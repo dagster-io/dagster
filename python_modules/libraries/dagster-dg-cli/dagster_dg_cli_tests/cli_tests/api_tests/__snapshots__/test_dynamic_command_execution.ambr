@@ -308,498 +308,212 @@
 # ---
 # name: TestDynamicCommandExecution.test_command_execution[asset_success_assets_status_view_human_readable_text]
   '''
-  Asset Key: ANALYTICS/company_perf
-  ID: ["ANALYTICS", "company_perf"]
-  Description: dbt model for: company_perf 
-   
-  	select
-  	        company,
-  	        sum(n_orders) as n_orders,
-  	        sum(total_revenue) as total_revenue
-  	from {{ ref("company_stats") }}
-  	group by 1
-  Group: ANALYTICS
-  Kinds: dbt, snowflake
+  Asset Key: asset_health_report_slack
+  ID: ["asset_health_report_slack"]
+  Description: Sends Dagster asset health report to #bot-purina Slack channel
+  Group: monitoring
+  Kinds: slack
+  Deps: None
+  Asset Health: HEALTHY
+  Materialization Status: HEALTHY
+  Freshness Status: NOT_APPLICABLE
+  Asset Checks Status: NOT_APPLICABLE
+  Latest Materialization: 2025-09-30 13:01:29
+  Latest Run ID: 68fb6e21-5928-4da1-b9fe-3f6a565e3a39
+  
+  Asset Key: aws/cloud-prod/user_roles
+  ID: ["aws", "cloud-prod", "user_roles"]
+  Description: Snowflake stages for AWS data, creates new stages for new assets, refreses existing stages.
+  Group: aws_stages
+  Kinds: None
+  Deps: None
+  Asset Health: HEALTHY
+  Materialization Status: HEALTHY
+  Freshness Status: NOT_APPLICABLE
+  Asset Checks Status: NOT_APPLICABLE
+  Latest Materialization: 2025-10-01 03:02:40
+  Latest Run ID: 74a2f116-1e7a-41d8-9d6d-5b47c05ebbe0
+  
+  Asset Key: aws/cloud-prod/workspace_staging_asset_checks
+  ID: ["aws", "cloud-prod", "workspace_staging_asset_checks"]
+  Description: Snowflake stages for AWS data, creates new stages for new assets, refreses existing stages.
+  Group: aws_stages
+  Kinds: None
+  Deps: cloud-prod-workspace-replication/staging/asset_checks
   Asset Health: HEALTHY
   Materialization Status: HEALTHY
   Freshness Status: HEALTHY
-  Asset Checks Status: HEALTHY
-  Latest Materialization: 2025-09-09 00:02:25
-  Latest Run ID: 83112ac7-a739-4b79-8f1f-6d91911a029a
+  Asset Checks Status: NOT_APPLICABLE
+  Latest Materialization: 2025-10-01 09:20:37
+  Latest Run ID: 3fb15668-f967-45ec-ac66-7682a6097583
   
-  Asset Key: ANALYTICS/company_stats
-  ID: ["ANALYTICS", "company_stats"]
-  Description: dbt model for: company_stats 
-   
-  	{{
-  	        config(tags=["core_kpis"])
-  	}}
-  	select
-  	        order_date,
-  	        company,
-  	        count(*) as n_orders,
-  	        sum(order_total) as total_revenue
-  	from {{ ref("orders_augmented") }}
-  	group by 1, 2
-  Group: ANALYTICS
-  Kinds: dbt, snowflake
+  Asset Key: aws/cloud-prod/workspace_staging_assets
+  ID: ["aws", "cloud-prod", "workspace_staging_assets"]
+  Description: Snowflake stages for AWS data, creates new stages for new assets, refreses existing stages.
+  Group: aws_stages
+  Kinds: None
+  Deps: cloud-prod-workspace-replication/staging/assets
   Asset Health: HEALTHY
   Materialization Status: HEALTHY
   Freshness Status: HEALTHY
-  Asset Checks Status: HEALTHY
-  Latest Materialization: 2025-09-10 16:21:19
-  Latest Run ID: a484f830-3007-424b-862e-4fefbd733bab
+  Asset Checks Status: NOT_APPLICABLE
+  Latest Materialization: 2025-10-01 09:20:37
+  Latest Run ID: 3fb15668-f967-45ec-ac66-7682a6097583
   
-  Asset Key: ANALYTICS/order_stats
-  ID: ["ANALYTICS", "order_stats"]
-  Description: dbt model for: order_stats 
-   
-  	select
-  	        {{ date_trunc("day", "order_date") }} as order_date,
-  	        count(*) as n_orders,
-  	        sum(order_total) as total_revenue
-  	from {{ ref("orders_augmented") }}
-  	{% if is_incremental() %}
-  	WHERE {{ date_trunc("day", "order_date") }} >=  '{{ var('min_date') }}' AND {{ date_trunc("day", "order_date") }} <=  '{{ var('max_date') }}'
-  	{% endif %}
-  	group by 1
-  Group: ANALYTICS
-  Kinds: dbt, snowflake
-  Asset Health: WARNING
-  Materialization Status: HEALTHY
-  Freshness Status: WARNING
-  Asset Checks Status: HEALTHY
-  Latest Materialization: 2025-09-07 00:03:22
-  Latest Run ID: 112a4461-789e-477b-a88c-872cf8c24316
-  Latest Partition: 2025-08-31
-  
-  Asset Key: ANALYTICS/orders_augmented
-  ID: ["ANALYTICS", "orders_augmented"]
-  Description: dbt model for: orders_augmented 
-   
-  	{{
-  	        config(tags=["core_kpis"])
-  	}}
-  	select
-  	        o.*,
-  	        u.company,
-  	        l.state,
-  	        l.zip_code
-  	from {{ ref("orders_cleaned") }} o 
-  
-  	left join {{ ref("users_cleaned") }} u
-  	       on o.user_id = u.user_id
-  
-  	 left join {{ ref("locations_cleaned") }} l
-  	        on o.user_id = l.user_id
-  
-  	{% if is_incremental() %}
-  	WHERE o.order_date >= '{{ var('min_date') }}' AND o.order_date <= '{{ var('max_date') }}'
-  	{% endif %}
-  Group: ANALYTICS
-  Kinds: dbt, snowflake
-  Asset Health: DEGRADED
-  Materialization Status: DEGRADED
-  Freshness Status: WARNING
-  Asset Checks Status: HEALTHY
-  Latest Materialization: 2025-09-10 00:02:11
-  Latest Run ID: 085aa81e-11f7-4848-8e25-8b9e37b3a753
-  Latest Partition: 2025-09-09
-  
-  Asset Key: ANALYTICS/sku_stats
-  ID: ["ANALYTICS", "sku_stats"]
-  Description: dbt model for: sku_stats 
-   
-  	select
-  	        order_date,
-  	        sku,
-  	        count(*) as n_orders,
-  	        sum(order_total) as total_revenue
-  	from {{ ref("orders_augmented") }}
-  	group by 1, 2
-  Group: ANALYTICS
-  Kinds: dbt, snowflake
-  Asset Health: DEGRADED
-  Materialization Status: HEALTHY
-  Freshness Status: DEGRADED
-  Asset Checks Status: WARNING
-  Latest Materialization: 2025-09-01 00:03:55
-  Latest Run ID: 41b0e33d-a965-423f-acca-b444a7058dba
-  Total Checks: 1
-  Warning Checks: 1
-  
-  Asset Key: ANALYTICS/weekly_order_summary
-  ID: ["ANALYTICS", "weekly_order_summary"]
-  Description: dbt model for: weekly_order_summary 
-   
-  	{{
-  	        config(
-  	                tags=["core_kpis"]
-  	        )
-  	}}
-  
-  	select
-  	        order_date,
-  	        n_orders as num_orders
-  	from {{ ref("order_stats") }}
-  	{% if is_incremental() %}
-  	WHERE o.order_date >= '{{ var('min_date') }}' AND o.order_date <= '{{ var('max_date') }}'
-  	{% endif %}
-  Group: ANALYTICS
-  Kinds: dbt, snowflake
-  Asset Health: WARNING
-  Materialization Status: HEALTHY
-  Freshness Status: WARNING
-  Asset Checks Status: HEALTHY
-  Latest Materialization: 2025-09-07 00:03:23
-  Latest Run ID: 112a4461-789e-477b-a88c-872cf8c24316
-  Latest Partition: 2025-08-31
-  
-  Asset Key: CLEANED/locations_cleaned
-  ID: ["CLEANED", "locations_cleaned"]
-  Description: dbt model for: locations_cleaned 
-   
-  	with source as (
-      
-  	select *
-  	from {{ source("raw_data", "locations") }}
-  
-  	),
-   
-  	source_renamed as (
-  
-  	    select l_user_id as user_id,
-  	           l_street_address as street_address,
-  	           l_state as state,
-  	           l_country as country,
-  	           l_zip_code as zip_code,
-  	           _sling_loaded_at
-  	    from source
-  
-  	)
-  
-  	select *
-  	from source_renamed
-  Group: CLEANED
-  Kinds: dbt, snowflake
+  Asset Key: aws/cloud-prod/workspace_staging_external_repo_metadata
+  ID: ["aws", "cloud-prod", "workspace_staging_external_repo_metadata"]
+  Description: Snowflake stages for AWS data, creates new stages for new assets, refreses existing stages.
+  Group: aws_stages
+  Kinds: None
+  Deps: cloud-prod-workspace-replication/staging/external_repo_metadata
   Asset Health: HEALTHY
   Materialization Status: HEALTHY
   Freshness Status: HEALTHY
-  Asset Checks Status: HEALTHY
-  Latest Materialization: 2025-09-10 19:21:44
-  Latest Run ID: 7bfdcc2b-d67d-4df8-bea0-3cf8d19e80eb
+  Asset Checks Status: NOT_APPLICABLE
+  Latest Materialization: 2025-10-01 09:20:37
+  Latest Run ID: 3fb15668-f967-45ec-ac66-7682a6097583
   
-  Asset Key: CLEANED/orders_cleaned
-  ID: ["CLEANED", "orders_cleaned"]
-  Description: dbt model for: orders_cleaned 
-   
-  	{{config(tags="my_test_tag")}}
-  	select
-  	        user_id,
-  	        quantity,
-  	        purchase_price,
-  	        sku,
-  	        dt,
-  	        cast(dt as datetime) as order_date,
-  	        quantity * purchase_price as order_total
-  	from {{ source("raw_data", "orders") }}
-  	{% if is_incremental() %}
-  	WHERE dt >= '{{ var('min_date') }}' AND dt <= '{{ var('max_date') }}'
-  	{% endif %}
-  Group: CLEANED
-  Kinds: dbt, snowflake
-  Asset Health: WARNING
+  Asset Key: aws/cloud-prod/workspace_staging_jobs
+  ID: ["aws", "cloud-prod", "workspace_staging_jobs"]
+  Description: Snowflake stages for AWS data, creates new stages for new assets, refreses existing stages.
+  Group: aws_stages
+  Kinds: None
+  Deps: cloud-prod-workspace-replication/staging/jobs
+  Asset Health: HEALTHY
   Materialization Status: HEALTHY
   Freshness Status: HEALTHY
-  Asset Checks Status: WARNING
-  Latest Materialization: 2025-09-10 19:21:02
-  Latest Run ID: 198d2c64-664d-4b23-9c69-976247ac0c2d
-  Latest Partition: 2025-09-09
-  Total Checks: 4
-  Warning Checks: 2
+  Asset Checks Status: NOT_APPLICABLE
+  Latest Materialization: 2025-10-01 09:20:37
+  Latest Run ID: 3fb15668-f967-45ec-ac66-7682a6097583
   
-  Asset Key: CLEANED/users_cleaned
-  ID: ["CLEANED", "users_cleaned"]
-  Description: dbt model for: users_cleaned 
-   
-  	select
-  	        user_id,
-  	        created_at,
-  	        company
-  	from {{ source("raw_data", "users") }}
-  	where not is_test_user
-  Group: CLEANED
-  Kinds: dbt, snowflake
-  Asset Health: DEGRADED
-  Materialization Status: DEGRADED
+  Asset Key: aws/cloud-prod/workspace_staging_metadata
+  ID: ["aws", "cloud-prod", "workspace_staging_metadata"]
+  Description: Snowflake stages for AWS data, creates new stages for new assets, refreses existing stages.
+  Group: aws_stages
+  Kinds: None
+  Deps: cloud-prod-workspace-replication/staging/metadata
+  Asset Health: HEALTHY
+  Materialization Status: HEALTHY
   Freshness Status: HEALTHY
-  Asset Checks Status: HEALTHY
-  Latest Materialization: 2025-09-10 19:21:02
-  Latest Run ID: 198d2c64-664d-4b23-9c69-976247ac0c2d
-  Latest Partition: 2025-09-09
-  
-  Asset Key: FORECASTING/big_orders
-  ID: ["FORECASTING", "big_orders"]
-  Description: Days where predicted orders surpass our current carrying capacity
-  Group: FORECASTING
-  Kinds: databricks, pyspark
-  Asset Health: DEGRADED
-  Materialization Status: DEGRADED
-  Freshness Status: NOT_APPLICABLE
   Asset Checks Status: NOT_APPLICABLE
-  Latest Materialization: 2023-04-05 16:27:28
-  Latest Run ID: db0cf46a-14b3-4f79-80f6-6961f2d4fb03
+  Latest Materialization: 2025-10-01 09:20:37
+  Latest Run ID: 3fb15668-f967-45ec-ac66-7682a6097583
   
-  Asset Key: FORECASTING/predicted_orders
-  ID: ["FORECASTING", "predicted_orders"]
-  Description: Predicted orders for the next 30 days based on the fit paramters
-  Group: FORECASTING
-  Kinds: pandas, snowflake
+  Asset Key: aws/cloud-prod/workspace_staging_partitions
+  ID: ["aws", "cloud-prod", "workspace_staging_partitions"]
+  Description: Snowflake stages for AWS data, creates new stages for new assets, refreses existing stages.
+  Group: aws_stages
+  Kinds: None
+  Deps: cloud-prod-workspace-replication/staging/partitions
   Asset Health: HEALTHY
   Materialization Status: HEALTHY
-  Freshness Status: NOT_APPLICABLE
-  Asset Checks Status: NOT_APPLICABLE
-  Latest Materialization: 2025-09-10 00:03:05
-  Latest Run ID: 2b2e7e49-0093-425c-bdd4-404839306665
-  
-  Asset Key: MARKETING/avg_orders
-  ID: ["MARKETING", "avg_orders"]
-  Description: Computes avg order KPI, must be updated regularly for exec dashboard
-  Group: MARKETING
-  Kinds: pandas, snowflake
-  Asset Health: DEGRADED
-  Materialization Status: HEALTHY
-  Freshness Status: NOT_APPLICABLE
-  Asset Checks Status: DEGRADED
-  Latest Materialization: 2025-09-09 00:02:45
-  Latest Run ID: 83112ac7-a739-4b79-8f1f-6d91911a029a
-  Total Checks: 2
-  Failed Checks: 1
-  Warning Checks: 0
-  
-  Asset Key: MARKETING/key_product_deepdive
-  ID: ["MARKETING", "key_product_deepdive"]
-  Description: Creates a file for a BI tool based on the current quarters top product, represented as a dynamic partition
-  Group: MARKETING
-  Kinds: pandas, s3
-  Asset Health: HEALTHY
-  Materialization Status: HEALTHY
-  Freshness Status: NOT_APPLICABLE
-  Asset Checks Status: NOT_APPLICABLE
-  Latest Materialization: 2025-08-26 20:39:09
-  Latest Run ID: 7fd31e6d-e9a6-43c8-8a5e-a70873dffec5
-  Latest Partition: macaroni
-  
-  Asset Key: MARKETING/min_order
-  ID: ["MARKETING", "min_order"]
-  Description: Computes min order KPI
-  Group: MARKETING
-  Kinds: pandas, snowflake
-  Asset Health: DEGRADED
-  Materialization Status: HEALTHY
-  Freshness Status: DEGRADED
-  Asset Checks Status: NOT_APPLICABLE
-  Latest Materialization: 2025-09-05 14:54:48
-  Latest Run ID: f24fab3c-27e7-4a90-8b06-5bd7f454b7e5
-  
-  Asset Key: RAW_DATA/locations
-  ID: ["RAW_DATA", "locations"]
-  Description: None
-  Group: RAW_DATA
-  Kinds: SNOWFLAKE, sling
-  Asset Health: HEALTHY
-  Materialization Status: HEALTHY
-  Freshness Status: NOT_APPLICABLE
-  Asset Checks Status: NOT_APPLICABLE
-  Latest Materialization: 2025-09-10 19:20:40
-  Latest Run ID: 630a0162-dbd5-4bf7-b888-9a6cbefa0e9d
-  
-  Asset Key: RAW_DATA/orders
-  ID: ["RAW_DATA", "orders"]
-  Description: A table containing all orders that have been placed
-  Group: RAW_DATA
-  Kinds: api, snowflake
-  Asset Health: DEGRADED
-  Materialization Status: DEGRADED
   Freshness Status: HEALTHY
-  Asset Checks Status: WARNING
-  Latest Materialization: 2025-09-10 19:20:27
-  Latest Run ID: 198d2c64-664d-4b23-9c69-976247ac0c2d
-  Latest Partition: 2025-09-09
-  Total Checks: 1
-  Warning Checks: 1
-  
-  Asset Key: RAW_DATA/users
-  ID: ["RAW_DATA", "users"]
-  Description: A table containing all users data
-  Group: RAW_DATA
-  Kinds: api, snowflake
-  Asset Health: DEGRADED
-  Materialization Status: DEGRADED
-  Freshness Status: HEALTHY
-  Asset Checks Status: WARNING
-  Latest Materialization: 2025-09-10 19:20:23
-  Latest Run ID: 198d2c64-664d-4b23-9c69-976247ac0c2d
-  Latest Partition: 2025-09-09
-  Total Checks: 2
-  Warning Checks: 2
-  
-  Asset Key: change_model
-  ID: ["change_model"]
-  Description: None
-  Group: default
-  Kinds: Kubernetes, S3
-  Asset Health: HEALTHY
-  Materialization Status: HEALTHY
-  Freshness Status: NOT_APPLICABLE
   Asset Checks Status: NOT_APPLICABLE
-  Latest Materialization: 2025-05-28 18:47:22
-  Latest Run ID: b0b7679c-5180-4bc1-b7d7-27a12047f01f
-  
-  Asset Key: continent_stats
-  ID: ["continent_stats"]
-  Description: None
-  Group: default
-  Kinds: Kubernetes, S3
-  Asset Health: HEALTHY
-  Materialization Status: HEALTHY
-  Freshness Status: NOT_APPLICABLE
-  Asset Checks Status: NOT_APPLICABLE
-  Latest Materialization: 2025-05-28 18:47:30
-  Latest Run ID: b0b7679c-5180-4bc1-b7d7-27a12047f01f
-  
-  Asset Key: country_stats
-  ID: ["country_stats"]
-  Description: None
-  Group: default
-  Kinds: Kubernetes, S3
-  Asset Health: HEALTHY
-  Materialization Status: HEALTHY
-  Freshness Status: NOT_APPLICABLE
-  Asset Checks Status: HEALTHY
-  Latest Materialization: 2025-05-28 18:47:12
-  Latest Run ID: b0b7679c-5180-4bc1-b7d7-27a12047f01f
-  
-  Asset Key: databricks/economic_indicators
-  ID: ["databricks", "economic_indicators"]
-  Description: Ledger loaded 
-  Group: ingestion
-  Kinds: databricks
-  Asset Health: HEALTHY
-  Materialization Status: HEALTHY
-  Freshness Status: NOT_APPLICABLE
-  Asset Checks Status: NOT_APPLICABLE
-  Latest Materialization: 2025-09-10 12:00:46
-  Latest Run ID: 26c59dcc-3484-4165-b281-e5254632ed4d
-  
-  Asset Key: databricks/news_sentiment
-  ID: ["databricks", "news_sentiment"]
-  Description: Ledger loaded 
-  Group: ingestion
-  Kinds: databricks
-  Asset Health: HEALTHY
-  Materialization Status: HEALTHY
-  Freshness Status: NOT_APPLICABLE
-  Asset Checks Status: NOT_APPLICABLE
-  Latest Materialization: 2025-09-10 12:00:46
-  Latest Run ID: 26c59dcc-3484-4165-b281-e5254632ed4d
-  
-  Asset Key: databricks/revenue
-  ID: ["databricks", "revenue"]
-  Description: Ledger loaded 
-  Group: ingestion
-  Kinds: databricks
-  Asset Health: HEALTHY
-  Materialization Status: HEALTHY
-  Freshness Status: NOT_APPLICABLE
-  Asset Checks Status: NOT_APPLICABLE
-  Latest Materialization: 2025-09-10 12:00:50
-  Latest Run ID: 26c59dcc-3484-4165-b281-e5254632ed4d
-  
-  Asset Key: databricks_asset
-  ID: ["databricks_asset"]
-  Description: None
-  Group: FORECASTING
-  Kinds: databricks, pyspark
-  Asset Health: HEALTHY
-  Materialization Status: HEALTHY
-  Freshness Status: NOT_APPLICABLE
-  Asset Checks Status: NOT_APPLICABLE
-  Latest Materialization: 2025-05-28 18:52:32
-  Latest Run ID: d5a01d8f-696e-4b7f-b1b3-351152bcf99d
+  Latest Materialization: 2025-10-01 09:20:37
+  Latest Run ID: 3fb15668-f967-45ec-ac66-7682a6097583
   
   '''
 # ---
 # name: TestDynamicCommandExecution.test_command_execution[asset_success_assets_status_view_json]
   dict({
-    'cursor': '["dbt", "model", "salesforce_source", "stg_salesforce__account_tmp"]',
+    'cursor': '["aws", "cloud-prod", "workspace_staging_partitions_ext"]',
     'has_more': True,
     'items': list([
       dict({
-        'asset_key': 'ANALYTICS/company_perf',
+        'asset_key': 'asset_health_report_slack',
         'asset_key_parts': list([
-          'ANALYTICS',
-          'company_perf',
+          'asset_health_report_slack',
         ]),
-        'description': '''
-          dbt model for: company_perf 
-           
-          	select
-          	        company,
-          	        sum(n_orders) as n_orders,
-          	        sum(total_revenue) as total_revenue
-          	from {{ ref("company_stats") }}
-          	group by 1
-        ''',
-        'group_name': 'ANALYTICS',
-        'id': '["ANALYTICS", "company_perf"]',
+        'dependency_keys': list([
+        ]),
+        'description': 'Sends Dagster asset health report to #bot-purina Slack channel',
+        'group_name': 'monitoring',
+        'id': '["asset_health_report_slack"]',
         'kinds': list([
-          'dbt',
-          'snowflake',
+          'slack',
         ]),
         'metadata_entries': list([
-          dict({
-            'description': None,
-            'label': 'dagster-dbt/materialization_type',
-            'text': 'table',
-          }),
-          dict({
-            'description': None,
-            'label': 'dagster/table_name',
-            'text': 'DEMO_DB2.analytics.company_perf',
-          }),
-          dict({
-            'description': None,
-            'label': 'partition_expr',
-            'text': 'order_date',
-          }),
-          dict({
-            'description': None,
-            'label': 'dagster_dbt/manifest',
-            'text': '[DbtManifestWrapper] (unserializable)',
-          }),
-          dict({
-            'description': None,
-            'label': 'dagster_dbt/dagster_dbt_translator',
-            'text': '[CustomDagsterDbtTranslator] (unserializable)',
-          }),
-          dict({
-            'description': None,
-            'label': 'dagster_dbt/unique_id',
-            'text': 'model.dbt_project.company_perf',
-          }),
-          dict({
-            'description': None,
-            'label': 'dagster/code_references',
-          }),
         ]),
         'status': dict({
-          'asset_checks_status': 'HEALTHY',
+          'asset_checks_status': 'NOT_APPLICABLE',
           'asset_health': 'HEALTHY',
           'checks_status': dict({
             'num_failed_checks': None,
             'num_warning_checks': None,
-            'status': 'HEALTHY',
+            'status': 'NOT_APPLICABLE',
+            'total_num_checks': None,
+          }),
+          'freshness_info': None,
+          'freshness_status': 'NOT_APPLICABLE',
+          'health_metadata': None,
+          'latest_materialization': dict({
+            'partition': None,
+            'run_id': '68fb6e21-5928-4da1-b9fe-3f6a565e3a39',
+            'timestamp': 1759237289874.0,
+          }),
+          'materialization_status': 'HEALTHY',
+        }),
+      }),
+      dict({
+        'asset_key': 'aws/cloud-prod/user_roles',
+        'asset_key_parts': list([
+          'aws',
+          'cloud-prod',
+          'user_roles',
+        ]),
+        'dependency_keys': list([
+        ]),
+        'description': 'Snowflake stages for AWS data, creates new stages for new assets, refreses existing stages.',
+        'group_name': 'aws_stages',
+        'id': '["aws", "cloud-prod", "user_roles"]',
+        'kinds': list([
+        ]),
+        'metadata_entries': list([
+        ]),
+        'status': dict({
+          'asset_checks_status': 'NOT_APPLICABLE',
+          'asset_health': 'HEALTHY',
+          'checks_status': dict({
+            'num_failed_checks': None,
+            'num_warning_checks': None,
+            'status': 'NOT_APPLICABLE',
+            'total_num_checks': None,
+          }),
+          'freshness_info': None,
+          'freshness_status': 'NOT_APPLICABLE',
+          'health_metadata': None,
+          'latest_materialization': dict({
+            'partition': None,
+            'run_id': '74a2f116-1e7a-41d8-9d6d-5b47c05ebbe0',
+            'timestamp': 1759287760784.0,
+          }),
+          'materialization_status': 'HEALTHY',
+        }),
+      }),
+      dict({
+        'asset_key': 'aws/cloud-prod/workspace_staging_asset_checks',
+        'asset_key_parts': list([
+          'aws',
+          'cloud-prod',
+          'workspace_staging_asset_checks',
+        ]),
+        'dependency_keys': list([
+          'cloud-prod-workspace-replication/staging/asset_checks',
+        ]),
+        'description': 'Snowflake stages for AWS data, creates new stages for new assets, refreses existing stages.',
+        'group_name': 'aws_stages',
+        'id': '["aws", "cloud-prod", "workspace_staging_asset_checks"]',
+        'kinds': list([
+        ]),
+        'metadata_entries': list([
+        ]),
+        'status': dict({
+          'asset_checks_status': 'NOT_APPLICABLE',
+          'asset_health': 'HEALTHY',
+          'checks_status': dict({
+            'num_failed_checks': None,
+            'num_warning_checks': None,
+            'status': 'NOT_APPLICABLE',
             'total_num_checks': None,
           }),
           'freshness_info': dict({
@@ -813,81 +527,36 @@
           'health_metadata': None,
           'latest_materialization': dict({
             'partition': None,
-            'run_id': '83112ac7-a739-4b79-8f1f-6d91911a029a',
-            'timestamp': 1757376145523.0,
+            'run_id': '3fb15668-f967-45ec-ac66-7682a6097583',
+            'timestamp': 1759310437939.0,
           }),
           'materialization_status': 'HEALTHY',
         }),
       }),
       dict({
-        'asset_key': 'ANALYTICS/company_stats',
+        'asset_key': 'aws/cloud-prod/workspace_staging_assets',
         'asset_key_parts': list([
-          'ANALYTICS',
-          'company_stats',
+          'aws',
+          'cloud-prod',
+          'workspace_staging_assets',
         ]),
-        'description': '''
-          dbt model for: company_stats 
-           
-          	{{
-          	        config(tags=["core_kpis"])
-          	}}
-          	select
-          	        order_date,
-          	        company,
-          	        count(*) as n_orders,
-          	        sum(order_total) as total_revenue
-          	from {{ ref("orders_augmented") }}
-          	group by 1, 2
-        ''',
-        'group_name': 'ANALYTICS',
-        'id': '["ANALYTICS", "company_stats"]',
+        'dependency_keys': list([
+          'cloud-prod-workspace-replication/staging/assets',
+        ]),
+        'description': 'Snowflake stages for AWS data, creates new stages for new assets, refreses existing stages.',
+        'group_name': 'aws_stages',
+        'id': '["aws", "cloud-prod", "workspace_staging_assets"]',
         'kinds': list([
-          'dbt',
-          'snowflake',
         ]),
         'metadata_entries': list([
-          dict({
-            'description': None,
-            'label': 'dagster-dbt/materialization_type',
-            'text': 'table',
-          }),
-          dict({
-            'description': None,
-            'label': 'dagster/table_name',
-            'text': 'DEMO_DB2.analytics.company_stats',
-          }),
-          dict({
-            'description': None,
-            'label': 'partition_expr',
-            'text': 'order_date',
-          }),
-          dict({
-            'description': None,
-            'label': 'dagster_dbt/manifest',
-            'text': '[DbtManifestWrapper] (unserializable)',
-          }),
-          dict({
-            'description': None,
-            'label': 'dagster_dbt/dagster_dbt_translator',
-            'text': '[CustomDagsterDbtTranslator] (unserializable)',
-          }),
-          dict({
-            'description': None,
-            'label': 'dagster_dbt/unique_id',
-            'text': 'model.dbt_project.company_stats',
-          }),
-          dict({
-            'description': None,
-            'label': 'dagster/code_references',
-          }),
         ]),
         'status': dict({
-          'asset_checks_status': 'HEALTHY',
+          'asset_checks_status': 'NOT_APPLICABLE',
           'asset_health': 'HEALTHY',
           'checks_status': dict({
             'num_failed_checks': None,
             'num_warning_checks': None,
-            'status': 'HEALTHY',
+            'status': 'NOT_APPLICABLE',
             'total_num_checks': None,
           }),
           'freshness_info': dict({
@@ -901,460 +570,36 @@
           'health_metadata': None,
           'latest_materialization': dict({
             'partition': None,
-            'run_id': 'a484f830-3007-424b-862e-4fefbd733bab',
-            'timestamp': 1757521279949.0,
+            'run_id': '3fb15668-f967-45ec-ac66-7682a6097583',
+            'timestamp': 1759310437219.0,
           }),
           'materialization_status': 'HEALTHY',
         }),
       }),
       dict({
-        'asset_key': 'ANALYTICS/order_stats',
+        'asset_key': 'aws/cloud-prod/workspace_staging_external_repo_metadata',
         'asset_key_parts': list([
-          'ANALYTICS',
-          'order_stats',
+          'aws',
+          'cloud-prod',
+          'workspace_staging_external_repo_metadata',
         ]),
-        'description': '''
-          dbt model for: order_stats 
-           
-          	select
-          	        {{ date_trunc("day", "order_date") }} as order_date,
-          	        count(*) as n_orders,
-          	        sum(order_total) as total_revenue
-          	from {{ ref("orders_augmented") }}
-          	{% if is_incremental() %}
-          	WHERE {{ date_trunc("day", "order_date") }} >=  '{{ var('min_date') }}' AND {{ date_trunc("day", "order_date") }} <=  '{{ var('max_date') }}'
-          	{% endif %}
-          	group by 1
-        ''',
-        'group_name': 'ANALYTICS',
-        'id': '["ANALYTICS", "order_stats"]',
+        'dependency_keys': list([
+          'cloud-prod-workspace-replication/staging/external_repo_metadata',
+        ]),
+        'description': 'Snowflake stages for AWS data, creates new stages for new assets, refreses existing stages.',
+        'group_name': 'aws_stages',
+        'id': '["aws", "cloud-prod", "workspace_staging_external_repo_metadata"]',
         'kinds': list([
-          'dbt',
-          'snowflake',
         ]),
         'metadata_entries': list([
-          dict({
-            'description': None,
-            'label': 'dagster-dbt/materialization_type',
-            'text': 'table',
-          }),
-          dict({
-            'description': None,
-            'label': 'dagster/table_name',
-            'text': 'DEMO_DB2.analytics.order_stats',
-          }),
-          dict({
-            'description': None,
-            'label': 'partition_expr',
-            'text': 'order_date',
-          }),
-          dict({
-            'description': None,
-            'label': 'dagster_dbt/manifest',
-            'text': '[DbtManifestWrapper] (unserializable)',
-          }),
-          dict({
-            'description': None,
-            'label': 'dagster_dbt/dagster_dbt_translator',
-            'text': '[CustomDagsterDbtTranslator] (unserializable)',
-          }),
-          dict({
-            'description': None,
-            'label': 'dagster_dbt/unique_id',
-            'text': 'model.dbt_project.order_stats',
-          }),
-          dict({
-            'description': None,
-            'label': 'dagster/code_references',
-          }),
         ]),
         'status': dict({
-          'asset_checks_status': 'HEALTHY',
-          'asset_health': 'WARNING',
-          'checks_status': dict({
-            'num_failed_checks': None,
-            'num_warning_checks': None,
-            'status': 'HEALTHY',
-            'total_num_checks': None,
-          }),
-          'freshness_info': dict({
-            'cron_schedule': None,
-            'current_lag_minutes': None,
-            'current_minutes_late': None,
-            'latest_materialization_minutes_late': None,
-            'maximum_lag_minutes': None,
-          }),
-          'freshness_status': 'WARNING',
-          'health_metadata': None,
-          'latest_materialization': dict({
-            'partition': '2025-08-31',
-            'run_id': '112a4461-789e-477b-a88c-872cf8c24316',
-            'timestamp': 1757203402552.0,
-          }),
-          'materialization_status': 'HEALTHY',
-        }),
-      }),
-      dict({
-        'asset_key': 'ANALYTICS/orders_augmented',
-        'asset_key_parts': list([
-          'ANALYTICS',
-          'orders_augmented',
-        ]),
-        'description': '''
-          dbt model for: orders_augmented 
-           
-          	{{
-          	        config(tags=["core_kpis"])
-          	}}
-          	select
-          	        o.*,
-          	        u.company,
-          	        l.state,
-          	        l.zip_code
-          	from {{ ref("orders_cleaned") }} o 
-          
-          	left join {{ ref("users_cleaned") }} u
-          	       on o.user_id = u.user_id
-          
-          	 left join {{ ref("locations_cleaned") }} l
-          	        on o.user_id = l.user_id
-          
-          	{% if is_incremental() %}
-          	WHERE o.order_date >= '{{ var('min_date') }}' AND o.order_date <= '{{ var('max_date') }}'
-          	{% endif %}
-        ''',
-        'group_name': 'ANALYTICS',
-        'id': '["ANALYTICS", "orders_augmented"]',
-        'kinds': list([
-          'dbt',
-          'snowflake',
-        ]),
-        'metadata_entries': list([
-          dict({
-            'description': None,
-            'label': 'dagster-dbt/materialization_type',
-            'text': 'table',
-          }),
-          dict({
-            'description': None,
-            'label': 'dagster/column_schema',
-          }),
-          dict({
-            'description': None,
-            'label': 'dagster/table_name',
-            'text': 'DEMO_DB2.analytics.orders_augmented',
-          }),
-          dict({
-            'description': None,
-            'label': 'partition_expr',
-            'text': 'order_date',
-          }),
-          dict({
-            'description': None,
-            'label': 'dagster_dbt/manifest',
-            'text': '[DbtManifestWrapper] (unserializable)',
-          }),
-          dict({
-            'description': None,
-            'label': 'dagster_dbt/dagster_dbt_translator',
-            'text': '[CustomDagsterDbtTranslator] (unserializable)',
-          }),
-          dict({
-            'description': None,
-            'label': 'dagster_dbt/unique_id',
-            'text': 'model.dbt_project.orders_augmented',
-          }),
-          dict({
-            'description': None,
-            'label': 'dagster/code_references',
-          }),
-        ]),
-        'status': dict({
-          'asset_checks_status': 'HEALTHY',
-          'asset_health': 'DEGRADED',
-          'checks_status': dict({
-            'num_failed_checks': None,
-            'num_warning_checks': None,
-            'status': 'HEALTHY',
-            'total_num_checks': None,
-          }),
-          'freshness_info': dict({
-            'cron_schedule': None,
-            'current_lag_minutes': None,
-            'current_minutes_late': None,
-            'latest_materialization_minutes_late': None,
-            'maximum_lag_minutes': None,
-          }),
-          'freshness_status': 'WARNING',
-          'health_metadata': None,
-          'latest_materialization': dict({
-            'partition': '2025-09-09',
-            'run_id': '085aa81e-11f7-4848-8e25-8b9e37b3a753',
-            'timestamp': 1757462531632.0,
-          }),
-          'materialization_status': 'DEGRADED',
-        }),
-      }),
-      dict({
-        'asset_key': 'ANALYTICS/sku_stats',
-        'asset_key_parts': list([
-          'ANALYTICS',
-          'sku_stats',
-        ]),
-        'description': '''
-          dbt model for: sku_stats 
-           
-          	select
-          	        order_date,
-          	        sku,
-          	        count(*) as n_orders,
-          	        sum(order_total) as total_revenue
-          	from {{ ref("orders_augmented") }}
-          	group by 1, 2
-        ''',
-        'group_name': 'ANALYTICS',
-        'id': '["ANALYTICS", "sku_stats"]',
-        'kinds': list([
-          'dbt',
-          'snowflake',
-        ]),
-        'metadata_entries': list([
-          dict({
-            'description': None,
-            'label': 'dagster-dbt/materialization_type',
-            'text': 'table',
-          }),
-          dict({
-            'description': None,
-            'label': 'dagster/table_name',
-            'text': 'DEMO_DB2.analytics.sku_stats',
-          }),
-          dict({
-            'description': None,
-            'label': 'partition_expr',
-            'text': 'order_date',
-          }),
-          dict({
-            'description': None,
-            'label': 'dagster_dbt/manifest',
-            'text': '[DbtManifestWrapper] (unserializable)',
-          }),
-          dict({
-            'description': None,
-            'label': 'dagster_dbt/dagster_dbt_translator',
-            'text': '[CustomDagsterDbtTranslator] (unserializable)',
-          }),
-          dict({
-            'description': None,
-            'label': 'dagster_dbt/unique_id',
-            'text': 'model.dbt_project.sku_stats',
-          }),
-          dict({
-            'description': None,
-            'label': 'dagster/code_references',
-          }),
-        ]),
-        'status': dict({
-          'asset_checks_status': 'WARNING',
-          'asset_health': 'DEGRADED',
-          'checks_status': dict({
-            'num_failed_checks': None,
-            'num_warning_checks': 1,
-            'status': 'WARNING',
-            'total_num_checks': 1,
-          }),
-          'freshness_info': dict({
-            'cron_schedule': None,
-            'current_lag_minutes': None,
-            'current_minutes_late': None,
-            'latest_materialization_minutes_late': None,
-            'maximum_lag_minutes': None,
-          }),
-          'freshness_status': 'DEGRADED',
-          'health_metadata': None,
-          'latest_materialization': dict({
-            'partition': None,
-            'run_id': '41b0e33d-a965-423f-acca-b444a7058dba',
-            'timestamp': 1756685035863.0,
-          }),
-          'materialization_status': 'HEALTHY',
-        }),
-      }),
-      dict({
-        'asset_key': 'ANALYTICS/weekly_order_summary',
-        'asset_key_parts': list([
-          'ANALYTICS',
-          'weekly_order_summary',
-        ]),
-        'description': '''
-          dbt model for: weekly_order_summary 
-           
-          	{{
-          	        config(
-          	                tags=["core_kpis"]
-          	        )
-          	}}
-          
-          	select
-          	        order_date,
-          	        n_orders as num_orders
-          	from {{ ref("order_stats") }}
-          	{% if is_incremental() %}
-          	WHERE o.order_date >= '{{ var('min_date') }}' AND o.order_date <= '{{ var('max_date') }}'
-          	{% endif %}
-        ''',
-        'group_name': 'ANALYTICS',
-        'id': '["ANALYTICS", "weekly_order_summary"]',
-        'kinds': list([
-          'dbt',
-          'snowflake',
-        ]),
-        'metadata_entries': list([
-          dict({
-            'description': None,
-            'label': 'dagster-dbt/materialization_type',
-            'text': 'table',
-          }),
-          dict({
-            'description': None,
-            'label': 'dagster/table_name',
-            'text': 'DEMO_DB2.analytics.weekly_order_summary',
-          }),
-          dict({
-            'description': None,
-            'label': 'partition_expr',
-            'text': 'order_date',
-          }),
-          dict({
-            'description': None,
-            'label': 'dagster_dbt/manifest',
-            'text': '[DbtManifestWrapper] (unserializable)',
-          }),
-          dict({
-            'description': None,
-            'label': 'dagster_dbt/dagster_dbt_translator',
-            'text': '[CustomDagsterDbtTranslator] (unserializable)',
-          }),
-          dict({
-            'description': None,
-            'label': 'dagster_dbt/unique_id',
-            'text': 'model.dbt_project.weekly_order_summary',
-          }),
-          dict({
-            'description': None,
-            'label': 'dagster/code_references',
-          }),
-        ]),
-        'status': dict({
-          'asset_checks_status': 'HEALTHY',
-          'asset_health': 'WARNING',
-          'checks_status': dict({
-            'num_failed_checks': None,
-            'num_warning_checks': None,
-            'status': 'HEALTHY',
-            'total_num_checks': None,
-          }),
-          'freshness_info': dict({
-            'cron_schedule': None,
-            'current_lag_minutes': None,
-            'current_minutes_late': None,
-            'latest_materialization_minutes_late': None,
-            'maximum_lag_minutes': None,
-          }),
-          'freshness_status': 'WARNING',
-          'health_metadata': None,
-          'latest_materialization': dict({
-            'partition': '2025-08-31',
-            'run_id': '112a4461-789e-477b-a88c-872cf8c24316',
-            'timestamp': 1757203403541.0,
-          }),
-          'materialization_status': 'HEALTHY',
-        }),
-      }),
-      dict({
-        'asset_key': 'CLEANED/locations_cleaned',
-        'asset_key_parts': list([
-          'CLEANED',
-          'locations_cleaned',
-        ]),
-        'description': '''
-          dbt model for: locations_cleaned 
-           
-          	with source as (
-              
-          	select *
-          	from {{ source("raw_data", "locations") }}
-          
-          	),
-           
-          	source_renamed as (
-          
-          	    select l_user_id as user_id,
-          	           l_street_address as street_address,
-          	           l_state as state,
-          	           l_country as country,
-          	           l_zip_code as zip_code,
-          	           _sling_loaded_at
-          	    from source
-          
-          	)
-          
-          	select *
-          	from source_renamed
-        ''',
-        'group_name': 'CLEANED',
-        'id': '["CLEANED", "locations_cleaned"]',
-        'kinds': list([
-          'dbt',
-          'snowflake',
-        ]),
-        'metadata_entries': list([
-          dict({
-            'description': None,
-            'label': 'dagster-dbt/materialization_type',
-            'text': 'table',
-          }),
-          dict({
-            'description': None,
-            'label': 'dagster/column_schema',
-          }),
-          dict({
-            'description': None,
-            'label': 'dagster/table_name',
-            'text': 'DEMO_DB2.analytics.locations_cleaned',
-          }),
-          dict({
-            'description': None,
-            'label': 'partition_expr',
-            'text': 'order_date',
-          }),
-          dict({
-            'description': None,
-            'label': 'dagster_dbt/manifest',
-            'text': '[DbtManifestWrapper] (unserializable)',
-          }),
-          dict({
-            'description': None,
-            'label': 'dagster_dbt/dagster_dbt_translator',
-            'text': '[CustomDagsterDbtTranslator] (unserializable)',
-          }),
-          dict({
-            'description': None,
-            'label': 'dagster_dbt/unique_id',
-            'text': 'model.dbt_project.locations_cleaned',
-          }),
-          dict({
-            'description': None,
-            'label': 'dagster/code_references',
-          }),
-        ]),
-        'status': dict({
-          'asset_checks_status': 'HEALTHY',
+          'asset_checks_status': 'NOT_APPLICABLE',
           'asset_health': 'HEALTHY',
           'checks_status': dict({
             'num_failed_checks': None,
             'num_warning_checks': None,
-            'status': 'HEALTHY',
+            'status': 'NOT_APPLICABLE',
             'total_num_checks': None,
           }),
           'freshness_info': dict({
@@ -1368,89 +613,37 @@
           'health_metadata': None,
           'latest_materialization': dict({
             'partition': None,
-            'run_id': '7bfdcc2b-d67d-4df8-bea0-3cf8d19e80eb',
-            'timestamp': 1757532104423.0,
+            'run_id': '3fb15668-f967-45ec-ac66-7682a6097583',
+            'timestamp': 1759310437858.0,
           }),
           'materialization_status': 'HEALTHY',
         }),
       }),
       dict({
-        'asset_key': 'CLEANED/orders_cleaned',
+        'asset_key': 'aws/cloud-prod/workspace_staging_jobs',
         'asset_key_parts': list([
-          'CLEANED',
-          'orders_cleaned',
+          'aws',
+          'cloud-prod',
+          'workspace_staging_jobs',
         ]),
-        'description': '''
-          dbt model for: orders_cleaned 
-           
-          	{{config(tags="my_test_tag")}}
-          	select
-          	        user_id,
-          	        quantity,
-          	        purchase_price,
-          	        sku,
-          	        dt,
-          	        cast(dt as datetime) as order_date,
-          	        quantity * purchase_price as order_total
-          	from {{ source("raw_data", "orders") }}
-          	{% if is_incremental() %}
-          	WHERE dt >= '{{ var('min_date') }}' AND dt <= '{{ var('max_date') }}'
-          	{% endif %}
-        ''',
-        'group_name': 'CLEANED',
-        'id': '["CLEANED", "orders_cleaned"]',
+        'dependency_keys': list([
+          'cloud-prod-workspace-replication/staging/jobs',
+        ]),
+        'description': 'Snowflake stages for AWS data, creates new stages for new assets, refreses existing stages.',
+        'group_name': 'aws_stages',
+        'id': '["aws", "cloud-prod", "workspace_staging_jobs"]',
         'kinds': list([
-          'dbt',
-          'snowflake',
         ]),
         'metadata_entries': list([
-          dict({
-            'description': None,
-            'label': 'dagster-dbt/materialization_type',
-            'text': 'table',
-          }),
-          dict({
-            'description': None,
-            'label': 'dagster/column_schema',
-          }),
-          dict({
-            'description': None,
-            'label': 'dagster/table_name',
-            'text': 'DEMO_DB2.analytics.orders_cleaned',
-          }),
-          dict({
-            'description': None,
-            'label': 'partition_expr',
-            'text': 'dt',
-          }),
-          dict({
-            'description': None,
-            'label': 'dagster_dbt/manifest',
-            'text': '[DbtManifestWrapper] (unserializable)',
-          }),
-          dict({
-            'description': None,
-            'label': 'dagster_dbt/dagster_dbt_translator',
-            'text': '[CustomDagsterDbtTranslator] (unserializable)',
-          }),
-          dict({
-            'description': None,
-            'label': 'dagster_dbt/unique_id',
-            'text': 'model.dbt_project.orders_cleaned',
-          }),
-          dict({
-            'description': None,
-            'label': 'dagster/code_references',
-          }),
         ]),
         'status': dict({
-          'asset_checks_status': 'WARNING',
-          'asset_health': 'WARNING',
+          'asset_checks_status': 'NOT_APPLICABLE',
+          'asset_health': 'HEALTHY',
           'checks_status': dict({
             'num_failed_checks': None,
-            'num_warning_checks': 2,
-            'status': 'WARNING',
-            'total_num_checks': 4,
+            'num_warning_checks': None,
+            'status': 'NOT_APPLICABLE',
+            'total_num_checks': None,
           }),
           'freshness_info': dict({
             'cron_schedule': None,
@@ -1462,82 +655,37 @@
           'freshness_status': 'HEALTHY',
           'health_metadata': None,
           'latest_materialization': dict({
-            'partition': '2025-09-09',
-            'run_id': '198d2c64-664d-4b23-9c69-976247ac0c2d',
-            'timestamp': 1757532062078.0,
+            'partition': None,
+            'run_id': '3fb15668-f967-45ec-ac66-7682a6097583',
+            'timestamp': 1759310437770.0,
           }),
           'materialization_status': 'HEALTHY',
         }),
       }),
       dict({
-        'asset_key': 'CLEANED/users_cleaned',
+        'asset_key': 'aws/cloud-prod/workspace_staging_metadata',
         'asset_key_parts': list([
-          'CLEANED',
-          'users_cleaned',
+          'aws',
+          'cloud-prod',
+          'workspace_staging_metadata',
         ]),
-        'description': '''
-          dbt model for: users_cleaned 
-           
-          	select
-          	        user_id,
-          	        created_at,
-          	        company
-          	from {{ source("raw_data", "users") }}
-          	where not is_test_user
-        ''',
-        'group_name': 'CLEANED',
-        'id': '["CLEANED", "users_cleaned"]',
+        'dependency_keys': list([
+          'cloud-prod-workspace-replication/staging/metadata',
+        ]),
+        'description': 'Snowflake stages for AWS data, creates new stages for new assets, refreses existing stages.',
+        'group_name': 'aws_stages',
+        'id': '["aws", "cloud-prod", "workspace_staging_metadata"]',
         'kinds': list([
-          'dbt',
-          'snowflake',
         ]),
         'metadata_entries': list([
-          dict({
-            'description': None,
-            'label': 'dagster-dbt/materialization_type',
-            'text': 'table',
-          }),
-          dict({
-            'description': None,
-            'label': 'dagster/column_schema',
-          }),
-          dict({
-            'description': None,
-            'label': 'dagster/table_name',
-            'text': 'DEMO_DB2.analytics.users_cleaned',
-          }),
-          dict({
-            'description': None,
-            'label': 'partition_expr',
-            'text': 'created_at',
-          }),
-          dict({
-            'description': None,
-            'label': 'dagster_dbt/manifest',
-            'text': '[DbtManifestWrapper] (unserializable)',
-          }),
-          dict({
-            'description': None,
-            'label': 'dagster_dbt/dagster_dbt_translator',
-            'text': '[CustomDagsterDbtTranslator] (unserializable)',
-          }),
-          dict({
-            'description': None,
-            'label': 'dagster_dbt/unique_id',
-            'text': 'model.dbt_project.users_cleaned',
-          }),
-          dict({
-            'description': None,
-            'label': 'dagster/code_references',
-          }),
         ]),
         'status': dict({
-          'asset_checks_status': 'HEALTHY',
-          'asset_health': 'DEGRADED',
+          'asset_checks_status': 'NOT_APPLICABLE',
+          'asset_health': 'HEALTHY',
           'checks_status': dict({
             'num_failed_checks': None,
             'num_warning_checks': None,
-            'status': 'HEALTHY',
+            'status': 'NOT_APPLICABLE',
             'total_num_checks': None,
           }),
           'freshness_info': dict({
@@ -1550,75 +698,29 @@
           'freshness_status': 'HEALTHY',
           'health_metadata': None,
           'latest_materialization': dict({
-            'partition': '2025-09-09',
-            'run_id': '198d2c64-664d-4b23-9c69-976247ac0c2d',
-            'timestamp': 1757532062400.0,
-          }),
-          'materialization_status': 'DEGRADED',
-        }),
-      }),
-      dict({
-        'asset_key': 'FORECASTING/big_orders',
-        'asset_key_parts': list([
-          'FORECASTING',
-          'big_orders',
-        ]),
-        'description': 'Days where predicted orders surpass our current carrying capacity',
-        'group_name': 'FORECASTING',
-        'id': '["FORECASTING", "big_orders"]',
-        'kinds': list([
-          'databricks',
-          'pyspark',
-        ]),
-        'metadata_entries': list([
-          dict({
-            'description': None,
-            'intValue': 50,
-            'label': 'resource_constrained_at',
-          }),
-          dict({
-            'description': None,
-            'label': 'dagster/code_references',
-          }),
-        ]),
-        'status': dict({
-          'asset_checks_status': 'NOT_APPLICABLE',
-          'asset_health': 'DEGRADED',
-          'checks_status': dict({
-            'num_failed_checks': None,
-            'num_warning_checks': None,
-            'status': 'NOT_APPLICABLE',
-            'total_num_checks': None,
-          }),
-          'freshness_info': None,
-          'freshness_status': 'NOT_APPLICABLE',
-          'health_metadata': None,
-          'latest_materialization': dict({
             'partition': None,
-            'run_id': 'db0cf46a-14b3-4f79-80f6-6961f2d4fb03',
-            'timestamp': 1680712048768.0,
+            'run_id': '3fb15668-f967-45ec-ac66-7682a6097583',
+            'timestamp': 1759310437135.0,
           }),
-          'materialization_status': 'DEGRADED',
+          'materialization_status': 'HEALTHY',
         }),
       }),
       dict({
-        'asset_key': 'FORECASTING/predicted_orders',
+        'asset_key': 'aws/cloud-prod/workspace_staging_partitions',
         'asset_key_parts': list([
-          'FORECASTING',
-          'predicted_orders',
+          'aws',
+          'cloud-prod',
+          'workspace_staging_partitions',
         ]),
-        'description': 'Predicted orders for the next 30 days based on the fit paramters',
-        'group_name': 'FORECASTING',
-        'id': '["FORECASTING", "predicted_orders"]',
+        'dependency_keys': list([
+          'cloud-prod-workspace-replication/staging/partitions',
+        ]),
+        'description': 'Snowflake stages for AWS data, creates new stages for new assets, refreses existing stages.',
+        'group_name': 'aws_stages',
+        'id': '["aws", "cloud-prod", "workspace_staging_partitions"]',
         'kinds': list([
-          'pandas',
-          'snowflake',
         ]),
         'metadata_entries': list([
-          dict({
-            'description': None,
-            'label': 'dagster/code_references',
-          }),
         ]),
         'status': dict({
           'asset_checks_status': 'NOT_APPLICABLE',
@@ -1628,227 +730,6 @@
             'num_warning_checks': None,
             'status': 'NOT_APPLICABLE',
             'total_num_checks': None,
-          }),
-          'freshness_info': None,
-          'freshness_status': 'NOT_APPLICABLE',
-          'health_metadata': None,
-          'latest_materialization': dict({
-            'partition': None,
-            'run_id': '2b2e7e49-0093-425c-bdd4-404839306665',
-            'timestamp': 1757462585599.0,
-          }),
-          'materialization_status': 'HEALTHY',
-        }),
-      }),
-      dict({
-        'asset_key': 'MARKETING/avg_orders',
-        'asset_key_parts': list([
-          'MARKETING',
-          'avg_orders',
-        ]),
-        'description': 'Computes avg order KPI, must be updated regularly for exec dashboard',
-        'group_name': 'MARKETING',
-        'id': '["MARKETING", "avg_orders"]',
-        'kinds': list([
-          'pandas',
-          'snowflake',
-        ]),
-        'metadata_entries': list([
-          dict({
-            'description': None,
-            'label': 'dagster/code_references',
-          }),
-        ]),
-        'status': dict({
-          'asset_checks_status': 'DEGRADED',
-          'asset_health': 'DEGRADED',
-          'checks_status': dict({
-            'num_failed_checks': 1,
-            'num_warning_checks': 0,
-            'status': 'DEGRADED',
-            'total_num_checks': 2,
-          }),
-          'freshness_info': None,
-          'freshness_status': 'NOT_APPLICABLE',
-          'health_metadata': None,
-          'latest_materialization': dict({
-            'partition': None,
-            'run_id': '83112ac7-a739-4b79-8f1f-6d91911a029a',
-            'timestamp': 1757376165289.0,
-          }),
-          'materialization_status': 'HEALTHY',
-        }),
-      }),
-      dict({
-        'asset_key': 'MARKETING/key_product_deepdive',
-        'asset_key_parts': list([
-          'MARKETING',
-          'key_product_deepdive',
-        ]),
-        'description': 'Creates a file for a BI tool based on the current quarters top product, represented as a dynamic partition',
-        'group_name': 'MARKETING',
-        'id': '["MARKETING", "key_product_deepdive"]',
-        'kinds': list([
-          'pandas',
-          's3',
-        ]),
-        'metadata_entries': list([
-          dict({
-            'description': None,
-            'label': 'dagster/code_references',
-          }),
-        ]),
-        'status': dict({
-          'asset_checks_status': 'NOT_APPLICABLE',
-          'asset_health': 'HEALTHY',
-          'checks_status': dict({
-            'num_failed_checks': None,
-            'num_warning_checks': None,
-            'status': 'NOT_APPLICABLE',
-            'total_num_checks': None,
-          }),
-          'freshness_info': None,
-          'freshness_status': 'NOT_APPLICABLE',
-          'health_metadata': None,
-          'latest_materialization': dict({
-            'partition': 'macaroni',
-            'run_id': '7fd31e6d-e9a6-43c8-8a5e-a70873dffec5',
-            'timestamp': 1756240749936.0,
-          }),
-          'materialization_status': 'HEALTHY',
-        }),
-      }),
-      dict({
-        'asset_key': 'MARKETING/min_order',
-        'asset_key_parts': list([
-          'MARKETING',
-          'min_order',
-        ]),
-        'description': 'Computes min order KPI',
-        'group_name': 'MARKETING',
-        'id': '["MARKETING", "min_order"]',
-        'kinds': list([
-          'pandas',
-          'snowflake',
-        ]),
-        'metadata_entries': list([
-          dict({
-            'description': None,
-            'label': 'dagster/code_references',
-          }),
-        ]),
-        'status': dict({
-          'asset_checks_status': 'NOT_APPLICABLE',
-          'asset_health': 'DEGRADED',
-          'checks_status': dict({
-            'num_failed_checks': None,
-            'num_warning_checks': None,
-            'status': 'NOT_APPLICABLE',
-            'total_num_checks': None,
-          }),
-          'freshness_info': dict({
-            'cron_schedule': None,
-            'current_lag_minutes': None,
-            'current_minutes_late': None,
-            'latest_materialization_minutes_late': None,
-            'maximum_lag_minutes': None,
-          }),
-          'freshness_status': 'DEGRADED',
-          'health_metadata': None,
-          'latest_materialization': dict({
-            'partition': None,
-            'run_id': 'f24fab3c-27e7-4a90-8b06-5bd7f454b7e5',
-            'timestamp': 1757084088986.0,
-          }),
-          'materialization_status': 'HEALTHY',
-        }),
-      }),
-      dict({
-        'asset_key': 'RAW_DATA/locations',
-        'asset_key_parts': list([
-          'RAW_DATA',
-          'locations',
-        ]),
-        'description': None,
-        'group_name': 'RAW_DATA',
-        'id': '["RAW_DATA", "locations"]',
-        'kinds': list([
-          'SNOWFLAKE',
-          'sling',
-        ]),
-        'metadata_entries': list([
-          dict({
-            'description': None,
-            'jsonString': '{"object": "locations"}',
-            'label': 'stream_config',
-          }),
-          dict({
-            'description': None,
-            'label': 'dagster_sling/dagster_sling_translator',
-            'text': '[CustomSlingTranslator] (unserializable)',
-          }),
-          dict({
-            'description': None,
-            'jsonString': '{"defaults": {"mode": "full-refresh", "object": "{stream_file_folder}.{stream_file_name}", "source_options": {"format": "csv"}}, "source": "S3", "streams": {"s3://hooli-demo/embedded-elt/locations.csv": {"object": "locations"}}, "target": "SNOWFLAKE_PROD"}',
-            'label': 'dagster_sling/sling_replication_config',
-          }),
-          dict({
-            'description': None,
-            'label': 'dagster/code_references',
-          }),
-        ]),
-        'status': dict({
-          'asset_checks_status': 'NOT_APPLICABLE',
-          'asset_health': 'HEALTHY',
-          'checks_status': dict({
-            'num_failed_checks': None,
-            'num_warning_checks': None,
-            'status': 'NOT_APPLICABLE',
-            'total_num_checks': None,
-          }),
-          'freshness_info': None,
-          'freshness_status': 'NOT_APPLICABLE',
-          'health_metadata': None,
-          'latest_materialization': dict({
-            'partition': None,
-            'run_id': '630a0162-dbd5-4bf7-b888-9a6cbefa0e9d',
-            'timestamp': 1757532040442.0,
-          }),
-          'materialization_status': 'HEALTHY',
-        }),
-      }),
-      dict({
-        'asset_key': 'RAW_DATA/orders',
-        'asset_key_parts': list([
-          'RAW_DATA',
-          'orders',
-        ]),
-        'description': 'A table containing all orders that have been placed',
-        'group_name': 'RAW_DATA',
-        'id': '["RAW_DATA", "orders"]',
-        'kinds': list([
-          'api',
-          'snowflake',
-        ]),
-        'metadata_entries': list([
-          dict({
-            'description': None,
-            'label': 'partition_expr',
-            'text': 'DT',
-          }),
-          dict({
-            'description': None,
-            'label': 'dagster/code_references',
-          }),
-        ]),
-        'status': dict({
-          'asset_checks_status': 'WARNING',
-          'asset_health': 'DEGRADED',
-          'checks_status': dict({
-            'num_failed_checks': None,
-            'num_warning_checks': 1,
-            'status': 'WARNING',
-            'total_num_checks': 1,
           }),
           'freshness_info': dict({
             'cron_schedule': None,
@@ -1860,313 +741,9 @@
           'freshness_status': 'HEALTHY',
           'health_metadata': None,
           'latest_materialization': dict({
-            'partition': '2025-09-09',
-            'run_id': '198d2c64-664d-4b23-9c69-976247ac0c2d',
-            'timestamp': 1757532027053.0,
-          }),
-          'materialization_status': 'DEGRADED',
-        }),
-      }),
-      dict({
-        'asset_key': 'RAW_DATA/users',
-        'asset_key_parts': list([
-          'RAW_DATA',
-          'users',
-        ]),
-        'description': 'A table containing all users data',
-        'group_name': 'RAW_DATA',
-        'id': '["RAW_DATA", "users"]',
-        'kinds': list([
-          'api',
-          'snowflake',
-        ]),
-        'metadata_entries': list([
-          dict({
-            'description': None,
-            'label': 'partition_expr',
-            'text': 'created_at',
-          }),
-          dict({
-            'description': None,
-            'label': 'dagster/code_references',
-          }),
-        ]),
-        'status': dict({
-          'asset_checks_status': 'WARNING',
-          'asset_health': 'DEGRADED',
-          'checks_status': dict({
-            'num_failed_checks': None,
-            'num_warning_checks': 2,
-            'status': 'WARNING',
-            'total_num_checks': 2,
-          }),
-          'freshness_info': dict({
-            'cron_schedule': None,
-            'current_lag_minutes': None,
-            'current_minutes_late': None,
-            'latest_materialization_minutes_late': None,
-            'maximum_lag_minutes': None,
-          }),
-          'freshness_status': 'HEALTHY',
-          'health_metadata': None,
-          'latest_materialization': dict({
-            'partition': '2025-09-09',
-            'run_id': '198d2c64-664d-4b23-9c69-976247ac0c2d',
-            'timestamp': 1757532023589.0,
-          }),
-          'materialization_status': 'DEGRADED',
-        }),
-      }),
-      dict({
-        'asset_key': 'change_model',
-        'asset_key_parts': list([
-          'change_model',
-        ]),
-        'description': None,
-        'group_name': 'default',
-        'id': '["change_model"]',
-        'kinds': list([
-          'Kubernetes',
-          'S3',
-        ]),
-        'metadata_entries': list([
-          dict({
-            'description': None,
-            'label': 'dagster/code_references',
-          }),
-        ]),
-        'status': dict({
-          'asset_checks_status': 'NOT_APPLICABLE',
-          'asset_health': 'HEALTHY',
-          'checks_status': dict({
-            'num_failed_checks': None,
-            'num_warning_checks': None,
-            'status': 'NOT_APPLICABLE',
-            'total_num_checks': None,
-          }),
-          'freshness_info': None,
-          'freshness_status': 'NOT_APPLICABLE',
-          'health_metadata': None,
-          'latest_materialization': dict({
             'partition': None,
-            'run_id': 'b0b7679c-5180-4bc1-b7d7-27a12047f01f',
-            'timestamp': 1748458042286.0,
-          }),
-          'materialization_status': 'HEALTHY',
-        }),
-      }),
-      dict({
-        'asset_key': 'continent_stats',
-        'asset_key_parts': list([
-          'continent_stats',
-        ]),
-        'description': None,
-        'group_name': 'default',
-        'id': '["continent_stats"]',
-        'kinds': list([
-          'Kubernetes',
-          'S3',
-        ]),
-        'metadata_entries': list([
-          dict({
-            'description': None,
-            'label': 'dagster/code_references',
-          }),
-        ]),
-        'status': dict({
-          'asset_checks_status': 'NOT_APPLICABLE',
-          'asset_health': 'HEALTHY',
-          'checks_status': dict({
-            'num_failed_checks': None,
-            'num_warning_checks': None,
-            'status': 'NOT_APPLICABLE',
-            'total_num_checks': None,
-          }),
-          'freshness_info': None,
-          'freshness_status': 'NOT_APPLICABLE',
-          'health_metadata': None,
-          'latest_materialization': dict({
-            'partition': None,
-            'run_id': 'b0b7679c-5180-4bc1-b7d7-27a12047f01f',
-            'timestamp': 1748458050165.0,
-          }),
-          'materialization_status': 'HEALTHY',
-        }),
-      }),
-      dict({
-        'asset_key': 'country_stats',
-        'asset_key_parts': list([
-          'country_stats',
-        ]),
-        'description': None,
-        'group_name': 'default',
-        'id': '["country_stats"]',
-        'kinds': list([
-          'Kubernetes',
-          'S3',
-        ]),
-        'metadata_entries': list([
-          dict({
-            'description': None,
-            'label': 'dagster/code_references',
-          }),
-        ]),
-        'status': dict({
-          'asset_checks_status': 'HEALTHY',
-          'asset_health': 'HEALTHY',
-          'checks_status': dict({
-            'num_failed_checks': None,
-            'num_warning_checks': None,
-            'status': 'HEALTHY',
-            'total_num_checks': None,
-          }),
-          'freshness_info': None,
-          'freshness_status': 'NOT_APPLICABLE',
-          'health_metadata': None,
-          'latest_materialization': dict({
-            'partition': None,
-            'run_id': 'b0b7679c-5180-4bc1-b7d7-27a12047f01f',
-            'timestamp': 1748458032786.0,
-          }),
-          'materialization_status': 'HEALTHY',
-        }),
-      }),
-      dict({
-        'asset_key': 'databricks/economic_indicators',
-        'asset_key_parts': list([
-          'databricks',
-          'economic_indicators',
-        ]),
-        'description': 'Ledger loaded ',
-        'group_name': 'ingestion',
-        'id': '["databricks", "economic_indicators"]',
-        'kinds': list([
-          'databricks',
-        ]),
-        'metadata_entries': list([
-        ]),
-        'status': dict({
-          'asset_checks_status': 'NOT_APPLICABLE',
-          'asset_health': 'HEALTHY',
-          'checks_status': dict({
-            'num_failed_checks': None,
-            'num_warning_checks': None,
-            'status': 'NOT_APPLICABLE',
-            'total_num_checks': None,
-          }),
-          'freshness_info': None,
-          'freshness_status': 'NOT_APPLICABLE',
-          'health_metadata': None,
-          'latest_materialization': dict({
-            'partition': None,
-            'run_id': '26c59dcc-3484-4165-b281-e5254632ed4d',
-            'timestamp': 1757505646980.0,
-          }),
-          'materialization_status': 'HEALTHY',
-        }),
-      }),
-      dict({
-        'asset_key': 'databricks/news_sentiment',
-        'asset_key_parts': list([
-          'databricks',
-          'news_sentiment',
-        ]),
-        'description': 'Ledger loaded ',
-        'group_name': 'ingestion',
-        'id': '["databricks", "news_sentiment"]',
-        'kinds': list([
-          'databricks',
-        ]),
-        'metadata_entries': list([
-        ]),
-        'status': dict({
-          'asset_checks_status': 'NOT_APPLICABLE',
-          'asset_health': 'HEALTHY',
-          'checks_status': dict({
-            'num_failed_checks': None,
-            'num_warning_checks': None,
-            'status': 'NOT_APPLICABLE',
-            'total_num_checks': None,
-          }),
-          'freshness_info': None,
-          'freshness_status': 'NOT_APPLICABLE',
-          'health_metadata': None,
-          'latest_materialization': dict({
-            'partition': None,
-            'run_id': '26c59dcc-3484-4165-b281-e5254632ed4d',
-            'timestamp': 1757505646902.0,
-          }),
-          'materialization_status': 'HEALTHY',
-        }),
-      }),
-      dict({
-        'asset_key': 'databricks/revenue',
-        'asset_key_parts': list([
-          'databricks',
-          'revenue',
-        ]),
-        'description': 'Ledger loaded ',
-        'group_name': 'ingestion',
-        'id': '["databricks", "revenue"]',
-        'kinds': list([
-          'databricks',
-        ]),
-        'metadata_entries': list([
-        ]),
-        'status': dict({
-          'asset_checks_status': 'NOT_APPLICABLE',
-          'asset_health': 'HEALTHY',
-          'checks_status': dict({
-            'num_failed_checks': None,
-            'num_warning_checks': None,
-            'status': 'NOT_APPLICABLE',
-            'total_num_checks': None,
-          }),
-          'freshness_info': None,
-          'freshness_status': 'NOT_APPLICABLE',
-          'health_metadata': None,
-          'latest_materialization': dict({
-            'partition': None,
-            'run_id': '26c59dcc-3484-4165-b281-e5254632ed4d',
-            'timestamp': 1757505650247.0,
-          }),
-          'materialization_status': 'HEALTHY',
-        }),
-      }),
-      dict({
-        'asset_key': 'databricks_asset',
-        'asset_key_parts': list([
-          'databricks_asset',
-        ]),
-        'description': None,
-        'group_name': 'FORECASTING',
-        'id': '["databricks_asset"]',
-        'kinds': list([
-          'databricks',
-          'pyspark',
-        ]),
-        'metadata_entries': list([
-          dict({
-            'description': None,
-            'label': 'dagster/code_references',
-          }),
-        ]),
-        'status': dict({
-          'asset_checks_status': 'NOT_APPLICABLE',
-          'asset_health': 'HEALTHY',
-          'checks_status': dict({
-            'num_failed_checks': None,
-            'num_warning_checks': None,
-            'status': 'NOT_APPLICABLE',
-            'total_num_checks': None,
-          }),
-          'freshness_info': None,
-          'freshness_status': 'NOT_APPLICABLE',
-          'health_metadata': None,
-          'latest_materialization': dict({
-            'partition': None,
-            'run_id': 'd5a01d8f-696e-4b7f-b1b3-351152bcf99d',
-            'timestamp': 1748458352433.0,
+            'run_id': '3fb15668-f967-45ec-ac66-7682a6097583',
+            'timestamp': 1759310437442.0,
           }),
           'materialization_status': 'HEALTHY',
         }),
@@ -2192,938 +769,155 @@
 # ---
 # name: TestDynamicCommandExecution.test_command_execution[asset_success_multiple_assets_json]
   dict({
-    'cursor': '["dbt", "model", "salesforce_source", "stg_salesforce__account_tmp"]',
+    'cursor': '["aws", "cloud-prod", "workspace_staging_partitions_ext"]',
     'has_more': True,
     'items': list([
       dict({
-        'asset_key': 'change_model',
+        'asset_key': 'asset_health_report_slack',
         'asset_key_parts': list([
-          'change_model',
+          'asset_health_report_slack',
         ]),
-        'description': None,
-        'group_name': 'default',
-        'id': 'basics.__repository__.["change_model"]',
+        'dependency_keys': list([
+        ]),
+        'description': 'Sends Dagster asset health report to #bot-purina Slack channel',
+        'group_name': 'monitoring',
+        'id': 'dagster_open_platform.__repository__.["asset_health_report_slack"]',
         'kinds': list([
-          'Kubernetes',
-          'S3',
-        ]),
-        'metadata_entries': list([
-          dict({
-            'description': None,
-            'label': 'dagster/code_references',
-          }),
-        ]),
-        'status': None,
-      }),
-      dict({
-        'asset_key': 'continent_stats',
-        'asset_key_parts': list([
-          'continent_stats',
-        ]),
-        'description': None,
-        'group_name': 'default',
-        'id': 'basics.__repository__.["continent_stats"]',
-        'kinds': list([
-          'Kubernetes',
-          'S3',
-        ]),
-        'metadata_entries': list([
-          dict({
-            'description': None,
-            'label': 'dagster/code_references',
-          }),
-        ]),
-        'status': None,
-      }),
-      dict({
-        'asset_key': 'country_stats',
-        'asset_key_parts': list([
-          'country_stats',
-        ]),
-        'description': None,
-        'group_name': 'default',
-        'id': 'basics.__repository__.["country_stats"]',
-        'kinds': list([
-          'Kubernetes',
-          'S3',
-        ]),
-        'metadata_entries': list([
-          dict({
-            'description': None,
-            'label': 'dagster/code_references',
-          }),
-        ]),
-        'status': None,
-      }),
-      dict({
-        'asset_key': 'ANALYTICS/company_perf',
-        'asset_key_parts': list([
-          'ANALYTICS',
-          'company_perf',
-        ]),
-        'description': '''
-          dbt model for: company_perf 
-           
-          	select
-          	        company,
-          	        sum(n_orders) as n_orders,
-          	        sum(total_revenue) as total_revenue
-          	from {{ ref("company_stats") }}
-          	group by 1
-        ''',
-        'group_name': 'ANALYTICS',
-        'id': 'data-eng-pipeline.__repository__.["ANALYTICS", "company_perf"]',
-        'kinds': list([
-          'dbt',
-          'snowflake',
-        ]),
-        'metadata_entries': list([
-          dict({
-            'description': None,
-            'label': 'dagster-dbt/materialization_type',
-            'text': 'table',
-          }),
-          dict({
-            'description': None,
-            'label': 'dagster/table_name',
-            'text': 'DEMO_DB2.analytics.company_perf',
-          }),
-          dict({
-            'description': None,
-            'label': 'partition_expr',
-            'text': 'order_date',
-          }),
-          dict({
-            'description': None,
-            'label': 'dagster_dbt/manifest',
-            'text': '[DbtManifestWrapper] (unserializable)',
-          }),
-          dict({
-            'description': None,
-            'label': 'dagster_dbt/dagster_dbt_translator',
-            'text': '[CustomDagsterDbtTranslator] (unserializable)',
-          }),
-          dict({
-            'description': None,
-            'label': 'dagster_dbt/unique_id',
-            'text': 'model.dbt_project.company_perf',
-          }),
-          dict({
-            'description': None,
-            'label': 'dagster/code_references',
-          }),
-        ]),
-        'status': None,
-      }),
-      dict({
-        'asset_key': 'ANALYTICS/company_stats',
-        'asset_key_parts': list([
-          'ANALYTICS',
-          'company_stats',
-        ]),
-        'description': '''
-          dbt model for: company_stats 
-           
-          	{{
-          	        config(tags=["core_kpis"])
-          	}}
-          	select
-          	        order_date,
-          	        company,
-          	        count(*) as n_orders,
-          	        sum(order_total) as total_revenue
-          	from {{ ref("orders_augmented") }}
-          	group by 1, 2
-        ''',
-        'group_name': 'ANALYTICS',
-        'id': 'data-eng-pipeline.__repository__.["ANALYTICS", "company_stats"]',
-        'kinds': list([
-          'dbt',
-          'snowflake',
-        ]),
-        'metadata_entries': list([
-          dict({
-            'description': None,
-            'label': 'dagster-dbt/materialization_type',
-            'text': 'table',
-          }),
-          dict({
-            'description': None,
-            'label': 'dagster/table_name',
-            'text': 'DEMO_DB2.analytics.company_stats',
-          }),
-          dict({
-            'description': None,
-            'label': 'partition_expr',
-            'text': 'order_date',
-          }),
-          dict({
-            'description': None,
-            'label': 'dagster_dbt/manifest',
-            'text': '[DbtManifestWrapper] (unserializable)',
-          }),
-          dict({
-            'description': None,
-            'label': 'dagster_dbt/dagster_dbt_translator',
-            'text': '[CustomDagsterDbtTranslator] (unserializable)',
-          }),
-          dict({
-            'description': None,
-            'label': 'dagster_dbt/unique_id',
-            'text': 'model.dbt_project.company_stats',
-          }),
-          dict({
-            'description': None,
-            'label': 'dagster/code_references',
-          }),
-        ]),
-        'status': None,
-      }),
-      dict({
-        'asset_key': 'ANALYTICS/order_stats',
-        'asset_key_parts': list([
-          'ANALYTICS',
-          'order_stats',
-        ]),
-        'description': '''
-          dbt model for: order_stats 
-           
-          	select
-          	        {{ date_trunc("day", "order_date") }} as order_date,
-          	        count(*) as n_orders,
-          	        sum(order_total) as total_revenue
-          	from {{ ref("orders_augmented") }}
-          	{% if is_incremental() %}
-          	WHERE {{ date_trunc("day", "order_date") }} >=  '{{ var('min_date') }}' AND {{ date_trunc("day", "order_date") }} <=  '{{ var('max_date') }}'
-          	{% endif %}
-          	group by 1
-        ''',
-        'group_name': 'ANALYTICS',
-        'id': 'data-eng-pipeline.__repository__.["ANALYTICS", "order_stats"]',
-        'kinds': list([
-          'dbt',
-          'snowflake',
-        ]),
-        'metadata_entries': list([
-          dict({
-            'description': None,
-            'label': 'dagster-dbt/materialization_type',
-            'text': 'table',
-          }),
-          dict({
-            'description': None,
-            'label': 'dagster/table_name',
-            'text': 'DEMO_DB2.analytics.order_stats',
-          }),
-          dict({
-            'description': None,
-            'label': 'partition_expr',
-            'text': 'order_date',
-          }),
-          dict({
-            'description': None,
-            'label': 'dagster_dbt/manifest',
-            'text': '[DbtManifestWrapper] (unserializable)',
-          }),
-          dict({
-            'description': None,
-            'label': 'dagster_dbt/dagster_dbt_translator',
-            'text': '[CustomDagsterDbtTranslator] (unserializable)',
-          }),
-          dict({
-            'description': None,
-            'label': 'dagster_dbt/unique_id',
-            'text': 'model.dbt_project.order_stats',
-          }),
-          dict({
-            'description': None,
-            'label': 'dagster/code_references',
-          }),
-        ]),
-        'status': None,
-      }),
-      dict({
-        'asset_key': 'ANALYTICS/orders_augmented',
-        'asset_key_parts': list([
-          'ANALYTICS',
-          'orders_augmented',
-        ]),
-        'description': '''
-          dbt model for: orders_augmented 
-           
-          	{{
-          	        config(tags=["core_kpis"])
-          	}}
-          	select
-          	        o.*,
-          	        u.company,
-          	        l.state,
-          	        l.zip_code
-          	from {{ ref("orders_cleaned") }} o 
-          
-          	left join {{ ref("users_cleaned") }} u
-          	       on o.user_id = u.user_id
-          
-          	 left join {{ ref("locations_cleaned") }} l
-          	        on o.user_id = l.user_id
-          
-          	{% if is_incremental() %}
-          	WHERE o.order_date >= '{{ var('min_date') }}' AND o.order_date <= '{{ var('max_date') }}'
-          	{% endif %}
-        ''',
-        'group_name': 'ANALYTICS',
-        'id': 'data-eng-pipeline.__repository__.["ANALYTICS", "orders_augmented"]',
-        'kinds': list([
-          'dbt',
-          'snowflake',
-        ]),
-        'metadata_entries': list([
-          dict({
-            'description': None,
-            'label': 'dagster-dbt/materialization_type',
-            'text': 'table',
-          }),
-          dict({
-            'description': None,
-            'label': 'dagster/column_schema',
-          }),
-          dict({
-            'description': None,
-            'label': 'dagster/table_name',
-            'text': 'DEMO_DB2.analytics.orders_augmented',
-          }),
-          dict({
-            'description': None,
-            'label': 'partition_expr',
-            'text': 'order_date',
-          }),
-          dict({
-            'description': None,
-            'label': 'dagster_dbt/manifest',
-            'text': '[DbtManifestWrapper] (unserializable)',
-          }),
-          dict({
-            'description': None,
-            'label': 'dagster_dbt/dagster_dbt_translator',
-            'text': '[CustomDagsterDbtTranslator] (unserializable)',
-          }),
-          dict({
-            'description': None,
-            'label': 'dagster_dbt/unique_id',
-            'text': 'model.dbt_project.orders_augmented',
-          }),
-          dict({
-            'description': None,
-            'label': 'dagster/code_references',
-          }),
-        ]),
-        'status': None,
-      }),
-      dict({
-        'asset_key': 'ANALYTICS/sku_stats',
-        'asset_key_parts': list([
-          'ANALYTICS',
-          'sku_stats',
-        ]),
-        'description': '''
-          dbt model for: sku_stats 
-           
-          	select
-          	        order_date,
-          	        sku,
-          	        count(*) as n_orders,
-          	        sum(order_total) as total_revenue
-          	from {{ ref("orders_augmented") }}
-          	group by 1, 2
-        ''',
-        'group_name': 'ANALYTICS',
-        'id': 'data-eng-pipeline.__repository__.["ANALYTICS", "sku_stats"]',
-        'kinds': list([
-          'dbt',
-          'snowflake',
-        ]),
-        'metadata_entries': list([
-          dict({
-            'description': None,
-            'label': 'dagster-dbt/materialization_type',
-            'text': 'table',
-          }),
-          dict({
-            'description': None,
-            'label': 'dagster/table_name',
-            'text': 'DEMO_DB2.analytics.sku_stats',
-          }),
-          dict({
-            'description': None,
-            'label': 'partition_expr',
-            'text': 'order_date',
-          }),
-          dict({
-            'description': None,
-            'label': 'dagster_dbt/manifest',
-            'text': '[DbtManifestWrapper] (unserializable)',
-          }),
-          dict({
-            'description': None,
-            'label': 'dagster_dbt/dagster_dbt_translator',
-            'text': '[CustomDagsterDbtTranslator] (unserializable)',
-          }),
-          dict({
-            'description': None,
-            'label': 'dagster_dbt/unique_id',
-            'text': 'model.dbt_project.sku_stats',
-          }),
-          dict({
-            'description': None,
-            'label': 'dagster/code_references',
-          }),
-        ]),
-        'status': None,
-      }),
-      dict({
-        'asset_key': 'ANALYTICS/weekly_order_summary',
-        'asset_key_parts': list([
-          'ANALYTICS',
-          'weekly_order_summary',
-        ]),
-        'description': '''
-          dbt model for: weekly_order_summary 
-           
-          	{{
-          	        config(
-          	                tags=["core_kpis"]
-          	        )
-          	}}
-          
-          	select
-          	        order_date,
-          	        n_orders as num_orders
-          	from {{ ref("order_stats") }}
-          	{% if is_incremental() %}
-          	WHERE o.order_date >= '{{ var('min_date') }}' AND o.order_date <= '{{ var('max_date') }}'
-          	{% endif %}
-        ''',
-        'group_name': 'ANALYTICS',
-        'id': 'data-eng-pipeline.__repository__.["ANALYTICS", "weekly_order_summary"]',
-        'kinds': list([
-          'dbt',
-          'snowflake',
-        ]),
-        'metadata_entries': list([
-          dict({
-            'description': None,
-            'label': 'dagster-dbt/materialization_type',
-            'text': 'table',
-          }),
-          dict({
-            'description': None,
-            'label': 'dagster/table_name',
-            'text': 'DEMO_DB2.analytics.weekly_order_summary',
-          }),
-          dict({
-            'description': None,
-            'label': 'partition_expr',
-            'text': 'order_date',
-          }),
-          dict({
-            'description': None,
-            'label': 'dagster_dbt/manifest',
-            'text': '[DbtManifestWrapper] (unserializable)',
-          }),
-          dict({
-            'description': None,
-            'label': 'dagster_dbt/dagster_dbt_translator',
-            'text': '[CustomDagsterDbtTranslator] (unserializable)',
-          }),
-          dict({
-            'description': None,
-            'label': 'dagster_dbt/unique_id',
-            'text': 'model.dbt_project.weekly_order_summary',
-          }),
-          dict({
-            'description': None,
-            'label': 'dagster/code_references',
-          }),
-        ]),
-        'status': None,
-      }),
-      dict({
-        'asset_key': 'CLEANED/locations_cleaned',
-        'asset_key_parts': list([
-          'CLEANED',
-          'locations_cleaned',
-        ]),
-        'description': '''
-          dbt model for: locations_cleaned 
-           
-          	with source as (
-              
-          	select *
-          	from {{ source("raw_data", "locations") }}
-          
-          	),
-           
-          	source_renamed as (
-          
-          	    select l_user_id as user_id,
-          	           l_street_address as street_address,
-          	           l_state as state,
-          	           l_country as country,
-          	           l_zip_code as zip_code,
-          	           _sling_loaded_at
-          	    from source
-          
-          	)
-          
-          	select *
-          	from source_renamed
-        ''',
-        'group_name': 'CLEANED',
-        'id': 'data-eng-pipeline.__repository__.["CLEANED", "locations_cleaned"]',
-        'kinds': list([
-          'dbt',
-          'snowflake',
-        ]),
-        'metadata_entries': list([
-          dict({
-            'description': None,
-            'label': 'dagster-dbt/materialization_type',
-            'text': 'table',
-          }),
-          dict({
-            'description': None,
-            'label': 'dagster/column_schema',
-          }),
-          dict({
-            'description': None,
-            'label': 'dagster/table_name',
-            'text': 'DEMO_DB2.analytics.locations_cleaned',
-          }),
-          dict({
-            'description': None,
-            'label': 'partition_expr',
-            'text': 'order_date',
-          }),
-          dict({
-            'description': None,
-            'label': 'dagster_dbt/manifest',
-            'text': '[DbtManifestWrapper] (unserializable)',
-          }),
-          dict({
-            'description': None,
-            'label': 'dagster_dbt/dagster_dbt_translator',
-            'text': '[CustomDagsterDbtTranslator] (unserializable)',
-          }),
-          dict({
-            'description': None,
-            'label': 'dagster_dbt/unique_id',
-            'text': 'model.dbt_project.locations_cleaned',
-          }),
-          dict({
-            'description': None,
-            'label': 'dagster/code_references',
-          }),
-        ]),
-        'status': None,
-      }),
-      dict({
-        'asset_key': 'CLEANED/orders_cleaned',
-        'asset_key_parts': list([
-          'CLEANED',
-          'orders_cleaned',
-        ]),
-        'description': '''
-          dbt model for: orders_cleaned 
-           
-          	{{config(tags="my_test_tag")}}
-          	select
-          	        user_id,
-          	        quantity,
-          	        purchase_price,
-          	        sku,
-          	        dt,
-          	        cast(dt as datetime) as order_date,
-          	        quantity * purchase_price as order_total
-          	from {{ source("raw_data", "orders") }}
-          	{% if is_incremental() %}
-          	WHERE dt >= '{{ var('min_date') }}' AND dt <= '{{ var('max_date') }}'
-          	{% endif %}
-        ''',
-        'group_name': 'CLEANED',
-        'id': 'data-eng-pipeline.__repository__.["CLEANED", "orders_cleaned"]',
-        'kinds': list([
-          'dbt',
-          'snowflake',
-        ]),
-        'metadata_entries': list([
-          dict({
-            'description': None,
-            'label': 'dagster-dbt/materialization_type',
-            'text': 'table',
-          }),
-          dict({
-            'description': None,
-            'label': 'dagster/column_schema',
-          }),
-          dict({
-            'description': None,
-            'label': 'dagster/table_name',
-            'text': 'DEMO_DB2.analytics.orders_cleaned',
-          }),
-          dict({
-            'description': None,
-            'label': 'partition_expr',
-            'text': 'dt',
-          }),
-          dict({
-            'description': None,
-            'label': 'dagster_dbt/manifest',
-            'text': '[DbtManifestWrapper] (unserializable)',
-          }),
-          dict({
-            'description': None,
-            'label': 'dagster_dbt/dagster_dbt_translator',
-            'text': '[CustomDagsterDbtTranslator] (unserializable)',
-          }),
-          dict({
-            'description': None,
-            'label': 'dagster_dbt/unique_id',
-            'text': 'model.dbt_project.orders_cleaned',
-          }),
-          dict({
-            'description': None,
-            'label': 'dagster/code_references',
-          }),
-        ]),
-        'status': None,
-      }),
-      dict({
-        'asset_key': 'CLEANED/users_cleaned',
-        'asset_key_parts': list([
-          'CLEANED',
-          'users_cleaned',
-        ]),
-        'description': '''
-          dbt model for: users_cleaned 
-           
-          	select
-          	        user_id,
-          	        created_at,
-          	        company
-          	from {{ source("raw_data", "users") }}
-          	where not is_test_user
-        ''',
-        'group_name': 'CLEANED',
-        'id': 'data-eng-pipeline.__repository__.["CLEANED", "users_cleaned"]',
-        'kinds': list([
-          'dbt',
-          'snowflake',
-        ]),
-        'metadata_entries': list([
-          dict({
-            'description': None,
-            'label': 'dagster-dbt/materialization_type',
-            'text': 'table',
-          }),
-          dict({
-            'description': None,
-            'label': 'dagster/column_schema',
-          }),
-          dict({
-            'description': None,
-            'label': 'dagster/table_name',
-            'text': 'DEMO_DB2.analytics.users_cleaned',
-          }),
-          dict({
-            'description': None,
-            'label': 'partition_expr',
-            'text': 'created_at',
-          }),
-          dict({
-            'description': None,
-            'label': 'dagster_dbt/manifest',
-            'text': '[DbtManifestWrapper] (unserializable)',
-          }),
-          dict({
-            'description': None,
-            'label': 'dagster_dbt/dagster_dbt_translator',
-            'text': '[CustomDagsterDbtTranslator] (unserializable)',
-          }),
-          dict({
-            'description': None,
-            'label': 'dagster_dbt/unique_id',
-            'text': 'model.dbt_project.users_cleaned',
-          }),
-          dict({
-            'description': None,
-            'label': 'dagster/code_references',
-          }),
-        ]),
-        'status': None,
-      }),
-      dict({
-        'asset_key': 'FORECASTING/big_orders',
-        'asset_key_parts': list([
-          'FORECASTING',
-          'big_orders',
-        ]),
-        'description': 'Days where predicted orders surpass our current carrying capacity',
-        'group_name': 'FORECASTING',
-        'id': 'data-eng-pipeline.__repository__.["FORECASTING", "big_orders"]',
-        'kinds': list([
-          'databricks',
-          'pyspark',
-        ]),
-        'metadata_entries': list([
-          dict({
-            'description': None,
-            'intValue': 50,
-            'label': 'resource_constrained_at',
-          }),
-          dict({
-            'description': None,
-            'label': 'dagster/code_references',
-          }),
-        ]),
-        'status': None,
-      }),
-      dict({
-        'asset_key': 'FORECASTING/predicted_orders',
-        'asset_key_parts': list([
-          'FORECASTING',
-          'predicted_orders',
-        ]),
-        'description': 'Predicted orders for the next 30 days based on the fit paramters',
-        'group_name': 'FORECASTING',
-        'id': 'data-eng-pipeline.__repository__.["FORECASTING", "predicted_orders"]',
-        'kinds': list([
-          'pandas',
-          'snowflake',
-        ]),
-        'metadata_entries': list([
-          dict({
-            'description': None,
-            'label': 'dagster/code_references',
-          }),
-        ]),
-        'status': None,
-      }),
-      dict({
-        'asset_key': 'MARKETING/avg_orders',
-        'asset_key_parts': list([
-          'MARKETING',
-          'avg_orders',
-        ]),
-        'description': 'Computes avg order KPI, must be updated regularly for exec dashboard',
-        'group_name': 'MARKETING',
-        'id': 'data-eng-pipeline.__repository__.["MARKETING", "avg_orders"]',
-        'kinds': list([
-          'pandas',
-          'snowflake',
-        ]),
-        'metadata_entries': list([
-          dict({
-            'description': None,
-            'label': 'dagster/code_references',
-          }),
-        ]),
-        'status': None,
-      }),
-      dict({
-        'asset_key': 'MARKETING/key_product_deepdive',
-        'asset_key_parts': list([
-          'MARKETING',
-          'key_product_deepdive',
-        ]),
-        'description': 'Creates a file for a BI tool based on the current quarters top product, represented as a dynamic partition',
-        'group_name': 'MARKETING',
-        'id': 'data-eng-pipeline.__repository__.["MARKETING", "key_product_deepdive"]',
-        'kinds': list([
-          'pandas',
-          's3',
-        ]),
-        'metadata_entries': list([
-          dict({
-            'description': None,
-            'label': 'dagster/code_references',
-          }),
-        ]),
-        'status': None,
-      }),
-      dict({
-        'asset_key': 'MARKETING/min_order',
-        'asset_key_parts': list([
-          'MARKETING',
-          'min_order',
-        ]),
-        'description': 'Computes min order KPI',
-        'group_name': 'MARKETING',
-        'id': 'data-eng-pipeline.__repository__.["MARKETING", "min_order"]',
-        'kinds': list([
-          'pandas',
-          'snowflake',
-        ]),
-        'metadata_entries': list([
-          dict({
-            'description': None,
-            'label': 'dagster/code_references',
-          }),
-        ]),
-        'status': None,
-      }),
-      dict({
-        'asset_key': 'RAW_DATA/orders',
-        'asset_key_parts': list([
-          'RAW_DATA',
-          'orders',
-        ]),
-        'description': 'A table containing all orders that have been placed',
-        'group_name': 'RAW_DATA',
-        'id': 'data-eng-pipeline.__repository__.["RAW_DATA", "orders"]',
-        'kinds': list([
-          'api',
-          'snowflake',
-        ]),
-        'metadata_entries': list([
-          dict({
-            'description': None,
-            'label': 'partition_expr',
-            'text': 'DT',
-          }),
-          dict({
-            'description': None,
-            'label': 'dagster/code_references',
-          }),
-        ]),
-        'status': None,
-      }),
-      dict({
-        'asset_key': 'RAW_DATA/users',
-        'asset_key_parts': list([
-          'RAW_DATA',
-          'users',
-        ]),
-        'description': 'A table containing all users data',
-        'group_name': 'RAW_DATA',
-        'id': 'data-eng-pipeline.__repository__.["RAW_DATA", "users"]',
-        'kinds': list([
-          'api',
-          'snowflake',
-        ]),
-        'metadata_entries': list([
-          dict({
-            'description': None,
-            'label': 'partition_expr',
-            'text': 'created_at',
-          }),
-          dict({
-            'description': None,
-            'label': 'dagster/code_references',
-          }),
-        ]),
-        'status': None,
-      }),
-      dict({
-        'asset_key': 'databricks_asset',
-        'asset_key_parts': list([
-          'databricks_asset',
-        ]),
-        'description': None,
-        'group_name': 'FORECASTING',
-        'id': 'data-eng-pipeline.__repository__.["databricks_asset"]',
-        'kinds': list([
-          'databricks',
-          'pyspark',
-        ]),
-        'metadata_entries': list([
-          dict({
-            'description': None,
-            'label': 'dagster/code_references',
-          }),
-        ]),
-        'status': None,
-      }),
-      dict({
-        'asset_key': 'databricks/economic_indicators',
-        'asset_key_parts': list([
-          'databricks',
-          'economic_indicators',
-        ]),
-        'description': 'Ledger loaded ',
-        'group_name': 'ingestion',
-        'id': 'hooli_airlift.__repository__.["databricks", "economic_indicators"]',
-        'kinds': list([
-          'databricks',
+          'slack',
         ]),
         'metadata_entries': list([
         ]),
         'status': None,
       }),
       dict({
-        'asset_key': 'databricks/news_sentiment',
+        'asset_key': 'aws/cloud-prod/user_roles',
         'asset_key_parts': list([
-          'databricks',
-          'news_sentiment',
+          'aws',
+          'cloud-prod',
+          'user_roles',
         ]),
-        'description': 'Ledger loaded ',
-        'group_name': 'ingestion',
-        'id': 'hooli_airlift.__repository__.["databricks", "news_sentiment"]',
+        'dependency_keys': list([
+        ]),
+        'description': 'Snowflake stages for AWS data, creates new stages for new assets, refreses existing stages.',
+        'group_name': 'aws_stages',
+        'id': 'dagster_open_platform.__repository__.["aws", "cloud-prod", "user_roles"]',
         'kinds': list([
-          'databricks',
         ]),
         'metadata_entries': list([
         ]),
         'status': None,
       }),
       dict({
-        'asset_key': 'databricks/revenue',
+        'asset_key': 'aws/cloud-prod/workspace_staging_asset_checks',
         'asset_key_parts': list([
-          'databricks',
-          'revenue',
+          'aws',
+          'cloud-prod',
+          'workspace_staging_asset_checks',
         ]),
-        'description': 'Ledger loaded ',
-        'group_name': 'ingestion',
-        'id': 'hooli_airlift.__repository__.["databricks", "revenue"]',
+        'dependency_keys': list([
+          'cloud-prod-workspace-replication/staging/asset_checks',
+        ]),
+        'description': 'Snowflake stages for AWS data, creates new stages for new assets, refreses existing stages.',
+        'group_name': 'aws_stages',
+        'id': 'dagster_open_platform.__repository__.["aws", "cloud-prod", "workspace_staging_asset_checks"]',
         'kinds': list([
-          'databricks',
         ]),
         'metadata_entries': list([
         ]),
         'status': None,
       }),
       dict({
-        'asset_key': 'RAW_DATA/locations',
+        'asset_key': 'aws/cloud-prod/workspace_staging_assets',
         'asset_key_parts': list([
-          'RAW_DATA',
-          'locations',
+          'aws',
+          'cloud-prod',
+          'workspace_staging_assets',
         ]),
-        'description': None,
-        'group_name': 'RAW_DATA',
-        'id': 'hooli_data_ingest.__repository__.["RAW_DATA", "locations"]',
+        'dependency_keys': list([
+          'cloud-prod-workspace-replication/staging/assets',
+        ]),
+        'description': 'Snowflake stages for AWS data, creates new stages for new assets, refreses existing stages.',
+        'group_name': 'aws_stages',
+        'id': 'dagster_open_platform.__repository__.["aws", "cloud-prod", "workspace_staging_assets"]',
         'kinds': list([
-          'SNOWFLAKE',
-          'sling',
         ]),
         'metadata_entries': list([
-          dict({
-            'description': None,
-            'jsonString': '{"object": "locations"}',
-            'label': 'stream_config',
-          }),
-          dict({
-            'description': None,
-            'label': 'dagster_sling/dagster_sling_translator',
-            'text': '[CustomSlingTranslator] (unserializable)',
-          }),
-          dict({
-            'description': None,
-            'jsonString': '{"defaults": {"mode": "full-refresh", "object": "{stream_file_folder}.{stream_file_name}", "source_options": {"format": "csv"}}, "source": "S3", "streams": {"s3://hooli-demo/embedded-elt/locations.csv": {"object": "locations"}}, "target": "SNOWFLAKE_PROD"}',
-            'label': 'dagster_sling/sling_replication_config',
-          }),
-          dict({
-            'description': None,
-            'label': 'dagster/code_references',
-          }),
+        ]),
+        'status': None,
+      }),
+      dict({
+        'asset_key': 'aws/cloud-prod/workspace_staging_external_repo_metadata',
+        'asset_key_parts': list([
+          'aws',
+          'cloud-prod',
+          'workspace_staging_external_repo_metadata',
+        ]),
+        'dependency_keys': list([
+          'cloud-prod-workspace-replication/staging/external_repo_metadata',
+        ]),
+        'description': 'Snowflake stages for AWS data, creates new stages for new assets, refreses existing stages.',
+        'group_name': 'aws_stages',
+        'id': 'dagster_open_platform.__repository__.["aws", "cloud-prod", "workspace_staging_external_repo_metadata"]',
+        'kinds': list([
+        ]),
+        'metadata_entries': list([
+        ]),
+        'status': None,
+      }),
+      dict({
+        'asset_key': 'aws/cloud-prod/workspace_staging_jobs',
+        'asset_key_parts': list([
+          'aws',
+          'cloud-prod',
+          'workspace_staging_jobs',
+        ]),
+        'dependency_keys': list([
+          'cloud-prod-workspace-replication/staging/jobs',
+        ]),
+        'description': 'Snowflake stages for AWS data, creates new stages for new assets, refreses existing stages.',
+        'group_name': 'aws_stages',
+        'id': 'dagster_open_platform.__repository__.["aws", "cloud-prod", "workspace_staging_jobs"]',
+        'kinds': list([
+        ]),
+        'metadata_entries': list([
+        ]),
+        'status': None,
+      }),
+      dict({
+        'asset_key': 'aws/cloud-prod/workspace_staging_metadata',
+        'asset_key_parts': list([
+          'aws',
+          'cloud-prod',
+          'workspace_staging_metadata',
+        ]),
+        'dependency_keys': list([
+          'cloud-prod-workspace-replication/staging/metadata',
+        ]),
+        'description': 'Snowflake stages for AWS data, creates new stages for new assets, refreses existing stages.',
+        'group_name': 'aws_stages',
+        'id': 'dagster_open_platform.__repository__.["aws", "cloud-prod", "workspace_staging_metadata"]',
+        'kinds': list([
+        ]),
+        'metadata_entries': list([
+        ]),
+        'status': None,
+      }),
+      dict({
+        'asset_key': 'aws/cloud-prod/workspace_staging_partitions',
+        'asset_key_parts': list([
+          'aws',
+          'cloud-prod',
+          'workspace_staging_partitions',
+        ]),
+        'dependency_keys': list([
+          'cloud-prod-workspace-replication/staging/partitions',
+        ]),
+        'description': 'Snowflake stages for AWS data, creates new stages for new assets, refreses existing stages.',
+        'group_name': 'aws_stages',
+        'id': 'dagster_open_platform.__repository__.["aws", "cloud-prod", "workspace_staging_partitions"]',
+        'kinds': list([
+        ]),
+        'metadata_entries': list([
         ]),
         'status': None,
       }),
@@ -3132,876 +926,96 @@
 # ---
 # name: TestDynamicCommandExecution.test_command_execution[asset_success_nested_asset_json]
   dict({
-    'asset_key': 'forecasting/model_stats_by_month',
+    'asset_key': 'aws/cloud-prod/workspace_staging_assets',
     'asset_key_parts': list([
-      'forecasting',
-      'model_stats_by_month',
+      'aws',
+      'cloud-prod',
+      'workspace_staging_assets',
     ]),
-    'description': 'Model errors by month',
-    'group_name': 'FORECASTING',
-    'id': 'data-eng-pipeline.__repository__.["forecasting", "model_stats_by_month"]',
+    'dependency_keys': list([
+      'cloud-prod-workspace-replication/staging/assets',
+    ]),
+    'description': 'Snowflake stages for AWS data, creates new stages for new assets, refreses existing stages.',
+    'group_name': 'aws_stages',
+    'id': 'dagster_open_platform.__repository__.["aws", "cloud-prod", "workspace_staging_assets"]',
     'kinds': list([
-      'scikitlearn',
-      'snowflake',
     ]),
     'metadata_entries': list([
-      dict({
-        'description': None,
-        'label': 'dagster/code_references',
-      }),
     ]),
     'status': None,
   })
 # ---
 # name: TestDynamicCommandExecution.test_command_execution[asset_success_paginated_assets_json]
   dict({
-    'cursor': '["ANALYTICS", "users_cleaned"]',
+    'cursor': '["__snowflake_query_metadata_self_serve_customer_attribution_check_all_partitions_job"]',
     'has_more': True,
     'items': list([
-      dict({
-        'asset_key': 'ANALYTICS/company_perf',
-        'asset_key_parts': list([
-          'ANALYTICS',
-          'company_perf',
-        ]),
-        'description': '''
-          dbt model for: company_perf 
-           
-          	select
-          	        company,
-          	        sum(n_orders) as n_orders,
-          	        sum(total_revenue) as total_revenue
-          	from {{ ref("company_stats") }}
-          	group by 1
-        ''',
-        'group_name': 'ANALYTICS',
-        'id': 'data-eng-pipeline.__repository__.["ANALYTICS", "company_perf"]',
-        'kinds': list([
-          'dbt',
-          'snowflake',
-        ]),
-        'metadata_entries': list([
-          dict({
-            'description': None,
-            'label': 'dagster-dbt/materialization_type',
-            'text': 'table',
-          }),
-          dict({
-            'description': None,
-            'label': 'dagster/table_name',
-            'text': 'DEMO_DB2.analytics.company_perf',
-          }),
-          dict({
-            'description': None,
-            'label': 'partition_expr',
-            'text': 'order_date',
-          }),
-          dict({
-            'description': None,
-            'label': 'dagster_dbt/manifest',
-            'text': '[DbtManifestWrapper] (unserializable)',
-          }),
-          dict({
-            'description': None,
-            'label': 'dagster_dbt/dagster_dbt_translator',
-            'text': '[CustomDagsterDbtTranslator] (unserializable)',
-          }),
-          dict({
-            'description': None,
-            'label': 'dagster_dbt/unique_id',
-            'text': 'model.dbt_project.company_perf',
-          }),
-          dict({
-            'description': None,
-            'label': 'dagster/code_references',
-          }),
-        ]),
-        'status': None,
-      }),
-      dict({
-        'asset_key': 'ANALYTICS/company_stats',
-        'asset_key_parts': list([
-          'ANALYTICS',
-          'company_stats',
-        ]),
-        'description': '''
-          dbt model for: company_stats 
-           
-          	{{
-          	        config(tags=["core_kpis"])
-          	}}
-          	select
-          	        order_date,
-          	        company,
-          	        count(*) as n_orders,
-          	        sum(order_total) as total_revenue
-          	from {{ ref("orders_augmented") }}
-          	group by 1, 2
-        ''',
-        'group_name': 'ANALYTICS',
-        'id': 'data-eng-pipeline.__repository__.["ANALYTICS", "company_stats"]',
-        'kinds': list([
-          'dbt',
-          'snowflake',
-        ]),
-        'metadata_entries': list([
-          dict({
-            'description': None,
-            'label': 'dagster-dbt/materialization_type',
-            'text': 'table',
-          }),
-          dict({
-            'description': None,
-            'label': 'dagster/table_name',
-            'text': 'DEMO_DB2.analytics.company_stats',
-          }),
-          dict({
-            'description': None,
-            'label': 'partition_expr',
-            'text': 'order_date',
-          }),
-          dict({
-            'description': None,
-            'label': 'dagster_dbt/manifest',
-            'text': '[DbtManifestWrapper] (unserializable)',
-          }),
-          dict({
-            'description': None,
-            'label': 'dagster_dbt/dagster_dbt_translator',
-            'text': '[CustomDagsterDbtTranslator] (unserializable)',
-          }),
-          dict({
-            'description': None,
-            'label': 'dagster_dbt/unique_id',
-            'text': 'model.dbt_project.company_stats',
-          }),
-          dict({
-            'description': None,
-            'label': 'dagster/code_references',
-          }),
-        ]),
-        'status': None,
-      }),
-      dict({
-        'asset_key': 'ANALYTICS/order_stats',
-        'asset_key_parts': list([
-          'ANALYTICS',
-          'order_stats',
-        ]),
-        'description': '''
-          dbt model for: order_stats 
-           
-          	select
-          	        {{ date_trunc("day", "order_date") }} as order_date,
-          	        count(*) as n_orders,
-          	        sum(order_total) as total_revenue
-          	from {{ ref("orders_augmented") }}
-          	{% if is_incremental() %}
-          	WHERE {{ date_trunc("day", "order_date") }} >=  '{{ var('min_date') }}' AND {{ date_trunc("day", "order_date") }} <=  '{{ var('max_date') }}'
-          	{% endif %}
-          	group by 1
-        ''',
-        'group_name': 'ANALYTICS',
-        'id': 'data-eng-pipeline.__repository__.["ANALYTICS", "order_stats"]',
-        'kinds': list([
-          'dbt',
-          'snowflake',
-        ]),
-        'metadata_entries': list([
-          dict({
-            'description': None,
-            'label': 'dagster-dbt/materialization_type',
-            'text': 'table',
-          }),
-          dict({
-            'description': None,
-            'label': 'dagster/table_name',
-            'text': 'DEMO_DB2.analytics.order_stats',
-          }),
-          dict({
-            'description': None,
-            'label': 'partition_expr',
-            'text': 'order_date',
-          }),
-          dict({
-            'description': None,
-            'label': 'dagster_dbt/manifest',
-            'text': '[DbtManifestWrapper] (unserializable)',
-          }),
-          dict({
-            'description': None,
-            'label': 'dagster_dbt/dagster_dbt_translator',
-            'text': '[CustomDagsterDbtTranslator] (unserializable)',
-          }),
-          dict({
-            'description': None,
-            'label': 'dagster_dbt/unique_id',
-            'text': 'model.dbt_project.order_stats',
-          }),
-          dict({
-            'description': None,
-            'label': 'dagster/code_references',
-          }),
-        ]),
-        'status': None,
-      }),
-      dict({
-        'asset_key': 'ANALYTICS/orders_augmented',
-        'asset_key_parts': list([
-          'ANALYTICS',
-          'orders_augmented',
-        ]),
-        'description': '''
-          dbt model for: orders_augmented 
-           
-          	{{
-          	        config(tags=["core_kpis"])
-          	}}
-          	select
-          	        o.*,
-          	        u.company,
-          	        l.state,
-          	        l.zip_code
-          	from {{ ref("orders_cleaned") }} o 
-          
-          	left join {{ ref("users_cleaned") }} u
-          	       on o.user_id = u.user_id
-          
-          	 left join {{ ref("locations_cleaned") }} l
-          	        on o.user_id = l.user_id
-          
-          	{% if is_incremental() %}
-          	WHERE o.order_date >= '{{ var('min_date') }}' AND o.order_date <= '{{ var('max_date') }}'
-          	{% endif %}
-        ''',
-        'group_name': 'ANALYTICS',
-        'id': 'data-eng-pipeline.__repository__.["ANALYTICS", "orders_augmented"]',
-        'kinds': list([
-          'dbt',
-          'snowflake',
-        ]),
-        'metadata_entries': list([
-          dict({
-            'description': None,
-            'label': 'dagster-dbt/materialization_type',
-            'text': 'table',
-          }),
-          dict({
-            'description': None,
-            'label': 'dagster/column_schema',
-          }),
-          dict({
-            'description': None,
-            'label': 'dagster/table_name',
-            'text': 'DEMO_DB2.analytics.orders_augmented',
-          }),
-          dict({
-            'description': None,
-            'label': 'partition_expr',
-            'text': 'order_date',
-          }),
-          dict({
-            'description': None,
-            'label': 'dagster_dbt/manifest',
-            'text': '[DbtManifestWrapper] (unserializable)',
-          }),
-          dict({
-            'description': None,
-            'label': 'dagster_dbt/dagster_dbt_translator',
-            'text': '[CustomDagsterDbtTranslator] (unserializable)',
-          }),
-          dict({
-            'description': None,
-            'label': 'dagster_dbt/unique_id',
-            'text': 'model.dbt_project.orders_augmented',
-          }),
-          dict({
-            'description': None,
-            'label': 'dagster/code_references',
-          }),
-        ]),
-        'status': None,
-      }),
-      dict({
-        'asset_key': 'ANALYTICS/sku_stats',
-        'asset_key_parts': list([
-          'ANALYTICS',
-          'sku_stats',
-        ]),
-        'description': '''
-          dbt model for: sku_stats 
-           
-          	select
-          	        order_date,
-          	        sku,
-          	        count(*) as n_orders,
-          	        sum(order_total) as total_revenue
-          	from {{ ref("orders_augmented") }}
-          	group by 1, 2
-        ''',
-        'group_name': 'ANALYTICS',
-        'id': 'data-eng-pipeline.__repository__.["ANALYTICS", "sku_stats"]',
-        'kinds': list([
-          'dbt',
-          'snowflake',
-        ]),
-        'metadata_entries': list([
-          dict({
-            'description': None,
-            'label': 'dagster-dbt/materialization_type',
-            'text': 'table',
-          }),
-          dict({
-            'description': None,
-            'label': 'dagster/table_name',
-            'text': 'DEMO_DB2.analytics.sku_stats',
-          }),
-          dict({
-            'description': None,
-            'label': 'partition_expr',
-            'text': 'order_date',
-          }),
-          dict({
-            'description': None,
-            'label': 'dagster_dbt/manifest',
-            'text': '[DbtManifestWrapper] (unserializable)',
-          }),
-          dict({
-            'description': None,
-            'label': 'dagster_dbt/dagster_dbt_translator',
-            'text': '[CustomDagsterDbtTranslator] (unserializable)',
-          }),
-          dict({
-            'description': None,
-            'label': 'dagster_dbt/unique_id',
-            'text': 'model.dbt_project.sku_stats',
-          }),
-          dict({
-            'description': None,
-            'label': 'dagster/code_references',
-          }),
-        ]),
-        'status': None,
-      }),
     ]),
   })
 # ---
 # name: TestDynamicCommandExecution.test_command_execution[asset_success_paginated_assets_status_view_json]
   dict({
-    'cursor': '["ANALYTICS", "users_cleaned"]',
+    'cursor': '["__snowflake_query_metadata_self_serve_customer_attribution_check_all_partitions_job"]',
     'has_more': True,
     'items': list([
-      dict({
-        'asset_key': 'ANALYTICS/company_perf',
-        'asset_key_parts': list([
-          'ANALYTICS',
-          'company_perf',
-        ]),
-        'description': '''
-          dbt model for: company_perf 
-           
-          	select
-          	        company,
-          	        sum(n_orders) as n_orders,
-          	        sum(total_revenue) as total_revenue
-          	from {{ ref("company_stats") }}
-          	group by 1
-        ''',
-        'group_name': 'ANALYTICS',
-        'id': '["ANALYTICS", "company_perf"]',
-        'kinds': list([
-          'dbt',
-          'snowflake',
-        ]),
-        'metadata_entries': list([
-          dict({
-            'description': None,
-            'label': 'dagster-dbt/materialization_type',
-            'text': 'table',
-          }),
-          dict({
-            'description': None,
-            'label': 'dagster/table_name',
-            'text': 'DEMO_DB2.analytics.company_perf',
-          }),
-          dict({
-            'description': None,
-            'label': 'partition_expr',
-            'text': 'order_date',
-          }),
-          dict({
-            'description': None,
-            'label': 'dagster_dbt/manifest',
-            'text': '[DbtManifestWrapper] (unserializable)',
-          }),
-          dict({
-            'description': None,
-            'label': 'dagster_dbt/dagster_dbt_translator',
-            'text': '[CustomDagsterDbtTranslator] (unserializable)',
-          }),
-          dict({
-            'description': None,
-            'label': 'dagster_dbt/unique_id',
-            'text': 'model.dbt_project.company_perf',
-          }),
-          dict({
-            'description': None,
-            'label': 'dagster/code_references',
-          }),
-        ]),
-        'status': dict({
-          'asset_checks_status': 'HEALTHY',
-          'asset_health': 'HEALTHY',
-          'checks_status': dict({
-            'num_failed_checks': None,
-            'num_warning_checks': None,
-            'status': 'HEALTHY',
-            'total_num_checks': None,
-          }),
-          'freshness_info': dict({
-            'cron_schedule': None,
-            'current_lag_minutes': None,
-            'current_minutes_late': None,
-            'latest_materialization_minutes_late': None,
-            'maximum_lag_minutes': None,
-          }),
-          'freshness_status': 'HEALTHY',
-          'health_metadata': None,
-          'latest_materialization': dict({
-            'partition': None,
-            'run_id': '83112ac7-a739-4b79-8f1f-6d91911a029a',
-            'timestamp': 1757376145523.0,
-          }),
-          'materialization_status': 'HEALTHY',
-        }),
-      }),
-      dict({
-        'asset_key': 'ANALYTICS/company_stats',
-        'asset_key_parts': list([
-          'ANALYTICS',
-          'company_stats',
-        ]),
-        'description': '''
-          dbt model for: company_stats 
-           
-          	{{
-          	        config(tags=["core_kpis"])
-          	}}
-          	select
-          	        order_date,
-          	        company,
-          	        count(*) as n_orders,
-          	        sum(order_total) as total_revenue
-          	from {{ ref("orders_augmented") }}
-          	group by 1, 2
-        ''',
-        'group_name': 'ANALYTICS',
-        'id': '["ANALYTICS", "company_stats"]',
-        'kinds': list([
-          'dbt',
-          'snowflake',
-        ]),
-        'metadata_entries': list([
-          dict({
-            'description': None,
-            'label': 'dagster-dbt/materialization_type',
-            'text': 'table',
-          }),
-          dict({
-            'description': None,
-            'label': 'dagster/table_name',
-            'text': 'DEMO_DB2.analytics.company_stats',
-          }),
-          dict({
-            'description': None,
-            'label': 'partition_expr',
-            'text': 'order_date',
-          }),
-          dict({
-            'description': None,
-            'label': 'dagster_dbt/manifest',
-            'text': '[DbtManifestWrapper] (unserializable)',
-          }),
-          dict({
-            'description': None,
-            'label': 'dagster_dbt/dagster_dbt_translator',
-            'text': '[CustomDagsterDbtTranslator] (unserializable)',
-          }),
-          dict({
-            'description': None,
-            'label': 'dagster_dbt/unique_id',
-            'text': 'model.dbt_project.company_stats',
-          }),
-          dict({
-            'description': None,
-            'label': 'dagster/code_references',
-          }),
-        ]),
-        'status': dict({
-          'asset_checks_status': 'HEALTHY',
-          'asset_health': 'HEALTHY',
-          'checks_status': dict({
-            'num_failed_checks': None,
-            'num_warning_checks': None,
-            'status': 'HEALTHY',
-            'total_num_checks': None,
-          }),
-          'freshness_info': dict({
-            'cron_schedule': None,
-            'current_lag_minutes': None,
-            'current_minutes_late': None,
-            'latest_materialization_minutes_late': None,
-            'maximum_lag_minutes': None,
-          }),
-          'freshness_status': 'HEALTHY',
-          'health_metadata': None,
-          'latest_materialization': dict({
-            'partition': None,
-            'run_id': 'a484f830-3007-424b-862e-4fefbd733bab',
-            'timestamp': 1757521279949.0,
-          }),
-          'materialization_status': 'HEALTHY',
-        }),
-      }),
-      dict({
-        'asset_key': 'ANALYTICS/order_stats',
-        'asset_key_parts': list([
-          'ANALYTICS',
-          'order_stats',
-        ]),
-        'description': '''
-          dbt model for: order_stats 
-           
-          	select
-          	        {{ date_trunc("day", "order_date") }} as order_date,
-          	        count(*) as n_orders,
-          	        sum(order_total) as total_revenue
-          	from {{ ref("orders_augmented") }}
-          	{% if is_incremental() %}
-          	WHERE {{ date_trunc("day", "order_date") }} >=  '{{ var('min_date') }}' AND {{ date_trunc("day", "order_date") }} <=  '{{ var('max_date') }}'
-          	{% endif %}
-          	group by 1
-        ''',
-        'group_name': 'ANALYTICS',
-        'id': '["ANALYTICS", "order_stats"]',
-        'kinds': list([
-          'dbt',
-          'snowflake',
-        ]),
-        'metadata_entries': list([
-          dict({
-            'description': None,
-            'label': 'dagster-dbt/materialization_type',
-            'text': 'table',
-          }),
-          dict({
-            'description': None,
-            'label': 'dagster/table_name',
-            'text': 'DEMO_DB2.analytics.order_stats',
-          }),
-          dict({
-            'description': None,
-            'label': 'partition_expr',
-            'text': 'order_date',
-          }),
-          dict({
-            'description': None,
-            'label': 'dagster_dbt/manifest',
-            'text': '[DbtManifestWrapper] (unserializable)',
-          }),
-          dict({
-            'description': None,
-            'label': 'dagster_dbt/dagster_dbt_translator',
-            'text': '[CustomDagsterDbtTranslator] (unserializable)',
-          }),
-          dict({
-            'description': None,
-            'label': 'dagster_dbt/unique_id',
-            'text': 'model.dbt_project.order_stats',
-          }),
-          dict({
-            'description': None,
-            'label': 'dagster/code_references',
-          }),
-        ]),
-        'status': dict({
-          'asset_checks_status': 'HEALTHY',
-          'asset_health': 'WARNING',
-          'checks_status': dict({
-            'num_failed_checks': None,
-            'num_warning_checks': None,
-            'status': 'HEALTHY',
-            'total_num_checks': None,
-          }),
-          'freshness_info': dict({
-            'cron_schedule': None,
-            'current_lag_minutes': None,
-            'current_minutes_late': None,
-            'latest_materialization_minutes_late': None,
-            'maximum_lag_minutes': None,
-          }),
-          'freshness_status': 'WARNING',
-          'health_metadata': None,
-          'latest_materialization': dict({
-            'partition': '2025-08-31',
-            'run_id': '112a4461-789e-477b-a88c-872cf8c24316',
-            'timestamp': 1757203402552.0,
-          }),
-          'materialization_status': 'HEALTHY',
-        }),
-      }),
-      dict({
-        'asset_key': 'ANALYTICS/orders_augmented',
-        'asset_key_parts': list([
-          'ANALYTICS',
-          'orders_augmented',
-        ]),
-        'description': '''
-          dbt model for: orders_augmented 
-           
-          	{{
-          	        config(tags=["core_kpis"])
-          	}}
-          	select
-          	        o.*,
-          	        u.company,
-          	        l.state,
-          	        l.zip_code
-          	from {{ ref("orders_cleaned") }} o 
-          
-          	left join {{ ref("users_cleaned") }} u
-          	       on o.user_id = u.user_id
-          
-          	 left join {{ ref("locations_cleaned") }} l
-          	        on o.user_id = l.user_id
-          
-          	{% if is_incremental() %}
-          	WHERE o.order_date >= '{{ var('min_date') }}' AND o.order_date <= '{{ var('max_date') }}'
-          	{% endif %}
-        ''',
-        'group_name': 'ANALYTICS',
-        'id': '["ANALYTICS", "orders_augmented"]',
-        'kinds': list([
-          'dbt',
-          'snowflake',
-        ]),
-        'metadata_entries': list([
-          dict({
-            'description': None,
-            'label': 'dagster-dbt/materialization_type',
-            'text': 'table',
-          }),
-          dict({
-            'description': None,
-            'label': 'dagster/column_schema',
-          }),
-          dict({
-            'description': None,
-            'label': 'dagster/table_name',
-            'text': 'DEMO_DB2.analytics.orders_augmented',
-          }),
-          dict({
-            'description': None,
-            'label': 'partition_expr',
-            'text': 'order_date',
-          }),
-          dict({
-            'description': None,
-            'label': 'dagster_dbt/manifest',
-            'text': '[DbtManifestWrapper] (unserializable)',
-          }),
-          dict({
-            'description': None,
-            'label': 'dagster_dbt/dagster_dbt_translator',
-            'text': '[CustomDagsterDbtTranslator] (unserializable)',
-          }),
-          dict({
-            'description': None,
-            'label': 'dagster_dbt/unique_id',
-            'text': 'model.dbt_project.orders_augmented',
-          }),
-          dict({
-            'description': None,
-            'label': 'dagster/code_references',
-          }),
-        ]),
-        'status': dict({
-          'asset_checks_status': 'HEALTHY',
-          'asset_health': 'DEGRADED',
-          'checks_status': dict({
-            'num_failed_checks': None,
-            'num_warning_checks': None,
-            'status': 'HEALTHY',
-            'total_num_checks': None,
-          }),
-          'freshness_info': dict({
-            'cron_schedule': None,
-            'current_lag_minutes': None,
-            'current_minutes_late': None,
-            'latest_materialization_minutes_late': None,
-            'maximum_lag_minutes': None,
-          }),
-          'freshness_status': 'WARNING',
-          'health_metadata': None,
-          'latest_materialization': dict({
-            'partition': '2025-09-09',
-            'run_id': '085aa81e-11f7-4848-8e25-8b9e37b3a753',
-            'timestamp': 1757462531632.0,
-          }),
-          'materialization_status': 'DEGRADED',
-        }),
-      }),
-      dict({
-        'asset_key': 'ANALYTICS/sku_stats',
-        'asset_key_parts': list([
-          'ANALYTICS',
-          'sku_stats',
-        ]),
-        'description': '''
-          dbt model for: sku_stats 
-           
-          	select
-          	        order_date,
-          	        sku,
-          	        count(*) as n_orders,
-          	        sum(order_total) as total_revenue
-          	from {{ ref("orders_augmented") }}
-          	group by 1, 2
-        ''',
-        'group_name': 'ANALYTICS',
-        'id': '["ANALYTICS", "sku_stats"]',
-        'kinds': list([
-          'dbt',
-          'snowflake',
-        ]),
-        'metadata_entries': list([
-          dict({
-            'description': None,
-            'label': 'dagster-dbt/materialization_type',
-            'text': 'table',
-          }),
-          dict({
-            'description': None,
-            'label': 'dagster/table_name',
-            'text': 'DEMO_DB2.analytics.sku_stats',
-          }),
-          dict({
-            'description': None,
-            'label': 'partition_expr',
-            'text': 'order_date',
-          }),
-          dict({
-            'description': None,
-            'label': 'dagster_dbt/manifest',
-            'text': '[DbtManifestWrapper] (unserializable)',
-          }),
-          dict({
-            'description': None,
-            'label': 'dagster_dbt/dagster_dbt_translator',
-            'text': '[CustomDagsterDbtTranslator] (unserializable)',
-          }),
-          dict({
-            'description': None,
-            'label': 'dagster_dbt/unique_id',
-            'text': 'model.dbt_project.sku_stats',
-          }),
-          dict({
-            'description': None,
-            'label': 'dagster/code_references',
-          }),
-        ]),
-        'status': dict({
-          'asset_checks_status': 'WARNING',
-          'asset_health': 'DEGRADED',
-          'checks_status': dict({
-            'num_failed_checks': None,
-            'num_warning_checks': 1,
-            'status': 'WARNING',
-            'total_num_checks': 1,
-          }),
-          'freshness_info': dict({
-            'cron_schedule': None,
-            'current_lag_minutes': None,
-            'current_minutes_late': None,
-            'latest_materialization_minutes_late': None,
-            'maximum_lag_minutes': None,
-          }),
-          'freshness_status': 'DEGRADED',
-          'health_metadata': None,
-          'latest_materialization': dict({
-            'partition': None,
-            'run_id': '41b0e33d-a965-423f-acca-b444a7058dba',
-            'timestamp': 1756685035863.0,
-          }),
-          'materialization_status': 'HEALTHY',
-        }),
-      }),
     ]),
   })
 # ---
 # name: TestDynamicCommandExecution.test_command_execution[asset_success_single_asset_json]
   dict({
-    'asset_key': 'country_stats',
+    'asset_key': 'asset_health_report_slack',
     'asset_key_parts': list([
-      'country_stats',
+      'asset_health_report_slack',
     ]),
-    'description': None,
-    'group_name': 'default',
-    'id': 'basics.__repository__.["country_stats"]',
+    'dependency_keys': list([
+    ]),
+    'description': 'Sends Dagster asset health report to #bot-purina Slack channel',
+    'group_name': 'monitoring',
+    'id': 'dagster_open_platform.__repository__.["asset_health_report_slack"]',
     'kinds': list([
-      'Kubernetes',
-      'S3',
+      'slack',
     ]),
     'metadata_entries': list([
-      dict({
-        'description': None,
-        'label': 'dagster/code_references',
-      }),
     ]),
     'status': None,
   })
 # ---
 # name: TestDynamicCommandExecution.test_command_execution[asset_success_single_asset_status_view_human_readable_text]
   '''
-  Asset Key: forecasting/model_stats_by_month
-  ID: ["forecasting", "model_stats_by_month"]
-  Description: Model errors by month
-  Group: FORECASTING
-  Kinds: scikitlearn, snowflake
+  Asset Key: aws/cloud-prod/workspace_staging_metadata
+  ID: ["aws", "cloud-prod", "workspace_staging_metadata"]
+  Description: Snowflake stages for AWS data, creates new stages for new assets, refreses existing stages.
+  Group: aws_stages
+  Kinds: None
+  Deps: cloud-prod-workspace-replication/staging/metadata
   
   Status Information:
     Asset Health: HEALTHY
     Materialization Status: HEALTHY
-    Freshness Status: NOT_APPLICABLE
+    Freshness Status: HEALTHY
     Asset Checks Status: NOT_APPLICABLE
-    Latest Materialization: 2023-02-28 22:02:57
-    Latest Run ID: fc70230e-2fcc-4bff-8400-5eefca046bbf
-    Latest Partition: 2023-01-01
-  
-  Metadata:
-    dagster/code_references: None
+    Latest Materialization: 2025-10-01 09:20:37
+    Latest Run ID: 3fb15668-f967-45ec-ac66-7682a6097583
   
   '''
 # ---
 # name: TestDynamicCommandExecution.test_command_execution[asset_success_single_asset_status_view_json]
   dict({
-    'asset_key': 'forecasting/model_stats_by_month',
+    'asset_key': 'aws/cloud-prod/workspace_staging_jobs',
     'asset_key_parts': list([
-      'forecasting',
-      'model_stats_by_month',
+      'aws',
+      'cloud-prod',
+      'workspace_staging_jobs',
     ]),
-    'description': 'Model errors by month',
-    'group_name': 'FORECASTING',
-    'id': '["forecasting", "model_stats_by_month"]',
+    'dependency_keys': list([
+      'cloud-prod-workspace-replication/staging/jobs',
+    ]),
+    'description': 'Snowflake stages for AWS data, creates new stages for new assets, refreses existing stages.',
+    'group_name': 'aws_stages',
+    'id': '["aws", "cloud-prod", "workspace_staging_jobs"]',
     'kinds': list([
-      'scikitlearn',
-      'snowflake',
     ]),
     'metadata_entries': list([
-      dict({
-        'description': None,
-        'label': 'dagster/code_references',
-      }),
     ]),
     'status': dict({
       'asset_checks_status': 'NOT_APPLICABLE',
@@ -4012,13 +1026,19 @@
         'status': 'NOT_APPLICABLE',
         'total_num_checks': None,
       }),
-      'freshness_info': None,
-      'freshness_status': 'NOT_APPLICABLE',
+      'freshness_info': dict({
+        'cron_schedule': None,
+        'current_lag_minutes': None,
+        'current_minutes_late': None,
+        'latest_materialization_minutes_late': None,
+        'maximum_lag_minutes': None,
+      }),
+      'freshness_status': 'HEALTHY',
       'health_metadata': None,
       'latest_materialization': dict({
-        'partition': '2023-01-01',
-        'run_id': 'fc70230e-2fcc-4bff-8400-5eefca046bbf',
-        'timestamp': 1677621777152.0,
+        'partition': None,
+        'run_id': '3fb15668-f967-45ec-ac66-7682a6097583',
+        'timestamp': 1759310437770.0,
       }),
       'materialization_status': 'HEALTHY',
     }),

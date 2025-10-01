@@ -286,6 +286,7 @@ class GrapheneAsset(graphene.ObjectType):
     latestMaterializationTimestamp = graphene.Float()
     hasDefinitionOrRecord = graphene.NonNull(graphene.Boolean)
     latestFailedToMaterializeTimestamp = graphene.Float()
+    freshnessStatusChangedTimestamp = graphene.Float()
 
     class Meta:
         name = "Asset"
@@ -476,7 +477,8 @@ class GrapheneAsset(graphene.ObjectType):
         )
         if min_materialization_state is not None:
             return (
-                min_materialization_state.latest_materialization_timestamp * 1000
+                min_materialization_state.latest_materialization_timestamp
+                * 1000  # FE prefers timestamp in milliseconds
                 if min_materialization_state.latest_materialization_timestamp
                 else None
             )
@@ -484,7 +486,9 @@ class GrapheneAsset(graphene.ObjectType):
         record = await AssetRecord.gen(graphene_info.context, self._asset_key)
         latest_materialization_event = record.asset_entry.last_materialization if record else None
         return (
-            latest_materialization_event.timestamp * 1000 if latest_materialization_event else None
+            latest_materialization_event.timestamp * 1000  # FE prefers timestamp in milliseconds
+            if latest_materialization_event
+            else None
         )
 
     async def resolve_latestFailedToMaterializeTimestamp(
@@ -495,10 +499,22 @@ class GrapheneAsset(graphene.ObjectType):
             record.asset_entry.last_failed_to_materialize_entry if record else None
         )
         return (
-            latest_failed_to_materialize_event.timestamp * 1000
+            latest_failed_to_materialize_event.timestamp
+            * 1000  # FE prefers timestamp in milliseconds
             if latest_failed_to_materialize_event
             else None
         )
+
+    def resolve_freshnessStatusChangedTimestamp(
+        self, graphene_info: ResolveInfo
+    ) -> Optional[float]:
+        freshness_state_record = graphene_info.context.instance.get_freshness_state_records(
+            [self._asset_key]
+        ).get(self._asset_key)
+        if freshness_state_record is not None:
+            return (
+                freshness_state_record.updated_at.timestamp() * 1000
+            )  # FE prefers timestamp in milliseconds
 
 
 class GrapheneEventConnection(graphene.ObjectType):
@@ -1221,7 +1237,7 @@ class GraphenePipeline(GrapheneIPipelineSnapshotMixin, graphene.ObjectType):
         selected_asset_keys: Optional[list[GrapheneAssetKeyInput]] = None,
     ) -> GraphenePartitionKeys:
         result = graphene_info.context.get_partition_names(
-            repository_handle=self._remote_job.repository_handle,
+            repository_selector=self._remote_job.repository_handle.to_selector(),
             job_name=self._remote_job.name,
             selected_asset_keys=_asset_key_input_list_to_asset_key_set(selected_asset_keys),
             instance=graphene_info.context.instance,

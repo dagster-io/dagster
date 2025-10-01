@@ -6,6 +6,8 @@
       'analytics',
       'complex_table',
     ]),
+    'dependency_keys': list([
+    ]),
     'description': 'Complex asset with various metadata types',
     'group_name': 'analytics',
     'id': 'complex-asset',
@@ -75,6 +77,7 @@
   Description: None
   Group: default
   Kinds: None
+  Deps: None
   '''
 # ---
 # name: TestFormatAssets.test_format_assets_json_output[0]
@@ -86,6 +89,8 @@
         'asset_key': 'users',
         'asset_key_parts': list([
           'users',
+        ]),
+        'dependency_keys': list([
         ]),
         'description': 'User data table',
         'group_name': 'core_tables',
@@ -113,6 +118,8 @@
           'analytics',
           'user_metrics',
         ]),
+        'dependency_keys': list([
+        ]),
         'description': 'Aggregated user metrics',
         'group_name': 'analytics',
         'id': 'asset-2',
@@ -134,12 +141,14 @@
   Description: User data table
   Group: core_tables
   Kinds: dbt, table
+  Deps: None
   
   Asset Key: analytics/user_metrics
   ID: asset-2
   Description: Aggregated user metrics
   Group: analytics
   Kinds: dbt, view
+  Deps: None
   '''
 # ---
 # name: TestFormatAssets.test_format_empty_assets_json_output[0]
@@ -158,6 +167,8 @@
     'asset_key': 'users',
     'asset_key_parts': list([
       'users',
+    ]),
+    'dependency_keys': list([
     ]),
     'description': 'User data table',
     'group_name': 'core_tables',
@@ -187,6 +198,7 @@
   Description: User data table
   Group: core_tables
   Kinds: dbt, table
+  Deps: None
   
   Metadata:
     owner: data-team

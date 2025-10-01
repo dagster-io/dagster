@@ -105,6 +105,7 @@ export type Asset = {
   assetMaterializations: Array<MaterializationEvent>;
   assetObservations: Array<ObservationEvent>;
   definition: Maybe<AssetNode>;
+  freshnessStatusChangedTimestamp: Maybe<Scalars['Float']['output']>;
   hasDefinitionOrRecord: Scalars['Boolean']['output'];
   id: Scalars['String']['output'];
   key: AssetKey;
@@ -6328,6 +6329,10 @@ export const buildAsset = (
         : relationshipsToOmit.has('AssetNode')
           ? ({} as AssetNode)
           : buildAssetNode({}, relationshipsToOmit),
+    freshnessStatusChangedTimestamp:
+      overrides && overrides.hasOwnProperty('freshnessStatusChangedTimestamp')
+        ? overrides.freshnessStatusChangedTimestamp!
+        : 5.61,
     hasDefinitionOrRecord:
       overrides && overrides.hasOwnProperty('hasDefinitionOrRecord')
         ? overrides.hasDefinitionOrRecord!

@@ -134,7 +134,6 @@ class GrapheneSchedule(graphene.ObjectType):
         partition_set = repository.get_partition_set(self._remote_schedule.partition_set_name)
 
         return GraphenePartitionSet(
-            repository_handle=repository.handle,
             remote_partition_set=partition_set,
         )
 

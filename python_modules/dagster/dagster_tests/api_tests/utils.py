@@ -28,6 +28,25 @@ def get_bar_workspace(instance: DagsterInstance) -> Iterator[WorkspaceRequestCon
 
 
 @contextmanager
+def get_workspace(
+    instance: DagsterInstance,
+    python_file: str,
+    attribute: str,
+    location_name: str,
+) -> Iterator[WorkspaceRequestContext]:
+    with WorkspaceProcessContext(
+        instance,
+        PythonFileTarget(
+            python_file=python_file,
+            attribute=attribute,
+            working_directory=None,
+            location_name=location_name,
+        ),
+    ) as workspace_process_context:
+        yield workspace_process_context.create_request_context()
+
+
+@contextmanager
 def get_bar_repo_code_location(
     instance: Optional[dg.DagsterInstance] = None,
 ) -> Iterator[GrpcServerCodeLocation]:
