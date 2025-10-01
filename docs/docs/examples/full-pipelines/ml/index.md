@@ -83,43 +83,12 @@ The ML pipeline consists of several key components:
 
 ```mermaid
 graph TD
-    A[Raw MNIST Data] --> B[Data Ingestion Asset]
-    B --> C[Processed Training Data]
-    C --> D[CNN Model Training]
-    D --> E[Trained Model]
-    E --> F[Model Evaluation]
-    F --> G{Quality Gate}
-    G -->|Meets Threshold| H[Production Deployment]
-    G -->|Below Threshold| I[Training Retry]
-    I --> D
-    H --> J[Batch Inference Service]
-    H --> K[Real-time Inference Service]
-
-    subgraph "Data Pipeline"
-        A
-        B
-        C
-    end
-
-    subgraph "Training Pipeline"
-        D
-        E
-    end
-
-    subgraph "Evaluation Pipeline"
-        F
-        G
-        I
-    end
-
-    subgraph "Deployment Pipeline"
-        H
-    end
-
-    subgraph "Inference Services"
-        J
-        K
-    end
+    A[Raw MNIST Data] --> B[Data Processing & Splitting]
+    B --> C[CNN Model Training]
+    C --> D[Model Evaluation]
+    G[Training Configuration] --> C
+    H[Test Dataset] --> D
+    I[Performance Metrics] --> D
 ```
 
 The pipeline demonstrates:
@@ -132,4 +101,4 @@ The pipeline demonstrates:
 
 ## Next steps
 
-- Continue this tutorial with [data ingestion](/examples/ml/data-ingestion)
+- Continue this tutorial with [data ingestion](/examples/full-pipelines/ml/data-ingestion)
