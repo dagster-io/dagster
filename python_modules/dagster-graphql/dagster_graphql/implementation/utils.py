@@ -28,6 +28,7 @@ from dagster._core.definitions.selector import (
     GraphSelector,
     JobSelector,
     JobSubsetSelector,
+    RepositorySelector,
     ScheduleSelector,
     SensorSelector,
 )
@@ -321,38 +322,55 @@ def has_permission_for_backfill(
             cast("list[AssetKey]", backfill.asset_selection),
             permission,
         )
+
+    # job backfill
     if not backfill.partition_set_origin:
         # does not resolve to a partition set, so need deployment-wide permissions
         return graphene_info.context.has_permission(permission)
 
     partition_selector = backfill.partition_set_origin.selector
-    try:
-        code_location = graphene_info.context.get_code_location(partition_selector.location_name)
-    except (DagsterCodeLocationNotFoundError, DagsterCodeLocationLoadError):
-        code_location = None
+    if not graphene_info.context.has_code_location_name(partition_selector.location_name):
+        return graphene_info.context.has_permission(permission)
 
-    if not code_location or not code_location.has_repository(partition_selector.repository_name):
-        repository = None
-    else:
-        repository = code_location.get_repository(partition_selector.repository_name)
+    partition_sets = graphene_info.context.get_partition_sets(
+        repository_selector=RepositorySelector(
+            location_name=partition_selector.location_name,
+            repository_name=partition_selector.repository_name,
+        )
+    )
 
-    if repository:
-        matches = [
-            partition_set
-            for partition_set in repository.get_partition_sets()
-            if partition_set.name == partition_selector.partition_set_name
-        ]
-    else:
-        matches = []
+    matches = [
+        partition_set
+        for partition_set in partition_sets
+        if partition_set.name == partition_selector.partition_set_name
+    ]
 
-    if not repository or len(matches) != 1:
+    if len(matches) != 1:
         return graphene_info.context.has_permission_for_location(
             permission, partition_selector.location_name
         )
 
     remote_partition_set = next(iter(matches))
-    remote_job = repository.get_full_job(remote_partition_set.job_name)
-    return has_permission_for_remote_job(graphene_info, permission, remote_job)
+    if not graphene_info.context.has_job(
+        JobSelector(
+            location_name=partition_selector.location_name,
+            repository_name=partition_selector.repository_name,
+            job_name=remote_partition_set.job_name,
+        )
+    ):
+        return graphene_info.context.has_permission_for_location(
+            permission, partition_selector.location_name
+        )
+
+    return has_permission_for_job(
+        graphene_info,
+        permission,
+        JobSelector(
+            location_name=partition_selector.location_name,
+            repository_name=partition_selector.repository_name,
+            job_name=remote_partition_set.job_name,
+        ),
+    )
 
 
 def assert_permission_for_backfill(

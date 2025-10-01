@@ -2,7 +2,11 @@ from collections.abc import Sequence
 from typing import TYPE_CHECKING, Union, cast
 
 import dagster._check as check
-from dagster._core.definitions.selector import PartitionsByAssetSelector, RepositorySelector
+from dagster._core.definitions.selector import (
+    JobSelector,
+    PartitionsByAssetSelector,
+    RepositorySelector,
+)
 from dagster._core.definitions.utils import check_valid_title
 from dagster._core.errors import DagsterInvariantViolationError, DagsterUserCodeProcessError
 from dagster._core.events import AssetKey
@@ -21,18 +25,14 @@ from dagster._core.workspace.permissions import Permissions
 from dagster._time import datetime_from_timestamp, get_current_timestamp
 from dagster._utils.caching_instance_queryer import CachingInstanceQueryer
 from dagster_shared.error import DagsterError
-from dagster._core.definitions.selector import (
-    JobSelector,
-    RepositorySelector,
-)
 
 from dagster_graphql.implementation.utils import (
     AssetBackfillPreviewParams,
     BackfillParams,
     assert_permission_for_asset_graph,
     assert_permission_for_backfill,
+    assert_permission_for_job,
     assert_permission_for_location,
-    assert_permission_for_remote_job,
     assert_valid_asset_partition_backfill,
     assert_valid_job_partition_backfill,
 )
@@ -166,13 +166,14 @@ def create_and_launch_partition_backfill(
                 f"Partition set names must be unique: found {len(matches)} matches for {partition_set_name}"
             )
         remote_partition_set = next(iter(matches))
-        remote_job = graphene_info.context.get_full_job(JobSelector(
-            location_name=repository_selector.location_name,
-            repository_name=repository_selector.repository_name,
-            job_name=remote_partition_set.job_name
-        ))
-        assert_permission_for_remote_job(
-            graphene_info, Permissions.LAUNCH_PARTITION_BACKFILL, remote_job
+        assert_permission_for_job(
+            graphene_info,
+            Permissions.LAUNCH_PARTITION_BACKFILL,
+            JobSelector(
+                location_name=repository_selector.location_name,
+                repository_name=repository_selector.repository_name,
+                job_name=remote_partition_set.job_name,
+            ),
         )
 
         if backfill_params.get("allPartitions"):
