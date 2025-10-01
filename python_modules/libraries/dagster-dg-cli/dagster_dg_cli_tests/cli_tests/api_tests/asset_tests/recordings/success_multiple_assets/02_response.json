@@ -3,800 +3,170 @@
     {
       "assetKey": {
         "path": [
-          "change_model"
+          "asset_health_report_slack"
         ]
       },
-      "description": null,
-      "groupName": "default",
-      "id": "basics.__repository__.[\"change_model\"]",
+      "dependencyKeys": [],
+      "description": "Sends Dagster asset health report to #bot-purina Slack channel",
+      "groupName": "monitoring",
+      "id": "dagster_open_platform.__repository__.[\"asset_health_report_slack\"]",
       "kinds": [
-        "Kubernetes",
-        "S3"
-      ],
-      "metadataEntries": [
-        {
-          "description": null,
-          "label": "dagster/code_references"
-        }
-      ]
-    },
-    {
-      "assetKey": {
-        "path": [
-          "continent_stats"
-        ]
-      },
-      "description": null,
-      "groupName": "default",
-      "id": "basics.__repository__.[\"continent_stats\"]",
-      "kinds": [
-        "Kubernetes",
-        "S3"
-      ],
-      "metadataEntries": [
-        {
-          "description": null,
-          "label": "dagster/code_references"
-        }
-      ]
-    },
-    {
-      "assetKey": {
-        "path": [
-          "country_stats"
-        ]
-      },
-      "description": null,
-      "groupName": "default",
-      "id": "basics.__repository__.[\"country_stats\"]",
-      "kinds": [
-        "Kubernetes",
-        "S3"
-      ],
-      "metadataEntries": [
-        {
-          "description": null,
-          "label": "dagster/code_references"
-        }
-      ]
-    },
-    {
-      "assetKey": {
-        "path": [
-          "ANALYTICS",
-          "company_perf"
-        ]
-      },
-      "description": "dbt model for: company_perf \n \n\tselect\n\t        company,\n\t        sum(n_orders) as n_orders,\n\t        sum(total_revenue) as total_revenue\n\tfrom {{ ref(\"company_stats\") }}\n\tgroup by 1",
-      "groupName": "ANALYTICS",
-      "id": "data-eng-pipeline.__repository__.[\"ANALYTICS\", \"company_perf\"]",
-      "kinds": [
-        "dbt",
-        "snowflake"
-      ],
-      "metadataEntries": [
-        {
-          "description": null,
-          "label": "dagster-dbt/materialization_type",
-          "text": "table"
-        },
-        {
-          "description": null,
-          "label": "dagster/table_name",
-          "text": "DEMO_DB2.analytics.company_perf"
-        },
-        {
-          "description": null,
-          "label": "partition_expr",
-          "text": "order_date"
-        },
-        {
-          "description": null,
-          "label": "dagster_dbt/manifest",
-          "text": "[DbtManifestWrapper] (unserializable)"
-        },
-        {
-          "description": null,
-          "label": "dagster_dbt/dagster_dbt_translator",
-          "text": "[CustomDagsterDbtTranslator] (unserializable)"
-        },
-        {
-          "description": null,
-          "label": "dagster_dbt/unique_id",
-          "text": "model.dbt_project.company_perf"
-        },
-        {
-          "description": null,
-          "label": "dagster/code_references"
-        }
-      ]
-    },
-    {
-      "assetKey": {
-        "path": [
-          "ANALYTICS",
-          "company_stats"
-        ]
-      },
-      "description": "dbt model for: company_stats \n \n\t{{\n\t        config(tags=[\"core_kpis\"])\n\t}}\n\tselect\n\t        order_date,\n\t        company,\n\t        count(*) as n_orders,\n\t        sum(order_total) as total_revenue\n\tfrom {{ ref(\"orders_augmented\") }}\n\tgroup by 1, 2",
-      "groupName": "ANALYTICS",
-      "id": "data-eng-pipeline.__repository__.[\"ANALYTICS\", \"company_stats\"]",
-      "kinds": [
-        "dbt",
-        "snowflake"
-      ],
-      "metadataEntries": [
-        {
-          "description": null,
-          "label": "dagster-dbt/materialization_type",
-          "text": "table"
-        },
-        {
-          "description": null,
-          "label": "dagster/table_name",
-          "text": "DEMO_DB2.analytics.company_stats"
-        },
-        {
-          "description": null,
-          "label": "partition_expr",
-          "text": "order_date"
-        },
-        {
-          "description": null,
-          "label": "dagster_dbt/manifest",
-          "text": "[DbtManifestWrapper] (unserializable)"
-        },
-        {
-          "description": null,
-          "label": "dagster_dbt/dagster_dbt_translator",
-          "text": "[CustomDagsterDbtTranslator] (unserializable)"
-        },
-        {
-          "description": null,
-          "label": "dagster_dbt/unique_id",
-          "text": "model.dbt_project.company_stats"
-        },
-        {
-          "description": null,
-          "label": "dagster/code_references"
-        }
-      ]
-    },
-    {
-      "assetKey": {
-        "path": [
-          "ANALYTICS",
-          "order_stats"
-        ]
-      },
-      "description": "dbt model for: order_stats \n \n\tselect\n\t        {{ date_trunc(\"day\", \"order_date\") }} as order_date,\n\t        count(*) as n_orders,\n\t        sum(order_total) as total_revenue\n\tfrom {{ ref(\"orders_augmented\") }}\n\t{% if is_incremental() %}\n\tWHERE {{ date_trunc(\"day\", \"order_date\") }} >=  '{{ var('min_date') }}' AND {{ date_trunc(\"day\", \"order_date\") }} <=  '{{ var('max_date') }}'\n\t{% endif %}\n\tgroup by 1",
-      "groupName": "ANALYTICS",
-      "id": "data-eng-pipeline.__repository__.[\"ANALYTICS\", \"order_stats\"]",
-      "kinds": [
-        "dbt",
-        "snowflake"
-      ],
-      "metadataEntries": [
-        {
-          "description": null,
-          "label": "dagster-dbt/materialization_type",
-          "text": "table"
-        },
-        {
-          "description": null,
-          "label": "dagster/table_name",
-          "text": "DEMO_DB2.analytics.order_stats"
-        },
-        {
-          "description": null,
-          "label": "partition_expr",
-          "text": "order_date"
-        },
-        {
-          "description": null,
-          "label": "dagster_dbt/manifest",
-          "text": "[DbtManifestWrapper] (unserializable)"
-        },
-        {
-          "description": null,
-          "label": "dagster_dbt/dagster_dbt_translator",
-          "text": "[CustomDagsterDbtTranslator] (unserializable)"
-        },
-        {
-          "description": null,
-          "label": "dagster_dbt/unique_id",
-          "text": "model.dbt_project.order_stats"
-        },
-        {
-          "description": null,
-          "label": "dagster/code_references"
-        }
-      ]
-    },
-    {
-      "assetKey": {
-        "path": [
-          "ANALYTICS",
-          "orders_augmented"
-        ]
-      },
-      "description": "dbt model for: orders_augmented \n \n\t{{\n\t        config(tags=[\"core_kpis\"])\n\t}}\n\tselect\n\t        o.*,\n\t        u.company,\n\t        l.state,\n\t        l.zip_code\n\tfrom {{ ref(\"orders_cleaned\") }} o \n\n\tleft join {{ ref(\"users_cleaned\") }} u\n\t       on o.user_id = u.user_id\n\n\t left join {{ ref(\"locations_cleaned\") }} l\n\t        on o.user_id = l.user_id\n\n\t{% if is_incremental() %}\n\tWHERE o.order_date >= '{{ var('min_date') }}' AND o.order_date <= '{{ var('max_date') }}'\n\t{% endif %}",
-      "groupName": "ANALYTICS",
-      "id": "data-eng-pipeline.__repository__.[\"ANALYTICS\", \"orders_augmented\"]",
-      "kinds": [
-        "dbt",
-        "snowflake"
-      ],
-      "metadataEntries": [
-        {
-          "description": null,
-          "label": "dagster-dbt/materialization_type",
-          "text": "table"
-        },
-        {
-          "description": null,
-          "label": "dagster/column_schema"
-        },
-        {
-          "description": null,
-          "label": "dagster/table_name",
-          "text": "DEMO_DB2.analytics.orders_augmented"
-        },
-        {
-          "description": null,
-          "label": "partition_expr",
-          "text": "order_date"
-        },
-        {
-          "description": null,
-          "label": "dagster_dbt/manifest",
-          "text": "[DbtManifestWrapper] (unserializable)"
-        },
-        {
-          "description": null,
-          "label": "dagster_dbt/dagster_dbt_translator",
-          "text": "[CustomDagsterDbtTranslator] (unserializable)"
-        },
-        {
-          "description": null,
-          "label": "dagster_dbt/unique_id",
-          "text": "model.dbt_project.orders_augmented"
-        },
-        {
-          "description": null,
-          "label": "dagster/code_references"
-        }
-      ]
-    },
-    {
-      "assetKey": {
-        "path": [
-          "ANALYTICS",
-          "sku_stats"
-        ]
-      },
-      "description": "dbt model for: sku_stats \n \n\tselect\n\t        order_date,\n\t        sku,\n\t        count(*) as n_orders,\n\t        sum(order_total) as total_revenue\n\tfrom {{ ref(\"orders_augmented\") }}\n\tgroup by 1, 2",
-      "groupName": "ANALYTICS",
-      "id": "data-eng-pipeline.__repository__.[\"ANALYTICS\", \"sku_stats\"]",
-      "kinds": [
-        "dbt",
-        "snowflake"
-      ],
-      "metadataEntries": [
-        {
-          "description": null,
-          "label": "dagster-dbt/materialization_type",
-          "text": "table"
-        },
-        {
-          "description": null,
-          "label": "dagster/table_name",
-          "text": "DEMO_DB2.analytics.sku_stats"
-        },
-        {
-          "description": null,
-          "label": "partition_expr",
-          "text": "order_date"
-        },
-        {
-          "description": null,
-          "label": "dagster_dbt/manifest",
-          "text": "[DbtManifestWrapper] (unserializable)"
-        },
-        {
-          "description": null,
-          "label": "dagster_dbt/dagster_dbt_translator",
-          "text": "[CustomDagsterDbtTranslator] (unserializable)"
-        },
-        {
-          "description": null,
-          "label": "dagster_dbt/unique_id",
-          "text": "model.dbt_project.sku_stats"
-        },
-        {
-          "description": null,
-          "label": "dagster/code_references"
-        }
-      ]
-    },
-    {
-      "assetKey": {
-        "path": [
-          "ANALYTICS",
-          "weekly_order_summary"
-        ]
-      },
-      "description": "dbt model for: weekly_order_summary \n \n\t{{\n\t        config(\n\t                tags=[\"core_kpis\"]\n\t        )\n\t}}\n\n\tselect\n\t        order_date,\n\t        n_orders as num_orders\n\tfrom {{ ref(\"order_stats\") }}\n\t{% if is_incremental() %}\n\tWHERE o.order_date >= '{{ var('min_date') }}' AND o.order_date <= '{{ var('max_date') }}'\n\t{% endif %}",
-      "groupName": "ANALYTICS",
-      "id": "data-eng-pipeline.__repository__.[\"ANALYTICS\", \"weekly_order_summary\"]",
-      "kinds": [
-        "dbt",
-        "snowflake"
-      ],
-      "metadataEntries": [
-        {
-          "description": null,
-          "label": "dagster-dbt/materialization_type",
-          "text": "table"
-        },
-        {
-          "description": null,
-          "label": "dagster/table_name",
-          "text": "DEMO_DB2.analytics.weekly_order_summary"
-        },
-        {
-          "description": null,
-          "label": "partition_expr",
-          "text": "order_date"
-        },
-        {
-          "description": null,
-          "label": "dagster_dbt/manifest",
-          "text": "[DbtManifestWrapper] (unserializable)"
-        },
-        {
-          "description": null,
-          "label": "dagster_dbt/dagster_dbt_translator",
-          "text": "[CustomDagsterDbtTranslator] (unserializable)"
-        },
-        {
-          "description": null,
-          "label": "dagster_dbt/unique_id",
-          "text": "model.dbt_project.weekly_order_summary"
-        },
-        {
-          "description": null,
-          "label": "dagster/code_references"
-        }
-      ]
-    },
-    {
-      "assetKey": {
-        "path": [
-          "CLEANED",
-          "locations_cleaned"
-        ]
-      },
-      "description": "dbt model for: locations_cleaned \n \n\twith source as (\n    \n\tselect *\n\tfrom {{ source(\"raw_data\", \"locations\") }}\n\n\t),\n \n\tsource_renamed as (\n\n\t    select l_user_id as user_id,\n\t           l_street_address as street_address,\n\t           l_state as state,\n\t           l_country as country,\n\t           l_zip_code as zip_code,\n\t           _sling_loaded_at\n\t    from source\n\n\t)\n\n\tselect *\n\tfrom source_renamed",
-      "groupName": "CLEANED",
-      "id": "data-eng-pipeline.__repository__.[\"CLEANED\", \"locations_cleaned\"]",
-      "kinds": [
-        "dbt",
-        "snowflake"
-      ],
-      "metadataEntries": [
-        {
-          "description": null,
-          "label": "dagster-dbt/materialization_type",
-          "text": "table"
-        },
-        {
-          "description": null,
-          "label": "dagster/column_schema"
-        },
-        {
-          "description": null,
-          "label": "dagster/table_name",
-          "text": "DEMO_DB2.analytics.locations_cleaned"
-        },
-        {
-          "description": null,
-          "label": "partition_expr",
-          "text": "order_date"
-        },
-        {
-          "description": null,
-          "label": "dagster_dbt/manifest",
-          "text": "[DbtManifestWrapper] (unserializable)"
-        },
-        {
-          "description": null,
-          "label": "dagster_dbt/dagster_dbt_translator",
-          "text": "[CustomDagsterDbtTranslator] (unserializable)"
-        },
-        {
-          "description": null,
-          "label": "dagster_dbt/unique_id",
-          "text": "model.dbt_project.locations_cleaned"
-        },
-        {
-          "description": null,
-          "label": "dagster/code_references"
-        }
-      ]
-    },
-    {
-      "assetKey": {
-        "path": [
-          "CLEANED",
-          "orders_cleaned"
-        ]
-      },
-      "description": "dbt model for: orders_cleaned \n \n\t{{config(tags=\"my_test_tag\")}}\n\tselect\n\t        user_id,\n\t        quantity,\n\t        purchase_price,\n\t        sku,\n\t        dt,\n\t        cast(dt as datetime) as order_date,\n\t        quantity * purchase_price as order_total\n\tfrom {{ source(\"raw_data\", \"orders\") }}\n\t{% if is_incremental() %}\n\tWHERE dt >= '{{ var('min_date') }}' AND dt <= '{{ var('max_date') }}'\n\t{% endif %}",
-      "groupName": "CLEANED",
-      "id": "data-eng-pipeline.__repository__.[\"CLEANED\", \"orders_cleaned\"]",
-      "kinds": [
-        "dbt",
-        "snowflake"
-      ],
-      "metadataEntries": [
-        {
-          "description": null,
-          "label": "dagster-dbt/materialization_type",
-          "text": "table"
-        },
-        {
-          "description": null,
-          "label": "dagster/column_schema"
-        },
-        {
-          "description": null,
-          "label": "dagster/table_name",
-          "text": "DEMO_DB2.analytics.orders_cleaned"
-        },
-        {
-          "description": null,
-          "label": "partition_expr",
-          "text": "dt"
-        },
-        {
-          "description": null,
-          "label": "dagster_dbt/manifest",
-          "text": "[DbtManifestWrapper] (unserializable)"
-        },
-        {
-          "description": null,
-          "label": "dagster_dbt/dagster_dbt_translator",
-          "text": "[CustomDagsterDbtTranslator] (unserializable)"
-        },
-        {
-          "description": null,
-          "label": "dagster_dbt/unique_id",
-          "text": "model.dbt_project.orders_cleaned"
-        },
-        {
-          "description": null,
-          "label": "dagster/code_references"
-        }
-      ]
-    },
-    {
-      "assetKey": {
-        "path": [
-          "CLEANED",
-          "users_cleaned"
-        ]
-      },
-      "description": "dbt model for: users_cleaned \n \n\tselect\n\t        user_id,\n\t        created_at,\n\t        company\n\tfrom {{ source(\"raw_data\", \"users\") }}\n\twhere not is_test_user",
-      "groupName": "CLEANED",
-      "id": "data-eng-pipeline.__repository__.[\"CLEANED\", \"users_cleaned\"]",
-      "kinds": [
-        "dbt",
-        "snowflake"
-      ],
-      "metadataEntries": [
-        {
-          "description": null,
-          "label": "dagster-dbt/materialization_type",
-          "text": "table"
-        },
-        {
-          "description": null,
-          "label": "dagster/column_schema"
-        },
-        {
-          "description": null,
-          "label": "dagster/table_name",
-          "text": "DEMO_DB2.analytics.users_cleaned"
-        },
-        {
-          "description": null,
-          "label": "partition_expr",
-          "text": "created_at"
-        },
-        {
-          "description": null,
-          "label": "dagster_dbt/manifest",
-          "text": "[DbtManifestWrapper] (unserializable)"
-        },
-        {
-          "description": null,
-          "label": "dagster_dbt/dagster_dbt_translator",
-          "text": "[CustomDagsterDbtTranslator] (unserializable)"
-        },
-        {
-          "description": null,
-          "label": "dagster_dbt/unique_id",
-          "text": "model.dbt_project.users_cleaned"
-        },
-        {
-          "description": null,
-          "label": "dagster/code_references"
-        }
-      ]
-    },
-    {
-      "assetKey": {
-        "path": [
-          "FORECASTING",
-          "big_orders"
-        ]
-      },
-      "description": "Days where predicted orders surpass our current carrying capacity",
-      "groupName": "FORECASTING",
-      "id": "data-eng-pipeline.__repository__.[\"FORECASTING\", \"big_orders\"]",
-      "kinds": [
-        "databricks",
-        "pyspark"
-      ],
-      "metadataEntries": [
-        {
-          "description": null,
-          "intValue": 50,
-          "label": "resource_constrained_at"
-        },
-        {
-          "description": null,
-          "label": "dagster/code_references"
-        }
-      ]
-    },
-    {
-      "assetKey": {
-        "path": [
-          "FORECASTING",
-          "predicted_orders"
-        ]
-      },
-      "description": "Predicted orders for the next 30 days based on the fit paramters",
-      "groupName": "FORECASTING",
-      "id": "data-eng-pipeline.__repository__.[\"FORECASTING\", \"predicted_orders\"]",
-      "kinds": [
-        "pandas",
-        "snowflake"
-      ],
-      "metadataEntries": [
-        {
-          "description": null,
-          "label": "dagster/code_references"
-        }
-      ]
-    },
-    {
-      "assetKey": {
-        "path": [
-          "MARKETING",
-          "avg_orders"
-        ]
-      },
-      "description": "Computes avg order KPI, must be updated regularly for exec dashboard",
-      "groupName": "MARKETING",
-      "id": "data-eng-pipeline.__repository__.[\"MARKETING\", \"avg_orders\"]",
-      "kinds": [
-        "pandas",
-        "snowflake"
-      ],
-      "metadataEntries": [
-        {
-          "description": null,
-          "label": "dagster/code_references"
-        }
-      ]
-    },
-    {
-      "assetKey": {
-        "path": [
-          "MARKETING",
-          "key_product_deepdive"
-        ]
-      },
-      "description": "Creates a file for a BI tool based on the current quarters top product, represented as a dynamic partition",
-      "groupName": "MARKETING",
-      "id": "data-eng-pipeline.__repository__.[\"MARKETING\", \"key_product_deepdive\"]",
-      "kinds": [
-        "pandas",
-        "s3"
-      ],
-      "metadataEntries": [
-        {
-          "description": null,
-          "label": "dagster/code_references"
-        }
-      ]
-    },
-    {
-      "assetKey": {
-        "path": [
-          "MARKETING",
-          "min_order"
-        ]
-      },
-      "description": "Computes min order KPI",
-      "groupName": "MARKETING",
-      "id": "data-eng-pipeline.__repository__.[\"MARKETING\", \"min_order\"]",
-      "kinds": [
-        "pandas",
-        "snowflake"
-      ],
-      "metadataEntries": [
-        {
-          "description": null,
-          "label": "dagster/code_references"
-        }
-      ]
-    },
-    {
-      "assetKey": {
-        "path": [
-          "RAW_DATA",
-          "orders"
-        ]
-      },
-      "description": "A table containing all orders that have been placed",
-      "groupName": "RAW_DATA",
-      "id": "data-eng-pipeline.__repository__.[\"RAW_DATA\", \"orders\"]",
-      "kinds": [
-        "api",
-        "snowflake"
-      ],
-      "metadataEntries": [
-        {
-          "description": null,
-          "label": "partition_expr",
-          "text": "DT"
-        },
-        {
-          "description": null,
-          "label": "dagster/code_references"
-        }
-      ]
-    },
-    {
-      "assetKey": {
-        "path": [
-          "RAW_DATA",
-          "users"
-        ]
-      },
-      "description": "A table containing all users data",
-      "groupName": "RAW_DATA",
-      "id": "data-eng-pipeline.__repository__.[\"RAW_DATA\", \"users\"]",
-      "kinds": [
-        "api",
-        "snowflake"
-      ],
-      "metadataEntries": [
-        {
-          "description": null,
-          "label": "partition_expr",
-          "text": "created_at"
-        },
-        {
-          "description": null,
-          "label": "dagster/code_references"
-        }
-      ]
-    },
-    {
-      "assetKey": {
-        "path": [
-          "databricks_asset"
-        ]
-      },
-      "description": null,
-      "groupName": "FORECASTING",
-      "id": "data-eng-pipeline.__repository__.[\"databricks_asset\"]",
-      "kinds": [
-        "databricks",
-        "pyspark"
-      ],
-      "metadataEntries": [
-        {
-          "description": null,
-          "label": "dagster/code_references"
-        }
-      ]
-    },
-    {
-      "assetKey": {
-        "path": [
-          "databricks",
-          "economic_indicators"
-        ]
-      },
-      "description": "Ledger loaded ",
-      "groupName": "ingestion",
-      "id": "hooli_airlift.__repository__.[\"databricks\", \"economic_indicators\"]",
-      "kinds": [
-        "databricks"
+        "slack"
       ],
       "metadataEntries": []
     },
     {
       "assetKey": {
         "path": [
-          "databricks",
-          "news_sentiment"
+          "aws",
+          "cloud-prod",
+          "user_roles"
         ]
       },
-      "description": "Ledger loaded ",
-      "groupName": "ingestion",
-      "id": "hooli_airlift.__repository__.[\"databricks\", \"news_sentiment\"]",
-      "kinds": [
-        "databricks"
-      ],
+      "dependencyKeys": [],
+      "description": "Snowflake stages for AWS data, creates new stages for new assets, refreses existing stages.",
+      "groupName": "aws_stages",
+      "id": "dagster_open_platform.__repository__.[\"aws\", \"cloud-prod\", \"user_roles\"]",
+      "kinds": [],
       "metadataEntries": []
     },
     {
       "assetKey": {
         "path": [
-          "databricks",
-          "revenue"
+          "aws",
+          "cloud-prod",
+          "workspace_staging_asset_checks"
         ]
       },
-      "description": "Ledger loaded ",
-      "groupName": "ingestion",
-      "id": "hooli_airlift.__repository__.[\"databricks\", \"revenue\"]",
-      "kinds": [
-        "databricks"
-      ],
-      "metadataEntries": []
-    },
-    {
-      "assetKey": {
-        "path": [
-          "RAW_DATA",
-          "locations"
-        ]
-      },
-      "description": null,
-      "groupName": "RAW_DATA",
-      "id": "hooli_data_ingest.__repository__.[\"RAW_DATA\", \"locations\"]",
-      "kinds": [
-        "SNOWFLAKE",
-        "sling"
-      ],
-      "metadataEntries": [
+      "dependencyKeys": [
         {
-          "description": null,
-          "jsonString": "{\"object\": \"locations\"}",
-          "label": "stream_config"
-        },
-        {
-          "description": null,
-          "label": "dagster_sling/dagster_sling_translator",
-          "text": "[CustomSlingTranslator] (unserializable)"
-        },
-        {
-          "description": null,
-          "jsonString": "{\"defaults\": {\"mode\": \"full-refresh\", \"object\": \"{stream_file_folder}.{stream_file_name}\", \"source_options\": {\"format\": \"csv\"}}, \"source\": \"S3\", \"streams\": {\"s3://hooli-demo/embedded-elt/locations.csv\": {\"object\": \"locations\"}}, \"target\": \"SNOWFLAKE_PROD\"}",
-          "label": "dagster_sling/sling_replication_config"
-        },
-        {
-          "description": null,
-          "label": "dagster/code_references"
+          "path": [
+            "cloud-prod-workspace-replication",
+            "staging",
+            "asset_checks"
+          ]
         }
-      ]
+      ],
+      "description": "Snowflake stages for AWS data, creates new stages for new assets, refreses existing stages.",
+      "groupName": "aws_stages",
+      "id": "dagster_open_platform.__repository__.[\"aws\", \"cloud-prod\", \"workspace_staging_asset_checks\"]",
+      "kinds": [],
+      "metadataEntries": []
+    },
+    {
+      "assetKey": {
+        "path": [
+          "aws",
+          "cloud-prod",
+          "workspace_staging_assets"
+        ]
+      },
+      "dependencyKeys": [
+        {
+          "path": [
+            "cloud-prod-workspace-replication",
+            "staging",
+            "assets"
+          ]
+        }
+      ],
+      "description": "Snowflake stages for AWS data, creates new stages for new assets, refreses existing stages.",
+      "groupName": "aws_stages",
+      "id": "dagster_open_platform.__repository__.[\"aws\", \"cloud-prod\", \"workspace_staging_assets\"]",
+      "kinds": [],
+      "metadataEntries": []
+    },
+    {
+      "assetKey": {
+        "path": [
+          "aws",
+          "cloud-prod",
+          "workspace_staging_external_repo_metadata"
+        ]
+      },
+      "dependencyKeys": [
+        {
+          "path": [
+            "cloud-prod-workspace-replication",
+            "staging",
+            "external_repo_metadata"
+          ]
+        }
+      ],
+      "description": "Snowflake stages for AWS data, creates new stages for new assets, refreses existing stages.",
+      "groupName": "aws_stages",
+      "id": "dagster_open_platform.__repository__.[\"aws\", \"cloud-prod\", \"workspace_staging_external_repo_metadata\"]",
+      "kinds": [],
+      "metadataEntries": []
+    },
+    {
+      "assetKey": {
+        "path": [
+          "aws",
+          "cloud-prod",
+          "workspace_staging_jobs"
+        ]
+      },
+      "dependencyKeys": [
+        {
+          "path": [
+            "cloud-prod-workspace-replication",
+            "staging",
+            "jobs"
+          ]
+        }
+      ],
+      "description": "Snowflake stages for AWS data, creates new stages for new assets, refreses existing stages.",
+      "groupName": "aws_stages",
+      "id": "dagster_open_platform.__repository__.[\"aws\", \"cloud-prod\", \"workspace_staging_jobs\"]",
+      "kinds": [],
+      "metadataEntries": []
+    },
+    {
+      "assetKey": {
+        "path": [
+          "aws",
+          "cloud-prod",
+          "workspace_staging_metadata"
+        ]
+      },
+      "dependencyKeys": [
+        {
+          "path": [
+            "cloud-prod-workspace-replication",
+            "staging",
+            "metadata"
+          ]
+        }
+      ],
+      "description": "Snowflake stages for AWS data, creates new stages for new assets, refreses existing stages.",
+      "groupName": "aws_stages",
+      "id": "dagster_open_platform.__repository__.[\"aws\", \"cloud-prod\", \"workspace_staging_metadata\"]",
+      "kinds": [],
+      "metadataEntries": []
+    },
+    {
+      "assetKey": {
+        "path": [
+          "aws",
+          "cloud-prod",
+          "workspace_staging_partitions"
+        ]
+      },
+      "dependencyKeys": [
+        {
+          "path": [
+            "cloud-prod-workspace-replication",
+            "staging",
+            "partitions"
+          ]
+        }
+      ],
+      "description": "Snowflake stages for AWS data, creates new stages for new assets, refreses existing stages.",
+      "groupName": "aws_stages",
+      "id": "dagster_open_platform.__repository__.[\"aws\", \"cloud-prod\", \"workspace_staging_partitions\"]",
+      "kinds": [],
+      "metadataEntries": []
     }
   ]
 }

@@ -10,6 +10,7 @@ from dagster._api.snapshot_partition import (
 )
 from dagster._core.definitions.assets.job.asset_job import IMPLICIT_ASSET_JOB_NAME
 from dagster._core.definitions.repository_definition import SINGLETON_REPOSITORY_NAME
+from dagster._core.definitions.selector import RepositorySelector
 from dagster._core.errors import DagsterUserCodeProcessError
 from dagster._core.instance import DagsterInstance
 from dagster._core.remote_representation.external_data import (
@@ -24,7 +25,12 @@ from dagster._grpc.types import PartitionArgs, PartitionNamesArgs, PartitionSetE
 
 ensure_dagster_tests_import()
 
-from dagster_tests.api_tests.utils import get_bar_repo_code_location, get_code_location  # noqa: I001
+from dagster_tests.api_tests.utils import (
+    get_bar_repo_code_location,
+    get_bar_workspace,
+    get_code_location,
+    get_workspace,
+)
 
 
 def get_repo_with_differently_partitioned_assets():
@@ -58,9 +64,13 @@ def test_external_partition_names_grpc(instance: DagsterInstance):
 
 
 def test_external_partition_names(instance: DagsterInstance):
-    with get_bar_repo_code_location(instance) as code_location:
-        data = code_location.get_partition_names(
-            repository_handle=code_location.get_repository("bar_repo").handle,
+    with get_bar_workspace(instance) as workspace:
+        repo_selector = RepositorySelector(
+            location_name="bar_code_location",
+            repository_name="bar_repo",
+        )
+        data = workspace.get_partition_names(
+            repository_selector=repo_selector,
             job_name="baz",
             instance=instance,
             selected_asset_keys=None,
@@ -70,14 +80,17 @@ def test_external_partition_names(instance: DagsterInstance):
 
 
 def test_external_partition_names_asset_selection(instance: DagsterInstance):
-    with get_code_location(
+    with get_workspace(
         python_file=__file__,
         attribute="get_repo_with_differently_partitioned_assets",
         location_name="something",
         instance=instance,
-    ) as code_location:
-        data = code_location.get_partition_names(
-            repository_handle=code_location.get_repository(SINGLETON_REPOSITORY_NAME).handle,
+    ) as workspace:
+        data = workspace.get_partition_names(
+            repository_selector=RepositorySelector(
+                location_name="something",
+                repository_name=SINGLETON_REPOSITORY_NAME,
+            ),
             job_name=IMPLICIT_ASSET_JOB_NAME,
             instance=instance,
             selected_asset_keys={dg.AssetKey("asset2"), dg.AssetKey("asset3")},
@@ -193,9 +206,13 @@ def test_external_partitions_tags_grpc(instance: DagsterInstance):
 
 
 def test_external_partition_tags(instance: DagsterInstance):
-    with get_bar_repo_code_location(instance) as code_location:
-        data = code_location.get_partition_tags(
-            repository_handle=code_location.get_repository("bar_repo").handle,
+    with get_bar_workspace(instance) as workspace:
+        selector = RepositorySelector(
+            location_name="bar_code_location",
+            repository_name="bar_repo",
+        )
+        data = workspace.get_partition_tags(
+            repository_selector=selector,
             job_name="baz",
             partition_name="c",
             instance=instance,
@@ -208,14 +225,17 @@ def test_external_partition_tags(instance: DagsterInstance):
 
 
 def test_external_partition_tags_different_partitions_defs(instance: DagsterInstance):
-    with get_code_location(
+    with get_workspace(
         python_file=__file__,
         attribute="get_repo_with_differently_partitioned_assets",
         location_name="something",
         instance=instance,
-    ) as code_location:
-        data = code_location.get_partition_tags(
-            repository_handle=code_location.get_repository(SINGLETON_REPOSITORY_NAME).handle,
+    ) as workspace:
+        data = workspace.get_partition_tags(
+            repository_selector=RepositorySelector(
+                location_name="something",
+                repository_name=SINGLETON_REPOSITORY_NAME,
+            ),
             job_name=IMPLICIT_ASSET_JOB_NAME,
             selected_asset_keys={dg.AssetKey("asset2"), dg.AssetKey("asset3")},
             partition_name="b",

@@ -105,10 +105,12 @@ export type Asset = {
   assetMaterializations: Array<MaterializationEvent>;
   assetObservations: Array<ObservationEvent>;
   definition: Maybe<AssetNode>;
+  freshnessStatusChangedTimestamp: Maybe<Scalars['Float']['output']>;
   hasDefinitionOrRecord: Scalars['Boolean']['output'];
   id: Scalars['String']['output'];
   key: AssetKey;
   latestEventSortKey: Maybe<Scalars['ID']['output']>;
+  latestFailedToMaterializeTimestamp: Maybe<Scalars['Float']['output']>;
   latestMaterializationTimestamp: Maybe<Scalars['Float']['output']>;
 };
 
@@ -6327,6 +6329,10 @@ export const buildAsset = (
         : relationshipsToOmit.has('AssetNode')
           ? ({} as AssetNode)
           : buildAssetNode({}, relationshipsToOmit),
+    freshnessStatusChangedTimestamp:
+      overrides && overrides.hasOwnProperty('freshnessStatusChangedTimestamp')
+        ? overrides.freshnessStatusChangedTimestamp!
+        : 5.61,
     hasDefinitionOrRecord:
       overrides && overrides.hasOwnProperty('hasDefinitionOrRecord')
         ? overrides.hasDefinitionOrRecord!
@@ -6342,6 +6348,10 @@ export const buildAsset = (
       overrides && overrides.hasOwnProperty('latestEventSortKey')
         ? overrides.latestEventSortKey!
         : 'b9e5eeed-491e-4839-9bbf-1dedd727f77b',
+    latestFailedToMaterializeTimestamp:
+      overrides && overrides.hasOwnProperty('latestFailedToMaterializeTimestamp')
+        ? overrides.latestFailedToMaterializeTimestamp!
+        : 3.33,
     latestMaterializationTimestamp:
       overrides && overrides.hasOwnProperty('latestMaterializationTimestamp')
         ? overrides.latestMaterializationTimestamp!

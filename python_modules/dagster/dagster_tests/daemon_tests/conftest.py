@@ -17,7 +17,7 @@ from dagster._core.test_utils import (
     create_test_daemon_workspace_context,
 )
 from dagster._core.types.loadable_target_origin import LoadableTargetOrigin
-from dagster._core.workspace.context import WorkspaceProcessContext
+from dagster._core.workspace.context import BaseWorkspaceRequestContext, WorkspaceProcessContext
 
 
 @pytest.fixture(name="instance_module_scoped", scope="module")
@@ -62,15 +62,18 @@ def workspace_fixture(instance_module_scoped) -> Iterator[WorkspaceProcessContex
         yield workspace_context
 
 
+@pytest.fixture(scope="module")
+def workspace_request_context(workspace_context) -> Iterator[BaseWorkspaceRequestContext]:
+    yield workspace_context.create_request_context()
+
+
 @pytest.fixture(name="code_location", scope="module")
 def code_location_fixture(
-    workspace_context: WorkspaceProcessContext,
+    workspace_request_context: BaseWorkspaceRequestContext,
 ) -> CodeLocation:
     return cast(
         "CodeLocation",
-        next(
-            iter(workspace_context.create_request_context().get_code_location_entries().values())
-        ).code_location,
+        next(iter(workspace_request_context.get_code_location_entries().values())).code_location,
     )
 
 

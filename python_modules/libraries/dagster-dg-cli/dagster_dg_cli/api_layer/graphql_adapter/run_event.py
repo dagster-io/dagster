@@ -4,8 +4,24 @@ from typing import Any, Optional
 
 from dagster_dg_cli.utils.plus.gql_client import IGraphQLClient
 
-# Exact GraphQL query from specification
+# Enhanced GraphQL query with error information
 RUN_EVENTS_QUERY = """
+fragment errorFragment on PythonError {
+    message
+    className
+    stack
+    cause {
+        message
+        className
+        stack
+        cause {
+            message
+            className
+            stack
+        }
+    }
+}
+
 query CliRunEventsQuery($runId: ID!, $limit: Int, $afterCursor: String) {
     logsForRun(runId: $runId, limit: $limit, afterCursor: $afterCursor) {
         __typename
@@ -19,6 +35,17 @@ query CliRunEventsQuery($runId: ID!, $limit: Int, $afterCursor: String) {
                     level
                     stepKey
                     eventType
+                }
+                ... on ExecutionStepFailureEvent {
+                    runId
+                    message
+                    timestamp
+                    level
+                    stepKey
+                    eventType
+                    error {
+                        ...errorFragment
+                    }
                 }
             }
             cursor

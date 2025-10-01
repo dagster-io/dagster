@@ -208,6 +208,7 @@ def retry_run(
     tags = {RETRY_NUMBER_TAG: str(len(run_group_list))}
     new_run = instance.create_reexecuted_run(
         parent_run=failed_run,
+        request_context=workspace,
         code_location=code_location,
         remote_job=remote_job,
         strategy=strategy,

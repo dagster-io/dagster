@@ -32,8 +32,11 @@ dg api deployment delete <name>
 ### 2. **secret**
 
 ```bash
+# Implemented
 dg api secret list [--location <name>] [--scope <deployment|organization>] [--json]
 dg api secret get <name> [--location <name>] [--json]
+
+# Future verbs
 dg api secret create --name <name> --value <value> [--location <name>] [--scope <scope>]
 dg api secret update <name> --value <value> [--location <name>]
 dg api secret delete <name> [--location <name>]

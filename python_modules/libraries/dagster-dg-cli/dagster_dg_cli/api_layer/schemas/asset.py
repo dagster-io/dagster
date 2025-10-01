@@ -68,6 +68,7 @@ class DgApiAsset(BaseModel):
     group_name: str
     kinds: list[str]
     metadata_entries: list[dict]
+    dependency_keys: list[str] = []  # ["dep/one", "dep/two"]
     # Status fields - populated only for status view
     status: Optional[DgApiAssetStatus] = None
 

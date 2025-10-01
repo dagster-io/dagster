@@ -353,57 +353,6 @@ class RemoteRepository:
 
         return RemoteRepositoryAssetGraph.build(self)
 
-    def get_partition_names_for_asset_job(
-        self,
-        job_name: str,
-        selected_asset_keys: Optional[AbstractSet[AssetKey]],
-        instance: DagsterInstance,
-    ) -> Sequence[str]:
-        partitions_def = self._get_partitions_def_for_job(
-            job_name=job_name, selected_asset_keys=selected_asset_keys
-        )
-        if not partitions_def:
-            return []
-        return partitions_def.get_partition_keys(dynamic_partitions_store=instance)
-
-    def get_partition_tags_for_implicit_asset_job(
-        self,
-        job_name: str,
-        selected_asset_keys: Optional[AbstractSet[AssetKey]],
-        instance: DagsterInstance,
-        partition_name: str,
-    ) -> Mapping[str, str]:
-        return check.not_none(
-            self._get_partitions_def_for_job(
-                job_name=job_name, selected_asset_keys=selected_asset_keys
-            )
-        ).get_tags_for_partition_key(partition_name)
-
-    def _get_partitions_def_for_job(
-        self,
-        job_name: str,
-        selected_asset_keys: Optional[AbstractSet[AssetKey]],
-    ) -> Optional[PartitionsDefinition]:
-        asset_nodes = self.get_asset_node_snaps(job_name)
-        unique_partitions_defs: set[PartitionsDefinition] = set()
-        for asset_node in asset_nodes:
-            if selected_asset_keys is not None and asset_node.asset_key not in selected_asset_keys:
-                continue
-
-            if asset_node.partitions is not None:
-                unique_partitions_defs.add(asset_node.partitions.get_partitions_definition())
-
-        if len(unique_partitions_defs) == 0:
-            # Assets are all unpartitioned
-            return None
-        if len(unique_partitions_defs) == 1:
-            return next(iter(unique_partitions_defs))
-        else:
-            check.failed(
-                "There is no PartitionsDefinition shared by all the provided assets."
-                f" {len(unique_partitions_defs)} unique PartitionsDefinitions."
-            )
-
     @cached_property
     def _sensor_mappings(
         self,
