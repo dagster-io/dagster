@@ -45,6 +45,7 @@ attributes:
       end_date: "example_string"
       timezone: "example_string"
       minute_offset: 1
+    freshness_policy: "example_string"
     key: "example_string"
     key_prefix:
       - "example_string"

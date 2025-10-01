@@ -77,6 +77,7 @@ attributes:  # Optional: Attributes details
       # partition_keys:  # Optional: List of string items
         - <string>
       #
+    freshness_policy: <string>  # Optional: The freshness policy for the asset.
     key: <string>  # Optional: 
     key_prefix: <one of: string, array of string>  # Optional: Prefix the existing asset key with the provided value.
   translation_settings:  # Optional: Allows enabling or disabling various features for translating dbt models in to Dagster assets.
