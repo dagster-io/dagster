@@ -60,6 +60,7 @@ function init() {
                 ...tokenToAssetKey(key),
               },
               latestMaterializationTimestamp: null,
+              latestFailedToMaterializeTimestamp: null,
               assetHealth: null,
             };
           }
@@ -263,6 +264,7 @@ export const ASSETS_HEALTH_INFO_QUERY = gql`
     }
 
     latestMaterializationTimestamp
+    latestFailedToMaterializeTimestamp
 
     assetHealth {
       assetHealth
@@ -335,6 +337,7 @@ function buildEmptyAssetHealthFragment(key: string): AssetHealthFragment {
       ...tokenToAssetKey(key),
     },
     latestMaterializationTimestamp: null,
+    latestFailedToMaterializeTimestamp: null,
     assetHealth: null,
   };
 }
