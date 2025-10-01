@@ -251,17 +251,15 @@ class BaseWorkspaceRequestContext(LoadingContext):
         if not self.viewer_has_any_owner_definition_permissions(permission):
             return False
 
-        location = self.get_code_location(selector.location_name)
-        if not location.has_repository(selector.repository_name):
-            return False
-
-        repository = location.get_repository(selector.repository_name)
         if isinstance(selector, JobSelector):
-            remote_definition = repository.get_full_job(selector.job_name)
+            remote_definition = self.get_full_job(selector)
         elif isinstance(selector, ScheduleSelector):
-            remote_definition = repository.get_schedule(selector.schedule_name)
+            remote_definition = self.get_schedule(selector)
         elif isinstance(selector, SensorSelector):
-            remote_definition = repository.get_sensor(selector.sensor_name)
+            remote_definition = self.get_sensor(selector)
+
+        if not remote_definition:
+            return False
 
         return self.has_permission_for_definition(permission, remote_definition)
 
