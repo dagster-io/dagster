@@ -3,23 +3,25 @@
     {
       "assetKey": {
         "path": [
-          "forecasting",
-          "model_stats_by_month"
+          "aws",
+          "cloud-prod",
+          "workspace_staging_assets"
         ]
       },
-      "description": "Model errors by month",
-      "groupName": "FORECASTING",
-      "id": "data-eng-pipeline.__repository__.[\"forecasting\", \"model_stats_by_month\"]",
-      "kinds": [
-        "scikitlearn",
-        "snowflake"
-      ],
-      "metadataEntries": [
+      "dependencyKeys": [
         {
-          "description": null,
-          "label": "dagster/code_references"
+          "path": [
+            "cloud-prod-workspace-replication",
+            "staging",
+            "assets"
+          ]
         }
-      ]
+      ],
+      "description": "Snowflake stages for AWS data, creates new stages for new assets, refreses existing stages.",
+      "groupName": "aws_stages",
+      "id": "dagster_open_platform.__repository__.[\"aws\", \"cloud-prod\", \"workspace_staging_assets\"]",
+      "kinds": [],
+      "metadataEntries": []
     }
   ]
 }
