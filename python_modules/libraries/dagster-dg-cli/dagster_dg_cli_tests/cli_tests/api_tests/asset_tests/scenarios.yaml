@@ -2,10 +2,10 @@ success_multiple_assets:
   command: "dg api asset list --json"
 
 success_single_asset:
-  command: "dg api asset get country_stats --json"
+  command: "dg api asset get asset_health_report_slack --json"
 
 success_nested_asset:
-  command: "dg api asset get forecasting/model_stats_by_month --json"
+  command: "dg api asset get aws/cloud-prod/workspace_staging_assets --json"
 
 success_paginated_assets:
   command: "dg api asset list --limit 10 --json"
@@ -18,13 +18,13 @@ success_assets_status_view:
   command: "dg api asset list --view status --json"
 
 success_single_asset_status_view:
-  command: "dg api asset get forecasting/model_stats_by_month --view status --json"
+  command: "dg api asset get aws/cloud-prod/workspace_staging_jobs --view status --json"
 
 success_assets_status_view_human_readable:
   command: "dg api asset list --view status"
 
 success_single_asset_status_view_human_readable:
-  command: "dg api asset get forecasting/model_stats_by_month --view status"
+  command: "dg api asset get aws/cloud-prod/workspace_staging_metadata --view status"
 
 success_paginated_assets_status_view:
   command: "dg api asset list --view status --limit 10 --json"

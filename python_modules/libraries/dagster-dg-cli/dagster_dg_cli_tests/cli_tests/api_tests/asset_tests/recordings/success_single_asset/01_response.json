@@ -3,22 +3,17 @@
     {
       "assetKey": {
         "path": [
-          "country_stats"
+          "asset_health_report_slack"
         ]
       },
-      "description": null,
-      "groupName": "default",
-      "id": "basics.__repository__.[\"country_stats\"]",
+      "dependencyKeys": [],
+      "description": "Sends Dagster asset health report to #bot-purina Slack channel",
+      "groupName": "monitoring",
+      "id": "dagster_open_platform.__repository__.[\"asset_health_report_slack\"]",
       "kinds": [
-        "Kubernetes",
-        "S3"
+        "slack"
       ],
-      "metadataEntries": [
-        {
-          "description": null,
-          "label": "dagster/code_references"
-        }
-      ]
+      "metadataEntries": []
     }
   ]
 }

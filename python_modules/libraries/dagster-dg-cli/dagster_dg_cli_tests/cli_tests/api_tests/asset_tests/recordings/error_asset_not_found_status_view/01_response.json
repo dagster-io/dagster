@@ -4,10 +4,10 @@
     "nodes": [
       {
         "assetHealth": {
-          "assetChecksStatus": "NOT_APPLICABLE",
+          "assetChecksStatus": "UNKNOWN",
           "assetChecksStatusMetadata": null,
           "assetHealth": "UNKNOWN",
-          "freshnessStatus": "NOT_APPLICABLE",
+          "freshnessStatus": "UNKNOWN",
           "freshnessStatusMetadata": null,
           "materializationStatus": "UNKNOWN",
           "materializationStatusMetadata": null
