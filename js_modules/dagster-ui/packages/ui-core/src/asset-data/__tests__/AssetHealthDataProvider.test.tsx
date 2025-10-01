@@ -78,6 +78,7 @@ describe('AssetHealthDataProvider integration tests', () => {
             path: ['asset_without_def'],
           }),
           latestMaterializationTimestamp: null,
+          latestFailedToMaterializeTimestamp: null,
           assetHealth: null,
         });
       });
@@ -148,6 +149,7 @@ describe('AssetHealthDataProvider integration tests', () => {
             path: ['asset3'],
           }),
           latestMaterializationTimestamp: null,
+          latestFailedToMaterializeTimestamp: null,
           assetHealth: null,
         });
 
@@ -158,6 +160,7 @@ describe('AssetHealthDataProvider integration tests', () => {
             path: ['asset4'],
           }),
           latestMaterializationTimestamp: null,
+          latestFailedToMaterializeTimestamp: null,
           assetHealth: null,
         });
       });
@@ -196,6 +199,7 @@ describe('AssetHealthDataProvider integration tests', () => {
             path: ['asset1'],
           }),
           latestMaterializationTimestamp: null,
+          latestFailedToMaterializeTimestamp: null,
           assetHealth: null,
         });
 
@@ -206,6 +210,7 @@ describe('AssetHealthDataProvider integration tests', () => {
             path: ['asset2'],
           }),
           latestMaterializationTimestamp: null,
+          latestFailedToMaterializeTimestamp: null,
           assetHealth: null,
         });
       });
@@ -311,6 +316,7 @@ describe('AssetHealthDataProvider integration tests', () => {
             path: ['namespace', 'deeply', 'nested', 'asset'],
           }),
           latestMaterializationTimestamp: null,
+          latestFailedToMaterializeTimestamp: null,
           assetHealth: null,
         });
       });
@@ -338,6 +344,7 @@ describe('AssetHealthDataProvider integration tests', () => {
             path: ['asset-with-dashes', 'asset_with_underscores'],
           }),
           latestMaterializationTimestamp: null,
+          latestFailedToMaterializeTimestamp: null,
           assetHealth: null,
         });
       });
