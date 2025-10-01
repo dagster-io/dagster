@@ -56,6 +56,7 @@ def format_assets(assets: "DgApiAssetList", as_json: bool) -> str:
             f"Description: {asset.description or 'None'}",
             f"Group: {asset.group_name}",
             f"Kinds: {', '.join(asset.kinds) if asset.kinds else 'None'}",
+            f"Deps: {', '.join(asset.dependency_keys) if asset.dependency_keys else 'None'}",
         ]
 
         # Add status information if present
@@ -168,6 +169,7 @@ def format_asset(asset: "DgApiAsset", as_json: bool) -> str:
         f"Description: {asset.description or 'None'}",
         f"Group: {asset.group_name}",
         f"Kinds: {', '.join(asset.kinds) if asset.kinds else 'None'}",
+        f"Deps: {', '.join(asset.dependency_keys) if asset.dependency_keys else 'None'}",
     ]
 
     # Add status information if present
