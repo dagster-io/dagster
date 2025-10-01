@@ -1,6 +1,7 @@
-import {Box, Colors, Tag} from '@dagster-io/ui-components';
+import {Box, Tag} from '@dagster-io/ui-components';
 import {UserDisplay} from 'shared/runs/UserDisplay.oss';
-import styled from 'styled-components';
+
+import styles from './css/DefinitionOwners.module.css';
 
 export interface UserOwner {
   __typename: 'UserDefinitionOwner' | 'UserAssetOwner';
@@ -27,9 +28,9 @@ export const DefinitionOwners = ({owners}: DefinitionOwnersProps) => {
     <Box flex={{gap: 4, wrap: 'wrap'}}>
       {owners.map((owner, idx) =>
         owner.__typename === 'UserDefinitionOwner' || owner.__typename === 'UserAssetOwner' ? (
-          <UserOwnerWrapper key={idx}>
+          <div key={idx} className={styles.user_display}>
             <UserDisplay email={owner.email} size="very-small" />
-          </UserOwnerWrapper>
+          </div>
         ) : (
           <Tag icon="people" key={idx}>
             {(owner as TeamOwner).team}
@@ -39,10 +40,3 @@ export const DefinitionOwners = ({owners}: DefinitionOwnersProps) => {
     </Box>
   );
 };
-
-const UserOwnerWrapper = styled.div`
-  > div {
-    border: 1px solid ${Colors.backgroundGray()};
-    border-radius: 8px;
-  }
-`;

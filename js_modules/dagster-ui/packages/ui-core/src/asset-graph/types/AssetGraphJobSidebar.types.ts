@@ -1329,4 +1329,4 @@ export type AssetGraphSidebarQuery = {
       };
 };
 
-export const AssetGraphSidebarQueryVersion = 'b8f5c830ecb670facdc1493343898810f851ce7c089a91a50b666f61b24e20d1';
+export const AssetGraphSidebarQueryVersion = '423d6b155cc63752472fa9bde2ff75a6e872fa1c230473394bdf6057789ad9e8';

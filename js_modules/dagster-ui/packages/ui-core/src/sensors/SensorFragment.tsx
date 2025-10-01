@@ -29,11 +29,9 @@ export const SENSOR_FRAGMENT = gql`
     }
     owners {
       ... on UserDefinitionOwner {
-        __typename
         email
       }
       ... on TeamDefinitionOwner {
-        __typename
         team
       }
     }
