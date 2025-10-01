@@ -1,6 +1,6 @@
 from abc import ABC
 from collections.abc import Iterable, Mapping
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from enum import Enum
 from typing import TYPE_CHECKING, Any, Optional, Union
 
@@ -219,10 +219,10 @@ class FreshnessStateRecord(LoadableBy[AssetKey]):
     @staticmethod
     def from_db_row(db_row):
         return FreshnessStateRecord(
-            entity_key=check.not_none(AssetKey.from_db_string(db_row[0])),
-            freshness_state=FreshnessState(db_row[3]),
-            record_body=deserialize_value(db_row[4], FreshnessStateRecordBody),
-            updated_at=db_row[5],
+            entity_key=check.not_none(AssetKey.from_db_string(db_row.entity_key)),
+            freshness_state=FreshnessState(db_row.freshness_state),
+            record_body=deserialize_value(db_row.record_body, FreshnessStateRecordBody),
+            updated_at=db_row.update_timestamp.replace(tzinfo=timezone.utc),
         )
 
     @staticmethod

@@ -41,7 +41,7 @@ interface IParseState {
 function parentsPoppingItemsDeeperThan(parents: IParseStateParent[], indent: number) {
   while (parents.length > 0) {
     const immediateParent = parents[parents.length - 1];
-    if (!immediateParent || immediateParent.indent >= indent) {
+    if (!immediateParent || immediateParent.indent < indent) {
       break;
     }
     parents = parents.slice(0, parents.length - 1);

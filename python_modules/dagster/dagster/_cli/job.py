@@ -60,7 +60,6 @@ from dagster._core.remote_representation.external_data import (
     PartitionNamesSnap,
     PartitionSetExecutionParamSnap,
 )
-from dagster._core.remote_representation.handle import RepositoryHandle
 from dagster._core.snap import JobSnap, NodeInvocationSnap
 from dagster._core.storage.dagster_run import DagsterRun
 from dagster._core.storage.tags import (
@@ -835,15 +834,9 @@ def execute_backfill_command(
             raise click.UsageError(f"Job `{remote_job.name}` is not partitioned.")
 
         run_tags = _normalize_cli_tags(tags)
-
-        repo_handle = RepositoryHandle.from_location(
-            repository_name=repo.name,
-            code_location=code_location,
-        )
-
         try:
-            partition_names_or_error = code_location.get_partition_names(
-                repository_handle=repo_handle,
+            partition_names_or_error = workspace.get_partition_names(
+                repository_selector=repo.selector,
                 job_name=remote_job.name,
                 instance=instance,
                 selected_asset_keys=None,
@@ -890,7 +883,7 @@ def execute_backfill_command(
             )
             try:
                 partition_execution_data = code_location.get_partition_set_execution_params(
-                    repository_handle=repo_handle,
+                    repository_handle=repo.handle,
                     partition_set_name=job_partition_set.name,
                     partition_names=partition_names,
                     instance=instance,
@@ -908,6 +901,7 @@ def execute_backfill_command(
 
             for partition_data in partition_execution_data.partition_data:
                 dagster_run = create_backfill_run(
+                    workspace,
                     instance,
                     code_location,
                     remote_job,

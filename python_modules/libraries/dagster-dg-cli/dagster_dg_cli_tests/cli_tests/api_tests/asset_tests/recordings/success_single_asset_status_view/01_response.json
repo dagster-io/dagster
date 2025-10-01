@@ -7,42 +7,43 @@
           "assetChecksStatus": "NOT_APPLICABLE",
           "assetChecksStatusMetadata": null,
           "assetHealth": "HEALTHY",
-          "freshnessStatus": "NOT_APPLICABLE",
-          "freshnessStatusMetadata": null,
+          "freshnessStatus": "HEALTHY",
+          "freshnessStatusMetadata": {
+            "lastMaterializedTimestamp": 1759310437.7702928
+          },
           "materializationStatus": "HEALTHY",
-          "materializationStatusMetadata": {
-            "numMissingPartitions": 31,
-            "totalNumPartitions": 44
-          }
+          "materializationStatusMetadata": null
         },
         "assetMaterializations": [
           {
-            "partition": "2023-01-01",
-            "runId": "fc70230e-2fcc-4bff-8400-5eefca046bbf",
-            "timestamp": "1677621777152"
+            "partition": null,
+            "runId": "3fb15668-f967-45ec-ac66-7682a6097583",
+            "timestamp": "1759310437770"
           }
         ],
         "definition": {
-          "description": "Model errors by month",
+          "dependencyKeys": [
+            {
+              "path": [
+                "cloud-prod-workspace-replication",
+                "staging",
+                "jobs"
+              ]
+            }
+          ],
+          "description": "Snowflake stages for AWS data, creates new stages for new assets, refreses existing stages.",
           "freshnessInfo": null,
           "freshnessPolicy": null,
-          "groupName": "FORECASTING",
-          "kinds": [
-            "scikitlearn",
-            "snowflake"
-          ],
-          "metadataEntries": [
-            {
-              "description": null,
-              "label": "dagster/code_references"
-            }
-          ]
+          "groupName": "aws_stages",
+          "kinds": [],
+          "metadataEntries": []
         },
-        "id": "[\"forecasting\", \"model_stats_by_month\"]",
+        "id": "[\"aws\", \"cloud-prod\", \"workspace_staging_jobs\"]",
         "key": {
           "path": [
-            "forecasting",
-            "model_stats_by_month"
+            "aws",
+            "cloud-prod",
+            "workspace_staging_jobs"
           ]
         }
       }

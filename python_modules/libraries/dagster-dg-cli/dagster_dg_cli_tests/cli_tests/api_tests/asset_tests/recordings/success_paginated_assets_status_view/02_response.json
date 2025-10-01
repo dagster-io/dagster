@@ -4,507 +4,191 @@
     "nodes": [
       {
         "assetHealth": {
-          "assetChecksStatus": "NOT_APPLICABLE",
+          "assetChecksStatus": "UNKNOWN",
           "assetChecksStatusMetadata": null,
-          "assetHealth": "HEALTHY",
-          "freshnessStatus": "NOT_APPLICABLE",
+          "assetHealth": "UNKNOWN",
+          "freshnessStatus": "UNKNOWN",
           "freshnessStatusMetadata": null,
-          "materializationStatus": "HEALTHY",
+          "materializationStatus": "UNKNOWN",
           "materializationStatusMetadata": null
         },
-        "assetMaterializations": [
-          {
-            "partition": null,
-            "runId": "db0cf46a-14b3-4f79-80f6-6961f2d4fb03",
-            "timestamp": "1680712081404"
-          }
-        ],
+        "assetMaterializations": [],
         "definition": null,
-        "id": "[\"ANALYTICS\", \"all_orders\"]",
+        "id": "[\"__bigquery_query_metadata___ASSET_JOB_0\"]",
         "key": {
           "path": [
-            "ANALYTICS",
-            "all_orders"
+            "__bigquery_query_metadata___ASSET_JOB_0"
           ]
         }
       },
       {
         "assetHealth": {
-          "assetChecksStatus": "HEALTHY",
+          "assetChecksStatus": "UNKNOWN",
           "assetChecksStatusMetadata": null,
-          "assetHealth": "HEALTHY",
-          "freshnessStatus": "HEALTHY",
-          "freshnessStatusMetadata": {
-            "lastMaterializedTimestamp": 1757376145.523822
-          },
-          "materializationStatus": "HEALTHY",
-          "materializationStatusMetadata": null
-        },
-        "assetMaterializations": [
-          {
-            "partition": null,
-            "runId": "83112ac7-a739-4b79-8f1f-6d91911a029a",
-            "timestamp": "1757376145523"
-          }
-        ],
-        "definition": {
-          "description": "dbt model for: company_perf \n \n\tselect\n\t        company,\n\t        sum(n_orders) as n_orders,\n\t        sum(total_revenue) as total_revenue\n\tfrom {{ ref(\"company_stats\") }}\n\tgroup by 1",
-          "freshnessInfo": null,
-          "freshnessPolicy": null,
-          "groupName": "ANALYTICS",
-          "kinds": [
-            "dbt",
-            "snowflake"
-          ],
-          "metadataEntries": [
-            {
-              "description": null,
-              "label": "dagster-dbt/materialization_type",
-              "text": "table"
-            },
-            {
-              "description": null,
-              "label": "dagster/table_name",
-              "text": "DEMO_DB2.analytics.company_perf"
-            },
-            {
-              "description": null,
-              "label": "partition_expr",
-              "text": "order_date"
-            },
-            {
-              "description": null,
-              "label": "dagster_dbt/manifest",
-              "text": "[DbtManifestWrapper] (unserializable)"
-            },
-            {
-              "description": null,
-              "label": "dagster_dbt/dagster_dbt_translator",
-              "text": "[CustomDagsterDbtTranslator] (unserializable)"
-            },
-            {
-              "description": null,
-              "label": "dagster_dbt/unique_id",
-              "text": "model.dbt_project.company_perf"
-            },
-            {
-              "description": null,
-              "label": "dagster/code_references"
-            }
-          ]
-        },
-        "id": "[\"ANALYTICS\", \"company_perf\"]",
-        "key": {
-          "path": [
-            "ANALYTICS",
-            "company_perf"
-          ]
-        }
-      },
-      {
-        "assetHealth": {
-          "assetChecksStatus": "HEALTHY",
-          "assetChecksStatusMetadata": null,
-          "assetHealth": "HEALTHY",
-          "freshnessStatus": "HEALTHY",
-          "freshnessStatusMetadata": {
-            "lastMaterializedTimestamp": 1757521279.9490397
-          },
-          "materializationStatus": "HEALTHY",
-          "materializationStatusMetadata": null
-        },
-        "assetMaterializations": [
-          {
-            "partition": null,
-            "runId": "a484f830-3007-424b-862e-4fefbd733bab",
-            "timestamp": "1757521279949"
-          }
-        ],
-        "definition": {
-          "description": "dbt model for: company_stats \n \n\t{{\n\t        config(tags=[\"core_kpis\"])\n\t}}\n\tselect\n\t        order_date,\n\t        company,\n\t        count(*) as n_orders,\n\t        sum(order_total) as total_revenue\n\tfrom {{ ref(\"orders_augmented\") }}\n\tgroup by 1, 2",
-          "freshnessInfo": null,
-          "freshnessPolicy": null,
-          "groupName": "ANALYTICS",
-          "kinds": [
-            "dbt",
-            "snowflake"
-          ],
-          "metadataEntries": [
-            {
-              "description": null,
-              "label": "dagster-dbt/materialization_type",
-              "text": "table"
-            },
-            {
-              "description": null,
-              "label": "dagster/table_name",
-              "text": "DEMO_DB2.analytics.company_stats"
-            },
-            {
-              "description": null,
-              "label": "partition_expr",
-              "text": "order_date"
-            },
-            {
-              "description": null,
-              "label": "dagster_dbt/manifest",
-              "text": "[DbtManifestWrapper] (unserializable)"
-            },
-            {
-              "description": null,
-              "label": "dagster_dbt/dagster_dbt_translator",
-              "text": "[CustomDagsterDbtTranslator] (unserializable)"
-            },
-            {
-              "description": null,
-              "label": "dagster_dbt/unique_id",
-              "text": "model.dbt_project.company_stats"
-            },
-            {
-              "description": null,
-              "label": "dagster/code_references"
-            }
-          ]
-        },
-        "id": "[\"ANALYTICS\", \"company_stats\"]",
-        "key": {
-          "path": [
-            "ANALYTICS",
-            "company_stats"
-          ]
-        }
-      },
-      {
-        "assetHealth": {
-          "assetChecksStatus": "NOT_APPLICABLE",
-          "assetChecksStatusMetadata": null,
-          "assetHealth": "HEALTHY",
-          "freshnessStatus": "NOT_APPLICABLE",
+          "assetHealth": "UNKNOWN",
+          "freshnessStatus": "UNKNOWN",
           "freshnessStatusMetadata": null,
-          "materializationStatus": "HEALTHY",
+          "materializationStatus": "UNKNOWN",
           "materializationStatusMetadata": null
         },
-        "assetMaterializations": [
-          {
-            "partition": "2023-06-11",
-            "runId": "03b7fb49-03d6-4e2a-a19e-c8deb545dc95",
-            "timestamp": "1686528537126"
-          }
-        ],
+        "assetMaterializations": [],
         "definition": null,
-        "id": "[\"ANALYTICS\", \"daily_order_summary\"]",
+        "id": "[\"__bigquery_query_metadata_bigquery_jaffle_shop_job\"]",
         "key": {
           "path": [
-            "ANALYTICS",
-            "daily_order_summary"
+            "__bigquery_query_metadata_bigquery_jaffle_shop_job"
           ]
         }
       },
       {
         "assetHealth": {
-          "assetChecksStatus": "HEALTHY",
+          "assetChecksStatus": "UNKNOWN",
           "assetChecksStatusMetadata": null,
-          "assetHealth": "WARNING",
-          "freshnessStatus": "WARNING",
-          "freshnessStatusMetadata": {
-            "lastMaterializedTimestamp": 1757203402.5526671
-          },
-          "materializationStatus": "HEALTHY",
-          "materializationStatusMetadata": null
-        },
-        "assetMaterializations": [
-          {
-            "partition": "2025-08-31",
-            "runId": "112a4461-789e-477b-a88c-872cf8c24316",
-            "timestamp": "1757203402552"
-          }
-        ],
-        "definition": {
-          "description": "dbt model for: order_stats \n \n\tselect\n\t        {{ date_trunc(\"day\", \"order_date\") }} as order_date,\n\t        count(*) as n_orders,\n\t        sum(order_total) as total_revenue\n\tfrom {{ ref(\"orders_augmented\") }}\n\t{% if is_incremental() %}\n\tWHERE {{ date_trunc(\"day\", \"order_date\") }} >=  '{{ var('min_date') }}' AND {{ date_trunc(\"day\", \"order_date\") }} <=  '{{ var('max_date') }}'\n\t{% endif %}\n\tgroup by 1",
-          "freshnessInfo": null,
-          "freshnessPolicy": null,
-          "groupName": "ANALYTICS",
-          "kinds": [
-            "dbt",
-            "snowflake"
-          ],
-          "metadataEntries": [
-            {
-              "description": null,
-              "label": "dagster-dbt/materialization_type",
-              "text": "table"
-            },
-            {
-              "description": null,
-              "label": "dagster/table_name",
-              "text": "DEMO_DB2.analytics.order_stats"
-            },
-            {
-              "description": null,
-              "label": "partition_expr",
-              "text": "order_date"
-            },
-            {
-              "description": null,
-              "label": "dagster_dbt/manifest",
-              "text": "[DbtManifestWrapper] (unserializable)"
-            },
-            {
-              "description": null,
-              "label": "dagster_dbt/dagster_dbt_translator",
-              "text": "[CustomDagsterDbtTranslator] (unserializable)"
-            },
-            {
-              "description": null,
-              "label": "dagster_dbt/unique_id",
-              "text": "model.dbt_project.order_stats"
-            },
-            {
-              "description": null,
-              "label": "dagster/code_references"
-            }
-          ]
-        },
-        "id": "[\"ANALYTICS\", \"order_stats\"]",
-        "key": {
-          "path": [
-            "ANALYTICS",
-            "order_stats"
-          ]
-        }
-      },
-      {
-        "assetHealth": {
-          "assetChecksStatus": "HEALTHY",
-          "assetChecksStatusMetadata": null,
-          "assetHealth": "DEGRADED",
-          "freshnessStatus": "WARNING",
-          "freshnessStatusMetadata": {
-            "lastMaterializedTimestamp": 1757462531.632167
-          },
-          "materializationStatus": "DEGRADED",
-          "materializationStatusMetadata": {
-            "numFailedPartitions": 3,
-            "numMissingPartitions": 0,
-            "totalNumPartitions": 839
-          }
-        },
-        "assetMaterializations": [
-          {
-            "partition": "2025-09-09",
-            "runId": "085aa81e-11f7-4848-8e25-8b9e37b3a753",
-            "timestamp": "1757462531632"
-          }
-        ],
-        "definition": {
-          "description": "dbt model for: orders_augmented \n \n\t{{\n\t        config(tags=[\"core_kpis\"])\n\t}}\n\tselect\n\t        o.*,\n\t        u.company,\n\t        l.state,\n\t        l.zip_code\n\tfrom {{ ref(\"orders_cleaned\") }} o \n\n\tleft join {{ ref(\"users_cleaned\") }} u\n\t       on o.user_id = u.user_id\n\n\t left join {{ ref(\"locations_cleaned\") }} l\n\t        on o.user_id = l.user_id\n\n\t{% if is_incremental() %}\n\tWHERE o.order_date >= '{{ var('min_date') }}' AND o.order_date <= '{{ var('max_date') }}'\n\t{% endif %}",
-          "freshnessInfo": null,
-          "freshnessPolicy": null,
-          "groupName": "ANALYTICS",
-          "kinds": [
-            "dbt",
-            "snowflake"
-          ],
-          "metadataEntries": [
-            {
-              "description": null,
-              "label": "dagster-dbt/materialization_type",
-              "text": "table"
-            },
-            {
-              "description": null,
-              "label": "dagster/column_schema"
-            },
-            {
-              "description": null,
-              "label": "dagster/table_name",
-              "text": "DEMO_DB2.analytics.orders_augmented"
-            },
-            {
-              "description": null,
-              "label": "partition_expr",
-              "text": "order_date"
-            },
-            {
-              "description": null,
-              "label": "dagster_dbt/manifest",
-              "text": "[DbtManifestWrapper] (unserializable)"
-            },
-            {
-              "description": null,
-              "label": "dagster_dbt/dagster_dbt_translator",
-              "text": "[CustomDagsterDbtTranslator] (unserializable)"
-            },
-            {
-              "description": null,
-              "label": "dagster_dbt/unique_id",
-              "text": "model.dbt_project.orders_augmented"
-            },
-            {
-              "description": null,
-              "label": "dagster/code_references"
-            }
-          ]
-        },
-        "id": "[\"ANALYTICS\", \"orders_augmented\"]",
-        "key": {
-          "path": [
-            "ANALYTICS",
-            "orders_augmented"
-          ]
-        }
-      },
-      {
-        "assetHealth": {
-          "assetChecksStatus": "NOT_APPLICABLE",
-          "assetChecksStatusMetadata": null,
-          "assetHealth": "HEALTHY",
-          "freshnessStatus": "NOT_APPLICABLE",
+          "assetHealth": "UNKNOWN",
+          "freshnessStatus": "UNKNOWN",
           "freshnessStatusMetadata": null,
-          "materializationStatus": "HEALTHY",
+          "materializationStatus": "UNKNOWN",
           "materializationStatusMetadata": null
         },
-        "assetMaterializations": [
-          {
-            "partition": "2023-06-15-20:00",
-            "runId": "3049e8c3-f335-44c5-8c05-624463e1b205",
-            "timestamp": "1686863239996"
-          }
-        ],
+        "assetMaterializations": [],
         "definition": null,
-        "id": "[\"ANALYTICS\", \"orders_cleaned\"]",
+        "id": "[\"__bigquery_query_metadata_bigquery_standalone_op_job\"]",
         "key": {
           "path": [
-            "ANALYTICS",
-            "orders_cleaned"
+            "__bigquery_query_metadata_bigquery_standalone_op_job"
           ]
         }
       },
       {
         "assetHealth": {
-          "assetChecksStatus": "WARNING",
-          "assetChecksStatusMetadata": {
-            "numWarningChecks": 1,
-            "totalNumChecks": 1
-          },
-          "assetHealth": "DEGRADED",
-          "freshnessStatus": "DEGRADED",
-          "freshnessStatusMetadata": {
-            "lastMaterializedTimestamp": 1756685035.8632421
-          },
-          "materializationStatus": "HEALTHY",
-          "materializationStatusMetadata": null
-        },
-        "assetMaterializations": [
-          {
-            "partition": null,
-            "runId": "41b0e33d-a965-423f-acca-b444a7058dba",
-            "timestamp": "1756685035863"
-          }
-        ],
-        "definition": {
-          "description": "dbt model for: sku_stats \n \n\tselect\n\t        order_date,\n\t        sku,\n\t        count(*) as n_orders,\n\t        sum(order_total) as total_revenue\n\tfrom {{ ref(\"orders_augmented\") }}\n\tgroup by 1, 2",
-          "freshnessInfo": null,
-          "freshnessPolicy": null,
-          "groupName": "ANALYTICS",
-          "kinds": [
-            "dbt",
-            "snowflake"
-          ],
-          "metadataEntries": [
-            {
-              "description": null,
-              "label": "dagster-dbt/materialization_type",
-              "text": "table"
-            },
-            {
-              "description": null,
-              "label": "dagster/table_name",
-              "text": "DEMO_DB2.analytics.sku_stats"
-            },
-            {
-              "description": null,
-              "label": "partition_expr",
-              "text": "order_date"
-            },
-            {
-              "description": null,
-              "label": "dagster_dbt/manifest",
-              "text": "[DbtManifestWrapper] (unserializable)"
-            },
-            {
-              "description": null,
-              "label": "dagster_dbt/dagster_dbt_translator",
-              "text": "[CustomDagsterDbtTranslator] (unserializable)"
-            },
-            {
-              "description": null,
-              "label": "dagster_dbt/unique_id",
-              "text": "model.dbt_project.sku_stats"
-            },
-            {
-              "description": null,
-              "label": "dagster/code_references"
-            }
-          ]
-        },
-        "id": "[\"ANALYTICS\", \"sku_stats\"]",
-        "key": {
-          "path": [
-            "ANALYTICS",
-            "sku_stats"
-          ]
-        }
-      },
-      {
-        "assetHealth": {
-          "assetChecksStatus": "NOT_APPLICABLE",
+          "assetChecksStatus": "UNKNOWN",
           "assetChecksStatusMetadata": null,
-          "assetHealth": "HEALTHY",
-          "freshnessStatus": "NOT_APPLICABLE",
+          "assetHealth": "UNKNOWN",
+          "freshnessStatus": "UNKNOWN",
           "freshnessStatusMetadata": null,
-          "materializationStatus": "HEALTHY",
+          "materializationStatus": "UNKNOWN",
           "materializationStatusMetadata": null
         },
-        "assetMaterializations": [
-          {
-            "partition": null,
-            "runId": "db0cf46a-14b3-4f79-80f6-6961f2d4fb03",
-            "timestamp": "1680711533052"
-          }
-        ],
+        "assetMaterializations": [],
         "definition": null,
-        "id": "[\"ANALYTICS\", \"top_users\"]",
+        "id": "[\"__snowflake_query_metadata___ASSET_JOB\"]",
         "key": {
           "path": [
-            "ANALYTICS",
-            "top_users"
+            "__snowflake_query_metadata___ASSET_JOB"
           ]
         }
       },
       {
         "assetHealth": {
-          "assetChecksStatus": "NOT_APPLICABLE",
+          "assetChecksStatus": "UNKNOWN",
           "assetChecksStatusMetadata": null,
-          "assetHealth": "HEALTHY",
-          "freshnessStatus": "NOT_APPLICABLE",
+          "assetHealth": "UNKNOWN",
+          "freshnessStatus": "UNKNOWN",
           "freshnessStatusMetadata": null,
-          "materializationStatus": "HEALTHY",
+          "materializationStatus": "UNKNOWN",
           "materializationStatusMetadata": null
         },
-        "assetMaterializations": [
-          {
-            "partition": "2023-06-15-20:00",
-            "runId": "3049e8c3-f335-44c5-8c05-624463e1b205",
-            "timestamp": "1686863145824"
-          }
-        ],
+        "assetMaterializations": [],
         "definition": null,
-        "id": "[\"ANALYTICS\", \"users_cleaned\"]",
+        "id": "[\"__snowflake_query_metadata___ASSET_JOB_0\"]",
         "key": {
           "path": [
-            "ANALYTICS",
-            "users_cleaned"
+            "__snowflake_query_metadata___ASSET_JOB_0"
+          ]
+        }
+      },
+      {
+        "assetHealth": {
+          "assetChecksStatus": "UNKNOWN",
+          "assetChecksStatusMetadata": null,
+          "assetHealth": "UNKNOWN",
+          "freshnessStatus": "UNKNOWN",
+          "freshnessStatusMetadata": null,
+          "materializationStatus": "UNKNOWN",
+          "materializationStatusMetadata": null
+        },
+        "assetMaterializations": [],
+        "definition": null,
+        "id": "[\"__snowflake_query_metadata_billing_issues_rollup\"]",
+        "key": {
+          "path": [
+            "__snowflake_query_metadata_billing_issues_rollup"
+          ]
+        }
+      },
+      {
+        "assetHealth": {
+          "assetChecksStatus": "UNKNOWN",
+          "assetChecksStatusMetadata": null,
+          "assetHealth": "UNKNOWN",
+          "freshnessStatus": "UNKNOWN",
+          "freshnessStatusMetadata": null,
+          "materializationStatus": "UNKNOWN",
+          "materializationStatusMetadata": null
+        },
+        "assetMaterializations": [],
+        "definition": null,
+        "id": "[\"__snowflake_query_metadata_detect_self_serve_customers\"]",
+        "key": {
+          "path": [
+            "__snowflake_query_metadata_detect_self_serve_customers"
+          ]
+        }
+      },
+      {
+        "assetHealth": {
+          "assetChecksStatus": "UNKNOWN",
+          "assetChecksStatusMetadata": null,
+          "assetHealth": "UNKNOWN",
+          "freshnessStatus": "UNKNOWN",
+          "freshnessStatusMetadata": null,
+          "materializationStatus": "UNKNOWN",
+          "materializationStatusMetadata": null
+        },
+        "assetMaterializations": [],
+        "definition": null,
+        "id": "[\"__snowflake_query_metadata_detect_self_serve_customers_job\"]",
+        "key": {
+          "path": [
+            "__snowflake_query_metadata_detect_self_serve_customers_job"
+          ]
+        }
+      },
+      {
+        "assetHealth": {
+          "assetChecksStatus": "UNKNOWN",
+          "assetChecksStatusMetadata": null,
+          "assetHealth": "UNKNOWN",
+          "freshnessStatus": "UNKNOWN",
+          "freshnessStatusMetadata": null,
+          "materializationStatus": "UNKNOWN",
+          "materializationStatusMetadata": null
+        },
+        "assetMaterializations": [],
+        "definition": null,
+        "id": "[\"__snowflake_query_metadata_self_serve_attribution_job\"]",
+        "key": {
+          "path": [
+            "__snowflake_query_metadata_self_serve_attribution_job"
+          ]
+        }
+      },
+      {
+        "assetHealth": {
+          "assetChecksStatus": "UNKNOWN",
+          "assetChecksStatusMetadata": null,
+          "assetHealth": "UNKNOWN",
+          "freshnessStatus": "UNKNOWN",
+          "freshnessStatusMetadata": null,
+          "materializationStatus": "UNKNOWN",
+          "materializationStatusMetadata": null
+        },
+        "assetMaterializations": [],
+        "definition": null,
+        "id": "[\"__snowflake_query_metadata_self_serve_customer_attribution_check_all_partitions_job\"]",
+        "key": {
+          "path": [
+            "__snowflake_query_metadata_self_serve_customer_attribution_check_all_partitions_job"
           ]
         }
       }
