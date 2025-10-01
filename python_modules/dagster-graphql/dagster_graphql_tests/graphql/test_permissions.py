@@ -70,9 +70,21 @@ class FakeMutation:
         pass
 
 
+class FakeMutationAsync:
+    @check_permission("fake_permission")
+    async def mutate(self, graphene_info: ResolveInfo, **_kwargs):
+        pass
+
+
 class FakeOtherPermissionMutation:
     @check_permission("fake_other_permission")
     def mutate(self, graphene_info: ResolveInfo, **_kwargs):
+        pass
+
+
+class FakeOtherPermissionMutationAsync:
+    @check_permission("fake_other_permission")
+    async def mutate(self, graphene_info: ResolveInfo, **_kwargs):
         pass
 
 
@@ -133,9 +145,24 @@ class EndpointMissingRequiredPermissionCheck:
         pass
 
 
+class EndpointMissingRequiredPermissionCheckAsync:
+    @require_permission_check(Permissions.LAUNCH_PARTITION_BACKFILL)
+    async def mutate(self, graphene_info, **_kwargs):
+        pass
+
+
 class FakeEnumLocationPermissionMutation:
     @require_permission_check(Permissions.LAUNCH_PIPELINE_EXECUTION)
     def mutate(self, graphene_info, **kwargs):
+        location_name = kwargs["locationName"]
+        assert_permission_for_location(
+            graphene_info, Permissions.LAUNCH_PIPELINE_EXECUTION, location_name
+        )
+
+
+class FakeEnumLocationPermissionMutationAsync:
+    @require_permission_check(Permissions.LAUNCH_PIPELINE_EXECUTION)
+    async def mutate(self, graphene_info, **kwargs):
         location_name = kwargs["locationName"]
         assert_permission_for_location(
             graphene_info, Permissions.LAUNCH_PIPELINE_EXECUTION, location_name
@@ -186,6 +213,16 @@ def test_check_location_mutation(fake_graphene_info):
         mutation.mutate(fake_graphene_info, locationName="no_location_permission")
 
 
+@pytest.mark.asyncio
+async def test_check_location_mutation_async(fake_graphene_info):
+    # Fails per-location check
+    mutation = FakeEnumLocationPermissionMutationAsync()
+    await mutation.mutate(fake_graphene_info, locationName="has_location_permission")
+
+    with pytest.raises(UserFacingGraphQLError, match="GrapheneUnauthorizedError"):
+        await mutation.mutate(fake_graphene_info, locationName="no_location_permission")
+
+
 def test_require_permission_check_succeeds(fake_graphene_info):
     # Fails per-location check
     mutation = EndpointWithRequiredPermissionCheck()
@@ -201,9 +238,24 @@ def test_require_permission_check_missing(fake_graphene_info):
         mutation.mutate(fake_graphene_info)
 
 
+@pytest.mark.asyncio
+async def test_require_permission_check_missing_async(fake_graphene_info):
+    # Fails per-location check
+    mutation = EndpointMissingRequiredPermissionCheckAsync()
+    with pytest.raises(
+        Exception, match="Permission launch_partition_backfill was never checked during the request"
+    ):
+        await mutation.mutate(fake_graphene_info)
+
+
 @pytest.mark.parametrize("mutation", [FakeMutation(), FakeEnumPermissionMutation()])
 def test_check_permission_has_permission(fake_graphene_info, mutation):
     mutation.mutate(fake_graphene_info)
+
+
+@pytest.mark.asyncio
+async def test_check_permission_has_permission_async(fake_graphene_info):
+    await FakeMutationAsync().mutate(fake_graphene_info)
 
 
 @pytest.mark.parametrize(
@@ -212,6 +264,12 @@ def test_check_permission_has_permission(fake_graphene_info, mutation):
 def test_check_permission_does_not_have_permission(fake_graphene_info, mutation):
     with pytest.raises(UserFacingGraphQLError, match="GrapheneUnauthorizedError"):
         mutation.mutate(fake_graphene_info)
+
+
+@pytest.mark.asyncio
+async def test_check_permission_does_not_have_permission_async(fake_graphene_info):
+    with pytest.raises(UserFacingGraphQLError, match="GrapheneUnauthorizedError"):
+        await FakeOtherPermissionMutationAsync().mutate(fake_graphene_info)
 
 
 @pytest.mark.parametrize(

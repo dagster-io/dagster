@@ -319,7 +319,10 @@ class BaseWorkspaceRequestContext(LoadingContext):
         self,
         selector: JobSubsetSelector,
     ) -> RemoteJob:
-        return await self.get_code_location(selector.location_name).gen_job(selector)
+        if not selector.is_subset_selection:
+            return self.get_full_job(selector)
+
+        return await self.get_code_location(selector.location_name).gen_subset_job(selector)
 
     def get_execution_plan(
         self,

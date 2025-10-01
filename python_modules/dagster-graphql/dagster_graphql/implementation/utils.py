@@ -57,33 +57,56 @@ def assert_permission_for_location(
 
 def require_permission_check(
     permission: str,
-) -> Callable[[GrapheneResolverFn], GrapheneResolverFn]:
-    def decorator(fn: GrapheneResolverFn) -> GrapheneResolverFn:
-        @functools.wraps(fn)
-        def _fn(self, graphene_info, *args: P.args, **kwargs: P.kwargs):
-            result = fn(self, graphene_info, *args, **kwargs)
+):
+    def decorator(fn):
+        if iscoroutinefunction(fn):
 
-            if not graphene_info.context.was_permission_checked(permission):
-                raise Exception(f"Permission {permission} was never checked during the request")
+            @functools.wraps(fn)
+            async def _async_fn(self, graphene_info, *args: P.args, **kwargs: P.kwargs):
+                result = await fn(self, graphene_info, *args, **kwargs)
+                if not graphene_info.context.was_permission_checked(permission):
+                    raise Exception(f"Permission {permission} was never checked during the request")
+                return result
 
-            return result
+            return _async_fn
+        else:
 
-        return _fn
+            @functools.wraps(fn)
+            def _fn(self, graphene_info, *args: P.args, **kwargs: P.kwargs):
+                result = fn(self, graphene_info, *args, **kwargs)
+
+                if not graphene_info.context.was_permission_checked(permission):
+                    raise Exception(f"Permission {permission} was never checked during the request")
+
+                return result
+
+            return _fn
 
     return decorator
 
 
 def check_permission(
     permission: str,
-) -> Callable[[GrapheneResolverFn], GrapheneResolverFn]:
-    def decorator(fn: GrapheneResolverFn) -> GrapheneResolverFn:
-        @functools.wraps(fn)
-        def _fn(self, graphene_info, *args: P.args, **kwargs: P.kwargs):
-            assert_permission(graphene_info, permission)
+):
+    def decorator(fn):
+        if iscoroutinefunction(fn):
 
-            return fn(self, graphene_info, *args, **kwargs)
+            @functools.wraps(fn)
+            async def _async_fn(self, graphene_info, *args: P.args, **kwargs: P.kwargs):
+                assert_permission(graphene_info, permission)
 
-        return _fn
+                return await fn(self, graphene_info, *args, **kwargs)
+
+            return _async_fn
+        else:
+
+            @functools.wraps(fn)
+            def _fn(self, graphene_info, *args: P.args, **kwargs: P.kwargs):
+                assert_permission(graphene_info, permission)
+
+                return fn(self, graphene_info, *args, **kwargs)
+
+            return _fn
 
     return decorator
 
