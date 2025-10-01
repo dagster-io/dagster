@@ -180,11 +180,9 @@ export const SIDEBAR_ROOT_CONTAINER_FRAGMENT = gql`
       }
       owners {
         ... on UserDefinitionOwner {
-          __typename
           email
         }
         ... on TeamDefinitionOwner {
-          __typename
           team
         }
       }

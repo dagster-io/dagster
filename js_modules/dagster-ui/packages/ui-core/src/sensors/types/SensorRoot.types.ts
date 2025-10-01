@@ -191,6 +191,6 @@ export type SensorAssetSelectionQuery = {
     | {__typename: 'UnauthorizedError'};
 };
 
-export const SensorRootQueryVersion = '41aff75212bad038c9405723f1732a94ce0090d71b757b65ccb0f5c3728235ea';
+export const SensorRootQueryVersion = '2a50267e2bec5042609d0a0a269e4ac4d39a7d337fbd2ec9768e887cdf6344a3';
 
 export const SensorAssetSelectionQueryVersion = '2fb6c2c612ee7ab4a7ad1f59cfd7677a6a3d14319200f8c49b43850de8b3b0f3';
