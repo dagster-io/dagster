@@ -9,6 +9,7 @@ import dagster as dg
 import torch
 
 
+# start_model_storage_interface
 class ModelStoreResource(dg.ConfigurableResource, ABC):
     """Abstract base class for model storage resources."""
 
@@ -24,6 +25,9 @@ class ModelStoreResource(dg.ConfigurableResource, ABC):
     def list_models(self) -> list[str]:
         """List available models, sorted by modification time (newest first)."""
         pass
+
+
+# end_model_storage_interface
 
 
 class LocalModelStoreResource(ModelStoreResource):

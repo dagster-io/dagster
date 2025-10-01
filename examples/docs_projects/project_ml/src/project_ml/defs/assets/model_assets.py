@@ -26,6 +26,7 @@ from project_ml.defs.constants import (
 from project_ml.defs.utils import get_optimizer
 
 
+# start_model_config
 class ModelConfig(dg.Config):
     """Configuration for model architecture and training."""
 
@@ -69,6 +70,10 @@ class ModelConfig(dg.Config):
     model_name_prefix: str = "mnist_cnn"
 
 
+# end_model_config
+
+
+# start_cnn_architecture
 class DigitCNN(nn.Module):
     """Improved CNN for MNIST digit classification based on research."""
 
@@ -157,6 +162,9 @@ class DigitCNN(nn.Module):
         x = self.fc3(x)  # Final layer - no activation (raw logits)
 
         return x  # Return raw logits for CrossEntropyLoss
+
+
+# end_cnn_architecture
 
 
 def train_model(context, model, train_loader, val_loader, config: ModelConfig):
@@ -292,6 +300,7 @@ def train_model(context, model, train_loader, val_loader, config: ModelConfig):
     return model, train_losses, val_accuracies
 
 
+# start_training_asset
 @dg.asset(
     description="Train CNN digit classifier with configurable parameters",
     group_name="model_pipeline",
@@ -372,6 +381,9 @@ def digit_classifier(
     return trained_model
 
 
+# end_training_asset
+
+
 class ModelEvaluationConfig(dg.Config):
     """Configuration for model evaluation."""
 
@@ -379,6 +391,7 @@ class ModelEvaluationConfig(dg.Config):
     accuracy_threshold: float = ACCURACY_THRESHOLD
 
 
+# start_model_evaluation
 @dg.asset(
     description="Evaluate model performance on test set",
     group_name="model_pipeline",
@@ -496,6 +509,10 @@ def model_evaluation(
     }
 
 
+# end_model_evaluation
+
+
+# start_deployment_config
 class DeploymentConfig(dg.Config):
     """Configuration for model deployment."""
 
@@ -503,6 +520,9 @@ class DeploymentConfig(dg.Config):
     model_path: str = str(MODELS_DIR)
     custom_model_name: Optional[str] = None  # Allow users to specify a specific model to deploy
     force_deploy: bool = False  # Allow users to bypass accuracy threshold
+
+
+# end_deployment_config
 
 
 @dg.asset(

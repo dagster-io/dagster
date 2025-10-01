@@ -8,6 +8,7 @@ from torchvision import datasets, transforms
 from project_ml.defs.constants import DATA_DIR, MNIST_MEAN, MNIST_STD, RANDOM_SEED, VALIDATION_SPLIT
 
 
+# start_raw_data_loading
 @dg.asset(
     description="Download and load raw MNIST dataset",
     group_name="data_processing",
@@ -48,6 +49,10 @@ def raw_mnist_data(context) -> dict[str, Any]:
     }
 
 
+# end_raw_data_loading
+
+
+# start_data_preprocessing
 @dg.asset(
     description="Preprocess MNIST images for training",
     group_name="data_processing",
@@ -96,3 +101,6 @@ def processed_mnist_data(context, raw_mnist_data: dict[str, Any]) -> dict[str, t
         "test_data": test_data,
         "test_labels": test_labels,
     }
+
+
+# end_data_preprocessing

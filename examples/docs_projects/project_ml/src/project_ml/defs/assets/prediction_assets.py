@@ -6,6 +6,7 @@ import torch
 from torch.utils.data import DataLoader, TensorDataset
 
 
+# start_batch_prediction_config
 class BatchPredictionConfig(dg.Config):
     """Configuration for batch prediction processing."""
 
@@ -15,6 +16,10 @@ class BatchPredictionConfig(dg.Config):
     device: str = "cuda"  # Will fallback to CPU if CUDA not available
 
 
+# end_batch_prediction_config
+
+
+# start_realtime_prediction_config
 class RealTimePredictionConfig(dg.Config):
     """Configuration for real-time prediction processing."""
 
@@ -22,6 +27,9 @@ class RealTimePredictionConfig(dg.Config):
     device: str = "cuda"  # Will fallback to CPU if CUDA not available
     confidence_threshold: float = 0.9  # Higher threshold for real-time predictions
     return_probabilities: bool = False  # Whether to return full probability distribution
+
+
+# end_realtime_prediction_config
 
 
 @dg.asset(
