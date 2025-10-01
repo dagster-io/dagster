@@ -104,14 +104,14 @@ class DagsterPlusCliDefsStateStorage(DefsStateStorage[T_DagsterInstance]):
 
     def get_latest_defs_state_info(self) -> Optional[DefsStateInfo]:
         res = self._execute_query(GET_LATEST_DEFS_STATE_INFO_QUERY)
-        latest_info = res["data"]["latestDefsStateInfo"]
-        return DefsStateInfo.from_graphql(latest_info) if latest_info else None
+        latest_info = res["latestDefsStateInfo"]
+        return DefsStateInfo.from_graphql(latest_info)
 
     def set_latest_version(self, key: str, version: str) -> None:
         result = self._execute_query(
             SET_LATEST_VERSION_MUTATION, variables={"key": key, "version": version}
         )
         check.invariant(
-            result["data"].get("setLatestDefsStateVersion", {}).get("ok"),
-            "Failed to set latest version",
+            result.get("setLatestDefsStateVersion", {}).get("ok"),
+            f"Failed to set latest version. Result: {result}",
         )
