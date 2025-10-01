@@ -1,7 +1,7 @@
 ---
 title: Dagster+ Hybrid performance optimization and troubleshooting
 description: Configure your agent and code server container settings for optimal performance of your Dagster+ deployment.
-sidebar_position: 300
+sidebar_position: 100
 ---
 
 To avoid running into performance issues, we recommend tailoring your agent and code server settings for your deployment using the recommendations in the [performance optimization](#performance-optimization) section.
