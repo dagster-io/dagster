@@ -71,14 +71,17 @@ gh api repos/dagster-io/dagster/issues/12345
 **Affected Area**: [e.g., Asset System, Sensors, UI]
 
 ### Summary
+
 [Concise description of the issue]
 
 ### Root Cause (for bugs)
+
 [Technical explanation of why the issue occurs]
 
 ### Proposed Implementation
 
 **Files to Modify**:
+
 - `path/to/file.py:123` - [what needs to change]
 - `path/to/test.py` - [test additions]
 
@@ -92,6 +95,7 @@ gh api repos/dagster-io/dagster/issues/12345
 [Any edge cases or risks]
 
 ### Next Steps
+
 [Todo list created for implementation]
 ```
 
@@ -103,6 +107,7 @@ gh api repos/dagster-io/dagster/issues/12345
 **Status**: Needs clarification
 
 **Missing Information**:
+
 - [What details are needed]
 
 **Suggested Response**:
