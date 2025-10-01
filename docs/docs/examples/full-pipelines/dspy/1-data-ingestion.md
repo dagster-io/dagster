@@ -64,4 +64,4 @@ The component approach provides several benefits: configurations can be easily m
 
 Now that we have a robust data ingestion pipeline that loads, validates, and prepares puzzle data for training, we can move on to building the core AI solver that will use this data to learn puzzle-solving strategies.
 
-- Continue this tutorial with [building the DSPy solver](/examples/dspy/dspy-modeling)
+- Continue this tutorial with [building the DSPy solver](/examples/full-pipelines/dspy/dspy-modeling)

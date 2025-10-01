@@ -78,4 +78,4 @@ The configuration-driven approach means teams can maintain different optimizatio
 
 With our optimized solver in hand, we need comprehensive evaluation to understand how much the optimization improved our puzzle-solving capabilities and whether the model is ready for production deployment.
 
-- Continue this tutorial with [performance evaluation](/examples/dspy/evaluation)
+- Continue this tutorial with [performance evaluation](/examples/full-pipelines/dspy/evaluation)

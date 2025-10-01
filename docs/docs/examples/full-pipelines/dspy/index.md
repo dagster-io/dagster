@@ -121,4 +121,4 @@ The pipeline demonstrates:
 
 ## Next steps
 
-- Continue this tutorial with [puzzle data ingestion](/examples/dspy/data-ingestion)
+- Continue this tutorial with [puzzle data ingestion](/examples/full-pipelines/dspy/data-ingestion)

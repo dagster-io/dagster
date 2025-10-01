@@ -60,4 +60,4 @@ The baseline model serves as our performance benchmark. Before we apply any opti
 
 ## Next steps
 
-- Continue this tutorial with [MIPROv2 optimization](/examples/dspy/optimization)
+- Continue this tutorial with [MIPROv2 optimization](/examples/full-pipelines/dspy/optimization)
