@@ -440,3 +440,53 @@ project: {dbt_path!s}
 prepare_if_dev: False
     """)
     assert not c.prepare_if_dev
+
+
+def test_subclass_override_get_asset_spec(dbt_path: Path) -> None:
+    """Test that we can subclass DbtProjectComponent and override get_asset_spec method."""
+
+    @dataclass
+    class CustomDbtProjectComponent(DbtProjectComponent):
+        def get_asset_spec(
+            self, manifest: Mapping[str, Any], unique_id: str, project: Optional[DbtProject]
+        ) -> dg.AssetSpec:
+            # Get the base asset spec from the parent implementation
+            base_spec = super().get_asset_spec(manifest, unique_id, project)
+
+            # Add custom tags to demonstrate the override works
+            custom_tags = {
+                "custom_override": "true",
+                "model_name": manifest["nodes"][unique_id]["name"],
+            }
+
+            # Return the spec with our custom modifications
+            return base_spec.replace_attributes(tags={**base_spec.tags, **custom_tags})
+
+    defs = build_component_defs_for_test(CustomDbtProjectComponent, {"project": str(dbt_path)})
+
+    # Test that our custom get_asset_spec method is being used
+    assets_def = defs.resolve_assets_def(AssetKey("stg_customers"))
+    asset_spec = assets_def.get_asset_spec(AssetKey("stg_customers"))
+
+    # Verify that our custom tags were added
+    assert asset_spec.tags["custom_override"] == "true"
+    assert asset_spec.tags["model_name"] == "stg_customers"
+    # Verify code references are still added automatically
+    refs = check.inst(
+        assets_def.metadata_by_key[AssetKey("stg_customers")]["dagster/code_references"],
+        CodeReferencesMetadataValue,
+    )
+    assert len(refs.code_references) == 1
+    assert isinstance(refs.code_references[0], LocalFileCodeReference)
+    assert refs.code_references[0].file_path.endswith("models/staging/stg_customers.sql")
+
+    # Verify that the base functionality still works (e.g., original metadata is preserved)
+    assert "dagster-dbt/materialization_type" in asset_spec.metadata
+    assert "dagster/table_name" in asset_spec.metadata
+
+    # Test with another asset to ensure it works across different models
+    assets_def_orders = defs.resolve_assets_def(AssetKey("stg_orders"))
+    asset_spec_orders = assets_def_orders.get_asset_spec(AssetKey("stg_orders"))
+
+    assert asset_spec_orders.tags["custom_override"] == "true"
+    assert asset_spec_orders.tags["model_name"] == "stg_orders"
