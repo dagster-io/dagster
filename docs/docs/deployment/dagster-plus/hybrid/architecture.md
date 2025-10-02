@@ -21,40 +21,41 @@ Work is enqueued for your agent when:
 - The GraphQL API is queried, or
 - Schedules and sensors tick
 
-The agent polls the agent API to see if any work needs to be done and launches user code as appropriate to fulfill requests. User code then streams metadata back to the agent API (GraphQL over HTTPS) to make it available in Dagster+.
+The agent polls the agent API to see if any work needs to be done, and launches user code in a code server as appropriate to fulfill requests. User code then streams metadata back to the agent API (GraphQL over HTTPS) to make it available in Dagster+.
 
 All user code runs within your environment, in isolation from Dagster system code.
 
 ## The agent
 
-The Dagster+ agent is a long-lived process that polls Dagster+'s API servers for new work. Currently supported agents include:
+The Dagster+ agent is a long-lived process that polls Dagster+'s API servers for new work, and launches or queries your user code as needed.
 
+### Infrastructure management
 
-Because the agent communicates with the Dagster+ control plane over the agent API, it's possible to support agents that operate in arbitrary compute environments.
+- Launches and manages [code servers](#code-server) for each code location
+- Launches run workers (new containers/processes) when runs need to be executed
+- Acts as the run launcher, spinning up isolated tasks/pods/processes for each run
 
-This means that over time, Dagster+'s support for different user deployment environments will expand and custom agents can take advantage of bespoke compute environments such as HPC.
+### Communication
 
-See the [setup page](index.md#dagster-hybrid-agents) for a list of agents that are currently supported.
+- Receives messages and instructions from Dagster+ about what work needs to be done
+- Sends metadata back to Dagster+ about launched runs and code server status
 
 ## Code server
 
-In Dagster+ Hybrid, the [code location](/deployment/code-locations/dagster-plus-code-locations) is served by a user code server running in your infra; Dagster+ talks to it (through the agent) to:
+In Dagster+ Hybrid, each [code location](/deployment/code-locations/dagster-plus-code-locations) is served by a long-standing user code server running in your environment. When you inform Dagster+ about a new code location, we enqueue instructions for your agent to launch a new code server. Dagster+ communicates with the code server (through the agent) to:
 
-Load definitions and metadata (UI browsing, asset graphs)
+- Load definitions and metadata (UI browsing, asset graphs)
+- Evaluate sensors/schedules (or call into them)
+- Launch and monitor runs
+- Stream logs and materialization events
 
-Evaluate sensors/schedules (or call into them)
+## Runs
 
-Launch and monitor runs
+Your definitions might include [automations](/guides/automate) that launch runs or materialize assets. Or your developers might launch runs directly with the web UI.
 
-Stream logs and materialization events code location is served by a user code server running in your infra; Dagster+ talks to it (through the agent) to:
+When a run needs to be launched, Dagster+ enqueues instructions for your agent to launch a new run. The next time your agent polls Dagster+ for new work, it will see instructions about how to launch your run. It will delegate those instructions to your code server and your code server will launch a run - a new run will typically require its own container.
 
-Load definitions and metadata (UI browsing, asset graphs)
-
-Evaluate sensors/schedules (or call into them)
-
-Launch and monitor runs
-
-Stream logs and materialization events
+Your agent will send Dagster+ metadata letting us know the run has been launched. Your run's container will also send Dagster+ metadata informing us of how the run is progressing. The Dagster+ backend services will monitor this stream of metadata to make additional orchestration decisions, monitor for failure, or send alerts.
 
 ## Security
 

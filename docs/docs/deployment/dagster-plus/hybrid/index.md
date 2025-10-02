@@ -10,23 +10,19 @@ tags: [dagster-plus-feature]
 
 In a Dagster+ Hybrid deployment, the orchestration control plane is run by Dagster+ while your Dagster code is executed within your environment.
 
-:::info
-
 For an overview of the Hybrid design, including security considerations, see [Dagster+ Hybrid architecture](/deployment/dagster-plus/hybrid/architecture).
-
-:::
 
 ## Getting started
 
 To get started with a Hybrid deployment, you'll need to:
 
 1. Create a [Dagster+ organization](https://dagster.cloud/signup).
-2. Install a Dagster+ Hybrid agent in your infrastructure:
+2. Install a Dagster+ Hybrid [agent](/deployment/dagster-plus/hybrid/architecture#the-agent) in your environment:
     - [Kubernetes](/deployment/dagster-plus/hybrid/kubernetes)
     - [AWS ECS](/deployment/dagster-plus/hybrid/amazon-ecs/new-vpc)
     - [Docker](/deployment/dagster-plus/hybrid/docker)
     - [Microsoft Azure](/deployment/dagster-plus/hybrid/azure)
-3. [Add a code location](/deployment/code-locations) to your deployment, typically using a Git repository and CI/CD.
+3. [Add a code location](/deployment/code-locations/dagster-plus-code-locations) to your deployment, typically using a [Git repository and CI/CD](/deployment/dagster-plus/ci-cd/ci-cd-in-hybrid).
 
 :::tip
 
