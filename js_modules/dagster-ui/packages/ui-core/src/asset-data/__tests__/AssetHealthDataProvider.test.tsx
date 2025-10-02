@@ -79,6 +79,7 @@ describe('AssetHealthDataProvider integration tests', () => {
           }),
           latestMaterializationTimestamp: null,
           latestFailedToMaterializeTimestamp: null,
+          freshnessStatusChangedTimestamp: null,
           assetHealth: null,
         });
       });
@@ -150,6 +151,7 @@ describe('AssetHealthDataProvider integration tests', () => {
           }),
           latestMaterializationTimestamp: null,
           latestFailedToMaterializeTimestamp: null,
+          freshnessStatusChangedTimestamp: null,
           assetHealth: null,
         });
 
@@ -161,6 +163,7 @@ describe('AssetHealthDataProvider integration tests', () => {
           }),
           latestMaterializationTimestamp: null,
           latestFailedToMaterializeTimestamp: null,
+          freshnessStatusChangedTimestamp: null,
           assetHealth: null,
         });
       });
@@ -200,6 +203,7 @@ describe('AssetHealthDataProvider integration tests', () => {
           }),
           latestMaterializationTimestamp: null,
           latestFailedToMaterializeTimestamp: null,
+          freshnessStatusChangedTimestamp: null,
           assetHealth: null,
         });
 
@@ -211,6 +215,7 @@ describe('AssetHealthDataProvider integration tests', () => {
           }),
           latestMaterializationTimestamp: null,
           latestFailedToMaterializeTimestamp: null,
+          freshnessStatusChangedTimestamp: null,
           assetHealth: null,
         });
       });
@@ -317,6 +322,7 @@ describe('AssetHealthDataProvider integration tests', () => {
           }),
           latestMaterializationTimestamp: null,
           latestFailedToMaterializeTimestamp: null,
+          freshnessStatusChangedTimestamp: null,
           assetHealth: null,
         });
       });
@@ -345,6 +351,7 @@ describe('AssetHealthDataProvider integration tests', () => {
           }),
           latestMaterializationTimestamp: null,
           latestFailedToMaterializeTimestamp: null,
+          freshnessStatusChangedTimestamp: null,
           assetHealth: null,
         });
       });

@@ -61,6 +61,7 @@ function init() {
               },
               latestMaterializationTimestamp: null,
               latestFailedToMaterializeTimestamp: null,
+              freshnessStatusChangedTimestamp: null,
               assetHealth: null,
             };
           }
@@ -265,6 +266,7 @@ export const ASSETS_HEALTH_INFO_QUERY = gql`
 
     latestMaterializationTimestamp
     latestFailedToMaterializeTimestamp
+    freshnessStatusChangedTimestamp
 
     assetHealth {
       assetHealth
@@ -338,6 +340,7 @@ function buildEmptyAssetHealthFragment(key: string): AssetHealthFragment {
     },
     latestMaterializationTimestamp: null,
     latestFailedToMaterializeTimestamp: null,
+    freshnessStatusChangedTimestamp: null,
     assetHealth: null,
   };
 }
