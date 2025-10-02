@@ -1,5 +1,21 @@
 # Changelog
 
+## 1.11.13 (core) / 0.27.13 (libraries)
+
+### New
+
+- [dagster-deltalake,dagster-deltalake-polars] BREAKING - support deltalake>=1.0.0, we will no longer support `deltalake<1.0.0` for `dagster-deltalake` and `dagster-deltalake-polars` moving forward, end user APIs remain the same.
+- [dagster-databricks] Spark Python and Python Wheel tasks are now support in `PipesDatabricksServerlessClient`.
+- [dagster-dbt] `dagster-dbt project prepare-and-package --components .` will no longer attempt to load components outside of `DbtProjectComponent`, preventing errors when attempting to run this command in environments that do not have the necessary env vars set for other components.
+- [dg] adds `dg api secret list` and `dg api secret get`
+
+### Bugfixes
+
+- Fixed a bug in the backfill daemon where an asset backfill with CANCELING​ or FAILING​ status could become permanently stuck in CANCELING​ or FAILING​ if the partitions definitions of the assets changed.
+- Fixed an issue introduced in the 1.11.12 release where auto-complete in the Launchpad for nested fields stopped working.
+- Fixed an issue where backfills would fail if a TimeWindowPartitionsDefinition's start date was changed in the middle of the backfill, even if it did not remove any of the targeted partitions.
+- [ui] Fixed the link to "View asset lineage" on runs that don't specify an asset selection. Changelog
+
 ## 1.11.12 (core) / 0.27.12 (libraries)
 
 ### New
