@@ -7,9 +7,9 @@ dg list defs --assets 'key:semantic_model*' --columns name,kinds,is_executable
 │         │ ┃ Key                                 ┃ Kinds          ┃ Is executable ┃ │
 │         │ ┡━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━╇━━━━━━━━━━━━━━━━╇━━━━━━━━━━━━━━━┩ │
 │         │ │ semantic_model/Marketing_Data_Model │ powerbi        │ True          │ │
-│         │ │                                     │ semantic model │               │ │
+│         │ │                                     │ semantic_model │               │ │
 │         │ ├─────────────────────────────────────┼────────────────┼───────────────┤ │
 │         │ │ semantic_model/Sales_Data_Model     │ powerbi        │ True          │ │
-│         │ │                                     │ semantic model │               │ │
+│         │ │                                     │ semantic_model │               │ │
 │         │ └─────────────────────────────────────┴────────────────┴───────────────┘ │
 └─────────┴──────────────────────────────────────────────────────────────────────────┘

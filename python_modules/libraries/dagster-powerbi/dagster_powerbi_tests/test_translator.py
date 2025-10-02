@@ -106,7 +106,7 @@ def test_translator_semantic_model(workspace_data: PowerBIWorkspaceData) -> None
     assert asset_spec.tags == {
         "dagster-powerbi/asset_type": "semantic_model",
         **build_kind_tag("powerbi"),
-        **build_kind_tag("semantic model"),
+        **build_kind_tag("semantic_model"),
     }
     assert asset_spec.owners == ["chris@dagsterlabs.com"]
 
