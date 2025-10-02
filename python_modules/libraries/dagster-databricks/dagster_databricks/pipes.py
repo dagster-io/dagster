@@ -328,7 +328,15 @@ class PipesDatabricksClient(BasePipesDatabricksClient, TreatAsResourceParam):
                         f'Passing Pipes bootstrap parameters via Databricks parameters as "{key}.parameters". Make sure to use the PipesCliArgsParamsLoader in the task.'  # pyright: ignore[reportPossiblyUnboundVariable]
                     )
                     break
-
+                
+            # use env vars to pass pipes context in case of notebook_task
+            pipes_env_vars = session.get_bootstrap_env_vars()
+            if submit_task_dict.get("notebook_task"):
+                existing_params = submit_task_dict["notebook_task"].get("base_parameters", {})
+                # merge the existing parameters with the CLI arguments
+                existing_params = {**existing_params, **session.get_bootstrap_env_vars()}
+                submit_task_dict["notebook_task"]["base_parameters"] = existing_params
+                
         else:
             pipes_env_vars = session.get_bootstrap_env_vars()
 
