@@ -33,7 +33,7 @@ from dagster._utils.error import serializable_error_info_from_exc_info
 from typing_extensions import ParamSpec, TypeAlias
 
 if TYPE_CHECKING:
-    from dagster._core.workspace.context import BaseWorkspaceRequestContext
+    from dagster._core.workspace.context import BaseWorkspaceRequestContext, RemoteDefinition
 
     from dagster_graphql.schema.errors import GrapheneError, GraphenePythonError
     from dagster_graphql.schema.util import ResolveInfo
@@ -99,20 +99,21 @@ def assert_permission(graphene_info: "ResolveInfo", permission: str) -> None:
 def has_permission_for_asset_graph(
     graphene_info: "ResolveInfo",
     asset_graph: RemoteWorkspaceAssetGraph,
-    asset_selection: Optional[Sequence[AssetKey]],
+    asset_selection: Sequence[AssetKey],
     permission: str,
 ) -> bool:
     asset_keys = set(asset_selection or [])
     context = cast("BaseWorkspaceRequestContext", graphene_info.context)
 
-    # if we have the permission for all code locations, no need to check specific asset keys or locations
+    # if we have the permission for the whole deployment, no need to check specific asset keys or locations
     if context.has_permission(permission):
         return True
 
     if not any(
         context.has_permission_for_location(permission, location_name)
         for location_name in context.code_location_names
-    ):
+    ) and not context.viewer_has_any_owner_definition_permissions(permission):
+        # short-circuit if we don't have any location-level permissions or definition-level permissions
         return False
 
     if asset_keys:
@@ -133,17 +134,34 @@ def has_permission_for_asset_graph(
 
     if not location_names:
         return context.has_permission(permission)
-    else:
+
+    # if we have permission for all locations relevant to the asset graph, we're good
+    if all(
+        context.has_permission_for_location(permission, location_name)
+        for location_name in location_names
+    ):
+        return True
+
+    # No need to check individual asset keys if we don't have owner permissions
+    if not context.viewer_has_any_owner_definition_permissions(permission):
+        return False
+
+    if asset_keys:
+        # if we have owner permissions and are checking specific asset keys, check that we own all of
+        # the asset keys
         return all(
-            context.has_permission_for_location(permission, location_name)
-            for location_name in location_names
+            context.has_permission_for_definition(permission, asset_graph.get(key))
+            for key in asset_keys
+            if asset_graph.has(key)
         )
+
+    return False
 
 
 def assert_permission_for_asset_graph(
     graphene_info: "ResolveInfo",
     asset_graph: RemoteWorkspaceAssetGraph,
-    asset_selection: Optional[Sequence[AssetKey]],
+    asset_selection: Sequence[AssetKey],
     permission: str,
 ) -> None:
     from dagster_graphql.schema.errors import GrapheneUnauthorizedError
@@ -502,3 +520,15 @@ def get_query_limit_with_default(provided_limit: Optional[int], default_limit: i
 
 BackfillParams: TypeAlias = Mapping[str, Any]
 AssetBackfillPreviewParams: TypeAlias = Mapping[str, Any]
+
+
+def assert_permission_for_definition(
+    graphene_info: "ResolveInfo",
+    permission: str,
+    definition: "RemoteDefinition",
+):
+    from dagster_graphql.schema.errors import GrapheneUnauthorizedError
+
+    context = cast("BaseWorkspaceRequestContext", graphene_info.context)
+    if not context.has_permission_for_definition(permission, definition):
+        raise UserFacingGraphQLError(GrapheneUnauthorizedError())
