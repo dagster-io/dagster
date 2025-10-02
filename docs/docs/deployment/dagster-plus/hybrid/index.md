@@ -21,10 +21,10 @@ To get started with a Hybrid deployment, you'll need to:
 
 1. Create a [Dagster+ organization](https://dagster.cloud/signup).
 2. Install a Dagster+ Hybrid [agent](/deployment/dagster-plus/hybrid/architecture#the-agent) in your environment:
-    - [Kubernetes](/deployment/dagster-plus/hybrid/kubernetes)
-    - [AWS ECS](/deployment/dagster-plus/hybrid/amazon-ecs/new-vpc)
-    - [Docker](/deployment/dagster-plus/hybrid/docker)
-    - [Microsoft Azure](/deployment/dagster-plus/hybrid/azure)
+   - [Kubernetes](/deployment/dagster-plus/hybrid/kubernetes)
+   - [AWS ECS](/deployment/dagster-plus/hybrid/amazon-ecs/new-vpc)
+   - [Docker](/deployment/dagster-plus/hybrid/docker)
+   - [Microsoft Azure](/deployment/dagster-plus/hybrid/azure)
 3. [Add a code location](/deployment/code-locations/dagster-plus-code-locations) to your deployment, typically using a [Git repository and CI/CD](/deployment/dagster-plus/ci-cd/ci-cd-in-hybrid).
 
 <HybridAgentRecommendation />

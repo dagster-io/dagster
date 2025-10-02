@@ -12,13 +12,13 @@ All suggestions in this guide apply to both Dagster Open Source (OSS) and Dagste
 
 :::
 
-The default sensor timeout is 60 seconds, and sensors can hit that limit for a number of reasons. Most of the time, timeouts are the result of poorly optimized business logic or network issues, but occasionally, the business logic does require long evaluation cycles. 
+The default sensor timeout is 60 seconds, and sensors can hit that limit for a number of reasons. Most of the time, timeouts are the result of poorly optimized business logic or network issues, but occasionally, the business logic does require long evaluation cycles.
 
 For these cases, we provide a mechanism to increase the default timeout of sensors, in both OSS and Dagster+. However, we consider changing the sensor timeout to be a last resort; we recommend considering the other options in this guide before attempting to change the timeout.
 
 ## Step 1: Find the root of the timeout
 
-The first step of addressing sensor timeouts is to understand *why* they are occurring. To do this, we recommend using [`py-spy`](https://pypi.org/project/py-spy/), which allows you to profile your business logic and understand where the hot paths are. For more information on using `py-spy`, see [Profiling your code with py-spy](py-spy-guide).
+The first step of addressing sensor timeouts is to understand _why_ they are occurring. To do this, we recommend using [`py-spy`](https://pypi.org/project/py-spy/), which allows you to profile your business logic and understand where the hot paths are. For more information on using `py-spy`, see [Profiling your code with py-spy](py-spy-guide).
 
 Often, hot paths can manifest as calls to external APIs hanging or poorly optimized business logic. In the case of hanging external API calls, timing out is the appropriate failure mode. You may even consider making the sensor timeout shorter to improve resilience to these types of transient API errors.
 
@@ -72,7 +72,7 @@ When you increase the timeout of your sensors, you are potentially placing more 
 
 ![dagster_user_cloud_diagram](/images/deployment/dagster-user-cloud-env.png)
 
-The above diagram describes how sensor requests flow through the system. They are generated in Dagster's host cloud, then sent to the agent, which sends requests to the code server running a particular sensor. 
+The above diagram describes how sensor requests flow through the system. They are generated in Dagster's host cloud, then sent to the agent, which sends requests to the code server running a particular sensor.
 
 As sensor throughput increases, there's the potential for bottlenecks anywhere in this flow. Each bottleneck is limited by three things:
 
@@ -90,7 +90,7 @@ Monitoring the CPU and memory of the agent and code servers should be done using
 
 ##### Exposing agent and code server metrics in Dagster+ Hybrid
 
-Let's turn our attention to handling the maximum request throughput of the agent/code server. With `dagster >= 1.6.4`, you can enable logging that exposes the current throughput of your agent and/or code server. 
+Let's turn our attention to handling the maximum request throughput of the agent/code server. With `dagster >= 1.6.4`, you can enable logging that exposes the current throughput of your agent and/or code server.
 
 It is important to make sure that both your agent and your code server versions are running 1.6.4 or greater. The metrics collection feature is not backwards compatible with older versions of Dagster, and you could run into errors if both are not upgraded.
 
@@ -110,18 +110,16 @@ To check the version of a code server:
 After verifying your agent and code server versions meet the requirements, you can enable throughput logging:
 
 - **K8s**: Add the following values to your Helm chart at the top level:
-    
-    ```yaml
-    agentMetrics:
-      enabled: true
-    codeServerMetrics:
-      enabled: true
-    ```
-    
-- **ECS**: Set the  `AgentMetricsEnabled` and `CodeServerMetricsEnabled` settings  to `true`.
+  ```yaml
+  agentMetrics:
+    enabled: true
+  codeServerMetrics:
+    enabled: true
+  ```
+- **ECS**: Set the `AgentMetricsEnabled` and `CodeServerMetricsEnabled` settings to `true`.
 - **Docker**: This functionality isn’t currently supported.
 
-Once enabled, you should see metrics tracking the throughput of the agent in your agent logs.  This includes not only the agent’s maximum throughput, but also each code server. In both cases, the request utilization metrics are provided in a JSON blob.
+Once enabled, you should see metrics tracking the throughput of the agent in your agent logs. This includes not only the agent’s maximum throughput, but also each code server. In both cases, the request utilization metrics are provided in a JSON blob.
 
 For the agent, the log looks like this:
 
@@ -134,7 +132,9 @@ For the code server, the request utilization information must be parsed out of a
 ```bash
 > user_code_launcher - Updated code server metrics for location sensor_test_87 in deployment prod: {'container_utilization': {'num_allocated_cores': 2, 'cpu_usage': 320.930756512, 'cpu_cfs_quota_us': -1.0, 'cpu_cfs_period_us': 100000.0, 'memory_usage': 150790144, 'memory_limit': 9223372036854771712, 'measurement_timestamp': 1708649283.031707, 'previous_cpu_usage': 320.823456119, 'previous_measurement_timestamp': 1708649221.99951}, 'request_utilization': {'max_concurrent_requests': 50, 'num_running_requests': 1, 'num_queued_requests': 0}, 'per_api_metrics': {'Ping': {'current_request_count': 1}}}
 ```
+
 In the above code example, there are many fields that can be ignored. The important fields from the perspective of request throughput are:
+
 - `num_running_requests`: tracks the number of currently running requests on the code server
 - `num_queued_requests`: tracks number of enqueued requests on the code server (not currently running).
 - `max_concurrent_requests`: the maximum number of requests which can run at any given time on the code server.

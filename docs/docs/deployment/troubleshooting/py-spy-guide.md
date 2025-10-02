@@ -24,12 +24,11 @@ sudo py-spy record -f speedscope --idle -- dagster definitions validate
 
 ## Generating a `py-spy` dump for a hanging run in Kubernetes
 
-
-1. Configure your Dagster deployment so that each run pod is using a security context that can run `py-spy`. Note that this gives the pod elevated permissions, so check with your cluster admins to make sure this is an acceptable change to make temporarily.
+1.  Configure your Dagster deployment so that each run pod is using a security context that can run `py-spy`. Note that this gives the pod elevated permissions, so check with your cluster admins to make sure this is an acceptable change to make temporarily.
 
     <Tabs>
-        <TabItem value="oss" label="Dagster OSS">
-            If you're using the Dagster Open Source Helm chart, you can configure the run launcher to launch each run with 
+    <TabItem value="oss" label="Dagster OSS">
+        If you're using the Dagster Open Source Helm chart, you can configure the run launcher to launch each run with
 
             ```
             runLauncher:
@@ -74,21 +73,23 @@ sudo py-spy record -f speedscope --idle -- dagster definitions validate
 
             For more information on applying this type of customization to your Kubernetes pod in Dagster+, see the [Kubernetes agent configuration reference](/deployment/dagster-plus/hybrid/kubernetes/configuration).
         </TabItem>
+
     </Tabs>
 
     :::note
-    
+
     For more information, see the [`py-spy` guide to running `py-spy` in Kubernetes](https://github.com/benfred/py-spy#how-do-i-run-py-spy-in-kubernetes).
 
     :::
 
-2. Launch a run and wait until it hangs.
-3. Check the event logs for the run to find the run pod, then `kubectl exec` into the pod to run `py-spy`:
+2.  Launch a run and wait until it hangs.
+3.  Check the event logs for the run to find the run pod, then `kubectl exec` into the pod to run `py-spy`:
 
     ```
     kubectl exec -it <pod name here> /bin/bash
     ```
-4. Install `py-spy`, then run it:
+
+4.  Install `py-spy`, then run it:
 
     ```
     pip install py-spy
