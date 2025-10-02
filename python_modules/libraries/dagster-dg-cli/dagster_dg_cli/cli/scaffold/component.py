@@ -15,7 +15,8 @@ from dagster_dg_cli.scaffold import scaffold_component
 def _parse_component_name(dg_context: DgContext, name: str) -> tuple[str, str]:
     """Parse the name into a module name and class name."""
     if "." in name:
-        module_name, class_name = name.rsplit(".", 1)
+        module_path, class_name = name.rsplit(".", 1)
+        module_name = f"{module_path}.{snakecase(class_name)}"
         if not module_name.startswith(dg_context.root_module_name):
             exit_with_error(
                 f"Component `{name}` must be nested under the root module `{dg_context.root_module_name}`."
