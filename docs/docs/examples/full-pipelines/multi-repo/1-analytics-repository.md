@@ -1,6 +1,6 @@
 ---
 title: Analytics repo
-description: The analytics repoistory
+description: The analytics repository
 sidebar_position: 10
 ---
 

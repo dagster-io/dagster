@@ -1,6 +1,6 @@
 ---
 title: ML repo
-description: The ML repoistory
+description: The ML repository
 sidebar_position: 20
 ---
 
