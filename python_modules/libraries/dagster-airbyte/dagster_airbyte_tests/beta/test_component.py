@@ -373,3 +373,39 @@ class TestAirbyteTranslation(TestTranslation):
 
             assets_def = defs.get_assets_def(key)
             assert assertion(assets_def.get_asset_spec(key))
+
+
+def test_subclass_override_get_asset_spec(
+    fetch_workspace_data_api_mocks: responses.RequestsMock,
+    rest_api_url: str,
+    config_api_url: str,
+    resource: Union[AirbyteCloudWorkspace, AirbyteWorkspace],
+) -> None:
+    """Test that subclasses of AirbyteWorkspaceComponent can override get_asset_spec method."""
+
+    class CustomAirbyteWorkspaceComponent(AirbyteWorkspaceComponent):
+        def get_asset_spec(self, props) -> AssetSpec:
+            # Override to add custom metadata and tags
+            base_spec = super().get_asset_spec(props)
+            return base_spec.replace_attributes(
+                metadata={**base_spec.metadata, "custom_override": "test_value"},
+                tags={**base_spec.tags, "custom_tag": "override_test"},
+            )
+
+    defs = CustomAirbyteWorkspaceComponent(
+        workspace=resource,
+    ).build_defs(ComponentTree.for_test().load_context)
+
+    # Verify that the custom get_asset_spec method is being used
+    assets_def = defs.get_assets_def(AssetKey(["test_prefix_test_stream"]))
+    asset_spec = assets_def.get_asset_spec(AssetKey(["test_prefix_test_stream"]))
+
+    # Check that our custom metadata and tags are present
+    assert asset_spec.metadata["custom_override"] == "test_value"
+    assert asset_spec.tags["custom_tag"] == "override_test"
+
+    # Verify that the asset keys are still correct
+    assert defs.resolve_asset_graph().get_all_asset_keys() == {
+        AssetKey(["test_prefix_test_stream"]),
+        AssetKey(["test_prefix_test_another_stream"]),
+    }
