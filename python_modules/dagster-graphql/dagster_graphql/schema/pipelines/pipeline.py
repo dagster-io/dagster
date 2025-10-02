@@ -11,6 +11,7 @@ from dagster._core.definitions.partitions.utils import PartitionRangeStatus
 from dagster._core.errors import DagsterUserCodeProcessError
 from dagster._core.event_api import EventLogCursor
 from dagster._core.events import DagsterEventType
+from dagster._core.remote_representation.code_location import is_implicit_asset_job_name
 from dagster._core.remote_representation.external import RemoteExecutionPlan, RemoteJob
 from dagster._core.remote_representation.external_data import (
     DEFAULT_MODE_NAME,
@@ -1217,10 +1218,14 @@ class GraphenePipeline(GrapheneIPipelineSnapshotMixin, graphene.ObjectType):
         return True
 
     def resolve_isAssetJob(self, graphene_info: ResolveInfo):
-        handle = self._remote_job.repository_handle
-        location = graphene_info.context.get_code_location(handle.location_name)
-        repository = location.get_repository(handle.repository_name)
-        return bool(repository.get_asset_node_snaps(self._remote_job.name))
+        if is_implicit_asset_job_name(self._remote_job.name):
+            return True
+
+        return bool(
+            graphene_info.context.get_asset_keys_in_job(
+                self._remote_job.handle.to_selector(),
+            )
+        )
 
     def resolve_repository(self, graphene_info: ResolveInfo):
         from dagster_graphql.schema.external import GrapheneRepository
