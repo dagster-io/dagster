@@ -5,7 +5,6 @@ last_update:
   author: Dennis Hume
 sidebar_custom_props:
   logo: images/integrations/looker.svg
-tags: [reference-architecture]
 ---
 
 ## Objective
