@@ -46,7 +46,7 @@ def topstories(context: AssetExecutionContext) -> MaterializeResult:
     return MaterializeResult(
         metadata={
             "num_records": len(df),  # Metadata can be any key-value pair
-            "preview": MetadataValue.md(str(df.head().to_markdown())),
+            "preview": MetadataValue.md(df.head().to_markdown()),
             # The `MetadataValue` class has useful static methods to build Metadata
         }
     )
