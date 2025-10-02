@@ -1,4 +1,8 @@
-# ML Repository
+---
+title: ML repo
+description: The ML repoistory
+sidebar_position: 20
+---
 
 The ML Platform team's repository (`repo-ml/`) demonstrates advanced machine learning workflows that build upon the Analytics team's foundational data. This repository showcases how to implement feature engineering, model training, and prediction pipelines while maintaining dependencies on assets from another code location.
 

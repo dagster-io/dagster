@@ -1,4 +1,8 @@
-# Analytics Repository
+---
+title: Analytics repo
+description: The analytics repoistory
+sidebar_position: 10
+---
 
 The Analytics team's repository (`repo-analytics/`) demonstrates a traditional data engineering workflow focused on data ingestion, transformation, and analytics reporting. This repository serves as the foundation layer, providing clean, processed data that other teams can build upon.
 

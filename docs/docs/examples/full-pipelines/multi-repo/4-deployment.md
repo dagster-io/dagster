@@ -1,4 +1,8 @@
-# Deployment Configuration
+---
+title: Deployment
+description: Deploying multi-repository code locations to Dagster+
+sidebar_position: 30
+---
 
 Deploying multi-repository code locations in Dagster+ requires careful configuration of each repository's deployment settings and coordination between teams. This page covers the deployment patterns and best practices for managing multiple code locations in production.
 

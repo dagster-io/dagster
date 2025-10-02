@@ -1,4 +1,8 @@
-# Cross-Repository Dependencies
+---
+title: Cross repository dependencies
+description: Dependencies across repositories
+sidebar_position: 30
+---
 
 One of the most powerful features of multi-repository code locations is the ability to create asset dependencies that span across different repositories and teams. This enables organizations to maintain repository boundaries while still allowing data to flow seamlessly between teams.
 
