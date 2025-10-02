@@ -154,7 +154,7 @@ export const SensorDetails = ({
               <td>{sensor.description}</td>
             </tr>
           ) : null}
-          {sensor.owners && sensor.owners.length > 0 && (
+          {sensor.owners.length > 0 && (
             <tr>
               <td>Owners</td>
               <td>

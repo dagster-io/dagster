@@ -76,7 +76,7 @@ export const ScheduleDetails = (props: {
               <td>{schedule.description}</td>
             </tr>
           ) : null}
-          {schedule.owners && schedule.owners.length > 0 && (
+          {schedule.owners.length > 0 && (
             <tr>
               <td>Owners</td>
               <td>
