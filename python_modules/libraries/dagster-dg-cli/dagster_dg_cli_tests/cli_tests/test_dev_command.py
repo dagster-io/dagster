@@ -4,6 +4,7 @@ from pathlib import Path
 
 import pytest
 from dagster_dg_core.utils import activate_venv, discover_git_root, is_windows, pushd
+from dagster_shared.utils import environ
 from dagster_test.components.test_utils.test_cases import BASIC_INVALID_VALUE, BASIC_MISSING_VALUE
 from dagster_test.dg_utils.utils import (
     ProxyRunner,
@@ -28,12 +29,12 @@ def test_dev_workspace_context_success(monkeypatch):
     with (
         ProxyRunner.test() as runner,
         isolated_example_workspace(runner, create_venv=True) as workspace_path,
+        environ({"DAGSTER_GIT_REPO_DIR": dagster_git_repo_dir}),
     ):
         with activate_venv(workspace_path / ".venv"):
             result = runner.invoke_create_dagster(
                 "project",
                 "--use-editable-dagster",
-                dagster_git_repo_dir,
                 "project-1",
                 "--uv-sync",
             )
@@ -41,7 +42,6 @@ def test_dev_workspace_context_success(monkeypatch):
             result = runner.invoke_create_dagster(
                 "project",
                 "--use-editable-dagster",
-                dagster_git_repo_dir,
                 "project-2",
                 "--uv-sync",
             )
@@ -63,13 +63,13 @@ def test_dev_workspace_load_env_files(monkeypatch):
     with (
         ProxyRunner.test() as runner,
         isolated_example_workspace(runner, create_venv=True) as workspace_path,
+        environ({"DAGSTER_GIT_REPO_DIR": dagster_git_repo_dir}),
     ):
         with activate_venv(workspace_path / ".venv"):
             Path(".env").write_text("WORKSPACE_ENV_VAR=1\nOVERWRITTEN_ENV_VAR=3")
             result = runner.invoke_create_dagster(
                 "project",
                 "--use-editable-dagster",
-                dagster_git_repo_dir,
                 "project-1",
                 "--uv-sync",
             )
@@ -77,7 +77,6 @@ def test_dev_workspace_load_env_files(monkeypatch):
             result = runner.invoke_create_dagster(
                 "project",
                 "--use-editable-dagster",
-                dagster_git_repo_dir,
                 "project-2",
                 "--uv-sync",
             )

@@ -2,6 +2,7 @@ from pathlib import Path
 
 import pytest
 from dagster_dg_core.utils import discover_git_root, is_windows, pushd
+from dagster_shared.utils import environ
 from dagster_test.components.test_utils.test_cases import BASIC_INVALID_VALUE, BASIC_MISSING_VALUE
 from dagster_test.dg_utils.utils import (
     ProxyRunner,
@@ -15,11 +16,14 @@ from dagster_test.dg_utils.utils import (
 @pytest.mark.skipif(is_windows(), reason="Temporarily skipping (signal issues in CLI)..")
 def test_check_defs_workspace_context_success():
     dagster_git_repo_dir = str(discover_git_root(Path(__file__)))
-    with ProxyRunner.test() as runner, isolated_example_workspace(runner, create_venv=True):
+    with (
+        ProxyRunner.test() as runner,
+        isolated_example_workspace(runner, create_venv=True),
+        environ({"DAGSTER_GIT_REPO_DIR": dagster_git_repo_dir}),
+    ):
         result = runner.invoke_create_dagster(
             "project",
             "--use-editable-dagster",
-            dagster_git_repo_dir,
             "projects/project-1",
             "--uv-sync",
         )
@@ -27,7 +31,6 @@ def test_check_defs_workspace_context_success():
         result = runner.invoke_create_dagster(
             "project",
             "--use-editable-dagster",
-            dagster_git_repo_dir,
             "projects/project-2",
             "--uv-sync",
         )

@@ -43,6 +43,7 @@ from dagster_dg_core.utils import (
     pushd,
     set_toml_node,
 )
+from dagster_shared.utils import environ
 from packaging.version import Version
 from typing_extensions import Self, TypeAlias
 
@@ -167,11 +168,12 @@ def isolated_example_workspace(
         runner.isolated_filesystem(),
         clear_module_from_cache("foo_bar"),
         clear_module_from_cache(project_name) if project_name else nullcontext(),
+        environ({"DAGSTER_GIT_REPO_DIR": dagster_git_repo_dir}),
     ):
         result = runner.invoke_create_dagster(
             "workspace",
             "dagster-workspace",
-            *(["--use-editable-dagster", dagster_git_repo_dir] if use_editable_dagster else []),
+            *(["--use-editable-dagster"] if use_editable_dagster else []),
         )
         assert_runner_result(result)
         if workspace_config_file_type == "pyproject.toml":
@@ -184,11 +186,7 @@ def isolated_example_workspace(
                 result = runner.invoke_create_dagster(
                     "project",
                     "projects/" + project_name,
-                    *(
-                        ["--use-editable-dagster", dagster_git_repo_dir]
-                        if use_editable_dagster
-                        else []
-                    ),
+                    *(["--use-editable-dagster"] if use_editable_dagster else []),
                 )
                 assert_runner_result(result)
                 if project_config_file_type == "dg.toml":
@@ -244,12 +242,12 @@ def isolated_example_project_foo_bar(
         fs_context = isolated_example_workspace(runner)
     else:
         fs_context = runner.isolated_filesystem()
-    with fs_context:
+    with fs_context, environ({"DAGSTER_GIT_REPO_DIR": dagster_git_repo_dir}):
         args = [
             "project",
             "foo-bar",
             *uv_sync_args,
-            *(["--use-editable-dagster", dagster_git_repo_dir] if use_editable_dagster else []),
+            *(["--use-editable-dagster"] if use_editable_dagster else []),
         ]
         result = runner.invoke_create_dagster(*args)
 
