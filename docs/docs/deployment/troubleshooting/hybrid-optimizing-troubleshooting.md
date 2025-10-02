@@ -4,16 +4,15 @@ description: Configure your agent and code server container settings for optimal
 sidebar_position: 100
 ---
 
+import HybridResources from '@site/docs/partials/\_HybridResources.md';
+
 To ensure the best performance of your Dagster+ deployment, we recommend following the guidance in the [performance optimization](#performance-optimization) section of this doc to tune your [agent](/deployment/dagster-plus/hybrid/architecture#the-agent) and [code server](/deployment/dagster-plus/hybrid/architecture#code-server) container settings to meet your organization's needs.
 
 If you run into issues as you scale your deployment (especially as asset counts increase), you can use the [troubleshooting guidance](#troubleshooting) to diagnose and fix them.
 
 ## Performance optimization
 
-* **Agent container** - Start at 0.25 vCPU core and 1 GB RAM, then scale with [concurrent runs](/guides/operate/managing-concurrency) and the number and size of [code locations](/deployment/code-locations/dagster-plus-code-locations).
-* **Code server container** - Budget for imports, plus the definition graph, and any heavy initialization. We recommend starting with 0.25 vCPU cores and 1GB RAM.
-
-For compute-heavy jobs, increase memory and/or CPU where the run workers are (i.e. Kubernetes pods or ECS tasks), not just the code server.
+<HybridResources />
 
 ## Troubleshooting
 

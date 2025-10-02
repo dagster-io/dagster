@@ -5,13 +5,15 @@ title: Architecture overview
 tags: [dagster-plus-feature]
 ---
 
+import HybridAgentRecommendation from '@site/docs/partials/\_HybridAgentRecommendation.md';
+
 The Dagster+ Hybrid architecture is the most flexible and secure way to deploy Dagster+. It allows you to run your user code in your environment while leveraging Dagster+'s infrastructure for orchestration and metadata management.
 
 ## Hybrid architecture overview
 
 A **hybrid deployment** utilizes a combination of your infrastructure and Dagster-hosted backend services.
 
-The Dagster backend services - including the web frontend, GraphQL API, metadata database, and daemons (responsible for executing schedules and sensors) - are hosted in Dagster+. You are responsible for running an [agent](/deployment/dagster-plus/hybrid#dagster-hybrid-agents) in your environment.
+The Dagster backend services - including the web frontend, GraphQL API, metadata database, and daemons (responsible for executing schedules and sensors) - are hosted in Dagster+. You are responsible for running an [agent](#the-agent) in your environment.
 
 ![Dagster+ Hybrid deployment architecture](/images/dagster-plus/deployment/hybrid-architecture.png)
 
@@ -27,15 +29,28 @@ All user code runs within your environment, in isolation from Dagster system cod
 
 ## The agent
 
-The Dagster+ agent is a long-lived process that polls Dagster+'s API servers for new work, and launches or queries your user code as needed.
+The Dagster+ agent is a long-lived process that polls Dagster+'s API servers for new work, and launches or queries your user code as needed. Currently, Dagster supports the following agents:
+
+- [AWS ECS](/deployment/dagster-plus/hybrid/amazon-ecs)
+- [Microsoft Azure](/deployment/dagster-plus/hybrid/azure)
+- [Docker](/deployment/dagster-plus/hybrid/docker)
+- [Kubernetes](/deployment/dagster-plus/hybrid/kubernetes)
+
+You can also install a [local agent](/deployment/dagster-plus/hybrid/local) to experiment with Dagster+ before deploying a more scalable Hybrid agent, or run [multiple agents](/deployment/dagster-plus/hybrid/multiple) to provide redundancy if a single agent goes down.
+
+<HybridAgentRecommendation />
 
 ### Infrastructure management
+
+The Dagster+ agent:
 
 - Launches and manages [code servers](#code-server) for each code location
 - Launches run workers (new containers/processes) when runs need to be executed
 - Acts as the run launcher, spinning up isolated tasks/pods/processes for each run
 
 ### Communication
+
+Additionally, the agent:
 
 - Receives messages and instructions from Dagster+ about what work needs to be done
 - Sends metadata back to Dagster+ about launched runs and code server status
