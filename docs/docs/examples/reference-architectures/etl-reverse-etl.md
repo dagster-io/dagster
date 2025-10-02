@@ -5,8 +5,6 @@ last_update:
   author: Dennis Hume
 sidebar_custom_props:
   logo: images/integrations/snowflake.svg
-  referenceArchitecture: true
-tags: [reference-architecture]
 ---
 
 ## Objective
