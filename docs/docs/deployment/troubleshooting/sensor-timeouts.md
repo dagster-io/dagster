@@ -86,7 +86,7 @@ Monitoring the CPU and memory of the agent and code servers should be done using
 
 - **For k8s**, refer to [this resource management guide](https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/).
 - **For ECS,** we provide `AgentMemory`, `AgentCpu`, `CodeServerMemory`, and `CodeServerCPU` parameters on our Cloudformation agent template that allow you to easily configure your resource constraints.
-- For general troubleshooting advice regarding Dagster+ Hybrid performance, see the [Hybrid performance optimization and troubleshooting guide](/hybrid-optimizing-troubleshooting).
+- For general troubleshooting advice regarding Dagster+ Hybrid performance, see the [Hybrid performance optimization and troubleshooting guide](/deployment/troubleshooting/hybrid-optimizing-troubleshooting).
 
 ##### Exposing agent and code server metrics in Dagster+ Hybrid
 
