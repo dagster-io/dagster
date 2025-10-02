@@ -5,8 +5,6 @@ last_update:
   author: Dennis Hume
 sidebar_custom_props:
   logo: images/dagster-primary-mark.svg
-  miniProject: true
-tags: [mini-project]
 ---
 
 In this example, we'll explore different ways to handle caching in Dagster. Caching is especially useful for assets that rely on expensive operations, such as API calls, database queries, or heavy computations, as it can dramatically improve performance, reduce costs, and make pipelines more efficient. In practice, it’s usually best to implement caching within [resources](/guides/build/external-resources) rather than [assets](/guides/build/assets), since this makes the functionality easier to share and reuse.

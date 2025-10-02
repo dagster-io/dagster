@@ -18,7 +18,6 @@ import {SINGLE_JOB_QUERY} from './SingleJobQuery';
 import {TimeFromNow} from '../ui/TimeFromNow';
 import {SingleJobQuery, SingleJobQueryVariables} from './types/SingleJobQuery.types';
 import {JobMenu} from '../instance/JobMenu';
-import {RunStatusIndicator} from '../runs/RunStatusDots';
 import {RunStatusOverlay, RunStatusPezList} from '../runs/RunStatusPez';
 import {buildPipelineSelector} from './WorkspaceContext/util';
 import {RepoAddress} from './types';
@@ -97,10 +96,7 @@ export const VirtualizedObserveJobRow = forwardRef(
                   hoverOpenDelay={100}
                 >
                   <HoverButton>
-                    <Box flex={{direction: 'row', alignItems: 'center', gap: 8}}>
-                      <RunStatusIndicator status={latestRuns[0].status} />
-                      <TimeFromNow unixTimestamp={latestRuns[0].startTime} />
-                    </Box>
+                    <TimeFromNow unixTimestamp={latestRuns[0].startTime} showTooltip={false} />
                   </HoverButton>
                 </Popover>
               ) : null,

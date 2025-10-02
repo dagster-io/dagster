@@ -606,10 +606,10 @@ class BaseWorkspaceRequestContext(LoadingContext):
         )
         return repository.sensors_by_job_name.get(selector.job_name, [])
 
-    def get_assets_in_job(
+    def get_asset_keys_in_job(
         self,
         selector: Union[JobSubsetSelector, JobSelector],
-    ) -> Sequence[RemoteRepositoryAssetNode]:
+    ) -> Sequence[AssetKey]:
         if not self.has_code_location(selector.location_name):
             return []
 
@@ -619,13 +619,19 @@ class BaseWorkspaceRequestContext(LoadingContext):
 
         repository = location.get_repository(selector.repository_name)
         snaps = repository.get_asset_node_snaps(job_name=selector.job_name)
+        return [snap.asset_key for snap in snaps]
 
-        # use repository scoped nodes to match existing behavior,
-        # easily switched to workspace scope nodes by using self.asset_graph
+    def get_assets_in_job(
+        self,
+        selector: Union[JobSubsetSelector, JobSelector],
+    ) -> Sequence[RemoteRepositoryAssetNode]:
+        keys = self.get_asset_keys_in_job(selector)
+        if not keys:
+            return []
+
+        repo_asset_graph = self.get_repository(selector.repository_selector).asset_graph
         return [
-            repository.asset_graph.get(snap.asset_key)
-            for snap in snaps
-            if repository.asset_graph.has(snap.asset_key)
+            repo_asset_graph.get(asset_key) for asset_key in keys if repo_asset_graph.has(asset_key)
         ]
 
     def get_partition_sets(
