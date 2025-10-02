@@ -27,8 +27,8 @@ sudo py-spy record -f speedscope --idle -- dagster definitions validate
 1.  Configure your Dagster deployment so that each run pod is using a security context that can run `py-spy`. Note that this gives the pod elevated permissions, so check with your cluster admins to make sure this is an acceptable change to make temporarily.
 
     <Tabs>
-    <TabItem value="oss" label="Dagster OSS">
-        If you're using the Dagster Open Source Helm chart, you can configure the run launcher to launch each run with
+        <TabItem value="oss" label="Dagster OSS">
+            If you're using the Dagster Open Source Helm chart, you can configure the run launcher to launch each run with
 
             ```
             runLauncher:
