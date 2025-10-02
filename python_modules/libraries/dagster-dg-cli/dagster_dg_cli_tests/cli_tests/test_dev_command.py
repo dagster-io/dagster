@@ -168,11 +168,11 @@ def test_implicit_yaml_check_from_dg_dev() -> None:
     ):
         with pushd(str(tmpdir)):
             result = runner.invoke("dev")
-            assert result.exit_code != 0, str(result.stdout)
+            assert result.exit_code != 0, str(result.output)
 
             assert BASIC_INVALID_VALUE.check_error_msg and BASIC_MISSING_VALUE.check_error_msg
-            BASIC_INVALID_VALUE.check_error_msg(str(result.stdout))
-            BASIC_MISSING_VALUE.check_error_msg(str(result.stdout))
+            BASIC_INVALID_VALUE.check_error_msg(str(result.output))
+            BASIC_MISSING_VALUE.check_error_msg(str(result.output))
 
 
 def test_implicit_yaml_check_from_dg_dev_in_workspace_context() -> None:
@@ -188,17 +188,17 @@ def test_implicit_yaml_check_from_dg_dev_in_workspace_context() -> None:
     ):
         with pushd(Path(tmpdir).parent):
             result = runner.invoke("dev", "--check-yaml")
-            assert result.exit_code != 0, str(result.stdout)
+            assert result.exit_code != 0, str(result.output)
 
             assert "--check-yaml is not currently supported in a workspace context" in str(
-                result.stdout
+                result.output
             )
 
         # It is supported and is the default in a project context within a workspace
         with pushd(tmpdir):
             result = runner.invoke("dev", "--check-yaml")
-            assert result.exit_code != 0, str(result.stdout)
+            assert result.exit_code != 0, str(result.output)
 
             assert BASIC_INVALID_VALUE.check_error_msg and BASIC_MISSING_VALUE.check_error_msg
-            BASIC_INVALID_VALUE.check_error_msg(str(result.stdout))
-            BASIC_MISSING_VALUE.check_error_msg(str(result.stdout))
+            BASIC_INVALID_VALUE.check_error_msg(str(result.output))
+            BASIC_MISSING_VALUE.check_error_msg(str(result.output))

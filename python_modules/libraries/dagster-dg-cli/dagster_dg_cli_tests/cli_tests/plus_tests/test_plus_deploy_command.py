@@ -1003,7 +1003,7 @@ def test_plus_deploy_hybrid_with_build_yaml_scaffold(
         with patch(
             "dagster_dg_cli.cli.plus.deploy.deploy_session._build_hybrid_image",
         ):
-            result = runner.invoke("scaffold", "build-artifacts")
+            result = runner.invoke("scaffold", "build-artifacts", "-y")
             assert not result.exit_code, result.output
 
             result = runner.invoke("plus", "deploy", "--agent-type", "hybrid", "--yes")
@@ -1056,6 +1056,7 @@ def test_plus_deploy_hybrid_with_workspace_build_yaml_scaffold(
             result = runner.invoke(
                 "scaffold",
                 "build-artifacts",
+                "-y",
             )
             assert not result.exit_code, result.output
 

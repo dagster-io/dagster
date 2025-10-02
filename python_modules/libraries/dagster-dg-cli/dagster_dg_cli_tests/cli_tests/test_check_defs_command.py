@@ -74,14 +74,14 @@ def test_implicit_yaml_check_from_dg_check_defs_in_project_context() -> None:
     ):
         with pushd(str(tmpdir)):
             result = runner.invoke("check", "defs", catch_exceptions=False)
-            assert result.exit_code != 0, str(result.stdout)
+            assert result.exit_code != 0, str(result.output)
 
             assert BASIC_INVALID_VALUE.check_error_msg and BASIC_MISSING_VALUE.check_error_msg
-            BASIC_INVALID_VALUE.check_error_msg(str(result.stdout))
-            BASIC_MISSING_VALUE.check_error_msg(str(result.stdout))
+            BASIC_INVALID_VALUE.check_error_msg(str(result.output))
+            BASIC_MISSING_VALUE.check_error_msg(str(result.output))
 
             # didn't make it to defs check
-            assert "Validation failed for code location foo-bar" not in str(result.stdout)
+            assert "Validation failed for code location foo-bar" not in str(result.output)
 
 
 def test_implicit_yaml_check_disabled_in_project_context() -> None:
@@ -97,10 +97,10 @@ def test_implicit_yaml_check_disabled_in_project_context() -> None:
     ):
         with pushd(str(tmpdir)):
             result = runner.invoke("check", "defs", "--no-check-yaml", catch_exceptions=False)
-            assert result.exit_code != 0, str(result.stdout)
+            assert result.exit_code != 0, str(result.output)
 
             # yaml check was skipped, defs check failed
-            assert "Validation failed for code location foo-bar" in str(result.stdout)
+            assert "Validation failed for code location foo-bar" in str(result.output)
 
 
 def test_no_implicit_yaml_check_from_dg_check_defs_in_workspace_context() -> None:
@@ -116,10 +116,10 @@ def test_no_implicit_yaml_check_from_dg_check_defs_in_workspace_context() -> Non
     ):
         with pushd(Path(tmpdir).parent):
             result = runner.invoke("check", "defs", catch_exceptions=False)
-            assert result.exit_code != 0, str(result.stdout)
+            assert result.exit_code != 0, str(result.output)
 
             # yaml check was skipped, defs check failed
-            assert "Validation failed for code location foo-bar" in str(result.stdout)
+            assert "Validation failed for code location foo-bar" in str(result.output)
 
 
 def test_implicit_yaml_check_from_dg_check_defs_disallowed_in_workspace_context() -> None:
@@ -135,17 +135,17 @@ def test_implicit_yaml_check_from_dg_check_defs_disallowed_in_workspace_context(
     ):
         with pushd(Path(tmpdir).parent):
             result = runner.invoke("check", "defs", "--check-yaml", catch_exceptions=False)
-            assert result.exit_code != 0, str(result.stdout)
+            assert result.exit_code != 0, str(result.output)
 
             assert "--check-yaml is not currently supported in a workspace context" in str(
-                result.stdout
+                result.output
             )
 
         # It is supported and is the default in a project context within a workspace
         with pushd(tmpdir):
             result = runner.invoke("check", "defs", "--check-yaml", catch_exceptions=False)
-            assert result.exit_code != 0, str(result.stdout)
+            assert result.exit_code != 0, str(result.output)
 
             assert BASIC_INVALID_VALUE.check_error_msg and BASIC_MISSING_VALUE.check_error_msg
-            BASIC_INVALID_VALUE.check_error_msg(str(result.stdout))
-            BASIC_MISSING_VALUE.check_error_msg(str(result.stdout))
+            BASIC_INVALID_VALUE.check_error_msg(str(result.output))
+            BASIC_MISSING_VALUE.check_error_msg(str(result.output))

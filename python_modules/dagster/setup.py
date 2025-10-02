@@ -81,7 +81,7 @@ setup(
     python_requires=">=3.9,<3.14",
     install_requires=[
         # cli
-        "click>=5.0,<8.2",
+        "click>=5.0,<9.0",
         "coloredlogs>=6.1,<=14.0",
         "Jinja2",
         # core (not explicitly expressed atm)

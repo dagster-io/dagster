@@ -37,7 +37,7 @@ setup(
     install_requires=[
         "Jinja2",
         "tomlkit<0.13.3",  # bug in this version
-        "click>=8,<8.2",
+        "click>=8,<9",
         "click-aliases",
         "typing_extensions>=4.4.0,<5",
         "gql[requests]",

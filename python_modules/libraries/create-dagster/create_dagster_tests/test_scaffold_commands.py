@@ -85,7 +85,7 @@ def test_scaffold_workspace_already_exists_failure(monkeypatch) -> None:
         result = runner.invoke_create_dagster(
             "workspace",
             "dagster-workspace",
-            "--use-editable-dagster",
+            "--no-uv-sync",
         )
         assert_runner_result(result, exit_0=False)
         assert "already exists" in result.output
@@ -133,7 +133,10 @@ def test_scaffold_workspace_already_exists_failure(monkeypatch) -> None:
     ],
 )
 def test_scaffold_project_success(
-    monkeypatch, cli_args: tuple[str, ...], input_str: Optional[str], opts: dict[str, object]
+    monkeypatch,
+    cli_args: tuple[str, ...],
+    input_str: Optional[str],
+    opts: dict[str, object],
 ) -> None:
     use_preexisting_venv = check.opt_bool_elem(opts, "use_preexisting_venv") or False
     no_uv = check.opt_bool_elem(opts, "no_uv") or False
@@ -150,7 +153,9 @@ def test_scaffold_project_success(
                 subprocess.run(["uv", "venv"], check=True)
 
         result = runner.invoke_create_dagster(
-            "project", "--use-editable-dagster", *cli_args, input=input_str
+            "project",
+            *cli_args,
+            input=input_str,
         )
         assert_runner_result(result)
 
@@ -458,7 +463,7 @@ def test_scaffold_project_editable_dagster_no_env_var_no_value_fails(
         isolated_example_workspace(runner, use_editable_dagster=False),
         environ({"DAGSTER_GIT_REPO_DIR": ""}),
     ):
-        result = runner.invoke_create_dagster("project", option, "--", "bar")
+        result = runner.invoke_create_dagster("project", "--no-uv-sync", option, "--", "bar")
         assert_runner_result(result, exit_0=False)
         assert "requires the `DAGSTER_GIT_REPO_DIR`" in result.output
 
