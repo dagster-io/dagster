@@ -9,8 +9,6 @@ import {
   Select,
   Skeleton,
   Subtitle1,
-  Tab,
-  Tabs,
   Tag,
   UnstyledButton,
   ifPlural,
@@ -19,10 +17,8 @@ import React, {useCallback, useEffect, useMemo, useState} from 'react';
 import {useRouteMatch} from 'react-router-dom';
 import {useSetRecoilState} from 'recoil';
 import {CreateCatalogViewButton} from 'shared/assets/CreateCatalogViewButton.oss';
-import {
-  AssetCatalogAlerts,
-  useShouldShowAssetCatalogAlerts,
-} from 'shared/assets/catalog/AssetCatalogAlerts.oss';
+import {AssetCatalogAlerts} from 'shared/assets/catalog/AssetCatalogAlerts.oss';
+import {AssetCatalogTabs} from 'shared/assets/catalog/AssetCatalogTabs.oss';
 import {useCatalogExtraDropdownOptions} from 'shared/assets/catalog/useCatalogExtraDropdownOptions.oss';
 import {AssetCatalogInsights} from 'shared/assets/insights/AssetCatalogInsights.oss';
 import {useFavoriteAssets} from 'shared/assets/useFavoriteAssets.oss';
@@ -170,26 +166,10 @@ export const AssetCatalogTableV2 = React.memo(() => {
 
   const {isFullScreen} = useFullScreen();
 
-  const shouldShowCatalogAlerts = useShouldShowAssetCatalogAlerts();
-
-  const tabs = useMemo(
-    () => (
-      <Box border="bottom">
-        {isFullScreen ? null : (
-          <Tabs
-            onChange={onChangeTab}
-            selectedTabId={selectedTab}
-            style={{marginLeft: 24, marginRight: 24}}
-          >
-            <Tab id="assets" title="Assets" />
-            <Tab id="lineage" title="Lineage" />
-            <Tab id="insights" title="Insights" />
-            {shouldShowCatalogAlerts ? <Tab id="alerts" title="Alert Policies" /> : null}
-          </Tabs>
-        )}
-      </Box>
-    ),
-    [isFullScreen, onChangeTab, selectedTab, shouldShowCatalogAlerts],
+  const tabs = isFullScreen ? null : (
+    <Box border="bottom" padding={{left: 24, right: 24}}>
+      <AssetCatalogTabs onChangeTab={onChangeTab} selectedTab={selectedTab} />
+    </Box>
   );
 
   const content = () => {
