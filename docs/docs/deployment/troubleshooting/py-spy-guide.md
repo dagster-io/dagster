@@ -24,57 +24,55 @@ sudo py-spy record -f speedscope --idle -- dagster definitions validate
 
 ## Generating a `py-spy` dump for a hanging run in Kubernetes
 
-1.  Configure your Dagster deployment so that each run pod is using a security context that can run `py-spy`. Note that this gives the pod elevated permissions, so check with your cluster admins to make sure this is an acceptable change to make temporarily.
+1. Configure your Dagster deployment so that each run pod is using a security context that can run `py-spy`. Note that this gives the pod elevated permissions, so check with your cluster admins to make sure this is an acceptable change to make temporarily.
 
-    <Tabs>
-        <TabItem value="oss" label="Dagster OSS">
-            If you're using the Dagster Open Source Helm chart, you can configure the run launcher to launch each run with
+<Tabs>
+    <TabItem value="oss" label="Dagster OSS">
+        If you're using the Dagster Open Source Helm chart, you can configure the run launcher to launch each run with
 
-            ```
-            runLauncher:
-            type: K8sRunLauncher
-            config:
-                k8sRunLauncher:
-                runK8sConfig:
-                    containerConfig:
+        ```
+        runLauncher:
+        type: K8sRunLauncher
+        config:
+            k8sRunLauncher:
+            runK8sConfig:
+                containerConfig:
+                securityContext:
+                    capabilities:
+                    add:
+                        - SYS_PTRACE
+        ```
+
+        For more information on applying this type of configuration to your Kubernetes pod in Dagster OSS, see [Customizing your Kubernetes deployment](/deployment/oss/deployment-options/kubernetes/customizing-your-deployment#instance-level-kubernetes-configuration).
+    </TabItem>
+    <TabItem value="hybrid" label="Dagster+ Hybrid with Kubernetes agent">
+        For example, you can set the following in your `dagster_cloud.yaml` file for your code location if you're running a Kubernetes agent to make both your code servers and run pods able to work with py-spy:
+
+        ```
+        locations:
+        - location_name: cloud-examples
+            image: dagster/dagster-cloud-examples:latest
+            code_source:
+            package_name: dagster_cloud_examples
+            container_context:
+            k8s:
+                server_k8s_config: # Raw kubernetes config for code servers launched by the agent
+                container_config:
                     securityContext:
-                        capabilities:
+                    capabilities:
                         add:
-                            - SYS_PTRACE
-            ```
+                        - SYS_PTRACE
+                run_k8s_config: # Raw kubernetes config for runs launched by the agent
+                container_config:
+                    securityContext:
+                    capabilities:
+                        add:
+                        - SYS_PTRACE
+        ```
 
-            For more information on applying this type of configuration to your Kubernetes pod in Dagster OSS, see [Customizing your Kubernetes deployment](/deployment/oss/deployment-options/kubernetes/customizing-your-deployment#instance-level-kubernetes-configuration).
-        </TabItem>
-        <TabItem value="hybrid" label="Dagster+ Hybrid with Kubernetes agent">
-
-            For example, you can set the following in your `dagster_cloud.yaml` file for your code location if you're running a Kubernetes agent to make both your code servers and run pods able to work with py-spy:
-
-            ```
-            locations:
-            - location_name: cloud-examples
-                image: dagster/dagster-cloud-examples:latest
-                code_source:
-                package_name: dagster_cloud_examples
-                container_context:
-                k8s:
-                    server_k8s_config: # Raw kubernetes config for code servers launched by the agent
-                    container_config:
-                        securityContext:
-                        capabilities:
-                            add:
-                            - SYS_PTRACE
-                    run_k8s_config: # Raw kubernetes config for runs launched by the agent
-                    container_config:
-                        securityContext:
-                        capabilities:
-                            add:
-                            - SYS_PTRACE
-            ```
-
-            For more information on applying this type of customization to your Kubernetes pod in Dagster+, see the [Kubernetes agent configuration reference](/deployment/dagster-plus/hybrid/kubernetes/configuration).
-        </TabItem>
-
-    </Tabs>
+        For more information on applying this type of customization to your Kubernetes pod in Dagster+, see the [Kubernetes agent configuration reference](/deployment/dagster-plus/hybrid/kubernetes/configuration).
+    </TabItem>
+</Tabs>
 
     :::note
 
