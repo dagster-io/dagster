@@ -1,0 +1,11 @@
+# start_workspace_config
+load_from:
+  - python_package:
+      package_name: analytics.definitions
+      location_name: analytics-team
+      working_directory: ./repo-analytics
+  - python_package:
+      package_name: ml_platform.definitions  
+      location_name: ml-platform
+      working_directory: ./repo-ml
+# end_workspace_config

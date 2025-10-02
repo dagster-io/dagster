@@ -1,0 +1,32 @@
+[project]
+name = "dagster-ml-platform"
+version = "0.1.0"
+description = "ML Platform Team Dagster Code Location"
+
+dependencies = [
+    "dagster",
+    "dagster-webserver",
+    "dagster-cloud",
+    "pandas",
+    "pyarrow",
+    "scikit-learn",
+    "numpy",
+    "joblib",
+]
+
+[build-system]
+requires = ["setuptools>=61.0"]
+build-backend = "setuptools.build_meta"
+
+[tool.dagster]
+module_name = "ml_platform.definitions"
+
+[tool.dg]
+directory_type = "project"
+
+
+[tool.dg.project]
+root_module = "ml_platform"
+registry_modules = [
+    "ml_platform.components.*",
+]

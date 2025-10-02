@@ -1,0 +1,19 @@
+# start_analytics_cloud_config
+locations:
+  - location_name: analytics-team
+    code_source:
+      python_file: analytics/definitions.py
+    build:
+      directory: .
+      # Optional: specify custom Docker registry
+      # registry: your-registry.amazonaws.com/dagster-analytics
+    # Optional: specify compute resources for Serverless
+    # container_context:
+    #   serverless:
+    #     cpu: 0.25
+    #     memory: 512
+    # Optional: environment variables
+    # env_vars:
+    #   - DATABASE_URL
+    #   - API_KEY
+# end_analytics_cloud_config

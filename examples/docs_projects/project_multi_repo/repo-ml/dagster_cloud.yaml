@@ -1,0 +1,19 @@
+# start_ml_cloud_config
+locations:
+  - location_name: ml-platform
+    code_source:
+      python_file: ml_platform/definitions.py
+    build:
+      directory: .
+      # Optional: specify custom Docker registry
+      # registry: your-registry.amazonaws.com/dagster-ml-platform
+    # Optional: specify compute resources for ML workloads
+    # container_context:
+    #   serverless:
+    #     cpu: 1.0
+    #     memory: 2048
+    # Optional: environment variables for ML models
+    # env_vars:
+    #   - MODEL_REGISTRY_URL
+    #   - MLFLOW_TRACKING_URI
+# end_ml_cloud_config
