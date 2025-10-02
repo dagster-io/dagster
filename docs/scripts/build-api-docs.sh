@@ -41,9 +41,9 @@ if [ "$VERCEL" = "1" ]; then
   cp -rf sphinx/_build/mdx/sections/api/apidocs/clis docs/api
 
   # Parallelize production sphinx-inv build -- see tox.ini
-  echo "Running sphinx and copying \`object.inv\` to \`static/\`"
-  tox -e sphinx-inv-vercel
-  cp sphinx/_build/json/objects.inv static/.
+  # echo "Running sphinx and copying \`object.inv\` to \`static/\`"
+  # tox -e sphinx-inv-vercel
+  # cp sphinx/_build/json/objects.inv static/.
 else
   # Do not parallelize local sphinx-mdx build -- see tox.ini
   echo "Running sphinx-mdx and copying files to \`docs/api\`"
@@ -52,9 +52,8 @@ else
   cp -rf sphinx/_build/mdx/sections/api/apidocs/libraries docs/api
   cp -rf sphinx/_build/mdx/sections/api/apidocs/clis docs/api
 
-  
   # Do not parallelize local sphinx-inv build -- see tox.ini
-  echo "Running sphinx and copying \`object.inv\` to \`static/\`"
-  tox -e sphinx-inv-local
-  cp sphinx/_build/json/objects.inv static/.
+  # echo "Running sphinx and copying \`object.inv\` to \`static/\`"
+  # tox -e sphinx-inv-local
+  # cp sphinx/_build/json/objects.inv static/.
 fi
