@@ -4,27 +4,27 @@ description: Configure your agent and code server container settings for optimal
 sidebar_position: 100
 ---
 
-To avoid running into performance issues, we recommend tailoring your agent and code server settings for your deployment using the recommendations in the [performance optimization](#performance-optimization) section.
+To ensure the best performance of your Dagster+ deployment, we recommend following the guidance in the [performance optimization](#performance-optimization) section of this doc to tune your [agent](/deployment/dagster-plus/hybrid/architecture#the-agent) and [code server](/deployment/dagster-plus/hybrid/architecture#code-server) container settings to meet your organization's needs.
 
-If you run into issues as you scale your deployment (especially as asset counts increase), you can use the [troubleshooting suggestions](#troubleshooting) to diagnose and fix them.
+If you run into issues as you scale your deployment (especially as asset counts increase), you can use the [troubleshooting guidance](#troubleshooting) to diagnose and fix them.
 
 ## Performance optimization
 
-* **Agent** - Start at 0.25 vCPU core and 1 GB RAM, then scale with [concurrent runs](/guides/operate/managing-concurrency) and the number and size of [code locations](/deployment/code-locations/dagster-plus-code-locations).
-* **Code server** - Budget for imports, plus the definition graph, and any heavy initialization. We recommend starting with 0.25 vCPU cores and 1GB RAM.
+* **Agent container** - Start at 0.25 vCPU core and 1 GB RAM, then scale with [concurrent runs](/guides/operate/managing-concurrency) and the number and size of [code locations](/deployment/code-locations/dagster-plus-code-locations).
+* **Code server container** - Budget for imports, plus the definition graph, and any heavy initialization. We recommend starting with 0.25 vCPU cores and 1GB RAM.
 
 For compute-heavy jobs, increase memory and/or CPU where the run workers are (i.e. Kubernetes pods or ECS tasks), not just the code server.
 
 ## Troubleshooting
 
-### General advice
+### General guidance
 
 * Look for `exit code 137` / `OOMKilled` in the agent or code server container logs -- this is the strongest signal that the issue is insufficient memory.
 * Correlate heartbeat timeouts (agent or code server) with CPU spikes or container restarts.
 * Distinguish issues where the run never starts (agent can’t schedule workers) from those where the run starts, then dies (worker or code server out of memory).
 * If errors disappear when you lower concurrency, this is a signal that you were hitting CPU/RAM saturation with the previous concurrency settings.
 
-### Agent troubleshooting
+### Agent server troubleshooting
 
 | Symptom | Solution |
 |---------|----------|

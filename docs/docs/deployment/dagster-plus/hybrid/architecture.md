@@ -27,11 +27,34 @@ All user code runs within your environment, in isolation from Dagster system cod
 
 ## The agent
 
+The Dagster+ agent is a long-lived process that polls Dagster+'s API servers for new work. Currently supported agents include:
+
+
 Because the agent communicates with the Dagster+ control plane over the agent API, it's possible to support agents that operate in arbitrary compute environments.
 
 This means that over time, Dagster+'s support for different user deployment environments will expand and custom agents can take advantage of bespoke compute environments such as HPC.
 
 See the [setup page](index.md#dagster-hybrid-agents) for a list of agents that are currently supported.
+
+## Code server
+
+In Dagster+ Hybrid, the [code location](/deployment/code-locations/dagster-plus-code-locations) is served by a user code server running in your infra; Dagster+ talks to it (through the agent) to:
+
+Load definitions and metadata (UI browsing, asset graphs)
+
+Evaluate sensors/schedules (or call into them)
+
+Launch and monitor runs
+
+Stream logs and materialization events code location is served by a user code server running in your infra; Dagster+ talks to it (through the agent) to:
+
+Load definitions and metadata (UI browsing, asset graphs)
+
+Evaluate sensors/schedules (or call into them)
+
+Launch and monitor runs
+
+Stream logs and materialization events
 
 ## Security
 
