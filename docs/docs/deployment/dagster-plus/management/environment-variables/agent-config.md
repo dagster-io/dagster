@@ -22,7 +22,7 @@ Environment variables that have been set in the Dagster+ UI will take precedence
 To complete the steps in this guide, you'll need:
 
 - A Dagster+ account using [Hybrid deployment](/deployment/dagster-plus/hybrid)
-- An existing [Hybrid agent](/deployment/dagster-plus/hybrid#dagster-hybrid-agents)
+- An existing [Hybrid agent](/deployment/dagster-plus/hybrid/architecture#the-agent)
 - **Editor**, **Admin**, or **Organization Admin** permissions in Dagster+
 
 ## Setting environment variables for a code location
