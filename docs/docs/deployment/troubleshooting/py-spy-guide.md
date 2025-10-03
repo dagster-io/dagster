@@ -72,6 +72,7 @@ sudo py-spy record -f speedscope --idle -- dagster definitions validate
 
         For more information on applying this type of customization to your Kubernetes pod in Dagster+, see the [Kubernetes agent configuration reference](/deployment/dagster-plus/hybrid/kubernetes/configuration).
     </TabItem>
+
 </Tabs>
 
 :::note
