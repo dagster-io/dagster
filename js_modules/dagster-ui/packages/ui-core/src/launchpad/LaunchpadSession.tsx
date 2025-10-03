@@ -300,8 +300,9 @@ const LaunchpadSession = (props: LaunchpadSessionProps) => {
   };
 
   const onExpandDefaults = () => {
-    if (rootDefaultYaml) {
-      onSaveSession({runConfigYaml: mergeYaml(rootDefaultYaml, currentSession.runConfigYaml)});
+    console.log('rootDefaultYamlInExpandDefaults', runConfigSchema?.rootDefaultYaml);
+    if (runConfigSchema?.rootDefaultYaml) {
+      onSaveSession({runConfigYaml: mergeYaml(runConfigSchema?.rootDefaultYaml, currentSession.runConfigYaml)});
     }
   };
 
@@ -940,7 +941,7 @@ const SessionSettingsSpacer = styled.div`
   width: 5px;
 `;
 
-const PIPELINE_EXECUTION_CONFIG_SCHEMA_QUERY = gql`
+export const PIPELINE_EXECUTION_CONFIG_SCHEMA_QUERY = gql`
   query PipelineExecutionConfigSchemaQuery($selector: PipelineSelector!, $mode: String) {
     runConfigSchemaOrError(selector: $selector, mode: $mode) {
       ...LaunchpadSessionRunConfigSchemaFragment
