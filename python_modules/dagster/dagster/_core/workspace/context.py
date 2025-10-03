@@ -197,6 +197,10 @@ class BaseWorkspaceRequestContext(LoadingContext):
     def permissions_for_location(self, *, location_name: str) -> Mapping[str, PermissionResult]:
         pass
 
+    @abstractmethod
+    def permissions_for_owner(self, owner: str) -> Mapping[str, PermissionResult]:
+        pass
+
     def has_permission_for_location(self, permission: str, location_name: str) -> bool:
         if self.has_code_location_name(location_name):
             permissions = self.permissions_for_location(location_name=location_name)
@@ -220,8 +224,11 @@ class BaseWorkspaceRequestContext(LoadingContext):
         if self.has_permission_for_location(permission, location_name):
             return True
 
-        owners_for_definition = get_owners_for_definition(remote_definition)
-        return self.has_owner_permission(permission, owners_for_definition)
+        owners = get_owners_for_definition(remote_definition)
+        for owner in owners:
+            if self.permissions_for_owner(owner).get(permission, False):
+                return True
+        return False
 
     def has_permission_for_selector(
         self,
@@ -240,7 +247,9 @@ class BaseWorkspaceRequestContext(LoadingContext):
                 return True
 
             owners = get_owners_for_definition(node)
-            return self.has_owner_permission(permission, owners)
+            for owner in owners:
+                if self.permissions_for_owner(owner).get(permission, False):
+                    return True
 
         if not self.has_code_location_name(selector.location_name):
             return False
@@ -251,6 +260,16 @@ class BaseWorkspaceRequestContext(LoadingContext):
         if not self.viewer_has_any_owner_definition_permissions(permission):
             return False
 
+        owners = self.get_owners_for_selector(selector)
+        for owner in owners:
+            permissions = self.permissions_for_owner(owner)
+            if permissions.get(permission, False):
+                return True
+        return False
+
+    def get_owners_for_selector(
+        self, selector: Union[JobSelector, ScheduleSelector, SensorSelector, AssetKey]
+    ) -> Sequence[str]:
         if isinstance(selector, JobSelector):
             remote_definition = self.get_full_job(selector)
         elif isinstance(selector, ScheduleSelector):
@@ -259,9 +278,8 @@ class BaseWorkspaceRequestContext(LoadingContext):
             remote_definition = self.get_sensor(selector)
 
         if not remote_definition:
-            return False
-
-        return self.has_permission_for_definition(permission, remote_definition)
+            return []
+        return get_owners_for_definition(remote_definition)
 
     @property
     @abstractmethod
@@ -272,9 +290,6 @@ class BaseWorkspaceRequestContext(LoadingContext):
         return True
 
     def viewer_has_any_owner_definition_permissions(self, permission: str) -> bool:
-        return False
-
-    def has_owner_permission(self, permission: str, definition_owners: Sequence[str]) -> bool:
         return False
 
     def get_viewer_tags(self) -> dict[str, str]:
@@ -792,6 +807,9 @@ class WorkspaceRequestContext(BaseWorkspaceRequestContext):
             return get_location_scoped_user_permissions(self._read_only_locations[location_name])
         return get_location_scoped_user_permissions(self._read_only)
 
+    def permissions_for_owner(self, *, owner: str) -> Mapping[str, PermissionResult]:
+        return {}
+
     def has_permission(self, permission: str) -> bool:
         permissions = self.permissions
         check.invariant(
@@ -1002,6 +1020,9 @@ class WorkspaceProcessContext(IWorkspaceProcessContext):
 
     def permissions_for_location(self, *, location_name: str) -> Mapping[str, PermissionResult]:
         return get_location_scoped_user_permissions(True)
+
+    def permissions_for_owner(self, *, owner: str) -> Mapping[str, PermissionResult]:
+        return {}
 
     @property
     def version(self) -> str:
