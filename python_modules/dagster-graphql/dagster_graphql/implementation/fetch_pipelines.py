@@ -13,13 +13,13 @@ if TYPE_CHECKING:
     from dagster_graphql.schema.pipelines.snapshot import GraphenePipelineSnapshot
 
 
-def get_job_snapshot_or_error_from_job_selector(
+async def get_job_snapshot_or_error_from_job_selector(
     graphene_info: ResolveInfo, job_selector: JobSubsetSelector
 ) -> "GraphenePipelineSnapshot":
     from dagster_graphql.schema.pipelines.snapshot import GraphenePipelineSnapshot
 
     check.inst_param(job_selector, "pipeline_selector", JobSubsetSelector)
-    return GraphenePipelineSnapshot(get_full_remote_job_or_raise(graphene_info, job_selector))
+    return GraphenePipelineSnapshot(await get_full_remote_job_or_raise(graphene_info, job_selector))
 
 
 def get_job_snapshot_or_error_from_snapshot_id(
@@ -30,7 +30,7 @@ def get_job_snapshot_or_error_from_snapshot_id(
     return _get_job_snapshot_from_instance(graphene_info.context.instance, snapshot_id)
 
 
-def get_job_snapshot_or_error_from_snap_or_selector(
+async def get_job_snapshot_or_error_from_snap_or_selector(
     graphene_info: ResolveInfo,
     job_selector: JobSubsetSelector,
     snapshot_id: str,
@@ -42,7 +42,7 @@ def get_job_snapshot_or_error_from_snap_or_selector(
         if job_snapshot:
             return GraphenePipelineSnapshot(job_snapshot)
 
-    return get_job_snapshot_or_error_from_job_selector(graphene_info, job_selector)
+    return await get_job_snapshot_or_error_from_job_selector(graphene_info, job_selector)
 
 
 # extracted this out to test

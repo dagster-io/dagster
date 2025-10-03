@@ -693,7 +693,7 @@ class GrapheneQuery(graphene.ObjectType):
         return fetch_location_statuses(graphene_info.context)
 
     @capture_error
-    def resolve_pipelineSnapshotOrError(
+    async def resolve_pipelineSnapshotOrError(
         self,
         graphene_info: ResolveInfo,
         snapshotId: Optional[str] = None,
@@ -702,10 +702,10 @@ class GrapheneQuery(graphene.ObjectType):
         if activePipelineSelector:
             job_selector = pipeline_selector_from_graphql(activePipelineSelector)
             if snapshotId:
-                return get_job_snapshot_or_error_from_snap_or_selector(
+                return await get_job_snapshot_or_error_from_snap_or_selector(
                     graphene_info, job_selector, snapshotId
                 )
-            return get_job_snapshot_or_error_from_job_selector(graphene_info, job_selector)
+            return await get_job_snapshot_or_error_from_job_selector(graphene_info, job_selector)
         elif snapshotId:
             return get_job_snapshot_or_error_from_snapshot_id(graphene_info, snapshotId)
         else:
@@ -838,9 +838,11 @@ class GrapheneQuery(graphene.ObjectType):
         )
 
     @capture_error
-    def resolve_pipelineOrError(self, graphene_info: ResolveInfo, params: GraphenePipelineSelector):
+    async def resolve_pipelineOrError(
+        self, graphene_info: ResolveInfo, params: GraphenePipelineSelector
+    ):
         return GraphenePipeline(
-            get_remote_job_or_raise(graphene_info, pipeline_selector_from_graphql(params))
+            await get_remote_job_or_raise(graphene_info, pipeline_selector_from_graphql(params))
         )
 
     @capture_error
@@ -994,41 +996,41 @@ class GrapheneQuery(graphene.ObjectType):
         return get_run_group(graphene_info, runId)
 
     @capture_error
-    def resolve_isPipelineConfigValid(
+    async def resolve_isPipelineConfigValid(
         self,
         graphene_info: ResolveInfo,
         pipeline: GraphenePipelineSelector,
         mode: str,
         runConfigData: Optional[Any] = None,  # custom scalar (GrapheneRunConfigData)
     ):
-        return validate_pipeline_config(
+        return await validate_pipeline_config(
             graphene_info,
             pipeline_selector_from_graphql(pipeline),
             parse_run_config_input(runConfigData or {}, raise_on_error=False),
         )
 
     @capture_error
-    def resolve_executionPlanOrError(
+    async def resolve_executionPlanOrError(
         self,
         graphene_info: ResolveInfo,
         pipeline: GraphenePipelineSelector,
         mode: str,
         runConfigData: Optional[Any] = None,  # custom scalar (GrapheneRunConfigData)
     ):
-        return get_execution_plan(
+        return await get_execution_plan(
             graphene_info,
             pipeline_selector_from_graphql(pipeline),
             parse_run_config_input(runConfigData or {}, raise_on_error=True),  # type: ignore  # (possible str)
         )
 
     @capture_error
-    def resolve_runConfigSchemaOrError(
+    async def resolve_runConfigSchemaOrError(
         self,
         graphene_info: ResolveInfo,
         selector: GraphenePipelineSelector,
         mode: Optional[str] = None,
     ):
-        return resolve_run_config_schema_or_error(
+        return await resolve_run_config_schema_or_error(
             graphene_info, pipeline_selector_from_graphql(selector), mode
         )
 

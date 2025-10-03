@@ -297,7 +297,7 @@ def get_runs_count(graphene_info: "ResolveInfo", filters: Optional[RunsFilter]) 
     return graphene_info.context.instance.get_runs_count(filters)
 
 
-def validate_pipeline_config(
+async def validate_pipeline_config(
     graphene_info: "ResolveInfo",
     selector: JobSubsetSelector,
     run_config: Union[str, Mapping[str, object]],
@@ -306,12 +306,12 @@ def validate_pipeline_config(
 
     check.inst_param(selector, "selector", JobSubsetSelector)
 
-    remote_job = get_remote_job_or_raise(graphene_info, selector)
+    remote_job = await get_remote_job_or_raise(graphene_info, selector)
     ensure_valid_config(remote_job, run_config)
     return GraphenePipelineConfigValidationValid(pipeline_name=remote_job.name)
 
 
-def get_execution_plan(
+async def get_execution_plan(
     graphene_info: "ResolveInfo",
     selector: JobSubsetSelector,
     run_config: Mapping[str, Any],
@@ -320,7 +320,7 @@ def get_execution_plan(
 
     check.inst_param(selector, "selector", JobSubsetSelector)
 
-    remote_job = get_remote_job_or_raise(graphene_info, selector)
+    remote_job = await get_remote_job_or_raise(graphene_info, selector)
     ensure_valid_config(remote_job, run_config)
     return GrapheneExecutionPlan(
         graphene_info.context.get_execution_plan(

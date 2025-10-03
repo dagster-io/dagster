@@ -22,19 +22,19 @@ if TYPE_CHECKING:
     from dagster_graphql.schema.util import ResolveInfo
 
 
-def launch_pipeline_reexecution(
+async def launch_pipeline_reexecution(
     graphene_info: "ResolveInfo", execution_params: ExecutionParams
 ) -> "GrapheneLaunchRunSuccess":
-    return _launch_pipeline_execution(graphene_info, execution_params, is_reexecuted=True)
+    return await _launch_pipeline_execution(graphene_info, execution_params, is_reexecuted=True)
 
 
-def launch_pipeline_execution(
+async def launch_pipeline_execution(
     graphene_info: "ResolveInfo", execution_params: ExecutionParams
 ) -> "GrapheneLaunchRunSuccess":
-    return _launch_pipeline_execution(graphene_info, execution_params)
+    return await _launch_pipeline_execution(graphene_info, execution_params)
 
 
-def do_launch(
+async def do_launch(
     graphene_info: "ResolveInfo", execution_params: ExecutionParams, is_reexecuted: bool = False
 ) -> DagsterRun:
     check.inst_param(execution_params, "execution_params", ExecutionParams)
@@ -47,7 +47,7 @@ def do_launch(
         )
         check.str_param(execution_metadata.root_run_id, "root_run_id")
         check.str_param(execution_metadata.parent_run_id, "parent_run_id")
-    remote_job = get_remote_job_or_raise(graphene_info, execution_params.selector)
+    remote_job = await get_remote_job_or_raise(graphene_info, execution_params.selector)
     dagster_run = create_valid_pipeline_run(graphene_info.context, remote_job, execution_params)
 
     return graphene_info.context.instance.submit_run(
@@ -56,7 +56,7 @@ def do_launch(
     )
 
 
-def _launch_pipeline_execution(
+async def _launch_pipeline_execution(
     graphene_info: "ResolveInfo", execution_params: ExecutionParams, is_reexecuted: bool = False
 ) -> "GrapheneLaunchRunSuccess":
     from dagster_graphql.schema.pipelines.pipeline import GrapheneRun
@@ -65,13 +65,13 @@ def _launch_pipeline_execution(
     check.inst_param(execution_params, "execution_params", ExecutionParams)
     check.bool_param(is_reexecuted, "is_reexecuted")
 
-    run = do_launch(graphene_info, execution_params, is_reexecuted)
+    run = await do_launch(graphene_info, execution_params, is_reexecuted)
     records = graphene_info.context.instance.get_run_records(RunsFilter(run_ids=[run.run_id]))
 
     return GrapheneLaunchRunSuccess(run=GrapheneRun(records[0]))
 
 
-def launch_reexecution_from_parent_run(
+async def launch_reexecution_from_parent_run(
     graphene_info: "ResolveInfo",
     parent_run_id: str,
     strategy: str,
@@ -105,7 +105,7 @@ def launch_reexecution_from_parent_run(
     )
 
     repo_location = graphene_info.context.get_code_location(selector.location_name)
-    external_pipeline = get_remote_job_or_raise(graphene_info, selector)
+    external_pipeline = await get_remote_job_or_raise(graphene_info, selector)
 
     run = instance.create_reexecuted_run(
         parent_run=cast("DagsterRun", parent_run),
