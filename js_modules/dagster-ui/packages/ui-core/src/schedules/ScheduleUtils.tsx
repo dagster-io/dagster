@@ -26,6 +26,14 @@ export const SCHEDULE_FRAGMENT = gql`
         timestamp
       }
     }
+    owners {
+      ... on UserDefinitionOwner {
+        email
+      }
+      ... on TeamDefinitionOwner {
+        team
+      }
+    }
   }
 
   ${INSTIGATION_STATE_FRAGMENT}

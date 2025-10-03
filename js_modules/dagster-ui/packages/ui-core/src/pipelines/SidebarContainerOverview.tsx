@@ -12,6 +12,7 @@ import {SidebarRootContainerFragment} from './types/SidebarContainerOverview.typ
 import {breakOnUnderscores} from '../app/Util';
 import {MetadataEntry} from '../metadata/MetadataEntry';
 import {METADATA_ENTRY_FRAGMENT} from '../metadata/MetadataEntryFragment';
+import {DefinitionOwners} from '../owners/DefinitionOwners';
 import {findRepositoryAmongOptions, useRepositoryOptions} from '../workspace/WorkspaceContext/util';
 import {repoContainsPipeline} from '../workspace/findRepoContainingPipeline';
 import {RepoAddress} from '../workspace/types';
@@ -85,6 +86,16 @@ export const SidebarContainerOverview = ({
           <Description description={container.description || 'No description provided'} />
         </Box>
       </SidebarSection>
+
+      {container.__typename === 'PipelineSnapshot' &&
+        container.owners &&
+        container.owners.length > 0 && (
+          <SidebarSection title="Owners">
+            <Box padding={{vertical: 16, horizontal: 24}}>
+              <DefinitionOwners owners={container.owners} />
+            </Box>
+          </SidebarSection>
+        )}
 
       {container.__typename === 'PipelineSnapshot' && !externalJobSource && (
         <SidebarSection title={isLegacy ? 'Modes' : 'Resources'} collapsedByDefault={true}>
@@ -166,6 +177,14 @@ export const SIDEBAR_ROOT_CONTAINER_FRAGMENT = gql`
       tags {
         key
         value
+      }
+      owners {
+        ... on UserDefinitionOwner {
+          email
+        }
+        ... on TeamDefinitionOwner {
+          team
+        }
       }
     }
   }

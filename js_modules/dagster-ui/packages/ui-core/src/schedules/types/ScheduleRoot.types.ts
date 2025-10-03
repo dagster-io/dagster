@@ -82,6 +82,10 @@ export type ScheduleRootQuery = {
           __typename: 'DryRunInstigationTicks';
           results: Array<{__typename: 'DryRunInstigationTick'; timestamp: number | null}>;
         };
+        owners: Array<
+          | {__typename: 'TeamDefinitionOwner'; team: string}
+          | {__typename: 'UserDefinitionOwner'; email: string}
+        >;
       }
     | {__typename: 'ScheduleNotFoundError'; message: string};
   instance: {
@@ -114,4 +118,4 @@ export type ScheduleRootQuery = {
   };
 };
 
-export const ScheduleRootQueryVersion = 'b54dfb64f816baa5c52c4676dcbd3808477130cab5237a5b96b988ec002adafc';
+export const ScheduleRootQueryVersion = '51b9af155e42eda9cfcd415db7fd1e885c9912ede375879156b1d063da6a7d66';
