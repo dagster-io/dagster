@@ -10,7 +10,6 @@ from dagster._core.instance import MayHaveInstanceWeakref, T_DagsterInstance
 
 # constant indicating where to store the latest defs state info in a kvs context
 DEFS_STATE_INFO_CURSOR_KEY = "__latest_defs_state_info__"
-LOCAL_STATE_VERSION = "__local__"
 
 _current_storage: ContextVar[Optional["DefsStateStorage"]] = ContextVar(
     "_current_storage", default=None
