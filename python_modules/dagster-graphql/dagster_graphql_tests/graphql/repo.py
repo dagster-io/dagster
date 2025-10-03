@@ -2213,7 +2213,7 @@ def define_standard_jobs() -> Sequence[JobDefinition]:
 partitions_def_for_permissions = StaticPartitionsDefinition(["a", "b", "c"])
 
 
-@asset(owners=["test@elementl.com"])
+@asset(owners=["test@elementl.com", "team:foo"])
 def owned_asset():
     return 1
 
@@ -2223,7 +2223,7 @@ def unowned_asset():
     return 2
 
 
-@asset(partitions_def=partitions_def_for_permissions, owners=["test@elementl.com"])
+@asset(partitions_def=partitions_def_for_permissions, owners=["test@elementl.com", "team:foo"])
 def owned_partitioned_asset():
     return 1
 
@@ -2238,7 +2238,7 @@ def permission_test_op():
     pass
 
 
-@job
+@job(owners=["test@elementl.com", "team:foo"])
 def owned_job():
     permission_test_op()
 
@@ -2254,7 +2254,7 @@ def permission_partitioned_op(context):
     return context.partition_key
 
 
-@job(partitions_def=partitions_def_for_permissions)
+@job(partitions_def=partitions_def_for_permissions, owners=["test@elementl.com", "team:foo"])
 def owned_partitioned_job():
     permission_partitioned_op()
 
@@ -2264,7 +2264,7 @@ def unowned_partitioned_job():
     permission_partitioned_op()
 
 
-@sensor(job=owned_job)
+@sensor(job=owned_job, owners=["test@elementl.com", "team:foo"])
 def owned_sensor():
     pass
 
@@ -2274,7 +2274,7 @@ def unowned_sensor():
     pass
 
 
-@schedule(job=owned_job, cron_schedule="* * * * *")
+@schedule(job=owned_job, cron_schedule="* * * * *", owners=["test@elementl.com", "team:foo"])
 def owned_schedule():
     return {}
 

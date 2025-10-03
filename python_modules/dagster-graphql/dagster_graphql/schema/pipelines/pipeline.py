@@ -80,6 +80,7 @@ from dagster_graphql.schema.logs.events import (
     GrapheneRunStepStats,
 )
 from dagster_graphql.schema.metadata import GrapheneMetadataEntry
+from dagster_graphql.schema.owners import GrapheneDefinitionOwner, definition_owner_from_owner_str
 from dagster_graphql.schema.partition_keys import GraphenePartitionKeys
 from dagster_graphql.schema.pipelines.mode import GrapheneMode
 from dagster_graphql.schema.pipelines.pipeline_ref import GraphenePipelineReference
@@ -894,6 +895,7 @@ class GrapheneIPipelineSnapshotMixin:
     #
     name = graphene.NonNull(graphene.String)
     description = graphene.String()
+    owners = non_null_list(GrapheneDefinitionOwner)
     id = graphene.NonNull(graphene.ID)
     pipeline_snapshot_id = graphene.NonNull(graphene.String)
     dagster_types = non_null_list(GrapheneDagsterType)
@@ -941,6 +943,12 @@ class GrapheneIPipelineSnapshotMixin:
 
     def resolve_description(self, _graphene_info: ResolveInfo):
         return self.get_represented_job().description
+
+    def resolve_owners(self, _graphene_info: ResolveInfo):
+        return [
+            definition_owner_from_owner_str(owner)
+            for owner in (self.get_represented_job().owners or [])
+        ]
 
     def resolve_dagster_types(self, _graphene_info: ResolveInfo):
         represented_pipeline = self.get_represented_job()
@@ -1098,6 +1106,7 @@ class GrapheneIPipelineSnapshotMixin:
 class GrapheneIPipelineSnapshot(graphene.Interface):
     name = graphene.NonNull(graphene.String)
     description = graphene.String()
+    owners = non_null_list(GrapheneDefinitionOwner)
     pipeline_snapshot_id = graphene.NonNull(graphene.String)
     dagster_types = non_null_list(GrapheneDagsterType)
     dagster_type_or_error = graphene.Field(

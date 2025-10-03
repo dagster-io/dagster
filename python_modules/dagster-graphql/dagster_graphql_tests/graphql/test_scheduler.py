@@ -160,6 +160,14 @@ query getSchedule($scheduleSelector: ScheduleSelector!, $ticksAfter: Float) {
           }
         }
       }
+      owners {
+        ... on UserDefinitionOwner {
+          email
+        }
+        ... on TeamDefinitionOwner {
+          team
+        }
+      }
     }
   }
 }
@@ -663,6 +671,35 @@ def test_get_single_schedule_definition(graphql_context):
         datetime.datetime(2019, 3, 3, tzinfo=get_timezone("US/Central")).timestamp(),
         datetime.datetime(2019, 3, 4, tzinfo=get_timezone("US/Central")).timestamp(),
     ]
+
+
+def test_schedule_owners(graphql_context):
+    schedule_selector = infer_schedule_selector(graphql_context, "owned_schedule")
+    result = execute_dagster_graphql(
+        graphql_context,
+        GET_SCHEDULE_QUERY,
+        variables={"scheduleSelector": schedule_selector},
+    )
+    assert result.data
+    assert result.data["scheduleOrError"]["__typename"] == "Schedule"
+    schedule = result.data["scheduleOrError"]
+
+    assert schedule["owners"] is not None
+    assert len(schedule["owners"]) == 2
+
+    # Check the user owner
+    user_owner = None
+    team_owner = None
+    for owner in schedule["owners"]:
+        if owner.get("email"):
+            user_owner = owner
+        elif owner.get("team"):
+            team_owner = owner
+
+    assert user_owner is not None
+    assert user_owner["email"] == "test@elementl.com"
+    assert team_owner is not None
+    assert team_owner["team"] == "foo"
 
 
 def test_composite_cron_schedule_definition(graphql_context):
