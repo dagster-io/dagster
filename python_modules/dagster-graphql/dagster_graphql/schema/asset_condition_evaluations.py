@@ -6,6 +6,9 @@ from typing import Optional, Union
 import graphene
 from dagster._core.asset_graph_view.serializable_entity_subset import SerializableEntitySubset
 from dagster._core.definitions.asset_key import AssetKey
+from dagster._core.definitions.declarative_automation.operators.since_operator import (
+    SinceConditionData,
+)
 from dagster._core.definitions.declarative_automation.serialized_objects import (
     AutomationConditionEvaluation,
     AutomationConditionSnapshot,
@@ -216,6 +219,25 @@ class GrapheneAssetConditionEvaluation(graphene.ObjectType):
         )
 
 
+class GrapheneSinceConditionMetadata(graphene.ObjectType):
+    triggerEvaluationId = graphene.Field(graphene.Int)
+    triggerTimestamp = graphene.Field(graphene.Float)
+    resetEvaluationId = graphene.Field(graphene.Int)
+    resetTimestamp = graphene.Field(graphene.Float)
+
+    class Meta:
+        name = "SinceConditionMetadata"
+
+    def __init__(self, since_condition_data: SinceConditionData):
+        self._since_condition_data = since_condition_data
+        super().__init__(
+            triggerEvaluationId=since_condition_data.trigger_evaluation_id,
+            triggerTimestamp=since_condition_data.trigger_timestamp,
+            resetEvaluationId=since_condition_data.reset_evaluation_id,
+            resetTimestamp=since_condition_data.reset_timestamp,
+        )
+
+
 class GrapheneAutomationConditionEvaluationNode(graphene.ObjectType):
     uniqueId = graphene.NonNull(graphene.String)
     userLabel = graphene.Field(graphene.String)
@@ -232,6 +254,7 @@ class GrapheneAutomationConditionEvaluationNode(graphene.ObjectType):
 
     childUniqueIds = non_null_list(graphene.String)
     operatorType = graphene.NonNull(graphene.String)
+    sinceMetadata = graphene.Field(GrapheneSinceConditionMetadata)
 
     class Meta:
         name = "AutomationConditionEvaluationNode"
@@ -254,6 +277,16 @@ class GrapheneAutomationConditionEvaluationNode(graphene.ObjectType):
                 child.condition_snapshot.unique_id for child in evaluation.child_evaluations
             ],
             operatorType=evaluation.condition_snapshot.operator_type,
+        )
+
+    def resolve_sinceMetadata(
+        self, graphene_info: ResolveInfo
+    ) -> Optional[GrapheneSinceConditionMetadata]:
+        if self._evaluation.condition_snapshot.class_name != "SinceCondition":
+            return None
+
+        return GrapheneSinceConditionMetadata(
+            since_condition_data=SinceConditionData.from_metadata(self._evaluation.metadata)
         )
 
 
