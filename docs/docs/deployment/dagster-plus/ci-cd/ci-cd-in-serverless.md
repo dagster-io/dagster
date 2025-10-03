@@ -6,6 +6,8 @@ sidebar_label: CI/CD in Serverless
 tags: [dagster-plus-feature]
 ---
 
+import UpdateGitHubActionVersion from '@site/docs/partials/_UpdateGitHubActionVersion.md';
+
 :::note
 
 This guide only applies to [Dagster+ Serverless deployments](/deployment/dagster-plus/serverless).
@@ -37,9 +39,7 @@ If you're a GitHub user, with a single click our GitHub app with GitHub Actions 
 
 :::
 
-:::tip
-We recommend periodically (every 6 months or so) updating the version of the Dagster GitHub Actions in your workflow files. These actions use version tags that follow the Dagster release convention (e.g., `@v1.11.13`). You can find the most [recent Dagster release](https://github.com/dagster-io/dagster/releases) on GitHub.
-:::
+<UpdateGitHubActionVersion />
 
 </TabItem>
 
