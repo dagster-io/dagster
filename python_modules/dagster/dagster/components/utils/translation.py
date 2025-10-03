@@ -1,11 +1,13 @@
+import functools
 from collections.abc import Mapping
 from dataclasses import dataclass
-from typing import Annotated, Any, Callable, Generic, Optional, TypeVar, Union
+from typing import TYPE_CHECKING, Annotated, Any, Callable, Generic, Optional, TypeVar, Union, cast
 
 from pydantic import BaseModel
 from typing_extensions import TypeAlias
 
 from dagster import _check as check
+from dagster._core.definitions.asset_checks.asset_check_spec import AssetCheckSpec
 from dagster._core.definitions.assets.definition.asset_spec import AssetSpec
 from dagster.components.resolved.context import ResolutionContext
 from dagster.components.resolved.core_models import (
@@ -13,6 +15,10 @@ from dagster.components.resolved.core_models import (
     resolve_asset_spec_update_kwargs_to_mapping,
 )
 from dagster.components.resolved.model import Resolver
+
+if TYPE_CHECKING:
+    from dagster.components.component.component import Component
+
 
 TRANSLATOR_MERGE_ATTRIBUTES = {"metadata", "tags"}
 
@@ -177,3 +183,44 @@ ResolvedTranslationFn: TypeAlias = Optional[
         TranslationFnResolver[T](lambda data: {"data": data}),
     ]
 ]
+
+T_Component = TypeVar("T_Component", bound="Component", covariant=True)
+T_Translator = TypeVar("T_Translator")
+
+
+class ComponentTranslator(Generic[T_Component]):
+    """To support python versions < 3.10, we need to use a Protocol to tell the type system that
+    these generated classes have a component property.
+    """
+
+    def __init__(self, component: T_Component, *args, **kwargs):
+        self._component = component
+        super().__init__(*args, **kwargs)
+
+    @property
+    def component(self) -> T_Component:
+        return self._component
+
+
+def create_component_translator_cls(
+    base_component_cls: type[T_Component], base_translator_cls: type[T_Translator]
+) -> type[T_Translator]:
+    class _GeneratedComponentTranslator(base_translator_cls, ComponentTranslator[T_Component]):  # type: ignore
+        def _shim_method(self, method_name: str) -> Callable:
+            component_base_method = getattr(base_component_cls, method_name)
+            component_instance_method = getattr(self._component.__class__, method_name)
+            if component_base_method is not component_instance_method:
+                # if the user has overridden the method, we invoke the instance method
+                return functools.partial(component_instance_method, self._component)
+            else:
+                # we never invoke the component_base_method directly. instead, if the user
+                # has not overridden the method, we invoke the original translator class method
+                return getattr(super(), method_name)
+
+        def get_asset_spec(self, *args, **kwargs) -> AssetSpec:
+            return self._shim_method("get_asset_spec")(*args, **kwargs)
+
+        def get_asset_check_spec(self, *args, **kwargs) -> Optional[AssetCheckSpec]:
+            return self._shim_method("get_asset_check_spec")(*args, **kwargs)
+
+    return cast("type[T_Translator]", _GeneratedComponentTranslator)
