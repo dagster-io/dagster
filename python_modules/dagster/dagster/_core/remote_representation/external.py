@@ -283,8 +283,8 @@ class RemoteRepository:
     def get_all_jobs(self) -> Sequence["RemoteJob"]:
         return [self.get_full_job(pn) for pn in self._job_map]
 
-    def get_job_ref_snap(self, job_name: str) -> JobRefSnap:
-        return check.inst(self._job_map[job_name], JobRefSnap)
+    def get_job_map_entry(self, job_name: str) -> Union[JobDataSnap, JobRefSnap]:
+        return self._job_map[job_name]
 
     @property
     def handle(self) -> RepositoryHandle:
