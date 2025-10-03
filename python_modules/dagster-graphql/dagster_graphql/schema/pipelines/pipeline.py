@@ -1221,7 +1221,11 @@ class GraphenePipeline(GrapheneIPipelineSnapshotMixin, graphene.ObjectType):
         if is_implicit_asset_job_name(self._remote_job.name):
             return True
 
-        return bool(graphene_info.context.get_assets_in_job(self._remote_job.handle.to_selector()))
+        return bool(
+            graphene_info.context.get_asset_keys_in_job(
+                self._remote_job.handle.to_selector(),
+            )
+        )
 
     def resolve_repository(self, graphene_info: ResolveInfo):
         from dagster_graphql.schema.external import GrapheneRepository

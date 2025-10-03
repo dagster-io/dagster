@@ -1,7 +1,7 @@
 ---
-title: Job execution
+title: Executing jobs
 description: Dagster provides several methods to execute op and asset jobs using the UI, command line, Python APIs, or via schedules or sensors.
-sidebar_position: 300
+sidebar_position: 400
 ---
 
 :::note
@@ -21,28 +21,17 @@ You can also launch jobs in other ways:
 - [Schedules](/guides/automate/schedules) can be used to launch runs on a fixed interval.
 - [Sensors](/guides/automate/sensors) allow you to launch runs based on external state changes.
 
-## Relevant APIs
-
-| Name                                                            | Description                                                                        |
-| --------------------------------------------------------------- | ---------------------------------------------------------------------------------- |
-| <PyObject section="jobs" module="dagster" object="JobDefinition.execute_in_process" /> | A method to execute a job synchronously, typically for running scripts or testing. |
-
 ## Executing a job
-
-Dagster supports the following methods to execute one-off jobs. Click the tabs for more info.
 
 <Tabs>
 <TabItem value="Dagster UI">
 
 Using the Dagster UI, you can view, interact, and execute jobs.
 
-To view your job in the UI, use the [`dg dev`](/api/clis/dg-cli/dg-cli-reference#dg-dev) command:
+To view your job in the UI do one of the following:
 
-```bash
-dg dev
-```
-
-Then navigate to `http://localhost:3000`:
+* Log into your Dagster+ account
+* On the command line, run the [`dg dev`](/api/clis/dg-cli/dg-cli-reference#dg-dev) command to start the local server, then navigate to `http://localhost:3000`:
 
 ![Pipeline def](/images/guides/build/ops/pipeline-def.png)
 
@@ -52,7 +41,7 @@ Click on the **Launchpad** tab, then press the **Launch Run** button to execute 
 
 By default, Dagster will run the job using the <PyObject section="execution" module="dagster" object="multiprocess_executor" /> - that means each step in the job runs in its own process, and steps that don't depend on each other can run in parallel.
 
-The Launchpad also offers a configuration editor to let you interactively build up the configuration. Refer to the [run configuration documentation](/guides/operate/configuration/run-configuration#providing-config-values-at-runtime) for more info.
+The Launchpad also offers a configuration editor to let you interactively build up the configuration. For more information, see the [run configuration documentation](/guides/operate/configuration/run-configuration#providing-config-values-at-runtime).
 
 </TabItem>
 <TabItem value="Command line">
@@ -70,14 +59,12 @@ dg launch --jobs my_job
 </TabItem>
 <TabItem value="Python">
 
-### Python APIs
-
 Dagster includes Python APIs for execution that are useful when writing tests or scripts.
 
 <PyObject section="jobs" module="dagster" object="JobDefinition.execute_in_process" /> executes a job and
 returns an <PyObject section="execution" module="dagster" object="ExecuteInProcessResult" />.
 
-<CodeExample path="docs_snippets/docs_snippets/concepts/ops_jobs_graphs/job_execution.py" startAfter="start_execute" endBefore="end_execute" title="src/<project_name>/defs/assets.py"/>
+<CodeExample path="docs_snippets/docs_snippets/concepts/ops_jobs_graphs/job_execution.py" startAfter="start_execute" endBefore="end_execute" title="src/<project_name>/defs/assets.py" trimMainBlock={false} />
 
 You can find the full API documentation in [Execution API](/api/dagster/execution) and learn more about the testing use cases in the [testing documentation](/guides/test).
 

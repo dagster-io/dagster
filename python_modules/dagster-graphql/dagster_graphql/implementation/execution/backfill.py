@@ -308,10 +308,13 @@ def cancel_partition_backfill(
 
     if backfill.is_asset_backfill:
         asset_graph = graphene_info.context.asset_graph
+        check.invariant(
+            backfill.asset_selection is not None, "Asset backfill must have asset selection"
+        )
         assert_permission_for_asset_graph(
             graphene_info,
             asset_graph,
-            backfill.asset_selection,
+            cast("list[AssetKey]", backfill.asset_selection),
             Permissions.CANCEL_PARTITION_BACKFILL,
         )
     else:

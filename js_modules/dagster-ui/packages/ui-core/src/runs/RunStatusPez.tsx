@@ -9,6 +9,7 @@ import {RunStateSummary, RunTime, titleForRun} from './RunUtils';
 import {RunTimeFragment} from './types/RunUtils.types';
 import {RunStatus} from '../graphql/types';
 import {StepSummaryForRun} from '../instance/StepSummaryForRun';
+import {PezItem} from '../ui/PezItem';
 
 const MIN_OPACITY = 0.2;
 const MAX_OPACITY = 1.0;
@@ -54,7 +55,9 @@ export const RunStatusPezList = (props: ListProps) => {
       {items.map((run, ii) => {
         const opacity = fade ? MAX_OPACITY - (count - ii - 1) * step : 1.0;
         if (!run) {
-          return <Pez key={`empty-${ii}`} $color={Colors.backgroundLighter()} $opacity={opacity} />;
+          return (
+            <PezItem key={`empty-${ii}`} color={Colors.backgroundLighter()} opacity={opacity} />
+          );
         }
 
         return (
@@ -69,7 +72,7 @@ export const RunStatusPezList = (props: ListProps) => {
             }
             hoverOpenDelay={100}
           >
-            <RunStatusPez key={run.id} runId={run.id} status={run.status} opacity={opacity} />
+            <PezItem key={run.id} color={RUN_STATUS_COLORS[run.status]} opacity={opacity} />
           </Popover>
         );
       })}

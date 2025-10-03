@@ -1,5 +1,6 @@
 """GraphQL implementation for asset operations."""
 
+import logging
 from typing import Optional
 
 from dagster_dg_cli.api_layer.schemas.asset import (
@@ -11,6 +12,30 @@ from dagster_dg_cli.api_layer.schemas.asset import (
     DgApiAssetStatus,
 )
 from dagster_dg_cli.utils.plus.gql_client import IGraphQLClient
+
+logger = logging.getLogger(__name__)
+
+
+def _extract_dependency_keys(dependency_keys_data: list[dict]) -> list[str]:
+    """Extract and format dependency keys, filtering out those with slashes in path components.
+
+    Asset keys with slashes in individual path components cannot be represented unambiguously
+    in a slash-separated format. For example, ["foo/bar", "baz"] when joined becomes "foo/bar/baz"
+    which is indistinguishable from ["foo", "bar", "baz"].
+    """
+    dependency_keys = []
+    for dep in dependency_keys_data:
+        path_parts = dep["path"]
+        # Check if any path component contains a slash
+        if any("/" in part for part in path_parts):
+            # Skip this dependency - can't represent it unambiguously in slash-separated format
+            logger.warning(
+                f"Dependency key {path_parts} contains slashes in path components and will not be displayed"
+            )
+            continue
+        dependency_keys.append("/".join(path_parts))
+    return dependency_keys
+
 
 # GraphQL queries
 ASSET_RECORDS_QUERY = """
@@ -43,6 +68,9 @@ query AssetNodes($assetKeys: [AssetKeyInput!]!) {
         description
         groupName
         kinds
+        dependencyKeys {
+            path
+        }
         metadataEntries {
             label
             description
@@ -153,6 +181,9 @@ def list_dg_plus_api_assets_via_graphql(
 
             metadata_entries.append(metadata_dict)
 
+        # Extract dependency keys
+        dependency_keys = _extract_dependency_keys(node.get("dependencyKeys", []))
+
         asset = DgApiAsset(
             id=node["id"],
             asset_key=asset_key,
@@ -161,6 +192,7 @@ def list_dg_plus_api_assets_via_graphql(
             group_name=node.get("groupName", ""),
             kinds=node.get("kinds", []),
             metadata_entries=metadata_entries,
+            dependency_keys=dependency_keys,
         )
         assets.append(asset)
 
@@ -220,6 +252,9 @@ def get_dg_plus_api_asset_via_graphql(
 
         metadata_entries.append(metadata_dict)
 
+    # Extract dependency keys
+    dependency_keys = _extract_dependency_keys(node.get("dependencyKeys", []))
+
     return DgApiAsset(
         id=node["id"],
         asset_key=asset_key,
@@ -228,6 +263,7 @@ def get_dg_plus_api_asset_via_graphql(
         group_name=node.get("groupName", ""),
         kinds=node.get("kinds", []),
         metadata_entries=metadata_entries,
+        dependency_keys=dependency_keys,
     )
 
 
@@ -245,6 +281,9 @@ query AssetsWithStatus($assetKeys: [AssetKeyInput!]!) {
                     description
                     groupName
                     kinds
+                    dependencyKeys {
+                        path
+                    }
                     metadataEntries {
                         label
                         description
@@ -511,6 +550,9 @@ def list_dg_plus_api_assets_with_status_via_graphql(
 
             metadata_entries.append(metadata_dict)
 
+        # Extract dependency keys
+        dependency_keys = _extract_dependency_keys(definition_data.get("dependencyKeys", []))
+
         # Build status data
         status = _transform_asset_status_data(node_data)
 
@@ -522,6 +564,7 @@ def list_dg_plus_api_assets_with_status_via_graphql(
             group_name=definition_data.get("groupName", ""),
             kinds=definition_data.get("kinds", []),
             metadata_entries=metadata_entries,
+            dependency_keys=dependency_keys,
             status=status,
         )
         assets.append(asset)
@@ -582,6 +625,9 @@ def get_dg_plus_api_asset_with_status_via_graphql(
 
         metadata_entries.append(metadata_dict)
 
+    # Extract dependency keys
+    dependency_keys = _extract_dependency_keys(definition_data.get("dependencyKeys", []))
+
     # Build status data
     status = _transform_asset_status_data(node)
 
@@ -593,5 +639,6 @@ def get_dg_plus_api_asset_with_status_via_graphql(
         group_name=definition_data.get("groupName", ""),
         kinds=definition_data.get("kinds", []),
         metadata_entries=metadata_entries,
+        dependency_keys=dependency_keys,
         status=status,
     )
