@@ -74,11 +74,11 @@ sudo py-spy record -f speedscope --idle -- dagster definitions validate
     </TabItem>
 </Tabs>
 
-    :::note
+:::note
 
-    For more information, see the [`py-spy` guide to running `py-spy` in Kubernetes](https://github.com/benfred/py-spy#how-do-i-run-py-spy-in-kubernetes).
+For more information, see the [`py-spy` guide to running `py-spy` in Kubernetes](https://github.com/benfred/py-spy#how-do-i-run-py-spy-in-kubernetes).
 
-    :::
+:::
 
 2.  Launch a run and wait until it hangs.
 3.  Check the event logs for the run to find the run pod, then `kubectl exec` into the pod to run `py-spy`:
