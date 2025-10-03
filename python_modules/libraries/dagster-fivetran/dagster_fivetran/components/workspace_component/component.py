@@ -1,11 +1,11 @@
-from collections.abc import Sequence
+from collections.abc import Iterable, Sequence
 from functools import cached_property
 from typing import Annotated, Callable, Optional, Union
 
 import dagster as dg
 import pydantic
 from dagster._annotations import public
-from dagster._core.definitions.job_definition import default_job_io_manager
+from dagster._utils.names import clean_name
 from dagster.components.resolved.base import resolve_fields
 from dagster.components.utils.translation import (
     ComponentTranslator,
@@ -15,7 +15,7 @@ from dagster.components.utils.translation import (
 )
 from dagster_shared import check
 
-from dagster_fivetran.asset_defs import build_fivetran_assets_definitions
+from dagster_fivetran.asset_decorator import fivetran_assets
 from dagster_fivetran.components.workspace_component.scaffolder import (
     FivetranAccountComponentScaffolder,
 )
@@ -24,6 +24,7 @@ from dagster_fivetran.translator import (
     DagsterFivetranTranslator,
     FivetranConnector,
     FivetranConnectorTableProps,
+    FivetranMetadataSet,
 )
 
 
@@ -115,22 +116,42 @@ class FivetranAccountComponent(dg.Component, dg.Model, dg.Resolvable):
     def get_asset_spec(self, props: FivetranConnectorTableProps) -> dg.AssetSpec:
         return self._base_translator.get_asset_spec(props)
 
+    def execute(
+        self, context: dg.AssetExecutionContext, fivetran: FivetranWorkspace
+    ) -> Iterable[Union[dg.AssetMaterialization, dg.MaterializeResult]]:
+        yield from fivetran.sync_and_poll(context=context)
+
     def build_defs(self, context: dg.ComponentLoadContext) -> dg.Definitions:
-        fivetran_assets = build_fivetran_assets_definitions(
-            workspace=self.workspace_resource,
+        connector_selector_fn = self.connector_selector or (lambda connector: bool(connector))
+        all_asset_specs = self.workspace.load_asset_specs(
             dagster_fivetran_translator=self.translator,
-            connector_selector_fn=self.connector_selector,
+            connector_selector_fn=connector_selector_fn,
         )
-        assets_with_resource = [
-            fivetran_asset.with_resources(
-                {
-                    "fivetran": self.workspace_resource.get_resource_definition(),
-                    "io_manager": default_job_io_manager,
-                }
+
+        connectors = {
+            (
+                check.not_none(FivetranMetadataSet.extract(spec.metadata).connector_id),
+                check.not_none(FivetranMetadataSet.extract(spec.metadata).connector_name),
             )
-            for fivetran_asset in fivetran_assets
-        ]
-        return dg.Definitions(assets=assets_with_resource)
+            for spec in all_asset_specs
+        }
+
+        assets = []
+        for connector_id, connector_name in connectors:
+
+            @fivetran_assets(
+                connector_id=connector_id,
+                workspace=self.workspace,
+                name=f"fivetran_{clean_name(connector_name)}",
+                dagster_fivetran_translator=self.translator,
+                connector_selector_fn=connector_selector_fn,
+            )
+            def _asset(context: dg.AssetExecutionContext):
+                yield from self.execute(context=context, fivetran=self.workspace)
+
+            assets.append(_asset)
+
+        return dg.Definitions(assets=assets)
 
 
 class FivetranComponentTranslator(
