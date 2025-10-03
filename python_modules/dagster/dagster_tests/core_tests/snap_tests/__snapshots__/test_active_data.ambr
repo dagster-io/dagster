@@ -2371,6 +2371,7 @@
         "metadata": {},
         "mode": "default",
         "name": "foo_schedule",
+        "owners": null,
         "partition_set_name": null,
         "pipeline_name": "foo_job",
         "solid_selection": null,

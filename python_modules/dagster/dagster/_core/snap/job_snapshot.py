@@ -96,7 +96,7 @@ class JobSnapSerializer(RecordSerializer["JobSnap"]):
     storage_name="PipelineSnapshot",
     serializer=JobSnapSerializer,
     skip_when_empty_fields={"metadata"},
-    skip_when_none_fields={"run_tags"},
+    skip_when_none_fields={"run_tags", "owners"},
     field_serializers={"metadata": MetadataFieldSerializer},
     storage_field_names={"node_defs_snapshot": "solid_definitions_snapshot"},
 )
@@ -119,6 +119,7 @@ class JobSnap(IHaveNew):
     lineage_snapshot: Optional["JobLineageSnap"]
     graph_def_name: str
     metadata: Mapping[str, MetadataValue]
+    owners: Optional[Sequence[str]]
 
     def __new__(
         cls,
@@ -134,6 +135,7 @@ class JobSnap(IHaveNew):
         lineage_snapshot: Optional["JobLineageSnap"],
         graph_def_name: str,
         metadata: Optional[Mapping[str, RawMetadataValue]],
+        owners: Optional[Sequence[str]] = None,
     ):
         return super().__new__(
             cls,
@@ -151,6 +153,7 @@ class JobSnap(IHaveNew):
             metadata=normalize_metadata(
                 check.opt_mapping_param(metadata, "metadata", key_type=str)
             ),
+            owners=owners,
         )
 
     @classmethod
@@ -183,6 +186,7 @@ class JobSnap(IHaveNew):
             mode_def_snaps=[build_mode_def_snap(job_def)],
             lineage_snapshot=lineage,
             graph_def_name=job_def.graph.name,
+            owners=job_def.owners,
         )
 
     @cached_property

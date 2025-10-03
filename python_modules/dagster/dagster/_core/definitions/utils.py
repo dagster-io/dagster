@@ -169,6 +169,52 @@ def is_valid_asset_owner(owner: str) -> bool:
     return is_valid_email(owner) or (owner.startswith("team:") and len(owner) > 5)
 
 
+def is_valid_definition_owner(owner: str) -> bool:
+    """Enhanced owner validation that checks team name characters.
+
+    An owner must be either:
+    - A valid email address
+    - A team name prefixed with 'team:' where the team name contains only valid characters (A-Za-z0-9_)
+    """
+    if is_valid_email(owner):
+        return True
+
+    if owner.startswith("team:") and len(owner) > 5:
+        team_name = owner[5:]  # Remove 'team:' prefix
+        return has_valid_name_chars(team_name)
+
+    return False
+
+
+def validate_definition_owner(owner: str, definition_type: str, definition_name: str) -> None:
+    """Validate that an owner string is properly formatted.
+
+    Args:
+        owner: The owner string to validate
+        definition_type: Type of definition (e.g., "job", "sensor", "schedule") for error messages
+        definition_name: Name of the definition for error messages
+    """
+    if not is_valid_definition_owner(owner):
+        if owner.startswith("team:"):
+            team_name = owner[5:] if len(owner) > 5 else ""
+            if not team_name:
+                raise DagsterInvalidDefinitionError(
+                    f"Invalid owner '{owner}' for {definition_type} '{definition_name}'. "
+                    "Team name cannot be empty after 'team:' prefix."
+                )
+            else:
+                raise DagsterInvalidDefinitionError(
+                    f"Invalid owner '{owner}' for {definition_type} '{definition_name}'. "
+                    f"Team name '{team_name}' contains invalid characters. "
+                    f"Team names must match regex {VALID_NAME_REGEX_STR}."
+                )
+        else:
+            raise DagsterInvalidDefinitionError(
+                f"Invalid owner '{owner}' for {definition_type} '{definition_name}'. "
+                "Owner must be an email address or a team name prefixed with 'team:'."
+            )
+
+
 def validate_group_name(group_name: Optional[str]) -> None:
     """Ensures a string name is valid and returns a default if no name provided."""
     if group_name:
