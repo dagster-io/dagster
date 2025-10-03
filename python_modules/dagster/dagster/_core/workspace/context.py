@@ -198,7 +198,7 @@ class BaseWorkspaceRequestContext(LoadingContext):
         pass
 
     @abstractmethod
-    def permissions_for_owner(self, owner: str) -> Mapping[str, PermissionResult]:
+    def permissions_for_owner(self, *, owner: str) -> Mapping[str, PermissionResult]:
         pass
 
     def has_permission_for_location(self, permission: str, location_name: str) -> bool:
@@ -251,6 +251,8 @@ class BaseWorkspaceRequestContext(LoadingContext):
                 if self.permissions_for_owner(owner).get(permission, False):
                     return True
 
+            return False
+
         if not self.has_code_location_name(selector.location_name):
             return False
 
@@ -263,7 +265,7 @@ class BaseWorkspaceRequestContext(LoadingContext):
         owners = self.get_owners_for_selector(selector)
         for owner in owners:
             permissions = self.permissions_for_owner(owner)
-            if permissions.get(permission, False):
+            if permission in permissions and permissions[permission].enabled:
                 return True
         return False
 
