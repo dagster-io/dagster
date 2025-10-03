@@ -198,7 +198,7 @@ class BaseWorkspaceRequestContext(LoadingContext):
         pass
 
     @abstractmethod
-    def permissions_for_owner(self, owner: str) -> Mapping[str, PermissionResult]:
+    def permissions_for_owner(self, *, owner: str) -> Mapping[str, PermissionResult]:
         pass
 
     def has_permission_for_location(self, permission: str, location_name: str) -> bool:
@@ -226,30 +226,18 @@ class BaseWorkspaceRequestContext(LoadingContext):
 
         owners = get_owners_for_definition(remote_definition)
         for owner in owners:
-            if self.permissions_for_owner(owner).get(permission, False):
+            owner_permissions = self.permissions_for_owner(owner=owner)
+            if permission in owner_permissions and owner_permissions[permission].enabled:
                 return True
         return False
 
     def has_permission_for_selector(
         self,
         permission: str,
-        selector: Union[JobSelector, ScheduleSelector, SensorSelector, AssetKey],
+        selector: Union[JobSelector, ScheduleSelector, SensorSelector],
     ) -> bool:
         if self.has_permission(permission):
             return True
-
-        if isinstance(selector, AssetKey):
-            if not self.asset_graph.has(selector):
-                return False
-
-            node = self.asset_graph.get(selector).resolve_to_singular_repo_scoped_node()
-            if self.has_permission_for_location(permission, node.repository_handle.location_name):
-                return True
-
-            owners = get_owners_for_definition(node)
-            for owner in owners:
-                if self.permissions_for_owner(owner).get(permission, False):
-                    return True
 
         if not self.has_code_location_name(selector.location_name):
             return False
@@ -262,13 +250,13 @@ class BaseWorkspaceRequestContext(LoadingContext):
 
         owners = self.get_owners_for_selector(selector)
         for owner in owners:
-            permissions = self.permissions_for_owner(owner)
-            if permissions.get(permission, False):
+            permissions = self.permissions_for_owner(owner=owner)
+            if permission in permissions and permissions[permission].enabled:
                 return True
         return False
 
     def get_owners_for_selector(
-        self, selector: Union[JobSelector, ScheduleSelector, SensorSelector, AssetKey]
+        self, selector: Union[JobSelector, ScheduleSelector, SensorSelector]
     ) -> Sequence[str]:
         if isinstance(selector, JobSelector):
             remote_definition = self.get_full_job(selector)
@@ -279,6 +267,7 @@ class BaseWorkspaceRequestContext(LoadingContext):
 
         if not remote_definition:
             return []
+
         return get_owners_for_definition(remote_definition)
 
     @property
