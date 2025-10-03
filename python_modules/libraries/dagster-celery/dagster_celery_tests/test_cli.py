@@ -46,12 +46,12 @@ def check_for_worker(name, args=None, present=True):
 
 def test_invoke_entrypoint():
     runner = CliRunner()
-    result = runner.invoke(main)
+    result = runner.invoke(main, ["--help"])
     assert result.exit_code == 0
     assert "worker" in result.output
 
     runner = CliRunner()
-    result = runner.invoke(main, ["worker"])
+    result = runner.invoke(main, ["worker", "--help"])
     assert result.exit_code == 0
     assert "Start a dagster celery worker" in result.output
 

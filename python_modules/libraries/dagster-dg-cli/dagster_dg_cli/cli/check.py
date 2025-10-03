@@ -139,13 +139,6 @@ def check_toml_command(
     help="Format of the logs for dagster services",
 )
 @click.option(
-    "--verbose",
-    "-v",
-    flag_value=True,
-    default=False,
-    help="Show verbose error messages, including system frames in stack traces.",
-)
-@click.option(
     "--check-yaml/--no-check-yaml",
     flag_value=True,
     help="Whether to schema-check defs.yaml files for the project before loading and checking all definitions.",
@@ -159,7 +152,7 @@ def check_definitions_command(
     context: click.Context,
     log_level: str,
     log_format: str,
-    verbose: bool,
+    verbose: bool,  # from dg_global_options
     target_path: Path,
     check_yaml: Optional[bool],
     **global_options: Mapping[str, object],
@@ -207,7 +200,7 @@ def check_definitions_command(
                 )
                 overall_check_result = overall_check_result and check_result
             if not overall_check_result:
-                click.get_current_context().exit(1)
+                context.exit(1)
 
         from dagster._cli.definitions import definitions_validate_command_impl
 
