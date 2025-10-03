@@ -239,11 +239,10 @@ def assert_permission_for_sensor(
     permission: Permissions,
     sensor_selector: SensorSelector,
 ):
-    remote_sensor = graphene_info.context.get_sensor(sensor_selector)
-    if not remote_sensor:
-        assert_permission_for_location(graphene_info, permission, sensor_selector.location_name)
-    else:
-        assert_permission_for_definition(graphene_info, permission, remote_sensor)
+    from dagster_graphql.schema.errors import GrapheneUnauthorizedError
+
+    if not graphene_info.context.has_permission_for_selector(permission, sensor_selector):
+        raise UserFacingGraphQLError(GrapheneUnauthorizedError())
 
 
 def assert_permission_for_schedule(
@@ -251,11 +250,10 @@ def assert_permission_for_schedule(
     permission: Permissions,
     schedule_selector: ScheduleSelector,
 ):
-    remote_schedule = graphene_info.context.get_schedule(schedule_selector)
-    if not remote_schedule:
-        assert_permission_for_location(graphene_info, permission, schedule_selector.location_name)
-    else:
-        assert_permission_for_definition(graphene_info, permission, remote_schedule)
+    from dagster_graphql.schema.errors import GrapheneUnauthorizedError
+
+    if not graphene_info.context.has_permission_for_selector(permission, schedule_selector):
+        raise UserFacingGraphQLError(GrapheneUnauthorizedError())
 
 
 def assert_valid_job_partition_backfill(
