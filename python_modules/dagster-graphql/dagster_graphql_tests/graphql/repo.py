@@ -2205,6 +2205,8 @@ def define_standard_jobs() -> Sequence[JobDefinition]:
         some_external_job,
         owned_job,
         unowned_job,
+        owned_partitioned_job,
+        unowned_partitioned_job,
     ]
 
 
@@ -2244,6 +2246,22 @@ def owned_job():
 @job
 def unowned_job():
     permission_test_op()
+
+
+@op
+def permission_partitioned_op(context):
+    context.log.info(f"Processing partition: {context.partition_key}")
+    return context.partition_key
+
+
+@job(partitions_def=partitions_def_for_permissions)
+def owned_partitioned_job():
+    permission_partitioned_op()
+
+
+@job(partitions_def=partitions_def_for_permissions)
+def unowned_partitioned_job():
+    permission_partitioned_op()
 
 
 @sensor(job=owned_job)
