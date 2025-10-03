@@ -8,16 +8,22 @@ from pathlib import Path
 from typing import TYPE_CHECKING, Optional, Union
 from uuid import uuid4
 
+from dagster_shared import check
 from dagster_shared.serdes.objects.models.defs_state_info import (
+    CODE_SERVER_STATE_VERSION,
+    LOCAL_STATE_VERSION,
     DefsStateStorageLocation,
     get_local_state_path,
 )
 from typing_extensions import Self
 
 from dagster._core.definitions.definitions_class import Definitions
-from dagster._core.definitions.definitions_load_context import DefinitionsLoadContext
+from dagster._core.definitions.definitions_load_context import (
+    DefinitionsLoadContext,
+    DefinitionsLoadType,
+)
 from dagster._core.errors import DagsterInvalidInvocationError
-from dagster._core.storage.defs_state.base import LOCAL_STATE_VERSION, DefsStateStorage
+from dagster._core.storage.defs_state.base import DefsStateStorage
 from dagster.components.component.component import Component
 from dagster.components.core.context import ComponentLoadContext
 
@@ -50,6 +56,18 @@ class StateBackedComponent(Component):
         else:
             await asyncio.to_thread(self.write_state_to_path, state_path)
 
+    async def _store_code_server_state(self, key: str, state_storage: DefsStateStorage) -> None:
+        load_context = DefinitionsLoadContext.get()
+        check.invariant(
+            load_context.load_type == DefinitionsLoadType.INITIALIZATION,
+            "Attempted to store CODE_SERVER state outside of the initialization phase.",
+        )
+        with tempfile.TemporaryDirectory() as temp_dir:
+            state_path = Path(temp_dir) / key
+            await self._write_state_to_path_async(state_path)
+            load_context.add_code_server_defs_state_info(key, state_path.read_text())
+            state_storage.set_latest_version(key, CODE_SERVER_STATE_VERSION)
+
     async def _store_local_filesystem_state(
         self, key: str, state_storage: DefsStateStorage
     ) -> None:
@@ -80,6 +98,10 @@ class StateBackedComponent(Component):
             await self._store_versioned_state_storage_state(key, state_storage)
         elif self._state_storage_location == DefsStateStorageLocation.LOCAL:
             await self._store_local_filesystem_state(key, state_storage)
+        elif self._state_storage_location == DefsStateStorageLocation.LEGACY_CODE_SERVER_SNAPSHOTS:
+            raise DagsterInvalidInvocationError(
+                "Attempted to refresh `CODE_SERVER` state explicitly, but this can only happen during code server startup."
+            )
         else:
             raise DagsterInvalidInvocationError(
                 f"Invalid state storage location: {self._state_storage_location}"
@@ -87,8 +109,21 @@ class StateBackedComponent(Component):
 
     def build_defs(self, context: ComponentLoadContext) -> Definitions:
         key = self.get_defs_state_key()
+        defs_load_context = DefinitionsLoadContext.get()
+        state_storage = DefsStateStorage.get()
+        if state_storage is None:
+            raise DagsterInvalidInvocationError(
+                "Attempted to build defs without a StateStorage in context. "
+                "This is likely the result of an internal framework error."
+            )
 
-        with DefinitionsLoadContext.get().state_path(key) as state_path:
+        if (
+            self._state_storage_location == DefsStateStorageLocation.LEGACY_CODE_SERVER_SNAPSHOTS
+            and defs_load_context.load_type == DefinitionsLoadType.INITIALIZATION
+        ):
+            asyncio.run(self._store_code_server_state(key, state_storage))
+
+        with DefinitionsLoadContext.get().state_path(key, state_storage) as state_path:
             return self.build_defs_from_state(context, state_path=state_path)
 
     @abstractmethod
