@@ -1,0 +1,9 @@
+# start_sling_component_config
+type: dagster_components.dagster_sling.SlingReplicationCollectionComponent
+
+attributes:
+  replications:
+    - path: replication.yaml
+      # asset_attributes:
+      #   group_name: jaffle_platform
+# end_sling_component_config

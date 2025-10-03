@@ -1,0 +1,37 @@
+[project]
+name = "project_sql_but_not_dbt"
+requires-python = ">=3.9,<3.13"
+version = "0.1.0"
+dependencies = [
+    "dagster-components[sling]==0.26.6.post0",
+    "sqlalchemy",
+    "pandas",
+    "duckdb-engine",
+]
+
+[project.entry-points]
+"dagster.components" = { project_sql_but_not_dbt = "project_sql_but_not_dbt.lib"}
+
+[dependency-groups]
+dev = [
+    "dagster-webserver",
+]
+
+[build-system]
+requires = ["setuptools"]
+build-backend = "setuptools.build_meta"
+
+[tool.dagster]
+module_name = "project_sql_but_not_dbt.definitions"
+code_location_name = "project_sql_but_not_dbt"
+
+[tool.dg]
+directory_type = "project"
+
+[tool.dg.project]
+root_module = "project_sql_but_not_dbt"
+
+[tool.setuptools.packages.find]
+exclude=["tests"]
+
+

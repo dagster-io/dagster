@@ -1,0 +1,25 @@
+# start_sql_component_config
+type: iwritesqlbutnotdbt.lib.SqlComponent
+
+attributes:
+  sql_path: "./first_5_orders.sql"
+  sql_engine_url: "duckdb:////tmp/jaffle_platform.duckdb"
+  asset_specs:
+    - key: first_5_orders
+      deps:
+        - raw_orders
+      kinds:
+        - duckdb
+        - sql
+      # group_name: jaffle_platform
+# end_sql_component_config
+
+    # next step: takes a list of specs, instead of a single spec
+    # - sql_path: "./pypi_package_downloads.sql"
+    #   sql_engine_url: "bigquery://my-project/my-dataset"
+    #   asset_specs:
+    #     - key: pypi_package_downloads
+    #       kinds:
+    #         - bigquery
+    #         - sql
+    #       group_name: pypi
