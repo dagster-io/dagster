@@ -82,6 +82,12 @@ const NEW_EVALUATION_NODE_FRAGMENT = gql`
     entityKey {
       ...EntityKeyFragment
     }
+    sinceMetadata {
+      triggerEvaluationId
+      triggerTimestamp
+      resetEvaluationId
+      resetTimestamp
+    }
   }
   ${ENTITY_KEY_FRAGMENT}
 `;

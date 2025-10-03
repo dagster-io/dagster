@@ -12,7 +12,11 @@ import {
 import {useCallback, useMemo, useState} from 'react';
 import styled, {css} from 'styled-components';
 
-import {EvaluationConditionalLabel, EvaluationUserLabel} from './EvaluationConditionalLabel';
+import {
+  EvaluationConditionalLabel,
+  EvaluationSinceLabel,
+  EvaluationUserLabel,
+} from './EvaluationConditionalLabel';
 import {PartitionSegmentWithPopover} from './PartitionSegmentWithPopover';
 import {PolicyEvaluationCondition} from './PolicyEvaluationCondition';
 import {PolicyEvaluationStatusTag} from './PolicyEvaluationStatusTag';
@@ -191,7 +195,7 @@ const NewPolicyEvaluationTable = ({
       </thead>
       <tbody>
         {flattenedRecords.map(({evaluation, id, parentId, depth, type, entityKey}) => {
-          const {userLabel, uniqueId, numTrue, numCandidates, expandedLabel} = evaluation;
+          const {userLabel, uniqueId, numTrue, numCandidates} = evaluation;
           const status = statusForEvaluation(evaluation);
           let endTimestamp, startTimestamp;
           if ('endTimestamp' in evaluation) {
@@ -273,13 +277,7 @@ const NewPolicyEvaluationTable = ({
                     )
                   }
                   evaluationLink={entityEvaluationLink}
-                  label={
-                    userLabel ? (
-                      <EvaluationUserLabel userLabel={userLabel} expandedLabel={expandedLabel} />
-                    ) : (
-                      <EvaluationConditionalLabel segments={expandedLabel} />
-                    )
-                  }
+                  label={<EvaluationLabel evaluation={evaluation} pushHistory={pushHistory} />}
                   skipped={status === AssetConditionEvaluationStatus.SKIPPED}
                   depth={depth}
                   type={type}
@@ -327,6 +325,23 @@ const NewPolicyEvaluationTable = ({
       </tbody>
     </VeryCompactTable>
   );
+};
+
+const EvaluationLabel = ({
+  evaluation,
+  pushHistory,
+}: {
+  evaluation: NewEvaluationNodeFragment;
+  pushHistory?: (item: EvaluationHistoryStackItem) => void;
+}) => {
+  const {userLabel, expandedLabel} = evaluation;
+  if (userLabel) {
+    return <EvaluationUserLabel userLabel={userLabel} expandedLabel={expandedLabel} />;
+  }
+  if (evaluation.sinceMetadata) {
+    return <EvaluationSinceLabel evaluation={evaluation} pushHistory={pushHistory} />;
+  }
+  return <EvaluationConditionalLabel segments={expandedLabel} />;
 };
 
 const UnpartitionedPolicyEvaluationTable = ({
