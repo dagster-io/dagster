@@ -42,6 +42,10 @@ After you make the above changes and commit the workflow file, the CI process sh
 
 During the deployment, the agent will attempt to load your code and update the metadata in Dagster+. When that has finished, you should see the GitHub Action complete successfully, and also be able to see the code location under the **Deployment** tag in Dagster+.
 
+:::tip
+We recommend periodically (every 6 months or so) updating the version of the Dagster GitHub Actions in your workflow files. These actions use version tags that follow the Dagster release convention (e.g., `@v1.11.13`). You can find the most [recent Dagster release](https://github.com/dagster-io/dagster/releases) on GitHub.
+:::
+
 ## Non-GitHub CI/CD provider \{#non-github}
 
 If you are using a non-GitHub CI/CD provider, your system should use the `dagster-cloud ci` command to deploy code locations to Dagster+.
