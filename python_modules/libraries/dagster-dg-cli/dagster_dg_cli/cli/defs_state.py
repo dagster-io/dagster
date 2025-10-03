@@ -81,8 +81,6 @@ async def _refresh_state_for_component(
 ) -> None:
     """Refreshes the state of a component and tracks its state in the statuses dictionary as it progresses."""
     key = component.get_defs_state_key()
-    start_time = time.time()
-    statuses[key] = ComponentStateRefreshStatus(status="refreshing", start_time=start_time)
 
     try:
         await component.refresh_state()
@@ -90,9 +88,10 @@ async def _refresh_state_for_component(
     except Exception as e:
         error = e
 
+    original_status = statuses[key]
     statuses[key] = replace(
-        statuses[key],
-        duration=time.time() - start_time,
+        original_status,
+        duration=time.time() - original_status.start_time,
         status="done" if error is None else "failed",
         error=error,
     )
@@ -127,7 +126,13 @@ def get_updated_defs_state_info_task_and_statuses(
         components_to_refresh = _get_components_to_refresh(component_tree, defs_state_keys)
 
     # shared dictionary to be used for all subtasks
-    statuses = dict()
+    start_time = time.time()
+    statuses = {
+        component.get_defs_state_key(): ComponentStateRefreshStatus(
+            status="refreshing", start_time=start_time
+        )
+        for component in components_to_refresh
+    }
     refresh_task = asyncio.create_task(
         _refresh_state_for_components(defs_state_storage, components_to_refresh, statuses)
     )
