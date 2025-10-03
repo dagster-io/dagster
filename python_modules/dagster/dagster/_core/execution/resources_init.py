@@ -1,8 +1,10 @@
 import inspect
+import io
+import os
 from asyncio import AbstractEventLoop
 from collections import deque
 from collections.abc import Generator, Mapping
-from contextlib import ContextDecorator
+from contextlib import ContextDecorator, nullcontext, redirect_stderr, redirect_stdout
 from typing import AbstractSet, Any, Callable, Optional, Union, cast  # noqa: UP035
 
 from dagster_shared.utils.timing import format_duration
@@ -313,27 +315,53 @@ def single_resource_event_generator(
         with user_code_error_boundary(
             DagsterResourceFunctionError, msg_fn, log_manager=context.log
         ):
-            try:
-                with time_execution_scope() as timer_result:
-                    resource_or_gen = (
-                        resource_def.resource_fn(context)
-                        if has_at_least_one_parameter(resource_def.resource_fn)
-                        else resource_def.resource_fn()  # type: ignore[call-arg]
-                    )
+            should_capture = not (os.name == "nt" and not os.environ.get("PYTHONLEGACYWINDOWSSTDIO"))
+            
+            stdout_buffer = io.StringIO() if should_capture else None
+            stderr_buffer = io.StringIO() if should_capture else None
+            
+            # Use context managers for capture if enabled, otherwise use nullcontext
+            stdout_ctx = redirect_stdout(stdout_buffer) if should_capture else nullcontext()
+            stderr_ctx = redirect_stderr(stderr_buffer) if should_capture else nullcontext()
+            
+            with stdout_ctx, stderr_ctx:
+                try:
+                    with time_execution_scope() as timer_result:
+                        resource_or_gen = (
+                            resource_def.resource_fn(context)
+                            if has_at_least_one_parameter(resource_def.resource_fn)
+                            else resource_def.resource_fn()
+                        )
 
-                    # Flag for whether resource is generator. This is used to ensure that teardown
-                    # occurs when resources are initialized out of execution.
-                    is_gen = inspect.isgenerator(resource_or_gen) or isinstance(
-                        resource_or_gen, ContextDecorator
-                    )
+                        # Flag for whether resource is generator. This is used to ensure that teardown
+                        # occurs when resources are initialized out of execution.
+                        is_gen = inspect.isgenerator(resource_or_gen) or isinstance(
+                            resource_or_gen, ContextDecorator
+                        )
 
-                    resource_iter = _wrapped_resource_iterator(resource_or_gen)
-                    resource = next(resource_iter)
-                resource = InitializedResource(
-                    resource, format_duration(timer_result.millis), is_gen
-                )
-            except StopIteration:
-                check.failed(f"Resource generator {resource_name} must yield one item.")
+                        resource_iter = _wrapped_resource_iterator(resource_or_gen)
+                        resource = next(resource_iter)
+                    resource = InitializedResource(
+                        resource, format_duration(timer_result.millis), is_gen
+                    )
+                except StopIteration:
+                    check.failed(f"Resource generator {resource_name} must yield one item.")
+            
+            # Forward captured stdout/stderr to Dagster log manager
+            if should_capture and context.log:
+                stdout_content = stdout_buffer.getvalue() if stdout_buffer else ""
+                stderr_content = stderr_buffer.getvalue() if stderr_buffer else ""
+                
+                if stdout_content:
+                    # Log each line separately to preserve formatting
+                    for line in stdout_content.splitlines():
+                        if line.strip():  # Skip empty lines
+                            context.log.info(line)
+                
+                if stderr_content:
+                    for line in stderr_content.splitlines():
+                        if line.strip():  # Skip empty lines
+                            context.log.warning(line)
 
         yield resource
 
