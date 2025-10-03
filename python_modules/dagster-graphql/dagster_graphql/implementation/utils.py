@@ -24,7 +24,13 @@ from dagster._core.definitions.asset_checks.asset_check_spec import AssetCheckKe
 from dagster._core.definitions.assets.graph.remote_asset_graph import RemoteWorkspaceAssetGraph
 from dagster._core.definitions.events import AssetKey
 from dagster._core.definitions.partitions.definition import PartitionsDefinition
-from dagster._core.definitions.selector import GraphSelector, JobSelector, JobSubsetSelector
+from dagster._core.definitions.selector import (
+    GraphSelector,
+    JobSelector,
+    JobSubsetSelector,
+    ScheduleSelector,
+    SensorSelector,
+)
 from dagster._core.definitions.temporal_context import TemporalContext
 from dagster._core.errors import DagsterError, DagsterInvariantViolationError
 from dagster._core.execution.backfill import PartitionBackfill
@@ -208,6 +214,28 @@ def assert_permission_for_job(
     from dagster_graphql.schema.errors import GrapheneUnauthorizedError
 
     if not has_permission_for_job(graphene_info, permission, job_selector, asset_keys):
+        raise UserFacingGraphQLError(GrapheneUnauthorizedError())
+
+
+def assert_permission_for_sensor(
+    graphene_info: "ResolveInfo",
+    permission: Permissions,
+    sensor_selector: SensorSelector,
+):
+    from dagster_graphql.schema.errors import GrapheneUnauthorizedError
+
+    if not graphene_info.context.has_permission_for_selector(permission, sensor_selector):
+        raise UserFacingGraphQLError(GrapheneUnauthorizedError())
+
+
+def assert_permission_for_schedule(
+    graphene_info: "ResolveInfo",
+    permission: Permissions,
+    schedule_selector: ScheduleSelector,
+):
+    from dagster_graphql.schema.errors import GrapheneUnauthorizedError
+
+    if not graphene_info.context.has_permission_for_selector(permission, schedule_selector):
         raise UserFacingGraphQLError(GrapheneUnauthorizedError())
 
 
