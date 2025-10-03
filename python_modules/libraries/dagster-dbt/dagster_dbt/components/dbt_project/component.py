@@ -192,6 +192,10 @@ class DbtProjectComponent(dg.Component, dg.Resolvable):
         ),
     ] = True
 
+    @property
+    def local_project(self) -> DbtProject:
+        return self.project
+
     @cached_property
     def translator(self) -> "DagsterDbtTranslator":
         return DbtProjectComponentTranslator(self, self.translation_settings)
@@ -216,13 +220,13 @@ class DbtProjectComponent(dg.Component, dg.Resolvable):
 
     @cached_property
     def cli_resource(self):
-        return DbtCliResource(self.project)
+        return DbtCliResource(self.local_project)
 
     def get_asset_selection(
         self, select: str, exclude: str = DBT_DEFAULT_EXCLUDE
     ) -> DbtManifestAssetSelection:
         return DbtManifestAssetSelection.build(
-            manifest=self.project.manifest_path,
+            manifest=self.local_project.manifest_path,
             dagster_dbt_translator=self.translator,
             select=select,
             exclude=exclude,
@@ -230,12 +234,12 @@ class DbtProjectComponent(dg.Component, dg.Resolvable):
 
     def build_defs(self, context: dg.ComponentLoadContext) -> dg.Definitions:
         if self.prepare_if_dev:
-            self.project.prepare_if_dev()
+            self.local_project.prepare_if_dev()
 
         @dbt_assets(
-            manifest=self.project.manifest_path,
-            project=self.project,
-            name=self.op.name if self.op else self.project.name,
+            manifest=self.local_project.manifest_path,
+            project=self.local_project,
+            name=self.op.name if self.op else self.local_project.name,
             op_tags=self.op.tags if self.op else None,
             dagster_dbt_translator=self.translator,
             select=self.select,
@@ -305,7 +309,7 @@ class DbtProjectComponent(dg.Component, dg.Resolvable):
 
     @cached_property
     def _validated_manifest(self):
-        return validate_manifest(self.project.manifest_path)
+        return validate_manifest(self.local_project.manifest_path)
 
     @cached_property
     def _validated_translator(self):
@@ -328,7 +332,7 @@ class DbtProjectComponent(dg.Component, dg.Resolvable):
         return dagster_dbt_translator.get_asset_spec(
             manifest,
             next(iter(matching_model_ids)),
-            self.project,
+            self.local_project,
         ).key
 
 
