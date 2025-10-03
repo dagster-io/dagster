@@ -1,0 +1,23 @@
+# data_contracts/shipments_contract.yaml
+name: shipments_contract
+version: "1.0"
+description: "Data contract for shipments table"
+
+schema:
+  columns:
+    shipment_id:
+      type: "int64"
+      description: "Unique identifier for shipment"
+      required: true
+    customer_name:
+      type: "string"
+      description: "Name of the customer"
+      required: true
+    amount:
+      type: "float64"
+      description: "Shipment amount"
+      required: true
+    ship_date:
+      type: "datetime64[ns]"
+      description: "Date when shipment was made"
+      required: true
