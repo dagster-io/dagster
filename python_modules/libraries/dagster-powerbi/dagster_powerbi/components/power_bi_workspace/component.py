@@ -13,7 +13,12 @@ from dagster.components.resolved.base import resolve_fields
 from dagster.components.resolved.context import ResolutionContext
 from dagster.components.resolved.core_models import AssetSpecKeyUpdateKwargs, AssetSpecUpdateKwargs
 from dagster.components.utils import TranslatorResolvingInfo
-from dagster.components.utils.translation import TranslationFn, TranslationFnResolver
+from dagster.components.utils.translation import (
+    ComponentTranslator,
+    TranslationFn,
+    TranslationFnResolver,
+    create_component_translator_cls,
+)
 from dagster_shared import check
 from dagster_shared.record import record
 from pydantic import BaseModel
@@ -142,15 +147,6 @@ ResolvedMultilayerTranslationFn: TypeAlias = Annotated[
 ]
 
 
-class ProxyDagsterPowerBITranslator(DagsterPowerBITranslator):
-    def __init__(self, fn: TranslationFn):
-        self._fn = fn
-
-    def get_asset_spec(self, data: PowerBITranslatorData) -> AssetSpec:
-        base_asset_spec = super().get_asset_spec(data)
-        return self._fn(base_asset_spec, data)
-
-
 @dataclass
 class PowerBIWorkspaceModel(Resolvable):
     credentials: Annotated[
@@ -189,9 +185,14 @@ class PowerBIWorkspaceComponent(Component, Resolvable):
 
     @cached_property
     def translator(self) -> DagsterPowerBITranslator:
-        if self.translation:
-            return ProxyDagsterPowerBITranslator(self.translation)
+        return PowerBIComponentTranslator(self)
+
+    @cached_property
+    def _base_translator(self) -> DagsterPowerBITranslator:
         return DagsterPowerBITranslator()
+
+    def get_asset_spec(self, data: PowerBITranslatorData) -> AssetSpec:
+        return self._base_translator.get_asset_spec(data)
 
     @cached_property
     def workspace_resource(self) -> PowerBIWorkspace:
@@ -236,3 +237,18 @@ class PowerBIWorkspaceComponent(Component, Resolvable):
             for spec in specs
         ]
         return dg.Definitions(assets=specs_with_refreshable_semantic_models)
+
+
+class PowerBIComponentTranslator(
+    create_component_translator_cls(PowerBIWorkspaceComponent, DagsterPowerBITranslator),
+    ComponentTranslator[PowerBIWorkspaceComponent],
+):
+    def __init__(self, component: PowerBIWorkspaceComponent):
+        self._component = component
+
+    def get_asset_spec(self, data: PowerBITranslatorData) -> AssetSpec:
+        base_asset_spec = super().get_asset_spec(data)
+        if self.component.translation is None:
+            return base_asset_spec
+        else:
+            return self.component.translation(base_asset_spec, data)
