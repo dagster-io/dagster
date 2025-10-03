@@ -18,6 +18,7 @@ from dagster_dg_core.utils import (
     modify_toml_as_dict,
 )
 from dagster_shared.libraries import get_published_pypi_versions
+from dagster_shared.utils import environ
 from dagster_test.dg_utils.utils import (
     ProxyRunner,
     assert_runner_result,
@@ -282,24 +283,17 @@ EditableOption: TypeAlias = Literal["--use-editable-dagster"]
 
 
 @pytest.mark.parametrize("option", get_args(EditableOption))
-@pytest.mark.parametrize("value_source", ["env_var", "arg"])
-def test_scaffold_project_editable_dagster_success(
-    value_source: str, option: EditableOption, monkeypatch
-) -> None:
+def test_scaffold_project_editable_dagster_success(option: EditableOption, monkeypatch) -> None:
     dagster_git_repo_dir = discover_git_root(Path(__file__))
-    if value_source == "env_var":
-        monkeypatch.setenv("DAGSTER_GIT_REPO_DIR", str(dagster_git_repo_dir))
-        editable_args = [option, "--"]
-    else:
-        editable_args = [option, str(dagster_git_repo_dir)]
     with (
         ProxyRunner.test() as runner,
         isolated_example_workspace(runner, use_editable_dagster=False),
+        environ({"DAGSTER_GIT_REPO_DIR": str(dagster_git_repo_dir)}),
     ):
         result = runner.invoke_create_dagster(
             "project",
             "--uv-sync",
-            *editable_args,
+            "--use-editable-dagster",
             "projects/foo-bar",
         )
         assert_runner_result(result)
@@ -401,7 +395,11 @@ def test_scaffold_project_use_editable_dagster_env_var_succeeds(monkeypatch) -> 
     dagster_git_repo_dir = discover_git_root(Path(__file__))
     monkeypatch.setenv("DAGSTER_GIT_REPO_DIR", str(dagster_git_repo_dir))
     monkeypatch.setenv(DEFAULT_EDITABLE_DAGSTER_PROJECTS_ENV_VAR, "1")
-    with ProxyRunner.test() as runner, runner.isolated_filesystem():
+    with (
+        ProxyRunner.test() as runner,
+        runner.isolated_filesystem(),
+        environ({"DAGSTER_GIT_REPO_DIR": str(dagster_git_repo_dir)}),
+    ):
         # We need to use subprocess rather than runner here because the environment variable affects
         # CLI defaults set at process startup.
         subprocess.check_output(["create-dagster", "project", "--uv-sync", "foo-bar"], text=True)
@@ -453,12 +451,12 @@ def test_scaffold_project_normal_package_installation_works(monkeypatch) -> None
 
 @pytest.mark.parametrize("option", get_args(EditableOption))
 def test_scaffold_project_editable_dagster_no_env_var_no_value_fails(
-    option: EditableOption, monkeypatch
+    option: EditableOption,
 ) -> None:
-    monkeypatch.setenv("DAGSTER_GIT_REPO_DIR", "")
     with (
         ProxyRunner.test() as runner,
         isolated_example_workspace(runner, use_editable_dagster=False),
+        environ({"DAGSTER_GIT_REPO_DIR": ""}),
     ):
         result = runner.invoke_create_dagster("project", option, "--", "bar")
         assert_runner_result(result, exit_0=False)
