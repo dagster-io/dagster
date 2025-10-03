@@ -16,6 +16,7 @@ import {IExecutionSession} from '../app/ExecutionSessionStorage';
 import {PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorFragment';
 import {useTrackPageView} from '../app/analytics';
 import {asAssetKeyInput} from '../assets/asInput';
+import {CONFIG_EDITOR_RUN_CONFIG_SCHEMA_FRAGMENT} from '../configeditor/ConfigEditorUtils';
 import {explorerPathFromString, useStripSnapshotFromPath} from '../pipelines/PipelinePathUtils';
 import {useJobTitle} from '../pipelines/useJobTitle';
 import {lazy} from '../util/lazy';
@@ -153,6 +154,11 @@ export const LaunchpadAllowedRoot = (props: Props) => {
         sessionPresets={sessionPresets || {}}
         rootDefaultYaml={filteredRootDefaultYaml}
         onSaveConfig={onSaveConfig}
+        runConfigSchema={
+          result.data?.runConfigSchemaOrError.__typename === 'RunConfigSchema'
+            ? result.data.runConfigSchemaOrError
+            : undefined
+        }
       />
     );
   } else {
@@ -166,6 +172,11 @@ export const LaunchpadAllowedRoot = (props: Props) => {
         rootDefaultYaml={
           result.data?.runConfigSchemaOrError.__typename === 'RunConfigSchema'
             ? result.data.runConfigSchemaOrError.rootDefaultYaml
+            : undefined
+        }
+        runConfigSchema={
+          result.data?.runConfigSchemaOrError.__typename === 'RunConfigSchema'
+            ? result.data.runConfigSchemaOrError
             : undefined
         }
       />
@@ -225,6 +236,7 @@ export const PIPELINE_EXECUTION_ROOT_QUERY = gql`
       ... on RunConfigSchema {
         rootDefaultYaml
       }
+      ...LaunchpadSessionRunConfigSchemaFragment
     }
   }
 
@@ -244,7 +256,21 @@ export const PIPELINE_EXECUTION_ROOT_QUERY = gql`
     }
   }
 
+  fragment LaunchpadSessionRunConfigSchemaFragment on RunConfigSchemaOrError {
+    ... on RunConfigSchema {
+      ...ConfigEditorRunConfigSchemaFragment
+    }
+    ... on ModeNotFoundError {
+      ...LaunchpadSessionModeNotFound
+    }
+  }
+
+  fragment LaunchpadSessionModeNotFound on ModeNotFoundError {
+    message
+  }
+
   ${PYTHON_ERROR_FRAGMENT}
   ${CONFIG_EDITOR_GENERATOR_PARTITION_SETS_FRAGMENT}
   ${CONFIG_EDITOR_GENERATOR_PIPELINE_FRAGMENT}
+  ${CONFIG_EDITOR_RUN_CONFIG_SCHEMA_FRAGMENT}
 `;

@@ -137,6 +137,11 @@ export const BackfillLaunchpad = ({
         }}
         rootDefaultYaml={rootDefaultYaml}
         onSaveConfig={onSaveConfig}
+        runConfigSchema={
+          result.data?.runConfigSchemaOrError.__typename === 'RunConfigSchema'
+            ? result.data.runConfigSchemaOrError
+            : undefined
+        }
       />
     </Dialog>
   );
