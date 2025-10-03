@@ -75,9 +75,9 @@ sudo py-spy record -f speedscope --idle -- dagster definitions validate
 
 </Tabs>
 
-:::note
+:::info
 
-For more information, see the [`py-spy` guide to running `py-spy` in Kubernetes](https://github.com/benfred/py-spy#how-do-i-run-py-spy-in-kubernetes).
+For more information on running `py-spy` in Kubernetes, see [this `py-spy` guide](https://github.com/benfred/py-spy#how-do-i-run-py-spy-in-kubernetes).
 
 :::
 
