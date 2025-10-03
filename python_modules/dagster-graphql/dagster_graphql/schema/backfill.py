@@ -1,7 +1,7 @@
 import json
 import logging
 from collections.abc import Sequence
-from typing import TYPE_CHECKING, Optional
+from typing import TYPE_CHECKING, Optional, cast
 
 import dagster._check as check
 import graphene
@@ -631,10 +631,14 @@ class GraphenePartitionBackfill(graphene.ObjectType):
 
     def resolve_hasCancelPermission(self, graphene_info: ResolveInfo) -> bool:
         if self._backfill_job.is_asset_backfill:
+            check.invariant(
+                self._backfill_job.asset_selection is not None,
+                "Asset backfill must have asset selection",
+            )
             return has_permission_for_asset_graph(
                 graphene_info,
                 graphene_info.context.asset_graph,
-                self._backfill_job.asset_selection,
+                cast("list[AssetKey]", self._backfill_job.asset_selection),
                 Permissions.CANCEL_PARTITION_BACKFILL,
             )
         if self._backfill_job.partition_set_origin is None:
@@ -646,10 +650,14 @@ class GraphenePartitionBackfill(graphene.ObjectType):
 
     def resolve_hasResumePermission(self, graphene_info: ResolveInfo) -> bool:
         if self._backfill_job.is_asset_backfill:
+            check.invariant(
+                self._backfill_job.asset_selection is not None,
+                "Asset backfill must have asset selection",
+            )
             return has_permission_for_asset_graph(
                 graphene_info,
                 graphene_info.context.asset_graph,
-                self._backfill_job.asset_selection,
+                cast("list[AssetKey]", self._backfill_job.asset_selection),
                 Permissions.LAUNCH_PARTITION_BACKFILL,
             )
 

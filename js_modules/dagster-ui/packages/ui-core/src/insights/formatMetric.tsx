@@ -37,6 +37,10 @@ export const formatMetric = (
 ) => {
   const num = stripFormattingFromNumber(value);
 
+  if (unitType === ReportingUnitType.TIME_SECONDS) {
+    return formatElapsedTimeWithoutMsec(num * 1000);
+  }
+
   if (unitType === ReportingUnitType.TIME_MS) {
     return formatElapsedTimeWithoutMsec(num);
   }

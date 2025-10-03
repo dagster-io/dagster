@@ -268,4 +268,23 @@ describe('formatMetric', () => {
       expect(formatMetric(50 * 60 * 60 * 1000, ReportingUnitType.TIME_MS)).toBe('50:00:00');
     });
   });
+
+  describe('Elapsed time formatting for seconds', () => {
+    it('formats < 1 minute', () => {
+      expect(formatMetric(0, ReportingUnitType.TIME_SECONDS)).toBe('0:00:00');
+      expect(formatMetric(1, ReportingUnitType.TIME_SECONDS)).toBe('0:00:01');
+      expect(formatMetric(5, ReportingUnitType.TIME_SECONDS)).toBe('0:00:05');
+    });
+
+    it('formats < 1 hour', () => {
+      expect(formatMetric(10, ReportingUnitType.TIME_SECONDS)).toBe('0:00:10');
+      expect(formatMetric(60, ReportingUnitType.TIME_SECONDS)).toBe('0:01:00');
+      expect(formatMetric(59 * 60, ReportingUnitType.TIME_SECONDS)).toBe('0:59:00');
+    });
+
+    it('formats > 1 hour', () => {
+      expect(formatMetric(2 * 60 * 60, ReportingUnitType.TIME_SECONDS)).toBe('2:00:00');
+      expect(formatMetric(50 * 60 * 60, ReportingUnitType.TIME_SECONDS)).toBe('50:00:00');
+    });
+  });
 });

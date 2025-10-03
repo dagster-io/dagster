@@ -6,12 +6,13 @@ from dagster import (
     define_asset_job,
     graph_asset,
     link_code_references_to_git,
+    load_assets_from_package_module,
     op,
     with_source_code_references,
 )
 from dagster._core.definitions.metadata.source_code import AnchorBasedFilePathMapping
 
-from .defs.assets import most_frequent_words, topstories, topstory_ids
+from . import assets
 
 daily_refresh_schedule = ScheduleDefinition(
     job=define_asset_job(name="all_assets_job"), cron_schedule="0 0 * * *"
@@ -31,9 +32,7 @@ def my_asset():
 my_assets = with_source_code_references(
     [
         my_asset,
-        topstory_ids,
-        topstories,
-        most_frequent_words,
+        *load_assets_from_package_module(assets),
     ]
 )
 
@@ -43,7 +42,7 @@ my_assets = link_code_references_to_git(
     git_branch="master",
     file_path_mapping=AnchorBasedFilePathMapping(
         local_file_anchor=Path(__file__).parent,
-        file_anchor_path_in_repository="examples/quickstart_etl/src/quickstart_etl/",
+        file_anchor_path_in_repository="examples/quickstart_etl/quickstart_etl/",
     ),
 )
 
