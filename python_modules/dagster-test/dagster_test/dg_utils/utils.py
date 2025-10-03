@@ -173,6 +173,7 @@ def isolated_example_workspace(
         result = runner.invoke_create_dagster(
             "workspace",
             "dagster-workspace",
+            "--no-uv-sync",
             *(["--use-editable-dagster"] if use_editable_dagster else []),
         )
         assert_runner_result(result)
@@ -187,6 +188,7 @@ def isolated_example_workspace(
                     "project",
                     "projects/" + project_name,
                     *(["--use-editable-dagster"] if use_editable_dagster else []),
+                    "--no-uv-sync",
                 )
                 assert_runner_result(result)
                 if project_config_file_type == "dg.toml":
@@ -632,7 +634,6 @@ class ProxyRunner:
         use_fixed_test_components: bool = False,
         verbose: bool = False,
         console_width: int = DG_CLI_MAX_OUTPUT_WIDTH,
-        mix_stderr: bool = True,
     ) -> Iterator[Self]:
         # We set the `COLUMNS` environment variable because this determines the width of output from
         # `rich`, which we use for generating tables etc.
@@ -647,7 +648,7 @@ class ProxyRunner:
                 *(["--verbose"] if verbose else []),
             ]
             yield cls(
-                CliRunner(mix_stderr=mix_stderr),
+                CliRunner(),
                 append_args=append_opts,
                 console_width=console_width,
             )
