@@ -1,15 +1,20 @@
+import shutil
 import tempfile
 from abc import abstractmethod
 from pathlib import Path
 from typing import TYPE_CHECKING, Optional
 from uuid import uuid4
 
+from dagster_shared.serdes.objects.models.defs_state_info import (
+    DefsStateStorageLocation,
+    get_local_state_path,
+)
 from typing_extensions import Self
 
 from dagster._core.definitions.definitions_class import Definitions
 from dagster._core.definitions.definitions_load_context import DefinitionsLoadContext
-from dagster._core.errors import DagsterInvalidInvocationError
-from dagster._core.storage.defs_state.base import DefsStateStorage
+from dagster._core.errors import DagsterInvalidDefinitionError, DagsterInvalidInvocationError
+from dagster._core.storage.defs_state.base import LOCAL_STATE_VERSION, DefsStateStorage
 from dagster.components.component.component import Component
 from dagster.components.core.context import ComponentLoadContext
 
@@ -28,15 +33,25 @@ class StateBackedComponent(Component):
         )
         return loaded_component
 
+    @property
+    def _state_storage_location(self) -> DefsStateStorageLocation:
+        return DefsStateStorageLocation.REMOTE
+
     def get_defs_state_key(self) -> str:
         """Returns a key that uniquely identifies the state for this component."""
         return self.__class__.__name__
 
-    def build_defs(self, context: ComponentLoadContext) -> Definitions:
-        key = self.get_defs_state_key()
+    async def _store_local_state(self, key: str, state_storage: DefsStateStorage) -> None:
+        state_path = get_local_state_path(key)
+        shutil.rmtree(state_path, ignore_errors=True)
+        await self.write_state_to_path(state_path)
+        state_storage.set_latest_version(key, LOCAL_STATE_VERSION)
 
-        with DefinitionsLoadContext.get().temp_state_path(key) as state_path:
-            return self.build_defs_from_state(context, state_path=state_path)
+    async def _store_remote_state(self, key: str, state_storage: DefsStateStorage) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            state_path = Path(temp_dir) / key
+            await self.write_state_to_path(state_path)
+            state_storage.upload_state_from_path(key, version=str(uuid4()), path=state_path)
 
     async def refresh_state(self) -> None:
         """Rebuilds the state for this component and persists it to the current StateStore."""
@@ -47,10 +62,21 @@ class StateBackedComponent(Component):
                 f"Attempted to refresh state of {key} without a StateStorage in context. "
                 "This is likely the result of an internal framework error."
             )
-        with tempfile.TemporaryDirectory() as temp_dir:
-            state_path = Path(temp_dir) / key
-            await self.write_state_to_path(state_path)
-            state_storage.upload_state_from_path(key, version=str(uuid4()), path=state_path)
+
+        if self._state_storage_location == DefsStateStorageLocation.REMOTE:
+            await self._store_remote_state(key, state_storage)
+        elif self._state_storage_location == DefsStateStorageLocation.LOCAL:
+            await self._store_local_state(key, state_storage)
+        else:
+            raise DagsterInvalidDefinitionError(
+                f"Invalid state storage location: {self._state_storage_location}"
+            )
+
+    def build_defs(self, context: ComponentLoadContext) -> Definitions:
+        key = self.get_defs_state_key()
+
+        with DefinitionsLoadContext.get().state_path(key) as state_path:
+            return self.build_defs_from_state(context, state_path=state_path)
 
     @abstractmethod
     def build_defs_from_state(
