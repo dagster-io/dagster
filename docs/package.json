@@ -32,6 +32,7 @@
     "@docusaurus/plugin-ideal-image": "^3.8.1",
     "@docusaurus/preset-classic": "^3.8.1",
     "@docusaurus/theme-mermaid": "^3.8.1",
+    "@docusaurus/theme-search-algolia": "./docusaurus-theme-search-algolia-3.9.1.tgz",
     "@mdx-js/react": "^3.0.1",
     "clsx": "^2.1.1",
     "docusaurus-lunr-search": "3.6.0",
