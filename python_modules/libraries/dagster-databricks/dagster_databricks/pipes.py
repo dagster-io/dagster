@@ -329,6 +329,13 @@ class PipesDatabricksClient(BasePipesDatabricksClient, TreatAsResourceParam):
                     )
                     break
 
+            # use env vars to pass pipes context in case of notebook_task
+            if submit_task_dict.get("notebook_task"):
+                existing_params = submit_task_dict["notebook_task"].get("base_parameters", {})
+                # merge the existing parameters with the CLI arguments
+                existing_params = {**existing_params, **session.get_bootstrap_env_vars()}
+                submit_task_dict["notebook_task"]["base_parameters"] = existing_params
+
         else:
             pipes_env_vars = session.get_bootstrap_env_vars()
 
