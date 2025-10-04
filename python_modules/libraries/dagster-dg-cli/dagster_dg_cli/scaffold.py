@@ -23,11 +23,12 @@ def scaffold_component(
     module_path = dg_context.root_path
     for i in range(len(module_parts) - 1):
         module = ".".join(module_parts[: i + 1])
-        module_path = dg_context.get_path_for_local_module(module, require_exists=False)
-        if not module_path.exists():
-            click.echo(f"Creating module at: {module_path}")
-            module_path.mkdir()
-        (module_path / "__init__.py").touch()
+        if module.startswith(dg_context.root_module_name):
+            module_path = dg_context.get_path_for_local_module(module, require_exists=False)
+            if not module_path.exists():
+                click.echo(f"Creating module at: {module_path}")
+                module_path.mkdir()
+            (module_path / "__init__.py").touch()
 
     scaffold_subtree(
         path=module_path,
