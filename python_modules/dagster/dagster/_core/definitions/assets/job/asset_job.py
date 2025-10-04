@@ -32,7 +32,10 @@ from dagster._core.definitions.partitions.definition import PartitionsDefinition
 from dagster._core.definitions.partitions.partitioned_config import PartitionedConfig
 from dagster._core.definitions.policy import RetryPolicy
 from dagster._core.definitions.resource_definition import ResourceDefinition
-from dagster._core.definitions.resource_requirement import ensure_requirements_satisfied
+from dagster._core.definitions.resource_requirement import (
+    ResourceKeyRequirement,
+    ensure_requirements_satisfied,
+)
 from dagster._core.definitions.utils import DEFAULT_IO_MANAGER_KEY
 from dagster._core.errors import DagsterInvalidDefinitionError, DagsterInvalidSubsetError
 from dagster._core.selector.subset_selector import AssetSelectionData
@@ -167,13 +170,21 @@ def build_asset_job(
     )
 
     asset_layer = AssetLayer.from_mapping(assets_defs_by_node_handle, asset_graph)
-
+    # Unclear when graph.get_resource_requirements would return a non-ResourceKeyRequirement, but it
+    # is possible according to our type system. In any case here we need to filter the requirements
+    # to just ResourceKeyRequirements so we can determine the resource keys required by this job.
+    job_resource_keys = {
+        req.key
+        for req in graph.get_resource_requirements(asset_layer=asset_layer)
+        if isinstance(req, ResourceKeyRequirement)
+    }
     all_resource_defs = get_all_resource_defs(asset_graph, wrapped_resource_defs)
+    job_resources = {k: all_resource_defs[k] for k in job_resource_keys}
 
     if _asset_selection_data:
         original_job = _asset_selection_data.parent_job_def
         return graph.to_job(
-            resource_defs=all_resource_defs,
+            resource_defs=job_resources,
             config=config,
             tags=tags,
             run_tags=run_tags,
@@ -187,7 +198,7 @@ def build_asset_job(
             op_retry_policy=original_job.op_retry_policy,
         )
     return graph.to_job(
-        resource_defs=all_resource_defs,
+        resource_defs=job_resources,
         config=config,
         tags=tags,
         run_tags=run_tags,
