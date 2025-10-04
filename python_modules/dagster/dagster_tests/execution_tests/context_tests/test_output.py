@@ -29,3 +29,18 @@ def test_build_output_context_asset_spec():
             pass
 
     dg.materialize([asset_spec], resources={"io_manager": TestIOManager()})
+
+
+def test_build_output_context_with_output_metadata():
+    expected_metadata = {"foo": "bar"}
+    output_context = dg.build_output_context(output_metadata=expected_metadata)
+
+    class TestIOManager(dg.IOManager):
+        def handle_output(self, context: OutputContext, obj: object):
+            assert context.output_metadata == expected_metadata
+
+        def load_input(self, context: InputContext) -> Any:
+            pass
+
+    io_manager = TestIOManager()
+    io_manager.handle_output(output_context, "test")
