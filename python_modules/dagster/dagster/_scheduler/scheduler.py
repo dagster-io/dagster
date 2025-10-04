@@ -368,7 +368,7 @@ def launch_scheduled_runs(
         yield
         return
 
-    for schedule in running_schedules.values():
+    for schedule in sorted(running_schedules.values(), key=lambda _: random.random()):
         error_info = None
         try:
             schedule_state = all_schedule_states.get(schedule.selector_id)
