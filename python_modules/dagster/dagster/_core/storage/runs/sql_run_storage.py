@@ -203,6 +203,7 @@ class SqlRunStorage(RunStorage):
             DagsterEventType.PIPELINE_CANCELED,
             DagsterEventType.PIPELINE_FAILURE,
             DagsterEventType.PIPELINE_SUCCESS,
+            DagsterEventType.PIPELINE_SUCCESS_WITH_WARNINGS,
         }:
             kwargs["end_time"] = update_timestamp.timestamp()
 

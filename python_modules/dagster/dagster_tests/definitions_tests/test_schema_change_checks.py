@@ -39,7 +39,10 @@ def assert_expected_schema_change(
 
     checks = dg.build_column_schema_change_checks(assets=[my_asset])
     result = execute_checks(checks, instance=instance)
-    assert result.success
+    if passed:
+        assert result.success
+    else:
+        assert result.success_with_warnings
 
     check_evals = result.get_asset_check_evaluations()
     assert len(check_evals) == 1
@@ -176,7 +179,10 @@ def assert_expected_schema_change_two_assets(
 
     checks = dg.build_column_schema_change_checks(assets=[my_asset_1, my_asset_2])
     result = execute_checks(checks, instance=instance)
-    assert result.success
+    if passed_1 and passed_2:
+        assert result.success
+    else:
+        assert result.success_with_warnings
 
     check_evals = result.get_asset_check_evaluations()
     assert len(check_evals) == 2

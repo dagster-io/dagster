@@ -167,7 +167,7 @@ function buildMocks(runsFilter?: RunsFilter) {
     return mockCompletedRuns(
       {
         completedFilter: {
-          statuses: ['FAILURE', 'SUCCESS', 'CANCELED'],
+          statuses: ['FAILURE', 'SUCCESS', 'CANCELED', 'SUCCESS_WITH_WARNINGS'],
           updatedBefore,
           updatedAfter,
           ...runsFilter,
@@ -272,7 +272,7 @@ describe('useRunsForTimeline', () => {
 
     const initialCompletedRunsVariables = initialBuckets.map((bucket) => ({
       completedFilter: {
-        statuses: ['FAILURE', 'SUCCESS', 'CANCELED'],
+        statuses: ['FAILURE', 'SUCCESS', 'CANCELED', 'SUCCESS_WITH_WARNINGS'],
         updatedBefore: bucket[1],
         updatedAfter: bucket[0],
       },
@@ -282,7 +282,7 @@ describe('useRunsForTimeline', () => {
 
     const extendedCompletedRunsVariables = extendedBuckets.map((bucket) => ({
       completedFilter: {
-        statuses: ['FAILURE', 'SUCCESS', 'CANCELED'],
+        statuses: ['FAILURE', 'SUCCESS', 'CANCELED', 'SUCCESS_WITH_WARNINGS'],
         updatedBefore: bucket[1],
         updatedAfter: bucket[0],
       },
@@ -410,7 +410,7 @@ describe('useRunsForTimeline', () => {
         query: COMPLETED_RUN_TIMELINE_QUERY,
         variables: {
           completedFilter: {
-            statuses: ['FAILURE', 'SUCCESS', 'CANCELED'],
+            statuses: ['FAILURE', 'SUCCESS', 'CANCELED', 'SUCCESS_WITH_WARNINGS'],
             updatedBefore,
             updatedAfter,
           },
@@ -549,7 +549,7 @@ describe('useRunsForTimeline', () => {
       mockCompletedRuns(
         {
           completedFilter: {
-            statuses: ['FAILURE', 'SUCCESS', 'CANCELED'],
+            statuses: ['FAILURE', 'SUCCESS', 'CANCELED', 'SUCCESS_WITH_WARNINGS'],
             // We only fetch the range missing from the cache
             updatedBefore: initialRange[1],
             updatedAfter: cachedRange[1],
@@ -737,7 +737,7 @@ describe('useRunsForTimeline', () => {
         query: COMPLETED_RUN_TIMELINE_QUERY,
         variables: {
           completedFilter: {
-            statuses: ['FAILURE', 'SUCCESS', 'CANCELED'],
+            statuses: ['FAILURE', 'SUCCESS', 'CANCELED', 'SUCCESS_WITH_WARNINGS'],
             updatedBefore,
             updatedAfter,
           },
