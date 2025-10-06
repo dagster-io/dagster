@@ -1,5 +1,5 @@
 src
-└── dagster_tutorial
+└── <your project>
     ├── __init__.py
     ├── components   # NEW
     │   ├── __init__.py

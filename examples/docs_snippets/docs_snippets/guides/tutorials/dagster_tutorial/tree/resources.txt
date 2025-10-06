@@ -1,4 +1,4 @@
 src
-└── dagster_tutorial
+└── <your project>
     └── defs
         └── resources.py

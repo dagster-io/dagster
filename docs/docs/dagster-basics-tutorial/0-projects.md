@@ -116,7 +116,7 @@ Your new Dagster project should have the following structure:
     ├── pyproject.toml
     ├── README.md
     ├── src
-    │   └── dagster_tutorial
+    │   └── <your project>
     │       ├── __init__.py
     │       ├── definitions.py
     │       └── defs
@@ -129,7 +129,7 @@ Your new Dagster project should have the following structure:
 
 - `pyproject.toml` defines the metadata and Python dependencies for the project.
 - The `src` directory will contain code for the project.
-- `src/definitions.py` defines the main Dagster project object.
+- `src/<your project>/definitions.py` defines the main Dagster project object.
 - The `tests` directory will contain tests for the project.
 
 ## 2. Start the Dagster webserver
