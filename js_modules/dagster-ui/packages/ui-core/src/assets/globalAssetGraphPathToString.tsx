@@ -30,6 +30,14 @@ export function globalAssetGraphPathForAssets(
 
   return globalAssetGraphPathToString({opNames, opsQuery});
 }
+
 export function globalAssetGraphPathForAssetsAndDescendants(assetKeys: AssetKeyInput[]) {
   return globalAssetGraphPathForAssets(assetKeys, true);
+}
+
+export function globalAssetGraphPathForGroup(groupName: string, assetKeyInContext?: AssetKeyInput) {
+  return globalAssetGraphPathToString({
+    opsQuery: `group:"${groupName}"`,
+    opNames: assetKeyInContext ? [tokenForAssetKey(assetKeyInContext)] : [],
+  });
 }

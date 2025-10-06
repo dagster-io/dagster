@@ -27,7 +27,7 @@ import {CopyIconButton} from '../../ui/CopyButton';
 import {buildTagString} from '../../ui/tagAsString';
 import {WorkspaceLocationNodeFragment} from '../../workspace/WorkspaceContext/types/WorkspaceQueries.types';
 import {RepoAddress} from '../../workspace/types';
-import {workspacePathFromAddress} from '../../workspace/workspacePath';
+import {globalAssetGraphPathForGroup} from '../globalAssetGraphPathToString';
 import {AssetTableDefinitionFragment} from '../types/AssetTableFragment.types';
 import {AssetViewDefinitionNodeFragment} from '../types/AssetView.types';
 
@@ -59,10 +59,9 @@ export const DefinitionSection = ({
       <AttributeAndValue label="Group">
         <Tag icon="asset_group">
           <Link
-            to={workspacePathFromAddress(
-              // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-              repoAddress!,
-              `/asset-groups/${cachedOrLiveAssetNode.groupName}`,
+            to={globalAssetGraphPathForGroup(
+              cachedOrLiveAssetNode.groupName,
+              cachedOrLiveAssetNode.assetKey,
             )}
           >
             {cachedOrLiveAssetNode.groupName}

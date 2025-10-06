@@ -8,8 +8,8 @@ import {AssetLocation} from '../../asset-graph/useFindAssetLocation';
 import {useOpenInNewTab} from '../../hooks/useOpenInNewTab';
 import {useStateWithStorage} from '../../hooks/useStateWithStorage';
 import {ExplorerPath} from '../../pipelines/PipelinePathUtils';
-import {workspacePathFromAddress} from '../../workspace/workspacePath';
 import {assetDetailsPathForKey} from '../assetDetailsPathForKey';
+import {globalAssetGraphPathForGroup} from '../globalAssetGraphPathToString';
 
 export const AssetCatalogAssetGraph = React.memo(
   ({
@@ -28,13 +28,10 @@ export const AssetCatalogAssetGraph = React.memo(
       (e: Pick<React.MouseEvent<any>, 'metaKey'>, node: AssetLocation) => {
         let path;
         if (node.groupName && node.repoAddress) {
-          path = workspacePathFromAddress(
-            node.repoAddress,
-            `/asset-groups/${node.groupName}/lineage/${node.assetKey.path
-              .map(encodeURIComponent)
-              .join('/')}`,
-          );
+          // It is defined elsewhere, go to the global graph where it should be resolved to a full node
+          path = globalAssetGraphPathForGroup(node.groupName, node.assetKey);
         } else {
+          // It is not defined in another repo, just go to stub definition page
           path = assetDetailsPathForKey(node.assetKey, {view: 'definition'});
         }
         if (e.metaKey) {
