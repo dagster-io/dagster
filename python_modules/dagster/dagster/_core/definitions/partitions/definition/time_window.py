@@ -149,7 +149,7 @@ class TimeWindowPartitionsDefinition(PartitionsDefinition, IHaveNew):
                 schedule_type=schedule_type,
                 minute_offset=minute_offset or 0,
                 hour_offset=hour_offset or 0,
-                day_offset=day_offset or 0,
+                day_offset=day_offset or None,
             )
 
         if not is_valid_cron_schedule(cron_schedule):
