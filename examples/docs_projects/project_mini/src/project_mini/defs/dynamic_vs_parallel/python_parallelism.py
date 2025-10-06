@@ -37,4 +37,4 @@ def python_parallelism():
     merge_and_analyze(load_and_process_pieces())
 
 
-defs = dg.Definitions(jobs=[python_parallelization])
+defs = dg.Definitions(jobs=[python_parallelism])
