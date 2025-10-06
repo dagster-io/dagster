@@ -43,6 +43,7 @@ from dagster_dg_core.utils import (
     pushd,
     set_toml_node,
 )
+from dagster_shared.utils import environ
 from packaging.version import Version
 from typing_extensions import Self, TypeAlias
 
@@ -167,11 +168,13 @@ def isolated_example_workspace(
         runner.isolated_filesystem(),
         clear_module_from_cache("foo_bar"),
         clear_module_from_cache(project_name) if project_name else nullcontext(),
+        environ({"DAGSTER_GIT_REPO_DIR": dagster_git_repo_dir}),
     ):
         result = runner.invoke_create_dagster(
             "workspace",
             "dagster-workspace",
-            *(["--use-editable-dagster", dagster_git_repo_dir] if use_editable_dagster else []),
+            "--no-uv-sync",
+            *(["--use-editable-dagster"] if use_editable_dagster else []),
         )
         assert_runner_result(result)
         if workspace_config_file_type == "pyproject.toml":
@@ -184,11 +187,8 @@ def isolated_example_workspace(
                 result = runner.invoke_create_dagster(
                     "project",
                     "projects/" + project_name,
-                    *(
-                        ["--use-editable-dagster", dagster_git_repo_dir]
-                        if use_editable_dagster
-                        else []
-                    ),
+                    *(["--use-editable-dagster"] if use_editable_dagster else []),
+                    "--no-uv-sync",
                 )
                 assert_runner_result(result)
                 if project_config_file_type == "dg.toml":
@@ -244,12 +244,12 @@ def isolated_example_project_foo_bar(
         fs_context = isolated_example_workspace(runner)
     else:
         fs_context = runner.isolated_filesystem()
-    with fs_context:
+    with fs_context, environ({"DAGSTER_GIT_REPO_DIR": dagster_git_repo_dir}):
         args = [
             "project",
             "foo-bar",
             *uv_sync_args,
-            *(["--use-editable-dagster", dagster_git_repo_dir] if use_editable_dagster else []),
+            *(["--use-editable-dagster"] if use_editable_dagster else []),
         ]
         result = runner.invoke_create_dagster(*args)
 
@@ -634,7 +634,6 @@ class ProxyRunner:
         use_fixed_test_components: bool = False,
         verbose: bool = False,
         console_width: int = DG_CLI_MAX_OUTPUT_WIDTH,
-        mix_stderr: bool = True,
     ) -> Iterator[Self]:
         # We set the `COLUMNS` environment variable because this determines the width of output from
         # `rich`, which we use for generating tables etc.
@@ -649,7 +648,7 @@ class ProxyRunner:
                 *(["--verbose"] if verbose else []),
             ]
             yield cls(
-                CliRunner(mix_stderr=mix_stderr),
+                CliRunner(),
                 append_args=append_opts,
                 console_width=console_width,
             )

@@ -276,3 +276,52 @@ def test_per_content_type_translation(
             AssetKey(["data_source", "sales_marketing_datas_xlsx"])
         )
         assert data_source_def
+
+
+def test_subclass_override_get_asset_spec(
+    workspace_id: str,
+    workspace_data_api_mocks,
+) -> None:
+    """Test that subclasses of PowerBIWorkspaceComponent can override get_asset_spec method."""
+    from dagster.components.core.component_tree import ComponentTree
+    from dagster_powerbi.resource import PowerBIServicePrincipal, PowerBIWorkspace
+
+    class CustomPowerBIWorkspaceComponent(PowerBIWorkspaceComponent):
+        def get_asset_spec(self, data) -> AssetSpec:
+            # Override to add custom metadata and tags
+            base_spec = super().get_asset_spec(data)
+            return base_spec.replace_attributes(
+                metadata={**base_spec.metadata, "custom_override": "test_value"},
+                tags={**base_spec.tags, "custom_tag": "override_test"},
+            )
+
+    defs = CustomPowerBIWorkspaceComponent(
+        workspace=PowerBIWorkspace(
+            credentials=PowerBIServicePrincipal(
+                client_id="test_client_id",
+                client_secret="test_client_secret",
+                tenant_id="test_tenant_id",
+            ),
+            workspace_id=workspace_id,
+        ),
+        use_workspace_scan=False,
+    ).build_defs(ComponentTree.for_test().load_context)
+
+    # Verify that the custom get_asset_spec method is being used
+    assets_def = defs.get_assets_def(AssetKey(["semantic_model", "Sales_Returns_Sample_v201912"]))
+    asset_spec = assets_def.get_asset_spec(
+        AssetKey(["semantic_model", "Sales_Returns_Sample_v201912"])
+    )
+
+    # Check that our custom metadata and tags are present
+    assert asset_spec.metadata["custom_override"] == "test_value"
+    assert asset_spec.tags["custom_tag"] == "override_test"
+
+    # Verify that the asset keys are still correct
+    assert defs.resolve_asset_graph().get_all_asset_keys() == {
+        AssetKey(["semantic_model", "Sales_Returns_Sample_v201912"]),
+        AssetKey(["dashboard", "Sales_Returns_Sample_v201912"]),
+        AssetKey(["data_27_09_2019_xlsx"]),
+        AssetKey(["sales_marketing_datas_xlsx"]),
+        AssetKey(["report", "Sales_Returns_Sample_v201912"]),
+    }

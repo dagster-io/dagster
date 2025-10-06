@@ -6,19 +6,19 @@ from functools import cached_property
 from pathlib import Path
 from typing import Annotated, Any, Literal, Optional, Union
 
-from dagster import Resolvable
+import dagster as dg
 from dagster._annotations import public
-from dagster._core.definitions.asset_key import AssetKey
-from dagster._core.definitions.definitions_class import Definitions
-from dagster._core.execution.context.asset_execution_context import AssetExecutionContext
 from dagster._utils.cached_method import cached_method
-from dagster.components.component.component import Component
 from dagster.components.core.component_tree import ComponentTree
-from dagster.components.core.context import ComponentLoadContext
 from dagster.components.resolved.core_models import OpSpec, ResolutionContext
 from dagster.components.resolved.model import Resolver
 from dagster.components.scaffold.scaffold import scaffold_with
-from dagster.components.utils.translation import TranslationFn, TranslationFnResolver
+from dagster.components.utils.translation import (
+    ComponentTranslator,
+    TranslationFn,
+    TranslationFnResolver,
+    create_component_translator_cls,
+)
 from dagster_shared import check
 from typing_extensions import TypeAlias
 
@@ -38,14 +38,14 @@ from dagster_dbt.utils import ASSET_RESOURCE_TYPES
 
 
 @dataclass(frozen=True)
-class DagsterDbtComponentsTranslatorSettings(DagsterDbtTranslatorSettings):
+class DagsterDbtComponentTranslatorSettings(DagsterDbtTranslatorSettings):
     """Subclass of DagsterDbtTranslatorSettings that enables code references by default."""
 
     enable_code_references: bool = True
 
 
 @dataclass
-class DbtProjectArgs(Resolvable):
+class DbtProjectArgs(dg.Resolvable):
     """Aligns with DbtProject.__new__."""
 
     project_dir: str
@@ -88,7 +88,7 @@ DbtMetadataAddons: TypeAlias = Literal["column_metadata", "row_count"]
 @public
 @scaffold_with(DbtProjectComponentScaffolder)
 @dataclass
-class DbtProjectComponent(Component, Resolvable):
+class DbtProjectComponent(dg.Component, dg.Resolvable):
     """Expose a DBT project to Dagster as a set of assets.
 
     This component assumes that you have already set up a dbt project, for example, the dbt `Jaffle shop <https://github.com/dbt-labs/jaffle-shop>`_. Run `git clone --depth=1 https://github.com/dbt-labs/jaffle-shop.git jaffle_shop && rm -rf jaffle_shop/.git` to copy that project
@@ -175,7 +175,7 @@ class DbtProjectComponent(Component, Resolvable):
         TranslationFnResolver(template_vars_for_translation_fn=lambda data: {"node": data}),
     ] = None
     translation_settings: Annotated[
-        Optional[DagsterDbtComponentsTranslatorSettings],
+        Optional[DagsterDbtComponentTranslatorSettings],
         Resolver.default(
             description="Allows enabling or disabling various features for translating dbt models in to Dagster assets.",
             examples=[
@@ -184,7 +184,7 @@ class DbtProjectComponent(Component, Resolvable):
                 },
             ],
         ),
-    ] = None
+    ] = field(default_factory=lambda: DagsterDbtComponentTranslatorSettings())
     prepare_if_dev: Annotated[
         bool,
         Resolver.default(
@@ -193,11 +193,26 @@ class DbtProjectComponent(Component, Resolvable):
     ] = True
 
     @cached_property
-    def translator(self):
-        translation_settings = self.translation_settings or DagsterDbtComponentsTranslatorSettings()
-        if self.translation:
-            return ProxyDagsterDbtTranslator(self.translation, translation_settings)
-        return DagsterDbtTranslator(translation_settings)
+    def translator(self) -> "DagsterDbtTranslator":
+        return DbtProjectComponentTranslator(self, self.translation_settings)
+
+    @cached_property
+    def _base_translator(self) -> "DagsterDbtTranslator":
+        return DagsterDbtTranslator(self.translation_settings)
+
+    def get_asset_spec(
+        self, manifest: Mapping[str, Any], unique_id: str, project: Optional[DbtProject]
+    ) -> dg.AssetSpec:
+        return self._base_translator.get_asset_spec(manifest, unique_id, project)
+
+    def get_asset_check_spec(
+        self,
+        asset_spec: dg.AssetSpec,
+        manifest: Mapping[str, Any],
+        unique_id: str,
+        project: Optional["DbtProject"],
+    ) -> Optional[dg.AssetCheckSpec]:
+        return self._base_translator.get_asset_check_spec(asset_spec, manifest, unique_id, project)
 
     @cached_property
     def cli_resource(self):
@@ -213,7 +228,7 @@ class DbtProjectComponent(Component, Resolvable):
             exclude=exclude,
         )
 
-    def build_defs(self, context: ComponentLoadContext) -> Definitions:
+    def build_defs(self, context: dg.ComponentLoadContext) -> dg.Definitions:
         if self.prepare_if_dev:
             self.project.prepare_if_dev()
 
@@ -227,13 +242,12 @@ class DbtProjectComponent(Component, Resolvable):
             exclude=self.exclude,
             backfill_policy=self.op.backfill_policy if self.op else None,
         )
-        def _fn(context: AssetExecutionContext):
+        def _fn(context: dg.AssetExecutionContext):
             yield from self.execute(context=context, dbt=self.cli_resource)
 
-        defs = Definitions(assets=[_fn])
-        return defs
+        return dg.Definitions(assets=[_fn])
 
-    def get_cli_args(self, context: AssetExecutionContext) -> list[str]:
+    def get_cli_args(self, context: dg.AssetExecutionContext) -> list[str]:
         # create a resolution scope that includes the partition key and range, if available
         partition_key = context.partition_key if context.has_partition_key else None
         partition_key_range = (
@@ -277,7 +291,7 @@ class DbtProjectComponent(Component, Resolvable):
         return normalized_args
 
     def _get_dbt_event_iterator(
-        self, context: AssetExecutionContext, dbt: DbtCliResource
+        self, context: dg.AssetExecutionContext, dbt: DbtCliResource
     ) -> Iterator:
         iterator = dbt.cli(self.get_cli_args(context), context=context).stream()
         if "column_metadata" in self.include_metadata:
@@ -286,7 +300,7 @@ class DbtProjectComponent(Component, Resolvable):
             iterator = iterator.fetch_row_counts()
         return iterator
 
-    def execute(self, context: AssetExecutionContext, dbt: DbtCliResource) -> Iterator:
+    def execute(self, context: dg.AssetExecutionContext, dbt: DbtCliResource) -> Iterator:
         yield from self._get_dbt_event_iterator(context, dbt)
 
     @cached_property
@@ -298,7 +312,7 @@ class DbtProjectComponent(Component, Resolvable):
         return validate_translator(self.translator)
 
     @cached_method
-    def asset_key_for_model(self, model_name: str) -> AssetKey:
+    def asset_key_for_model(self, model_name: str) -> dg.AssetKey:
         dagster_dbt_translator = self._validated_translator
         manifest = self._validated_manifest
 
@@ -318,17 +332,27 @@ class DbtProjectComponent(Component, Resolvable):
         ).key
 
 
-class ProxyDagsterDbtTranslator(DagsterDbtTranslator):
-    # get_description conflicts on Component, so cant make it directly a translator
-
-    def __init__(self, fn: TranslationFn, settings: Optional[DagsterDbtTranslatorSettings]):
-        self._fn = fn
+class DbtProjectComponentTranslator(
+    create_component_translator_cls(DbtProjectComponent, DagsterDbtTranslator),
+    ComponentTranslator[DbtProjectComponent],
+):
+    def __init__(
+        self,
+        component: DbtProjectComponent,
+        settings: Optional[DagsterDbtComponentTranslatorSettings],
+    ):
+        self._component = component
         super().__init__(settings)
 
-    def get_asset_spec(self, manifest, unique_id, project):
-        base_asset_spec = super().get_asset_spec(manifest, unique_id, project)
-        dbt_props = get_node(manifest, unique_id)
-        return self._fn(base_asset_spec, dbt_props)
+    def get_asset_spec(
+        self, manifest: Mapping[str, Any], unique_id: str, project: Optional[DbtProject]
+    ) -> dg.AssetSpec:
+        base_spec = super().get_asset_spec(manifest, unique_id, project)
+        if self.component.translation is None:
+            return base_spec
+        else:
+            dbt_props = get_node(manifest, unique_id)
+            return self.component.translation(base_spec, dbt_props)
 
 
 def get_projects_from_dbt_component(components: Path) -> list[DbtProject]:

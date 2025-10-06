@@ -39,7 +39,7 @@ setup(
         "questionary",
         "requests",
         "typer>=0.4.1",
-        "click<8.2",
+        "click",
         "PyYAML>=5.1",
         "github3.py",
         "Jinja2",

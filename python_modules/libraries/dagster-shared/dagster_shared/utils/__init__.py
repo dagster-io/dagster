@@ -3,7 +3,10 @@ import os
 import random
 import socket
 from collections.abc import Iterator, Mapping
+from types import GenericAlias
 from typing import TypeVar
+
+from typing_extensions import TypeGuard
 
 T = TypeVar("T")
 
@@ -79,3 +82,11 @@ def environ(env: Mapping[str, str]) -> Iterator[None]:
 
 def get_boolean_string_value(tag_value: str):
     return tag_value.lower() not in {"false", "none", "0", ""}
+
+
+def safe_is_subclass(obj, cls: type[T]) -> TypeGuard[type[T]]:
+    return (
+        isinstance(obj, type)
+        and not isinstance(obj, GenericAlias)  # prevent exceptions on 3.9
+        and issubclass(obj, cls)
+    )

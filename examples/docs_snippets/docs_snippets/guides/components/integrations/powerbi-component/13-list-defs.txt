@@ -30,12 +30,12 @@ dg list defs
 │         │ │ sales                               │ default      │                 │                │                │ │
 │         │ ├─────────────────────────────────────┼──────────────┼─────────────────┼────────────────┼────────────────┤ │
 │         │ │ semantic_model/Marketing_Data_Model │ powerbi_data │ marketing       │ powerbi        │ PowerBI        │ │
-│         │ │                                     │              │                 │ semantic model │ semantic_mode… │ │
+│         │ │                                     │              │                 │ semantic_model │ semantic_mode… │ │
 │         │ │                                     │              │                 │                │ Marketing Data │ │
 │         │ │                                     │              │                 │                │ Model          │ │
 │         │ ├─────────────────────────────────────┼──────────────┼─────────────────┼────────────────┼────────────────┤ │
 │         │ │ semantic_model/Sales_Data_Model     │ powerbi_data │ sales           │ powerbi        │ PowerBI        │ │
-│         │ │                                     │              │                 │ semantic model │ semantic_mode… │ │
+│         │ │                                     │              │                 │ semantic_model │ semantic_mode… │ │
 │         │ │                                     │              │                 │                │ Sales Data     │ │
 │         │ │                                     │              │                 │                │ Model          │ │
 │         │ └─────────────────────────────────────┴──────────────┴─────────────────┴────────────────┴────────────────┘ │

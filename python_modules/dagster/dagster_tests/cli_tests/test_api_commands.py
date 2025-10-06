@@ -25,7 +25,7 @@ def runner_execute_run(runner, cli_args):
         # CliRunner captures stdout so printing it out here
         raise Exception(
             f"dagster runner_execute_run commands with cli_args {cli_args} "
-            f'returned exit_code {result.exit_code} with stdout:\n"{result.stdout}"'
+            f'returned exit_code {result.exit_code} with stdout:\n"{result.output}"'
             f'\n exception: "\n{result.exception}"'
             f'\n and result as string: "{result}"'
         )
@@ -63,7 +63,7 @@ def test_execute_run():
                 [input_json],
             )
 
-            assert "RUN_SUCCESS" in result.stdout, f"no match, result: {result.stdout}"
+            assert "RUN_SUCCESS" in result.output, f"no match, result: {result.output}"
 
             # Framework errors (e.g. running a run that has already run) still result in a non-zero error code
             result = runner.invoke(api.execute_run_command, [input_json])
@@ -121,7 +121,7 @@ def test_execute_run_with_secrets_loader(capfd):
                 [input_json],
             )
 
-            assert "RUN_SUCCESS" in result.stdout, f"no match, result: {result.stdout}"
+            assert "RUN_SUCCESS" in result.output, f"no match, result: {result.output}"
 
             # Step subprocess is logged to capfd since its in a subprocess of the CLi command
             _, err = capfd.readouterr()
@@ -155,7 +155,7 @@ def test_execute_run_with_secrets_loader(capfd):
             [input_json],
         )
 
-        assert "RUN_FAILURE" in result.stdout, f"no match, result: {result.stdout}"
+        assert "RUN_FAILURE" in result.output, f"no match, result: {result.output}"
 
         # Step subprocess is logged to capfd since its in a subprocess of the CLi command
         _, err = capfd.readouterr()
@@ -197,7 +197,7 @@ def test_execute_run_fail_job():
             )
             assert result.exit_code == 0
 
-            assert "RUN_FAILURE" in result.stdout, f"no match, result: {result}"
+            assert "RUN_FAILURE" in result.output, f"no match, result: {result}"
 
             run = create_run_for_test(
                 instance,
@@ -216,9 +216,9 @@ def test_execute_run_fail_job():
 
             result = runner.invoke(api.execute_run_command, [input_json_raise_on_failure])
 
-            assert result.exit_code != 0, str(result.stdout)
+            assert result.exit_code != 0, str(result.output)
 
-            assert "RUN_FAILURE" in result.stdout, f"no match, result: {result}"
+            assert "RUN_FAILURE" in result.output, f"no match, result: {result}"
 
             with mock.patch(
                 "dagster._core.execution.api.job_execution_iterator"
@@ -238,7 +238,7 @@ def test_execute_run_fail_job():
 
                 # Framework errors also result in a non-zero error code
                 result = runner.invoke(api.execute_run_command, [input_json_raise_on_failure])
-                assert result.exit_code != 0, str(result.stdout)
+                assert result.exit_code != 0, str(result.output)
 
 
 def test_execute_run_cannot_load():
@@ -270,7 +270,7 @@ def test_execute_run_cannot_load():
             assert result.exit_code != 0
 
             assert f"Run with id '{run_id}' not found for run execution" in str(result.exception), (
-                f"no match, result: {result.stdout}"
+                f"no match, result: {result.output}"
             )
 
 
@@ -280,7 +280,7 @@ def runner_execute_step(runner: CliRunner, cli_args, env=None):
         # CliRunner captures stdout so printing it out here
         raise Exception(
             f"dagster runner_execute_step commands with cli_args {cli_args} "
-            f'returned exit_code {result.exit_code} with stdout:\n"{result.stdout}"'
+            f'returned exit_code {result.exit_code} with stdout:\n"{result.output}"'
             f'\n exception: "\n{result.exception}"'
             f'\n and result as string: "{result}"'
         )
@@ -317,9 +317,9 @@ def test_execute_step_success():
                 args.get_command_args()[5:],
             )
 
-        assert "STEP_SUCCESS" in result.stdout
+        assert "STEP_SUCCESS" in result.output
         assert (
-            '{"__class__": "StepSuccessData"' not in result.stdout
+            '{"__class__": "StepSuccessData"' not in result.output
         )  # does not include serialized DagsterEvents
 
 
@@ -354,9 +354,9 @@ def test_execute_step_print_serialized_events():
                 args.get_command_args()[5:],
             )
 
-        assert "STEP_SUCCESS" in result.stdout
+        assert "STEP_SUCCESS" in result.output
         assert (
-            '{"__class__": "StepSuccessData"' in result.stdout
+            '{"__class__": "StepSuccessData"' in result.output
         )  # includes serialized DagsterEvents
 
 
@@ -417,7 +417,7 @@ def test_execute_step_with_secrets_loader():
                 args.get_command_args()[3:],
             )
 
-            assert "STEP_SUCCESS" in result.stdout
+            assert "STEP_SUCCESS" in result.output
 
 
 def test_execute_step_with_env():
@@ -451,7 +451,7 @@ def test_execute_step_with_env():
                 env={d["name"]: d["value"] for d in args.get_command_env()},
             )
 
-        assert "STEP_SUCCESS" in result.stdout
+        assert "STEP_SUCCESS" in result.output
 
 
 def test_execute_step_non_compressed():
@@ -481,7 +481,7 @@ def test_execute_step_non_compressed():
 
             result = runner_execute_step(runner, [dg.serialize_value(args)])
 
-        assert "STEP_SUCCESS" in result.stdout
+        assert "STEP_SUCCESS" in result.output
 
 
 @pytest.mark.parametrize(
@@ -560,7 +560,7 @@ def test_execute_step_1():
                 ],  # the runner doesn't take the `dagster api execute_step` section
             )
 
-        assert "STEP_SUCCESS" in result.stdout
+        assert "STEP_SUCCESS" in result.output
 
 
 def test_execute_step_verify_step():

@@ -53,6 +53,10 @@ class ComponentDecl(abc.ABC, Generic[T]):
         """Loads the component represented by this decl."""
         ...
 
+    @property
+    @abc.abstractmethod
+    def component_type(self) -> type[T]: ...
+
     def iterate_all_component_decls(self) -> Iterator["ComponentDecl"]:
         for _, component in self.iterate_path_component_decl_pairs():
             yield component
@@ -77,6 +81,12 @@ class ComponentLoaderDecl(ComponentDecl[Component]):
     def _load_component(self) -> Component:
         return self.component_node_fn(self.context)
 
+    @property
+    def component_type(self) -> type[Component]:
+        # parse from function return type if possible
+        sig = inspect.signature(self.component_node_fn)
+        return sig.return_annotation or Component
+
 
 @record
 class PythonFileDecl(ComponentDecl[PythonFileComponent]):
@@ -95,13 +105,17 @@ class PythonFileDecl(ComponentDecl[PythonFileComponent]):
             path=self.path.file_path,
         )
 
+    @property
+    def component_type(self) -> type[PythonFileComponent]:
+        return PythonFileComponent
+
     def iterate_child_component_decls(self) -> Iterator["ComponentDecl"]:
         yield from self.decls.values()
 
 
 def _get_component_class(
     context: ComponentDeclLoadContext, component_file_model: ComponentFileModel
-) -> type[Component]:
+) -> type:
     # TODO: lookup in cache so we don't have to import the class directly
     type_str = context.normalize_component_type_str(component_file_model.type)
     key = EnvRegistryKey.from_typename(type_str)
@@ -153,12 +167,12 @@ class YamlBackedComponentDecl(ComponentDecl[T]):
             return self.context
         return context_with_injected_scope(
             self.context,
-            self.component_cls,
+            self.component_type,
             self.component_file_model.template_vars_module,
         )
 
-    @cached_property
-    def component_cls(self) -> type[Component]:
+    @property
+    def component_type(self) -> type[T]:
         """The class of the component that is being loaded."""
         return _get_component_class(self.context, check.not_none(self.component_file_model))
 
@@ -207,13 +221,13 @@ class YamlDecl(YamlBackedComponentDecl):
             check.not_none(self.source_tree).source_position_tree,
         )
 
-        model_cls = self.component_cls.get_model_cls()
+        model_cls = self.component_type.get_model_cls()
 
         attributes = _process_attributes_with_enriched_validation_err(
             self.source_tree, self.component_file_model, model_cls
         )
 
-        return self.component_cls.load(
+        return self.component_type.load(
             attributes, ComponentLoadContext.from_decl_load_context(context, self)
         )
 
@@ -238,6 +252,10 @@ class YamlFileDecl(ComponentDecl[CompositeYamlComponent]):
             ],
         )
 
+    @property
+    def component_type(self) -> type[CompositeYamlComponent]:
+        return CompositeYamlComponent
+
     def iterate_child_component_decls(self) -> Iterator["ComponentDecl"]:
         yield from self.decls
 
@@ -254,6 +272,10 @@ class DefsFolderDecl(YamlBackedComponentDecl[DefsFolderComponent]):
             DefsFolderDecl,
             f"Expected DefsFolderDecl at {context.path}, got {component}.",
         )
+
+    @property
+    def component_type(self) -> type[DefsFolderComponent]:
+        return DefsFolderComponent
 
     def _load_component(self) -> "DefsFolderComponent":
         _process_attributes_with_enriched_validation_err(

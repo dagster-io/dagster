@@ -13,6 +13,7 @@ from dagster._core.definitions.declarative_automation.automation_condition impor
     AutomationCondition,
 )
 from dagster._core.definitions.definitions_class import Definitions
+from dagster._core.definitions.freshness import InternalFreshnessPolicy
 from dagster._core.definitions.partitions.definition import (
     DailyPartitionsDefinition,
     HourlyPartitionsDefinition,
@@ -255,6 +256,14 @@ class SharedAssetKwargs(Resolvable):
                 TimeWindowPartitionsDefinitionModel,
                 StaticPartitionsDefinitionModel,
             ],
+        ),
+    ] = None
+    freshness_policy: Annotated[
+        Optional[InternalFreshnessPolicy],
+        Resolver.default(
+            model_field_type=Optional[str],
+            description="The freshness policy for the asset.",
+            examples=["{{ custom_freshness_template_var() }}"],
         ),
     ] = None
 

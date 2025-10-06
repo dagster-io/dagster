@@ -4,8 +4,6 @@ requires-python = ">=3.9,<3.14"
 version = "0.1.0"
 dependencies = [
     "dagster",
-    "dagster-dg-cli",
-    "dagster-webserver",
     "dagster-duckdb",
     "dagster-dbt",
     "dbt-duckdb",
@@ -18,8 +16,8 @@ dependencies = [
 
 [dependency-groups]
 dev = [
-    "ruff==0.11.5",
-    "pytest",
+    "dagster-webserver",
+    "dagster-dg-cli",
 ]
 
 [build-system]

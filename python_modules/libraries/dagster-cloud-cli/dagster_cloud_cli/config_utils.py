@@ -500,6 +500,7 @@ def get_location_document(name: Optional[str], kwargs: dict[str, Any]) -> dict[s
                 if kwargs.get("pex_tag")
                 else None
             ),
+            "defs_state_info": kwargs.get("defs_state_info"),
         }
     )
     return deep_merge_dicts(location_doc_from_file, location_doc_from_kwargs)

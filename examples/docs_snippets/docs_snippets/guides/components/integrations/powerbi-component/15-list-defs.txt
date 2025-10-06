@@ -23,9 +23,9 @@ dg list defs --columns name,kinds,tags
 │         │ │ sales                               │                │                                               │ │
 │         │ ├─────────────────────────────────────┼────────────────┼───────────────────────────────────────────────┤ │
 │         │ │ semantic_model/Marketing_Data_Model │ powerbi        │ "dagster-powerbi/asset_type"="semantic_model" │ │
-│         │ │                                     │ semantic model │ "is_semantic_model"="true"                    │ │
+│         │ │                                     │ semantic_model │ "is_semantic_model"="true"                    │ │
 │         │ ├─────────────────────────────────────┼────────────────┼───────────────────────────────────────────────┤ │
 │         │ │ semantic_model/Sales_Data_Model     │ powerbi        │ "dagster-powerbi/asset_type"="semantic_model" │ │
-│         │ │                                     │ semantic model │ "is_semantic_model"="true"                    │ │
+│         │ │                                     │ semantic_model │ "is_semantic_model"="true"                    │ │
 │         │ └─────────────────────────────────────┴────────────────┴───────────────────────────────────────────────┘ │
 └─────────┴──────────────────────────────────────────────────────────────────────────────────────────────────────────┘

@@ -34,8 +34,7 @@ export const JobTabs = (props: Props) => {
   }, [matchingTab, tabs]);
 
   return (
-    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-    <Tabs size="large" selectedTabId={selectedTab!.id}>
+    <Tabs size="large" selectedTabId={selectedTab?.id}>
       {tabs
         .filter((tab) => !tab.isHidden)
         .map((tab) => {

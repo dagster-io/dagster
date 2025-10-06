@@ -7,7 +7,12 @@ import pydantic
 from dagster._annotations import public
 from dagster._core.definitions.job_definition import default_job_io_manager
 from dagster.components.resolved.base import resolve_fields
-from dagster.components.utils.translation import TranslationFn, TranslationFnResolver
+from dagster.components.utils.translation import (
+    ComponentTranslator,
+    TranslationFn,
+    TranslationFnResolver,
+    create_component_translator_cls,
+)
 from dagster_shared import check
 
 from dagster_fivetran.asset_defs import build_fivetran_assets_definitions
@@ -20,17 +25,6 @@ from dagster_fivetran.translator import (
     FivetranConnector,
     FivetranConnectorTableProps,
 )
-
-
-class ProxyDagsterFivetranTranslator(DagsterFivetranTranslator):
-    def __init__(self, fn: TranslationFn[FivetranConnectorTableProps]):
-        self.fn = fn
-
-    def get_asset_spec(self, props: FivetranConnectorTableProps) -> dg.AssetSpec:
-        base_asset_spec = super().get_asset_spec(props)
-        spec = self.fn(base_asset_spec, props)
-
-        return spec
 
 
 class FivetranWorkspaceModel(pydantic.BaseModel):
@@ -102,7 +96,7 @@ class FivetranAccountComponent(dg.Component, dg.Model, dg.Resolvable):
             TranslationFnResolver(template_vars_for_translation_fn=lambda data: {"props": data}),
         ]
     ] = pydantic.Field(
-        None,
+        default=None,
         description="Function used to translate Fivetran connector table properties into Dagster asset specs.",
     )
 
@@ -112,9 +106,14 @@ class FivetranAccountComponent(dg.Component, dg.Model, dg.Resolvable):
 
     @cached_property
     def translator(self) -> DagsterFivetranTranslator:
-        if self.translation:
-            return ProxyDagsterFivetranTranslator(self.translation)
+        return FivetranComponentTranslator(self)
+
+    @cached_property
+    def _base_translator(self) -> DagsterFivetranTranslator:
         return DagsterFivetranTranslator()
+
+    def get_asset_spec(self, props: FivetranConnectorTableProps) -> dg.AssetSpec:
+        return self._base_translator.get_asset_spec(props)
 
     def build_defs(self, context: dg.ComponentLoadContext) -> dg.Definitions:
         fivetran_assets = build_fivetran_assets_definitions(
@@ -132,3 +131,18 @@ class FivetranAccountComponent(dg.Component, dg.Model, dg.Resolvable):
             for fivetran_asset in fivetran_assets
         ]
         return dg.Definitions(assets=assets_with_resource)
+
+
+class FivetranComponentTranslator(
+    create_component_translator_cls(FivetranAccountComponent, DagsterFivetranTranslator),
+    ComponentTranslator[FivetranAccountComponent],
+):
+    def __init__(self, component: "FivetranAccountComponent"):
+        self._component = component
+
+    def get_asset_spec(self, props: FivetranConnectorTableProps) -> dg.AssetSpec:
+        base_asset_spec = super().get_asset_spec(props)
+        if self.component.translation is None:
+            return base_asset_spec
+        else:
+            return self.component.translation(base_asset_spec, props)

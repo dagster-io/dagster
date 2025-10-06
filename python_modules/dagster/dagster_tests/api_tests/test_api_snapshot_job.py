@@ -78,20 +78,7 @@ async def test_async_job_snapshot_api_grpc(instance):
 
         assert (
             code_location.get_job(subset_selector).job_snapshot
-            == (await code_location.gen_job(subset_selector)).job_snapshot
-        )
-
-        full_selector = JobSubsetSelector(
-            location_name=code_location.name,
-            repository_name="bar_repo",
-            job_name="foo",
-            op_selection=None,
-            asset_selection=None,
-        )
-
-        assert (
-            code_location.get_job(full_selector).job_snapshot
-            == (await code_location.gen_job(full_selector)).job_snapshot
+            == (await code_location.gen_subset_job(subset_selector)).job_snapshot
         )
 
 

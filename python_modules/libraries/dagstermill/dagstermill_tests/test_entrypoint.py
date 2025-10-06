@@ -5,11 +5,11 @@ import pytest
 
 
 def test_entrypoint():
-    argv = sys.argv[1:]
+    argv = list(sys.argv)
     try:
-        del sys.argv[1:]
+        sys.argv = ["dagstermill", "--help"]
         with pytest.raises(SystemExit) as exc:
             runpy.run_module("dagstermill", run_name="__main__")
         assert exc.value.code == 0
     finally:
-        sys.argv += argv
+        sys.argv = argv

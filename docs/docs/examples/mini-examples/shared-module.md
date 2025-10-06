@@ -5,8 +5,6 @@ last_update:
   author: Dennis Hume
 sidebar_custom_props:
   logo: images/dagster-primary-mark.svg
-  miniProject: true
-tags: [mini-project]
 ---
 
 In this example, we'll explore strategies for sharing code across Dagster [code locations](/deployment/code-locations). This is useful when you have utility functions, factories, or helpers that are used in multiple places and you want to avoid duplication.

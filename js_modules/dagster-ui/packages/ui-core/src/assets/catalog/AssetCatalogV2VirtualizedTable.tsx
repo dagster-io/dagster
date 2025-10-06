@@ -2,6 +2,7 @@ import {
   Box,
   Container,
   HorizontalControls,
+  HoverButton,
   Icon,
   Inner,
   ListItem,
@@ -14,11 +15,14 @@ import {Link} from 'react-router-dom';
 import {usePrefixedCacheKey} from '../../app/usePrefixedCacheKey';
 import {tokenForAssetKey} from '../../asset-graph/Utils';
 import {useStateWithStorage} from '../../hooks/useStateWithStorage';
+import {TimeFromNow} from '../../ui/TimeFromNow';
 import {buildRepoAddress} from '../../workspace/buildRepoAddress';
 import {AssetActionMenu} from '../AssetActionMenu';
-import {AssetRecentUpdatesTrend} from '../AssetRecentUpdatesTrend';
+import {AssetHealthSummary} from '../AssetHealthSummary';
+import {AssetRecentUpdatesTrend, EventPopover} from '../AssetRecentUpdatesTrend';
 import {assetDetailsPathForKey} from '../assetDetailsPathForKey';
 import {useAllAssets} from '../useAllAssets';
+import {useAssetRecentUpdates} from '../useAssetRecentUpdates';
 
 const shimmer = {shimmer: true};
 const shimmerRows = [shimmer, shimmer, shimmer, shimmer, shimmer];
@@ -215,6 +219,12 @@ const AssetRow = forwardRef(
     ref: React.ForwardedRef<HTMLDivElement>,
   ) => {
     const linkUrl = assetDetailsPathForKey({path: asset.key.path});
+    const {recentEvents, latestInfo, loading} = useAssetRecentUpdates({asset});
+    const lastEvent = recentEvents[0];
+    const latestInfoItem =
+      latestInfo?.inProgressRunIds.length || latestInfo?.unstartedRunIds.length
+        ? latestInfo
+        : undefined;
 
     const {assets} = useAllAssets();
     const definition = useMemo(
@@ -248,7 +258,37 @@ const AssetRow = forwardRef(
             controls={[
               {
                 key: 'recent-updates',
-                control: <AssetRecentUpdatesTrend asset={asset} />,
+                control:
+                  loading && !lastEvent ? (
+                    <Skeleton $width={100} $height={21} />
+                  ) : (
+                    <>
+                      <EventPopover event={lastEvent}>
+                        {lastEvent ? (
+                          <HoverButton>
+                            <TimeFromNow
+                              unixTimestamp={Number(lastEvent.timestamp) / 1000}
+                              showTooltip={false}
+                            />
+                          </HoverButton>
+                        ) : (
+                          ' - '
+                        )}
+                      </EventPopover>
+                    </>
+                  ),
+              },
+              {
+                key: 'recent-events',
+                control: (
+                  <Box padding={{horizontal: 8}}>
+                    <AssetRecentUpdatesTrend events={recentEvents} latestInfo={latestInfoItem} />
+                  </Box>
+                ),
+              },
+              {
+                key: 'asset-health',
+                control: <AssetHealthSummary assetKey={asset.key} iconOnly />,
               },
               {
                 key: 'action-menu',

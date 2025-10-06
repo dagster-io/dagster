@@ -9,6 +9,7 @@ export enum ReportingUnitType {
   FLOAT = 'FLOAT',
   INTEGER = 'INTEGER',
   TIME_MS = 'TIME_MS',
+  TIME_SECONDS = 'TIME_SECONDS',
 }
 
 export type DatapointType = 'deployment' | 'asset-group' | 'asset' | 'job';

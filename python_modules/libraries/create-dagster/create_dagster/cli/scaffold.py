@@ -118,7 +118,7 @@ def _should_run_uv_sync(
 @cli_telemetry_wrapper
 def scaffold_project_command(
     path: Path,
-    use_editable_dagster: Optional[str],
+    use_editable_dagster: bool,
     uv_sync: Optional[bool],
     **global_options: object,
 ) -> None:
@@ -224,7 +224,7 @@ def scaffold_project_command(
 @cli_telemetry_wrapper
 def scaffold_workspace_command(
     path: Path,
-    use_editable_dagster: Optional[str],
+    use_editable_dagster: bool,
     uv_sync: Optional[bool],
     **global_options: object,
 ):
