@@ -37,7 +37,7 @@ def test_fetch_powerbi_workspace_data(workspace_data_api_mocks: None, workspace_
         workspace_id=workspace_id,
     )
 
-    actual_workspace_data = resource._fetch_powerbi_workspace_data(use_workspace_scan=False)  # noqa: SLF001
+    actual_workspace_data = resource.fetch_powerbi_workspace_data(use_workspace_scan=False)
     assert len(actual_workspace_data.dashboards_by_id) == 1
     assert len(actual_workspace_data.reports_by_id) == 1
     assert len(actual_workspace_data.semantic_models_by_id) == 1
@@ -53,7 +53,7 @@ def test_fetch_powerbi_workspace_data_scan(
         workspace_id=workspace_id,
     )
 
-    actual_workspace_data = resource._fetch_powerbi_workspace_data(use_workspace_scan=True)  # noqa: SLF001
+    actual_workspace_data = resource.fetch_powerbi_workspace_data(use_workspace_scan=True)
     assert len(actual_workspace_data.dashboards_by_id) == 1
     assert len(actual_workspace_data.reports_by_id) == 1
     assert len(actual_workspace_data.semantic_models_by_id) == 1
