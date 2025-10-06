@@ -21,15 +21,6 @@ This example demonstrates how to:
 - Evaluate puzzle-solving performance with custom metrics
 - Deploy and monitor AI systems in production
 
-You will learn to:
-
-- Set up a Dagster project with DsPy and Gemini integration
-- Create domain-specific DsPy modules for puzzle solving
-- Implement game logic validation and state management
-- Use automatic optimization to improve AI performance
-- Track solving success rates and efficiency metrics
-- Build production-ready AI applications with Dagster Components
-
 ## Prerequisites
 
 To follow the steps in this guide, you'll need:
@@ -107,14 +98,6 @@ graph TD
     H[Test Puzzles] --> E
     I[Success Metrics] --> E
 ```
-
-The pipeline demonstrates:
-
-- **Puzzle Data**: NYT Connections puzzles with groups and difficulty levels
-- **DsPy Solver**: Chain-of-thought reasoning for puzzle solving
-- **Game Logic**: Validation of guesses and state management
-- **Optimization**: Automatic prompt and few-shot example optimization
-- **Evaluation**: Success rates, efficiency, and puzzle-solving metrics
 
 ## Next steps
 
