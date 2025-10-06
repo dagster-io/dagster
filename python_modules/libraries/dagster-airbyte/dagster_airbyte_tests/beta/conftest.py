@@ -5,6 +5,7 @@ from unittest.mock import patch
 
 import pytest
 import responses
+from dagster._core.instance_for_test import instance_for_test
 from dagster_airbyte.resources import (
     AIRBYTE_CLOUD_CONFIGURATION_API_BASE_URL,
     AIRBYTE_CLOUD_REST_API_BASE_URL,
@@ -257,7 +258,7 @@ def config_api_url(api_urls) -> str:
 
 @pytest.fixture(name="base_api_mocks")
 def base_api_mocks_fixture(rest_api_url) -> Iterator[responses.RequestsMock]:
-    with responses.RequestsMock() as response:
+    with responses.RequestsMock() as response, instance_for_test():
         response.add(
             method=responses.POST,
             url=f"{rest_api_url}/applications/token",
