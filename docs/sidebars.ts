@@ -160,7 +160,7 @@ const sidebars: SidebarsConfig = {
             },
             {
               type: 'link',
-              label: 'Hooli example pipelines',
+              label: 'Sales demo example pipelines',
               href: 'https://github.com/dagster-io/hooli-data-eng-pipelines/',
             },
             {
