@@ -1,7 +1,7 @@
 import inspect
+import sys
 from collections.abc import Mapping
 from enum import Enum
-import sys
 from typing import Annotated, Any, Literal, Optional, TypeVar, Union
 
 from dagster_shared.dagster_model.pydantic_compat_layer import (
@@ -40,9 +40,11 @@ if sys.version_info >= (3, 10):
     # Support models being built with the `Foo | Bar` syntax,
     # not just `Union[Foo, Bar]`
     from types import UnionType
+
     _UNION_TYPES = [Union, UnionType]
 else:
     _UNION_TYPES = [Union]
+
 
 # This is from https://github.com/dagster-io/dagster/pull/11470
 def _apply_defaults_to_schema_field(field: Field, additional_default_values: Any) -> Field:
