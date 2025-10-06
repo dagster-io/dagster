@@ -5,6 +5,7 @@ import * as React from 'react';
 import {AssetSidebarNode} from './AssetSidebarNode';
 import {FolderNodeType, getDisplayName, nodePathKey} from './util';
 import {LayoutContext} from '../../app/LayoutProvider';
+import {useFeatureFlags} from '../../app/useFeatureFlags';
 import {AssetKey} from '../../assets/types';
 import {useQueryAndLocalStoragePersistedState} from '../../hooks/useQueryAndLocalStoragePersistedState';
 import {ExplorerPath} from '../../pipelines/PipelinePathUtils';
@@ -13,7 +14,6 @@ import {buildRepoPathForHuman} from '../../workspace/buildRepoAddress';
 import {AssetGroup} from '../AssetGraphExplorer';
 import {AssetGraphViewType, GraphData, GraphNode, groupIdForNode, tokenForAssetKey} from '../Utils';
 import {SearchFilter} from '../sidebar/SearchFilter';
-import {useFeatureFlags} from 'shared/app/useFeatureFlags';
 
 const COLLATOR = new Intl.Collator(navigator.language, {sensitivity: 'base', numeric: true});
 
@@ -137,8 +137,6 @@ export const AssetGraphExplorerSidebar = React.memo(
         ? buildRenderedNodesWithCodeLocations(graphData.nodes, openNodes)
         : buildRenderedNodes(graphData.nodes, openNodes);
     }, [flagAssetGraphGroupsPerCodeLocation, graphData.nodes, openNodes]);
-
-    console.log(renderedNodes);
 
     const {nav} = React.useContext(LayoutContext);
 
