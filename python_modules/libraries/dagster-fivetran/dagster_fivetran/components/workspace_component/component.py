@@ -123,7 +123,7 @@ class FivetranAccountComponent(dg.Component, dg.Model, dg.Resolvable):
 
     def build_defs(self, context: dg.ComponentLoadContext) -> dg.Definitions:
         connector_selector_fn = self.connector_selector or (lambda connector: bool(connector))
-        all_asset_specs = self.workspace.load_asset_specs(
+        all_asset_specs = self.workspace_resource.load_asset_specs(
             dagster_fivetran_translator=self.translator,
             connector_selector_fn=connector_selector_fn,
         )
@@ -141,13 +141,13 @@ class FivetranAccountComponent(dg.Component, dg.Model, dg.Resolvable):
 
             @fivetran_assets(
                 connector_id=connector_id,
-                workspace=self.workspace,
+                workspace=self.workspace_resource,
                 name=f"fivetran_{clean_name(connector_name)}",
                 dagster_fivetran_translator=self.translator,
                 connector_selector_fn=connector_selector_fn,
             )
             def _asset(context: dg.AssetExecutionContext):
-                yield from self.execute(context=context, fivetran=self.workspace)
+                yield from self.execute(context=context, fivetran=self.workspace_resource)
 
             assets.append(_asset)
 
