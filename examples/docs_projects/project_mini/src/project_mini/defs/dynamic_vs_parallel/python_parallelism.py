@@ -30,8 +30,10 @@ def merge_and_analyze(context: dg.OpExecutionContext, computed_pieces: list[str]
     return
 
 
+
 @dg.job
-def python_parallelization():
+def python_parallelism():
+
     merge_and_analyze(load_and_process_pieces())
 
 
