@@ -129,7 +129,7 @@ def sub_pipeline_process_record_option_b(
 
     1. "Extract processing units from the record (10-30 units per record)"
     2. "Each unit goes through processing (Second layer of parallelization)"
-       [Currently sequential as specified]
+       [Implemented using multiprocessing pool]
     3. "Results are aggregated to create final record output"
     """
     context.log.info(f"Sub-pipeline processing record: {record['id']}")
