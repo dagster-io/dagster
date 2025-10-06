@@ -9,15 +9,15 @@ sidebar_custom_props:
 
 In this example, we'll explore two different approaches to achieving parallelism in Dagster pipelines. When you have computationally expensive operations that can benefit from parallel processing, you can choose between Dagster's built-in dynamic outputs or standard Python parallelism techniques. Each approach has distinct trade-offs in terms of observability, performance, and resource consumption.
 
-### Problem: Parallel processing of multiple items
+## Problem: Parallel processing of multiple items
 
 Imagine you need to process a collection of items (in our example, letters a-z), where each item requires some computation time (simulated with a sleep operation). Without parallelism, processing each item sequentially would take much longer than processing them concurrently.
 
-The key question is: should you use Dagster's dynamic outputs to create separate op executions for each item, or should you handle the parallelism within a single op using Python's multiprocessing capabilities?
+The key question is: Should you use Dagster's dynamic outputs to create separate op executions for each item, or should you handle the parallelism within a single op using Python's multiprocessing capabilities?
 
 ### Solution 1: Dagster dynamic outputs
 
-Dynamic outputs allow you to create separate op executions for each item. In this example, each letter (a-z) gets its own op execution. This approach provides maximum observability and leverages Dagster's built-in retry mechanisms, but comes with additional overhead for each item.
+[Dynamic outputs](/api/dagster/dynamic#dagster.DynamicOutput) allow you to create separate op executions for each item. In this example, each letter (a-z) gets its own op execution. This approach provides maximum observability and leverages Dagster's built-in retry mechanisms, but comes with additional overhead for each item.
 
 <CodeExample
   path="docs_projects/project_mini/src/project_mini/defs/dynamic_vs_parallel/dynamic_outputs.py"
@@ -25,12 +25,12 @@ Dynamic outputs allow you to create separate op executions for each item. In thi
   title="src/project_mini/defs/dynamic_vs_parallel/dynamic_outputs.py"
 />
 
-|                    | **Dynamic Outputs Approach**                         |
+|                    | **Dynamic outputs approach**                         |
 | ------------------ | ---------------------------------------------------- |
-| **Execution Time** | ~26 seconds (1 second per letter + Dagster overhead) |
+| **Execution time** | ~26 seconds (1 second per letter + Dagster overhead) |
 | **Observability**  | Full visibility into each letter's execution         |
-| **Retry Logic**    | Automatic retry for individual letters               |
-| **Resource Usage** | Each letter consumes a credit in Dagster Cloud       |
+| **Retry logic**    | Automatic retry for individual letters               |
+| **Resource usage** | Each letter consumes a credit in Dagster Cloud       |
 | **Complexity**     | Simple dynamic pattern setup                         |
 
 ### Solution 2: Python parallelism
@@ -43,27 +43,27 @@ The Python parallelism approach uses multiprocessing within a single op to proce
   title="src/project_mini/defs/dynamic_vs_parallel/python_parallelism.py"
 />
 
-|                    | **Python Parallelism Approach**                        |
+|                    | **Python parallelism approach**                        |
 | ------------------ | ------------------------------------------------------ |
-| **Execution Time** | ~4 seconds (parallel processing across CPU cores)      |
+| **Execution time** | ~4 seconds (parallel processing across CPU cores)      |
 | **Observability**  | Limited visibility into individual letter progress     |
-| **Retry Logic**    | Manual implementation required                         |
-| **Resource Usage** | Single credit consumption for entire operation         |
+| **Retry logic**    | Manual implementation required                         |
+| **Resource usage** | Single credit consumption for entire operation         |
 | **Complexity**     | Simple multiprocessing setup, familiar Python patterns |
 
-### When to use each approach
+## When to use each approach
 
 The choice between dynamic outputs and Python parallelism depends on your specific requirements:
 
-**Use Dynamic Outputs when:**
+**Use Dagster dynamic outputs when:**
 
 - Each item takes 5+ minutes to process (overhead is negligible)
 - Individual item observability is critical
 - You need fine-grained retry capabilities
 - You want to leverage Dagster's built-in monitoring and alerting
-- Cost of additional credits in Dagster Cloud is acceptable
+- The cost of additional credits in Dagster+ is acceptable
 
-**Use Python Parallelism when:**
+**Use Python parallelism when:**
 
 - Each item takes seconds to minutes to process
 - Overall job performance is more important than granular visibility
@@ -71,7 +71,7 @@ The choice between dynamic outputs and Python parallelism depends on your specif
 - You're comfortable implementing custom error handling
 - You have CPU-bound work that benefits from true parallelism
 
-### Hybrid approach
+## Hybrid approach
 
 You can also combine both approaches: use Python parallelism within individual ops of a dynamically generated graph. This allows you to balance the granularity of Dagster's observability with the performance benefits of Python parallelism.
 
