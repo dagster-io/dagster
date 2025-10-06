@@ -35,7 +35,7 @@ The key question is: Should you use Dagster's dynamic outputs to create separate
 
 ### Solution 2: Python parallelism
 
-The Python parallelism approach uses multiprocessing within a single op to process all letters concurrently. This provides better performance by utilizing multiple CPU cores, but requires manual implementation of error handling and retry logic.
+The Python parallelism approach uses multiprocessing within a single op to process all letters concurrently. This provides better performance than Dagster's dynamic outputs approach by utilizing multiple CPU cores simultaneously, but requires manual implementation of error handling and retry logic.
 
 <CodeExample
   path="docs_projects/project_mini/src/project_mini/defs/dynamic_vs_parallel/python_parallelism.py"
