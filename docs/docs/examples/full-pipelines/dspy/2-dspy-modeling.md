@@ -1,12 +1,11 @@
 ---
-title: Building the DSPy solver
+title: Build the DSPy solver
 description: Create a DSPy module for solving Connections puzzles
 last_update:
   author: Dennis Hume
 sidebar_position: 30
 ---
 
-# Building the DSPy solver
 
 The DSPy solver transforms puzzle-solving from rule-based logic into learned reasoning patterns. By using [Chain-of-Thought](https://arxiv.org/abs/2201.11903) prompting, our AI learns to analyze word relationships, consider context clues, and develop strategic approaches that improve with training data.
 
@@ -54,7 +53,10 @@ The transition from development to production requires careful orchestration of 
   title="src/project_dspy/components/ds_py_model_builder.py"
 />
 
-This deployment pattern follows software engineering best practices: the DSPy resource ensures consistent language model configuration across all environments, the solver instance is created with a clean state for reproducible results, and the model is immediately persisted to disk for reliable retrieval during optimization and evaluation phases.
+This deployment pattern follows software engineering best practices:
+- The DSPy resource ensures consistent language model configuration across all environments.
+- The solver instance is created with a clean state for reproducible results.
+- The model is immediately persisted to disk for reliable retrieval during optimization and evaluation phases.
 
 The baseline model serves as our performance benchmark. Before we apply any optimization techniques, we need to understand how well the "vanilla" Chain-of-Thought approach performs. This baseline becomes crucial for measuring the effectiveness of subsequent optimizations and ensuring that our improvements are meaningful rather than just random variation.
 

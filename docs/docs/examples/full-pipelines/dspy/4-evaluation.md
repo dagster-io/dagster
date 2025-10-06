@@ -1,12 +1,11 @@
 ---
-title: Performance evaluation
+title: Evaluate performance
 description: Evaluate puzzle-solving performance and monitor model quality
 last_update:
   author: Dennis Hume
 sidebar_position: 50
 ---
 
-# Performance evaluation
 
 Evaluation in puzzle-solving AI goes beyond simple accuracy metrics. We need to understand not just whether our solver can complete puzzles, but how efficiently it does so, what strategies it employs, and whether its performance is consistent across different puzzle difficulties. This comprehensive evaluation approach ensures our AI is truly ready for real-world deployment.
 

@@ -10,7 +10,6 @@ canonicalUrl: '/examples/dspy'
 slug: '/examples/dspy'
 ---
 
-# Solving NYT Connections with DsPy
 
 In this tutorial, you'll build an AI system that solves [NYT Connections puzzles](https://www.nytimes.com/games/connections) using [DsPy](https://dspy.ai/) for structured reasoning and Dagster for pipeline orchestration. DsPy is a framework for building modular AI software that can be compiled into effective prompts and optimized automatically.
 
@@ -31,8 +30,7 @@ You will learn to:
 - Track solving success rates and efficiency metrics
 - Build production-ready AI applications with Dagster Components
 
-<details>
-  <summary>Prerequisites</summary>
+## Prerequisites
 
 To follow the steps in this guide, you'll need:
 
@@ -43,7 +41,6 @@ To follow the steps in this guide, you'll need:
 - Familiarity with puzzle-solving and game logic
 - Basic knowledge of the NYT Connections puzzle format
 
-</details>
 
 ## Step 1: Set up your Dagster environment
 
@@ -94,7 +91,7 @@ dg dev
 
 Navigate to [http://127.0.0.1:3000](http://127.0.0.1:3000) to view the Dagster UI.
 
-## Architecture Overview
+## Architecture overview
 
 The DsPy pipeline consists of several key components:
 

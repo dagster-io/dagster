@@ -1,14 +1,13 @@
 ---
-title: Puzzle data ingestion
+title: Ingest puzzle data
 description: Load and prepare Connections puzzle data for AI training
 last_update:
   author: Dennis Hume
 sidebar_position: 20
 ---
 
-# Puzzle data ingestion
 
-NYT Connections is a word puzzle where players find four groups of four related words from a 16-word grid. Each group has a difficulty level: **Yellow** (easiest), **Green**, **Blue**, and **Purple** (hardest). Our DsPy solver needs structured data to learn effective puzzle-solving strategies.
+[NYT Connections](https://www.nytimes.com/games/connections) is a word puzzle where players find four groups of four related words from a 16-word grid. Each group has a difficulty level: **Yellow** (easiest), **Green**, **Blue**, and **Purple** (hardest). Our DsPy solver needs structured data to learn effective puzzle-solving strategies.
 
 ## Data structure and loading
 
@@ -40,15 +39,15 @@ The data preparation process is handled by a Dagster asset that orchestrates the
 
 This asset performs several critical functions:
 
-1. It loads puzzles from the CSV file and validates their structure using our domain-specific validation logic.
-2. It splits the data into training and evaluation sets using a configurable ratio (default 25% for training), ensuring we have sufficient data for both optimization and testing.
-3. The asset also handles practical considerations like taking a subset of puzzles for efficient evaluation during development, while maintaining the full dataset for comprehensive testing.
+- It loads puzzles from the CSV file and validates their structure using our domain-specific validation logic.
+- It splits the data into training and evaluation sets using a configurable ratio (default 25% for training), ensuring we have sufficient data for both optimization and testing.
+- The asset also handles practical considerations, like taking a subset of puzzles for efficient evaluation during development, while maintaining the full dataset for comprehensive testing.
 
 All operations are tracked with detailed metadata, providing visibility into dataset size, split ratios, and data quality metrics. This transparency is crucial for understanding model performance and debugging potential data issues.
 
 ## Component configuration
 
-The data pipeline leverages [Dagster Component](/guides/build/components) to create reusable, configurable data processing workflows. This YAML configuration defines all the key parameters for the Connections puzzle solver:
+The data pipeline leverages [Dagster Components](/guides/build/components) to create reusable, configurable data processing workflows. This YAML configuration defines all the key parameters for the Connections puzzle solver:
 
 <CodeExample
   path="docs_projects/project_dspy/src/project_dspy/defs/connections_model/defs.yaml"
@@ -58,7 +57,10 @@ The data pipeline leverages [Dagster Component](/guides/build/components) to cre
 
 This configuration encapsulates specific defaults optimized for Connections puzzles. The data path points to our puzzle CSV file, the performance threshold (0.3) represents a reasonable baseline success rate for puzzle-solving, and the train/test split (0.25) balances having enough training data with sufficient evaluation coverage.
 
-The component approach provides several benefits: configurations can be easily modified for different environments or puzzle variants, the same component can be deployed across development and production with different parameters, and the declarative YAML format makes it easy to understand and version control the pipeline settings.
+The component approach provides several benefits:
+- Configurations can be easily modified for different environments or puzzle variants.
+- The same component can be deployed across development and production with different parameters.
+- The declarative YAML format makes it easy to understand and version control the pipeline settings.
 
 ## Next steps
 
