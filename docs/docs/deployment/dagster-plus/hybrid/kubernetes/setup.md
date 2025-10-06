@@ -254,6 +254,7 @@ helm --namespace dagster-cloud upgrade agent \
 Modify the [`dagster_cloud.yaml` file](/deployment/code-locations/dagster-cloud-yaml) in your project's Git repository:
 
 ```yaml file=dagster_cloud.yaml
+# dagster_cloud.yaml
 location:
   - location_name: cloud-examples
     image: dagster/dagster-cloud-examples:latest
@@ -279,6 +280,7 @@ If you need to request secrets from a secret manager like AWS Secrets Manager or
 Modify the [`dagster_cloud.yaml` file](/deployment/code-locations/dagster-cloud-yaml) in your project's Git repository:
 
 ```yaml file=dagster_cloud.yaml
+# dagster_cloud.yaml
 locations:
   - location_name: cloud-examples
     image: dagster/dagster-cloud-examples:latest
@@ -319,6 +321,7 @@ You may wish to run data pipelines from project A in Kubernetes cluster A, and p
   Specify an agent queue for the on-prem agent:
 
   ```yaml file=values.yaml
+  # values.yaml
   dagsterCloud:
     agentQueues:
       additionalQueues:
@@ -336,6 +339,7 @@ You may wish to run data pipelines from project A in Kubernetes cluster A, and p
   Specify an agent queue for the agent on AWS:
 
   ```yaml file=values.yaml
+  # values.yaml
   dagsterCloud:
     agentQueues:
       additionalQueues:
@@ -353,6 +357,7 @@ You may wish to run data pipelines from project A in Kubernetes cluster A, and p
 - Create separate code locations for each project
 - Update the `dagster_cloud.yaml` file for each code location
   ```yaml file=dagster_cloud.yaml
+  # dagster_cloud.yaml
   locations:
     - location_name: project-a
       ...
@@ -366,6 +371,7 @@ You may wish to run data pipelines from project A in Kubernetes cluster A, and p
 Code locations without an `agent_queue` will be routed to a default queue. By default, all agents will serve this default queue. You can specify which agent should serve the default queue using the `includeDefaultQueue` setting:
 
 ```yaml file=values.yaml
+# values.yaml
 dagsterCloud:
   agentQueues:
     includeDefaultQueue: true
@@ -403,6 +409,7 @@ First determine if you want to change the requested resource for everything in a
 Modify the [`dagster_cloud.yaml` file](/deployment/code-locations/dagster-cloud-yaml) in your project's Git repository:
 
 ```yaml file=dagster_cloud.yaml
+# dagster_cloud.yaml
 locations:
   - location_name: cloud-examples
     image: dagster/dagster-cloud-examples:latest

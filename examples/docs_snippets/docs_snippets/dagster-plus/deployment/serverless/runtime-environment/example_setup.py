@@ -2,9 +2,10 @@ from setuptools import find_packages, setup
 
 setup(
     name="quickstart_etl",
-    packages=find_packages(exclude=["quickstart_etl_tests"]),
+    packages=find_packages(exclude=["tests"]),
     install_requires=[
         "dagster",
+        "dagster-cloud",
         # highlight-start
         # when possible, add additional dependencies in setup.py
         "boto3",
@@ -12,5 +13,5 @@ setup(
         "matplotlib",
         # highlight-end
     ],
-    extras_require={"dev": ["dagster-webserver", "pytest"]},
+    extras_require={"dev": ["dagster-webserver", "dagster-dg-cli",]},
 )
