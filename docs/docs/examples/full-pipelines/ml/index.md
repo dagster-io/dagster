@@ -10,7 +10,6 @@ canonicalUrl: '/examples/ml'
 slug: '/examples/ml'
 ---
 
-
 In this tutorial, you'll build a complete CNN-based digit classifier using Dagster and PyTorch, covering the entire ML lifecycle with production-ready practices.
 
 This example demonstrates how to:
@@ -35,7 +34,6 @@ To follow the steps in this guide, you'll need:
 - Python 3.9+ installed on your system. Refer to the [Installation guide](/getting-started/installation) for information.
 - Basic familiarity with machine learning concepts (neural networks, training/validation splits)
 - Understanding of PyTorch fundamentals (tensors, models, training loops)
-
 
 ## Step 1: Set up your Dagster environment
 

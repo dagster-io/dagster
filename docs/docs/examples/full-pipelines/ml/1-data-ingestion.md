@@ -6,7 +6,6 @@ last_update:
 sidebar_position: 20
 ---
 
-
 The foundation of reliable ML systems starts with clean, well-structured data pipelines. Our data ingestion system automates [MNIST dataset](https://en.wikipedia.org/wiki/MNIST_database) downloading, applies proper preprocessing transforms, and creates stratified train/validation splits that ensure honest model evaluation.
 
 ## Automated data downloading with normalization

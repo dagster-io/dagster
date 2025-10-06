@@ -6,7 +6,6 @@ last_update:
 sidebar_position: 30
 ---
 
-
 Training effective neural networks requires careful architecture design, configurable hyperparameters, and robust training loops. Our CNN implementation uses modern best practices including batch normalization, dropout regularization, and adaptive learning rate scheduling to achieve reliable digit classification performance.
 
 ## Configurable model architecture
