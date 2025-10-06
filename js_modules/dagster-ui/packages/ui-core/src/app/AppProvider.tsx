@@ -12,6 +12,7 @@ import {AppContext} from './AppContext';
 import {CustomAlertProvider} from './CustomAlertProvider';
 import {CustomConfirmationProvider} from './CustomConfirmationProvider';
 import {GlobalStyleProvider} from './GlobalStyleProvider';
+import {ReloadOnHistoryChangeIfNewVersionAvailable} from './GraphQLVersion';
 import {LayoutProvider} from './LayoutProvider';
 import {createOperationQueryStringApolloLink} from './OperationQueryStringApolloLink';
 import {PermissionsProvider} from './Permissions';
@@ -183,6 +184,7 @@ export const AppProvider = (props: AppProviderProps) => {
         <ApolloProvider client={apolloClient}>
           <PermissionsProvider>
             <BrowserRouter basename={basePath || ''}>
+              <ReloadOnHistoryChangeIfNewVersionAvailable />
               <GlobalStyleProvider />
               <CompatRouter>
                 <TimeProvider>

@@ -30,15 +30,15 @@ export class WorkspaceStatusPoller {
     }) => Promise<void>
   >;
   private interval: NodeJS.Timeout | undefined;
-  private setCodeLocationStatusAtom: (status: CodeLocationStatusQuery) => void;
+  private setCodeLocationStatus: (status: CodeLocationStatusQuery, fromCache: boolean) => void;
   constructor(args: {
     localCacheIdPrefix: string | undefined;
     getData: ReturnType<typeof useGetData>;
-    setCodeLocationStatusAtom: (status: CodeLocationStatusQuery) => void;
+    setCodeLocationStatus: (status: CodeLocationStatusQuery, fromCache: boolean) => void;
   }) {
     this.key = `${args.localCacheIdPrefix}${CODE_LOCATION_STATUS_QUERY_KEY}`;
     this.getData = args.getData;
-    this.setCodeLocationStatusAtom = args.setCodeLocationStatusAtom;
+    this.setCodeLocationStatus = args.setCodeLocationStatus;
     this.subscribers = new Set();
     this.loadFromCache();
     this.loadFromServer();
@@ -51,7 +51,7 @@ export class WorkspaceStatusPoller {
       version: CodeLocationStatusQueryVersion,
     });
     if (cachedData) {
-      this.setCodeLocationStatusAtom(cachedData);
+      this.setCodeLocationStatus(cachedData, true);
     }
 
     if (cachedData?.locationStatusesOrError.__typename === 'WorkspaceLocationStatusEntries') {
@@ -83,7 +83,7 @@ export class WorkspaceStatusPoller {
     if (error) {
       console.error('Error loading code location statuses from server', error);
     } else if (data) {
-      this.setCodeLocationStatusAtom(data);
+      this.setCodeLocationStatus(data, false);
       if (data.locationStatusesOrError.__typename === 'WorkspaceLocationStatusEntries') {
         const nextStatuses = Object.fromEntries(
           data.locationStatusesOrError.entries.map((entry) => [entry.name, entry]),

@@ -254,6 +254,7 @@ export const LOCATION_WORKSPACE_QUERY = gql`
 
 export const CODE_LOCATION_STATUS_QUERY = gql`
   query CodeLocationStatusQuery {
+    version
     locationStatusesOrError {
       ... on WorkspaceLocationStatusEntries {
         entries {

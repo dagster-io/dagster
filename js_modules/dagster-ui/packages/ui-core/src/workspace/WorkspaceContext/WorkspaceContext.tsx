@@ -4,6 +4,7 @@ import {RecoilRoot, useSetRecoilState} from 'recoil';
 
 import {WorkspaceManager} from './WorkspaceManager';
 import {
+  CodeLocationStatusQuery,
   LocationStatusEntryFragment,
   LocationWorkspaceAssetsQuery,
   LocationWorkspaceQuery,
@@ -22,6 +23,7 @@ import {
 } from './util';
 import {useApolloClient} from '../../apollo-client';
 import {AppContext} from '../../app/AppContext';
+import {graphQLVersionAtom, initialGraphQLVersionOnceAtom} from '../../app/GraphQLVersion';
 import {PythonErrorFragment} from '../../app/types/PythonErrorFragment.types';
 import {codeLocationStatusAtom} from '../../nav/useCodeLocationsStatus';
 import {useGetData} from '../../search/useIndexedDBCachedQuery';
@@ -84,6 +86,19 @@ const WorkspaceProviderImpl = ({children}: {children: React.ReactNode}) => {
     useState<Record<string, LocationStatusEntryFragment>>(EMPTY_DATA);
 
   const setCodeLocationStatusAtom = useSetRecoilState(codeLocationStatusAtom);
+  const setGraphQLVersionAtom = useSetRecoilState(graphQLVersionAtom);
+  const setInitialGraphQLVersionOnceAtom = useSetRecoilState(initialGraphQLVersionOnceAtom);
+
+  const setCodeLocationStatus = useCallback(
+    (data: CodeLocationStatusQuery, fromCache: boolean) => {
+      setCodeLocationStatusAtom(data);
+      if (!fromCache) {
+        setGraphQLVersionAtom(data.version);
+        setInitialGraphQLVersionOnceAtom(data.version);
+      }
+    },
+    [setGraphQLVersionAtom, setCodeLocationStatusAtom, setInitialGraphQLVersionOnceAtom],
+  );
 
   const locationEntryData = useMemo(() => {
     return Object.entries(locationWorkspaceData).reduce(
@@ -150,7 +165,7 @@ const WorkspaceProviderImpl = ({children}: {children: React.ReactNode}) => {
       client,
       localCacheIdPrefix,
       getData,
-      setCodeLocationStatusAtom,
+      setCodeLocationStatus,
       setData: ({locationStatuses, locationEntries, assetEntries}) => {
         if (locationEntries) {
           setLocationWorkspaceData(locationEntries);
@@ -167,7 +182,7 @@ const WorkspaceProviderImpl = ({children}: {children: React.ReactNode}) => {
     return () => {
       manager.destroy();
     };
-  }, [client, localCacheIdPrefix, getData, setCodeLocationStatusAtom]);
+  }, [client, localCacheIdPrefix, getData, setCodeLocationStatus]);
 
   const locationEntries = useMemo(() => {
     return Object.values(fullLocationEntryData).reduce((acc, data) => {

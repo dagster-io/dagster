@@ -32,7 +32,7 @@ export class WorkspaceManager {
     readonly localCacheIdPrefix: string | undefined;
     readonly getData: ReturnType<typeof useGetData>;
     readonly setData: (data: Data) => void;
-    readonly setCodeLocationStatusAtom: (status: CodeLocationStatusQuery) => void;
+    readonly setCodeLocationStatus: (status: CodeLocationStatusQuery, fromCache: boolean) => void;
   }) {
     this.client = args.client;
     this.localCacheIdPrefix = args.localCacheIdPrefix;
@@ -46,7 +46,7 @@ export class WorkspaceManager {
     this.statusPoller = new WorkspaceStatusPoller({
       localCacheIdPrefix: this.localCacheIdPrefix,
       getData: this.getData,
-      setCodeLocationStatusAtom: args.setCodeLocationStatusAtom,
+      setCodeLocationStatus: args.setCodeLocationStatus,
     });
     this.dataFetchers = {
       locationEntries: new WorkspaceLocationDataFetcher({

@@ -924,6 +924,7 @@ export type CodeLocationStatusQueryVariables = Types.Exact<{[key: string]: never
 
 export type CodeLocationStatusQuery = {
   __typename: 'Query';
+  version: string;
   locationStatusesOrError:
     | {__typename: 'PythonError'}
     | {
@@ -1510,6 +1511,6 @@ export type WorkspaceRepositoryFragment = {
 
 export const LocationWorkspaceQueryVersion = 'dc3c765d258d59c8c265f45109e72281af380ac95cb06b3e8faf799e7edba7ef';
 
-export const CodeLocationStatusQueryVersion = '5491629a2659feca3a6cf0cc976c6f59c8e78dff1193e07d7850ae4355698b04';
+export const CodeLocationStatusQueryVersion = 'a59c78731fe8ad448abb72ddb95b72e8767e25368df2931ec061a6b183da8675';
 
 export const LocationWorkspaceAssetsQueryVersion = '61195fc88cb53d325132085b835ac95f0315c431e9a80a86dddd51815ef4c77f';
