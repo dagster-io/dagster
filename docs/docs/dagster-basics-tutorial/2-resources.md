@@ -76,7 +76,7 @@ Run `dg check` again to confirm that the assets and resources are configured cor
 
 Back in the UI, your assets will not look different, but you can view the resource in the **Definitions** tab:
 
-1. Click **Deployment**, then click "<your project>" to see your deployment.
+1. Click **Deployment**, then click on your project to see your deployment.
 2. Click **Definitions**.
 3. Navigate to the "Resources" section to view all of your resources, then select "duckdb":
 
