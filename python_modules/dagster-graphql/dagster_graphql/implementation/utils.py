@@ -287,20 +287,6 @@ def assert_valid_asset_partition_backfill(
                 )
             )
 
-        for parent_key in asset_graph.get(asset_key).parent_keys:
-            _parent_subset, required_but_nonexistent_subset = (
-                asset_graph_view.compute_parent_subset_and_required_but_nonexistent_subset(
-                    parent_key,
-                    entity_subset,
-                )
-            )
-
-            if not required_but_nonexistent_subset.is_empty:
-                raise DagsterInvariantViolationError(
-                    f"Targeted partition subset {entity_subset}"
-                    f" depends on non-existent partitions: {required_but_nonexistent_subset}"
-                )
-
 
 def _noop(_) -> None:
     pass
