@@ -6,7 +6,6 @@ last_update:
 sidebar_position: 20
 ---
 
-
 [NYT Connections](https://www.nytimes.com/games/connections) is a word puzzle where players find four groups of four related words from a 16-word grid. Each group has a difficulty level: **Yellow** (easiest), **Green**, **Blue**, and **Purple** (hardest). Our DsPy solver needs structured data to learn effective puzzle-solving strategies.
 
 ## Data structure and loading
@@ -58,6 +57,7 @@ The data pipeline leverages [Dagster Components](/guides/build/components) to cr
 This configuration encapsulates specific defaults optimized for Connections puzzles. The data path points to our puzzle CSV file, the performance threshold (0.3) represents a reasonable baseline success rate for puzzle-solving, and the train/test split (0.25) balances having enough training data with sufficient evaluation coverage.
 
 The component approach provides several benefits:
+
 - Configurations can be easily modified for different environments or puzzle variants.
 - The same component can be deployed across development and production with different parameters.
 - The declarative YAML format makes it easy to understand and version control the pipeline settings.

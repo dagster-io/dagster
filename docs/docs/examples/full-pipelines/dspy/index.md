@@ -10,7 +10,6 @@ canonicalUrl: '/examples/dspy'
 slug: '/examples/dspy'
 ---
 
-
 In this tutorial, you'll build an AI system that solves [NYT Connections puzzles](https://www.nytimes.com/games/connections) using [DsPy](https://dspy.ai/) for structured reasoning and Dagster for pipeline orchestration. DsPy is a framework for building modular AI software that can be compiled into effective prompts and optimized automatically.
 
 This example demonstrates how to:
@@ -31,7 +30,6 @@ To follow the steps in this guide, you'll need:
 - A Google Gemini API key (get one at [Google AI Studio](https://aistudio.google.com/))
 - Familiarity with puzzle-solving and game logic
 - Basic knowledge of the NYT Connections puzzle format
-
 
 ## Step 1: Set up your Dagster environment
 

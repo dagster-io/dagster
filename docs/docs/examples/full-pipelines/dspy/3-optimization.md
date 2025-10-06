@@ -6,7 +6,6 @@ last_update:
 sidebar_position: 40
 ---
 
-
 While our baseline Chain-of-Thought solver provides a solid foundation, [MIPROv2](https://dspy.ai/api/optimizers/MIPROv2/) takes it to the next level through automatic optimization. This sophisticated algorithm doesn't just use fixed prompts. It actively generates and tests different instruction variants, curates effective few-shot examples, and systematically improves the solver's performance through data-driven refinement.
 
 ## Optimization configuration

@@ -6,7 +6,6 @@ last_update:
 sidebar_position: 50
 ---
 
-
 Evaluation in puzzle-solving AI goes beyond simple accuracy metrics. We need to understand not just whether our solver can complete puzzles, but how efficiently it does so, what strategies it employs, and whether its performance is consistent across different puzzle difficulties. This comprehensive evaluation approach ensures our AI is truly ready for real-world deployment.
 
 ## Evaluation metrics
