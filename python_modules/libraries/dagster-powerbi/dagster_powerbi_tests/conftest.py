@@ -2,6 +2,7 @@ from collections.abc import Iterator
 
 import pytest
 import responses
+from dagster._core.instance_for_test import instance_for_test
 from dagster_powerbi.resource import BASE_API_URL, generate_data_source_id
 from dagster_powerbi.translator import PowerBIContentData, PowerBIContentType, PowerBIWorkspaceData
 
@@ -225,7 +226,10 @@ def workspace_scan_data_api_mocks_fixture(workspace_id: str) -> Iterator[respons
     name="workspace_data_api_mocks",
 )
 def workspace_data_api_mocks_fixture(workspace_id: str) -> Iterator[responses.RequestsMock]:
-    with responses.RequestsMock(assert_all_requests_are_fired=False) as response:
+    with (
+        responses.RequestsMock(assert_all_requests_are_fired=False) as response,
+        instance_for_test(),
+    ):
         response.add(
             method=responses.GET,
             url=f"{BASE_API_URL}/groups/{workspace_id}/dashboards",
