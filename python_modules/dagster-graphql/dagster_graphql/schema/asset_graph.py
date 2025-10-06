@@ -581,9 +581,8 @@ class GrapheneAssetNode(graphene.ObjectType):
         self,
         graphene_info: ResolveInfo,
     ) -> bool:
-        return graphene_info.context.has_permission_for_definition(
-            Permissions.LAUNCH_PIPELINE_EXECUTION,
-            self._remote_node,
+        return graphene_info.context.has_permission_for_selector(
+            Permissions.LAUNCH_PIPELINE_EXECUTION, self._asset_node_snap.asset_key
         )
 
     def resolve_hasReportRunlessAssetEventPermission(

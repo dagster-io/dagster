@@ -98,7 +98,6 @@ class TestBasicLaunch(BaseTestSuite):
 
         with (
             patch.object(graphql_context, "has_permission_for_selector", return_value=False),
-            patch.object(graphql_context, "has_permission_for_definition", return_value=False),
             patch.object(graphql_context, "was_permission_checked", return_value=True),
         ):
             result = execute_dagster_graphql(
@@ -173,10 +172,7 @@ class TestMultipleLaunch(BaseTestSuite):
         ]
 
         # mock no permissions
-        with (
-            patch.object(graphql_context, "has_permission_for_definition", return_value=False),
-            patch.object(graphql_context, "has_permission_for_selector", return_value=False),
-        ):
+        with patch.object(graphql_context, "has_permission_for_selector", return_value=False):
             result = execute_dagster_graphql(
                 context=graphql_context,
                 query=LAUNCH_MULTIPLE_RUNS_MUTATION,

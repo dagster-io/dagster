@@ -65,27 +65,19 @@ class BaseDefinitionOwnerPermissionsTestSuite(ABC):
             ]
         )
 
-    def _get_remote_definition(
+    def _get_selector(
         self, context, def_type: type[RemoteDefinition], def_handle: Union[str, AssetKey]
-    ) -> RemoteDefinition:
-        if def_type is RemoteAssetNode:
-            assert isinstance(def_handle, AssetKey)
-            return context.asset_graph.get(def_handle)
+    ) -> Union[AssetKey, JobSelector, ScheduleSelector, SensorSelector]:
+        if isinstance(def_handle, AssetKey):
+            return def_handle
 
         assert type(def_handle) is str
         if def_type is RemoteJob:
-            job_selector = JobSelector.from_graphql_input(infer_job_selector(context, def_handle))
-            return context.get_full_job(job_selector)
+            return JobSelector.from_graphql_input(infer_job_selector(context, def_handle))
         if def_type is RemoteSensor:
-            sensor_selector = SensorSelector.from_graphql_input(
-                infer_sensor_selector(context, def_handle)
-            )
-            return context.get_sensor(sensor_selector)
+            return SensorSelector.from_graphql_input(infer_sensor_selector(context, def_handle))
         if def_type is RemoteSchedule:
-            schedule_selector = ScheduleSelector.from_graphql_input(
-                infer_schedule_selector(context, def_handle)
-            )
-            return context.get_schedule(schedule_selector)
+            return ScheduleSelector.from_graphql_input(infer_schedule_selector(context, def_handle))
         raise Exception(f"Unknown definition type {def_type}")
 
     def get_partition_set_by_job_name(self, context, job_name: str):
@@ -253,15 +245,15 @@ class BaseDefinitionOwnerPermissionsTestSuite(ABC):
     def test_definitions_are_owned(self, graphql_context: WorkspaceRequestContext):
         for def_handle in self.get_owned_definitions():
             def_type = self._get_type_for_handle(def_handle)
-            definition = self._get_remote_definition(graphql_context, def_type, def_handle)
-            assert graphql_context.has_permission_for_definition(
-                Permissions.LAUNCH_PIPELINE_EXECUTION, definition
+            selector = self._get_selector(graphql_context, def_type, def_handle)
+            assert graphql_context.has_permission_for_selector(
+                Permissions.LAUNCH_PIPELINE_EXECUTION, selector
             )
         for def_handle in self.get_unowned_definitions():
             def_type = self._get_type_for_handle(def_handle)
-            definition = self._get_remote_definition(graphql_context, def_type, def_handle)
-            assert not graphql_context.has_permission_for_definition(
-                Permissions.LAUNCH_PIPELINE_EXECUTION, definition
+            selector = self._get_selector(graphql_context, def_type, def_handle)
+            assert not graphql_context.has_permission_for_selector(
+                Permissions.LAUNCH_PIPELINE_EXECUTION, selector
             )
 
     def test_asset_backfill_launch_permissions(self, graphql_context: WorkspaceRequestContext):
@@ -352,15 +344,6 @@ class TestDefinitionOwnerPermissions(
             _did_check[permission] = True
             return False
 
-        def _mock_definition_ownership(permission: str, definition: RemoteDefinition) -> bool:
-            owned_defs = self.get_owned_definitions()
-            _did_check[permission] = True
-            if isinstance(definition, RemoteAssetNode):
-                return definition.key in owned_defs
-            elif isinstance(definition, (RemoteJob, RemoteSensor, RemoteSchedule)):
-                return definition.name in owned_defs
-            return False
-
         def _mock_selector_ownership(
             permission: str,
             selector: Union[JobSelector, ScheduleSelector, SensorSelector, AssetKey],
@@ -394,13 +377,10 @@ class TestDefinitionOwnerPermissions(
             mock.patch.object(
                 context,
                 "viewer_has_any_owner_definition_permissions",
-                side_effect=lambda _: True,
+                side_effect=lambda: True,
             ),
             mock.patch.object(
                 context, "has_permission_for_selector", side_effect=_mock_selector_ownership
-            ),
-            mock.patch.object(
-                context, "has_permission_for_definition", side_effect=_mock_definition_ownership
             ),
             mock.patch.object(
                 context, "was_permission_checked", side_effect=_mock_permission_check

@@ -93,7 +93,7 @@ def test_stale_status():
             assert foo["staleStatus"] == "MISSING"
             assert foo["staleCauses"] == []
 
-            assert materialize_assets(context)
+            assert materialize_assets(context, [AssetKey(["foo"]), AssetKey(["bar"])])
             wait_for_runs_to_finish(context.instance)
 
         with define_out_of_process_context(__file__, "get_repo_v1", instance) as context:
