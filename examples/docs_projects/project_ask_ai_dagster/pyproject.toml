@@ -13,7 +13,6 @@ dependencies = [
     "langchain-openai",
     "langchain-chroma",
     "dagster",
-    "dagster-dg-cli",
     "dagster-openai",
     "dagster_duckdb",
     "chromadb",
@@ -26,18 +25,21 @@ dependencies = [
     "pinecone",
 ]
 
-[project.optional-dependencies]
+[dependency-groups]
 dev = [
-    "ruff",
-    "pytest",
     "dagster-webserver",
+    "dagster-dg-cli",
 ]
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
 
 [tool.dg]
 directory_type = "project"
 
 [tool.dg.project]
 root_module = "project_ask_ai_dagster"
-
-[tool.dg.project.python_environment]
-active = true
+registry_modules = [
+    "project_ask_ai_dagster.components.*",
+]

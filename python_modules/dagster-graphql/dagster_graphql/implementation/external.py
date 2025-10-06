@@ -25,20 +25,22 @@ if TYPE_CHECKING:
     from dagster_graphql.schema.util import ResolveInfo
 
 
-def get_full_remote_job_or_raise(
+async def get_full_remote_job_or_raise(
     graphene_info: "ResolveInfo",
     selector: JobSubsetSelector,
 ) -> RemoteJob:
     check.inst_param(selector, "selector", JobSubsetSelector)
-    return _get_remote_job_or_raise(graphene_info, selector, ignore_subset=True)
+    return await _get_remote_job_or_raise(graphene_info, selector, ignore_subset=True)
 
 
-def get_remote_job_or_raise(graphene_info: "ResolveInfo", selector: JobSubsetSelector) -> RemoteJob:
+async def get_remote_job_or_raise(
+    graphene_info: "ResolveInfo", selector: JobSubsetSelector
+) -> RemoteJob:
     check.inst_param(selector, "selector", JobSubsetSelector)
-    return _get_remote_job_or_raise(graphene_info, selector)
+    return await _get_remote_job_or_raise(graphene_info, selector)
 
 
-def _get_remote_job_or_raise(
+async def _get_remote_job_or_raise(
     graphene_info: "ResolveInfo",
     selector: JobSubsetSelector,
     ignore_subset: bool = False,
@@ -55,9 +57,8 @@ def _get_remote_job_or_raise(
             raise UserFacingGraphQLError(GraphenePipelineNotFoundError(selector=selector))
         remote_job = ctx.get_full_job(selector)
     else:
-        code_location = ctx.get_code_location(selector.location_name)
         try:
-            remote_job = code_location.get_job(selector)
+            remote_job = check.not_none(await RemoteJob.gen(ctx, selector))
         except Exception:
             error_info = serializable_error_info_from_exc_info(sys.exc_info())
             # include the full job in the response if its not __ASSET_JOB, since the

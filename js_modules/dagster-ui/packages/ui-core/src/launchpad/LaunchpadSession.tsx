@@ -37,19 +37,14 @@ import {SessionSettingsBar} from './SessionSettingsBar';
 import {TagContainer, TagEditor} from './TagEditor';
 import {scaffoldPipelineConfig} from './scaffoldType';
 import {LaunchpadType} from './types';
-import {ConfigEditorPipelinePresetFragment} from './types/ConfigEditorConfigPicker.types';
 import {
   LaunchpadSessionPartitionSetsFragment,
   LaunchpadSessionPipelineFragment,
 } from './types/LaunchpadAllowedRoot.types';
-import {
-  PipelineExecutionConfigSchemaQuery,
-  PipelineExecutionConfigSchemaQueryVariables,
-  PreviewConfigQuery,
-  PreviewConfigQueryVariables,
-} from './types/LaunchpadSession.types';
+import {PreviewConfigQuery, PreviewConfigQueryVariables} from './types/LaunchpadSession.types';
 import {mergeYaml, sanitizeConfigYamlString} from './yamlUtils';
-import {gql, useApolloClient, useQuery} from '../apollo-client';
+import {gql, useApolloClient} from '../apollo-client';
+import {ConfigEditorPipelinePresetFragment} from './types/ConfigEditorConfigPicker.types';
 import {usePartitionSetDetailsForLaunchpad} from './usePartitionSetDetailsForLaunchpad';
 import {showCustomAlert} from '../app/CustomAlertProvider';
 import {
@@ -63,10 +58,10 @@ import {ShortcutHandler} from '../app/ShortcutHandler';
 import {displayNameForAssetKey, tokenForAssetKey} from '../asset-graph/Utils';
 import {asAssetCheckHandleInput, asAssetKeyInput} from '../assets/asInput';
 import {
-  CONFIG_EDITOR_RUN_CONFIG_SCHEMA_FRAGMENT,
   CONFIG_EDITOR_VALIDATION_FRAGMENT,
   responseToYamlValidationResult,
 } from '../configeditor/ConfigEditorUtils';
+import {ConfigEditorRunConfigSchemaFragment} from '../configeditor/types/ConfigEditorUtils.types';
 import {
   AssetCheckCanExecuteIndividually,
   ExecutionParams,
@@ -104,6 +99,7 @@ interface LaunchpadSessionProps {
   partitionSets: LaunchpadSessionPartitionSetsFragment;
   repoAddress: RepoAddress;
   initialExecutionSessionState?: Partial<IExecutionSession>;
+  runConfigSchema: ConfigEditorRunConfigSchemaFragment | undefined;
   rootDefaultYaml: string | undefined;
   onSaveConfig?: (config: LaunchpadConfig) => void;
 }
@@ -198,6 +194,7 @@ const LaunchpadSession = (props: LaunchpadSessionProps) => {
     repoAddress,
     rootDefaultYaml,
     onSaveConfig,
+    runConfigSchema,
   } = props;
 
   const client = useApolloClient();
@@ -231,15 +228,6 @@ const LaunchpadSession = (props: LaunchpadSessionProps) => {
     pipeline.name,
     repoAddress,
   ]);
-
-  const configResult = useQuery<
-    PipelineExecutionConfigSchemaQuery,
-    PipelineExecutionConfigSchemaQueryVariables
-  >(PIPELINE_EXECUTION_CONFIG_SCHEMA_QUERY, {
-    variables: {selector: pipelineSelector, mode: currentSession?.mode},
-  });
-
-  const configSchemaOrError = configResult?.data?.runConfigSchemaOrError;
 
   React.useEffect(() => {
     mounted.current = true;
@@ -284,11 +272,6 @@ const LaunchpadSession = (props: LaunchpadSessionProps) => {
       return;
     }
   };
-
-  const runConfigSchema =
-    configSchemaOrError?.__typename === 'RunConfigSchema' ? configSchemaOrError : undefined;
-  const modeError =
-    configSchemaOrError?.__typename === 'ModeNotFoundError' ? configSchemaOrError : undefined;
 
   const onScaffoldMissingConfig = () => {
     const config = runConfigSchema ? scaffoldPipelineConfig(runConfigSchema) : {};
@@ -694,7 +677,6 @@ const LaunchpadSession = (props: LaunchpadSessionProps) => {
               <SessionSettingsSpacer />
               <ConfigEditorModePicker
                 modes={pipeline.modes}
-                modeError={modeError}
                 onModeChange={onModeChange}
                 modeName={currentSession.mode}
               />
@@ -938,29 +920,6 @@ const PREVIEW_CONFIG_QUERY = gql`
 
 const SessionSettingsSpacer = styled.div`
   width: 5px;
-`;
-
-const PIPELINE_EXECUTION_CONFIG_SCHEMA_QUERY = gql`
-  query PipelineExecutionConfigSchemaQuery($selector: PipelineSelector!, $mode: String) {
-    runConfigSchemaOrError(selector: $selector, mode: $mode) {
-      ...LaunchpadSessionRunConfigSchemaFragment
-    }
-  }
-
-  fragment LaunchpadSessionRunConfigSchemaFragment on RunConfigSchemaOrError {
-    ... on RunConfigSchema {
-      ...ConfigEditorRunConfigSchemaFragment
-    }
-    ... on ModeNotFoundError {
-      ...LaunchpadSessionModeNotFound
-    }
-  }
-
-  fragment LaunchpadSessionModeNotFound on ModeNotFoundError {
-    message
-  }
-
-  ${CONFIG_EDITOR_RUN_CONFIG_SCHEMA_FRAGMENT}
 `;
 
 function isMissingPartition(base: SessionBase | null) {

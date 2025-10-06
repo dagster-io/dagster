@@ -11,6 +11,7 @@ import {LaunchpadTransientSessionContainer} from './LaunchpadTransientSessionCon
 import {IExecutionSession} from '../app/ExecutionSessionStorage';
 import {usePermissionsForLocation} from '../app/Permissions';
 import {__ASSET_JOB_PREFIX} from '../asset-graph/Utils';
+import {asAssetKeyInput} from '../assets/asInput';
 import {useBlockTraceUntilTrue} from '../performance/TraceContext';
 import {RepoAddress} from '../workspace/types';
 import {LaunchpadRootQuery, LaunchpadRootQueryVariables} from './types/LaunchpadAllowedRoot.types';
@@ -76,6 +77,11 @@ export const BackfillLaunchpad = ({
 }) => {
   const title = 'Config Editor';
 
+  // Convert assetKeys to the format expected by sessionPresets.assetSelection
+  const assetSelection = assetKeys?.map((assetKey) => ({
+    assetKey: {path: assetKey.path},
+  }));
+
   const result = useQuery<LaunchpadRootQuery, LaunchpadRootQueryVariables>(
     PIPELINE_EXECUTION_ROOT_QUERY,
     {
@@ -83,6 +89,7 @@ export const BackfillLaunchpad = ({
         repositoryName: repoAddress.name,
         repositoryLocationName: repoAddress.location,
         pipelineName: assetJobName,
+        assetSelection: assetSelection?.map(asAssetKeyInput) || null,
       },
     },
   );
@@ -111,11 +118,6 @@ export const BackfillLaunchpad = ({
   // Use the saved config's runConfigYaml as rootDefaultYaml if available
   const rootDefaultYaml = savedConfig?.runConfigYaml;
 
-  // Convert assetKeys to the format expected by sessionPresets.assetSelection
-  const assetSelection = assetKeys?.map((assetKey) => ({
-    assetKey: {path: assetKey.path},
-  }));
-
   return (
     <Dialog
       style={{height: '90vh', width: '80%', minWidth: '1000px'}}
@@ -135,6 +137,11 @@ export const BackfillLaunchpad = ({
         }}
         rootDefaultYaml={rootDefaultYaml}
         onSaveConfig={onSaveConfig}
+        runConfigSchema={
+          result.data?.runConfigSchemaOrError.__typename === 'RunConfigSchema'
+            ? result.data.runConfigSchemaOrError
+            : undefined
+        }
       />
     </Dialog>
   );

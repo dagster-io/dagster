@@ -48,7 +48,7 @@ from dagster._record import ImportFrom, record
 from dagster._utils.cached_method import cached_method
 
 if TYPE_CHECKING:
-    from dagster._core.remote_origin import RemoteRepositoryOrigin
+    from dagster._core.definitions.selector import RepositorySelector
     from dagster._core.remote_representation.external_data import AssetCheckNodeSnap, AssetNodeSnap
 
 
@@ -69,7 +69,7 @@ class RemoteAssetNode(BaseAssetNode, ABC):
 
     @abstractmethod
     def resolve_to_repo_scoped_node(
-        self, repository_origin: "RemoteRepositoryOrigin"
+        self, repository_selector: "RepositorySelector"
     ) -> Optional["RemoteRepositoryAssetNode"]: ...
 
     @property
@@ -164,12 +164,11 @@ class RemoteRepositoryAssetNode(RemoteAssetNode):
         return object.__hash__(self)
 
     def resolve_to_repo_scoped_node(
-        self, repository_origin: "RemoteRepositoryOrigin"
+        self, repository_selector: "RepositorySelector"
     ) -> Optional["RemoteRepositoryAssetNode"]:
         return (
             self
-            if self.repository_handle.get_remote_origin().get_selector()
-            == repository_origin.get_selector()
+            if self.repository_handle.get_remote_origin().get_selector() == repository_selector
             else None
         )
 
@@ -352,13 +351,14 @@ class RemoteWorkspaceAssetNode(RemoteAssetNode):
         return self._materializable_node_snap.backfill_policy if self.is_materializable else None
 
     def resolve_to_repo_scoped_node(
-        self, repository_origin: "RemoteRepositoryOrigin"
+        self, repository_selector: "RepositorySelector"
     ) -> Optional["RemoteRepositoryAssetNode"]:
         return next(
             iter(
                 info.asset_node
                 for info in self.repo_scoped_asset_infos
-                if info.asset_node.repository_handle.get_remote_origin() == repository_origin
+                if info.asset_node.repository_handle.get_remote_origin().get_selector()
+                == repository_selector
             ),
             None,
         )
@@ -687,12 +687,12 @@ class RemoteWorkspaceAssetGraph(RemoteAssetGraph[RemoteWorkspaceAssetNode]):
             return self.remote_asset_check_nodes_by_key[key].handle
 
     def get_repo_scoped_node(
-        self, key: EntityKey, repository_origin: "RemoteRepositoryOrigin"
+        self, key: EntityKey, repository_selector: "RepositorySelector"
     ) -> Optional[Union[RemoteRepositoryAssetNode, RemoteAssetCheckNode]]:
         if isinstance(key, AssetKey):
             if not self.has(key):
                 return None
-            return self.get(key).resolve_to_repo_scoped_node(repository_origin)
+            return self.get(key).resolve_to_repo_scoped_node(repository_selector)
         else:
             raise Exception("Key must be an asset key for get_repo_scoped_node")
 

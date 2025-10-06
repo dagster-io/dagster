@@ -775,7 +775,7 @@ class RunDomain:
             return cast(
                 "Optional[BaseAssetNode]",
                 asset_graph.get_repo_scoped_node(
-                    asset_key, check.not_none(remote_job_origin).repository_origin
+                    asset_key, check.not_none(remote_job_origin).repository_origin.get_selector()
                 ),
             )
 

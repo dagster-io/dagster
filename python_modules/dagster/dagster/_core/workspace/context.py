@@ -347,7 +347,10 @@ class BaseWorkspaceRequestContext(LoadingContext):
         self,
         selector: JobSubsetSelector,
     ) -> RemoteJob:
-        return await self.get_code_location(selector.location_name).gen_job(selector)
+        if not selector.is_subset_selection:
+            return self.get_full_job(selector)
+
+        return await self.get_code_location(selector.location_name).gen_subset_job(selector)
 
     def get_execution_plan(
         self,
@@ -490,12 +493,9 @@ class BaseWorkspaceRequestContext(LoadingContext):
         job_selector: JobSelector,
         selected_asset_keys: Optional[AbstractSet[AssetKey]],
     ) -> Optional[PartitionsDefinition]:
-        asset_nodes = self.get_assets_in_job(job_selector)
+        asset_nodes = self.get_assets_in_job(job_selector, selected_asset_keys)
         unique_partitions_defs: set[PartitionsDefinition] = set()
         for asset_node in asset_nodes:
-            if selected_asset_keys is not None and asset_node.key not in selected_asset_keys:
-                continue
-
             if asset_node.asset_node_snap.partitions is not None:
                 unique_partitions_defs.add(
                     asset_node.asset_node_snap.partitions.get_partitions_definition()
@@ -652,10 +652,14 @@ class BaseWorkspaceRequestContext(LoadingContext):
     def get_assets_in_job(
         self,
         selector: Union[JobSubsetSelector, JobSelector],
+        selected_asset_keys: Optional[AbstractSet[AssetKey]] = None,
     ) -> Sequence[RemoteRepositoryAssetNode]:
         keys = self.get_asset_keys_in_job(selector)
         if not keys:
             return []
+
+        if selected_asset_keys is not None:
+            keys = [key for key in keys if key in selected_asset_keys]
 
         repo_asset_graph = self.get_repository(selector.repository_selector).asset_graph
         return [

@@ -279,8 +279,12 @@ class SlingResource(ConfigurableResource):
             yield
 
     def _clean_line(self, line: str) -> str:
-        """Removes ANSI escape sequences from a line of output."""
-        return ANSI_ESCAPE.sub("", line).replace("INF", "")
+        """Removes ANSI escape sequences and Sling log prefixes from a line of output."""
+        line = ANSI_ESCAPE.sub("", line)
+        # Remove Sling log format prefix: "{timestamp} {LEVEL} " (e.g., "1:04PM INF ")
+        # Match pattern: optional timestamp followed by log level (INF, WRN, ERR, DBG) and space
+        line = re.sub(r"^\d{1,2}:\d{2}[AP]M\s+(INF|WRN|ERR|DBG)\s+", "", line)
+        return line
 
     def _clean_timestamp_log(self, line: str):
         """Remove timestamp from log gather from sling cli to reduce redundency in dagster log.

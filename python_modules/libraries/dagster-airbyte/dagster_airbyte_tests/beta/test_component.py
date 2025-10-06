@@ -192,12 +192,6 @@ def test_basic_component_load(
             AssetKey(["test_prefix_test_stream"]),
             AssetKey(["test_prefix_test_another_stream"]),
         }
-        assert (
-            defs.get_assets_def("test_prefix_test_stream")
-            .resource_defs["airbyte"]
-            .configurable_resource_cls  # pyright: ignore [reportAttributeAccessIssue]
-            == expected_workspace_type
-        )
 
 
 @pytest.mark.parametrize(

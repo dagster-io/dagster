@@ -13,6 +13,7 @@ import {
   useInitialDataForMode,
 } from '../app/ExecutionSessionStorage';
 import {useFeatureFlags} from '../app/useFeatureFlags';
+import {ConfigEditorRunConfigSchemaFragment} from '../configeditor/types/ConfigEditorUtils.types';
 import {useSetStateUpdateCallback} from '../hooks/useSetStateUpdateCallback';
 import {RepoAddress} from '../workspace/types';
 
@@ -24,6 +25,7 @@ interface Props {
   sessionPresets: Partial<IExecutionSession>;
   rootDefaultYaml: string | undefined;
   onSaveConfig?: (config: LaunchpadConfig) => void;
+  runConfigSchema: ConfigEditorRunConfigSchemaFragment | undefined;
 }
 
 export const LaunchpadTransientSessionContainer = (props: Props) => {
@@ -35,6 +37,7 @@ export const LaunchpadTransientSessionContainer = (props: Props) => {
     sessionPresets,
     rootDefaultYaml,
     onSaveConfig,
+    runConfigSchema,
   } = props;
 
   const {flagDisableAutoLoadDefaults} = useFeatureFlags();
@@ -70,6 +73,7 @@ export const LaunchpadTransientSessionContainer = (props: Props) => {
       repoAddress={repoAddress}
       rootDefaultYaml={rootDefaultYaml}
       onSaveConfig={onSaveConfig}
+      runConfigSchema={runConfigSchema}
     />
   );
 };

@@ -35,24 +35,25 @@ With Dagster, you declare—as Python functions—the data assets that you want 
 Here is an example of a graph of three assets defined in Python:
 
 ```python
-from dagster import asset
-from pandas import DataFrame, read_html, get_dummies
+import dagster as dg
+import pandas as pd
+
 from sklearn.linear_model import LinearRegression
 
-@asset
-def country_populations() -> DataFrame:
-    df = read_html("https://tinyurl.com/mry64ebh")[0]
+@dg.asset
+def country_populations() -> pd.DataFrame:
+    df = pd.read_html("https://tinyurl.com/mry64ebh")[0]
     df.columns = ["country", "pop2022", "pop2023", "change", "continent", "region"]
-    df["change"] = df["change"].str.rstrip("%").str.replace("−", "-").astype("float")
+    df["change"] = df["change"].str.rstrip("%").astype("float")
     return df
 
-@asset
-def continent_change_model(country_populations: DataFrame) -> LinearRegression:
+@dg.asset
+def continent_change_model(country_populations: pd.DataFrame) -> LinearRegression:
     data = country_populations.dropna(subset=["change"])
-    return LinearRegression().fit(get_dummies(data[["continent"]]), data["change"])
+    return LinearRegression().fit(pd.get_dummies(data[["continent"]]), data["change"])
 
-@asset
-def continent_stats(country_populations: DataFrame, continent_change_model: LinearRegression) -> DataFrame:
+@dg.asset
+def continent_stats(country_populations: pd.DataFrame, continent_change_model: LinearRegression) -> pd.DataFrame:
     result = country_populations.groupby("continent").sum()
     result["pop_change_factor"] = continent_change_model.coef_
     return result
