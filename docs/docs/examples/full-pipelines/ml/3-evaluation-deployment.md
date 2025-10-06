@@ -1,12 +1,11 @@
 ---
-title: Model evaluation and deployment
+title: Evaluate model performance and deploy to production
 description: Assess model performance and deploy to production with quality gates
 last_update:
   author: Dennis Hume
 sidebar_position: 40
 ---
 
-# Model evaluation and deployment
 
 Reliable ML systems require comprehensive model evaluation and flexible deployment strategies. Our evaluation system generates detailed performance metrics and confusion matrix analysis, while the deployment pipeline supports multiple strategies from automatic quality based deployment to manual model selection.
 

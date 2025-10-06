@@ -1,12 +1,11 @@
 ---
-title: CNN model training and optimization
+title: Build and train the CNN model
 description: Build and train convolutional neural networks with configurable parameters
 last_update:
   author: Dennis Hume
 sidebar_position: 30
 ---
 
-# CNN model training and optimization
 
 Training effective neural networks requires careful architecture design, configurable hyperparameters, and robust training loops. Our CNN implementation uses modern best practices including batch normalization, dropout regularization, and adaptive learning rate scheduling to achieve reliable digit classification performance.
 

@@ -1,5 +1,5 @@
 ---
-title: Machine Learning with PyTorch
+title: Machine learning with PyTorch
 description: Build production-ready ML pipelines for handwritten digit classification
 last_update:
   author: Dennis Hume
@@ -10,7 +10,6 @@ canonicalUrl: '/examples/ml'
 slug: '/examples/ml'
 ---
 
-# Machine Learning with PyTorch
 
 In this tutorial, you'll build a complete CNN-based digit classifier using Dagster and PyTorch, covering the entire ML lifecycle with production-ready practices.
 
@@ -28,8 +27,7 @@ You will learn to:
 - Implement comprehensive model evaluation with automated deployment decision-making
 - Design storage abstractions that work seamlessly across local and cloud environments
 
-<details>
-  <summary>Prerequisites</summary>
+## Prerequisites
 
 To follow the steps in this guide, you'll need:
 
@@ -38,7 +36,6 @@ To follow the steps in this guide, you'll need:
 - Basic familiarity with machine learning concepts (neural networks, training/validation splits)
 - Understanding of PyTorch fundamentals (tensors, models, training loops)
 
-</details>
 
 ## Step 1: Set up your Dagster environment
 

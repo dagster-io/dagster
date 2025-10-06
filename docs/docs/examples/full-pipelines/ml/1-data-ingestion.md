@@ -1,12 +1,11 @@
 ---
-title: Data ingestion and preprocessing
+title: Ingest and preprocess data
 description: Download and prepare MNIST data for model training
 last_update:
   author: Dennis Hume
 sidebar_position: 20
 ---
 
-# Data ingestion and preprocessing
 
 The foundation of reliable ML systems starts with clean, well-structured data pipelines. Our data ingestion system automates [MNIST dataset](https://en.wikipedia.org/wiki/MNIST_database) downloading, applies proper preprocessing transforms, and creates stratified train/validation splits that ensure honest model evaluation.
 
