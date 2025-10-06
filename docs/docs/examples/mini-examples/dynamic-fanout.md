@@ -38,7 +38,7 @@ The first approach uses dynamic fanout to create parallel sub-pipelines for each
 
 This approach creates a sub-pipeline for each input record:
 
-1. **Dynamic trigger**: Uses <PyObject section="dynamic" module="dagster" object="DynamicOut()" /> to create one sub-pipeline per input record
+1. **Dynamic trigger**: Uses <PyObject section="dynamic" module="dagster" object="DynamicOut" /> to create one sub-pipeline per input record
 2. **Sequential unit processing**: Processes 10-30 units within each sub-pipeline sequentially
 3. **Result aggregation**: Combines unit results into a final record output
 
