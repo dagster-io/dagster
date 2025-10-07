@@ -117,7 +117,7 @@ export const RecentUpdatesTimeline = ({assetKey, events, loading}: Props) => {
         Math.floor((parseInt(e.timestamp) - startTimestamp) / bucketTimeRange),
         buckets - 1,
       );
-      bucketsArr[bucketIndex] = bucketsArr[bucketIndex] || {
+      const bucket = bucketsArr[bucketIndex] ?? {
         start: bucketIndex,
         end: bucketIndex + 1,
         events: [],
@@ -125,21 +125,17 @@ export const RecentUpdatesTimeline = ({assetKey, events, loading}: Props) => {
         hasMaterializations: false,
         hasSkippedMaterializations: false,
       };
-      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-      bucketsArr[bucketIndex]!.events.push(e);
+      bucket.events.push(e);
       if (e.__typename === 'FailedToMaterializeEvent') {
-        // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
         if (e.materializationFailureType === 'FAILED') {
-          // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-          bucketsArr[bucketIndex]!.hasFailedMaterializations = true;
+          bucket.hasFailedMaterializations = true;
         } else {
-          // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-          bucketsArr[bucketIndex]!.hasSkippedMaterializations = true;
+          bucket.hasSkippedMaterializations = true;
         }
       } else {
-        // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-        bucketsArr[bucketIndex]!.hasMaterializations = true;
+        bucket.hasMaterializations = true;
       }
+      bucketsArr[bucketIndex] = bucket;
     });
 
     return bucketsArr;
