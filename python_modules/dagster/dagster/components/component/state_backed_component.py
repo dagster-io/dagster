@@ -1,7 +1,10 @@
+import asyncio
+import inspect
 import tempfile
 from abc import abstractmethod
+from collections.abc import Awaitable
 from pathlib import Path
-from typing import TYPE_CHECKING, Optional
+from typing import TYPE_CHECKING, Optional, Union
 from uuid import uuid4
 
 from typing_extensions import Self
@@ -49,7 +52,11 @@ class StateBackedComponent(Component):
             )
         with tempfile.TemporaryDirectory() as temp_dir:
             state_path = Path(temp_dir) / key
-            await self.write_state_to_path(state_path)
+            # handle either sync or async write_state_to_path functions
+            if inspect.iscoroutinefunction(self.write_state_to_path):
+                await self.write_state_to_path(state_path)
+            else:
+                await asyncio.to_thread(self.write_state_to_path, state_path)
             state_storage.upload_state_from_path(key, version=str(uuid4()), path=state_path)
 
     @abstractmethod
@@ -69,6 +76,11 @@ class StateBackedComponent(Component):
         """
 
     @abstractmethod
-    async def write_state_to_path(self, state_path: Path):
-        """Fetches and writes required state to a local file."""
+    def write_state_to_path(self, state_path: Path) -> Union[None, Awaitable[None]]:
+        """Fetches and writes required state to a local file. This method can be
+        implemented as either sync or async.
+
+        Args:
+            state_path (Path): The path to the state file.
+        """
         raise NotImplementedError()
