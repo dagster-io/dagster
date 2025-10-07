@@ -15,7 +15,6 @@ export const assetsPathMatcher: MatcherFn = (_, currentLocation) => {
   return (
     pathname.startsWith('/catalog') ||
     pathname.startsWith('/assets') ||
-    pathname.startsWith('/asset-groups') ||
     (pathname.startsWith('/locations') && pathname.includes('/asset-groups/'))
   );
 };
@@ -29,6 +28,11 @@ export const deploymentPathMatcher: MatcherFn = (_, currentLocation) => {
       !automationPathMatcher(_, currentLocation) &&
       !jobsPathMatcher(_, currentLocation))
   );
+};
+
+export const lineagePathMatcher: MatcherFn = (_, currentLocation) => {
+  const {pathname} = currentLocation;
+  return pathname.startsWith('/asset-groups');
 };
 
 export const locationPathMatcher: MatcherFn = (_, currentLocation) => {
