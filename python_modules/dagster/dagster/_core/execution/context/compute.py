@@ -10,6 +10,7 @@ from dagster._core.execution.context.asset_check_execution_context import AssetC
 from dagster._core.execution.context.asset_execution_context import AssetExecutionContext
 from dagster._core.execution.context.op_execution_context import OpExecutionContext
 from dagster._core.execution.context.system import StepExecutionContext
+from dagster._core.instance.context import set_dagster_instance_context
 
 ExecutionContextTypes = Union[OpExecutionContext, AssetExecutionContext, AssetCheckExecutionContext]
 
@@ -100,27 +101,28 @@ def enter_execution_context(
 
     asset_token = current_execution_context.set(asset_ctx)
 
-    try:
-        if context_annotation is EmptyAnnotation:
-            # if no type hint has been given, default to:
-            # * AssetExecutionContext for sda steps not in graph-backed assets, and asset_checks
-            # * OpExecutionContext for non sda steps
-            # * OpExecutionContext for ops in graph-backed assets
-            if asset_check_only_step:
+    with set_dagster_instance_context(step_context):
+        try:
+            if context_annotation is EmptyAnnotation:
+                # if no type hint has been given, default to:
+                # * AssetExecutionContext for sda steps not in graph-backed assets, and asset_checks
+                # * OpExecutionContext for non sda steps
+                # * OpExecutionContext for ops in graph-backed assets
+                if asset_check_only_step:
+                    yield asset_ctx
+                elif is_op_in_graph_asset or not is_sda_step:
+                    yield asset_ctx.op_execution_context
+                else:
+                    yield asset_ctx
+            elif (
+                context_annotation is AssetExecutionContext
+                or context_annotation is AssetCheckExecutionContext
+            ):
                 yield asset_ctx
-            elif is_op_in_graph_asset or not is_sda_step:
-                yield asset_ctx.op_execution_context
             else:
-                yield asset_ctx
-        elif (
-            context_annotation is AssetExecutionContext
-            or context_annotation is AssetCheckExecutionContext
-        ):
-            yield asset_ctx
-        else:
-            yield asset_ctx.op_execution_context
-    finally:
-        current_execution_context.reset(asset_token)
+                yield asset_ctx.op_execution_context
+        finally:
+            current_execution_context.reset(asset_token)
 
 
 current_execution_context: ContextVar[

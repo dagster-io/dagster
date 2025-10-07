@@ -9,10 +9,6 @@ if TYPE_CHECKING:
 
 
 class DagsterInstanceContext(ABC):
-    @property
-    @abstractmethod
-    def instance(self) -> "DagsterInstance": ...
-
     @abstractmethod
     def create_instance(self) -> Optional["DagsterInstance"]: ...
 

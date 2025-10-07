@@ -54,6 +54,8 @@ from dagster._core.execution.plan.step import ExecutionStep
 from dagster._core.execution.retries import RetryMode
 from dagster._core.execution.step_dependency_config import StepDependencyConfig
 from dagster._core.executor.base import Executor
+from dagster._core.instance.context import DagsterInstanceContext
+from dagster._core.instance.instance import DagsterInstance
 from dagster._core.log_manager import DagsterLogManager
 from dagster._core.storage.dagster_run import DagsterRun
 from dagster._core.storage.io_manager import IOManager
@@ -74,7 +76,6 @@ if TYPE_CHECKING:
     from dagster._core.execution.context.hook import HookContext
     from dagster._core.execution.plan.plan import ExecutionPlan
     from dagster._core.execution.plan.state import KnownExecutionState
-    from dagster._core.instance import DagsterInstance
 
 
 def is_iterable(obj: Any) -> bool:
@@ -413,7 +414,7 @@ def is_step_in_asset_graph_layer(step: ExecutionStep, job_def: JobDefinition) ->
     return False
 
 
-class StepExecutionContext(PlanExecutionContext, IStepContext):
+class StepExecutionContext(PlanExecutionContext, IStepContext, DagsterInstanceContext):
     """Context for the execution of a step. Users should not instantiate this class directly.
 
     This context assumes that user code can be run directly, and thus includes resource and information.
@@ -493,6 +494,12 @@ class StepExecutionContext(PlanExecutionContext, IStepContext):
     @property
     def typed_event_stream_error_message(self) -> Optional[str]:
         return self._typed_event_stream_error_message
+
+    def create_instance(self) -> Optional["DagsterInstance"]:
+        if self.instance.is_ephemeral:
+            return self.instance
+
+        return DagsterInstance.from_ref(self.instance.get_ref())
 
     # Error message will be appended to the default error message.
     def set_requires_typed_event_stream(self, *, error_message: Optional[str] = None):

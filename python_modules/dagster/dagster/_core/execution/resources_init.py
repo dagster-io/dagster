@@ -30,6 +30,7 @@ from dagster._core.execution.plan.inputs import (
 from dagster._core.execution.plan.plan import ExecutionPlan, StepHandleUnion
 from dagster._core.execution.plan.step import ExecutionStep, IExecutionStep
 from dagster._core.instance import DagsterInstance
+from dagster._core.instance.context import set_dagster_instance_context
 from dagster._core.log_manager import DagsterLogManager
 from dagster._core.storage.dagster_run import DagsterRun
 from dagster._core.system_config.objects import ResourceConfig
@@ -174,12 +175,13 @@ def _core_resource_initialization_event_generator(
                     all_resource_defs=resource_defs,
                     event_loop=event_loop,
                 )
-                manager = single_resource_generation_manager(
-                    resource_context, resource_name, resource_def
-                )
-                for event in manager.generate_setup_events():
-                    if event:
-                        yield event
+                with set_dagster_instance_context(resource_context):
+                    manager = single_resource_generation_manager(
+                        resource_context, resource_name, resource_def
+                    )
+                    for event in manager.generate_setup_events():
+                        if event:
+                            yield event
                 initialized_resource = check.inst(manager.get_object(), InitializedResource)
                 resource_instances[resource_name] = initialized_resource.resource
                 resource_init_times[resource_name] = initialized_resource.duration
