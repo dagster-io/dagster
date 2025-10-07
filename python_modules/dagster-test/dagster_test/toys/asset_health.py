@@ -55,9 +55,9 @@ def sometimes_skips(context):
     # if should_fail is True twice, fail the asset. If true once, skip the asset. If false, materialize the asset.
     if should_fail(context.log):
         if should_fail(context.log):
-            yield dg.Output(1)
-        else:
             raise Exception("sometimes_skips failed")
+    else:
+        yield dg.Output(1)
 
 
 static_partitions = dg.StaticPartitionsDefinition(
