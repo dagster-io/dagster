@@ -7,6 +7,7 @@ from pathlib import Path
 from tempfile import NamedTemporaryFile
 from typing import Any, Callable
 
+from dagster._core.definitions.asset_key import AssetKey
 from dagster._core.instance_for_test import instance_for_test
 from dagster_graphql.test.utils import define_out_of_process_context, materialize_assets
 
@@ -24,7 +25,7 @@ def test_state_backed_defs_loader(monkeypatch) -> None:
         ):
             with define_out_of_process_context(repo_path, None, instance) as context:
                 assert _get_num_calls(log_file_path) == 1
-                materialize_assets(context)
+                materialize_assets(context, [AssetKey(["foo"])])
                 assert _get_num_calls(log_file_path) == 1
     finally:
         os.unlink(log_file_path)
