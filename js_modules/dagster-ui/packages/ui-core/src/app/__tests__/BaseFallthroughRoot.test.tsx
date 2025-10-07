@@ -183,7 +183,7 @@ describe('BaseFallthroughRoot', () => {
       </MockedProvider>,
     );
     await waitFor(() => {
-      expect(getByTestId('path').textContent).toEqual('/asset-groups/');
+      expect(getByTestId('path').textContent).toEqual('/asset-groups');
     });
   });
 });

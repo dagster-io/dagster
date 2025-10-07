@@ -95,7 +95,7 @@ export const AssetActionMenu = memo((props: Props) => {
               to={
                 definition
                   ? globalAssetGraphPathForGroup(definition.groupName, definition.assetKey)
-                  : '/asset-groups/'
+                  : '/asset-groups'
               }
               disabled={!definition}
               icon="asset_group"

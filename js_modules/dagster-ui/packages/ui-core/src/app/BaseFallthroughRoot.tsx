@@ -54,9 +54,9 @@ const FinalRedirectOrLoadingRoot = () => {
   }
 
   // If we have no repos with jobs, see if we have an asset group and route to it.
-  const hasAnyAssets = allRepos.find((r) => r.repository.assetGroups.length);
+  const hasAnyAssets = allRepos.some((r) => r.repository.assetGroups.length);
   if (hasAnyAssets) {
-    return <Redirect to="/asset-groups/" />;
+    return <Redirect to="/asset-groups" />;
   }
 
   // Ben note: We only reach here if anyReposWithVisibleJobs is false,
