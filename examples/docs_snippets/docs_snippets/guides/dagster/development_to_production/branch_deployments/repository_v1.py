@@ -2,11 +2,7 @@ import os
 
 from dagster_snowflake_pandas import SnowflakePandasIOManager
 
-# start_repository
-# definitions.py
-from dagster import Definitions
-
-from ..assets import comments, items, stories
+import dagster as dg
 
 snowflake_config = {
     "account": "abc1234.us-east-1",
@@ -37,9 +33,6 @@ def get_current_env():
     return "branch" if is_branch_depl else "prod"
 
 
-defs = Definitions(
-    assets=[items, comments, stories], resources=resources[get_current_env()]
-)
-
-
-# end_repository
+@dg.definitions
+def resources():
+    return dg.Definitions(resources=resources[get_current_env()])

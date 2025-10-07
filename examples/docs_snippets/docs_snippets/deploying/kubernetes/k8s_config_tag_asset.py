@@ -1,11 +1,11 @@
 from dagster_k8s import k8s_job_executor
 
-from dagster import AssetExecutionContext, asset, define_asset_job
+import dagster as dg
 
 
 # fmt: off
 # start_k8s_config
-@asset(
+@dg.asset(
     op_tags={
         "dagster-k8s/config": {
             "container_config": {
@@ -16,10 +16,10 @@ from dagster import AssetExecutionContext, asset, define_asset_job
         }
     }
 )
-def my_asset(context: AssetExecutionContext):
+def my_asset(context: dg.AssetExecutionContext):
     context.log.info("running")
 
-my_job = define_asset_job(name="my_job", selection="my_asset", executor_def=k8s_job_executor)
+my_job = dg.define_asset_job(name="my_job", selection="my_asset", executor_def=k8s_job_executor)
 
 # end_k8s_config
 # fmt: on

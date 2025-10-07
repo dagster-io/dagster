@@ -111,6 +111,7 @@ curl -H "Metadata:true" "http://169.254.169.254/metadata/identity/oauth2/token?r
 Once again, you need to update the Helm values to use Azure Blob Storage for logs. You can do this by editing the `values.yaml` file for your user-cloud deployment to include the following lines:
 
 ```yaml
+# values.yaml
 computeLogs:
   enabled: true
   custom:

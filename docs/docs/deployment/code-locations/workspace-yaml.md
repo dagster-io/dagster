@@ -12,7 +12,6 @@ A workspace file is used to configure code locations in Dagster. It tells Dagste
 
 ```yaml
 # workspace.yaml
-
 load_from:
   - python_file: my_file.py
 ```
@@ -42,6 +41,7 @@ dagster dev -w path/to/workspace.yaml
 The `workspace.yaml` file uses the following structure:
 
 ```yaml
+# workspace.yaml
 load_from:
   - <loading_method>: <configuration_options>
 ```
@@ -74,6 +74,7 @@ To load a code location from a local or installed Python module, use the `python
 **Example:**
 
 ```yaml
+# workspace.yaml
 load_from:
   - python_module:
       module_name: hello_world_module.definitions
@@ -94,6 +95,7 @@ To load a code location from a Python file, use the `python_file` key in workspa
 **Example:**
 
 ```yaml
+# workspace.yaml
 load_from:
   - python_file:
       relative_path: hello_world_repository.py
@@ -109,7 +111,6 @@ If using `@repository` to define code locations, you can identify a single repos
 
 ```yaml
 # workspace.yaml
-
 load_from:
   - python_file:
       relative_path: hello_world_repository.py
@@ -131,6 +132,7 @@ Configures a gRPC server as a code location.
 **Example:**
 
 ```yaml
+# workspace.yaml
 load_from:
   - grpc_server:
       host: localhost
@@ -143,6 +145,7 @@ load_from:
 You can define multiple code locations in a single `workspace.yaml` file:
 
 ```yaml
+# workspace.yaml
 load_from:
   - python_file:
       relative_path: path/to/dataengineering_spark_team.py
@@ -252,7 +255,6 @@ Then, in your workspace file, configure a new gRPC server code location to load:
 
 ```yaml file=/concepts/repositories_workspaces/workspace_grpc.yaml
 # workspace.yaml
-
 load_from:
   - grpc_server:
       host: localhost

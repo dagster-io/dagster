@@ -41,7 +41,6 @@ Whether you use a single repository or multiple, you can use a [`dagster_cloud.y
 
    ```yaml
    # dagster_cloud.yml
-
    locations:
      - location_name: project_a
        code_source:
@@ -59,7 +58,6 @@ Whether you use a single repository or multiple, you can use a [`dagster_cloud.y
 
    ```yaml
    # .github/workflows/dagster-cloud-deploy.yml
-
    jobs:
      dagster-cloud-deploy:
        # ...

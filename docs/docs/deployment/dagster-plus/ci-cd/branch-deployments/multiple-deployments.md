@@ -22,6 +22,7 @@ We will be leveraging the following configuration options across agent configura
 The `deployment(s)`, `branch_deployment`, and `agent_queues` configuration settings are available in the `dagster.yaml`.
 
 ```yaml
+# dagster.yaml
 dagster_cloud_api:
   # Deployment: a string that identifies the singular full deployment to be served by this agent.
   # This configuration should not be used in conjunction with the 'deployments' configuration option.
@@ -81,6 +82,7 @@ For more information about the Helm chart and its values, refer to:
 Whether in the context of a full deployment or a branch deployment, you can configure the code location to be served on a specific agent queue:
 
 ```yaml
+# dagster_cloud.yaml
 locations:
   - location_name: <location name>
     # The named queue that this code location will be served on. If not set, the default queue is used.

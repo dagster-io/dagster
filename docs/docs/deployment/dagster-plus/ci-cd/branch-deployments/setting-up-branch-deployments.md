@@ -127,6 +127,7 @@ Keep this around, as you'll need it in a later step.
 <CodeExample
   path="docs_snippets/docs_snippets/dagster-plus/deployment/branch-deployments/dagster.yaml"
   language="yaml"
+  title="dagster.yaml"
 />
 
   </TabItem>
@@ -172,6 +173,7 @@ For example:
 <CodeExample
   path="docs_snippets/docs_snippets/dagster-plus/deployment/branch-deployments/dagster_cloud.yaml"
   language="yaml"
+  title="dagster_cloud.yaml"
 />
 
 **Step 4.3: Configure GitHub Action secrets**
@@ -231,6 +233,7 @@ In this step, you'll update the GitHub workflow files in your repository to set 
 In the `.github/workflows/dagster-cloud-deploy.yml` file, un-comment the `step` associated with your registry. For example, for an Amazon ECR registry, you'd un-comment the following portion of the workflow file:
 
 ```yaml
+# dagster-cloud-deploy.yml
 jobs:
   dagster-cloud-deploy:
     steps:
@@ -283,6 +286,7 @@ For example:
 <CodeExample
   path="docs_snippets/docs_snippets/dagster-plus/deployment/branch-deployments/dagster_cloud.yaml"
   language="yaml"
+  title="dagster_cloud.yaml"
 />
 
 **Step 4.3: configure GitLab CI/CD variables**
