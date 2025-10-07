@@ -251,7 +251,7 @@ export const RecentUpdatesTimeline = ({assetKey, events, loading}: Props) => {
 
 const AssetUpdate = ({assetKey, event}: {assetKey: AssetKey; event: AssetEventType}) => {
   const run = event?.runOrError.__typename === 'Run' ? event.runOrError : null;
-  const icon = useMemo(() => {
+  const icon = () => {
     switch (event.__typename) {
       case 'MaterializationEvent':
         return <Icon name="run_success" color={Colors.accentGreen()} size={16} />;
@@ -264,11 +264,11 @@ const AssetUpdate = ({assetKey, event}: {assetKey: AssetKey; event: AssetEventTy
           <Icon name="status" color={Colors.accentGray()} size={16} />
         );
     }
-  }, [event.__typename]);
+  };
   return (
     <Box padding={4} border="bottom" flex={{justifyContent: 'space-between', gap: 8}}>
       <Box flex={{gap: 4, direction: 'row', alignItems: 'center'}}>
-        {icon}
+        {icon()}
         <Link
           to={assetDetailsPathForKey(assetKey, {
             view: 'events',
