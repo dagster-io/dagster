@@ -265,8 +265,8 @@ def test_components_docs_dbt_project(
                   cli_args:
                     - build
                     - --vars:
-                      start_date: "{{ context.partition_time_window.start.strftime('%Y-%m-%d') }}"
-                      end_date: "{{ context.partition_time_window.end.strftime('%Y-%m-%d') }}"
+                      start_date: "{{ partition_time_window.start.strftime('%Y-%m-%d') }}"
+                      end_date: "{{ partition_time_window.end.strftime('%Y-%m-%d') }}"
                 post_processing:
                   assets:
                     - target: "*"

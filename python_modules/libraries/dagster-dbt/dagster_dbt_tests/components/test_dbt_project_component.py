@@ -19,12 +19,16 @@ from dagster._core.test_utils import ensure_dagster_tests_import
 from dagster._utils.env import environ
 from dagster.components.core.component_tree import ComponentTree
 from dagster.components.core.load_defs import build_component_defs
+from dagster.components.resolved.context import ResolutionContext
 from dagster.components.resolved.core_models import AssetAttributesModel, OpSpec
 from dagster.components.resolved.errors import ResolutionException
 from dagster.components.testing.test_cases import TestOpCustomization, TestTranslation
 from dagster_dbt import DbtProject, DbtProjectComponent
 from dagster_dbt.cli.app import project_app_typer_click_object
-from dagster_dbt.components.dbt_project.component import get_projects_from_dbt_component
+from dagster_dbt.components.dbt_project.component import (
+    _set_resolution_context,
+    get_projects_from_dbt_component,
+)
 from dagster_shared import check
 
 ensure_dagster_tests_import()
@@ -348,7 +352,7 @@ def test_state_path(
                 {
                     "--vars": {
                         "start_date": "{{ partition_key_range.start }}",
-                        "end_date": "{{ partition_key_range.end }}",
+                        "end_date": "{{ foo }}",
                     }
                 },
                 {"--threads": 2},
@@ -373,7 +377,8 @@ def test_cli_args(dbt_path: Path, cli_args: Optional[list[str]], expected_args: 
     context = dg.build_asset_context(
         partition_key_range=dg.PartitionKeyRange(start="2021-01-01", end="2021-01-01"),
     )
-    assert comp.get_cli_args(context) == expected_args
+    with _set_resolution_context(ResolutionContext.default().with_scope(foo="2021-01-01")):
+        assert comp.get_cli_args(context) == expected_args
 
 
 def test_python_interface(dbt_path: Path):
