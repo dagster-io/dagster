@@ -196,7 +196,7 @@ const AssetGraphExplorerWithData = ({
   const [direction, setDirection] = useLayoutDirectionState();
   const [facets, setFacets] = useSavedAssetNodeFacets();
 
-  const {flagAssetNodeFacets} = useFeatureFlags();
+  const {flagAssetNodeFacets, flagAssetGraphGroupsPerCodeLocation} = useFeatureFlags();
 
   const [expandedGroups, setExpandedGroups] = useQueryAndLocalStoragePersistedState<string[]>({
     localStorageKey: `asset-graph-open-graph-nodes-${viewType}-${explorerPath.pipelineName}`,
@@ -219,8 +219,12 @@ const AssetGraphExplorerWithData = ({
     assetGraphData,
     expandedGroups,
     useMemo(
-      () => ({direction, facets: flagAssetNodeFacets ? Array.from(facets) : false}),
-      [direction, facets, flagAssetNodeFacets],
+      () => ({
+        direction,
+        flagAssetGraphGroupsPerCodeLocation,
+        facets: flagAssetNodeFacets ? Array.from(facets) : false,
+      }),
+      [direction, facets, flagAssetGraphGroupsPerCodeLocation, flagAssetNodeFacets],
     ),
     dataLoading,
   );
