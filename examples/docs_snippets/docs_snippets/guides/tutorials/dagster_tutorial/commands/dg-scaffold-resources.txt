@@ -1,3 +1,3 @@
 dg scaffold defs dagster.resources resources.py
 
-Creating a component at <YOUR PATH>/<YOUR PROJECT>/src/<YOUR PROJECT>/defs/resources.py.
+Creating a component at <YOUR PATH>/my-project/src/my_project/defs/resources.py.

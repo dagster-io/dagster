@@ -1,4 +1,4 @@
 src
-└── <your project>
+└── my_project
     └── defs
         └── schedules.py

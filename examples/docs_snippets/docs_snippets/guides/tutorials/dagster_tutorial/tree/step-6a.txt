@@ -1,5 +1,5 @@
 src
-└── <your project>
+└── my_project
     ├── __init__.py
     ├── components   # NEW
     │   ├── __init__.py
