@@ -28,7 +28,7 @@ export const useVisibleFeatureFlagRows = (): FeatureFlagRow[] => [
     flagType: FeatureFlag.flagDisableAutoLoadDefaults,
   },
   {
-    key: 'Revert to separate asset graph groups per code location',
+    key: 'Show separate asset graph groups per code location',
     flagType: FeatureFlag.flagAssetGraphGroupsPerCodeLocation,
   },
 ];

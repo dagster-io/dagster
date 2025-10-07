@@ -2098,6 +2098,7 @@ __metadata:
     "@types/faker": "npm:^5.1.7"
     "@types/fast-text-encoding": "npm:^1.0.3"
     "@types/graphql": "npm:^14.5.0"
+    "@types/invariant": "npm:^2.2.37"
     "@types/jest": "npm:^29.5.11"
     "@types/lodash": "npm:^4.14.145"
     "@types/lru-cache": "npm:^5.1.0"
@@ -2152,6 +2153,7 @@ __metadata:
     graphql-tag: "npm:^2.10.1"
     highlight.js: "npm:11.6.0"
     identity-obj-proxy: "npm:^3.0.0"
+    invariant: "npm:^2.2.4"
     jest: "npm:^29.7.0"
     jest-canvas-mock: "npm:^2.4.0"
     jest-environment-jsdom: "npm:^29.4"
@@ -5182,6 +5184,13 @@ __metadata:
   version: 6.1.0
   resolution: "@types/html-minifier-terser@npm:6.1.0"
   checksum: 10/06bb3e1e8ebff43602c826d67f53f1fd3a6b9c751bfbc67d7ea4e85679446a639e20e60adad8c9d44ab4baf1337b3861b91e7e5e2be798575caf0cc1a5712552
+  languageName: node
+  linkType: hard
+
+"@types/invariant@npm:^2.2.37":
+  version: 2.2.37
+  resolution: "@types/invariant@npm:2.2.37"
+  checksum: 10/dd6ee07af8516d21c868f95fd96c601c50a231e69c2df69360cb491b5858c76cf9b5a646df166cb4197b5078ca824da3dd90d6142d01a3cefc1176c57278b129
   languageName: node
   linkType: hard
 

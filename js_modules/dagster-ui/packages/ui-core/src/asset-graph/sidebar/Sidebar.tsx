@@ -1,5 +1,6 @@
 import {Box, Button, Icon, Skeleton, Tooltip} from '@dagster-io/ui-components';
 import {useVirtualizer} from '@tanstack/react-virtual';
+import invariant from 'invariant';
 import * as React from 'react';
 
 import {AssetSidebarNode} from './AssetSidebarNode';
@@ -294,17 +295,14 @@ export const AssetGraphExplorerSidebar = React.memo(
               <Inner $totalHeight={totalHeight}>
                 {items.map(({index, key, size, start}) => {
                   const node = renderedNodes[index];
-                  if (!node) {
-                    return;
-                  }
+                  invariant(node, 'Sidebar node is required');
+
                   const isCodeLocationNode = 'locationName' in node;
                   const isGroupNode = 'groupNode' in node;
                   const row = !isCodeLocationNode && !isGroupNode ? graphData.nodes[node.id] : node;
                   const isSelected =
                     selectedNode?.id === node.id || selectedNodes.includes(row as GraphNode);
-                  if (!row) {
-                    return;
-                  }
+                  invariant(row, 'Row for sidebar node is required');
 
                   return (
                     <Row $height={size} $start={start} key={key}>
