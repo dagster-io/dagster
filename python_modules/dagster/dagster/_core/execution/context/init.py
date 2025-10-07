@@ -11,12 +11,13 @@ from dagster._core.definitions.resource_definition import (
 )
 from dagster._core.errors import DagsterInvariantViolationError
 from dagster._core.instance import DagsterInstance
+from dagster._core.instance.context import DagsterInstanceContext
 from dagster._core.log_manager import DagsterLogManager
 from dagster._core.storage.dagster_run import DagsterRun
 
 
 @public
-class InitResourceContext:
+class InitResourceContext(DagsterInstanceContext):
     """The context object available as the argument to the initialization function of a :py:class:`dagster.ResourceDefinition`.
 
     Users should not instantiate this object directly. To construct an `InitResourceContext` for testing purposes, use :py:func:`dagster.build_init_resource_context`.
@@ -77,6 +78,15 @@ class InitResourceContext:
     def instance(self) -> Optional[DagsterInstance]:
         """The Dagster instance configured for the current execution context."""
         return self._instance
+
+    def create_instance(self) -> Optional["DagsterInstance"]:
+        if not self.instance:
+            return None
+
+        if self.instance.is_ephemeral:
+            return self.instance
+
+        return DagsterInstance.from_ref(self.instance.get_ref())
 
     @public
     @property

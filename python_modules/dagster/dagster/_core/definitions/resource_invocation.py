@@ -7,6 +7,7 @@ from dagster._config import Shape
 from dagster._core.definitions.configurable import ConfigurableDefinition
 from dagster._core.definitions.resource_requirement import ensure_requirements_satisfied
 from dagster._core.errors import DagsterInvalidConfigError, DagsterInvalidInvocationError
+from dagster._core.instance.context import set_dagster_instance_context
 
 if TYPE_CHECKING:
     from dagster._core.definitions.resource_definition import ResourceDefinition
@@ -29,23 +30,24 @@ def resource_invocation_result(
         return None
     _init_context = _check_invocation_requirements(resource_def, init_context)
 
-    resource_fn = resource_def.resource_fn
-    val_or_gen = (
-        resource_fn(_init_context) if has_at_least_one_parameter(resource_fn) else resource_fn()  # type: ignore  # (strict type guard)
-    )
-    if inspect.isgenerator(val_or_gen):
+    with set_dagster_instance_context(_init_context):
+        resource_fn = resource_def.resource_fn
+        val_or_gen = (
+            resource_fn(_init_context) if has_at_least_one_parameter(resource_fn) else resource_fn()  # type: ignore  # (strict type guard)
+        )
+        if inspect.isgenerator(val_or_gen):
 
-        @contextmanager
-        def _wrap_gen():
-            try:
-                val = next(val_or_gen)
-                yield val
-            except StopIteration:
-                check.failed("Resource generator must yield one item.")
+            @contextmanager
+            def _wrap_gen():
+                try:
+                    val = next(val_or_gen)
+                    yield val
+                except StopIteration:
+                    check.failed("Resource generator must yield one item.")
 
-        return _wrap_gen()
-    else:
-        return val_or_gen
+            return _wrap_gen()
+        else:
+            return val_or_gen
 
 
 def _check_invocation_requirements(
