@@ -32,11 +32,13 @@
     "@evidence-dev/trino": "^1.0.9"
   },
   "overrides": {
+    "cmdk-sv": "0.0.19",
     "cookie": "0.7.0",
+    "esbuild": "0.25.0",
     "jsonwebtoken": "9.0.0",
     "trim@<0.0.3": ">0.0.3",
     "sqlite3": "5.1.5",
     "@sveltejs/kit": "2.20.6",
-    "vite": "5.4.19"
+    "vite": "5.4.20"
   }
 }
