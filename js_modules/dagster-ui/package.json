@@ -21,7 +21,7 @@
   },
   "dependencies": {
     "graphql.macro": "^1.4.2",
-    "patch-package": "^8.0.0",
+    "patch-package": "^8.0.1",
     "postinstall-postinstall": "^2.1.0"
   },
   "packageManager": "yarn@4.10.3",
