@@ -11,12 +11,6 @@ import DagsterPlus from '@site/docs/partials/\_DagsterPlus.md';
 
 Dagster+ allows you to track external metrics, such as Snowflake usage, in the Insights UI. Out of the box integrations are provided to capture query runtime and billed usage, and associate them with the relevant assets or jobs.
 
-:::info
-
-Support for tracking external metrics is coming soon in updated Insights. To use legacy Insights, toggle off "New homepage & observability UIs" in your user settings.
-
-:::
-
 ## Requirements
 
 To use these features, you will need:
