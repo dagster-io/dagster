@@ -238,3 +238,26 @@ def test_unresolved_metadata():
     schedule = defs.resolve_schedule_def("my_schedule")
     assert schedule.metadata["foo"] == dg.TextMetadataValue("baz")
     assert schedule.metadata["four"] == dg.IntMetadataValue(4)
+
+
+def test_owners():
+    @dg.schedule(
+        cron_schedule="@daily", job_name="test_job", owners=["user@example.com", "team:data"]
+    )
+    def schedule_with_owners(): ...
+
+    assert schedule_with_owners.owners == ["user@example.com", "team:data"]
+
+
+def test_owners_validation():
+    # Test invalid team name with special characters
+    with pytest.raises(dg.DagsterInvalidDefinitionError, match="contains invalid characters"):
+
+        @dg.schedule(cron_schedule="@daily", job_name="test_job", owners=["team:bad-name"])
+        def schedule_with_bad_team(): ...
+
+    # Test empty team name
+    with pytest.raises(dg.DagsterInvalidDefinitionError, match="Team name cannot be empty"):
+
+        @dg.schedule(cron_schedule="@daily", job_name="test_job", owners=["team:"])
+        def schedule_with_empty_team(): ...

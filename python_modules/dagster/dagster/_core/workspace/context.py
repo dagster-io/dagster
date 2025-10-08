@@ -1269,8 +1269,8 @@ def get_location_name_for_definition(remote_definition: RemoteDefinition) -> str
 
 
 def get_owners_for_definition(remote_definition: RemoteDefinition) -> Sequence[str]:
-    if isinstance(remote_definition, RemoteAssetNode):
-        return remote_definition.owners
-
-    # Owners not yet supported for RemoteAssetCheckNode, RemoteJob, RemoteSchedule, RemoteSensor
-    return []
+    if isinstance(remote_definition, RemoteAssetCheckNode):
+        return []
+    if not remote_definition.owners:
+        return []
+    return remote_definition.owners
