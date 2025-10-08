@@ -28,6 +28,7 @@ from dagster._core.definitions.selector import (
     GraphSelector,
     JobSelector,
     JobSubsetSelector,
+    RepositorySelector,
     ScheduleSelector,
     SensorSelector,
 )
@@ -304,6 +305,69 @@ def assert_valid_job_partition_backfill(
 
     if invalid_keys:
         raise UserFacingGraphQLError(GraphenePartitionKeysNotFoundError(invalid_keys))
+
+
+def has_permission_for_backfill(
+    graphene_info: "ResolveInfo",
+    permission: Permissions,
+    backfill: PartitionBackfill,
+) -> bool:
+    if backfill.is_asset_backfill:
+        check.invariant(
+            backfill.asset_selection is not None, "Asset backfill must have asset selection"
+        )
+        return has_permission_for_asset_graph(
+            graphene_info,
+            graphene_info.context.asset_graph,
+            cast("list[AssetKey]", backfill.asset_selection),
+            permission,
+        )
+
+    # job backfill, check permissions for the job
+    if not backfill.partition_set_origin:
+        return graphene_info.context.has_permission(permission)
+
+    partition_selector = backfill.partition_set_origin.selector
+    if not graphene_info.context.has_code_location_name(partition_selector.location_name):
+        return graphene_info.context.has_permission(permission)
+
+    partition_sets = graphene_info.context.get_partition_sets(
+        repository_selector=RepositorySelector(
+            location_name=partition_selector.location_name,
+            repository_name=partition_selector.repository_name,
+        )
+    )
+    matches = [
+        partition_set
+        for partition_set in partition_sets
+        if partition_set.name == partition_selector.partition_set_name
+    ]
+
+    if len(matches) != 1:
+        return graphene_info.context.has_permission_for_location(
+            permission, partition_selector.location_name
+        )
+
+    remote_partition_set = next(iter(matches))
+    return graphene_info.context.has_permission_for_selector(
+        permission,
+        JobSelector(
+            location_name=partition_selector.location_name,
+            repository_name=partition_selector.repository_name,
+            job_name=remote_partition_set.job_name,
+        ),
+    )
+
+
+def assert_permission_for_backfill(
+    graphene_info: "ResolveInfo",
+    permission: Permissions,
+    backfill: PartitionBackfill,
+) -> None:
+    from dagster_graphql.schema.errors import GrapheneUnauthorizedError
+
+    if not has_permission_for_backfill(graphene_info, permission, backfill):
+        raise UserFacingGraphQLError(GrapheneUnauthorizedError())
 
 
 def assert_valid_asset_partition_backfill(

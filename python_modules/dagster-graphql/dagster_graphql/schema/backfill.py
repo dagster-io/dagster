@@ -1,7 +1,7 @@
 import json
 import logging
 from collections.abc import Sequence
-from typing import TYPE_CHECKING, Optional, cast
+from typing import TYPE_CHECKING, Optional
 
 import dagster._check as check
 import graphene
@@ -35,7 +35,7 @@ from dagster_graphql.implementation.fetch_partition_sets import (
     partition_status_counts_from_run_partition_data,
     partition_statuses_from_run_partition_data,
 )
-from dagster_graphql.implementation.utils import has_permission_for_asset_graph
+from dagster_graphql.implementation.utils import has_permission_for_backfill
 from dagster_graphql.schema.entity_key import GrapheneAssetKey
 from dagster_graphql.schema.errors import (
     GrapheneError,
@@ -630,42 +630,13 @@ class GraphenePartitionBackfill(graphene.ObjectType):
         return None
 
     def resolve_hasCancelPermission(self, graphene_info: ResolveInfo) -> bool:
-        if self._backfill_job.is_asset_backfill:
-            check.invariant(
-                self._backfill_job.asset_selection is not None,
-                "Asset backfill must have asset selection",
-            )
-            return has_permission_for_asset_graph(
-                graphene_info,
-                graphene_info.context.asset_graph,
-                cast("list[AssetKey]", self._backfill_job.asset_selection),
-                Permissions.CANCEL_PARTITION_BACKFILL,
-            )
-        if self._backfill_job.partition_set_origin is None:
-            return graphene_info.context.has_permission(Permissions.CANCEL_PARTITION_BACKFILL)
-        location_name = self._backfill_job.partition_set_origin.selector.location_name
-        return graphene_info.context.has_permission_for_location(
-            Permissions.CANCEL_PARTITION_BACKFILL, location_name
+        return has_permission_for_backfill(
+            graphene_info, Permissions.CANCEL_PARTITION_BACKFILL, self._backfill_job
         )
 
     def resolve_hasResumePermission(self, graphene_info: ResolveInfo) -> bool:
-        if self._backfill_job.is_asset_backfill:
-            check.invariant(
-                self._backfill_job.asset_selection is not None,
-                "Asset backfill must have asset selection",
-            )
-            return has_permission_for_asset_graph(
-                graphene_info,
-                graphene_info.context.asset_graph,
-                cast("list[AssetKey]", self._backfill_job.asset_selection),
-                Permissions.LAUNCH_PARTITION_BACKFILL,
-            )
-
-        if self._backfill_job.partition_set_origin is None:
-            return graphene_info.context.has_permission(Permissions.LAUNCH_PARTITION_BACKFILL)
-        location_name = self._backfill_job.partition_set_origin.selector.location_name
-        return graphene_info.context.has_permission_for_location(
-            Permissions.LAUNCH_PARTITION_BACKFILL, location_name
+        return has_permission_for_backfill(
+            graphene_info, Permissions.LAUNCH_PARTITION_BACKFILL, self._backfill_job
         )
 
     def resolve_user(self, _graphene_info: ResolveInfo) -> Optional[str]:
