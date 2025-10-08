@@ -299,15 +299,15 @@ def test_asset_checks_excluded_by_tag_unit_test() -> None:
     exclude = "tag:unit-test"
     manifest = get_sample_manifest_json()
 
-    # Manually edited a node here because I am not sure how
-    # to cleanly edit the existing manifest.json
+    # Manually edited a node here because it is complicated to cleanly edit
+    # the existing manifest.json to add a real dbt_unit_testing test
     test_node_uid = "test.jaffle_shop.unique_customers_customer_id.c5af1ff4b1"
     test_nodes = [
         (uid, node) for uid, node in manifest["nodes"].items() if node["resource_type"] == "test"
     ]
     for uid, node in test_nodes:
         if uid == test_node_uid:
-            node["tags"] = ["tag:unit-test"]
+            node["tags"] = ["unit-test"]
             break
 
     _, checks = build_dbt_specs(
