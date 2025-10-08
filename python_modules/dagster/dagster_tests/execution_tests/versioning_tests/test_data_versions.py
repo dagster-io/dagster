@@ -1034,5 +1034,9 @@ def test_fan_in():
         == {
             "DagsterInstance.get_asset_records": 1,
             "DagsterInstance.get_run_record_by_id": 3,  # get_run_record_by_id called when handling events for the run
+            # Note that this only happens on OSS. In Dagster Cloud, the most recent
+            # observation is stored on the AssetRecord, so we don't need to fetch
+            # observations.
+            "DagsterInstance.fetch_observations": 100,  # get_run_record_by_id called when handling events for the run
         }
     )
