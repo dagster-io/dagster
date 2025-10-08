@@ -1,9 +1,6 @@
-<<<<<<< HEAD
 import asyncio
 import inspect
-=======
 import shutil
->>>>>>> 26a25c8ab4 ([sbc] Allow `StateBackedComponents` to store their state on the local filesystem.)
 import tempfile
 from abc import abstractmethod
 from collections.abc import Awaitable
@@ -46,7 +43,7 @@ class StateBackedComponent(Component):
     def get_defs_state_key(self) -> str:
         """Returns a key that uniquely identifies the state for this component."""
         return self.__class__.__name__
-    
+
     async def _write_state_to_path_async(self, state_path: Path) -> None:
         if inspect.iscoroutinefunction(self.write_state_to_path):
             await self.write_state_to_path(state_path)

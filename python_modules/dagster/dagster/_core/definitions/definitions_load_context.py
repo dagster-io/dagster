@@ -184,7 +184,7 @@ class DefinitionsLoadContext:
                 yield state_path
         else:
             raise DagsterInvariantViolationError(
-                f"Invalid state storage location: {key_info.management_type}"
+                f"Invalid state storage location: {key_info.storage_location}"
             )
 
 
