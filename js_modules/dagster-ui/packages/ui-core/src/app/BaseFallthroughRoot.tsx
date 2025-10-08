@@ -6,7 +6,6 @@ import {Route} from './Route';
 import {isHiddenAssetGroupJob} from '../asset-graph/Utils';
 import {WorkspaceContext} from '../workspace/WorkspaceContext/WorkspaceContext';
 import {DagsterRepoOption} from '../workspace/WorkspaceContext/util';
-import {workspacePath} from '../workspace/workspacePath';
 
 export const BaseFallthroughRoot = () => {
   return (
@@ -55,21 +54,9 @@ const FinalRedirectOrLoadingRoot = () => {
   }
 
   // If we have no repos with jobs, see if we have an asset group and route to it.
-  const repoWithAssetGroup = allRepos.find((r) => r.repository.assetGroups.length);
-  if (repoWithAssetGroup) {
-    const {repository, repositoryLocation} = repoWithAssetGroup;
-    const assetGroup = repository.assetGroups[0]; // Should always be non-null from the find()
-    if (assetGroup) {
-      return (
-        <Redirect
-          to={workspacePath(
-            repository.name,
-            repositoryLocation.name,
-            `/asset-groups/${assetGroup.groupName}`,
-          )}
-        />
-      );
-    }
+  const hasAnyAssets = allRepos.some((r) => r.repository.assetGroups.length);
+  if (hasAnyAssets) {
+    return <Redirect to="/asset-groups" />;
   }
 
   // Ben note: We only reach here if anyReposWithVisibleJobs is false,

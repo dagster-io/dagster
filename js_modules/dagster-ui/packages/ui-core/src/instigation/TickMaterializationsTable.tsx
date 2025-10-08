@@ -27,10 +27,10 @@ import {AssetLink} from '../assets/AssetLink';
 import {AssetKeysDialogEmptyState} from '../assets/AutoMaterializePolicyPage/AssetKeysDialog';
 import {EvaluationDetailDialog} from '../assets/AutoMaterializePolicyPage/EvaluationDetailDialog';
 import {AssetDaemonTickFragment} from '../assets/auto-materialization/types/AssetDaemonTicksQuery.types';
+import {globalAssetGraphPathForGroup} from '../assets/globalAssetGraphPathToString';
 import {AssetKeyInput} from '../graphql/types';
 import {Container, HeaderRow} from '../ui/VirtualizedTable';
 import {buildRepoAddress} from '../workspace/buildRepoAddress';
-import {workspacePathFromAddress} from '../workspace/workspacePath';
 
 const TEMPLATE_COLUMNS = '30% 17% 53%';
 
@@ -182,9 +182,7 @@ const AssetDetailRow = ({
         <RowCell>
           {data ? (
             definition && definition.groupName && repoAddress ? (
-              <Link
-                to={workspacePathFromAddress(repoAddress, `/asset-groups/${definition.groupName}`)}
-              >
+              <Link to={globalAssetGraphPathForGroup(definition.groupName, assetKey)}>
                 <Box flex={{direction: 'row', gap: 8, alignItems: 'center'}}>
                   <Icon color={Colors.textLight()} name="asset_group" />
                   {definition.groupName}
