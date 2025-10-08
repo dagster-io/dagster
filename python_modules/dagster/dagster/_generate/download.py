@@ -39,7 +39,6 @@ AVAILABLE_EXAMPLES = [
     "oss-metadata-to-plus",
     "project_analytics",
     "project_fully_featured",
-    "quickstart_aws",
     "quickstart_etl",
     "quickstart_gcp",
     "tutorial",

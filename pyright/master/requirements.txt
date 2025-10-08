@@ -132,7 +132,6 @@ fastapi>=0.115.6 # producing a bizarrely early version of fastapi without this
 -e examples/docs_snippets[full]
 -e examples/feature_graph_backed_assets
 # -e examples/project_fully_featured
-# -e examples/quickstart_aws  # (analyzed but not installed)
 # -e examples/quickstart_etl  # (analyzed but not installed)
 # -e examples/quickstart_gcp  # (analyzed but not installed)
 -e examples/tutorial_notebook_assets
