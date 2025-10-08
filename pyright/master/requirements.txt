@@ -105,7 +105,6 @@ dagster-weaviate
 dagster-qdrant
 
 ### OTHER
-pandas_gbq  # (quickstart_gcp)
 wordcloud  # (quickstart-*)
 
 ### CONSTRAINED BEYOND RUNTIME
@@ -132,10 +131,7 @@ fastapi>=0.115.6 # producing a bizarrely early version of fastapi without this
 -e examples/docs_snippets[full]
 -e examples/feature_graph_backed_assets
 # -e examples/project_fully_featured
-# -e examples/quickstart_aws  # (analyzed but not installed)
 # -e examples/quickstart_etl  # (analyzed but not installed)
-# -e examples/quickstart_gcp  # (analyzed but not installed)
-# -e examples/quickstart_snowflake  # (analyzed but not installed)
 -e examples/tutorial_notebook_assets
 -e examples/with_great_expectations
 -e examples/with_openai
