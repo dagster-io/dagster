@@ -1,20 +1,27 @@
 import time
+import warnings
 from abc import ABC
-from collections.abc import Generator, Iterator
+from collections.abc import Generator, Iterator, Sequence
 from contextlib import contextmanager
-from typing import Union
+from typing import Union, cast
 from unittest import mock
 
-from dagster import AssetKey
+from dagster import AssetKey, BetaWarning
 from dagster._core.definitions.assets.graph.remote_asset_graph import RemoteAssetNode
+from dagster._core.definitions.assets.job.asset_job import IMPLICIT_ASSET_JOB_NAME
 from dagster._core.definitions.selector import JobSelector, ScheduleSelector, SensorSelector
 from dagster._core.execution.backfill import PartitionBackfill
 from dagster._core.remote_representation.external import RemoteJob, RemoteSchedule, RemoteSensor
 from dagster._core.utils import make_new_backfill_id
 from dagster._core.workspace.context import RemoteDefinition, WorkspaceRequestContext
 from dagster._core.workspace.permissions import Permissions
-from dagster_graphql.client.query import LAUNCH_PARTITION_BACKFILL_MUTATION
+from dagster_graphql.client.query import (
+    LAUNCH_PARTITION_BACKFILL_MUTATION,
+    LAUNCH_PIPELINE_EXECUTION_MUTATION,
+    LAUNCH_PIPELINE_REEXECUTION_MUTATION,
+)
 from dagster_graphql.test.utils import (
+    GqlAssetKey,
     execute_dagster_graphql,
     infer_job_selector,
     infer_schedule_selector,
@@ -26,6 +33,8 @@ from dagster_graphql_tests.graphql.graphql_context_test_suite import (
     make_graphql_context_test_suite,
 )
 from dagster_graphql_tests.graphql.test_partition_backfill import CANCEL_BACKFILL_MUTATION
+
+warnings.filterwarnings("ignore", category=BetaWarning, message=r"Parameter `owners` .*")
 
 BaseTestSuite = make_graphql_context_test_suite(
     # no need to test all storages... just pick one that supports launching
@@ -43,6 +52,7 @@ class BaseDefinitionOwnerPermissionsTestSuite(ABC):
             [
                 AssetKey(["owned_asset"]),
                 AssetKey(["owned_partitioned_asset"]),
+                "owned_job",
             ]
         )
 
@@ -51,31 +61,33 @@ class BaseDefinitionOwnerPermissionsTestSuite(ABC):
             [
                 AssetKey(["unowned_asset"]),
                 AssetKey(["unowned_partitioned_asset"]),
+                "unowned_job",
             ]
         )
 
-    def _get_remote_definition(
+    def _get_selector(
         self, context, def_type: type[RemoteDefinition], def_handle: Union[str, AssetKey]
-    ) -> RemoteDefinition:
-        if def_type is RemoteAssetNode:
-            assert isinstance(def_handle, AssetKey)
-            return context.asset_graph.get(def_handle)
+    ) -> Union[AssetKey, JobSelector, ScheduleSelector, SensorSelector]:
+        if isinstance(def_handle, AssetKey):
+            return def_handle
 
         assert type(def_handle) is str
         if def_type is RemoteJob:
-            job_selector = JobSelector.from_graphql_input(infer_job_selector(context, def_handle))
-            return context.get_full_job(job_selector)
+            return JobSelector.from_graphql_input(infer_job_selector(context, def_handle))
         if def_type is RemoteSensor:
-            sensor_selector = SensorSelector.from_graphql_input(
-                infer_sensor_selector(context, def_handle)
-            )
-            return context.get_sensor(sensor_selector)
+            return SensorSelector.from_graphql_input(infer_sensor_selector(context, def_handle))
         if def_type is RemoteSchedule:
-            schedule_selector = ScheduleSelector.from_graphql_input(
-                infer_schedule_selector(context, def_handle)
-            )
-            return context.get_schedule(schedule_selector)
+            return ScheduleSelector.from_graphql_input(infer_schedule_selector(context, def_handle))
         raise Exception(f"Unknown definition type {def_type}")
+
+    def get_partition_set_by_job_name(self, context, job_name: str):
+        job_selector = JobSelector.from_graphql_input(infer_job_selector(context, job_name))
+        repository = context.get_code_location(job_selector.location_name).get_repository(
+            job_selector.repository_name
+        )
+        return next(
+            iter(ps for ps in repository.get_partition_sets() if ps.job_name == job_name), None
+        )
 
     def graphql_launch_asset_backfill(self, context, asset_keys: list[AssetKey]):
         result = execute_dagster_graphql(
@@ -105,6 +117,100 @@ class BaseDefinitionOwnerPermissionsTestSuite(ABC):
         )
         assert result.data
         return result.data["cancelPartitionBackfill"]["__typename"]
+
+    def graphql_launch_asset_run(self, context, asset_selection: list[AssetKey]):
+        gql_asset_selection = (
+            cast("Sequence[GqlAssetKey]", [key.to_graphql_input() for key in asset_selection])
+            if asset_selection
+            else None
+        )
+        selector = infer_job_selector(
+            context,
+            IMPLICIT_ASSET_JOB_NAME,
+            asset_selection=gql_asset_selection,
+        )
+        result = execute_dagster_graphql(
+            context,
+            LAUNCH_PIPELINE_EXECUTION_MUTATION,
+            variables={
+                "executionParams": {
+                    "selector": selector,
+                    "mode": "default",
+                }
+            },
+        )
+        assert result.data
+        return result.data["launchPipelineExecution"]["__typename"]
+
+    def graphql_launch_job_run(self, context, job_name: str):
+        selector = infer_job_selector(context, job_name)
+
+        result = execute_dagster_graphql(
+            context,
+            LAUNCH_PIPELINE_EXECUTION_MUTATION,
+            variables={
+                "executionParams": {
+                    "selector": selector,
+                    "mode": "default",
+                }
+            },
+        )
+        assert result.data
+        typename = result.data["launchPipelineExecution"]["__typename"]
+        run_id = (
+            result.data["launchPipelineExecution"]["run"]["runId"]
+            if typename == "LaunchRunSuccess"
+            else None
+        )
+        return typename, run_id
+
+    def graphql_launch_job_reexecution(self, context, job_name: str, run_id: str):
+        selector = infer_job_selector(context, job_name)
+
+        result = execute_dagster_graphql(
+            context,
+            LAUNCH_PIPELINE_REEXECUTION_MUTATION,
+            variables={
+                "executionParams": {
+                    "selector": selector,
+                    "executionMetadata": {
+                        "rootRunId": run_id,
+                        "parentRunId": run_id,
+                    },
+                    "mode": "default",
+                }
+            },
+        )
+        assert result.data
+        return result.data["launchPipelineReexecution"]["__typename"]
+
+    def _create_run(self, context, job_name):
+        remote_job = context.get_full_job(
+            JobSelector.from_graphql_input(infer_job_selector(context, job_name))
+        )
+        repository = context.get_code_location(
+            remote_job.repository_handle.location_name
+        ).get_repository(remote_job.repository_handle.repository_name)
+        return context.instance.create_run(
+            job_name=job_name,
+            run_id=None,
+            run_config=None,
+            status=None,
+            tags=None,
+            root_run_id=None,
+            parent_run_id=None,
+            step_keys_to_execute=None,
+            execution_plan_snapshot=None,
+            job_snapshot=None,
+            parent_job_snapshot=None,
+            asset_selection=None,
+            asset_check_selection=None,
+            resolved_op_selection=None,
+            op_selection=None,
+            job_code_origin=None,
+            remote_job_origin=remote_job.get_remote_origin(),
+            asset_graph=repository.asset_graph,
+        )
 
     def _create_asset_backfill(self, context: WorkspaceRequestContext, asset_keys: list[AssetKey]):
         backfill_id = make_new_backfill_id()
@@ -139,15 +245,15 @@ class BaseDefinitionOwnerPermissionsTestSuite(ABC):
     def test_definitions_are_owned(self, graphql_context: WorkspaceRequestContext):
         for def_handle in self.get_owned_definitions():
             def_type = self._get_type_for_handle(def_handle)
-            definition = self._get_remote_definition(graphql_context, def_type, def_handle)
-            assert graphql_context.has_permission_for_definition(
-                Permissions.LAUNCH_PIPELINE_EXECUTION, definition
+            selector = self._get_selector(graphql_context, def_type, def_handle)
+            assert graphql_context.has_permission_for_selector(
+                Permissions.LAUNCH_PIPELINE_EXECUTION, selector
             )
         for def_handle in self.get_unowned_definitions():
             def_type = self._get_type_for_handle(def_handle)
-            definition = self._get_remote_definition(graphql_context, def_type, def_handle)
-            assert not graphql_context.has_permission_for_definition(
-                Permissions.LAUNCH_PIPELINE_EXECUTION, definition
+            selector = self._get_selector(graphql_context, def_type, def_handle)
+            assert not graphql_context.has_permission_for_selector(
+                Permissions.LAUNCH_PIPELINE_EXECUTION, selector
             )
 
     def test_asset_backfill_launch_permissions(self, graphql_context: WorkspaceRequestContext):
@@ -182,6 +288,41 @@ class BaseDefinitionOwnerPermissionsTestSuite(ABC):
         )
         assert self.graphql_cancel_backfill(graphql_context, backfill_id_b) == "UnauthorizedError"
 
+    def test_asset_run_launch_permissions(self, graphql_context: WorkspaceRequestContext):
+        assert (
+            self.graphql_launch_asset_run(graphql_context, [AssetKey(["owned_asset"])])
+            == "LaunchRunSuccess"
+        )
+        assert (
+            self.graphql_launch_asset_run(graphql_context, [AssetKey(["unowned_asset"])])
+            == "UnauthorizedError"
+        )
+        assert (
+            self.graphql_launch_asset_run(
+                graphql_context, [AssetKey(["owned_asset"]), AssetKey(["unowned_asset"])]
+            )
+            == "UnauthorizedError"
+        )
+
+    def test_job_run_launch_permissions(self, graphql_context: WorkspaceRequestContext):
+        typename, _ = self.graphql_launch_job_run(graphql_context, "owned_job")
+        assert typename == "LaunchRunSuccess"
+
+        typename, _ = self.graphql_launch_job_run(graphql_context, "unowned_job")
+        assert typename == "UnauthorizedError"
+
+    def test_job_reexecution_permissions(self, graphql_context: WorkspaceRequestContext):
+        run_a = self._create_run(graphql_context, "owned_job")
+        run_b = self._create_run(graphql_context, "unowned_job")
+        assert (
+            self.graphql_launch_job_reexecution(graphql_context, "owned_job", run_a.run_id)
+            == "LaunchRunSuccess"
+        )
+        assert (
+            self.graphql_launch_job_reexecution(graphql_context, "unowned_job", run_b.run_id)
+            == "UnauthorizedError"
+        )
+
 
 class TestDefinitionOwnerPermissions(
     BaseDefinitionOwnerPermissionsTestSuite,
@@ -203,13 +344,20 @@ class TestDefinitionOwnerPermissions(
             _did_check[permission] = True
             return False
 
-        def _mock_definition_ownership(permission: str, definition: RemoteDefinition) -> bool:
+        def _mock_selector_ownership(
+            permission: str,
+            selector: Union[JobSelector, ScheduleSelector, SensorSelector, AssetKey],
+        ) -> bool:
             owned_defs = self.get_owned_definitions()
             _did_check[permission] = True
-            if isinstance(definition, RemoteAssetNode):
-                return definition.key in owned_defs
-            elif isinstance(definition, (RemoteJob, RemoteSensor, RemoteSchedule)):
-                return definition.name in owned_defs
+            if isinstance(selector, AssetKey):
+                return selector in owned_defs
+            elif isinstance(selector, JobSelector):
+                return selector.job_name in owned_defs
+            elif isinstance(selector, ScheduleSelector):
+                return selector.schedule_name in owned_defs
+            elif isinstance(selector, SensorSelector):
+                return selector.sensor_name in owned_defs
             return False
 
         def _mock_permission_check(permission):
@@ -229,10 +377,10 @@ class TestDefinitionOwnerPermissions(
             mock.patch.object(
                 context,
                 "viewer_has_any_owner_definition_permissions",
-                side_effect=lambda _: True,
+                side_effect=lambda: True,
             ),
             mock.patch.object(
-                context, "has_permission_for_definition", side_effect=_mock_definition_ownership
+                context, "has_permission_for_selector", side_effect=_mock_selector_ownership
             ),
             mock.patch.object(
                 context, "was_permission_checked", side_effect=_mock_permission_check
