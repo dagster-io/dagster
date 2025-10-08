@@ -40,7 +40,6 @@ AVAILABLE_EXAMPLES = [
     "project_analytics",
     "project_fully_featured",
     "quickstart_etl",
-    "tutorial",
     "tutorial_notebook_assets",
     "with_great_expectations",
     "with_openai",
