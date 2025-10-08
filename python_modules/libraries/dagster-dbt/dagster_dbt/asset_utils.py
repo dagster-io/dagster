@@ -757,32 +757,10 @@ def get_upstream_unique_ids(
     return upstreams
 
 
-def _build_child_map(
-    manifest: Mapping[str, Any],
-    select: str,
-    exclude: str,
-    selector: str,
-    project: Optional[DbtProject],
-) -> Mapping[str, AbstractSet[str]]:
+def _build_child_map(manifest: Mapping[str, Any]) -> Mapping[str, AbstractSet[str]]:
     """Manifests produced by early versions of dbt Fusion do not contain a child map, so we need to build it manually."""
     if manifest.get("child_map"):
-        # Get the selected unique IDs to filter exclusions from the child map from the manifest
-        selected_unique_ids = select_unique_ids(
-            select=select,
-            exclude=exclude,
-            selector=selector,
-            project=project,
-            manifest_json=manifest,
-        )
-        filtered_child_map = defaultdict(set)
-        for parent_id, child_ids in manifest["child_map"].items():
-            # Only include children that are in the selected set
-            filtered_children = {
-                child_id for child_id in child_ids if child_id in selected_unique_ids
-            }
-            if filtered_children:
-                filtered_child_map[parent_id] = filtered_children
-        return filtered_child_map
+        return manifest["child_map"]
 
     child_map = defaultdict(set)
     for unique_id, node in manifest["nodes"].items():
@@ -809,7 +787,7 @@ def build_dbt_specs(
     check_specs: dict[str, AssetCheckSpec] = {}
     key_by_unique_id: dict[str, AssetKey] = {}
 
-    child_map = _build_child_map(manifest, select, exclude, selector, project)
+    child_map = _build_child_map(manifest)
     for unique_id in selected_unique_ids:
         resource_props = get_node(manifest, unique_id)
         resource_type = resource_props["resource_type"]
@@ -835,7 +813,7 @@ def build_dbt_specs(
 
         # add check specs associated with the asset
         for child_unique_id in child_map.get(unique_id, []):
-            if not child_unique_id.startswith("test"):
+            if child_unique_id not in selected_unique_ids or not child_unique_id.startswith("test"):
                 continue
             check_spec = translator.get_asset_check_spec(
                 asset_spec=spec,
