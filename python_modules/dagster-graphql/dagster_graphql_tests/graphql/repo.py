@@ -1155,6 +1155,8 @@ def define_schedules():
         provide_config_schedule,
         always_error,
         jobless_schedule,
+        owned_schedule,
+        unowned_schedule,
     ]
 
 
@@ -1303,6 +1305,8 @@ def define_sensors():
         every_asset_sensor,
         invalid_asset_selection_error,
         jobless_sensor,
+        owned_sensor,
+        unowned_sensor,
     ]
 
 
@@ -2199,13 +2203,17 @@ def define_standard_jobs() -> Sequence[JobDefinition]:
         tagged_job,
         two_ins_job,
         some_external_job,
+        owned_job,
+        unowned_job,
+        owned_partitioned_job,
+        unowned_partitioned_job,
     ]
 
 
 partitions_def_for_permissions = StaticPartitionsDefinition(["a", "b", "c"])
 
 
-@asset(owners=["test@elementl.com"])
+@asset(owners=["test@elementl.com", "team:foo"])
 def owned_asset():
     return 1
 
@@ -2215,7 +2223,7 @@ def unowned_asset():
     return 2
 
 
-@asset(partitions_def=partitions_def_for_permissions, owners=["test@elementl.com"])
+@asset(partitions_def=partitions_def_for_permissions, owners=["test@elementl.com", "team:foo"])
 def owned_partitioned_asset():
     return 1
 
@@ -2223,6 +2231,57 @@ def owned_partitioned_asset():
 @asset(partitions_def=partitions_def_for_permissions)
 def unowned_partitioned_asset():
     return 2
+
+
+@op
+def permission_test_op():
+    pass
+
+
+@job(owners=["test@elementl.com", "team:foo"])
+def owned_job():
+    permission_test_op()
+
+
+@job
+def unowned_job():
+    permission_test_op()
+
+
+@op
+def permission_partitioned_op(context):
+    context.log.info(f"Processing partition: {context.partition_key}")
+    return context.partition_key
+
+
+@job(partitions_def=partitions_def_for_permissions, owners=["test@elementl.com", "team:foo"])
+def owned_partitioned_job():
+    permission_partitioned_op()
+
+
+@job(partitions_def=partitions_def_for_permissions)
+def unowned_partitioned_job():
+    permission_partitioned_op()
+
+
+@sensor(job=owned_job, owners=["test@elementl.com", "team:foo"])
+def owned_sensor():
+    pass
+
+
+@sensor(job=unowned_job)
+def unowned_sensor():
+    pass
+
+
+@schedule(job=owned_job, cron_schedule="* * * * *", owners=["test@elementl.com", "team:foo"])
+def owned_schedule():
+    return {}
+
+
+@schedule(job=unowned_job, cron_schedule="* * * * *")
+def unowned_schedule():
+    return {}
 
 
 def define_assets():

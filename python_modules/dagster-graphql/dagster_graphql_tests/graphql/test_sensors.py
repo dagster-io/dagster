@@ -147,6 +147,14 @@ query SensorQuery($sensorSelector: SensorSelector!) {
       nextTick {
         timestamp
       }
+      owners {
+        ... on UserDefinitionOwner {
+          email
+        }
+        ... on TeamDefinitionOwner {
+          team
+        }
+      }
       sensorState {
         status
         runs {
@@ -832,6 +840,35 @@ class TestSensors(NonLaunchableGraphQLContextTestMatrix):
         assert sensor["sensorType"] == "STANDARD"
         assert sensor["tags"] == [{"key": "foo", "value": "bar"}]
         assert sensor["metadataEntries"] == [{"label": "foo", "text": "bar"}]
+
+    def test_sensor_owners(self, graphql_context: WorkspaceRequestContext):
+        sensor_selector = infer_sensor_selector(graphql_context, "owned_sensor")
+        result = execute_dagster_graphql(
+            graphql_context,
+            GET_SENSOR_QUERY,
+            variables={"sensorSelector": sensor_selector},
+        )
+        assert result.data
+        assert result.data["sensorOrError"]
+        assert result.data["sensorOrError"]["__typename"] == "Sensor"
+        sensor = result.data["sensorOrError"]
+
+        assert sensor["owners"] is not None
+        assert len(sensor["owners"]) == 2
+
+        # Check the user owner
+        user_owner = None
+        team_owner = None
+        for owner in sensor["owners"]:
+            if owner.get("email"):
+                user_owner = owner
+            elif owner.get("team"):
+                team_owner = owner
+
+        assert user_owner is not None
+        assert user_owner["email"] == "test@elementl.com"
+        assert team_owner is not None
+        assert team_owner["team"] == "foo"
 
 
 class TestReadonlySensorPermissions(ReadonlyGraphQLContextTestMatrix):

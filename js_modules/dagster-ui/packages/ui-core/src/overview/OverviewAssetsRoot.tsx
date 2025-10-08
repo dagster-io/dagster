@@ -26,13 +26,13 @@ import {groupAssetsByStatus} from '../asset-graph/util';
 import {partitionCountString} from '../assets/AssetNodePartitionCounts';
 import {useAllAssets} from '../assets/AssetsCatalogTable';
 import {assetDetailsPathForKey} from '../assets/assetDetailsPathForKey';
+import {globalAssetGraphPathForGroup} from '../assets/globalAssetGraphPathToString';
 import {AssetCatalogTableQuery} from '../assets/types/AssetsCatalogTable.types';
 import {useDocumentTitle} from '../hooks/useDocumentTitle';
 import {useQueryPersistedState} from '../hooks/useQueryPersistedState';
 import {RepositoryLink} from '../nav/RepositoryLink';
 import {Container, HeaderCell, HeaderRow, Inner, Row, RowCell} from '../ui/VirtualizedTable';
 import {buildRepoAddress} from '../workspace/buildRepoAddress';
-import {workspacePathFromAddress} from '../workspace/workspacePath';
 
 type Props = {
   Header: React.ComponentType<{refreshState: RefreshState}>;
@@ -254,7 +254,7 @@ function VirtualRow({height, start, group}: RowProps) {
                 {group.groupName ? (
                   <Link
                     style={{fontWeight: 700}}
-                    to={workspacePathFromAddress(repoAddress, `/asset-groups/${group.groupName}`)}
+                    to={globalAssetGraphPathForGroup(group.groupName)}
                   >
                     {group.groupName}
                   </Link>
