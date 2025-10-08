@@ -554,7 +554,7 @@ It supports running commands either on the local machine or on a remote machine 
 - `remote_password`: Password for SSH authentication. Optional, and used as an alternative to `ssh_key_path`.  
 - `ssh_key_path`: Path to the SSH private key used for authentication. Optional, and used as an alternative to `remote_password`.  
 - `remote_port`: SSH port number for the remote host. Defaults to `22` if not specified. *(optional)*
-- `remote_working_dir`: Temporary directory location on the remote host (via SSH) where the BTEQ script will be transferred and executed. Defaults to `/tmp` if not specified. This is only applicable when `ssh_conn_id` is provided.
+- `remote_working_dir`: Temporary directory location on the remote host (via SSH) where the BTEQ script will be transferred and executed. Defaults to `/tmp` if not specified. This is only applicable when `remote_host` is provided.
 - `bteq_script_encoding`: Character encoding for the BTEQ script file. Defaults to ASCII if not specified.
 - `bteq_session_encoding`: Character set encoding for the BTEQ session. Defaults to ASCII if not specified.
 - `bteq_quit_rc`: Accepts a single integer, list, or tuple of return codes. Specifies which BTEQ return codes should be treated as successful, allowing subsequent tasks to continue execution.
