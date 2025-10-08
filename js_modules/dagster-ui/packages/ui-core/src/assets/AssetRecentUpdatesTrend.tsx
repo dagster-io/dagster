@@ -12,8 +12,8 @@ interface Props {
 }
 
 export const AssetRecentUpdatesTrend = React.memo(({latestInfo, events}: Props) => {
-  const items = latestInfo ? [latestInfo, ...events] : [...events];
-  const emptyItems = new Array(5 - items.length).fill(null);
+  const items = latestInfo ? [latestInfo, ...events.slice(0, 4)] : events.slice(0, 5);
+  const emptyItems = new Array(Math.max(5 - items.length, 0)).fill(null);
   const allItems = [...items, ...emptyItems].reverse();
 
   const states = allItems.map((event, index) => {
