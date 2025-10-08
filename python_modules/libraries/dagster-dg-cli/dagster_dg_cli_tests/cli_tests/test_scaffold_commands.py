@@ -94,8 +94,13 @@ def test_scaffold_defs_validation_failure() -> None:
             "scaffold", "defs", "dagster_test.components.SimplePipesScriptComponent", "qux"
         )
         assert_runner_result(result, exit_0=False)
+        normalized_output = re.sub(
+            r'"url":\s*"https://errors\.pydantic\.dev/\d+\.\d+/v/missing"',
+            '"url": "<placeholder>"',
+            result.output.strip(),
+        )
         assert (
-            result.output.strip()
+            normalized_output
             == textwrap.dedent("""
             Error validating scaffold parameters for `dagster_test.components.SimplePipesScriptComponent`:\\n\\n[
                 {
@@ -105,7 +110,7 @@ def test_scaffold_defs_validation_failure() -> None:
                     ],
                     "msg": "Field required",
                     "input": {},
-                    "url": "https://errors.pydantic.dev/2.11/v/missing"
+                    "url": "<placeholder>"
                 },
                 {
                     "type": "missing",
@@ -114,7 +119,7 @@ def test_scaffold_defs_validation_failure() -> None:
                     ],
                     "msg": "Field required",
                     "input": {},
-                    "url": "https://errors.pydantic.dev/2.11/v/missing"
+                    "url": "<placeholder>"
                 }
             ]
         """).strip()
