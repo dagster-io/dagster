@@ -32,7 +32,6 @@ setup(
         "virtualenv>=20.27.0",
         "urllib3",
         "watchdog",
-        "deepeval",
     ],
     extras_require={
         "buildkite": [
