@@ -222,7 +222,7 @@ const config: Config = {
           lastVersion: 'current',
           versions: {
             current: {
-              label: 'Latest (1.11.13)',
+              label: 'Latest (1.11.14)',
               path: '/',
             },
           },
