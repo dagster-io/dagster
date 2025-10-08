@@ -548,10 +548,6 @@ EXAMPLE_PACKAGES_WITH_CUSTOM_CONFIG: list[PackageSpec] = [
         pytest_tox_factors=[ToxFactor("pypi")],
     ),
     PackageSpec(
-        "examples/quickstart_gcp",
-        pytest_tox_factors=[ToxFactor("pypi")],
-    ),
-    PackageSpec(
         "examples/use_case_repository",
         pytest_tox_factors=[ToxFactor("source")],
     ),
