@@ -132,7 +132,7 @@ def assert_permission(graphene_info: "ResolveInfo", permission: str) -> None:
 def has_permission_for_asset_graph(
     graphene_info: "ResolveInfo",
     asset_graph: RemoteWorkspaceAssetGraph,
-    asset_selection: Sequence[AssetKey],
+    asset_selection: Optional[Sequence[AssetKey]],
     permission: str,
 ) -> bool:
     asset_keys = set(asset_selection or [])
@@ -238,7 +238,6 @@ def has_permission_for_job(
     ] = None,  # asset keys are only required for implicit asset jobs
 ) -> bool:
     if is_implicit_asset_job_name(job_selector.job_name):
-        assert asset_keys is not None, "Asset keys must be provided for implicit asset jobs"
         return has_permission_for_asset_graph(
             graphene_info, graphene_info.context.asset_graph, asset_keys, permission
         )
@@ -255,9 +254,6 @@ def assert_permission_for_job(
     ] = None,  # asset keys are only required for implicit asset jobs
 ):
     from dagster_graphql.schema.errors import GrapheneUnauthorizedError
-
-    if is_implicit_asset_job_name(job_selector.job_name):
-        assert asset_keys is not None, "Asset keys must be provided for implicit asset jobs"
 
     if not has_permission_for_job(graphene_info, permission, job_selector, asset_keys):
         raise UserFacingGraphQLError(GrapheneUnauthorizedError())
