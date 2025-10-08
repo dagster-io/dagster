@@ -291,9 +291,6 @@ def test_asset_checks_excluded_by_tag_unit_test() -> None:
     AssetCheckSpecs when calling build_dbt_specs with exclude='tag:unit-test'.
 
     This allows @dbt_assets to exclude EqualExperts/dbt_unit_testing tests.
-
-    Before the fix, _build_child_map ignored exclude rules, so unit-test-tagged
-    dbt tests were incorrectly included as asset checks.
     """
     select = "fqn:*"
     exclude = "tag:unit-test"
@@ -315,7 +312,7 @@ def test_asset_checks_excluded_by_tag_unit_test() -> None:
         translator=DagsterDbtTranslator(),
         select=select,
         exclude=exclude,
-        selector=None,
+        selector="",
         io_manager_key=None,
         project=None,
     )
