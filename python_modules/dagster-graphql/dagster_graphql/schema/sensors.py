@@ -41,6 +41,7 @@ from dagster_graphql.schema.instigation import (
     GrapheneInstigationStatus,
 )
 from dagster_graphql.schema.metadata import GrapheneMetadataEntry
+from dagster_graphql.schema.owners import GrapheneDefinitionOwner, definition_owner_from_owner_str
 from dagster_graphql.schema.tags import GrapheneDefinitionTag
 from dagster_graphql.schema.util import ResolveInfo, non_null_list
 
@@ -86,6 +87,7 @@ class GrapheneSensor(graphene.ObjectType):
     metadata = graphene.NonNull(GrapheneSensorMetadata)
     sensorType = graphene.NonNull(GrapheneSensorType)
     assetSelection = graphene.Field(GrapheneAssetSelection)
+    owners = non_null_list(GrapheneDefinitionOwner)
     tags = non_null_list(GrapheneDefinitionTag)
     metadataEntries = non_null_list(GrapheneMetadataEntry)
 
@@ -149,6 +151,11 @@ class GrapheneSensor(graphene.ObjectType):
 
     def resolve_nextTick(self, graphene_info: ResolveInfo):
         return get_sensor_next_tick(graphene_info, self._sensor_state)
+
+    def resolve_owners(self, _graphene_info: ResolveInfo):
+        return [
+            definition_owner_from_owner_str(owner) for owner in (self._remote_sensor.owners or [])
+        ]
 
     def resolve_tags(self, _graphene_info: ResolveInfo) -> Sequence[GrapheneDefinitionTag]:
         return [
