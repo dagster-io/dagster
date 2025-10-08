@@ -12999,6 +12999,10 @@
       }
     ],
     "name": "owned_job",
+    "owners": [
+      "test@elementl.com",
+      "team:foo"
+    ],
     "solid_definitions_snapshot": {
       "__class__": "SolidDefinitionsSnapshot",
       "composite_solid_def_snaps": [],
@@ -13037,7 +13041,7 @@
   '''
 # ---
 # name: test_all_snapshot_ids[113]
-  '7aae08c7502cce74ce9300ebad18a12b3b465441'
+  '34f037fbab9e9485d131d04076511420d23dfb67'
 # ---
 # name: test_all_snapshot_ids[114]
   '''
@@ -13888,6 +13892,10 @@
       }
     ],
     "name": "owned_partitioned_job",
+    "owners": [
+      "test@elementl.com",
+      "team:foo"
+    ],
     "solid_definitions_snapshot": {
       "__class__": "SolidDefinitionsSnapshot",
       "composite_solid_def_snaps": [],
@@ -13926,7 +13934,7 @@
   '''
 # ---
 # name: test_all_snapshot_ids[115]
-  '1b42afdb2cf17f1eb539d6ac57a721f606094d29'
+  '58270c0322a167f3e6c65dc68a2420f18d5f8426'
 # ---
 # name: test_all_snapshot_ids[116]
   '''
