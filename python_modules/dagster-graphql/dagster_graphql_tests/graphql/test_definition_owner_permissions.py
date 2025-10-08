@@ -38,6 +38,7 @@ from dagster_graphql_tests.graphql.graphql_context_test_suite import (
     make_graphql_context_test_suite,
 )
 from dagster_graphql_tests.graphql.test_partition_backfill import CANCEL_BACKFILL_MUTATION
+from dagster_graphql_tests.graphql.test_runs import DELETE_RUN_MUTATION
 from dagster_graphql_tests.graphql.test_scheduler import START_SCHEDULES_QUERY, STOP_SCHEDULES_QUERY
 from dagster_graphql_tests.graphql.test_sensors import START_SENSORS_QUERY
 
@@ -269,6 +270,11 @@ class BaseDefinitionOwnerPermissionsTestSuite(ABC):
         assert result.data
         return result.data["setSensorCursor"]["__typename"]
 
+    def graphql_delete_run(self, context, run_id: str):
+        result = execute_dagster_graphql(context, DELETE_RUN_MUTATION, variables={"runId": run_id})
+        assert result.data
+        return result.data["deletePipelineRun"]["__typename"]
+
     def _create_run(self, context, job_name):
         remote_job = context.get_full_job(
             JobSelector.from_graphql_input(infer_job_selector(context, job_name))
@@ -429,6 +435,12 @@ class BaseDefinitionOwnerPermissionsTestSuite(ABC):
             self.graphql_update_sensor_cursor(graphql_context, "unowned_sensor")
             == "UnauthorizedError"
         )
+
+    def test_run_deletion_permissions(self, graphql_context: WorkspaceRequestContext):
+        run_a = self._create_run(graphql_context, "owned_job")
+        run_b = self._create_run(graphql_context, "unowned_job")
+        assert self.graphql_delete_run(graphql_context, run_a.run_id) == "DeletePipelineRunSuccess"
+        assert self.graphql_delete_run(graphql_context, run_b.run_id) == "UnauthorizedError"
 
 
 class TestDefinitionOwnerPermissions(

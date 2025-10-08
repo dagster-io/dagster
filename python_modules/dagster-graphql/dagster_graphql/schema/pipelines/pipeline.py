@@ -52,6 +52,7 @@ from dagster_graphql.implementation.utils import (
     apply_cursor_limit_reverse,
     capture_error,
     get_query_limit_with_default,
+    has_permission_for_run,
 )
 from dagster_graphql.schema.asset_health import GrapheneAssetHealth
 from dagster_graphql.schema.dagster_types import (
@@ -641,31 +642,24 @@ class GrapheneRun(graphene.ObjectType):
         self._run_record = record
         self._run_stats: Optional[DagsterRunStatsSnapshot] = None
 
-    def _get_permission_value(self, permission: Permissions, graphene_info: ResolveInfo) -> bool:
-        location_name = (
-            self.dagster_run.remote_job_origin.location_name
-            if self.dagster_run.remote_job_origin
-            else None
-        )
-
-        return (
-            graphene_info.context.has_permission_for_location(permission, location_name)
-            if location_name
-            else graphene_info.context.has_permission(permission)
-        )
-
     @property
     def creation_timestamp(self) -> float:
         return self._run_record.create_timestamp.timestamp()
 
     def resolve_hasReExecutePermission(self, graphene_info: ResolveInfo):
-        return self._get_permission_value(Permissions.LAUNCH_PIPELINE_REEXECUTION, graphene_info)
+        return has_permission_for_run(
+            graphene_info, Permissions.LAUNCH_PIPELINE_REEXECUTION, self.dagster_run
+        )
 
     def resolve_hasTerminatePermission(self, graphene_info: ResolveInfo):
-        return self._get_permission_value(Permissions.TERMINATE_PIPELINE_EXECUTION, graphene_info)
+        return has_permission_for_run(
+            graphene_info, Permissions.TERMINATE_PIPELINE_EXECUTION, self.dagster_run
+        )
 
     def resolve_hasDeletePermission(self, graphene_info: ResolveInfo):
-        return self._get_permission_value(Permissions.DELETE_PIPELINE_RUN, graphene_info)
+        return has_permission_for_run(
+            graphene_info, Permissions.DELETE_PIPELINE_RUN, self.dagster_run
+        )
 
     def resolve_id(self, _graphene_info: ResolveInfo):
         return self.dagster_run.run_id
