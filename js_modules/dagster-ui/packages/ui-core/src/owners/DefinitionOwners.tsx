@@ -28,7 +28,7 @@ export const DefinitionOwners = ({owners}: DefinitionOwnersProps) => {
     <Box flex={{gap: 4, wrap: 'wrap'}}>
       {owners.map((owner, idx) =>
         owner.__typename === 'UserDefinitionOwner' || owner.__typename === 'UserAssetOwner' ? (
-          <div key={idx} className={styles.user_display}>
+          <div key={idx} className={styles.userDisplay}>
             <UserDisplay email={owner.email} size="very-small" />
           </div>
         ) : (
