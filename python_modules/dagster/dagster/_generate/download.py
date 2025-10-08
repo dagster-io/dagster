@@ -42,7 +42,6 @@ AVAILABLE_EXAMPLES = [
     "quickstart_aws",
     "quickstart_etl",
     "quickstart_gcp",
-    "quickstart_snowflake",
     "tutorial",
     "tutorial_notebook_assets",
     "with_great_expectations",
