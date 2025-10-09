@@ -10,6 +10,8 @@ export const SCHEDULE_SWITCH_FRAGMENT = gql`
       id
       selectorId
       status
+      hasStartPermission
+      hasStopPermission
     }
   }
 `;

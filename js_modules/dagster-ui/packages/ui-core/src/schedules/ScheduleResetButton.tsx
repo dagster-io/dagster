@@ -8,7 +8,7 @@ import {
   ResetScheduleMutationVariables,
 } from './types/ScheduleMutations.types';
 import {ScheduleFragment} from './types/ScheduleUtils.types';
-import {DEFAULT_DISABLED_REASON, usePermissionsForLocation} from '../app/Permissions';
+import {DEFAULT_DISABLED_REASON} from '../app/Permissions';
 import {repoAddressToSelector} from '../workspace/repoAddressToSelector';
 import {RepoAddress} from '../workspace/types';
 
@@ -18,10 +18,6 @@ interface Props {
 }
 
 export const ScheduleResetButton = ({repoAddress, schedule}: Props) => {
-  const {
-    permissions: {canStartSchedule, canStopRunningSchedule},
-  } = usePermissionsForLocation(repoAddress.location);
-
   const {name} = schedule;
   const scheduleSelector = {
     ...repoAddressToSelector(repoAddress),
@@ -38,7 +34,8 @@ export const ScheduleResetButton = ({repoAddress, schedule}: Props) => {
     resetSchedule({variables: {scheduleSelector}});
   };
 
-  const hasPermission = canStartSchedule && canStopRunningSchedule;
+  const hasPermission =
+    schedule.scheduleState.hasStartPermission && schedule.scheduleState.hasStopPermission;
   const disabled = toggleOnInFlight || !hasPermission;
   const tooltipContent = hasPermission
     ? `In code, a default status for "${name}" has been set to "${schedule.defaultStatus}". Click here to reset the schedule status to track the status set in code.`

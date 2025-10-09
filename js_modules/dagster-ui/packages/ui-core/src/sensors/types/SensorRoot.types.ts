@@ -28,6 +28,7 @@ export type SensorRootQuery = {
         sensorType: Types.SensorType;
         defaultStatus: Types.InstigationStatus;
         canReset: boolean;
+        hasCursorUpdatePermissions: boolean;
         nextTick: {__typename: 'DryRunInstigationTick'; timestamp: number | null} | null;
         sensorState: {
           __typename: 'InstigationState';
@@ -191,6 +192,6 @@ export type SensorAssetSelectionQuery = {
     | {__typename: 'UnauthorizedError'};
 };
 
-export const SensorRootQueryVersion = '2a50267e2bec5042609d0a0a269e4ac4d39a7d337fbd2ec9768e887cdf6344a3';
+export const SensorRootQueryVersion = '37cc826fa5aa2787b0768acc044647ea991d00e668a2b11127af107f5f3f66bb';
 
 export const SensorAssetSelectionQueryVersion = '2fb6c2c612ee7ab4a7ad1f59cfd7677a6a3d14319200f8c49b43850de8b3b0f3';
