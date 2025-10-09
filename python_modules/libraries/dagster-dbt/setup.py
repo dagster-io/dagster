@@ -40,7 +40,7 @@ setup(
     include_package_data=True,
     python_requires=">=3.9,<3.14",
     install_requires=[
-        f"dagster{pin}",
+        "dagster==1.11.14",
         # Follow the version support constraints for dbt Core: https://docs.getdbt.com/docs/dbt-versions/core
         f"dbt-core>=1.7,<{DBT_CORE_VERSION_UPPER_BOUND}",
         "Jinja2",
