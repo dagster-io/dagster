@@ -14,7 +14,7 @@ from typing_extensions import Self
 
 import dagster._check as check
 from dagster._config.snap import ConfigTypeSnap
-from dagster._core.definitions.asset_key import AssetKey
+from dagster._core.definitions.asset_key import AssetCheckKey, AssetKey
 from dagster._core.definitions.assets.graph.remote_asset_graph import (
     RemoteAssetCheckNode,
     RemoteAssetGraph,
@@ -218,16 +218,17 @@ class BaseWorkspaceRequestContext(LoadingContext):
     def has_permission_for_selector(
         self,
         permission: str,
-        selector: Union[AssetKey, JobSelector, ScheduleSelector, SensorSelector],
+        selector: Union[AssetKey, AssetCheckKey, JobSelector, ScheduleSelector, SensorSelector],
     ) -> bool:
         if self.has_permission(permission):
             return True
 
-        if isinstance(selector, AssetKey):
+        if isinstance(selector, (AssetKey, AssetCheckKey)):
             if not self.asset_graph.has(selector):
                 return False
 
-            node = self.asset_graph.get(selector).resolve_to_singular_repo_scoped_node()
+            asset_key = selector if isinstance(selector, AssetKey) else selector.asset_key
+            node = self.asset_graph.get(asset_key).resolve_to_singular_repo_scoped_node()
             location_name = node.repository_handle.location_name
         else:
             location_name = selector.location_name
@@ -245,10 +246,14 @@ class BaseWorkspaceRequestContext(LoadingContext):
         return self.has_permission_for_owners(permission, owners)
 
     def get_owners_for_selector(
-        self, selector: Union[AssetKey, JobSelector, ScheduleSelector, SensorSelector]
+        self,
+        selector: Union[AssetKey, AssetCheckKey, JobSelector, ScheduleSelector, SensorSelector],
     ) -> Sequence[str]:
         if isinstance(selector, AssetKey):
             remote_definition = self.asset_graph.get(selector)
+        elif isinstance(selector, AssetCheckKey):
+            # make asset checks permissioned to the same owners as the underlying asset
+            remote_definition = self.asset_graph.get(selector.asset_key)
         elif isinstance(selector, JobSelector):
             remote_definition = self.get_full_job(selector)
         elif isinstance(selector, ScheduleSelector):

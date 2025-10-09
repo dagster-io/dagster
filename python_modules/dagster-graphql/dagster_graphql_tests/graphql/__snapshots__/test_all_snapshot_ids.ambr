@@ -64,7 +64,48 @@
           },
           "type_param_keys": null
         },
-        "Permissive.644230186656cbf4a7bf5594a97caa6e85cded9d": {
+        "Permissive.7493b137e48f8d4b013bce61e92617ff1bc51f7f": {
+          "__class__": "ConfigTypeSnap",
+          "description": null,
+          "enum_values": null,
+          "fields": [
+            {
+              "__class__": "ConfigFieldSnap",
+              "default_provided": true,
+              "default_value_as_json_str": "{}",
+              "description": null,
+              "is_required": false,
+              "name": "dummy_io_manager",
+              "type_key": "Shape.743e47901855cb245064dd633e217bfcb49a11a7"
+            },
+            {
+              "__class__": "ConfigFieldSnap",
+              "default_provided": false,
+              "default_value_as_json_str": null,
+              "description": null,
+              "is_required": true,
+              "name": "hanging_asset_resource",
+              "type_key": "Shape.b13a6c5637084590cc1538f9522324bfeb4b46b3"
+            },
+            {
+              "__class__": "ConfigFieldSnap",
+              "default_provided": true,
+              "default_value_as_json_str": "{\"config\": {}}",
+              "description": "Built-in filesystem IO manager that stores and retrieves values using pickling.",
+              "is_required": false,
+              "name": "io_manager",
+              "type_key": "Shape.44f2a71367507edd1b8e64f739222c4312b3691b"
+            }
+          ],
+          "given_name": null,
+          "key": "Permissive.7493b137e48f8d4b013bce61e92617ff1bc51f7f",
+          "kind": {
+            "__enum__": "ConfigTypeKind.PERMISSIVE_SHAPE"
+          },
+          "scalar_kind": null,
+          "type_param_keys": null
+        },
+        "Permissive.b85d206655e2c361633d05000b88b7aeac603bff": {
           "__class__": "ConfigTypeSnap",
           "description": null,
           "enum_values": null,
@@ -606,6 +647,15 @@
               "default_value_as_json_str": "{}",
               "description": null,
               "is_required": false,
+              "name": "owned_asset_owned_asset_check",
+              "type_key": "Shape.743e47901855cb245064dd633e217bfcb49a11a7"
+            },
+            {
+              "__class__": "ConfigFieldSnap",
+              "default_provided": true,
+              "default_value_as_json_str": "{}",
+              "description": null,
+              "is_required": false,
               "name": "owned_partitioned_asset",
               "type_key": "Shape.743e47901855cb245064dd633e217bfcb49a11a7"
             },
@@ -687,6 +737,15 @@
               "default_value_as_json_str": "{}",
               "description": null,
               "is_required": false,
+              "name": "unowned_asset_unowned_asset_check",
+              "type_key": "Shape.743e47901855cb245064dd633e217bfcb49a11a7"
+            },
+            {
+              "__class__": "ConfigFieldSnap",
+              "default_provided": true,
+              "default_value_as_json_str": "{}",
+              "description": null,
+              "is_required": false,
               "name": "unowned_partitioned_asset",
               "type_key": "Shape.743e47901855cb245064dd633e217bfcb49a11a7"
             },
@@ -755,48 +814,7 @@
             }
           ],
           "given_name": null,
-          "key": "Permissive.644230186656cbf4a7bf5594a97caa6e85cded9d",
-          "kind": {
-            "__enum__": "ConfigTypeKind.PERMISSIVE_SHAPE"
-          },
-          "scalar_kind": null,
-          "type_param_keys": null
-        },
-        "Permissive.7493b137e48f8d4b013bce61e92617ff1bc51f7f": {
-          "__class__": "ConfigTypeSnap",
-          "description": null,
-          "enum_values": null,
-          "fields": [
-            {
-              "__class__": "ConfigFieldSnap",
-              "default_provided": true,
-              "default_value_as_json_str": "{}",
-              "description": null,
-              "is_required": false,
-              "name": "dummy_io_manager",
-              "type_key": "Shape.743e47901855cb245064dd633e217bfcb49a11a7"
-            },
-            {
-              "__class__": "ConfigFieldSnap",
-              "default_provided": false,
-              "default_value_as_json_str": null,
-              "description": null,
-              "is_required": true,
-              "name": "hanging_asset_resource",
-              "type_key": "Shape.b13a6c5637084590cc1538f9522324bfeb4b46b3"
-            },
-            {
-              "__class__": "ConfigFieldSnap",
-              "default_provided": true,
-              "default_value_as_json_str": "{\"config\": {}}",
-              "description": "Built-in filesystem IO manager that stores and retrieves values using pickling.",
-              "is_required": false,
-              "name": "io_manager",
-              "type_key": "Shape.44f2a71367507edd1b8e64f739222c4312b3691b"
-            }
-          ],
-          "given_name": null,
-          "key": "Permissive.7493b137e48f8d4b013bce61e92617ff1bc51f7f",
+          "key": "Permissive.b85d206655e2c361633d05000b88b7aeac603bff",
           "kind": {
             "__enum__": "ConfigTypeKind.PERMISSIVE_SHAPE"
           },
@@ -1480,30 +1498,7 @@
           "scalar_kind": null,
           "type_param_keys": null
         },
-        "Shape.c1b51cfcee4bafa04a39110cb65b6e600e4d98d3": {
-          "__class__": "ConfigTypeSnap",
-          "description": null,
-          "enum_values": null,
-          "fields": [
-            {
-              "__class__": "ConfigFieldSnap",
-              "default_provided": true,
-              "default_value_as_json_str": "true",
-              "description": null,
-              "is_required": false,
-              "name": "require_upstream_step_success",
-              "type_key": "Bool"
-            }
-          ],
-          "given_name": null,
-          "key": "Shape.c1b51cfcee4bafa04a39110cb65b6e600e4d98d3",
-          "kind": {
-            "__enum__": "ConfigTypeKind.STRICT_SHAPE"
-          },
-          "scalar_kind": null,
-          "type_param_keys": null
-        },
-        "Shape.d0907a9028b5012ac0d082429dba0b857b046eb3": {
+        "Shape.b5cfc38cc98de30227a03ea6a246bf796c2b7f74": {
           "__class__": "ConfigTypeSnap",
           "description": null,
           "enum_values": null,
@@ -1529,11 +1524,11 @@
             {
               "__class__": "ConfigFieldSnap",
               "default_provided": true,
-              "default_value_as_json_str": "{\"asset_1\": {}, \"asset_1_my_check\": {}, \"asset_2\": {}, \"asset_3\": {}, \"asset_3_asset_3_check\": {}, \"asset_3_asset_3_other_check\": {}, \"asset_one\": {}, \"asset_two\": {}, \"asset_with_automation_condition\": {}, \"asset_with_compute_storage_kinds\": {\"config\": {}}, \"asset_with_custom_automation_condition\": {}, \"asset_yields_observation\": {}, \"bar\": {}, \"baz\": {}, \"check_in_op_asset\": {}, \"concurrency_asset\": {}, \"concurrency_graph_asset\": {\"ops\": {\"concurrency_op_1\": {}, \"concurrency_op_2\": {}}}, \"concurrency_multi_asset\": {\"config\": {}}, \"downstream_asset\": {}, \"downstream_dynamic_partitioned_asset\": {}, \"downstream_static_partitioned_asset\": {}, \"downstream_time_partitioned_asset\": {}, \"downstream_weekly_partitioned_asset\": {}, \"dynamic_in_multipartitions_fail\": {}, \"dynamic_in_multipartitions_success\": {}, \"executable_asset\": {}, \"fail_partition_materialization\": {}, \"first_asset\": {}, \"foo\": {}, \"foo_bar\": {}, \"fresh_diamond_bottom\": {}, \"fresh_diamond_left\": {}, \"fresh_diamond_right\": {}, \"fresh_diamond_top\": {}, \"grouped_asset_1\": {}, \"grouped_asset_2\": {}, \"grouped_asset_4\": {}, \"grouping_prefix__asset_with_prefix_1\": {}, \"grouping_prefix__asset_with_prefix_2\": {}, \"grouping_prefix__asset_with_prefix_3\": {}, \"grouping_prefix__asset_with_prefix_4\": {}, \"grouping_prefix__asset_with_prefix_5\": {}, \"hanging_asset\": {}, \"hanging_graph\": {\"ops\": {\"hanging_op\": {}, \"my_op\": {}, \"never_runs_op\": {}}}, \"hanging_partition_asset\": {}, \"integers_asset\": {}, \"middle_static_partitioned_asset_1\": {}, \"middle_static_partitioned_asset_2\": {}, \"multi_asset_with_kinds\": {\"config\": {}}, \"multi_run_backfill_policy_asset\": {}, \"multipartitions_1\": {}, \"multipartitions_2\": {}, \"multipartitions_fail\": {}, \"never_runs_asset\": {}, \"no_multipartitions_1\": {}, \"not_included_asset\": {}, \"observable_asset_same_version\": {}, \"output_then_hang_asset\": {}, \"owned_asset\": {}, \"owned_partitioned_asset\": {}, \"single_run_backfill_policy_asset\": {}, \"subsettable_checked_multi_asset\": {\"config\": {}}, \"typed_asset\": {}, \"typed_multi_asset\": {\"config\": {}}, \"unconnected\": {}, \"ungrouped_asset_3\": {}, \"ungrouped_asset_5\": {}, \"unowned_asset\": {}, \"unowned_partitioned_asset\": {}, \"unpartitioned_upstream_of_partitioned\": {}, \"untyped_asset\": {}, \"upstream_daily_partitioned_asset\": {}, \"upstream_dynamic_partitioned_asset\": {}, \"upstream_static_partitioned_asset\": {}, \"upstream_time_partitioned_asset\": {}, \"yield_partition_materialization\": {}}",
+              "default_value_as_json_str": "{\"asset_1\": {}, \"asset_1_my_check\": {}, \"asset_2\": {}, \"asset_3\": {}, \"asset_3_asset_3_check\": {}, \"asset_3_asset_3_other_check\": {}, \"asset_one\": {}, \"asset_two\": {}, \"asset_with_automation_condition\": {}, \"asset_with_compute_storage_kinds\": {\"config\": {}}, \"asset_with_custom_automation_condition\": {}, \"asset_yields_observation\": {}, \"bar\": {}, \"baz\": {}, \"check_in_op_asset\": {}, \"concurrency_asset\": {}, \"concurrency_graph_asset\": {\"ops\": {\"concurrency_op_1\": {}, \"concurrency_op_2\": {}}}, \"concurrency_multi_asset\": {\"config\": {}}, \"downstream_asset\": {}, \"downstream_dynamic_partitioned_asset\": {}, \"downstream_static_partitioned_asset\": {}, \"downstream_time_partitioned_asset\": {}, \"downstream_weekly_partitioned_asset\": {}, \"dynamic_in_multipartitions_fail\": {}, \"dynamic_in_multipartitions_success\": {}, \"executable_asset\": {}, \"fail_partition_materialization\": {}, \"first_asset\": {}, \"foo\": {}, \"foo_bar\": {}, \"fresh_diamond_bottom\": {}, \"fresh_diamond_left\": {}, \"fresh_diamond_right\": {}, \"fresh_diamond_top\": {}, \"grouped_asset_1\": {}, \"grouped_asset_2\": {}, \"grouped_asset_4\": {}, \"grouping_prefix__asset_with_prefix_1\": {}, \"grouping_prefix__asset_with_prefix_2\": {}, \"grouping_prefix__asset_with_prefix_3\": {}, \"grouping_prefix__asset_with_prefix_4\": {}, \"grouping_prefix__asset_with_prefix_5\": {}, \"hanging_asset\": {}, \"hanging_graph\": {\"ops\": {\"hanging_op\": {}, \"my_op\": {}, \"never_runs_op\": {}}}, \"hanging_partition_asset\": {}, \"integers_asset\": {}, \"middle_static_partitioned_asset_1\": {}, \"middle_static_partitioned_asset_2\": {}, \"multi_asset_with_kinds\": {\"config\": {}}, \"multi_run_backfill_policy_asset\": {}, \"multipartitions_1\": {}, \"multipartitions_2\": {}, \"multipartitions_fail\": {}, \"never_runs_asset\": {}, \"no_multipartitions_1\": {}, \"not_included_asset\": {}, \"observable_asset_same_version\": {}, \"output_then_hang_asset\": {}, \"owned_asset\": {}, \"owned_asset_owned_asset_check\": {}, \"owned_partitioned_asset\": {}, \"single_run_backfill_policy_asset\": {}, \"subsettable_checked_multi_asset\": {\"config\": {}}, \"typed_asset\": {}, \"typed_multi_asset\": {\"config\": {}}, \"unconnected\": {}, \"ungrouped_asset_3\": {}, \"ungrouped_asset_5\": {}, \"unowned_asset\": {}, \"unowned_asset_unowned_asset_check\": {}, \"unowned_partitioned_asset\": {}, \"unpartitioned_upstream_of_partitioned\": {}, \"untyped_asset\": {}, \"upstream_daily_partitioned_asset\": {}, \"upstream_dynamic_partitioned_asset\": {}, \"upstream_static_partitioned_asset\": {}, \"upstream_time_partitioned_asset\": {}, \"yield_partition_materialization\": {}}",
               "description": "Configure runtime parameters for ops or assets.",
               "is_required": false,
               "name": "ops",
-              "type_key": "Permissive.644230186656cbf4a7bf5594a97caa6e85cded9d"
+              "type_key": "Permissive.b85d206655e2c361633d05000b88b7aeac603bff"
             },
             {
               "__class__": "ConfigFieldSnap",
@@ -1546,7 +1541,30 @@
             }
           ],
           "given_name": null,
-          "key": "Shape.d0907a9028b5012ac0d082429dba0b857b046eb3",
+          "key": "Shape.b5cfc38cc98de30227a03ea6a246bf796c2b7f74",
+          "kind": {
+            "__enum__": "ConfigTypeKind.STRICT_SHAPE"
+          },
+          "scalar_kind": null,
+          "type_param_keys": null
+        },
+        "Shape.c1b51cfcee4bafa04a39110cb65b6e600e4d98d3": {
+          "__class__": "ConfigTypeSnap",
+          "description": null,
+          "enum_values": null,
+          "fields": [
+            {
+              "__class__": "ConfigFieldSnap",
+              "default_provided": true,
+              "default_value_as_json_str": "true",
+              "description": null,
+              "is_required": false,
+              "name": "require_upstream_step_success",
+              "type_key": "Bool"
+            }
+          ],
+          "given_name": null,
+          "key": "Shape.c1b51cfcee4bafa04a39110cb65b6e600e4d98d3",
           "kind": {
             "__enum__": "ConfigTypeKind.STRICT_SHAPE"
           },
@@ -2596,6 +2614,27 @@
         },
         {
           "__class__": "SolidInvocationSnap",
+          "input_dep_snaps": [
+            {
+              "__class__": "InputDependencySnap",
+              "input_name": "owned_asset",
+              "is_dynamic_collect": false,
+              "upstream_output_snaps": [
+                {
+                  "__class__": "OutputHandleSnap",
+                  "output_name": "result",
+                  "solid_name": "owned_asset"
+                }
+              ]
+            }
+          ],
+          "is_dynamic_mapped": false,
+          "solid_def_name": "owned_asset_owned_asset_check",
+          "solid_name": "owned_asset_owned_asset_check",
+          "tags": {}
+        },
+        {
+          "__class__": "SolidInvocationSnap",
           "input_dep_snaps": [],
           "is_dynamic_mapped": false,
           "solid_def_name": "owned_partitioned_asset",
@@ -2677,6 +2716,27 @@
           "is_dynamic_mapped": false,
           "solid_def_name": "unowned_asset",
           "solid_name": "unowned_asset",
+          "tags": {}
+        },
+        {
+          "__class__": "SolidInvocationSnap",
+          "input_dep_snaps": [
+            {
+              "__class__": "InputDependencySnap",
+              "input_name": "unowned_asset",
+              "is_dynamic_collect": false,
+              "upstream_output_snaps": [
+                {
+                  "__class__": "OutputHandleSnap",
+                  "output_name": "result",
+                  "solid_name": "unowned_asset"
+                }
+              ]
+            }
+          ],
+          "is_dynamic_mapped": false,
+          "solid_def_name": "unowned_asset_unowned_asset_check",
+          "solid_name": "unowned_asset_unowned_asset_check",
           "tags": {}
         },
         {
@@ -2852,7 +2912,7 @@
             "name": "io_manager"
           }
         ],
-        "root_config_key": "Shape.d0907a9028b5012ac0d082429dba0b857b046eb3"
+        "root_config_key": "Shape.b5cfc38cc98de30227a03ea6a246bf796c2b7f74"
       }
     ],
     "name": "__ASSET_JOB",
@@ -4962,6 +5022,40 @@
             "type_key": "Any"
           },
           "description": null,
+          "input_def_snaps": [
+            {
+              "__class__": "InputDefSnap",
+              "dagster_type_key": "Any",
+              "description": null,
+              "name": "owned_asset"
+            }
+          ],
+          "name": "owned_asset_owned_asset_check",
+          "output_def_snaps": [
+            {
+              "__class__": "OutputDefSnap",
+              "dagster_type_key": "Any",
+              "description": null,
+              "is_dynamic": false,
+              "is_required": true,
+              "name": "result"
+            }
+          ],
+          "required_resource_keys": [],
+          "tags": {}
+        },
+        {
+          "__class__": "SolidDefSnap",
+          "config_field_snap": {
+            "__class__": "ConfigFieldSnap",
+            "default_provided": false,
+            "default_value_as_json_str": null,
+            "description": null,
+            "is_required": false,
+            "name": "config",
+            "type_key": "Any"
+          },
+          "description": null,
           "input_def_snaps": [],
           "name": "owned_partitioned_asset",
           "output_def_snaps": [
@@ -5219,6 +5313,40 @@
           "description": null,
           "input_def_snaps": [],
           "name": "unowned_asset",
+          "output_def_snaps": [
+            {
+              "__class__": "OutputDefSnap",
+              "dagster_type_key": "Any",
+              "description": null,
+              "is_dynamic": false,
+              "is_required": true,
+              "name": "result"
+            }
+          ],
+          "required_resource_keys": [],
+          "tags": {}
+        },
+        {
+          "__class__": "SolidDefSnap",
+          "config_field_snap": {
+            "__class__": "ConfigFieldSnap",
+            "default_provided": false,
+            "default_value_as_json_str": null,
+            "description": null,
+            "is_required": false,
+            "name": "config",
+            "type_key": "Any"
+          },
+          "description": null,
+          "input_def_snaps": [
+            {
+              "__class__": "InputDefSnap",
+              "dagster_type_key": "Any",
+              "description": null,
+              "name": "unowned_asset"
+            }
+          ],
+          "name": "unowned_asset_unowned_asset_check",
           "output_def_snaps": [
             {
               "__class__": "OutputDefSnap",
@@ -41339,7 +41467,7 @@
   'a42b76205f669056b37fd68ef75743cbb470f27e'
 # ---
 # name: test_all_snapshot_ids[1]
-  '2dcc0e426c6020f684901aacf2c03eeb4fe58110'
+  '58a28f485f6ae0b69e09820237ca43e22c1491d4'
 # ---
 # name: test_all_snapshot_ids[20]
   '''
