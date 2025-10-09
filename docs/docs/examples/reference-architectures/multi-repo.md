@@ -9,14 +9,14 @@ sidebar_custom_props:
 
 ## Objective
 
-Build a platform that has two separate code locations which each run their own environment (dependencies as well as Python and Dagster versions).
+Build a platform that supports two separate code locations, each running in its own environment (with distinct dependencies, Python versions, and Dagster versions).
 
 ```mermaid
 %%{
   init: {
     'theme': 'base',
     'themeVariables': {
-      'primaryColor': '#4F43DD',
+      'primaryColor': '#A7A0F8',
       'primaryTextColor': '#FFFFFF',
       'primaryBorderColor': '#231F1B',
       'lineColor': '#DEDDFF',
@@ -26,8 +26,8 @@ Build a platform that has two separate code locations which each run their own e
   }
 }%%
 graph LR
-    A[<img src='/images/dagster-primary-mark.svg' width='50' height='50' /> Code Location DS]
-    B[<img src='/images/dagster-primary-mark.svg' width='50' height='50' /> Code Location DE]
+    A[<img src='/images/dagster-primary-mark.svg' width='50' height='50' /> Code Location Data Science]
+    B[<img src='/images/dagster-primary-mark.svg' width='50' height='50' /> Code Location Data Engineering]
 ```
 
 ## Dagster Architecture
@@ -47,7 +47,7 @@ There are two separate [code locations](/deployment/code-locations), `data-engin
 └── uv.lock
 ```
 
-In order to launch both of these code locations together we can configure a (`dg.toml` file)[api/clis/dg-cli/dg-cli-configuration#user-configuration-file].
+To launch both of these code locations together, configure a (`dg.toml` file)[api/clis/dg-cli/dg-cli-configuration#user-configuration-file]. This file defines multiple workspaces and ensures each code location is registered with the same Dagster deployment.
 
 **Dagster Features**
 
@@ -55,7 +55,9 @@ In order to launch both of these code locations together we can configure a (`dg
 
 ---
 
-### 2. dbt modeling in BigQuery
+### 2. Data science code location
+
+The data-science code location contains machine learning workflows, experimentation pipelines, and data preparation tasks. Its environment is tuned for heavier numerical computation and may include libraries like `pandas`, `scikit-learn`, or `pytorch`.
 
 ```
 .
@@ -64,19 +66,14 @@ In order to launch both of these code locations together we can configure a (`dg
     ├── README.md
     └── src
         └── data_engineering
-            ├── definitions.py
             └── definitions.py
 ```
 
-Each model within the dbt project will be created as a Dagster asset. Models depend on tables managed by Airbyte. Using declarative automation in Dagster, models can be set to trigger automatically when the upstream Airbyte assets materialize.
-
-Data quality is ensured through Dagster's automatic generation of asset checks for tests defined within the dbt project.
-
 ---
 
-### 3. Analyze data in Hex
+### 3. Data engineering code location
 
-After the data has been modeled with dbt, additional non-SQL based analysis can be handled with Notebooks in Hex.
+The data-engineering code location is focused on ETL/ELT workflows, database synchronization, and other data movement or transformation jobs. It requires a lighter dependency set optimized for reliability and scalability.
 
 ```
 .
@@ -85,6 +82,5 @@ After the data has been modeled with dbt, additional non-SQL based analysis can 
     ├── README.md
     └── src
         └── data_engineering
-            ├── definitions.py
             └── definitions.py
 ```
