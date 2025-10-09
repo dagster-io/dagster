@@ -2,11 +2,23 @@
 description: Configure multiple Dagster+ agents for redundancy or isolation in the same environment or across different environments using Docker, Kubernetes, or Amazon ECS.
 sidebar_label: Multiple agents
 sidebar_position: 7000
-title: Running multiple agents
+title: Running multiple Dagster agents
 tags: [dagster-plus-feature]
 ---
 
 Each Dagster+ full deployment (e.g., `prod`) needs to have at least one agent running. A single agent is adequate for many use cases, but you may want to run multiple agents to provide redundancy if a single agent goes down.
+
+## When to use multiple agents
+
+- For redundancy and high availability
+- When you need to run agents in completely separate infrastructure environments or AWS accounts, with separate compute resources, volumes, and networks
+- To dedicate specific agents for branch deployments
+
+## Considerations
+
+- Additional infrastructure management overhead
+- More complex configuration required for multiple agent setup
+- Need to configure agent queues for proper workload routing
 
 ## Running multiple agents in the same environment
 
