@@ -18,6 +18,7 @@ from dagster._annotations import (
 )
 from dagster._record import get_original_class, is_record
 from sphinx.application import Sphinx
+from sphinx.domains.python import ObjectEntry
 from sphinx.environment import BuildEnvironment
 from sphinx.ext.autodoc import (
     ClassDocumenter,
@@ -171,6 +172,70 @@ def get_child_as(node: nodes.Node, index: int, node_type: type[T_Node]) -> T_Nod
     return child
 
 
+def transform_inventory_uri(uri: str) -> str:
+    """Transform Sphinx source paths to final documentation URLs.
+
+    Transforms paths like:
+        sections/api/apidocs/dagster/internals/
+    to:
+        api/dagster/internals
+    """
+    # Remove the 'sections/api/apidocs/' prefix
+    if uri.startswith("sections/api/apidocs/"):
+        transformed = uri.replace("sections/api/apidocs/", "api/", 1)
+        # Remove trailing slash if present
+        if transformed.endswith("/"):
+            transformed = transformed[:-1]
+        return transformed
+    return uri
+
+
+def fix_inventory_uris(app: Sphinx, env) -> None:
+    """Fix URIs in the Sphinx inventory before it's written.
+
+    This hook runs during env-updated which happens after all documents are read
+    and before the build writes output files, allowing us to transform the URIs
+    in the domain data.
+    """
+    if env is None:
+        return
+
+    # Access the inventory data from the Python domain
+    py_domain = env.domaindata.get("py", {})
+    objects = py_domain.get("objects", {})
+
+    # Transform each URI
+    # In modern Sphinx (8.x), objects is dict[str, ObjectEntry]
+    # ObjectEntry is a namedtuple/dataclass with (docname, node_id, objtype, aliased)
+    modified_count = 0
+    for name, obj_data in list(objects.items()):
+        if isinstance(obj_data, ObjectEntry):
+            # New format: ObjectEntry with docname attribute
+            old_docname = obj_data.docname
+            new_docname = transform_inventory_uri(old_docname)
+            if new_docname != old_docname:
+                # Create a new ObjectEntry with the transformed docname
+                objects[name] = ObjectEntry(
+                    docname=new_docname,
+                    node_id=obj_data.node_id,
+                    objtype=obj_data.objtype,
+                    aliased=obj_data.aliased,
+                )
+                modified_count += 1
+        elif isinstance(obj_data, tuple):
+            # Old format: (docname, node_id, objtype, aliased)
+            docname, node_id, objtype, aliased = obj_data
+            new_docname = transform_inventory_uri(docname)
+            if new_docname != docname:
+                objects[name] = (new_docname, node_id, objtype, aliased)
+                modified_count += 1
+
+    if modified_count > 0:
+        logger.info(
+            f"[dagster_sphinx] Transformed {modified_count} inventory URIs for correct URL structure"
+        )
+
+
 def setup(app):
     app.setup_extension("sphinx.ext.autodoc")  # Require autodoc extension
     app.add_autodocumenter(ConfigurableDocumenter)
@@ -181,6 +246,8 @@ def setup(app):
     app.add_node(flag, html=(visit_flag, depart_flag))
     app.add_role("inline-flag", inline_flag_role)
     app.connect("autodoc-process-docstring", process_docstring)
+    # Connect to env-updated event which happens after reading all docs and before writing
+    app.connect("env-updated", fix_inventory_uris)
     # app.connect("doctree-resolved", substitute_deprecated_text)
 
     return {
