@@ -8,7 +8,6 @@ from dagster._core.definitions.partitions.partition_key_range import PartitionKe
 from dagster._core.definitions.selector import JobSelector
 from dagster._core.errors import DagsterInvariantViolationError
 from dagster._core.nux import get_has_seen_nux, set_nux_seen
-from dagster._core.remote_representation.code_location import is_implicit_asset_job_name
 from dagster._core.workspace.permissions import Permissions
 from dagster._daemon.asset_daemon import set_auto_materialize_paused
 
@@ -501,14 +500,6 @@ class GrapheneDeleteDynamicPartitionsMutation(graphene.Mutation):
 
 async def create_execution_params_and_launch_pipeline_reexec(graphene_info, execution_params_dict):
     execution_params = await create_execution_params(graphene_info, execution_params_dict)
-    if (
-        is_implicit_asset_job_name(execution_params.selector.job_name)
-        and not execution_params.selector.asset_selection
-    ):
-        raise DagsterInvariantViolationError(
-            "Must provide an asset selection when executing an implicit asset job."
-        )
-
     asset_keys: Optional[Sequence[AssetKey]] = (
         list(execution_params.selector.asset_selection)
         if execution_params.selector.asset_selection

@@ -8,8 +8,6 @@ import {
   Tag,
 } from '@dagster-io/ui-components';
 import {Link} from 'react-router-dom';
-import {UserDisplay} from 'shared/runs/UserDisplay.oss';
-import styled from 'styled-components';
 
 import {TimeFromNow} from '../../ui/TimeFromNow';
 import {AssetDefinedInMultipleReposNotice} from '../AssetDefinedInMultipleReposNotice';
@@ -23,6 +21,7 @@ import {
   isCanonicalUriEntry,
 } from '../../metadata/TableSchema';
 import {RepositoryLink} from '../../nav/RepositoryLink';
+import {DefinitionOwners} from '../../owners/DefinitionOwners';
 import {CopyIconButton} from '../../ui/CopyButton';
 import {buildTagString} from '../../ui/tagAsString';
 import {WorkspaceLocationNodeFragment} from '../../workspace/WorkspaceContext/types/WorkspaceQueries.types';
@@ -86,19 +85,9 @@ export const DefinitionSection = ({
         </Box>
       </AttributeAndValue>
       <AttributeAndValue label="Owners">
-        {cachedOrLiveAssetNode.owners &&
-          cachedOrLiveAssetNode.owners.length > 0 &&
-          cachedOrLiveAssetNode.owners.map((owner, idx) =>
-            owner.__typename === 'UserAssetOwner' ? (
-              <UserAssetOwnerWrapper key={idx}>
-                <UserDisplay key={idx} email={owner.email} size="very-small" />
-              </UserAssetOwnerWrapper>
-            ) : (
-              <Tag icon="people" key={idx}>
-                {owner.team}
-              </Tag>
-            ),
-          )}
+        {cachedOrLiveAssetNode.owners && cachedOrLiveAssetNode.owners.length > 0 && (
+          <DefinitionOwners owners={cachedOrLiveAssetNode.owners} />
+        )}
       </AttributeAndValue>
       <AttributeAndValue label="Compute kind">
         {cachedOrLiveAssetNode.computeKind && (
@@ -217,9 +206,3 @@ const SystemTagsToggle = ({tags}: {tags: Array<{key: string; value: string}>}) =
     );
   }
 };
-
-const UserAssetOwnerWrapper = styled.div`
-  > div {
-    background-color: ${Colors.backgroundGray()};
-  }
-`;
