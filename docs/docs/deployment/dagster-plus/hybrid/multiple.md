@@ -22,7 +22,7 @@ In Docker, you can set the number of replicas for a service in the `docker-compo
 ```yaml
 services:
   dagster-cloud-agent:
-    ...xf
+    ...
     deploy:
       mode: replicated
       replicas: 2

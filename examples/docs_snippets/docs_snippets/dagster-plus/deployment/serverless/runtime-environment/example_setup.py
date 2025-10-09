@@ -13,5 +13,10 @@ setup(
         "matplotlib",
         # highlight-end
     ],
-    extras_require={"dev": ["dagster-webserver", "dagster-dg-cli",]},
+    extras_require={
+        "dev": [
+            "dagster-webserver",
+            "dagster-dg-cli",
+        ]
+    },
 )

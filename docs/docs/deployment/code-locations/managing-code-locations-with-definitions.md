@@ -28,6 +28,10 @@ Code locations are loaded in a different process and communicate with Dagster sy
 | ------------------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------- |
 | <PyObject section="definitions" module="dagster" object="Definitions" /> | The object that contains all the definitions defined within a code location. Definitions include assets, jobs, resources, schedules, and sensors. |
 
+## Defining code locations
+
+A Dagster project can be scaffolded using the [`create-dagster` CLI](/guides/build/projects/creating-a-new-project). This will create a top-level variable that contains a <PyObject section="definitions" module="dagster" object="Definitions" /> object in a Python module.
+
 ## Deploying and loading code locations
 
 - [Local development](#local-development)

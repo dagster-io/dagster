@@ -23,10 +23,7 @@ run_retries:
 
 In both Dagster+ and Dagster Open Source, you can also configure retries using tags either on Job definitions or in the Dagster UI [Launchpad](/guides/operate/webserver).
 
-<CodeExample
-  path="docs_snippets/docs_snippets/deploying/job_retries.py"
-  title="src/my_project/assets.py"
-/>
+<CodeExample path="docs_snippets/docs_snippets/deploying/job_retries.py" title="src/my_project/assets.py" />
 
 :::note
 
