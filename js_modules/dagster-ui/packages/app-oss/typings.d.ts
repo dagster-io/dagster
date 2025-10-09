@@ -1,5 +1,4 @@
 /* eslint-disable import/no-default-export */
-/// <reference types="next" />
 
 type StaticImageData = {
   src: string;
