@@ -2326,6 +2326,22 @@
         dict({
           '__typename': 'UsedSolid',
           'definition': dict({
+            'name': 'owned_asset_owned_asset_check',
+          }),
+          'invocations': list([
+            dict({
+              'pipeline': dict({
+                'name': '__ASSET_JOB',
+              }),
+              'solidHandle': dict({
+                'handleID': 'owned_asset_owned_asset_check',
+              }),
+            }),
+          ]),
+        }),
+        dict({
+          '__typename': 'UsedSolid',
+          'definition': dict({
             'name': 'owned_partitioned_asset',
           }),
           'invocations': list([
@@ -3039,6 +3055,22 @@
               }),
               'solidHandle': dict({
                 'handleID': 'unowned_asset',
+              }),
+            }),
+          ]),
+        }),
+        dict({
+          '__typename': 'UsedSolid',
+          'definition': dict({
+            'name': 'unowned_asset_unowned_asset_check',
+          }),
+          'invocations': list([
+            dict({
+              'pipeline': dict({
+                'name': '__ASSET_JOB',
+              }),
+              'solidHandle': dict({
+                'handleID': 'unowned_asset_unowned_asset_check',
               }),
             }),
           ]),

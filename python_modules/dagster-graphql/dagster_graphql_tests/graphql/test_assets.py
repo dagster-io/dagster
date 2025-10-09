@@ -3079,6 +3079,8 @@ class TestAssetAwareEventLog(ExecutingGraphQLContextTestMatrix):
                 ["one"],
                 ["check_in_op_asset"],
                 ["asset_3"],
+                ["owned_asset"],
+                ["unowned_asset"],
             ]:
                 assert a["hasAssetChecks"] is True
             else:

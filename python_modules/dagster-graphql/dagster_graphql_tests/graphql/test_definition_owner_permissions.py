@@ -3,10 +3,10 @@ import warnings
 from abc import ABC
 from collections.abc import Generator, Iterator, Sequence
 from contextlib import contextmanager
-from typing import Union, cast
+from typing import Optional, Union, cast
 from unittest import mock
 
-from dagster import AssetKey, BetaWarning
+from dagster import AssetCheckKey, AssetKey, BetaWarning
 from dagster._core.definitions.assets.graph.remote_asset_graph import RemoteAssetNode
 from dagster._core.definitions.assets.job.asset_job import IMPLICIT_ASSET_JOB_NAME
 from dagster._core.definitions.selector import JobSelector, ScheduleSelector, SensorSelector
@@ -207,8 +207,47 @@ class BaseDefinitionOwnerPermissionsTestSuite(ABC):
         )
         return typename, run_id
 
-    def graphql_launch_job_reexecution(self, context, job_name: str, run_id: str):
-        selector = infer_job_selector(context, job_name)
+    def graphql_launch_asset_job(
+        self, context, asset_selection: list[AssetKey], asset_check_selection: list[AssetCheckKey]
+    ):
+        selector = infer_job_selector(
+            context,
+            IMPLICIT_ASSET_JOB_NAME,
+            asset_selection=[{"path": asset_key.path} for asset_key in asset_selection],
+            asset_check_selection=[
+                {"assetKey": {"path": check_key.asset_key.path}, "name": check_key.name}
+                for check_key in asset_check_selection
+            ],
+        )
+        result = execute_dagster_graphql(
+            context,
+            LAUNCH_PIPELINE_EXECUTION_MUTATION,
+            variables={"executionParams": {"selector": selector, "mode": "default"}},
+        )
+        assert result.data
+        return result.data["launchPipelineExecution"]["__typename"]
+
+    def graphql_launch_job_reexecution(
+        self,
+        context,
+        job_name: str,
+        run_id: str,
+        asset_selection: Optional[list[AssetKey]] = None,
+        asset_check_selection: Optional[list[AssetCheckKey]] = None,
+    ):
+        selector = infer_job_selector(
+            context,
+            job_name,
+            asset_selection=[{"path": key.path} for key in asset_selection]
+            if asset_selection
+            else None,
+            asset_check_selection=[
+                {"assetKey": {"path": check_key.asset_key.path}, "name": check_key.name}
+                for check_key in asset_check_selection
+            ]
+            if asset_check_selection
+            else None,
+        )
 
         result = execute_dagster_graphql(
             context,
@@ -386,6 +425,30 @@ class BaseDefinitionOwnerPermissionsTestSuite(ABC):
 
         raise Exception(f"Unknown definition handle {def_handle}")
 
+    def _create_run_with_asset_check_selection(
+        self, context, asset_selection: list[AssetKey], asset_check_selection: list[AssetCheckKey]
+    ):
+        return context.instance.create_run(
+            job_name=IMPLICIT_ASSET_JOB_NAME,
+            run_id=None,
+            run_config=None,
+            status=None,
+            tags=None,
+            root_run_id=None,
+            parent_run_id=None,
+            step_keys_to_execute=None,
+            execution_plan_snapshot=None,
+            job_snapshot=None,
+            parent_job_snapshot=None,
+            asset_selection=set(asset_selection),
+            asset_check_selection=set(asset_check_selection),
+            resolved_op_selection=None,
+            op_selection=None,
+            job_code_origin=None,
+            remote_job_origin=None,
+            asset_graph=None,
+        )
+
     def test_definitions_are_owned(self, graphql_context: WorkspaceRequestContext):
         for def_handle in self.get_owned_definitions():
             def_type = self._get_type_for_handle(def_handle)
@@ -510,6 +573,97 @@ class BaseDefinitionOwnerPermissionsTestSuite(ABC):
         )
         assert self.graphql_cancel_backfill(graphql_context, backfill_id_b) == "UnauthorizedError"
 
+    def test_asset_check_run_launch_permissions(self, graphql_context: WorkspaceRequestContext):
+        assert (
+            self.graphql_launch_asset_job(
+                graphql_context, [], [AssetCheckKey(AssetKey(["owned_asset"]), "owned_asset_check")]
+            )
+            == "LaunchRunSuccess"
+        )
+        assert (
+            self.graphql_launch_asset_job(
+                graphql_context,
+                [],
+                [AssetCheckKey(AssetKey(["unowned_asset"]), "unowned_asset_check")],
+            )
+            == "UnauthorizedError"
+        )
+
+    def test_mixed_asset_and_check_run_launch_permissions(
+        self, graphql_context: WorkspaceRequestContext
+    ):
+        assert (
+            self.graphql_launch_asset_job(
+                graphql_context,
+                [AssetKey(["owned_asset"])],
+                [AssetCheckKey(AssetKey(["owned_asset"]), "owned_asset_check")],
+            )
+            == "LaunchRunSuccess"
+        )
+        assert (
+            self.graphql_launch_asset_job(
+                graphql_context,
+                [AssetKey(["unowned_asset"])],
+                [AssetCheckKey(AssetKey(["unowned_asset"]), "unowned_asset_check")],
+            )
+            == "UnauthorizedError"
+        )
+        assert (
+            self.graphql_launch_asset_job(
+                graphql_context,
+                [AssetKey(["owned_asset"])],
+                [AssetCheckKey(AssetKey(["unowned_asset"]), "unowned_asset_check")],
+            )
+            == "UnauthorizedError"
+        )
+        assert (
+            self.graphql_launch_asset_job(
+                graphql_context,
+                [AssetKey(["unowned_asset"])],
+                [AssetCheckKey(AssetKey(["owned_asset"]), "owned_asset_check")],
+            )
+            == "UnauthorizedError"
+        )
+
+    def test_asset_check_reexecution_permissions(self, graphql_context: WorkspaceRequestContext):
+        run_with_owned = self._create_run_with_asset_check_selection(
+            graphql_context,
+            asset_selection=[AssetKey(["owned_asset"])],
+            asset_check_selection=[AssetCheckKey(AssetKey(["owned_asset"]), "owned_asset_check")],
+        )
+
+        run_with_unowned = self._create_run_with_asset_check_selection(
+            graphql_context,
+            asset_selection=[AssetKey(["unowned_asset"])],
+            asset_check_selection=[
+                AssetCheckKey(AssetKey(["unowned_asset"]), "unowned_asset_check")
+            ],
+        )
+        assert (
+            self.graphql_launch_job_reexecution(
+                graphql_context,
+                IMPLICIT_ASSET_JOB_NAME,
+                run_with_owned.run_id,
+                asset_selection=[AssetKey(["owned_asset"])],
+                asset_check_selection=[
+                    AssetCheckKey(AssetKey(["owned_asset"]), "owned_asset_check")
+                ],
+            )
+            == "LaunchRunSuccess"
+        )
+        assert (
+            self.graphql_launch_job_reexecution(
+                graphql_context,
+                IMPLICIT_ASSET_JOB_NAME,
+                run_with_unowned.run_id,
+                asset_selection=[AssetKey(["unowned_asset"])],
+                asset_check_selection=[
+                    AssetCheckKey(AssetKey(["unowned_asset"]), "unowned_asset_check")
+                ],
+            )
+            == "UnauthorizedError"
+        )
+
 
 class TestDefinitionOwnerPermissions(
     BaseDefinitionOwnerPermissionsTestSuite,
@@ -533,12 +687,15 @@ class TestDefinitionOwnerPermissions(
 
         def _mock_selector_ownership(
             permission: str,
-            selector: Union[JobSelector, ScheduleSelector, SensorSelector, AssetKey],
+            selector: Union[JobSelector, ScheduleSelector, SensorSelector, AssetKey, AssetCheckKey],
         ) -> bool:
             owned_defs = self.get_owned_definitions()
             _did_check[permission] = True
             if isinstance(selector, AssetKey):
                 return selector in owned_defs
+            elif isinstance(selector, AssetCheckKey):
+                # Asset checks inherit permissions from their underlying asset
+                return selector.asset_key in owned_defs
             elif isinstance(selector, JobSelector):
                 return selector.job_name in owned_defs
             elif isinstance(selector, ScheduleSelector):
