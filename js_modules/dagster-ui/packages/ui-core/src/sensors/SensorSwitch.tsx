@@ -33,7 +33,7 @@ import {
 } from './types/SensorMutations.types';
 import {SensorStateQuery, SensorStateQueryVariables} from './types/SensorStateQuery.types';
 import {SensorSwitchFragment} from './types/SensorSwitchFragment.types';
-import {usePermissionsForLocation} from '../app/Permissions';
+import {DEFAULT_DISABLED_REASON} from '../app/Permissions';
 import {InstigationStatus, SensorType} from '../graphql/types';
 import {TimeFromNow} from '../ui/TimeFromNow';
 import {repoAddressToSelector} from '../workspace/repoAddressToSelector';
@@ -49,11 +49,6 @@ interface Props {
 
 export const SensorSwitch = (props: Props) => {
   const {repoAddress, sensor, size = 'large'} = props;
-  const {
-    permissions: {canStartSensor, canStopSensor},
-    disabledReasons,
-  } = usePermissionsForLocation(repoAddress.location);
-
   const repoAddressSelector = useMemo(() => repoAddressToSelector(repoAddress), [repoAddress]);
 
   const {id, name} = sensor;
@@ -157,7 +152,7 @@ export const SensorSwitch = (props: Props) => {
 
   if (
     !running &&
-    canStartSensor &&
+    sensor.sensorState.hasStartPermission &&
     sensor.sensorType === SensorType.RUN_STATUS &&
     lastProcessedTimestamp &&
     isRunStatusSensorLagging(lastProcessedTimestamp)
@@ -225,7 +220,11 @@ export const SensorSwitch = (props: Props) => {
     );
   }
 
-  if (canStartSensor && canStopSensor) {
+  if (
+    sensor.sensorState &&
+    sensor.sensorState.hasStartPermission &&
+    sensor.sensorState.hasStopPermission
+  ) {
     return (
       <Checkbox
         format="switch"
@@ -237,7 +236,9 @@ export const SensorSwitch = (props: Props) => {
     );
   }
 
-  const lacksPermission = (running && !canStartSensor) || (!running && !canStopSensor);
+  const lacksPermission =
+    (running && !sensor.sensorState.hasStartPermission) ||
+    (!running && !sensor.sensorState.hasStopPermission);
   const disabled = toggleOffInFlight || toggleOnInFlight || lacksPermission;
 
   const switchElement = (
@@ -251,10 +252,7 @@ export const SensorSwitch = (props: Props) => {
   );
 
   return lacksPermission ? (
-    <Tooltip
-      content={running ? disabledReasons.canStartSensor : disabledReasons.canStopSensor}
-      display="flex"
-    >
+    <Tooltip content={DEFAULT_DISABLED_REASON} display="flex">
       {switchElement}
     </Tooltip>
   ) : (
