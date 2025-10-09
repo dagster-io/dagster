@@ -27,7 +27,7 @@ def get_mapped_resource_config(
     resource_defs: Mapping[str, ResourceDefinition], resource_config: Mapping[str, Any]
 ) -> Mapping[str, ResourceConfig]:
     resource_config_schema = define_resource_dictionary_cls(
-        resource_defs, set(resource_defs.keys())
+        resource_defs, set(resource_defs.keys()), is_permissive=False
     )
     config_evr = process_config(resource_config_schema, resource_config)
     if not config_evr.success:

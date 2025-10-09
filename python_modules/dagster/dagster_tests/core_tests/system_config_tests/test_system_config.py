@@ -410,8 +410,14 @@ def test_required_op_with_required_subfield():
 
 
 def test_implicit_asset_job_subset_config():
+    class MyConnectionResource(dg.ConfigurableResource):
+        username: str
+
+    class MyOtherResource(dg.ConfigurableResource):
+        groupname: str
+
     @dg.asset(config_schema={"foo": int})
-    def asset():
+    def asset(my_conn: MyConnectionResource):
         return 1
 
     @dg.asset(config_schema={"bar": int})
@@ -419,7 +425,7 @@ def test_implicit_asset_job_subset_config():
         return 2
 
     @dg.asset
-    def asset3():
+    def asset3(my_other_conn: MyOtherResource):
         return 3
 
     @dg.asset
@@ -433,6 +439,10 @@ def test_implicit_asset_job_subset_config():
                 "explicit_asset_job", selection=["asset", "asset2", "asset_without_config"]
             )
         ],
+        resources={
+            "my_conn": MyConnectionResource(username="my_user"),
+            "my_other_conn": MyOtherResource(groupname="my_group"),
+        },
     )
 
     explicit_asset_job = defs.resolve_job_def("explicit_asset_job")
@@ -448,10 +458,19 @@ def test_implicit_asset_job_subset_config():
     implicit_subset_env_type = create_run_config_schema_type(implicit_asset_job_subset)
     assert isinstance(implicit_subset_env_type, Shape)
     assert isinstance(implicit_subset_env_type.fields["ops"].config_type, Permissive)
-    permissive = cast("Permissive", implicit_subset_env_type.fields["ops"].config_type)
-    assert permissive.fields.keys() == {
+    assert isinstance(implicit_subset_env_type.fields["resources"].config_type, Permissive)
+    ops_permissive = cast("Permissive", implicit_subset_env_type.fields["ops"].config_type)
+    assert ops_permissive.fields.keys() == {
         "asset",
         "asset2",
+    }
+
+    resources_permissive = cast(
+        "Permissive", implicit_subset_env_type.fields["resources"].config_type
+    )
+    assert resources_permissive.fields.keys() == {
+        "io_manager",
+        "my_conn",
     }
 
     # despite having an asset_selection of just one asset, the subset job still includes the other assets
@@ -459,12 +478,22 @@ def test_implicit_asset_job_subset_config():
     explicit_subset_env_type = create_run_config_schema_type(explicit_asset_job_subset)
     assert isinstance(explicit_subset_env_type, Shape)
     assert isinstance(explicit_subset_env_type.fields["ops"].config_type, Shape)
-    shape = cast("Shape", explicit_subset_env_type.fields["ops"].config_type)
+    assert isinstance(explicit_subset_env_type.fields["resources"].config_type, Shape)
 
-    assert shape.fields.keys() == {
+    ops_shape = cast("Shape", explicit_subset_env_type.fields["ops"].config_type)
+
+    assert ops_shape.fields.keys() == {
         "asset",
         "asset2",
         "asset_without_config",
+    }
+
+    resources_shape = cast("Shape", explicit_subset_env_type.fields["resources"].config_type)
+
+    assert resources_shape.fields.keys() == {
+        "io_manager",
+        "my_conn",
+        "my_other_conn",
     }
 
 
