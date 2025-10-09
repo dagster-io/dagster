@@ -1,5 +1,29 @@
 # Changelog
 
+## 1.11.14 (core) / 0.27.14 (libraries)
+
+### New
+
+- `UnionTypes` (e.g. `Foo | Bar`) are now supported in `ConfigurableResources`. (Thanks, [@DominikHallab](https://github.com/DominikHallab)!)
+- Added an `output_metadata` parameter to `build_output_context` (Thanks, [@zyd14](https://github.com/zyd14)!)
+- `ResolvedAssetSpec` and related resolvers now support setting the `freshness_policy` field.
+- `dagster-dbt project prepare-and-package --components .` will no longer attempt to load components outside of `DbtProjectComponent`, preventing errors when attempting to run this command in environments that do not have the necessary env vars set for other components.
+- click<8.2 upper bound has been removed
+- [dagster-airbyte][dagster-fivetran][dagster-powerbi][dagster-sling][dagster-dlt] The `AirbyteWorkspaceComponent`, `FivetranAccountComponent`, `PowerBIWorkspaceComponent`, `SlingReplicationCollectionComponent`, and `DltLoadCollectionComponent` components have been updated to include a `get_asset_spec` method that can be overridden by subclasses to modify translation behavior.
+- [dagster-airbyte][dagster-fivetran] The `AirbyteWorkspaceComponent` and `FivetranAccountComponent` have been updated to include an `execute()` method that can be overridden by subclasses to modify runtime execution behavior.
+- [dagster-airbyte] The `AirbyteWorkspaceComponent` no longer binds an `"io_manager"` or `"airbyte"` resource, meaning it can be used in tandem with other definitions that use those keys without causing conflicts.
+- [dagster-dbt] The `DbtProjectComponent` now supports overriding `get_asset_spec` and `get_asset_check_spec` methods when subclassing.
+- [dagster-fivetran] The `FivetranAccountComponent` no longer binds an `"io_manager"` or `"fivetran"` resource, meaning it can be used in tandem with other definitions that use those keys without causing conflicts.
+
+### Bugfixes
+
+- Fixed a bug that would cause errors when instantiating a `TimeWindowPartitionsDefinition` with a monthly schedule and the default day offset.
+- [ui] The `Materialize` button in the lineage view is now disabled while the view is updating to avoid inconsistencies when launching runs.
+- [ui] Fixed an issue where the "View error" link in the popup that displayed when a backfill failed to launch was very difficult to see.
+- [dagster-dbt] Fixed issue where the `select` and `exclude` parameters to `@dbt_assets` would be ignored when generating `AssetCheckSpecs` (Thanks, [@nathanskone](https://github.com/nathanskone)!)
+- [dagster-powerbi] Previously, assets generated for semantic models would have a kind tag with an invalid space character (`"semantic model"`). Now, they have the kind tag `"semantic_model"`.
+- [dagster-sling] Resolved issue that caused the substring "INF" to be stripped from all logs.
+
 ## 1.11.13 (core) / 0.27.13 (libraries)
 
 ### New
