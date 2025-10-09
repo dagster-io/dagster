@@ -17,7 +17,7 @@ Branch Deployments compare asset definitions in the branch deployment against th
 
 You can also apply filters to show only new and changed assets in the UI. This makes it easy to understand which assets will be impacted by the changes in the pull request associated with the branch deployment.
 
-::: note
+:::note
 
 The default base for branch deployments is `prod`. To configure a different deployment as the base, [create a branch deployment using the dagster-cloud CLI](/deployment/dagster-plus/ci-cd/branch-deployments/using-branch-deployments-with-the-cli) and specify it using the optional `--base-deployment-name` parameter.
 
