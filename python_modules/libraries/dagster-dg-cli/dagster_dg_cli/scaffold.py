@@ -21,7 +21,7 @@ def scaffold_component(
 ) -> None:
     module_parts = module_name.split(".")
     module_path = dg_context.root_path
-    for i in range(len(module_parts) - 1):
+    for i in range(len(dg_context.root_module_name.split(".")), len(module_parts) - 1):
         module = ".".join(module_parts[: i + 1])
         module_path = dg_context.get_path_for_local_module(module, require_exists=False)
         if not module_path.exists():

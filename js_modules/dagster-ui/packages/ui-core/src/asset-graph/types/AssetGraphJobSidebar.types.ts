@@ -187,6 +187,10 @@ export type AssetGraphSidebarQuery = {
           | {__typename: 'UrlMetadataEntry'; url: string; label: string; description: string | null}
         >;
         tags: Array<{__typename: 'PipelineTag'; key: string; value: string}>;
+        owners: Array<
+          | {__typename: 'TeamDefinitionOwner'; team: string}
+          | {__typename: 'UserDefinitionOwner'; email: string}
+        >;
         modes: Array<{
           __typename: 'Mode';
           id: string;
@@ -1325,4 +1329,4 @@ export type AssetGraphSidebarQuery = {
       };
 };
 
-export const AssetGraphSidebarQueryVersion = '4f2dbdd2f880492b69e02fb600314bfe6e0c76d95e5d0c63184b2736db7c1aa3';
+export const AssetGraphSidebarQueryVersion = '423d6b155cc63752472fa9bde2ff75a6e872fa1c230473394bdf6057789ad9e8';

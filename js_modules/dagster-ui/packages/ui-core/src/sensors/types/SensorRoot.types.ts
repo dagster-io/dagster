@@ -85,6 +85,10 @@ export type SensorRootQuery = {
           __typename: 'SensorMetadata';
           assetKeys: Array<{__typename: 'AssetKey'; path: Array<string>}> | null;
         };
+        owners: Array<
+          | {__typename: 'TeamDefinitionOwner'; team: string}
+          | {__typename: 'UserDefinitionOwner'; email: string}
+        >;
       }
     | {__typename: 'SensorNotFoundError'}
     | {__typename: 'UnauthorizedError'};
@@ -187,6 +191,6 @@ export type SensorAssetSelectionQuery = {
     | {__typename: 'UnauthorizedError'};
 };
 
-export const SensorRootQueryVersion = 'fd32c8557a75c273133137c289091357635f3be0af17b9a57b052087f8e9d023';
+export const SensorRootQueryVersion = '2a50267e2bec5042609d0a0a269e4ac4d39a7d337fbd2ec9768e887cdf6344a3';
 
 export const SensorAssetSelectionQueryVersion = '2fb6c2c612ee7ab4a7ad1f59cfd7677a6a3d14319200f8c49b43850de8b3b0f3';
