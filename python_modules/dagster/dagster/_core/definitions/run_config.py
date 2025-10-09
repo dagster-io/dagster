@@ -49,7 +49,8 @@ if TYPE_CHECKING:
 def define_resource_dictionary_cls(
     resource_defs: Mapping[str, ResourceDefinition],
     required_resources: AbstractSet[str],
-) -> Shape:
+    is_permissive: bool,
+) -> Union[Permissive, Shape]:
     fields = {}
     for resource_name, resource_def in resource_defs.items():
         if resource_def.config_schema:
@@ -65,7 +66,7 @@ def define_resource_dictionary_cls(
                 description=resource_def.description,
             )
 
-    return Shape(fields=fields)
+    return Permissive(fields=fields) if is_permissive else Shape(fields=fields)
 
 
 def remove_none_entries(ddict: Mapping[Any, Any]) -> dict:
@@ -157,6 +158,7 @@ def define_run_config_schema_type(creation_data: RunConfigSchemaCreationData) ->
             define_resource_dictionary_cls(
                 creation_data.resource_defs,
                 creation_data.required_resources,
+                is_permissive=is_implicit_asset_job_name(creation_data.job_name),
             ),
             description="Configure how shared resources are implemented within a run.",
         ),

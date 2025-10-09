@@ -446,7 +446,7 @@ class JobDefinition(IHasInternalInit):
     @property
     def run_config_schema(self) -> "RunConfigSchema":
         if self._run_config_schema is None:
-            self._run_config_schema = _create_run_config_schema(self, self.required_resource_keys)
+            self._run_config_schema = _create_run_config_schema(self)
         return self._run_config_schema
 
     @public
@@ -1431,7 +1431,6 @@ def _build_all_node_defs(node_defs: Sequence[NodeDefinition]) -> Mapping[str, No
 
 def _create_run_config_schema(
     job_def: JobDefinition,
-    required_resources: AbstractSet[str],
 ) -> "RunConfigSchema":
     from dagster._core.definitions.run_config import (
         RunConfigSchemaCreationData,
@@ -1445,6 +1444,12 @@ def _create_run_config_schema(
     # from the original job as ignored to allow execution with
     # run config that is valid for the original
     ignored_nodes: Sequence[Node] = []
+
+    if job_def.is_subset and is_implicit_asset_job_name(job_def.name):
+        included_resource_defs = job_def.get_required_resource_defs()
+    else:
+        included_resource_defs = job_def.resource_defs
+
     if job_def.is_subset and not is_implicit_asset_job_name(job_def.name):
         if isinstance(job_def.graph, SubselectedGraphDefinition):  # op selection provided
             ignored_nodes = job_def.graph.get_top_level_omitted_nodes()
@@ -1466,10 +1471,10 @@ def _create_run_config_schema(
             graph_def=job_def.graph,
             dependency_structure=job_def.graph.dependency_structure,
             executor_def=job_def.executor_def,
-            resource_defs=job_def.resource_defs,
+            resource_defs=included_resource_defs,
             logger_defs=job_def.loggers,
             ignored_nodes=ignored_nodes,
-            required_resources=required_resources,
+            required_resources=job_def.required_resource_keys,
             direct_inputs=job_def.input_values,
             asset_layer=job_def.asset_layer,
         )
