@@ -210,6 +210,7 @@ export const ASSET_FAILED_TO_MATERIALIZE_FRAGMENT = gql`
     metadataEntries {
       ...MetadataEntryFragment
     }
+    materializationFailureType
   }
 
   ${METADATA_ENTRY_FRAGMENT}
