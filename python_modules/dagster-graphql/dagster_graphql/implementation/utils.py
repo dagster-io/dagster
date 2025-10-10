@@ -160,12 +160,8 @@ def has_permission_for_asset_graph(
                 # If any of the asset keys don't map to a location (e.g. because they are no longer in the
                 # graph) need deployment-wide permissions - no valid code location to check
                 return context.has_permission(permission)
-            # use the underlying asset key for checks to handle permissions
-            asset_key = key if isinstance(key, AssetKey) else key.asset_key
-            asset_node = asset_graph.get(asset_key)
-            location_names.add(
-                asset_node.resolve_to_singular_repo_scoped_node().repository_handle.location_name
-            )
+            location_name = asset_graph.get_repository_handle(key).location_name
+            location_names.add(location_name)
     else:
         location_names = set(
             handle.location_name for handle in asset_graph.repository_handles_by_key.values()
