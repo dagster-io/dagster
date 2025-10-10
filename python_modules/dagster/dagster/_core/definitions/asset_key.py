@@ -195,7 +195,7 @@ def check_opt_coercible_to_asset_key_prefix_param(
 def key_prefix_from_coercible(key_prefix: CoercibleToAssetKeyPrefix) -> Sequence[str]:
     if isinstance(key_prefix, str):
         return [key_prefix]
-    elif isinstance(key_prefix, list):
+    elif isinstance(key_prefix, Sequence):
         return key_prefix
     else:
         check.failed(f"Unexpected type for key_prefix: {type(key_prefix)}")
