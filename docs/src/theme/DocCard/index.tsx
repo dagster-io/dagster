@@ -33,42 +33,48 @@ function useCategoryItemsPlural() {
     );
 }
 
-function CardContainer({href, children}: {href: string; children: ReactNode}): ReactNode {
-  return (
-    <Link href={href} className={clsx('card padding--lg', styles.cardContainer)} style={{height: '100%'}}>
-      {children}
-    </Link>
-  );
-}
-
 function CardLayout({
-  href,
-  logo,
-  title,
-  description,
-  community,
+  item,
+  ...props
 }: {
-  href: string;
-  title: string;
-  logo?: string;
-  description?: string;
-  community: boolean;
-}): ReactNode {
+  item: PropSidebarItemCategory | PropSidebarItemLink;
+} & React.ComponentPropsWithoutRef<'a'>): ReactNode {
+  const title = item.label;
+  const logo: string | null = (item?.customProps?.logo as string) || null;
+  const community: boolean = (item?.customProps?.community as boolean) || false;
+  let href, description;
+  const categoryItemsPlural = useCategoryItemsPlural();
+  if (item.type === 'category') {
+    href = findFirstSidebarItemLink(item);
+    description = item.description ?? categoryItemsPlural(item.items.length);
+  } else {
+    href = item.href;
+    description = item.description;
+  }
+
+  const LinkComponent = Link as any; // ← Type assertion to bypass the error
+
   return (
-    <CardContainer href={href}>
-      <div style={{display: 'flex', flexDirection: 'row', gap: '12px'}}>
-        <div style={{flex: '0 0 64px', display: logo ? 'block' : 'none'}}>
-          <img
-            src={useBaseUrl(logo)}
-            style={{
-              display: 'block',
-              width: '64px',
-              height: '64px',
-              background: 'var(--dagster-white)',
-              padding: '4px',
-            }}
-          />
-        </div>
+    <LinkComponent
+      href={href}
+      {...props}
+      className={clsx('card padding--lg', styles.cardContainer)}
+      style={{height: '100%'}}>
+      <div style={{display: 'flex', flexDirection: 'row', gap: '12px'}} className="cardContainer">
+        {logo && (
+          <div style={{flex: '0 0 64px'}}>
+            <img
+              src={useBaseUrl(logo)}
+              style={{
+                display: 'block',
+                width: '64px',
+                height: '64px',
+                background: 'var(--dagster-white)',
+                padding: '4px',
+              }}
+            />
+          </div>
+        )}
         <div>
           <div style={{display: 'flex', flexDirection: 'row'}}>
             <Heading as="h2" className={clsx('', styles.cardTitle)} title={title}>
@@ -87,57 +93,13 @@ function CardLayout({
           )}
         </div>
       </div>
-    </CardContainer>
-  );
-}
-
-function CardCategory({item}: {item: PropSidebarItemCategory}): ReactNode {
-  const href = findFirstSidebarItemLink(item);
-  const categoryItemsPlural = useCategoryItemsPlural();
-
-  // Unexpected: categories that don't have a link have been filtered upfront
-  if (!href) {
-    return null;
-  }
-
-  const logo: string | null = (item?.customProps?.logo as string) || null;
-
-  return (
-    <CardLayout
-      href={href}
-      title={item.label}
-      logo={logo}
-      description={item.description ?? categoryItemsPlural(item.items.length)}
-      community={false}
-    />
-  );
-}
-
-function CardLink({item}: {item: PropSidebarItemLink}): ReactNode {
-  // https://github.com/facebook/docusaurus/discussions/10476
-  //const icon = item?.customProps?.myEmoji ?? (isInternalUrl(item.href) ? '📄️' : '🔗');
-  const logo: string | null = (item?.customProps?.logo as string) || null;
-  const community: boolean = (item?.customProps?.community as boolean) || false;
-  const doc = useDocById(item.docId ?? undefined);
-
-  return (
-    <CardLayout
-      href={item.href}
-      logo={logo}
-      title={item.label}
-      description={item.description ?? doc?.description}
-      community={community}
-    />
+    </LinkComponent>
   );
 }
 
 export default function DocCard({item}: Props): ReactNode {
-  switch (item.type) {
-    case 'link':
-      return <CardLink item={item} />;
-    case 'category':
-      return <CardCategory item={item} />;
-    default:
-      throw new Error(`unknown item type ${JSON.stringify(item)}`);
+  if (item.type !== 'link' && item.type !== 'category') {
+    throw new Error(`unknown item type ${JSON.stringify(item)}`);
   }
+  return <CardLayout item={item} />;
 }
