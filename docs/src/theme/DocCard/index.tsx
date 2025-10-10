@@ -52,28 +52,19 @@ function CardLayout({
     description = item.description;
   }
 
-  const LinkComponent = Link as any; // ← Type assertion to bypass the error
+  const LinkComponent = Link as any; //Type assertion to bypass linting error
 
   return (
     <LinkComponent
       href={href}
       {...props}
-      className={clsx('card padding--lg', styles.cardContainer)}
-      style={{height: '100%'}}>
-      <div style={{display: 'flex', flexDirection: 'row', gap: '12px'}} className="cardContainer">
-        {logo && (
-          <div style={{flex: '0 0 64px'}}>
+      className={clsx('card', styles.cardContainer)}
+    >
+      {logo && (
             <img
+              className={styles.cardLogo}
               src={useBaseUrl(logo)}
-              style={{
-                display: 'block',
-                width: '64px',
-                height: '64px',
-                background: 'var(--dagster-white)',
-                padding: '4px',
-              }}
             />
-          </div>
         )}
         <div>
           <div style={{display: 'flex', flexDirection: 'row'}}>
@@ -92,7 +83,6 @@ function CardLayout({
             </p>
           )}
         </div>
-      </div>
     </LinkComponent>
   );
 }
