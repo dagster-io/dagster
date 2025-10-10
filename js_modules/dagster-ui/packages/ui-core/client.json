@@ -112,7 +112,7 @@
   "BackfillSelectorQuery": "715413ccaeb3a6d4b6d9b6ff9aa6cb98ab40e2d4ee1469a9883182f9d3f540b6",
   "AddDynamicPartitionMutation": "09fbfa963ad43c7fecfc8e4f780e1ca98ffcea9f0b04e916c78061667cb250eb",
   "JobBackfillsQuery": "7c0183fc088aaf2caafbf72dfc0ed87fafc4da9669f65ae537237203dbad7e75",
-  "PartitionsStatusQuery": "b51624d0ee6d3afd7bfd67307b3391318d53e7e3d977d3605f8a405d38c5969e",
+  "PartitionsStatusQuery": "3e60aeb057e0bb84148834c3398087479ce492df35cce0bfd3fd363da71d7ba1",
   "PartitionStepStatusPipelineQuery": "d5ef608096052079835b7080ed72204eab4168a32953d065b398ae7de975c0fb",
   "PartitionStepLoaderQuery": "c81bb54e0d99fe562bdeab9ae126f737c827cb034601c62cd7a6962ac93a9e48",
   "PipelineExplorerRootQuery": "4221d0d8b2d5f733513cc046448f5d9931186904aa33429dde0883718f3922e3",

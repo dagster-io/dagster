@@ -26,7 +26,7 @@ import {
 import {PartitionRuns} from './useMatrixData';
 import {usePartitionStepQuery} from './usePartitionStepQuery';
 import {QueryResult, gql, useQuery} from '../apollo-client';
-import {usePermissionsForLocation} from '../app/Permissions';
+import {DEFAULT_DISABLED_REASON} from '../app/Permissions';
 import {PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorFragment';
 import {PythonErrorInfo} from '../app/PythonErrorInfo';
 import {RunStatus} from '../graphql/types';
@@ -174,10 +174,6 @@ export const OpJobPartitionsViewContent = React.memo(
     repoAddress: RepoAddress;
     partitionsQueryResult: QueryResult<PartitionsStatusQuery, PartitionsStatusQueryVariables>;
   }) => {
-    const {
-      permissions: {canLaunchPartitionBackfill},
-      disabledReasons,
-    } = usePermissionsForLocation(repoAddress.location);
     const {viewport, containerProps} = useViewport();
 
     const [pageSize, setPageSize] = useState(60);
@@ -300,7 +296,7 @@ export const OpJobPartitionsViewContent = React.memo(
             >
               Refresh
             </Button>
-            {canLaunchPartitionBackfill ? (
+            {partitionSet.hasBackfillPermission ? (
               <Button
                 icon={<Icon name="add_circle" />}
                 onClick={() => {
@@ -311,7 +307,7 @@ export const OpJobPartitionsViewContent = React.memo(
                 Launch backfill…
               </Button>
             ) : (
-              <Tooltip content={disabledReasons.canLaunchPartitionBackfill}>
+              <Tooltip content={DEFAULT_DISABLED_REASON} display="block">
                 <Button icon={<Icon name="add_circle" />} disabled>
                   Launch backfill…
                 </Button>
@@ -476,6 +472,7 @@ const PARTITIONS_STATUS_QUERY = gql`
       }
       ...PythonErrorFragment
     }
+    hasBackfillPermission
   }
 
   fragment OpJobPartitionStatus on PartitionStatus {
