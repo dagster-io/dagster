@@ -169,6 +169,9 @@ class DefinitionsLoadContext:
         else:
             return self._pending_reconstruction_metadata[metadata_key]
 
+    def add_defs_state_info(self, key: str, version: str) -> None:
+        self._defs_state_info = DefsStateInfo.add_version(self._defs_state_info, key, version)
+
     @contextmanager
     def state_path(self, key: str, state_storage: DefsStateStorage) -> Iterator[Optional[Path]]:
         """Context manager that creates a temporary path to hold local state for a component."""
