@@ -54,7 +54,9 @@ def core_celery_execution_loop(job_context, execution_plan, step_execution_fn):
     step_results = {}  # Dict[ExecutionStep, celery.AsyncResult]
     step_errors = {}
 
-    with InstanceConcurrencyContext(job_context.instance, job_context.dagster_run) as instance_concurrency_context:
+    with InstanceConcurrencyContext(
+        job_context.instance, job_context.dagster_run
+    ) as instance_concurrency_context:
         with execution_plan.start(
             retry_mode=job_context.executor.retries,
             sort_key_fn=priority_for_step,
