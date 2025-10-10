@@ -1,5 +1,5 @@
 src
-└── my_project
+└── dagster_tutorial
     ├── __init__.py
     ├── definitions.py
     └── defs
