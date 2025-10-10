@@ -6,8 +6,8 @@ import dagster as dg
 import pytest
 from dagster import job
 from dagster._api.snapshot_repository import (
-    gen_streaming_external_repositories_data_grpc,
-    sync_get_streaming_external_repositories_data_grpc,
+    gen_external_repositories_data_grpc,
+    sync_get_external_repositories_data_grpc,
 )
 from dagster._core.errors import DagsterUserCodeProcessError
 from dagster._core.instance import DagsterInstance
@@ -35,7 +35,7 @@ from dagster_tests.api_tests.utils import get_bar_repo_code_location
 
 def test_streaming_external_repositories_api_grpc(instance):
     with get_bar_repo_code_location(instance) as code_location:
-        repository_snaps = sync_get_streaming_external_repositories_data_grpc(
+        repository_snaps = sync_get_external_repositories_data_grpc(
             code_location.client, code_location
         )
 
@@ -51,7 +51,7 @@ def test_streaming_external_repositories_api_grpc(instance):
         }
 
         async_repository_snaps = asyncio.run(
-            gen_streaming_external_repositories_data_grpc(code_location.client, code_location)
+            gen_external_repositories_data_grpc(code_location.client, code_location)
         )
 
         assert async_repository_snaps == repository_snaps
@@ -66,15 +66,13 @@ def test_streaming_external_repositories_error(instance):
             DagsterUserCodeProcessError,
             match='Could not find a repository called "does_not_exist"',
         ):
-            sync_get_streaming_external_repositories_data_grpc(code_location.client, code_location)
+            sync_get_external_repositories_data_grpc(code_location.client, code_location)
 
         with pytest.raises(
             DagsterUserCodeProcessError,
             match='Could not find a repository called "does_not_exist"',
         ):
-            asyncio.run(
-                gen_streaming_external_repositories_data_grpc(code_location.client, code_location)
-            )
+            asyncio.run(gen_external_repositories_data_grpc(code_location.client, code_location))
 
 
 @dg.op
@@ -117,7 +115,7 @@ def test_giant_external_repository_streaming_grpc():
     with dg.instance_for_test() as instance:
         with get_giant_repo_grpc_code_location(instance) as code_location:
             # Using streaming allows the giant repo to load
-            repository_snaps = sync_get_streaming_external_repositories_data_grpc(
+            repository_snaps = sync_get_external_repositories_data_grpc(
                 code_location.client, code_location
             )
 
