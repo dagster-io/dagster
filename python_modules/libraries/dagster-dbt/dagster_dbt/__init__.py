@@ -37,7 +37,7 @@ from dagster_dbt.dagster_dbt_translator import (
 from dagster_dbt.dbt_manifest_asset_selection import (
     DbtManifestAssetSelection as DbtManifestAssetSelection,
 )
-from dagster_dbt.dbt_project import (
+from dagster_dbt.dbt_project.dbt_project import (
     DagsterDbtProjectPreparer as DagsterDbtProjectPreparer,
     DbtProject as DbtProject,
     DbtProjectPreparer as DbtProjectPreparer,

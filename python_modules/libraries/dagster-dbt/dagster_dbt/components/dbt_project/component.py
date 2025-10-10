@@ -11,6 +11,7 @@ from typing import Annotated, Any, Literal, Optional, Union
 
 import dagster as dg
 from dagster._annotations import public
+from dagster._core.errors import DagsterInvariantViolationError
 from dagster._utils.cached_method import cached_method
 from dagster.components.component.state_backed_component import StateBackedComponent
 from dagster.components.core.component_tree import ComponentTree
@@ -39,7 +40,8 @@ from dagster_dbt.dagster_dbt_translator import (
 )
 from dagster_dbt.dbt_manifest import validate_manifest
 from dagster_dbt.dbt_manifest_asset_selection import DbtManifestAssetSelection
-from dagster_dbt.dbt_project import DbtProject
+from dagster_dbt.dbt_project import DbtProject, RemoteDbtProject
+from dagster_dbt.dbt_project.remote_dbt_project import RemoteGitDbtProject
 from dagster_dbt.utils import ASSET_RESOURCE_TYPES
 
 
@@ -63,29 +65,31 @@ class DbtProjectArgs(dg.Resolvable):
     state_path: Optional[str] = None
 
 
-def resolve_dbt_project(context: ResolutionContext, model) -> DbtProject:
+def resolve_dbt_project(context: ResolutionContext, model) -> Union[DbtProject, RemoteDbtProject]:
     if isinstance(model, str):
         return DbtProject(
             context.resolve_source_relative_path(
                 context.resolve_value(model, as_type=str),
             )
         )
+    elif isinstance(model, DbtProjectArgs.model()):
+        args = DbtProjectArgs.resolve_from_model(context, model)
 
-    args = DbtProjectArgs.resolve_from_model(context, model)
+        kwargs = {}  # use optionally splatted kwargs to avoid redefining default value
+        if args.target_path:
+            kwargs["target_path"] = args.target_path
 
-    kwargs = {}  # use optionally splatted kwargs to avoid redefining default value
-    if args.target_path:
-        kwargs["target_path"] = args.target_path
-
-    return DbtProject(
-        project_dir=context.resolve_source_relative_path(args.project_dir),
-        target=args.target,
-        profiles_dir=args.profiles_dir,
-        state_path=args.state_path,
-        packaged_project_dir=args.packaged_project_dir,
-        profile=args.profile,
-        **kwargs,
-    )
+        return DbtProject(
+            project_dir=context.resolve_source_relative_path(args.project_dir),
+            target=args.target,
+            profiles_dir=args.profiles_dir,
+            state_path=args.state_path,
+            packaged_project_dir=args.packaged_project_dir,
+            profile=args.profile,
+            **kwargs,
+        )
+    else:
+        return RemoteGitDbtProject.resolve_from_model(context, model)
 
 
 DbtMetadataAddons: TypeAlias = Literal["column_metadata", "row_count"]
@@ -116,10 +120,10 @@ class DbtProjectComponent(StateBackedComponent, dg.Resolvable):
     """
 
     project: Annotated[
-        DbtProject,
+        Union[DbtProject, RemoteDbtProject],
         Resolver(
             resolve_dbt_project,
-            model_field_type=Union[str, DbtProjectArgs.model()],
+            model_field_type=Union[str, DbtProjectArgs.model(), RemoteGitDbtProject.model()],
             description="The path to the dbt project or a mapping defining a DbtProject",
             examples=[
                 "{{ project_root }}/path/to/dbt_project",
@@ -209,10 +213,21 @@ class DbtProjectComponent(StateBackedComponent, dg.Resolvable):
         ),
     ] = True
 
+    def _get_defs_state_key(self) -> str:
+        if isinstance(self.project, DbtProject):
+            # For local projects, we can directly access the name
+            return f"{self.__class__.__name__}[{self.project.name}]"
+        elif isinstance(self.project, RemoteGitDbtProject):
+            # For remote projects, the project may not yet have been fetched
+            return f"{self.__class__.__name__}[{self.project.repo_url}]"
+        else:
+            # Fallback to the type name
+            return f"{self.__class__.__name__}[{type(self.project).__name__}]"
+
     @property
     def defs_state_config(self) -> DefsStateConfig:
         return DefsStateConfig(
-            key=f"{self.__class__.__name__}[{self.project.name}]",
+            key=self._get_defs_state_key(),
             type=DefsStateManagementType.LOCAL_FILESYSTEM,
             refresh_if_dev=self.prepare_if_dev,
         )
@@ -240,37 +255,62 @@ class DbtProjectComponent(StateBackedComponent, dg.Resolvable):
         return self._base_translator.get_asset_check_spec(asset_spec, manifest, unique_id, project)
 
     @cached_property
-    def cli_resource(self):
-        return DbtCliResource(self.project)
+    def dbt_project(self) -> DbtProject:
+        if isinstance(self.project, DbtProject):
+            return self.project
+        else:
+            # TODO: some amount of hacking could be done to make this work, but we
+            # should probably think of a more systemic solution
+            raise DagsterInvariantViolationError("Unsupported for RemoteDbtProject")
 
     def get_asset_selection(
         self, select: str, exclude: str = DBT_DEFAULT_EXCLUDE
     ) -> DbtManifestAssetSelection:
         return DbtManifestAssetSelection.build(
-            manifest=self.project.manifest_path,
+            manifest=self.dbt_project.manifest_path,
             dagster_dbt_translator=self.translator,
             select=select,
             exclude=exclude,
         )
 
     def write_state_to_path(self, state_path: Path) -> None:
+        state_dir = state_path.parent
+        project_dir = state_dir / "project"
+        if isinstance(self.project, RemoteDbtProject):
+            self.project.fetch(project_dir)
+
+        dbt_project = self._resolve_dbt_project_from_state_path(project_dir)
+
         # compile the manifest
-        self.project.preparer.prepare(self.project)
-        # move the manifest to the correct path
-        shutil.copyfile(self.project.manifest_path, state_path)
+        dbt_project.preparer.prepare(dbt_project)
+        # copy the manifest file to the state path
+        shutil.copyfile(dbt_project.manifest_path, state_path)
+
+    def _resolve_dbt_project_from_state_path(self, state_path: Optional[Path]) -> DbtProject:
+        if isinstance(self.project, DbtProject):
+            return self.project
+        elif state_path is not None:
+            return self.project.get_dbt_project(state_path.parent / "project")
+        else:
+            raise DagsterInvariantViolationError(
+                "Attempted to build definitions for a RemoteDbtProject, but no state path was provided. "
+                "This can happen if `dg utils refresh-defs-state` is not executed during the image build step when deploying."
+            )
 
     def build_defs_from_state(
         self, context: dg.ComponentLoadContext, state_path: Optional[Path]
     ) -> dg.Definitions:
+        dbt_project = self._resolve_dbt_project_from_state_path(state_path)
         if state_path is not None:
-            shutil.copyfile(state_path, self.project.manifest_path)
+            # Copy the state (manifest) to the intended runtime location
+            shutil.copyfile(state_path, dbt_project.manifest_path)
 
         res_ctx = context.resolution_context
 
         @dbt_assets(
-            manifest=self.project.manifest_path,
-            project=self.project,
-            name=self.op.name if self.op else self.project.name,
+            manifest=dbt_project.manifest_path,
+            project=dbt_project,
+            name=self.op.name if self.op else dbt_project.name,
             op_tags=self.op.tags if self.op else None,
             dagster_dbt_translator=self.translator,
             select=self.select,
@@ -279,7 +319,7 @@ class DbtProjectComponent(StateBackedComponent, dg.Resolvable):
         )
         def _fn(context: dg.AssetExecutionContext):
             with _set_resolution_context(res_ctx):
-                yield from self.execute(context=context, dbt=self.cli_resource)
+                yield from self.execute(context=context, dbt=DbtCliResource(dbt_project))
 
         return dg.Definitions(assets=[_fn])
 
@@ -341,7 +381,7 @@ class DbtProjectComponent(StateBackedComponent, dg.Resolvable):
 
     @cached_property
     def _validated_manifest(self):
-        return validate_manifest(self.project.manifest_path)
+        return validate_manifest(self.dbt_project.manifest_path)
 
     @cached_property
     def _validated_translator(self):
@@ -364,7 +404,7 @@ class DbtProjectComponent(StateBackedComponent, dg.Resolvable):
         return dagster_dbt_translator.get_asset_spec(
             manifest,
             next(iter(matching_model_ids)),
-            self.project,
+            self.dbt_project,
         ).key
 
 
@@ -396,4 +436,4 @@ def get_projects_from_dbt_component(components: Path) -> list[DbtProject]:
         of_type=DbtProjectComponent
     )
 
-    return [component.project for component in project_components]
+    return [component.dbt_project for component in project_components]

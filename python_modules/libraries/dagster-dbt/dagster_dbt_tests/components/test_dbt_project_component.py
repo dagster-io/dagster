@@ -32,6 +32,7 @@ from dagster_dbt.components.dbt_project.component import (
     _set_resolution_context,
     get_projects_from_dbt_component,
 )
+from dagster_dbt.core.resource import DbtCliResource
 from dagster_shared import check
 
 ensure_dagster_tests_import()
@@ -346,13 +347,13 @@ def test_state_path(
             },
         },
     )
-    state_path = comp.cli_resource.state_path
+    state_path = DbtCliResource(comp.dbt_project).state_path
     assert state_path
     assert Path(state_path).relative_to(dbt_path.resolve())
-    assert comp.project.state_path
-    assert comp.project.state_path.resolve() == Path(state_path)
-    assert comp.project.target == "target"
-    assert comp.project.profile == "profile"
+    assert comp.dbt_project.state_path
+    assert comp.dbt_project.state_path.resolve() == Path(state_path)
+    assert comp.dbt_project.target == "target"
+    assert comp.dbt_project.profile == "profile"
 
 
 @pytest.mark.parametrize(
@@ -443,7 +444,7 @@ project:
   project_dir: {dbt_path!s}
   {target}
         """)
-    assert c.project.target == "prod"
+    assert c.dbt_project.target == "prod"
 
 
 def test_project_root(dbt_path: Path):
