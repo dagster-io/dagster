@@ -6,6 +6,8 @@ sidebar_label: CI/CD in Serverless
 tags: [dagster-plus-feature]
 ---
 
+import UpdateGitHubActionVersion from '@site/docs/partials/_UpdateGitHubActionVersion.md';
+
 :::note
 
 This guide only applies to [Dagster+ Serverless deployments](/deployment/dagster-plus/serverless).
@@ -36,6 +38,8 @@ If you're a GitHub user, with a single click our GitHub app with GitHub Actions 
   - You can temporarily disable the branch protection rules and then re-enable them after the automatic setup completes.
 
 :::
+
+<UpdateGitHubActionVersion />
 
 </TabItem>
 
