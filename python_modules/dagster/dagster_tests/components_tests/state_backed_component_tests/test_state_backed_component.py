@@ -13,6 +13,7 @@ from dagster._core.definitions.definitions_load_context import (
 )
 from dagster._core.definitions.repository_definition.repository_definition import RepositoryLoadData
 from dagster._core.instance_for_test import instance_for_test
+from dagster._utils.env import environ
 from dagster._utils.test.definitions import scoped_definitions_load_context
 from dagster.components.component.state_backed_component import StateBackedComponent
 from dagster.components.core.component_tree import ComponentTreeException
@@ -138,7 +139,11 @@ def test_code_server_state_backed_component() -> None:
             component_cls=MyStateBackedComponent,
             defs_yaml_contents={
                 "type": "dagster_tests.components_tests.state_backed_component_tests.test_state_backed_component.MyStateBackedComponent",
-                "attributes": {"defs_state": {"type": "LEGACY_CODE_SERVER_SNAPSHOTS"}},
+                "attributes": {
+                    "defs_state": {
+                        "type": DefsStateManagementType.LEGACY_CODE_SERVER_SNAPSHOTS.value
+                    }
+                },
             },
             defs_path="foo",
         )
@@ -179,6 +184,41 @@ def test_code_server_state_backed_component() -> None:
                 spec = specs[0]
                 assert spec.metadata["state_value"] == original_metadata_value
                 assert "bar_" in spec.metadata["state_value"]
+
+
+@pytest.mark.parametrize(
+    "storage_location",
+    [
+        DefsStateManagementType.LOCAL_FILESYSTEM,
+        DefsStateManagementType.VERSIONED_STATE_STORAGE,
+        DefsStateManagementType.LEGACY_CODE_SERVER_SNAPSHOTS,
+    ],
+)
+def test_dev_mode_state_backed_component(storage_location: DefsStateManagementType) -> None:
+    with (
+        instance_for_test(),
+        create_defs_folder_sandbox() as sandbox,
+        # we're in dev mode
+        environ({"DAGSTER_IS_DEV_CLI": "1"}),
+    ):
+        component_path = sandbox.scaffold_component(
+            component_cls=MyStateBackedComponent,
+            defs_yaml_contents={
+                "type": "dagster_tests.components_tests.state_backed_component_tests.test_state_backed_component.MyStateBackedComponent",
+                "attributes": {"defs_state": {"type": storage_location.value}},
+            },
+            defs_path="foo",
+        )
+
+        with scoped_definitions_load_context(
+            load_type=DefinitionsLoadType.INITIALIZATION,
+        ):
+            with sandbox.load_component_and_build_defs(defs_path=component_path) as (_, defs):
+                specs = defs.get_all_asset_specs()
+                spec = specs[0]
+                metadata_value = spec.metadata["state_value"]
+                # should automatically load
+                assert metadata_value != "initial"
 
 
 def test_multiple_components() -> None:
