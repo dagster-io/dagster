@@ -226,10 +226,7 @@ class BaseWorkspaceRequestContext(LoadingContext):
         if isinstance(selector, (AssetKey, AssetCheckKey)):
             if not self.asset_graph.has(selector):
                 return False
-
-            asset_key = selector if isinstance(selector, AssetKey) else selector.asset_key
-            node = self.asset_graph.get(asset_key).resolve_to_singular_repo_scoped_node()
-            location_name = node.repository_handle.location_name
+            location_name = self.asset_graph.get_repository_handle(selector).location_name
         else:
             location_name = selector.location_name
 
@@ -264,7 +261,7 @@ class BaseWorkspaceRequestContext(LoadingContext):
         if not remote_definition:
             return []
 
-        return get_owners_for_definition(remote_definition)
+        return remote_definition.owners
 
     def has_permission_for_owners(self, permission: str, owners: Sequence[str]) -> bool:
         return any(
@@ -1257,25 +1254,3 @@ class WorkspaceProcessContext(IWorkspaceProcessContext):
             read_only=self.read_only,
             grpc_server_registry=self._grpc_server_registry,
         )
-
-
-def get_location_name_for_definition(remote_definition: RemoteDefinition) -> str:
-    if isinstance(remote_definition, RemoteAssetNode):
-        return (
-            remote_definition.resolve_to_singular_repo_scoped_node().repository_handle.location_name
-        )
-    elif isinstance(
-        remote_definition,
-        (RemoteJob, RemoteSchedule, RemoteSensor, RemoteAssetCheckNode),
-    ):
-        return remote_definition.handle.location_name
-    else:
-        check.failed(f"Unexpected remote definition type {type(remote_definition)}")
-
-
-def get_owners_for_definition(remote_definition: RemoteDefinition) -> Sequence[str]:
-    if isinstance(remote_definition, RemoteAssetCheckNode):
-        return []
-    if not remote_definition.owners:
-        return []
-    return remote_definition.owners
