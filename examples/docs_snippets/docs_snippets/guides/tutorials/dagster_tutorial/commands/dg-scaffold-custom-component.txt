@@ -1,3 +1,3 @@
-dg scaffold defs dagster_tutorial.components.tutorial.Tutorial tutorial
+dg scaffold defs my_project.components.tutorial.Tutorial tutorial
 
-Creating defs at <YOUR PATH>/dagster-tutorial/src/dagster_tutorial/defs/tutorial.
+Creating defs at <YOUR PATH>/my-project/src/my_project/defs/tutorial.

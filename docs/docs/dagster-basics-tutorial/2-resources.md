@@ -40,7 +40,7 @@ Next, scaffold a resources file:
 
 <CliInvocationExample path="docs_snippets/docs_snippets/guides/tutorials/dagster_tutorial/commands/dg-scaffold-resources.txt" />
 
-This adds a generic resources file to your project. The `resources.py` file is now part of the `dagster-tutorial` module:
+This adds a generic resources file to your project. The `resources.py` file is now part of your project module:
 
 <CliInvocationExample path="docs_snippets/docs_snippets/guides/tutorials/dagster_tutorial/tree/resources.txt" />
 
@@ -76,7 +76,7 @@ Run `dg check` again to confirm that the assets and resources are configured cor
 
 Back in the UI, your assets will not look different, but you can view the resource in the **Definitions** tab:
 
-1. Click **Deployment**, then click "dagster-tutorial" to see your deployment.
+1. Click **Deployment**, then click on your project to see your deployment.
 2. Click **Definitions**.
 3. Navigate to the "Resources" section to view all of your resources, then select "duckdb":
 

@@ -1,4 +1,4 @@
 src
-└── dagster_tutorial
+└── my_project
     └── defs
         └── schedules.py
