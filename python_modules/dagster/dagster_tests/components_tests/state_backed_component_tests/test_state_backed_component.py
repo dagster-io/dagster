@@ -3,7 +3,7 @@ import json
 import random
 import shutil
 from pathlib import Path
-from typing import Literal, Optional
+from typing import Optional
 
 import dagster as dg
 import pytest
@@ -17,19 +17,20 @@ from dagster._utils.test.definitions import scoped_definitions_load_context
 from dagster.components.component.state_backed_component import StateBackedComponent
 from dagster.components.core.component_tree import ComponentTreeException
 from dagster.components.testing.utils import create_defs_folder_sandbox
+from dagster.components.utils.defs_state import DefsStateConfig, ResolvedDefsStateConfig
 from dagster_shared.serdes.objects.models.defs_state_info import (
-    DefsStateStorageLocation,
+    DefsStateManagementType,
     get_code_server_metadata_key,
 )
 
 
 class MyStateBackedComponent(StateBackedComponent, dg.Model, dg.Resolvable):
     defs_state_key: Optional[str] = None
-    storage_location: Literal["LOCAL", "REMOTE", "LEGACY_CODE_SERVER_SNAPSHOTS"] = "REMOTE"
+    defs_state: ResolvedDefsStateConfig = DefsStateConfig.versioned_state_storage()
 
     @property
-    def _state_storage_location(self) -> DefsStateStorageLocation:
-        return DefsStateStorageLocation(self.storage_location)
+    def defs_state_config(self) -> DefsStateConfig:
+        return self.defs_state
 
     def get_defs_state_key(self) -> str:
         return self.defs_state_key or super().get_defs_state_key()
@@ -78,17 +79,17 @@ class MyStateBackedComponent(StateBackedComponent, dg.Model, dg.Resolvable):
 @pytest.mark.parametrize(
     "storage_location",
     [
-        DefsStateStorageLocation.LOCAL,
-        DefsStateStorageLocation.REMOTE,
+        DefsStateManagementType.LOCAL_FILESYSTEM,
+        DefsStateManagementType.VERSIONED_STATE_STORAGE,
     ],
 )
-def test_simple_state_backed_component(storage_location: DefsStateStorageLocation) -> None:
+def test_simple_state_backed_component(storage_location: DefsStateManagementType) -> None:
     with instance_for_test() as instance, create_defs_folder_sandbox() as sandbox:
         component_path = sandbox.scaffold_component(
             component_cls=MyStateBackedComponent,
             defs_yaml_contents={
                 "type": "dagster_tests.components_tests.state_backed_component_tests.test_state_backed_component.MyStateBackedComponent",
-                "attributes": {"storage_location": storage_location.value},
+                "attributes": {"defs_state": {"type": storage_location.value}},
             },
             defs_path="foo",
         )
@@ -137,7 +138,7 @@ def test_code_server_state_backed_component() -> None:
             component_cls=MyStateBackedComponent,
             defs_yaml_contents={
                 "type": "dagster_tests.components_tests.state_backed_component_tests.test_state_backed_component.MyStateBackedComponent",
-                "attributes": {"storage_location": "LEGACY_CODE_SERVER_SNAPSHOTS"},
+                "attributes": {"defs_state": {"type": "LEGACY_CODE_SERVER_SNAPSHOTS"}},
             },
             defs_path="foo",
         )
