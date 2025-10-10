@@ -49,12 +49,19 @@ export const AssetEventDetail = ({
           label: 'Observed',
         };
       case 'FailedToMaterializeEvent':
-        return {
-          icon: <Icon name="run_failed" color={Colors.accentRed()} size={16} />,
-          label: 'Failed',
-        };
+        if (event?.materializationFailureType === 'FAILED') {
+          return {
+            icon: <Icon name="run_failed" color={Colors.accentRed()} size={16} />,
+            label: 'Failed',
+          };
+        } else {
+          return {
+            icon: <Icon name="status" color={Colors.accentGray()} size={16} />,
+            label: 'Skipped',
+          };
+        }
     }
-  }, [event.__typename]);
+  }, [event]);
 
   return (
     <Box padding={{horizontal: 24, bottom: 24}} style={{flex: 1}}>
