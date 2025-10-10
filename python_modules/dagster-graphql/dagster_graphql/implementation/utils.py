@@ -211,15 +211,6 @@ def has_permission_for_run(
     if not run.remote_job_origin:
         return graphene_info.context.has_permission(permission)
 
-    if run.asset_selection and run.asset_check_selection:
-        entity_keys = [*run.asset_selection, *run.asset_check_selection]
-    elif run.asset_selection:
-        entity_keys = list(run.asset_selection)
-    elif run.asset_check_selection:
-        entity_keys = list(run.asset_check_selection)
-    else:
-        entity_keys = None
-
     return has_permission_for_job(
         graphene_info,
         permission,
@@ -228,7 +219,7 @@ def has_permission_for_run(
             repository_name=run.remote_job_origin.repository_origin.repository_name,
             job_name=run.job_name,
         ),
-        entity_keys=entity_keys,
+        entity_keys=list(run.entity_selection) if run.entity_selection else None,
     )
 
 
