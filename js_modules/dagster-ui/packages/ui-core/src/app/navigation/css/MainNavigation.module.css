@@ -1,0 +1,180 @@
+.nav {
+  height: 100%;
+  overflow-x: hidden;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  gap: 8px;
+  font-size: 14px;
+}
+
+.nav.collapsed {
+  align-items: flex-start;
+  padding-left: 16px;
+}
+
+.logoContainer {
+  width: 100%;
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.logoContainer svg {
+  width: 160px;
+  height: 40px;
+}
+
+.nav.collapsed .logoContainer {
+  flex-direction: column;
+  align-items: flex-start;
+  justify-content: flex-start;
+}
+
+.fullLogo {
+  display: block;
+}
+
+.collapsedLogo,
+.nav.collapsed .fullLogo,
+.collapsedToggle {
+  display: none;
+}
+
+.nav.collapsed .collapsedToggle {
+  display: block;
+}
+
+.nav.collapsed .collapsedLogo {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+}
+
+.topGroups {
+  flex: 1;
+  overflow-y: auto;
+  width: 100%;
+}
+
+.nav.collapsed .topGroups {
+  padding-right: 0;
+  scrollbar-width: thin;
+}
+
+.bottomGroups {
+  padding-right: 12px;
+}
+
+.group {
+  width: 204px;
+}
+
+.nav.collapsed .group {
+  width: 32px;
+}
+
+.itemContainer {
+  position: relative;
+  border-radius: 8px;
+  overflow: hidden;
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+}
+
+.nav.collapsed .itemContainer {
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+}
+
+.itemContainer:hover {
+  background-color: var(--color-background-lighter);
+}
+
+.itemContainer:hover:has(.link:active) {
+  background-color: var(--color-background-lighter-hover);
+}
+
+.itemContainer:has(:global(.active)) {
+  background-color: var(--color-background-blue);
+}
+
+.itemContainer:hover:has(:global(.active)) {
+  background-color: var(--color-background-blue-hover);
+}
+
+.itemContainer :global(.bp5-popover-target) {
+  display: block;
+  width: 100%;
+}
+
+.collapsed.itemContainer:has(:global(.active)) {
+  background-color: var(--color-background-blue);
+}
+
+.collapsed.itemContainer:hover:has(:global(.active)) {
+  background-color: var(--color-background-blue-hover);
+}
+
+.collapsed.itemContainer :global(.bp5-popover2-target) {
+  display: flex;
+  justify-content: center;
+}
+
+.disabledItem {
+  opacity: 0.5;
+  cursor: default;
+  width: 100%;
+  user-select: none;
+}
+
+.itemContainer:has(.disabledItem):hover {
+  background-color: var(--color-background-light);
+}
+
+.link {
+  flex: 1;
+}
+
+.link:focus {
+  outline: none;
+}
+
+.itemContainer:has(.link:focus-visible) {
+  box-shadow: inset 0 0 0 2px var(--color-focus-ring);
+}
+
+.link:link,
+.link:visited,
+.link:hover {
+  color: var(--color-text-default);
+  text-decoration: none;
+}
+
+.itemButton {
+  display: block;
+  font-size: 14px;
+  width: 100%;
+}
+
+.nav.collapsed .itemButton {
+  display: flex;
+  justify-content: center;
+}
+
+.identityItem {
+  padding: 8px 12px;
+}
+
+.identityItemText {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  max-width: 100%;
+}

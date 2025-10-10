@@ -1,9 +1,9 @@
 import clsx from 'clsx';
 import {CSSProperties, useCallback, useContext} from 'react';
 
+import {useFullScreen} from './AppTopNav/AppTopNavContext';
 import {LayoutContext} from './LayoutProvider';
 import {LEFT_NAV_WIDTH, LeftNav} from '../nav/LeftNav';
-import {useFullScreen} from './AppTopNav/AppTopNavContext';
 import styles from './css/App.module.css';
 
 interface Props {
@@ -11,7 +11,7 @@ interface Props {
   children: React.ReactNode;
 }
 
-export const App = ({banner, children}: Props) => {
+export const AppWithOldLayout = ({banner, children}: Props) => {
   const {nav} = useContext(LayoutContext);
 
   const onClickMain = useCallback(() => {
