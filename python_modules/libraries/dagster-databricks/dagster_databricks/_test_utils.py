@@ -1,6 +1,8 @@
 import base64
 import inspect
 import os
+import random
+import string
 import subprocess
 import textwrap
 from collections.abc import Iterator
@@ -11,6 +13,7 @@ import dagster._check as check
 import pytest
 from databricks.sdk import WorkspaceClient
 from databricks.sdk.service import files
+from databricks.sdk.service.workspace import ImportFormat, Language
 
 from dagster_databricks.pipes import dbfs_tempdir
 
@@ -40,7 +43,7 @@ def upload_dagster_pipes_whl(databricks_client: WorkspaceClient) -> Iterator[str
     with dbfs_tempdir(dbfs_client) as tempdir:
         path = os.path.join(f"dbfs:{tempdir}", DAGSTER_PIPES_WHL_FILENAME)
         subprocess.check_call(
-            ["dbfs", "cp", "--overwrite", f"dist/{DAGSTER_PIPES_WHL_FILENAME}", path]
+            ["databricks", "fs", "cp", "--overwrite", f"dist/{DAGSTER_PIPES_WHL_FILENAME}", path]
         )
         os.chdir(orig_wd)
         yield path
@@ -62,15 +65,9 @@ def get_databricks_python_file_path() -> str:
     return os.environ["DATABRICKS_PYTHON_FILE_PATH"]
 
 
-@contextmanager
-def temp_dbfs_script(
-    client: WorkspaceClient,
-    *,
-    script_fn: Optional[Callable[[], Any]] = None,
-    script_file: Optional[str] = None,
-    dbfs_path: Optional[str] = None,
-) -> Iterator[str]:
-    # drop the signature line
+def get_script_source(
+    script_fn: Optional[Callable[[], Any]] = None, script_file: Optional[str] = None
+):
     if script_fn is None and script_file is None:
         raise ValueError("Must provide either script_fn or script_file")
     elif script_fn is not None and script_file is not None:
@@ -82,8 +79,19 @@ def temp_dbfs_script(
             source = f.read().decode("utf-8")
     else:
         check.failed("Unreachable")
+    return base64.b64encode(source.encode("utf-8")).decode("utf-8")
+
+
+@contextmanager
+def temp_dbfs_script(
+    client: WorkspaceClient,
+    *,
+    script_fn: Optional[Callable[[], Any]] = None,
+    script_file: Optional[str] = None,
+    dbfs_path: Optional[str] = None,
+) -> Iterator[str]:
+    contents = get_script_source(script_fn=script_fn, script_file=script_file)
     dbfs_client = files.DbfsAPI(client.api_client)
-    contents = base64.b64encode(source.encode("utf-8")).decode("utf-8")
     if dbfs_path is None:
         with dbfs_tempdir(dbfs_client) as tempdir:
             script_path = os.path.join(tempdir, "script.py")
@@ -95,3 +103,29 @@ def temp_dbfs_script(
             yield dbfs_path
         finally:
             dbfs_client.delete(dbfs_path, recursive=False)
+
+
+@contextmanager
+def temp_workspace_notebook(
+    client: WorkspaceClient,
+    *,
+    workspace_path: str,
+    script_fn: Optional[Callable[[], Any]] = None,
+    script_file: Optional[str] = None,
+) -> Iterator[str]:
+    contents = get_script_source(script_fn=script_fn, script_file=script_file)
+    dirname = "".join(random.choices(string.ascii_letters, k=30))
+    workspace_path = f"{workspace_path}/{dirname}"
+    script_path = os.path.join(workspace_path, "script.ipynb")
+    try:
+        client.workspace.mkdirs(workspace_path)
+        client.workspace.import_(
+            path=script_path,
+            content=contents,
+            format=ImportFormat.SOURCE,
+            language=Language.PYTHON,
+            overwrite=True,
+        )
+        yield script_path
+    finally:
+        client.workspace.delete(workspace_path, recursive=True)
