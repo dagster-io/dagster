@@ -183,9 +183,7 @@ describe('BaseFallthroughRoot', () => {
       </MockedProvider>,
     );
     await waitFor(() => {
-      expect(getByTestId('path').textContent).toEqual(
-        '/locations/repo_with_pseudo_job@location_with_dunder_job/asset-groups/group1',
-      );
+      expect(getByTestId('path').textContent).toEqual('/asset-groups');
     });
   });
 });

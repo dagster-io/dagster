@@ -544,23 +544,7 @@ EXAMPLE_PACKAGES_WITH_CUSTOM_CONFIG: list[PackageSpec] = [
         ],
     ),
     PackageSpec(
-        "examples/quickstart_aws",
-        pytest_tox_factors=[ToxFactor("pypi")],
-        # TODO - re-enable once new version of `dagster-cloud` is available on pypi
-        unsupported_python_versions=[
-            AvailablePythonVersion.V3_13,
-        ],
-    ),
-    PackageSpec(
         "examples/quickstart_etl",
-        pytest_tox_factors=[ToxFactor("pypi")],
-    ),
-    PackageSpec(
-        "examples/quickstart_gcp",
-        pytest_tox_factors=[ToxFactor("pypi")],
-    ),
-    PackageSpec(
-        "examples/quickstart_snowflake",
         pytest_tox_factors=[ToxFactor("pypi")],
     ),
     PackageSpec(

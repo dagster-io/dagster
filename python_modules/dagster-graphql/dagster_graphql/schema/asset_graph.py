@@ -111,6 +111,11 @@ from dagster_graphql.schema.logs.events import (
     GrapheneObservationEvent,
 )
 from dagster_graphql.schema.metadata import GrapheneMetadataEntry
+from dagster_graphql.schema.owners import (
+    GrapheneAssetOwner,
+    GrapheneTeamAssetOwner,
+    GrapheneUserAssetOwner,
+)
 from dagster_graphql.schema.partition_keys import GraphenePartitionKeyConnection
 from dagster_graphql.schema.partition_mappings import GraphenePartitionMapping
 from dagster_graphql.schema.partition_sets import (
@@ -146,29 +151,6 @@ GrapheneAssetStaleCauseCategory = graphene.Enum.from_enum(
 )
 
 GrapheneAssetChangedReason = graphene.Enum.from_enum(AssetDefinitionChangeType, name="ChangeReason")
-
-
-class GrapheneUserAssetOwner(graphene.ObjectType):
-    class Meta:
-        name = "UserAssetOwner"
-
-    email = graphene.NonNull(graphene.String)
-
-
-class GrapheneTeamAssetOwner(graphene.ObjectType):
-    class Meta:
-        name = "TeamAssetOwner"
-
-    team = graphene.NonNull(graphene.String)
-
-
-class GrapheneAssetOwner(graphene.Union):
-    class Meta:
-        types = (
-            GrapheneUserAssetOwner,
-            GrapheneTeamAssetOwner,
-        )
-        name = "AssetOwner"
 
 
 class GrapheneAssetStaleCause(graphene.ObjectType):
@@ -396,6 +378,8 @@ class GrapheneAssetNode(graphene.ObjectType):
     def _graphene_asset_owner_from_owner_str(
         self, owner_str: str
     ) -> Union[GrapheneUserAssetOwner, GrapheneTeamAssetOwner]:
+        # TODO: (prha) switch to use definition_owner_from_owner_str once we have switched the frontend
+        # typename checks
         if is_valid_email(owner_str):
             return GrapheneUserAssetOwner(email=owner_str)
         else:
@@ -581,9 +565,8 @@ class GrapheneAssetNode(graphene.ObjectType):
         self,
         graphene_info: ResolveInfo,
     ) -> bool:
-        return graphene_info.context.has_permission_for_definition(
-            Permissions.LAUNCH_PIPELINE_EXECUTION,
-            self._remote_node,
+        return graphene_info.context.has_permission_for_selector(
+            Permissions.LAUNCH_PIPELINE_EXECUTION, self._asset_node_snap.asset_key
         )
 
     def resolve_hasReportRunlessAssetEventPermission(

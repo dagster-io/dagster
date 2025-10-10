@@ -2,6 +2,7 @@ import asyncio
 import itertools
 import json
 import tempfile
+import threading
 import time
 from collections.abc import Iterator, Mapping
 from contextlib import contextmanager
@@ -426,13 +427,34 @@ async def _refresh_defs_state_with_live_display(
     refresh_task, statuses = get_updated_defs_state_info_task_and_statuses(
         project_path, defs_state_storage, defs_state_keys
     )
-    with Live(refresh_per_second=10) as live:
-        spinner_char = itertools.cycle(DAGGY_SPINNER_FRAMES)
-        while not refresh_task.done():
-            live.update(Text.from_ansi(_get_display_text(statuses, next(spinner_char))))
-            await asyncio.sleep(0.1)
+
+    # Thread-safe coordination variables
+    display_stop_event = threading.Event()
+    display_lock = threading.Lock()
+
+    def display_update_worker():
+        """Display update worker that runs in a separate thread."""
+        with Live(refresh_per_second=10) as live:
+            spinner_char = itertools.cycle(DAGGY_SPINNER_FRAMES)
+            while not display_stop_event.is_set():
+                with display_lock:
+                    live.update(Text.from_ansi(_get_display_text(statuses, next(spinner_char))))
+                time.sleep(0.1)
+            # Final update before stopping
+            with display_lock:
+                live.update(Text.from_ansi(_get_display_text(statuses, next(spinner_char))))
+
+    # Start display thread
+    display_thread = threading.Thread(target=display_update_worker, daemon=True)
+    display_thread.start()
+
+    try:
+        # Wait for refresh task to complete
         await refresh_task
-        live.update(Text.from_ansi(_get_display_text(statuses, next(spinner_char))))
+    finally:
+        # Signal display thread to stop and wait for it
+        display_stop_event.set()
+        display_thread.join(timeout=1.0)  # Give it 1 second to finish
 
     raise_component_state_refresh_errors(statuses)
 

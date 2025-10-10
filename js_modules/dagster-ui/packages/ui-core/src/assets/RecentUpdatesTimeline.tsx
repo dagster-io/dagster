@@ -109,6 +109,7 @@ export const RecentUpdatesTimeline = ({assetKey, events, loading}: Props) => {
       events: AssetEventType[];
       hasFailedMaterializations: boolean;
       hasMaterializations: boolean;
+      hasSkippedMaterializations: boolean;
     }> = new Array(buckets);
 
     sortedEvents?.forEach((e) => {
@@ -116,22 +117,25 @@ export const RecentUpdatesTimeline = ({assetKey, events, loading}: Props) => {
         Math.floor((parseInt(e.timestamp) - startTimestamp) / bucketTimeRange),
         buckets - 1,
       );
-      bucketsArr[bucketIndex] = bucketsArr[bucketIndex] || {
+      const bucket = bucketsArr[bucketIndex] ?? {
         start: bucketIndex,
         end: bucketIndex + 1,
         events: [],
         hasFailedMaterializations: false,
         hasMaterializations: false,
+        hasSkippedMaterializations: false,
       };
-      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-      bucketsArr[bucketIndex]!.events.push(e);
+      bucket.events.push(e);
       if (e.__typename === 'FailedToMaterializeEvent') {
-        // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-        bucketsArr[bucketIndex]!.hasFailedMaterializations = true;
+        if (e.materializationFailureType === 'FAILED') {
+          bucket.hasFailedMaterializations = true;
+        } else {
+          bucket.hasSkippedMaterializations = true;
+        }
       } else {
-        // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-        bucketsArr[bucketIndex]!.hasMaterializations = true;
+        bucket.hasMaterializations = true;
       }
+      bucketsArr[bucketIndex] = bucket;
     });
 
     return bucketsArr;
@@ -195,7 +199,9 @@ export const RecentUpdatesTimeline = ({assetKey, events, loading}: Props) => {
                         // Make sure there's enough room to see the last tick.
                         left: `min(calc(100% - ${INNER_TICK_WIDTH}px), ${percent}%`,
                       }}
-                      $isSuccess={__typename !== 'FailedToMaterializeEvent'}
+                      $hasError={bucket.hasFailedMaterializations}
+                      $hasSuccess={bucket.hasMaterializations}
+                      $hasSkipped={bucket.hasSkippedMaterializations}
                     />
                   );
                 })}
@@ -221,6 +227,7 @@ export const RecentUpdatesTimeline = ({assetKey, events, loading}: Props) => {
                     <Tick
                       $hasError={bucket.hasFailedMaterializations}
                       $hasSuccess={bucket.hasMaterializations}
+                      $hasSkipped={bucket.hasSkippedMaterializations}
                     >
                       <TickText>{bucket.events.length}</TickText>
                     </Tick>
@@ -244,20 +251,24 @@ export const RecentUpdatesTimeline = ({assetKey, events, loading}: Props) => {
 
 const AssetUpdate = ({assetKey, event}: {assetKey: AssetKey; event: AssetEventType}) => {
   const run = event?.runOrError.__typename === 'Run' ? event.runOrError : null;
-  const icon = useMemo(() => {
+  const icon = () => {
     switch (event.__typename) {
       case 'MaterializationEvent':
         return <Icon name="run_success" color={Colors.accentGreen()} size={16} />;
       case 'ObservationEvent':
         return <Icon name="observation" color={Colors.accentGreen()} size={16} />;
       case 'FailedToMaterializeEvent':
-        return <Icon name="run_failed" color={Colors.accentRed()} size={16} />;
+        return event.materializationFailureType === 'FAILED' ? (
+          <Icon name="run_failed" color={Colors.accentRed()} size={16} />
+        ) : (
+          <Icon name="status" color={Colors.accentGray()} size={16} />
+        );
     }
-  }, [event.__typename]);
+  };
   return (
     <Box padding={4} border="bottom" flex={{justifyContent: 'space-between', gap: 8}}>
       <Box flex={{gap: 4, direction: 'row', alignItems: 'center'}}>
-        {icon}
+        {icon()}
         <Link
           to={assetDetailsPathForKey(assetKey, {
             view: 'events',
@@ -294,6 +305,7 @@ const AssetUpdate = ({assetKey, event}: {assetKey: AssetKey; event: AssetEventTy
 const Tick = styled.div<{
   $hasError: boolean;
   $hasSuccess: boolean;
+  $hasSkipped: boolean;
 }>`
   position: absolute;
   width: 100%;
@@ -304,12 +316,18 @@ const Tick = styled.div<{
   cursor: pointer;
   border-radius: 2px;
   &:hover {
-    background: ${({$hasError, $hasSuccess}) => {
+    background: ${({$hasError, $hasSuccess, $hasSkipped}) => {
       if ($hasError && $hasSuccess) {
         return `linear-gradient(90deg, ${Colors.accentRedHover()} 50%, ${Colors.accentGreenHover()} 50%)`;
       }
       if ($hasError) {
         return Colors.accentRedHover();
+      }
+      if ($hasSuccess) {
+        return Colors.accentGreenHover();
+      }
+      if ($hasSkipped) {
+        return Colors.accentGrayHover();
       }
       return Colors.accentGreenHover();
     }};
@@ -342,7 +360,9 @@ const TickWrapper = styled.div`
 `;
 
 const InnerTick = styled.div<{
-  $isSuccess: boolean;
+  $hasError: boolean;
+  $hasSuccess: boolean;
+  $hasSkipped: boolean;
 }>`
   width: ${INNER_TICK_WIDTH}px;
   top: 0;
@@ -351,11 +371,17 @@ const InnerTick = styled.div<{
   pointer-events: none;
   border-radius: 1px;
   opacity: 0.5;
-  background: ${({$isSuccess}) => {
-    if ($isSuccess) {
+  background: ${({$hasError, $hasSuccess, $hasSkipped}) => {
+    if ($hasError) {
+      return Colors.accentRed();
+    }
+    if ($hasSuccess) {
       return Colors.accentGreen();
     }
-    return Colors.accentRed();
+    if ($hasSkipped) {
+      return Colors.accentGray();
+    }
+    return Colors.accentGreen();
   }};
 `;
 

@@ -26,6 +26,7 @@ import {AutomationTargetList} from '../automation/AutomationTargetList';
 import {AutomationAssetSelectionFragment} from '../automation/types/AutomationAssetSelectionFragment.types';
 import {InstigationStatus, SensorType} from '../graphql/types';
 import {RepositoryLink} from '../nav/RepositoryLink';
+import {DefinitionOwners} from '../owners/DefinitionOwners';
 import {TimestampDisplay} from '../schedules/TimestampDisplay';
 import {TickStatusTag} from '../ticks/TickStatusTag';
 import {RepoAddress} from '../workspace/types';
@@ -153,6 +154,14 @@ export const SensorDetails = ({
               <td>{sensor.description}</td>
             </tr>
           ) : null}
+          {sensor.owners.length > 0 && (
+            <tr>
+              <td>Owners</td>
+              <td>
+                <DefinitionOwners owners={sensor.owners} />
+              </td>
+            </tr>
+          )}
           <tr>
             <td>Latest tick</td>
             <td>

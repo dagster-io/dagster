@@ -60,7 +60,6 @@ const nextConfig = {
   compiler: {
     styledComponents: true,
   },
-  distDir: 'build',
   assetPrefix: 'BUILDTIME_ASSETPREFIX_REPLACE_ME',
 };
 
@@ -88,5 +87,10 @@ module.exports = (phase) => {
       },
     };
   }
-  return nextConfig;
+
+  // The prod build outputs to `build`. The post-build script copies from there.
+  return {
+    ...nextConfig,
+    distDir: 'build',
+  };
 };

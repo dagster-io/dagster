@@ -76,7 +76,7 @@ def test_dependencies_changed():
 
     with instance_for_test(synchronous_run_coordinator=True) as instance:
         with define_out_of_process_context(__file__, "get_repo_v1", instance) as context_v1:
-            assert materialize_assets(context_v1)
+            assert materialize_assets(context_v1, [AssetKey(["foo"]), AssetKey(["bar"])])
             wait_for_runs_to_finish(context_v1.instance)
         with define_out_of_process_context(__file__, "get_repo_v2", instance) as context_v2:
             assert _fetch_data_versions(context_v2, repo_v2)
@@ -93,7 +93,7 @@ def test_stale_status():
             assert foo["staleStatus"] == "MISSING"
             assert foo["staleCauses"] == []
 
-            assert materialize_assets(context)
+            assert materialize_assets(context, [AssetKey(["foo"]), AssetKey(["bar"])])
             wait_for_runs_to_finish(context.instance)
 
         with define_out_of_process_context(__file__, "get_repo_v1", instance) as context:
@@ -286,7 +286,7 @@ def test_data_version_from_tags():
     repo_v1 = get_repo_v1()
     with instance_for_test(synchronous_run_coordinator=True) as instance:
         with define_out_of_process_context(__file__, "get_repo_v1", instance) as context_v1:
-            assert materialize_assets(context_v1)
+            assert materialize_assets(context_v1, [AssetKey(["foo"]), AssetKey(["bar"])])
             wait_for_runs_to_finish(context_v1.instance)
             result = _fetch_data_versions(context_v1, repo_v1)
             tags = result.data["assetNodes"][0]["assetMaterializations"][0]["tags"]

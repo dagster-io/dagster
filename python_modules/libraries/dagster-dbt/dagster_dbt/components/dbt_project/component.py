@@ -1,6 +1,8 @@
 import itertools
 import json
 from collections.abc import Iterator, Mapping
+from contextlib import contextmanager
+from contextvars import ContextVar
 from dataclasses import dataclass, field
 from functools import cached_property
 from pathlib import Path
@@ -84,6 +86,17 @@ def resolve_dbt_project(context: ResolutionContext, model) -> DbtProject:
 
 DbtMetadataAddons: TypeAlias = Literal["column_metadata", "row_count"]
 
+_resolution_context: ContextVar[ResolutionContext] = ContextVar("resolution_context")
+
+
+@contextmanager
+def _set_resolution_context(context: ResolutionContext):
+    token = _resolution_context.set(context)
+    try:
+        yield
+    finally:
+        _resolution_context.reset(token)
+
 
 @public
 @scaffold_with(DbtProjectComponentScaffolder)
@@ -125,8 +138,8 @@ class DbtProjectComponent(dg.Component, dg.Resolvable):
                     "--full_refresh",
                     {
                         "--vars": {
-                            "start_date": "{{ context.partition_range_start }}",
-                            "end_date": "{{ context.partition_range_end }}",
+                            "start_date": "{{ partition_range_start }}",
+                            "end_date": "{{ partition_range_end }}",
                         },
                     },
                 ],
@@ -232,6 +245,8 @@ class DbtProjectComponent(dg.Component, dg.Resolvable):
         if self.prepare_if_dev:
             self.project.prepare_if_dev()
 
+        res_ctx = context.resolution_context
+
         @dbt_assets(
             manifest=self.project.manifest_path,
             project=self.project,
@@ -243,7 +258,8 @@ class DbtProjectComponent(dg.Component, dg.Resolvable):
             backfill_policy=self.op.backfill_policy if self.op else None,
         )
         def _fn(context: dg.AssetExecutionContext):
-            yield from self.execute(context=context, dbt=self.cli_resource)
+            with _set_resolution_context(res_ctx):
+                yield from self.execute(context=context, dbt=self.cli_resource)
 
         return dg.Definitions(assets=[_fn])
 
@@ -258,15 +274,15 @@ class DbtProjectComponent(dg.Component, dg.Resolvable):
         except Exception:
             partition_time_window = None
 
-        scope = dict(
-            partition_key=partition_key,
-            partition_key_range=partition_key_range,
-            partition_time_window=partition_time_window,
-        )
-
-        # resolve the cli args with this additional scope
-        resolved_args = ResolutionContext(scope=scope).resolve_value(
-            self.cli_args, as_type=list[str]
+        # resolve the cli args with additional partition-related scope
+        resolved_args = (
+            _resolution_context.get()
+            .with_scope(
+                partition_key=partition_key,
+                partition_key_range=partition_key_range,
+                partition_time_window=partition_time_window,
+            )
+            .resolve_value(self.cli_args, as_type=list[str])
         )
 
         def _normalize_arg(arg: Union[str, dict[str, Any]]) -> list[str]:

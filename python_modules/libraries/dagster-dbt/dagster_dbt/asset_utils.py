@@ -813,7 +813,7 @@ def build_dbt_specs(
 
         # add check specs associated with the asset
         for child_unique_id in child_map.get(unique_id, []):
-            if not child_unique_id.startswith("test"):
+            if child_unique_id not in selected_unique_ids or not child_unique_id.startswith("test"):
                 continue
             check_spec = translator.get_asset_check_spec(
                 asset_spec=spec,

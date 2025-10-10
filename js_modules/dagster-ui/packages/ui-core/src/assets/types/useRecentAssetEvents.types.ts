@@ -10,6 +10,7 @@ export type AssetFailedToMaterializeFragment = {
   label: string | null;
   description: string | null;
   partition: string | null;
+  materializationFailureType: Types.AssetMaterializationFailureType;
   tags: Array<{__typename: 'EventTag'; key: string; value: string}>;
   runOrError:
     | {__typename: 'PythonError'}
@@ -583,6 +584,7 @@ export type RecentAssetEventsQuery = {
                 label: string | null;
                 description: string | null;
                 partition: string | null;
+                materializationFailureType: Types.AssetMaterializationFailureType;
                 tags: Array<{__typename: 'EventTag'; key: string; value: string}>;
                 runOrError:
                   | {__typename: 'PythonError'}
@@ -1481,7 +1483,7 @@ export type LatestAssetPartitionsQuery = {
     | {__typename: 'AssetNotFoundError'};
 };
 
-export const RecentAssetEventsQueryVersion = '6459c0177836dfb98ba88222cdf6461c67b74bed82a41827449e6d47cfb35941';
+export const RecentAssetEventsQueryVersion = '431b8b4e066097ef470ca323f252fe96bc33e60876bc221dfa82ddcc33824f09';
 
 export const RecentAssetEventsForCatalogViewQueryVersion = '6801960ef79fc4f7c4a33bf258fe9fcb7fd9bbafed9ac7d55b731675f3a19900';
 

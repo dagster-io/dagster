@@ -301,17 +301,15 @@ def ensure_dagster_graphql_tests_import() -> None:
 
 def materialize_assets(
     context: WorkspaceRequestContext,
-    asset_selection: Optional[Sequence[AssetKey]] = None,
+    asset_selection: Sequence[AssetKey],
     partition_keys: Optional[Sequence[str]] = None,
     run_config_data: Optional[Mapping[str, Any]] = None,
     location_name: Optional[str] = None,
 ) -> Union[GqlResult, Sequence[GqlResult]]:
     from dagster_graphql.client.query import LAUNCH_PIPELINE_EXECUTION_MUTATION
 
-    gql_asset_selection = (
-        cast("Sequence[GqlAssetKey]", [key.to_graphql_input() for key in asset_selection])
-        if asset_selection
-        else None
+    gql_asset_selection = cast(
+        "Sequence[GqlAssetKey]", [key.to_graphql_input() for key in asset_selection]
     )
     selector = infer_job_selector(
         context,

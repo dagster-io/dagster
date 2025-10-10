@@ -2,7 +2,7 @@ from collections.abc import Mapping
 from typing import TYPE_CHECKING, Any, Optional, cast
 
 import dagster._check as check
-from dagster._core.definitions.selector import JobSubsetSelector
+from dagster._core.definitions.selector import JobSelector, JobSubsetSelector
 from dagster._core.execution.plan.resume_retry import ReexecutionStrategy
 from dagster._core.storage.dagster_run import DagsterRun, RunsFilter
 from dagster._core.workspace.permissions import Permissions
@@ -12,7 +12,7 @@ from dagster_graphql.implementation.external import get_remote_job_or_raise
 from dagster_graphql.implementation.utils import (
     ExecutionMetadata,
     ExecutionParams,
-    assert_permission_for_location,
+    assert_permission_for_job,
 )
 
 if TYPE_CHECKING:
@@ -98,14 +98,18 @@ async def launch_reexecution_from_parent_run(
         op_selection=None,
     )
 
-    assert_permission_for_location(
-        graphene_info,
-        Permissions.LAUNCH_PIPELINE_REEXECUTION,
-        selector.location_name,
-    )
-
     repo_location = graphene_info.context.get_code_location(selector.location_name)
     external_pipeline = await get_remote_job_or_raise(graphene_info, selector)
+    assert_permission_for_job(
+        graphene_info,
+        Permissions.LAUNCH_PIPELINE_REEXECUTION,
+        JobSelector(
+            location_name=selector.location_name,
+            repository_name=selector.repository_name,
+            job_name=selector.job_name,
+        ),
+        list(parent_run.asset_selection) if parent_run.asset_selection else None,
+    )
 
     run = instance.create_reexecuted_run(
         parent_run=cast("DagsterRun", parent_run),

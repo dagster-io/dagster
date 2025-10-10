@@ -514,6 +514,10 @@ class RemoteJob(RepresentedJob, LoadableBy[JobSubsetSelector, "BaseWorkspaceRequ
         return self._job_index.job_snapshot.description
 
     @property
+    def owners(self) -> Optional[Sequence[str]]:
+        return getattr(self._job_index.job_snapshot, "owners", None)
+
+    @property
     def node_names_in_topological_order(self):
         return self._job_index.job_snapshot.node_names_in_topological_order
 
@@ -907,6 +911,10 @@ class RemoteSchedule:
     def metadata(self) -> Mapping[str, MetadataValue]:
         return self._schedule_snap.metadata
 
+    @property
+    def owners(self) -> Optional[Sequence[str]]:
+        return getattr(self._schedule_snap, "owners", None)
+
     def get_remote_origin(self) -> RemoteInstigatorOrigin:
         return self.handle.get_remote_origin()
 
@@ -1139,6 +1147,10 @@ class RemoteSensor:
     @property
     def tags(self) -> Mapping[str, str]:
         return self._sensor_snap.tags
+
+    @property
+    def owners(self) -> Optional[Sequence[str]]:
+        return getattr(self._sensor_snap, "owners", None)
 
     @property
     def default_status(self) -> DefaultSensorStatus:

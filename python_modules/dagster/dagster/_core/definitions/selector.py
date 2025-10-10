@@ -127,10 +127,11 @@ class JobSelector(IHaveNew):
 
     @staticmethod
     def from_graphql_input(graphql_data):
+        job_name = graphql_data.get("jobName") or graphql_data.get("pipelineName")
         return JobSelector(
             location_name=graphql_data["repositoryLocationName"],
             repository_name=graphql_data["repositoryName"],
-            job_name=graphql_data["jobName"],
+            job_name=job_name,
         )
 
     @property

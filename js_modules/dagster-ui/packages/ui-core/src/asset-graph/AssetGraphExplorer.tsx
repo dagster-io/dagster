@@ -801,9 +801,11 @@ const AssetGraphExplorerWithData = ({
                     <LaunchAssetExecutionButton
                       preferredJobName={explorerPath.pipelineName}
                       scope={
-                        selectedDefinitions.length
-                          ? {selected: selectedDefinitions}
-                          : {all: allDefinitionsForMaterialize}
+                        nextLayoutLoading
+                          ? {all: []}
+                          : selectedDefinitions.length
+                            ? {selected: selectedDefinitions}
+                            : {all: allDefinitionsForMaterialize}
                       }
                       additionalDropdownOptions={extraDropdownOptions}
                     />
