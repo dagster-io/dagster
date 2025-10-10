@@ -38,6 +38,7 @@ setup(
     install_requires=[
         "PyYAML>=5.1",
         "packaging>=20.9",
+        "platformdirs",
         "pydantic>=2,<3.0.0",
         "typing_extensions>=4.11.0,<5",
         "tomlkit",
