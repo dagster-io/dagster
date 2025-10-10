@@ -1,3 +1,4 @@
+import asyncio
 import copy
 from collections.abc import Iterator, Mapping
 from contextlib import contextmanager
@@ -88,6 +89,46 @@ def test_basic_component_load(
             AssetKey(["schema_name_in_destination_2", "table_name_in_destination_1_extra"]),
             AssetKey(["schema_name_in_destination_2", "table_name_in_destination_2_extra"]),
         }
+
+
+@pytest.mark.parametrize(
+    "defs_state_type",
+    ["LOCAL_FILESYSTEM", "VERSIONED_STATE_STORAGE"],
+)
+def test_component_load_with_defs_state(
+    fetch_workspace_data_multiple_connectors_mocks: responses.RequestsMock,
+    defs_state_type: str,
+) -> None:
+    with (
+        environ(
+            {
+                "FIVETRAN_API_KEY": TEST_API_KEY,
+                "FIVETRAN_API_SECRET": TEST_API_SECRET,
+                "FIVETRAN_ACCOUNT_ID": TEST_ACCOUNT_ID,
+            }
+        ),
+        create_defs_folder_sandbox() as sandbox,
+    ):
+        defs_path = sandbox.scaffold_component(
+            component_cls=FivetranAccountComponent,
+            defs_yaml_contents=deep_merge_dicts(
+                BASIC_FIVETRAN_COMPONENT_BODY,
+                {"attributes": {"defs_state": {"type": defs_state_type}}},
+            ),
+        )
+        with (
+            sandbox.load_component_and_build_defs(defs_path=defs_path) as (component, defs),
+        ):
+            # first load, nothing there
+            assert len(defs.resolve_asset_graph().get_all_asset_keys()) == 0
+            assert isinstance(component, FivetranAccountComponent)
+            asyncio.run(component.refresh_state())
+
+        with (
+            sandbox.load_component_and_build_defs(defs_path=defs_path) as (component, defs),
+        ):
+            # second load, should now have assets
+            assert len(defs.resolve_asset_graph().get_all_asset_keys()) == 8
 
 
 @pytest.mark.parametrize(
