@@ -65,6 +65,7 @@ def loadable_targets_from_loaded_module(module: ModuleType) -> Sequence[Loadable
                 "Cannot have more than one function decorated with @lazy_definitions defined in module scope"
             )
 
+        loadable_def_loaders[0].target_definition()  # type: ignore
         return loadable_def_loaders
 
     loadable_defs = _loadable_targets_of_type(module, Definitions)

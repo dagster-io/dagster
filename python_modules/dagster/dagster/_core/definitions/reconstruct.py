@@ -602,6 +602,7 @@ def _check_is_loadable(definition: T_LoadableDefinition) -> T_LoadableDefinition
             "Loadable attributes must be either a JobDefinition, GraphDefinition, Definitions, "
             f"or RepositoryDefinition. Got {definition!r}."
         )
+
     return definition
 
 
