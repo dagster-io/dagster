@@ -8,6 +8,10 @@
   transition: all var(--ifm-transition-fast) ease;
   transition-property: border, box-shadow;
   padding: 1rem !important;
+
+  display: flex;
+  flex-direction: row;
+  gap: .75rem
 }
 
 .cardContainer:hover {
@@ -53,4 +57,12 @@
   -webkit-line-clamp: 3;
   -webkit-box-orient: vertical;
   overflow: hidden;
+}
+
+.cardLogo {
+  display: block;
+  width: 4rem;
+  height: 4rem;
+  background: var(--dagster-white);
+  padding: .25rem;
 }
