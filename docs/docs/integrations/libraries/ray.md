@@ -2,18 +2,20 @@
 title: Dagster & Ray
 sidebar_label: Ray
 description: The community-supported Ray package allows orchestrating distributed Ray compute from Dagster pipelines.
-tags: [community-supported, etl]
+tags: [community-supported, compute]
 source: https://github.com/danielgafni/dagster-ray
 pypi: https://pypi.org/project/dagster-ray
 sidebar_custom_props:
   logo: images/integrations/ray.svg
   community: true
-partnerlink:
+partnerlink: https://danielgafni.github.io/dagster-ray/latest
 ---
 
 <p>{frontMatter.description}</p>
 
-For more information, see the [dagster-ray GitHub repository](https://github.com/danielgafni/dagster-ray).
+`dagster-ray` enables working with distributed Ray compute from Dagster pipelines, combining Dagster's excellent orchestration capabilities and Ray's distributed computing power together.
+
+Learn more in `dagster-ray` [docs](https://danielgafni.github.io/dagster-ray/latest).
 
 ## Installation
 
