@@ -6,7 +6,7 @@ title: Serverless security & data protection
 tags: [dagster-plus-feature]
 ---
 
-Unlike [Hybrid deployments](/deployment/dagster-plus/hybrid), Dagster+ Serverless deployments require direct access to your data, secrets and source code.
+Unlike [Hybrid deployments](/deployment/dagster-plus/hybrid), Dagster+ Serverless deployments require direct access to your data, secrets, and source code.
 
 Secrets and source code are built into the image directly. Images are stored in a per-customer container registry with restricted access.
 User code is securely sandboxed using modern container sandboxing techniques.
