@@ -171,7 +171,7 @@ To load the `workspace.yaml` file from a different folder, use the `-w` argument
 dg dev -w path/to/workspace.yaml
 ```
 
-When `dg dev` is run, Dagster will load all the code locations defined by the workspace file. For more information and examples, see the [CLI reference](/api/clis/cli#dg-dev).
+When `dg dev` is run, Dagster will load all the code locations defined by the workspace file. For more information and examples, see the [CLI reference](/api/clis/dg-cli/dg-cli-reference#dg-dev).
 
 If a code location can't be loaded - for example, due to a syntax error or other unrecoverable error - a warning message will display in the Dagster UI. You'll be directed to a status page with a descriptive error and stack trace for any locations Dagster was unable to load.
 
