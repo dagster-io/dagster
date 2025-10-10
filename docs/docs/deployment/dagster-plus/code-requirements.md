@@ -29,7 +29,7 @@ To work with Dagster+, your Dagster code:
 
 - **Must be loaded from a single entry point: either a Python file or package.** This entry point can load repositories from other files or packages.
 
-- **Must run in an environment where the `dagster` and `dagster-cloud` 0.13.2 or later Python packages are installed.**
+- **Must run in an environment where the `dagster`, `dagster-dg-cli` and `dagster-cloud` 0.13.2 or later Python packages are installed.**
 
 **Note**:
 

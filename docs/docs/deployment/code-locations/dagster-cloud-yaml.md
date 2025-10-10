@@ -19,13 +19,13 @@ The `dagster_cloud.yaml` file should be placed in the root of your Dagster proje
 example_etl
 ├── README.md
 ├── example_etl
-│   ├── __init__.py
-│   ├── assets
-│   ├── docker_image
+│  ├──__init__.py
+│  ├── assets
+│  └──  docker_image
 ├── ml_project
-│   ├── example_ml
-│     ├── __init__.py
-│     ├── ml_assets
+│  └──  example_ml
+│    ├── __init__.py
+│    └── ml_assets
 ├── random_assets.py
 ├── example_etl_tests
 ├── dagster_cloud.yaml
@@ -42,7 +42,6 @@ Settings are formatted using YAML. For example, using the file structure above a
 
 ```yaml
 # dagster_cloud.yaml
-
 locations:
   - location_name: data-eng-pipeline
     code_source:

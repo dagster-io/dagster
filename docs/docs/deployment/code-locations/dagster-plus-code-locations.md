@@ -59,13 +59,13 @@ Next you will want need to authenticate this Python client:
 Now add the code location. The following example assumes you are running the command from the top-level working directory of your Dagster project with a project named "quickstart" structured as a Python module named "quickstart".
 
 ```bash
-/quickstart
-    setup.py
-    pyproject.toml
-    /quickstart
-        __init__.py
-        /assets
-        /resources
+quickstart
+├── setup.py
+├── pyproject.toml
+└── quickstart
+    ├── __init__.py
+    ├── assets.py
+    └── resources.py
 ```
 
 The commands below take two main arguments:
@@ -134,6 +134,7 @@ Overall, the Git repository should contain:
 2. A [`dagster_cloud.yaml` file](/deployment/code-locations/dagster-cloud-yaml) with the settings for your code location. Here is an example:
 
    ```yaml title="dagster_cloud.yaml
+   # dagster_cloud.yaml
    locations:
    - location_name: quickstart
        code_source:
@@ -192,37 +193,39 @@ Many organizations use a Git monorepo to contain multiple Dagster projects. Here
 To add a new code location to a monorepo, create a new directory that contains your Dagster project. The final repository structure might look like this:
 
 ```
-README.md
-dagster_cloud.yaml
-/.github
-    ...
-/shared
-    setup.py
-    pyproject.toml
-    /shared
-        __init__.py
-        utilities.py
-/core
-    setup.py
-    pyproject.toml
-    Dockerfile
-    /core
-        definitions.py
-        __init__.py
-        /assets
-/new-code-location
-    setup.py
-    pyproject.toml
-    Dockerfile
-    /new-code-location
-        definitions.py
-        __init__.py
-        /assets
+.
+├── README.md
+├── dagster_cloud.yaml
+├── .github
+│  └── ...
+├── shared
+│  ├── setup.py
+│  ├── pyproject.toml
+│  └── shared
+│     ├── __init__.py
+│     └── utilities.py
+├── core
+│  ├── setup.py
+│  ├── pyproject.toml
+│  ├── Dockerfile
+│  └── core
+│     ├── definitions.py
+│     ├── __init__.py
+│     └── assets
+└── new-code-location
+   ├── setup.py
+   ├── pyproject.toml
+   ├── Dockerfile
+   └── new-code-location
+      ├── definitions.py
+      ├── __init__.py
+      └── assets
 ```
 
 Then update the `dagster_cloud.yaml` file in the root of the Git repository, adding a location section for your project including the location name, code source, and build directory. For Dagster+ Hybrid, include the registry. If you don't know the registry, consult your administrator or the team that set up CI/CD for the Git repository.
 
 ```yaml
+# dagster_cloud.yaml
 locations:
   - location_name: core
     code_source:

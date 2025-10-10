@@ -174,13 +174,14 @@ kubectl delete pod test-akv-secret-mount
 
 ## Step 5: Modify your AKS deployment to use the Dagster+ token from the Key Vault
 
-Modify the following sections of your values.yaml file.
+Modify the following sections of your `values.yaml` file.
 
 a) update the `dagsterCloud` section:
 
 This will ensure the agent token is provided and expected as the environment variable `dagsterAgentToken`.
 
 ```yaml
+# values.yaml
 dagsterCloud:
   agentTokenSecretName: dagster
   agentTokenEnvVarName: dagsterAgentToken
@@ -192,6 +193,7 @@ b) add these entries to the `dagsterCloudAgent` section:
 Required for the csi driver to mount the secret into the agent pod.
 
 ```yaml
+# values.yaml
 dagsterCloudAgent:
   volumeMounts:
     - name: dagster-token
@@ -211,6 +213,7 @@ c) add these entries to the `workspace`:
 This ensures the secret is also made available to the pods the agent will create to run your code.
 
 ```yaml
+# values.yaml
 envSecrets:
   - name: dagster
     optional: false
@@ -230,6 +233,7 @@ volumes:
 d) optionally, you could manage the secret provider within your helm values file by providing it as an extra manifest, instead of provisioning it separately:
 
 ```yaml
+# values.yaml
 extraManifests:
   # This is a SecretProviderClass example using workload identity to access your key vault
   - apiVersion: secrets-store.csi.x-k8s.io/v1

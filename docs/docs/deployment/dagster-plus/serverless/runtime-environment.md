@@ -183,7 +183,7 @@ dagster-cloud serverless deploy-python-executable \
     To add data files to your deployment, create a `data` directory under the `src/{PACKAGE NAME}` directory:
 
     ```bash
-    quickstart-etl
+    .
     ├── dagster_cloud.yaml
     ├── pyproject.toml
     ├── tests
