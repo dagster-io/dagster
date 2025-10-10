@@ -45,12 +45,12 @@ type: dagster_apprise.apprise_notifications
 
 attributes:
   urls:
-    - "discord://WEBHOOK_ID/WEBHOOK_TOKEN"
+    - 'discord://WEBHOOK_ID/WEBHOOK_TOKEN'
     # - "https://hooks.slack.com/services/YOUR/SLACK/WEBHOOK"
     # - "mailto://user:pass@gmail.com"
-  events: ["FAILURE"]
-  include_jobs: ["*"]
-  base_url: "http://localhost:3000"
+  events: ['FAILURE']
+  include_jobs: ['*']
+  base_url: 'http://localhost:3000'
 ```
 
 ## Configuration Options
@@ -61,15 +61,15 @@ See the [Apprise documentation](https://github.com/caronc/apprise/wiki) for all 
 
 ### AppriseNotificationsConfig
 
-| Option | Type | Default | Description |
-|--------|------|---------|-------------|
-| `urls` | `list[str]` | `[]` | List of Apprise notification URLs |
-| `config_file` | `str` | `None` | Path to Apprise config file |
-| `base_url` | `str` | `None` | Base URL for Dagster UI links |
-| `title_prefix` | `str` | `"Dagster"` | Prefix for notification titles |
-| `events` | `list[str]` | `["FAILURE"]` | Events to notify about |
-| `include_jobs` | `list[str]` | `["*"]` | Job patterns to include |
-| `exclude_jobs` | `list[str]` | `[]` | Job patterns to exclude |
+| Option         | Type        | Default       | Description                       |
+| -------------- | ----------- | ------------- | --------------------------------- |
+| `urls`         | `list[str]` | `[]`          | List of Apprise notification URLs |
+| `config_file`  | `str`       | `None`        | Path to Apprise config file       |
+| `base_url`     | `str`       | `None`        | Base URL for Dagster UI links     |
+| `title_prefix` | `str`       | `"Dagster"`   | Prefix for notification titles    |
+| `events`       | `list[str]` | `["FAILURE"]` | Events to notify about            |
+| `include_jobs` | `list[str]` | `["*"]`       | Job patterns to include           |
+| `exclude_jobs` | `list[str]` | `[]`          | Job patterns to exclude           |
 
 ### Supported Events
 
