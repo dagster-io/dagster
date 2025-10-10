@@ -49,7 +49,8 @@ function CardLayout({
     description = item.description ?? categoryItemsPlural(item.items.length);
   } else {
     href = item.href;
-    description = item.description;
+    const doc = useDocById(item.docId ?? undefined);
+    description = item.description ?? doc?.description;
   }
 
   const LinkComponent = Link as any; //Type assertion to bypass linting error
@@ -67,14 +68,12 @@ function CardLayout({
             />
         )}
         <div>
-          <div style={{display: 'flex', flexDirection: 'row'}}>
+          <div className={styles.cardTitleWrapper}>
             <Heading as="h2" className={styles.cardTitle} title={title}>
               {title}
             </Heading>
             {community && (
-              <span style={{marginLeft: 'auto'}}>
-                <div className={styles.cardTags}>Community</div>
-              </span>
+              <span className={styles.cardTags}>Community</span>
             )}
           </div>
           {description && (
