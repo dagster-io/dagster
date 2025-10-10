@@ -34,7 +34,7 @@ dg dev
 
 You can define multiple code locations in a single `dg.toml` file:
 
-```yaml
+```toml
 # dg.toml
 directory_type = "workspace"
 
@@ -61,5 +61,5 @@ This assumes that both projects are nested within the current directory where th
 To load the `dg.toml` file from a different folder, use the `-w` argument:
 
 ```shell
-dg dev
+dg dev -w path/to/dg.toml
 ```
