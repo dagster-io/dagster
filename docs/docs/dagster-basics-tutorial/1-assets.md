@@ -16,7 +16,7 @@ When building assets, the first step is to scaffold an assets file with the [`dg
 
 <CliInvocationExample path="docs_snippets/docs_snippets/guides/tutorials/dagster_tutorial/commands/dg-scaffold-assets.txt" />
 
-This adds a file called `assets.py` to your Dagster project, which will contain your asset code. Using `dg` to create the file ensures it is placed where Dagster can automatically discover it:
+This adds a file called `assets.py` to the `dagster-tutorial` module, which will contain your asset code. Using `dg` to create the file ensures it is placed where Dagster can automatically discover it:
 
 <CliInvocationExample path="docs_snippets/docs_snippets/guides/tutorials/dagster_tutorial/tree/assets.txt" />
 
@@ -50,7 +50,7 @@ In Dagster, all defined objects (such as assets) need to be associated with a to
   title="src/dagster_tutorial/definitions.py"
 />
 
-This `Definitions` object loads the module and automatically discovers all assets and other Dagster objects. There is no need to explicitly reference assets as they are created. However, it is good practice to check that the `Definitions` object can be loaded without error as new Dagster objects are added.
+This `Definitions` object loads the `dagster-tutorial` module and automatically discovers all assets and other Dagster objects. There is no need to explicitly reference assets as they are created. However, it is good practice to check that the `Definitions` object can be loaded without error as new Dagster objects are added.
 
 You can use the [`dg check defs`](/api/clis/dg-cli/dg-cli-reference#dg-check) command to ensure everything in your module loads correctly, and that your project is deployable:
 
