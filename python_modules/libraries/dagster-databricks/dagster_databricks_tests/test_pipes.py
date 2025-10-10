@@ -42,7 +42,7 @@ def script_fn():
     # are set, we know we are in the new cluster case and load params via the env vars.
     def is_notebook():
         try:
-            from pyspark.dbutils import DBUtils # pyright: ignore[reportMissingImports]
+            from pyspark.dbutils import DBUtils  # pyright: ignore[reportMissingImports]
 
             dbutils = DBUtils(spark)  # pyright: ignore[reportUndefinedVariable] # noqa: F821
             dbutils.widgets.get(DAGSTER_PIPES_CONTEXT_ENV_VAR)
@@ -166,7 +166,10 @@ def make_submit_task(
 @pytest.mark.skipif(not IS_WORKSPACE, reason="No DB workspace credentials found.")
 @pytest.mark.parametrize("forward_logs", [True, False])
 @pytest.mark.parametrize("use_existing_cluster", [True, False])
-@pytest.mark.parametrize("task_type, file_path_key", [("spark_python_task", "python_file"), ("notebook_task", "notebook_path")])
+@pytest.mark.parametrize(
+    "task_type, file_path_key",
+    [("spark_python_task", "python_file"), ("notebook_task", "notebook_path")],
+)
 def test_pipes_client(
     capsys,
     databricks_client: WorkspaceClient,  # noqa: F811
