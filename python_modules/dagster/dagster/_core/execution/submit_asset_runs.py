@@ -62,6 +62,8 @@ async def get_job_execution_data_from_run_request(
     workspace: BaseWorkspaceRequestContext,
     run_request_execution_data_cache: dict[JobSubsetSelector, RunRequestExecutionData],
 ) -> RunRequestExecutionData:
+    from dagster._core.remote_representation.external import RemoteExecutionPlanSelector
+
     check.invariant(
         len(run_request.entity_keys) > 0,
         "Expected RunRequest to have an asset selection or asset check keys",
@@ -88,13 +90,17 @@ async def get_job_execution_data_from_run_request(
         asset_selection=run_request.asset_selection,
         asset_check_selection=run_request.asset_check_keys,
         op_selection=None,
-        run_config=run_request.run_config or {},
     )
 
     if pipeline_selector not in run_request_execution_data_cache:
         remote_job, remote_execution_plan = await asyncio.gather(
             RemoteJob.gen(workspace, pipeline_selector),
-            RemoteExecutionPlan.gen(workspace, pipeline_selector),
+            RemoteExecutionPlan.gen(
+                workspace,
+                RemoteExecutionPlanSelector(
+                    job_selector=pipeline_selector, run_config=(run_request.run_config or {})
+                ),
+            ),
         )
         run_request_execution_data_cache[pipeline_selector] = RunRequestExecutionData(
             check.not_none(remote_job),
