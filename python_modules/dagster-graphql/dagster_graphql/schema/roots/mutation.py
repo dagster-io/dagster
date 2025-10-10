@@ -292,20 +292,6 @@ class GrapheneTerminateRunsResultOrError(graphene.Union):
 
 async def create_execution_params_and_launch_pipeline_exec(graphene_info, execution_params_dict):
     execution_params = await create_execution_params(graphene_info, execution_params_dict)
-    if (
-        execution_params.selector.asset_selection
-        and execution_params.selector.asset_check_selection
-    ):
-        entity_keys = [
-            *execution_params.selector.asset_selection,
-            *execution_params.selector.asset_check_selection,
-        ]
-    elif execution_params.selector.asset_selection:
-        entity_keys = list(execution_params.selector.asset_selection)
-    elif execution_params.selector.asset_check_selection:
-        entity_keys = list(execution_params.selector.asset_check_selection)
-    else:
-        entity_keys = None
 
     assert_permission_for_job(
         graphene_info,
@@ -315,7 +301,9 @@ async def create_execution_params_and_launch_pipeline_exec(graphene_info, execut
             repository_name=execution_params.selector.repository_name,
             job_name=execution_params.selector.job_name,
         ),
-        entity_keys,
+        list(execution_params.selector.entity_selection)
+        if execution_params.selector.entity_selection
+        else None,
     )
     return await launch_pipeline_execution(
         graphene_info,
@@ -510,21 +498,6 @@ class GrapheneDeleteDynamicPartitionsMutation(graphene.Mutation):
 
 async def create_execution_params_and_launch_pipeline_reexec(graphene_info, execution_params_dict):
     execution_params = await create_execution_params(graphene_info, execution_params_dict)
-    if (
-        execution_params.selector.asset_selection
-        and execution_params.selector.asset_check_selection
-    ):
-        entity_keys = [
-            *execution_params.selector.asset_selection,
-            *execution_params.selector.asset_check_selection,
-        ]
-    elif execution_params.selector.asset_selection:
-        entity_keys = list(execution_params.selector.asset_selection)
-    elif execution_params.selector.asset_check_selection:
-        entity_keys = list(execution_params.selector.asset_check_selection)
-    else:
-        entity_keys = None
-
     assert_permission_for_job(
         graphene_info,
         Permissions.LAUNCH_PIPELINE_REEXECUTION,
@@ -533,7 +506,9 @@ async def create_execution_params_and_launch_pipeline_reexec(graphene_info, exec
             repository_name=execution_params.selector.repository_name,
             job_name=execution_params.selector.job_name,
         ),
-        entity_keys,
+        list(execution_params.selector.entity_selection)
+        if execution_params.selector.entity_selection
+        else None,
     )
     return await launch_pipeline_reexecution(graphene_info, execution_params=execution_params)
 
