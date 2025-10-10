@@ -51,7 +51,7 @@ Insights views also features activity charts that group events by hour to help y
 
 Since updated Insights views are still under active development, there are a few limitations we aim to address in upcoming releases:
 
-- Insights views do not currently show cost, Dagster credits, and metadata metrics
+- Insights views do not currently show metadata metrics
 
 :::
 
