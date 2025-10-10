@@ -49,6 +49,7 @@ sudo py-spy record -f speedscope --idle -- dagster definitions validate
         For example, you can set the following in your `dagster_cloud.yaml` file for your code location if you're running a Kubernetes agent to make both your code servers and run pods able to work with py-spy:
 
         ```
+        # dagster_cloud.yaml
         locations:
         - location_name: cloud-examples
             image: dagster/dagster-cloud-examples:latest

@@ -15,6 +15,7 @@ By default, Dagster looks for the `dagster.yaml` file in the directory specified
 You can use environment variables to override values in the `dagster.yaml` file.
 
 ```yaml
+# dagster.yaml
 instance:
   module: dagster.core.instance
   class: DagsterInstance
@@ -28,6 +29,7 @@ instance:
 Here's a comprehensive `dagster.yaml` specification with all available options:
 
 ```yaml
+# dagster.yaml
 local_artifact_storage:
   module: dagster.core.storage.root
   class: LocalArtifactStorage

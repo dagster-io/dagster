@@ -95,6 +95,7 @@ To run multiple agents in an environment where each agent can not access the oth
 Add the following to the `dagster.yaml` file:
 
 ```yaml
+# dagster.yaml
 isolated_agents:
   enabled: true
 
@@ -216,6 +217,7 @@ dagsterCloud:
 Modify your ECS Cloud Formation template to add the following configuration to the `config.yaml` passed to the agent:
 
 ```yaml
+# config.yaml
 agent_queues:
   # Continue to handle requests for code locations that aren't
   # assigned to a specific agent queue

@@ -30,20 +30,7 @@ Code locations are loaded in a different process and communicate with Dagster sy
 
 ## Defining code locations
 
-To define a code location, create a top-level variable that contains a <PyObject section="definitions" module="dagster" object="Definitions" /> object in a Python module. For example:
-
-```python
-# definitions.py
-
-defs = Definitions(
-    assets=[dbt_customers_asset, dbt_orders_asset],
-    schedules=[bi_weekly_schedule],
-    sensors=[new_data_sensor],
-    resources=[dbt_resource],
-)
-```
-
-It is recommended to include definitions in a Python module named `definitions.py`.
+A Dagster project can be scaffolded using the [`create-dagster` CLI](/guides/build/projects/creating-a-new-project). This will create a top-level variable that contains a <PyObject section="definitions" module="dagster" object="Definitions" /> object in a Python module.
 
 ## Deploying and loading code locations
 
@@ -53,78 +40,13 @@ It is recommended to include definitions in a Python module named `definitions.p
 
 ### Local development
 
-<Tabs>
-<TabItem value="From a file" label="From a file">
-
-Dagster can load a file directly as a code location. In the following example, we used the `-f` argument to supply the name of the file:
+Dagster can load a project directly as a code location:
 
 ```shell
-dagster dev -f my_file.py
+dg dev
 ```
 
-This command loads the definitions in `my_file.py` as a code location in the current Python environment.
-
-You can also include multiple files at a time, where each file will be loaded as a code location:
-
-```shell
-dagster dev -f my_file.py -f my_second_file.py
-```
-
-</TabItem>
-<TabItem value="From a module" label="From a module">
-
-Dagster can also load Python modules as [code locations](/deployment/code-locations). When this approach is used, Dagster loads the definitions defined in the module passed to the command line.
-
-We recommend defining a variable containing the <PyObject section="definitions" module="dagster" object="Definitions" /> object in a submodule named `definitions` inside the Python module. In practice, the submodule can be created by adding a file named `definitions.py` at the root level of the Python module.
-
-As this style of development eliminates an entire class of Python import errors, we strongly recommend it for Dagster projects deployed to production.
-
-In the following example, we used the `-m` argument to supply the name of the module and where to find the definitions:
-
-```shell
-dagster dev -m your_module_name.definitions
-```
-
-This command loads the definitions in the variable containing the <PyObject section="definitions" module="dagster" object="Definitions" /> object in the `definitions` submodule in the current Python environment.
-
-You can also include multiple modules at a time, where each module will be loaded as a code location:
-
-```shell
-dagster dev -m your_module_name.definitions -m your_second_module.definitions
-```
-
-</TabItem>
-<TabItem value="Without command line arguments" label="Without command line arguments">
-
-To load definitions without supplying command line arguments, you can use the `pyproject.toml` file. This file, included in all Dagster example projects, contains a `tool.dagster` section with a `module_name` variable:
-
-```toml
-[tool.dagster]
-module_name = "your_module_name.definitions"  ## name of project's Python module and where to find the definitions
-code_location_name = "your_code_location_name"  ## optional, name of code location to display in the Dagster UI
-```
-
-When defined, you can run this in the same directory as the `pyproject.toml` file:
-
-```shell
-dagster dev
-```
-
-Instead of this:
-
-```shell
-dagster dev -m your_module_name.definitions
-```
-
-You can also include multiple modules at a time using the `pyproject.toml` file, where each module will be loaded as a code location:
-
-```toml
-[tool.dagster]
-modules = [{ type = "module", name = "foo" }, { type = "module", name = "bar" }]
-```
-
-</TabItem>
-</Tabs>
+This command loads the definitions in the project as a code location in the current Python environment.
 
 Fore more information about local development, including how to configure your local instance, see "[Running Dagster locally](/deployment/oss/deployment-options/running-dagster-locally)".
 

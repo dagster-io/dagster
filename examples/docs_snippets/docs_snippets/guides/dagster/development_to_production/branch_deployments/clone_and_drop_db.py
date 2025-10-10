@@ -1,12 +1,11 @@
 import os
 
-# start_clone_db
 from dagster_snowflake import SnowflakeResource
 
-from dagster import In, Nothing, graph, op
+import dagster as dg
 
 
-@op
+@dg.op
 def drop_database_clone(snowflake: SnowflakeResource):
     with snowflake.get_connection() as conn:
         cur = conn.cursor()
@@ -16,7 +15,7 @@ def drop_database_clone(snowflake: SnowflakeResource):
         )
 
 
-@op(ins={"start": In(Nothing)})
+@dg.op(ins={"start": dg.In(dg.Nothing)})
 def clone_production_database(snowflake: SnowflakeResource):
     with snowflake.get_connection() as conn:
         cur = conn.cursor()
@@ -27,14 +26,11 @@ def clone_production_database(snowflake: SnowflakeResource):
         )
 
 
-@graph
+@dg.graph
 def clone_prod():
     clone_production_database(start=drop_database_clone())
 
 
-@graph
+@dg.graph
 def drop_prod_clone():
     drop_database_clone()
-
-
-# end_clone_db

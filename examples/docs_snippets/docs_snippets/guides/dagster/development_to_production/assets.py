@@ -17,14 +17,14 @@ ITEM_FIELD_NAMES = [
 import pandas as pd
 import requests
 
-from dagster import Config, asset
+import dagster as dg
 
 
-class ItemsConfig(Config):
+class ItemsConfig(dg.Config):
     base_item_id: int
 
 
-@asset(
+@dg.asset(
     io_manager_key="snowflake_io_manager",
 )
 def items(config: ItemsConfig) -> pd.DataFrame:
@@ -44,7 +44,7 @@ def items(config: ItemsConfig) -> pd.DataFrame:
     return result
 
 
-@asset(
+@dg.asset(
     io_manager_key="snowflake_io_manager",
 )
 def comments(items: pd.DataFrame) -> pd.DataFrame:
@@ -52,7 +52,7 @@ def comments(items: pd.DataFrame) -> pd.DataFrame:
     return items[items["type"] == "comment"]
 
 
-@asset(
+@dg.asset(
     io_manager_key="snowflake_io_manager",
 )
 def stories(items: pd.DataFrame) -> pd.DataFrame:
