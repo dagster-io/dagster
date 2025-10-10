@@ -130,7 +130,7 @@ Join our community here:
 - 🌟 [Star us on GitHub](https://github.com/dagster-io/dagster)
 - 📥 [Subscribe to our Newsletter](https://dagster.io/newsletter-signup)
 - 🐦 [Follow us on Twitter](https://twitter.com/dagster)
-- 🕴️ [Follow us on LinkedIn](https://linkedin.com/showcase/dagster)
+- 🕴️ [Follow us on LinkedIn](https://www.linkedin.com/company/dagsterlabs/)
 - 📺 [Subscribe to our YouTube channel](https://www.youtube.com/@dagsterio)
 - 📚 [Read our blog posts](https://dagster.io/blog)
 - 👋 [Join us on Slack](https://dagster.io/slack)
