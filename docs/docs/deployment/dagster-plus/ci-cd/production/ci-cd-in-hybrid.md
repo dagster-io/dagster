@@ -1,14 +1,13 @@
 ---
 description: Configure CI/CD for Dagster+ Hybrid using GitHub Actions, or non-GitHub providers with the dagster-cloud CLI.
 title: CI/CD in Dagster+ Hybrid
-sidebar_label: CI/CD in Hybrid
 sidebar_position: 7200
 tags: [dagster-plus-feature]
 ---
 
 :::note
 
-This guide only applies to [Dagster+ Hybrid deployments](/deployment/dagster-plus/hybrid).
+This guide only applies to [Dagster+ Hybrid deployments](/deployment/dagster-plus/hybrid). For Serverless guidance, see [CI/CD in Serverless](/deployment/dagster-plus/ci-cd/production/ci-cd-in-serverless).
 
 :::
 
@@ -98,4 +97,5 @@ If you are using a non-GitHub CI/CD provider, your system should use the `dagste
 :::note
 
 Creating branch deployments using the CLI requires some additional steps. For more information, see "[Using branch deployments with the dagster-cloud CLI](/deployment/dagster-plus/ci-cd/branch-deployments/using-branch-deployments-with-the-cli).
+
 :::
