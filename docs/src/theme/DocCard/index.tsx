@@ -77,17 +77,17 @@ function CardLayout({
         )}
         <div>
           <div style={{display: 'flex', flexDirection: 'row'}}>
-            <Heading as="h2" className={clsx('', styles.cardTitle)} title={title}>
+            <Heading as="h2" className={styles.cardTitle} title={title}>
               {title}
             </Heading>
             {community && (
               <span style={{marginLeft: 'auto'}}>
-                <div className={clsx(styles.cardTags)}>Community</div>
+                <div className={styles.cardTags}>Community</div>
               </span>
             )}
           </div>
           {description && (
-            <p className={clsx(styles.cardDescription)} title={description}>
+            <p className={styles.cardDescription} title={description}>
               {description}
             </p>
           )}
