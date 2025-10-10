@@ -11,7 +11,9 @@
 
   display: flex;
   flex-direction: row;
-  gap: .75rem
+  align-items: stretch;
+  gap: .75rem;
+  height: 100%;
 }
 
 .cardContainer:hover {
@@ -60,9 +62,16 @@
 }
 
 .cardLogo {
-  display: block;
   width: 4rem;
   height: 4rem;
   background: var(--dagster-white);
   padding: .25rem;
+  flex-shrink: 0;
+}
+
+.cardTitleWrapper {
+  display: flex;
+  flex-direction: row;
+  align-items: start;
+  gap: 12px;
 }
