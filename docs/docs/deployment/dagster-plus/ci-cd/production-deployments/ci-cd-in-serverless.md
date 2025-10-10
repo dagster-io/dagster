@@ -1,13 +1,13 @@
 ---
 description: Implement CI/CD for your Dagster+ Serverless deployment with GitHub, GitLab, or another Git provider.
-sidebar_position: 7100
+sidebar_position: 7210
 title: CI/CD in Dagster+ Serverless
 tags: [dagster-plus-feature]
 ---
 
 :::note
 
-This guide only applies to [Dagster+ Serverless deployments](/deployment/dagster-plus/serverless). For Hybrid guidance, see [CI/CI in Dagster+ Hybrid](/deployment/dagster-plus/ci-cd/production/ci-cd-in-hybrid).
+This guide only applies to [Dagster+ Serverless deployments](/deployment/dagster-plus/serverless). For Hybrid guidance, see [CI/CI in Dagster+ Hybrid](/deployment/dagster-plus/ci-cd/production-deployments/ci-cd-in-hybrid).
 
 :::
 
@@ -15,7 +15,7 @@ If you're a GitHub or GitLab user, you can use our predefined workflows to deplo
 
 :::note
 
-Using the `Connect to GitHub` or `Connect to GitLab` buttons in Dagster+ to configure a Git repository requires the [Organization Admin role](/deployment/dagster-plus/authentication-and-access-control/rbac/user-roles/permissions) so that the system can provision an [agent token](/deployment/dagster-plus/management/tokens/agent-tokens).
+Using the `Connect to GitHub` or `Connect to GitLab` buttons in Dagster+ to configure a Git repository requires the [Organization Admin role](/deployment/dagster-plus/authentication-and-access-control/rbac/user-roles-permissions) so that the system can provision an [agent token](/deployment/dagster-plus/management/tokens/agent-tokens).
 
 :::
 

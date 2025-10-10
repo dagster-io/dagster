@@ -38,7 +38,7 @@ This guide is an extension of the [Transitioning data pipelines from development
 To complete the steps in this guide, you'll need:
 
 - A Dagster+ account
-- An existing Branch Deployments setup that uses [GitHub actions](/deployment/dagster-plus/ci-cd/ci-cd-in-hybrid#github) or [Gitlab CI/CD](/deployment/dagster-plus/ci-cd/ci-cd-in-hybrid#non-github). Your setup should contain a Dagster project set up for branch deployments containing:
+- An existing Branch Deployments setup that uses [GitHub actions](/deployment/dagster-plus/ci-cd/production-deployments/ci-cd-in-hybrid#github) or [Gitlab CI/CD](/deployment/dagster-plus/ci-cd/production-deployments/ci-cd-in-hybrid#non-github). Your setup should contain a Dagster project set up for branch deployments containing:
   - Either a GitHub actions workflow file (e.g. `.github/workflows/branch-deployments.yaml`) or a Gitlab CI/CD file (e.g. `.gitlab-ci.yml`)
   - Dockerfile that installs your Dagster project
 - User permissions in Dagster+ that allow you to [access Branch Deployments](/deployment/dagster-plus/authentication-and-access-control/rbac/user-roles-permissions)

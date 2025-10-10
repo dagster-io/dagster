@@ -164,7 +164,7 @@ If you are using [Components](/guides/build/components), you can prepare your `D
 
 :::note
 
-This feature requires the `DAGSTER_BUILD_STATEDIR` environment variable to be set in your CI/CD. Learn more about required environment variables in CI/CD for Dagster+ [here](/deployment/dagster-plus/ci-cd/ci-cd-in-hybrid).
+This feature requires the `DAGSTER_BUILD_STATEDIR` environment variable to be set in your CI/CD. Learn more about required environment variables in CI/CD for Dagster+ [here](/deployment/dagster-plus/ci-cd/production-deployments/ci-cd-in-hybrid).
 
 You will also need to run the `dagster-cloud ci dagster-dbt project manage-state` command in your prod deployment before it can be run in branch deployments. This will create the baseline for comparison in the branch deployments.
 

@@ -13,7 +13,7 @@ First, you will need to create a Dagster+ organization, choose your deployment t
 
 ## Step 2: Update CI/CD pipeline
 
-Next, you will need to modify the CI/CD process that deploys your OSS code to follow the Dagster+ deployment pattern. For more information, see the [Dagster+ CI/CD documentation](/deployment/dagster-plus/ci-cd/ci-cd-in-hybrid).
+Next, you will need to modify the CI/CD process that deploys your OSS code to follow the Dagster+ deployment pattern. For more information, see the [Dagster+ CI/CD documentation](/deployment/dagster-plus/ci-cd/production-deployments/ci-cd-in-hybrid).
 
 ## Step 3: Populate metadata in Dagster+
 

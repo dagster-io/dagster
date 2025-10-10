@@ -11,7 +11,7 @@ This guide assumes you are using Dagster+ and that you already have an AKS agent
 
 ## Prerequisites
 
-This guide will use a Github repository to store the Dagster code, and GitHub Actions to deploy the code to Azure Container Registry. If you need to use another CI/CD provider, such as Azure DevOps, the steps here will need to be adapted. For more information on configuring CI/CD using the `dagster-cloud` CLI, see "[Configuring CI/CD for your project](/deployment/dagster-plus/ci-cd/ci-cd-in-hybrid#non-github).
+This guide will use a Github repository to store the Dagster code, and GitHub Actions to deploy the code to Azure Container Registry. If you need to use another CI/CD provider, such as Azure DevOps, the steps here will need to be adapted. For more information on configuring CI/CD using the `dagster-cloud` CLI, see "[Configuring CI/CD for your project](/deployment/dagster-plus/ci-cd/production-deployments/ci-cd-in-hybrid#non-github).
 
 - The azure CLI installed on your machine. You can download it [here](https://docs.microsoft.com/en-us/cli/azure/install-azure-cli).
 - A GitHub account, and the ability to run GitHub Actions workflows in a repository.

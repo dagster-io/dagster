@@ -53,7 +53,7 @@ Once you've set up a Hybrid agent, navigate to the **Deployment > Agents** page 
 
 ## 5. Update your build process
 
-Update your build process to publish a new container image and configuration for each code location. To use Dagster's CI/CD process, see the [CI/CD in Dagster+ Hybrid guide](/deployment/dagster-plus/ci-cd/ci-cd-in-hybrid).
+Update your build process to publish a new container image and configuration for each code location. To use Dagster's CI/CD process, see the [CI/CD in Dagster+ Hybrid guide](/deployment/dagster-plus/ci-cd/production-deployments/ci-cd-in-hybrid).
 
 ## 6. Replace Serverless-only features with their Hybrid equivalents
 

@@ -1,13 +1,13 @@
 ---
 description: Configure CI/CD for Dagster+ Hybrid using GitHub Actions, or non-GitHub providers with the dagster-cloud CLI.
 title: CI/CD in Dagster+ Hybrid
-sidebar_position: 7200
+sidebar_position: 7220
 tags: [dagster-plus-feature]
 ---
 
 :::note
 
-This guide only applies to [Dagster+ Hybrid deployments](/deployment/dagster-plus/hybrid). For Serverless guidance, see [CI/CD in Serverless](/deployment/dagster-plus/ci-cd/production/ci-cd-in-serverless).
+This guide only applies to [Dagster+ Hybrid deployments](/deployment/dagster-plus/hybrid). For Serverless guidance, see [CI/CD in Serverless](/deployment/dagster-plus/ci-cd/production-deployments/ci-cd-in-serverless).
 
 :::
 
