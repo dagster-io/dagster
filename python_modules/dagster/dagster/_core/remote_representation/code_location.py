@@ -648,9 +648,7 @@ class GrpcServerCodeLocation(CodeLocation):
     ):
         from dagster._api.get_server_id import sync_get_server_id
         from dagster._api.list_repositories import sync_list_repositories_grpc
-        from dagster._api.snapshot_repository import (
-            sync_get_streaming_external_repositories_data_grpc,
-        )
+        from dagster._api.snapshot_repository import sync_get_external_repositories_data_grpc
         from dagster._grpc.client import DagsterGrpcClient, client_heartbeat_thread
 
         self._origin = check.inst_param(origin, "origin", CodeLocationOrigin)
@@ -729,7 +727,7 @@ class GrpcServerCodeLocation(CodeLocation):
 
             self._container_context = list_repositories_response.container_context
 
-            self._repository_snaps = sync_get_streaming_external_repositories_data_grpc(
+            self._repository_snaps = sync_get_external_repositories_data_grpc(
                 self.client,
                 self,
             )
