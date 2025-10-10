@@ -34,6 +34,35 @@ async def test_failed_unpartitioned() -> None:
     assert result.true_subset.size == 0
 
 
+def test_execution_failed_unpartitioned() -> None:
+    @dg.asset(automation_condition=dg.AutomationCondition.execution_failed())
+    def A(): ...
+
+    @dg.asset(deps=[A], automation_condition=dg.AutomationCondition.execution_failed())
+    def B():
+        raise Exception("blah")
+
+    defs = dg.Definitions(assets=[A, B])
+    instance = dg.DagsterInstance.ephemeral()
+    result = dg.evaluate_automation_conditions(defs=defs, instance=instance)
+    # no failures
+    assert result.total_requested == 0
+
+    # now execute a run where A succeeds and B fails
+    job_result = defs.resolve_implicit_global_asset_job_def().execute_in_process(
+        instance=instance, raise_on_error=False
+    )
+    assert not job_result.success
+
+    result = dg.evaluate_automation_conditions(defs=defs, instance=instance, cursor=result.cursor)
+    # only requested B
+    assert result.total_requested == 1
+
+    result = dg.evaluate_automation_conditions(defs=defs, instance=instance, cursor=result.cursor)
+    # still only requested B
+    assert result.total_requested == 1
+
+
 @pytest.mark.asyncio
 async def test_in_progress_static_partitioned() -> None:
     state = AutomationConditionScenarioState(
