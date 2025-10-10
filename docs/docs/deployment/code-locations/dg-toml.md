@@ -8,7 +8,7 @@ import DagsterOSS from '@site/docs/partials/\_DagsterOSS.md';
 
 <DagsterOSS />
 
-A dg.toml file can be used to configure code locations in Dagster. It tells Dagster where to find your code and how to load it. By default, this is a YAML document named dg.yaml. For example:
+A dg.toml file can be used to configure code locations in Dagster. It tells Dagster where to find your code and how to load it. This is a TOML format configuration file. For example:
 
 ```toml
 # dg.toml
