@@ -26,6 +26,7 @@ The [`dagsterCloudAgent`](https://artifacthub.io/packages/helm/dagster-cloud/dag
 The following `values.yaml` example file shows how to configure the resources for a Dagster+ agent:
 
 ```yaml
+# values.yaml
 dagsterCloudAgent:
   resources:
     requests:
@@ -50,7 +51,6 @@ The following example [`dagster_cloud.yaml`](/deployment/code-locations/dagster-
 
 ```yaml
 # dagster_cloud.yaml
-
 locations:
   - location_name: cloud-examples
     image: dagster/dagster-cloud-examples:latest
@@ -123,7 +123,6 @@ Using the `container_context.k8s.env_vars` and `container_context.k8s.env_secret
 
 ```yaml
 # dagster_cloud.yaml
-
 location:
   - location_name: cloud-examples
     image: dagster/dagster-cloud-examples:latest
@@ -155,10 +154,11 @@ By default, each Dagster job will run in its own Kubernetes pod, with each op ru
 You can also configure your Dagster job with the <PyObject section="libraries" module="dagster_k8s" object="k8s_job_executor" /> to run each op in its own Kubernetes pod. For example:
 
 ```python
-from dagster import job
+# jobs.py
+import dagster as dg
 from dagster_k8s import k8s_job_executor
 
-@job(executor_def=k8s_job_executor)
+@dg.job(executor_def=k8s_job_executor)
 def k8s_job():
     ...
 ```

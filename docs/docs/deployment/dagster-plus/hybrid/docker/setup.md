@@ -44,6 +44,7 @@ Keep the token somewhere handy - you'll need it to complete the setup.
 2. Create a `dagster.yaml` file:
 
    ```yaml
+   # dagster.yaml
    instance_class:
      module: dagster_cloud.instance
      class: DagsterCloudAgentInstance

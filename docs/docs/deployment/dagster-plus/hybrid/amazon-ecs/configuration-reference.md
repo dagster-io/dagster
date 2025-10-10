@@ -26,6 +26,7 @@ When [adding a code location](/deployment/code-locations) to Dagster+ with an Am
 The following example [`dagster_cloud.yaml`](/deployment/code-locations/dagster-cloud-yaml) file illustrates the available fields:
 
 ```yaml
+# dagster_cloud.yaml
 locations:
   - location_name: cloud-examples
     image: dagster/dagster-cloud-examples:latest
@@ -87,7 +88,6 @@ Using the `container_context.ecs.env_vars` and `container_context.ecs.secrets` p
 
 ```yaml
 # dagster_cloud.yaml
-
 locations:
   - location_name: cloud-examples
     image: dagster/dagster-cloud-examples:latest
@@ -123,20 +123,20 @@ Refer to the following guides for more info about environment variables:
 You can use job tags to customize the CPU and memory of every run for that job:
 
 ```python
-from dagster import job, op
+import dagster as dg
 
-@op()
-def my_op(context):
+@dg.asset
+def my_asset(context):
   context.log.info('running')
 
-@job(
+@dg.job(
   tags = {
     "ecs/cpu": "256",
     "ecs/memory": "512",
   }
 )
 def my_job():
-  my_op()
+  my_asset()
 ```
 
 [Fargate tasks only support certain combinations of CPU and memory.](https://docs.aws.amazon.com/AmazonECS/latest/developerguide/task-cpu-memory-error.html)
@@ -150,6 +150,7 @@ This section describes the properties of the `dagster.yaml` configuration file u
 To change these properties, edit the CloudFormation template and redeploy the CloudFormation stack.
 
 ```yaml
+# dagster.yaml
 instance_class:
   module: dagster_cloud
   class: DagsterCloudAgentInstance

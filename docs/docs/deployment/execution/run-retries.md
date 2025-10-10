@@ -23,13 +23,13 @@ run_retries:
 
 In both Dagster+ and Dagster Open Source, you can also configure retries using tags either on Job definitions or in the Dagster UI [Launchpad](/guides/operate/webserver).
 
-<CodeExample path="docs_snippets/docs_snippets/deploying/job_retries.py" />
+<CodeExample path="docs_snippets/docs_snippets/deploying/job_retries.py" title="src/my_project/assets.py" />
 
 :::note
 
 For asset jobs, you can use [op retries](/guides/build/ops/op-retries) by setting the `op_retry_policy` attribute of `define_asset_job()` to a <PyObject section="ops" module="dagster" object="RetryPolicy"  />.
 
-<CodeExample path="docs_snippets/docs_snippets/deploying/asset_job_retries.py" />
+<CodeExample path="docs_snippets/docs_snippets/deploying/asset_job_retries.py" title="src/my_project/assets.py" />
 
 :::warning
 
@@ -67,10 +67,10 @@ run_retries:
 You can also apply the `dagster/retry_on_asset_or_op_failure` tag on specific jobs using tags to override the default value for runs of that job:
 
 ```python
-from dagster import job
+import dagster as dg
 
 
-@job(tags={"dagster/max_retries": 3, "dagster/retry_on_asset_or_op_failure": False})
+@dg.job(tags={"dagster/max_retries": 3, "dagster/retry_on_asset_or_op_failure": False})
 def sample_job():
     pass
 ```

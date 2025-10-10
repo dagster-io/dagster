@@ -48,7 +48,6 @@ Using the `container_context.ecs.env_vars` and `container_context.ecs.secrets` p
 
 ```yaml
 # dagster_cloud.yaml
-
 locations:
   - location_name: cloud-examples
     image: dagster/dagster-cloud-examples:latest
@@ -110,7 +109,6 @@ Using the `container_context.k8s.env_vars` and `container_context.k8s.env_secret
 
 ```yaml
 # dagster_cloud.yaml
-
 locations:
   - location_name: cloud-examples
     image: dagster/dagster-cloud-examples:latest

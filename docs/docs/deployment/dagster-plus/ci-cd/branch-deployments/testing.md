@@ -66,6 +66,7 @@ In production, we want to write three tables to Snowflake: `ITEMS`, `COMMENTS`, 
   path="docs_snippets/docs_snippets/guides/dagster/development_to_production/assets.py"
   startAfter="start_assets"
   endBefore="end_assets"
+  title="src/my_project/assets.py"
 />
 
 As you can see, our assets use an [I/O manager](/guides/build/io-managers) named `snowflake_io_manager`. Using I/O managers and other resources allow us to swap out implementations per environment without modifying our business logic.
@@ -82,8 +83,7 @@ Because we want to configure our assets to write to Snowflake using a different 
 
 <CodeExample
   path="docs_snippets/docs_snippets/guides/dagster/development_to_production/branch_deployments/repository_v1.py"
-  startAfter="start_repository"
-  endBefore="end_repository"
+  title="src/my_project/resources.py"
 />
 
 Refer to the [Dagster+ environment variables documentation](/deployment/dagster-plus/management/environment-variables) for more info about available environment variables.
@@ -103,8 +103,7 @@ asset-specific features for these tasks, like viewing them in the Global Asset G
 
 <CodeExample
   path="docs_snippets/docs_snippets/guides/dagster/development_to_production/branch_deployments/clone_and_drop_db.py"
-  startAfter="start_clone_db"
-  endBefore="end_clone_db"
+  title="src/my_project/ops.py"
 />
 
 We've defined `drop_database_clone` and `clone_production_database` to utilize the <PyObject section="libraries" object="SnowflakeResource" module="dagster_snowflake" />. The Snowflake resource will use the same configuration as the Snowflake I/O manager to generate a connection to Snowflake. However, while our I/O manager writes outputs to Snowflake, the Snowflake resource executes queries against Snowflake.
@@ -115,6 +114,7 @@ We now need to define resources that configure our jobs to the current environme
   path="docs_snippets/docs_snippets/guides/dagster/development_to_production/branch_deployments/repository_v2.py"
   startAfter="start_resources"
   endBefore="end_resources"
+  title="src/my_project/resources.py"
 />
 
 Then, we can add the `clone_prod` and `drop_prod_clone` jobs that now use the appropriate resource to the environment and add them to our definitions:
@@ -123,6 +123,7 @@ Then, we can add the `clone_prod` and `drop_prod_clone` jobs that now use the ap
   path="docs_snippets/docs_snippets/guides/dagster/development_to_production/branch_deployments/repository_v2.py"
   startAfter="start_repository"
   endBefore="end_repository"
+  title="src/my_project/jobs.py"
 />
 
 ## Step 4: Create our database clone upon opening a branch
@@ -132,7 +133,10 @@ Then, we can add the `clone_prod` and `drop_prod_clone` jobs that now use the ap
 
 The `branch_deployments.yml` file located in `.github/workflows/branch_deployments.yml` defines a `dagster_cloud_build_push` job with a series of steps that launch a branch deployment. Because we want to queue a run of `clone_prod` within each deployment after it launches, we'll add an additional step at the end `dagster_cloud_build_push`. This job is triggered on multiple pull request events: `opened`, `synchronize`, `reopen`, and `closed`. This means that upon future pushes to the branch, we'll trigger a run of `clone_prod`. The `if` condition below ensures that `clone_prod` will not run if the pull request is closed:
 
-<CodeExample path="docs_snippets/docs_snippets/guides/dagster/development_to_production/branch_deployments/clone_prod.yaml" />
+<CodeExample
+  path="docs_snippets/docs_snippets/guides/dagster/development_to_production/branch_deployments/clone_prod.yaml"
+  title=".github/workflows/branch_deployments.yml"
+/>
 
 Opening a pull request for our current branch will automatically kick off a branch deployment. After the deployment launches, we can confirm that the `clone_prod` job has run:
 
@@ -149,7 +153,10 @@ We can also view our database in Snowflake to confirm that a clone exists for ea
 
 The `.gitlab-ci.yaml` script contains a `deploy` job that defines a series of steps that launch a branch deployment. Because we want to queue a run of `clone_prod` within each deployment after it launches, we'll add an additional step at the end of `deploy`. This job is triggered on when a merge request is created or updated. This means that upon future pushes to the branch, we'll trigger a run of `clone_prod`.
 
-<CodeExample path="docs_snippets/docs_snippets/guides/dagster/development_to_production/branch_deployments/clone_prod.gitlab-ci.yml" />
+<CodeExample
+  path="docs_snippets/docs_snippets/guides/dagster/development_to_production/branch_deployments/clone_prod.gitlab-ci.yml"
+  title=".gitlab-ci.yml"
+/>
 
 Opening a merge request for our current branch will automatically kick off a branch deployment. After the deployment launches, we can confirm that the `clone_prod` job has run:
 
@@ -170,14 +177,20 @@ We can also view our database in Snowflake to confirm that a clone exists for ea
 
 Finally, we can add a step to our `branch_deployments.yml` file that queues a run of our `drop_prod_clone` job:
 
-<CodeExample path="docs_snippets/docs_snippets/guides/dagster/development_to_production/branch_deployments/drop_db_clone.yaml" />
+<CodeExample
+  path="docs_snippets/docs_snippets/guides/dagster/development_to_production/branch_deployments/drop_db_clone.yaml"
+  title=".github/workflows/branch_deployments.yml"
+/>
 
 </TabItem>
 <TabItem value="Using Gitlab CI/CD">
 
 Finally, we can add a step to our `.gitlab-ci.yml` file that queues a run of our `drop_prod_clone` job:
 
-<CodeExample path="docs_snippets/docs_snippets/guides/dagster/development_to_production/branch_deployments/drop_db_clone.gitlab-ci.yml" />
+<CodeExample
+  path="docs_snippets/docs_snippets/guides/dagster/development_to_production/branch_deployments/drop_db_clone.gitlab-ci.yml"
+  title=".gitlab-ci.yml"
+/>
 
 </TabItem>
 </Tabs>

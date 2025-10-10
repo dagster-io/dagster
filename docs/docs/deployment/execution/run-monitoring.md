@@ -54,6 +54,7 @@ The below code example shows how to set a run timeout of 10 seconds on a per-job
   path="docs_snippets/docs_snippets/deploying/monitoring_daemon/run_timeouts.py"
   startAfter="start_timeout"
   endBefore="end_timeout"
+  title="src/my_project/assets.py"
 />
 
 ## Detecting run worker crashes

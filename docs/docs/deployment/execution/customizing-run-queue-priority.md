@@ -48,6 +48,7 @@ In this example, the priority is set to `-1` with a `dagster/priority` tag value
   startAfter="start_marker_priority"
   endBefore="end_marker_priority"
   path="docs_snippets/docs_snippets/deploying/concurrency_limits/concurrency_limits.py"
+  title="src/my_project/assets.py"
 />
 
 </TabItem>

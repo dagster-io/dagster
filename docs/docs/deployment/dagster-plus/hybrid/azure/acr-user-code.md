@@ -43,26 +43,27 @@ git push
 
 The project has the following structure:
 
-```plaintext
+```
+.
 ├── .github
-│   └── workflows
-│       └── dagster-cloud-deploy.yml # GitHub Actions workflow for re-deploying code location
-├── .vscode # Standard VSCode settings for working with a Dagster repository
-├── Dockerfile # Dockerfile for building the user code image
+│   └── workflows
+│       └── dagster-cloud-deploy.yml
+├── dagster_cloud.yaml
+├── Dockerfile
+├── pyproject.toml
+├── quickstart_etl_tests
+│   ├── __init__.py
+│   └── test_assets.py
 ├── README.md
-├── dagster_cloud.yaml # Configuration file describing all code locations in the repository
-├── pyproject.toml # Python project configuration file for the code location
-├── quickstart_etl # Python package containing the user code
-│   ├── __init__.py
-│   ├── assets
-│   │   ├── __init__.py
-│   │   └── hackernews.py
-│   └── definitions.py
-├── quickstart_etl_tests # User code tests
-│   ├── __init__.py
-│   └── test_assets.py
-├── setup.cfg
-└── setup.py
+└── src
+    └── quickstart_etl
+        ├── __init__.py
+        ├── definitions.py
+        └── defs
+            └── assets
+                ├── __init__.py
+                ├── hackernews.py
+                └── schedules.py
 ```
 
 ## Step 2: Setting up an Azure Container Registry
@@ -146,6 +147,7 @@ Finally, update the tags in the "Build and upload Docker image" step to match th
 Edit the `dagster_cloud.yaml` file in the root of your repository. Update the `build` section to use the Azure Container Registry, and provide an image name specific to the code location. This must match the registry and image name used in the previous step.
 
 ```yaml
+# dagster_cloud.yaml
 locations:
   - location_name: quickstart_etl
     code_source:
