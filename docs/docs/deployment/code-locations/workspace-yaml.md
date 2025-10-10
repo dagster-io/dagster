@@ -28,12 +28,12 @@ To accommodate incrementally migrating from `@repository` to `Definitions`, code
 
 ## Location of workspace.yaml
 
-Dagster command-line tools (like `dagster dev`, `dagster-webserver`, or `dagster-daemon run`) look for workspace files in the current directory when invoked. This allows you to launch from that directory without the need for command line arguments
+Dagster command-line tools (like `dg`) look for workspace files in the current directory when invoked. This allows you to launch from that directory without the need for command line arguments
 
 To load the workspace.yaml file from a different folder, use the -w argument:
 
 ```bash
-dagster dev -w path/to/workspace.yaml
+dg dev -w path/to/workspace.yaml
 ```
 
 ## File structure
@@ -159,19 +159,19 @@ load_from:
 
 ## Loading workspace files
 
-By default, Dagster command-line tools (like `dagster dev`, `dagster-webserver`, or `dagster-daemon run`) look for workspace files (by default, `workspace.yaml`) in the current directory when invoked. This allows you to launch from that directory without the need for command line arguments:
+By default, Dagster command-line tools (like `dg`) look for workspace files (by default, `workspace.yaml`) in the current directory when invoked. This allows you to launch from that directory without the need for command line arguments:
 
 ```shell
-dagster dev
+dg dev
 ```
 
 To load the `workspace.yaml` file from a different folder, use the `-w` argument:
 
 ```shell
-dagster dev -w path/to/workspace.yaml
+dg dev -w path/to/workspace.yaml
 ```
 
-When `dagster dev` is run, Dagster will load all the code locations defined by the workspace file. For more information and examples, see the [CLI reference](/api/clis/cli#dagster-dev).
+When `dg dev` is run, Dagster will load all the code locations defined by the workspace file. For more information and examples, see the [CLI reference](/api/clis/cli#dagster-dev).
 
 If a code location can't be loaded - for example, due to a syntax error or other unrecoverable error - a warning message will display in the Dagster UI. You'll be directed to a status page with a descriptive error and stack trace for any locations Dagster was unable to load.
 
