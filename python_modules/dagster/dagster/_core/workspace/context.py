@@ -261,7 +261,7 @@ class BaseWorkspaceRequestContext(LoadingContext):
         if not remote_definition:
             return []
 
-        return remote_definition.owners
+        return remote_definition.owners or []
 
     def has_permission_for_owners(self, permission: str, owners: Sequence[str]) -> bool:
         return any(
