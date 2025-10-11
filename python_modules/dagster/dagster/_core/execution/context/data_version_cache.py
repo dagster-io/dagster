@@ -153,14 +153,37 @@ class DataVersionCache:
         self, key: AssetKey, asset_record: Optional["AssetRecord"]
     ) -> Optional["EventLogRecord"]:
         event = None
+        materialization_event = None
+        observation_event = None
+
+        # For observable assets, we need to check both materializations and observations
+        # and return whichever is more recent
         if asset_record and asset_record.asset_entry.last_materialization_record:
-            event = asset_record.asset_entry.last_materialization_record
-        elif (
+            materialization_event = asset_record.asset_entry.last_materialization_record
+
+        if (
             asset_record
             and self._context.instance.event_log_storage.asset_records_have_last_observation
         ):
-            event = asset_record.asset_entry.last_observation_record
+            observation_event = asset_record.asset_entry.last_observation_record
+        elif asset_record:
+            # Fallback: if asset records don't have last_observation, fetch it directly
+            observation_records = self._context.instance.fetch_observations(key, limit=1).records
+            observation_event = next(iter(observation_records), None)
 
+        # If we have both, return the more recent one
+        if materialization_event and observation_event:
+            event = (
+                observation_event
+                if observation_event.timestamp > materialization_event.timestamp
+                else materialization_event
+            )
+        elif materialization_event:
+            event = materialization_event
+        elif observation_event:
+            event = observation_event
+
+        # Fallback for older instances that don't have last_observation on asset records
         if (
             not event
             and not self._context.instance.event_log_storage.asset_records_have_last_observation
