@@ -466,6 +466,7 @@ def _get_code_pointer_dict_from_python_pointer_opts(
         working_directory=working_directory,
         attribute=params.attribute,
         autoload_defs_module_name=params.autoload_defs_module_name,
+        resolve_lazy_defs=True,
     )
 
     # repository_name -> code_pointer
