@@ -320,3 +320,6 @@ class DbtProject(IHaveNew):
         """
         if self.preparer:
             self.preparer.prepare_if_dev(self)
+
+    def get_manifest_path(self) -> Path:
+        return self.manifest_path
