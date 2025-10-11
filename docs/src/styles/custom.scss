@@ -615,6 +615,9 @@ dd code {
       grid-template-columns: 1fr;
     }
   }
+  &.gap-lg {
+    gap: 2rem;
+  }
 }
 
 .card {
