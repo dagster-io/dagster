@@ -16,6 +16,10 @@ class DefsStateConfig(Resolvable, Model):
             DefsStateManagementType.LEGACY_CODE_SERVER_SNAPSHOTS.value,
         ],
     )
+    refresh_if_dev: bool = Field(
+        default=True,
+        description="Whether to automatically refresh defs state when using `dagster dev` or the `dg` cli.",
+    )
 
     @classmethod
     def local_filesystem(cls) -> "DefsStateConfig":
