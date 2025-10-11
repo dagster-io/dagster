@@ -116,6 +116,7 @@ from dagster._utils.env import use_verbose, using_dagster_dev
 from dagster._utils.error import serializable_error_info_from_exc_info, unwrap_user_code_error
 from dagster._utils.path import is_likely_venv_executable
 from dagster._utils.typed_dict import init_optional_typeddict
+from dagster.components.definitions import LazyDefinitions
 
 if TYPE_CHECKING:
     from multiprocessing.synchronize import Event as MPEvent
@@ -281,6 +282,11 @@ class LoadedRepositories:
                     autoload_defs_module_name=loadable_target_origin.autoload_defs_module_name,
                 )
             for loadable_target in loadable_targets:
+                # we need to fully load the Definitions object while we're still in the INITIALIZATION
+                # phase so that we properly cache objects
+                if isinstance(loadable_target.target_definition, LazyDefinitions):
+                    loadable_target.target_definition()
+
                 pointer = _get_code_pointer(loadable_target_origin, loadable_target)
                 recon_repo = ReconstructableRepository(
                     pointer,
