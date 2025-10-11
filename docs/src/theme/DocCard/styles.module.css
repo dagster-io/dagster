@@ -44,12 +44,13 @@
 }
 
 .cardTags {
-  padding-left: 8px;
-  padding-right: 8px;
-  background: var(--theme-color-background-blue);
-  border-radius: 16px;
-  font-size: 0.8rem;
+  padding: 4px 8px;
+  background: var(--theme-color-background-gray);
+  border-radius: 8px;
+  font-size: 12px;
+  line-height: 16px;
   font-weight: 400;
+  color: var(--theme-color-text-light);
 }
 
 .cardDescription {
