@@ -267,7 +267,7 @@ class PowerBIWorkspace(ConfigurableResource):
         )
 
     @cached_method
-    def _fetch_powerbi_workspace_data(self, use_workspace_scan: bool) -> PowerBIWorkspaceData:
+    def fetch_powerbi_workspace_data(self, use_workspace_scan: bool) -> PowerBIWorkspaceData:
         """Retrieves all Power BI content from the workspace and returns it as a PowerBIWorkspaceData object.
         Future work will cache this data to avoid repeated calls to the Power BI API.
 
@@ -445,7 +445,7 @@ class PowerBIWorkspaceDefsLoader(StateBackedDefinitionsLoader[PowerBIWorkspaceDa
 
     def fetch_state(self) -> PowerBIWorkspaceData:
         with self.workspace.process_config_and_initialize_cm() as initialized_workspace:
-            return initialized_workspace._fetch_powerbi_workspace_data(  # noqa: SLF001
+            return initialized_workspace.fetch_powerbi_workspace_data(
                 use_workspace_scan=self.use_workspace_scan
             )
 
