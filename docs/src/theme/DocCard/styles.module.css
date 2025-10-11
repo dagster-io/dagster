@@ -1,3 +1,5 @@
+/* TODO: Refactor with scss to simplify/match other docs styling, merge with card styling in custom.scss */
+
 .cardContainer {
   --ifm-link-color: var(--ifm-color-emphasis-800);
   --ifm-link-hover-color: var(--ifm-color-emphasis-700);
@@ -12,6 +14,7 @@
   gap: .75rem;
   height: 100%;
   border-radius: 8px;
+  justify-self: stretch;
 }
 
 .cardContainer:hover {
@@ -25,7 +28,8 @@
 .cardTitle {
   font-size: 1rem;
   font-weight: 500;
-  margin-bottom: 0.5rem;
+  margin: 0 !important;
+  padding: 0 !important;
   padding-top: 0.2rem;
   line-height: 1.25rem;
 }
@@ -50,7 +54,7 @@
 .cardDescription {
   font-size: 0.875rem !important;
   font-weight: 400 !important;
-  line-height: 1rem !important;
+  line-height: 1.25rem !important;
   display: -webkit-box;
   -webkit-line-clamp: 3;
   line-clamp: 3;
@@ -71,6 +75,11 @@
 .cardTitleWrapper {
   display: flex;
   flex-direction: row;
-  align-items: start;
-  gap: 12px;
+  align-items: center;
+  gap: 4px;
+  margin-bottom: 4px;
+}
+
+.cardTitleWrapper .cardTags {
+  margin-left: 8px;
 }
