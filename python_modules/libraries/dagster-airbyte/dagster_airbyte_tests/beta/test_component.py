@@ -1,3 +1,4 @@
+import asyncio
 import copy
 from collections.abc import Iterator, Mapping
 from contextlib import contextmanager
@@ -192,6 +193,54 @@ def test_basic_component_load(
             AssetKey(["test_prefix_test_stream"]),
             AssetKey(["test_prefix_test_another_stream"]),
         }
+
+
+@pytest.mark.parametrize(
+    "defs_state_type",
+    ["LOCAL_FILESYSTEM", "VERSIONED_STATE_STORAGE"],
+)
+def test_component_load_with_defs_state(
+    fetch_workspace_data_api_mocks: responses.RequestsMock,
+    rest_api_url: str,
+    config_api_url: str,
+    defs_state_type: str,
+) -> None:
+    # we're not doing auth in these examples
+    fetch_workspace_data_api_mocks.assert_all_requests_are_fired = False
+    with (
+        environ(
+            {
+                "AIRBYTE_REST_API_BASE_URL": rest_api_url,
+                "AIRBYTE_CONFIGURATION_API_BASE_URL": config_api_url,
+                "AIRBYTE_USERNAME": TEST_USERNAME,
+                "AIRBYTE_PASSWORD": TEST_PASSWORD,
+                "AIRBYTE_CLIENT_ID": TEST_CLIENT_ID,
+                "AIRBYTE_CLIENT_SECRET": TEST_CLIENT_SECRET,
+                "AIRBYTE_WORKSPACE_ID": TEST_WORKSPACE_ID,
+            }
+        ),
+        create_defs_folder_sandbox() as sandbox,
+    ):
+        defs_path = sandbox.scaffold_component(
+            component_cls=AirbyteWorkspaceComponent,
+            defs_yaml_contents=deep_merge_dicts(
+                BASIC_AIRBYTE_OSS_COMPONENT_BODY,
+                {"attributes": {"defs_state": {"type": defs_state_type}}},
+            ),
+        )
+        with (
+            sandbox.load_component_and_build_defs(defs_path=defs_path) as (component, defs),
+        ):
+            # first load, nothing there
+            assert len(defs.resolve_asset_graph().get_all_asset_keys()) == 0
+            assert isinstance(component, AirbyteWorkspaceComponent)
+            asyncio.run(component.refresh_state())
+
+        with (
+            sandbox.load_component_and_build_defs(defs_path=defs_path) as (component, defs),
+        ):
+            # second load, should now have assets
+            assert len(defs.resolve_asset_graph().get_all_asset_keys()) == 2
 
 
 @pytest.mark.parametrize(
