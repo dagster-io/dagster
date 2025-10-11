@@ -1439,12 +1439,13 @@ def _create_run_config_schema(
         define_run_config_schema_type,
     )
     from dagster._core.definitions.run_config_schema import RunConfigSchema
+    from dagster._core.remote_representation.code_location import is_implicit_asset_job_name
 
-    # When executing with a subset job, include the missing nodes
+    # When executing with a subset job that is not an implicit asset job, include the missing nodes
     # from the original job as ignored to allow execution with
     # run config that is valid for the original
     ignored_nodes: Sequence[Node] = []
-    if job_def.is_subset:
+    if job_def.is_subset and not is_implicit_asset_job_name(job_def.name):
         if isinstance(job_def.graph, SubselectedGraphDefinition):  # op selection provided
             ignored_nodes = job_def.graph.get_top_level_omitted_nodes()
         elif job_def.asset_selection_data:
