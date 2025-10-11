@@ -30,9 +30,7 @@ export default function DocCardList(props: Props): ReactNode {
         {() => {
           return filteredItems
             .filter((item) => item.href !== window.location.pathname)
-            .map((item, index) => (
-              <DocCard item={item} />
-            ));
+            .map((item, index) => <DocCard key={index} item={item} />);
         }}
       </BrowserOnly>
     </section>
