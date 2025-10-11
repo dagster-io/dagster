@@ -41,6 +41,7 @@ export const iconNameForMetric = (metricName: string): IconName => {
     case '__dagster_run_duration_ms':
       return 'timer';
     case '__dagster_execution_time_ms':
+    case '__dagster_execution_time_per_asset_ms':
       return 'waterfall_chart';
     case '__dagster_step_failures':
       return 'error_outline';
