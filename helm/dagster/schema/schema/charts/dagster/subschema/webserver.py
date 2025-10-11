@@ -45,6 +45,7 @@ class Webserver(BaseModel, extra="forbid"):
     dbPoolRecycle: Optional[int] = None
     dbPoolMaxOverflow: Optional[int] = None
     logLevel: Optional[str] = None
+    logFormat: Optional[str] = None
     schedulerName: Optional[str] = None
     volumeMounts: Optional[list[kubernetes.VolumeMount]] = None
     volumes: Optional[list[kubernetes.Volume]] = None
