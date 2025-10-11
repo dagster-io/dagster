@@ -27,4 +27,8 @@ export const useVisibleFeatureFlagRows = (): FeatureFlagRow[] => [
     key: 'Disable automatically loading default config in launchpad',
     flagType: FeatureFlag.flagDisableAutoLoadDefaults,
   },
+  {
+    key: 'Show separate asset graph groups per code location',
+    flagType: FeatureFlag.flagAssetGraphGroupsPerCodeLocation,
+  },
 ];

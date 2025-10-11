@@ -42,7 +42,7 @@ const _assetLayoutCacheKey = weakMapMemoize(
     return hashObject({
       opts,
       graphData,
-      version: 5,
+      version: 6,
     });
   },
 );

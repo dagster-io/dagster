@@ -22,6 +22,7 @@ import {GroupLayout} from './layout';
 import {groupAssetsByStatus} from './util';
 import {CloudOSSContext} from '../app/CloudOSSContext';
 import {withMiddleTruncation} from '../app/Util';
+import {useFeatureFlags} from '../app/useFeatureFlags';
 import {useAssetsHealthData} from '../asset-data/AssetHealthDataProvider';
 import {useAssetsLiveData} from '../asset-data/AssetLiveDataProvider';
 import {AssetHealthFragment} from '../asset-data/types/AssetHealthDataProvider.types';
@@ -37,6 +38,7 @@ export const GroupNodeNameAndRepo = ({group, minimal}: {minimal: boolean; group:
   const name = group.groupName;
   const nameWidth = group.bounds.width - 36; // padding and icon
   const maxLengthAtFontSize = (fontSize: number) => Math.floor(nameWidth / (fontSize * 0.53));
+  const {flagAssetGraphGroupsPerCodeLocation} = useFeatureFlags();
 
   const location = repoAddressAsHumanString({
     name: group.repositoryName,
@@ -67,9 +69,11 @@ export const GroupNodeNameAndRepo = ({group, minimal}: {minimal: boolean; group:
           {withMiddleTruncation(name, {maxLength: maxLengthAtFontSize(20)})}
         </div>
       </Box>
-      <Box style={{fontSize: 12, lineHeight: '1em', color: Colors.textLight()}}>
-        {withMiddleTruncation(location, {maxLength: maxLengthAtFontSize(16)})}
-      </Box>
+      {flagAssetGraphGroupsPerCodeLocation ? (
+        <Box style={{fontSize: 12, lineHeight: '1em', color: Colors.textLight()}}>
+          {withMiddleTruncation(location, {maxLength: maxLengthAtFontSize(16)})}
+        </Box>
+      ) : null}
     </Box>
   );
 };
@@ -107,7 +111,7 @@ export const CollapsedGroupNode = ({
         }}
       >
         <CollapsedGroupNodeBox $minimal={minimal}>
-          <Box padding={{vertical: 8, left: 12, right: 8}} flex={{}}>
+          <Box padding={{top: 8, bottom: 4, left: 12, right: 8}} flex={{}}>
             <GroupNodeNameAndRepo group={group} minimal={minimal} />
             <Box padding={{vertical: 4}}>
               <Icon name="unfold_more" />
@@ -157,7 +161,7 @@ const GroupNodeAssetStatusCountsAssetHealth = ({
   }, [liveDataByNode]);
 
   return (
-    <Box padding={{horizontal: 12, bottom: 4}} flex={{direction: 'row', gap: 4}}>
+    <Box padding={{horizontal: 12, bottom: 8}} flex={{direction: 'row', gap: 4}}>
       {Object.keys(liveDataByNode).length !== assetKeys.length ? (
         <AssetDescription $color={Colors.textLighter()}>
           {group.assetCount} {group.assetCount === 1 ? 'asset' : 'assets'} (fetching statuses)
@@ -227,7 +231,7 @@ const GroupNodeAssetStatusCountsNonAssetHealth = ({
     [group.assets, liveDataByNode],
   );
   return (
-    <Box padding={{horizontal: 12, bottom: 4}} flex={{direction: 'row', gap: 4}}>
+    <Box padding={{horizontal: 12, bottom: 8}} flex={{direction: 'row', gap: 4}}>
       {Object.keys(liveDataByNode).length !== assetKeys.length ? (
         <AssetDescription $color={Colors.textLighter()}>
           {group.assetCount} {group.assetCount === 1 ? 'asset' : 'assets'} (fetching statuses)

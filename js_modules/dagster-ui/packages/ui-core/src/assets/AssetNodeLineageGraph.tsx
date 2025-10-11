@@ -57,14 +57,18 @@ const AssetNodeLineageGraphInner = ({
   const [direction, setDirection] = useLayoutDirectionState();
   const [facets, setFacets] = useSavedAssetNodeFacets();
 
-  const {flagAssetNodeFacets} = useFeatureFlags();
+  const {flagAssetNodeFacets, flagAssetGraphGroupsPerCodeLocation} = useFeatureFlags();
 
   const {layout, loading} = useAssetLayout(
     assetGraphData,
     allGroups,
     useMemo(
-      () => ({direction, facets: flagAssetNodeFacets ? Array.from(facets) : false}),
-      [direction, facets, flagAssetNodeFacets],
+      () => ({
+        direction,
+        flagAssetGraphGroupsPerCodeLocation,
+        facets: flagAssetNodeFacets ? Array.from(facets) : false,
+      }),
+      [direction, facets, flagAssetGraphGroupsPerCodeLocation, flagAssetNodeFacets],
     ),
   );
   const viewportEl = useRef<SVGViewportRef>();
