@@ -2,31 +2,24 @@
   --ifm-link-color: var(--ifm-color-emphasis-800);
   --ifm-link-hover-color: var(--ifm-color-emphasis-700);
   --ifm-link-hover-decoration: none;
-
-  box-shadow: 0 1.5px 3px 0 rgb(0 0 0 / 15%);
-  border: 1px solid var(--ifm-color-emphasis-200);
+  border: 1px solid var(--theme-color-keyline);
   transition: all var(--ifm-transition-fast) ease;
   transition-property: border, box-shadow;
   padding: 1rem !important;
-
   display: flex;
   flex-direction: row;
-  align-items: stretch;
+  align-items: flex-start;
   gap: .75rem;
   height: 100%;
+  border-radius: 8px;
 }
 
 .cardContainer:hover {
-  border-color: var(--ifm-color-primary);
-  box-shadow: 0 3px 6px 0 rgb(0 0 0 / 20%);
+  box-shadow: 0 0 8px 0 var(--dagster-blue-translucent-30);
 }
 
 .cardContainer *:last-child {
   margin-bottom: 0;
-}
-
-.cardTitleContainer {
-  display: flex;
 }
 
 .cardTitle {
@@ -34,6 +27,7 @@
   font-weight: 500;
   margin-bottom: 0.5rem;
   padding-top: 0.2rem;
+  line-height: 1.25rem;
 }
 
 .cardSubtitle {
@@ -47,19 +41,22 @@
   padding: 4px 8px;
   background: var(--theme-color-background-gray);
   border-radius: 8px;
-  font-size: 12px;
-  line-height: 16px;
+  font-size: .75rem;
+  line-height: 1rem;
   font-weight: 400;
   color: var(--theme-color-text-light);
 }
 
 .cardDescription {
-  font-size: 0.8rem !important;
+  font-size: 0.875rem !important;
   font-weight: 400 !important;
+  line-height: 1rem !important;
   display: -webkit-box;
   -webkit-line-clamp: 3;
+  line-clamp: 3;
   -webkit-box-orient: vertical;
   overflow: hidden;
+  color: var(--theme-color-text-light);
 }
 
 .cardLogo {
@@ -68,6 +65,7 @@
   background: var(--dagster-white);
   padding: .25rem;
   flex-shrink: 0;
+  border-radius: 4px !important;
 }
 
 .cardTitleWrapper {
