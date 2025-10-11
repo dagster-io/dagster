@@ -3,7 +3,7 @@ import os
 from collections.abc import Mapping
 from enum import Enum
 from pathlib import Path
-from typing import Any
+from typing import Any, Optional
 
 import click
 from dagster_dg_core.config import normalize_cli_config
@@ -82,6 +82,10 @@ def _get_secret_scopes(secret: Mapping[str, Any]) -> set[EnvVarScope]:
     is_flag=True,
     help="Do not confirm the creation of the environment variable, if it already exists.",
 )
+@click.option(
+    "--deployment",
+    help="The deployment to create/update environment variable in. If not provided, uses the default deployment from your configuration.",
+)
 @dg_path_options
 @dg_global_options
 @cli_telemetry_wrapper
@@ -92,6 +96,7 @@ def create_env_command(
     global_: bool,
     from_local_env: bool,
     skip_confirmation_prompt: bool,
+    deployment: Optional[str],
     target_path: Path,
     **global_options: object,
 ) -> None:
@@ -128,6 +133,10 @@ def create_env_command(
         env_value = local_env_value
 
     config = _get_config_or_error()
+
+    # Use provided deployment or fall back to default
+    if deployment:
+        config = config.with_deployment(deployment)
 
     active_scopes = set(EnvVarScope(s) for s in scope) or {
         EnvVarScope.FULL,
@@ -213,9 +222,9 @@ def create_env_command(
 
     if global_:
         click.echo(
-            f"\nEnvironment variable {env_name} set{scope_text} for all locations in deployment {config.default_deployment}"
+            f"\nEnvironment variable {env_name} set{scope_text} for all locations in deployment {config.deployment}"
         )
     else:
         click.echo(
-            f"\nEnvironment variable {env_name} set{scope_text}{location_suffix} in deployment {config.default_deployment}"
+            f"\nEnvironment variable {env_name} set{scope_text}{location_suffix} in deployment {config.deployment}"
         )
