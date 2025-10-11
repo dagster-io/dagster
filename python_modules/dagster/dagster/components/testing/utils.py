@@ -12,6 +12,7 @@ from typing import Callable
 import yaml
 from dagster_shared import check
 
+from dagster._utils.test.definitions import scoped_definitions_load_context
 from dagster.components.component_scaffolding import scaffold_object
 from dagster.components.core.component_tree import ComponentTree
 from dagster.components.scaffold.scaffold import ScaffoldFormatOptions
@@ -181,7 +182,7 @@ class DefsFolderSandbox:
                     assert isinstance(component, MyComponent)
                     assert defs.get_asset_def("my_asset").key == AssetKey("my_asset")
         """
-        with self.build_component_tree() as tree:
+        with scoped_definitions_load_context(), self.build_component_tree() as tree:
             component = tree.load_component_at_path(defs_path)
             defs = tree.build_defs_at_path(defs_path)
             yield component, defs
