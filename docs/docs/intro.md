@@ -6,7 +6,7 @@ displayed_sidebar: 'docs'
 hide_table_of_contents: true
 ---
 
-import {Card, CardGroup} from '@site/src/components/Cards';
+import {Card} from '@site/src/components/Cards';
 import ThemedImage from '@theme/ThemedImage';
 
 # Welcome to Dagster
@@ -29,34 +29,17 @@ Dagster is a data orchestrator built for data engineers, with integrated lineage
 
 ## Get started
 
-<CardGroup cols={3}>
-  <Card title="Quickstart" href="/getting-started/quickstart" imagePath="./img/getting-started/icon-start.svg">
-    Build your first Dagster pipeline in our Quickstart tutorial.
-  </Card>
-  <Card title="Thinking in Assets" href="/guides/build/assets" imagePath="./img/getting-started/icon-assets.svg">
-    New to Dagster? Learn about how thinking in assets can help you manage your data better.
-  </Card>
-  <Card title="Dagster Plus" href="/deployment/dagster-plus" imagePath="./img/getting-started/icon-plus.svg">
-    Learn about Dagster Plus, our managed offering that includes a hosted Dagster instance and many more features.
-  </Card>
-</CardGroup>
+<div className="card-group cols-2">
+  <Card label="Quickstart" href="/getting-started/quickstart" logo="./img/getting-started/icon-start.svg" description="Build your first Dagster pipeline in our Quickstart tutorial." />
+  <Card label="Thinking in Assets" href="/guides/build/assets" logo="./img/getting-started/icon-assets.svg" description="New to Dagster? Learn about how thinking in assets can help you manage your data better." />
+  <Card label="Dagster Plus" href="/deployment/dagster-plus" logo="./img/getting-started/icon-plus.svg" description="Learn about Dagster Plus, our managed offering that includes a hosted Dagster instance and many more features." />
+</div>
 
 ## Join the Dagster community
 
-<CardGroup cols={4}>
-  <Card title="Slack" href="https://dagster.io/slack" imagePath="./img/getting-started/icon-slack.svg">
-    Join our Slack community to talk with other Dagster users, use our AI-powered chatbot, and get help with Dagster.
-  </Card>
-  <Card title="GitHub" href="https://github.com/dagster-io/dagster" imagePath="./img/getting-started/icon-github.svg">
-    Star our GitHub repository and follow our development through GitHub Discussions.
-  </Card>
-  <Card title="Youtube" href="https://www.youtube.com/@dagsterio" imagePath="./img/getting-started/icon-youtube.svg">
-    Watch our latest videos on YouTube.
-  </Card>
-  <Card
-    title="Dagster University"
-    href="https://courses.dagster.io"
-    imagePath="./img/getting-started/icon-education.svg">
-    Learn Dagster through interactive courses and hands-on tutorials.
-  </Card>
-</CardGroup>
+<div className="card-group cols-2">
+  <Card label="Slack" href="https://dagster.io/slack" logo="./img/getting-started/icon-slack.svg" description="Join our Slack community to talk with other Dagster users, use our AI-powered chatbot, and get help with Dagster." />
+  <Card label="GitHub" href="https://github.com/dagster-io/dagster" logo="./img/getting-started/icon-github.svg" description="Star our GitHub repository and follow our development through GitHub Discussions." />
+  <Card label="Youtube" href="https://www.youtube.com/@dagsterio" logo="./img/getting-started/icon-youtube.svg" description="Watch our latest videos on YouTube." />
+  <Card label="Dagster University" href="https://courses.dagster.io" logo="./img/getting-started/icon-education.svg" description="Learn Dagster through interactive courses and hands-on tutorials." />
+</div>
