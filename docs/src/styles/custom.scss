@@ -595,7 +595,7 @@ dd code {
 /* Card and CardGroup styles */
 .card-group {
   display: grid;
-  gap: 1rem;
+  gap: var(--card-group-gap, 1rem);
   margin-bottom: 2rem;
   &.cols-2 {
     grid-template-columns: repeat(2, 1fr);
@@ -614,9 +614,6 @@ dd code {
     @media (max-width: 768px) {
       grid-template-columns: 1fr;
     }
-  }
-  &.gap-lg {
-    gap: 2rem;
   }
 }
 

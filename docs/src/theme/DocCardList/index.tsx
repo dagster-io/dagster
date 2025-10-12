@@ -25,7 +25,7 @@ export default function DocCardList(props: Props): ReactNode {
   // https://github.com/facebook/docusaurus/blob/67924ca9795c4cd0399c752b4345f515bcedcaf6/website/docs/advanced/ssg.mdx#browseronly-browseronly
 
   return (
-    <section className={clsx('card-group cols-2 gap-lg', className)}>
+    <section className={clsx('card-group cols-2 gap-lg', className)} style={{['--card-group-gap' as any]: '2rem'}}>
       <BrowserOnly>
         {() => {
           return filteredItems

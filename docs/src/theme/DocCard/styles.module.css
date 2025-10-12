@@ -1,24 +1,18 @@
 /* TODO: Refactor with scss to simplify/match other docs styling, merge with card styling in custom.scss */
+/* TODO: This duplicates/conflicts with .card styles set in custom.scss. Try to create a more cohesive card styling system */
 
 .cardContainer {
   --ifm-link-color: var(--ifm-color-emphasis-800);
   --ifm-link-hover-color: var(--ifm-color-emphasis-700);
   --ifm-link-hover-decoration: none;
-  border: 1px solid var(--theme-color-keyline);
   transition: all var(--ifm-transition-fast) ease;
-  transition-property: border, box-shadow;
   padding: 1rem !important;
   display: flex;
   flex-direction: row;
   align-items: flex-start;
   gap: 0.75rem;
   height: 100%;
-  border-radius: 8px;
   justify-self: stretch;
-}
-
-.cardContainer:hover {
-  box-shadow: 0 0 8px 0 var(--dagster-blue-translucent-30);
 }
 
 .cardContainer *:last-child {
