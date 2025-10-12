@@ -59,7 +59,7 @@ function CardLayout({
 }: {
   item: PropSidebarItemCategory | PropSidebarItemLink;
 } & React.ComponentPropsWithoutRef<'a'>): ReactNode {
-  const title = item.label;
+  const label = item.label;
   const logo: string | null = (item?.customProps?.logo as string) || null;
   const community: boolean = (item?.customProps?.community as boolean) || false;
   let href, description;
@@ -80,8 +80,8 @@ function CardLayout({
       {logo && <img className={styles.cardLogo} src={useBaseUrl(logo)} />}
       <div>
         <div className={styles.cardTitleWrapper}>
-          <Heading as="h2" className={styles.cardTitle} title={title}>
-            {title}
+          <Heading as="h2" className={styles.cardTitle} title={label}>
+            {label}
           </Heading>
           {!isInternalUrl(href) && <ExternalLinkIcon />}
           {community && <span className={styles.cardTags}>Community</span>}
