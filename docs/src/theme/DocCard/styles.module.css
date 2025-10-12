@@ -23,8 +23,7 @@
   font-size: 1rem;
   font-weight: 500;
   margin: 0 !important;
-  padding: 0 !important;
-  padding-top: 0.2rem;
+  padding: 0px !important;
   line-height: 1.25rem;
 }
 
@@ -72,6 +71,7 @@
   align-items: center;
   gap: 4px;
   margin-bottom: 4px;
+  padding-top: .25rem;
 }
 
 .cardTitleWrapper .cardTags {
