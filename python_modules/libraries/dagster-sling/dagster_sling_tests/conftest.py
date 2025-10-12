@@ -103,3 +103,23 @@ def csv_to_sqlite_dataworks_replication(path_to_dataworks_folder):
         conf_streams[f"file://{file_path}"] = {"object": f"main.{table_name}"}
     conf["streams"] = conf_streams
     return conf
+
+
+@pytest.fixture
+def csv_to_sqlite_failed_replication(path_to_dataworks_folder):
+    with open(
+        file_relative_path(__file__, "replication_configs/csv_to_sqlite_config/replication.yaml")
+    ) as f:
+        conf = yaml.safe_load(f)
+    conf_streams = {}
+    file_path = os.path.join(path_to_dataworks_folder, "Failed_file.txt")
+    table_name = "failed_file"
+    conf_streams[f"file://{file_path}"] = {"object": f"main.{table_name}"}
+    # datawork sling replication to represent success stream
+    for file_name in os.listdir(path_to_dataworks_folder):
+        file_path = os.path.join(path_to_dataworks_folder, file_name)
+        table_name = file_name.split(".")[0].lower()
+        conf_streams[f"file://{file_path}"] = {"object": f"main.{table_name}"}
+    # sling stream represnt failed data work
+    conf["streams"] = conf_streams
+    return conf
