@@ -64,14 +64,20 @@ function CardLayout({
   const community: boolean = (item?.customProps?.community as boolean) || false;
   let href, description;
   const categoryItemsPlural = useCategoryItemsPlural();
-  if (item.type === 'category') {
-    href = findFirstSidebarItemLink(item);
-    description = item.description ?? categoryItemsPlural(item.items.length);
-  } else {
-    href = item.href;
-    const doc = useDocById(item.docId ?? undefined);
-    description = item.description ?? doc?.description;
+
+if (item.type === 'category') {
+  href = findFirstSidebarItemLink(item);
+  // Add safety check to handle cases where a category might not have a valid link
+  if (href === undefined) {
+    href = null; // or another appropriate fallback
   }
+  description = item.description ?? categoryItemsPlural(item.items.length);
+} else {
+  href = item.href;
+  const doc = useDocById(item.docId ?? undefined);
+  description = item.description ?? doc?.description;
+}
+
 
   const LinkComponent = Link as any; //Type assertion to bypass linting error
 
