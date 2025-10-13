@@ -64,7 +64,7 @@ function CardLayout({
   const logo: string | null = (item?.customProps?.logo as string) || null;
   const community: boolean = (item?.customProps?.community as boolean) || false;
   const categoryItemsPlural = useCategoryItemsPlural();
-  const doc = useDocById(item.type === 'link' ? item.docId ?? undefined : undefined);
+  const doc = useDocById(item.type === 'link' ? (item.docId ?? undefined) : undefined);
   const logoUrl = useBaseUrl(logo || '');
 
   let href, description;
@@ -79,7 +79,6 @@ function CardLayout({
     href = item.href;
     description = item.description ?? doc?.description;
   }
-
 
   const LinkComponent = Link as any; //Type assertion to bypass linting error
 
