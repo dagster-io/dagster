@@ -1,5 +1,8 @@
+import contextlib
+import os
 from collections.abc import Iterator
 from concurrent.futures import ThreadPoolExecutor
+from pathlib import Path
 from typing import TYPE_CHECKING, Any, Callable, Optional, Union, cast
 
 from dagster import (
@@ -30,6 +33,18 @@ logger = get_dagster_logger()
 DbtDagsterEventType = Union[
     Output, AssetMaterialization, AssetCheckResult, AssetObservation, AssetCheckEvaluation
 ]
+
+
+@contextlib.contextmanager
+def _change_working_directory(path: Path):
+    """Context manager to temporarily change the working directory."""
+    original_cwd = os.getcwd()
+    try:
+        os.chdir(path)
+        yield
+    finally:
+        os.chdir(original_cwd)
+
 
 # We define DbtEventIterator as a generic type for the sake of type hinting.
 # This is so that users who inspect the type of the return value of `DbtCliInvocation.stream()`
@@ -63,7 +78,10 @@ def _fetch_column_metadata(
 
     dbt_resource_props = _get_dbt_resource_props_from_event(invocation, event)
 
-    with adapter.connection_named(f"column_metadata_{dbt_resource_props['unique_id']}"):
+    with (
+        _change_working_directory(invocation.project_dir),
+        adapter.connection_named(f"column_metadata_{dbt_resource_props['unique_id']}"),
+    ):
         try:
             cols = invocation._get_columns_from_dbt_resource_props(  # noqa: SLF001
                 adapter=adapter, dbt_resource_props=dbt_resource_props
@@ -165,7 +183,10 @@ def _fetch_row_count_metadata(
     relation_name = dbt_resource_props["relation_name"]
 
     try:
-        with adapter.connection_named(f"row_count_{unique_id}"):
+        with (
+            _change_working_directory(invocation.project_dir),
+            adapter.connection_named(f"row_count_{unique_id}"),
+        ):
             query_result = adapter.execute(
                 f"""
                     SELECT

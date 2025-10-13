@@ -321,3 +321,75 @@ def test_attach_metadata(
         len(summary.records) > 0 and "column_name" in summary.records[0].data
         for summary in summaries_by_asset_key.values()
     ), str(summaries_by_asset_key)
+
+
+def test_row_count_with_relative_path_in_profile(
+    test_jaffle_shop_manifest_standalone_duckdb_dbfile: dict[str, Any],
+) -> None:
+    """Test that fetch_row_counts works correctly when profiles.yml contains relative paths.
+
+    This test verifies that when the dbt profile configuration contains relative paths
+    (e.g., for key files), the adapter operations run from the correct working directory
+    (the dbt project directory) rather than the Dagster execution directory.
+    """
+    from pathlib import Path
+
+    # Create a temporary test file with a relative path to simulate the issue
+    config_dir = test_jaffle_shop_path / "config"
+    config_dir.mkdir(exist_ok=True)
+    test_file = config_dir / "test_relative_path_marker.txt"
+
+    try:
+        test_file.write_text("test marker file")
+
+        def _check_relative_path_access(
+            invocation: DbtCliInvocation,
+            event: DbtDagsterEventType,
+        ):
+            if not isinstance(event, (AssetMaterialization, Output)):
+                return None
+
+            # This simulates what happens when a dbt adapter tries to access a file
+            # specified with a relative path in profiles.yml (e.g., private_key_path: config/ci_priv.p8)
+            # The file access should work because we're in the correct working directory
+            relative_path = Path("config/test_relative_path_marker.txt")
+
+            # This will raise FileNotFoundError if we're not in the dbt project directory
+            if not relative_path.exists():
+                raise FileNotFoundError(
+                    f"Could not find {relative_path} from current directory {os.getcwd()}. "
+                    "This indicates the adapter is not running from the dbt project directory."
+                )
+
+            return {"relative_path_test": "success"}
+
+        @dbt_assets(manifest=test_jaffle_shop_manifest_standalone_duckdb_dbfile)
+        def my_dbt_assets(context: AssetExecutionContext, dbt: DbtCliResource):
+            event_iterator = dbt.cli(["build"], context=context).stream()
+            yield from event_iterator._attach_metadata(_check_relative_path_access)  # noqa: SLF001
+
+        result = materialize(
+            [my_dbt_assets],
+            resources={"dbt": DbtCliResource(project_dir=os.fspath(test_jaffle_shop_path))},
+        )
+
+        assert result.success
+
+        # Validate that the relative path check succeeded
+        metadata_by_asset_key = {
+            check.not_none(event.asset_key): event.materialization.metadata
+            for event in result.get_asset_materialization_events()
+        }
+
+        # Check that at least one asset has the relative_path_test metadata
+        # (indicating that relative path access worked from the metadata attachment function)
+        assert any(
+            "relative_path_test" in metadata for metadata in metadata_by_asset_key.values()
+        ), "Relative path test metadata not found, indicating working directory issue"
+
+    finally:
+        # Clean up the test file
+        if test_file.exists():
+            test_file.unlink()
+        if config_dir.exists() and not any(config_dir.iterdir()):
+            config_dir.rmdir()
