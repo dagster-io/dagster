@@ -166,7 +166,7 @@ const AssetEventListPartitionRow = ({group}: {group: AssetEventGroup}) => {
           return <Tag intent="none">Skipped</Tag>;
         }
     }
-    return null;
+    return <Tag intent="none">Missing</Tag>;
   };
   return (
     <>
@@ -174,7 +174,7 @@ const AssetEventListPartitionRow = ({group}: {group: AssetEventGroup}) => {
         <Icon name="partition" />
         {partition}
         <div style={{flex: 1}} />
-        {!latest ? <Tag intent="none">Missing</Tag> : tag()}
+        {tag()}
       </Box>
 
       <Caption color={Colors.textLight()} style={{userSelect: 'none'}}>
