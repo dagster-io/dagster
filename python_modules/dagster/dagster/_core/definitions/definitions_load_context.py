@@ -70,6 +70,11 @@ class DefinitionsLoadContext:
         self._pending_reconstruction_metadata = {}
 
         defs_state_info = repository_load_data.defs_state_info if repository_load_data else None
+
+        # keep track of the keys that have been accessed during the load process
+        self._accessed_defs_state_keys = (
+            set() if defs_state_info is None else set(defs_state_info.info_mapping.keys())
+        )
         if load_type == DefinitionsLoadType.INITIALIZATION and defs_state_info is None:
             # defs_state_info is passed in during INITIALIZATION if explicit state versions
             # are provided via CLI arguments, otherwise we use the latest available state info
@@ -151,11 +156,19 @@ class DefinitionsLoadContext:
         )
 
     @property
-    def defs_state_info(self) -> Optional[DefsStateInfo]:
-        return self._defs_state_info
+    def accessed_defs_state_info(self) -> Optional[DefsStateInfo]:
+        return (
+            self._defs_state_info.for_keys(self._accessed_defs_state_keys)
+            if self._defs_state_info
+            else None
+        )
+
+    def _mark_defs_key_accessed(self, key: str) -> None:
+        self._accessed_defs_state_keys.add(key)
 
     def _get_defs_key_state_info(self, key: str) -> Optional[DefsKeyStateInfo]:
         """Ensures that if we attempt to access a key that doesn't exist, we mark it as None."""
+        self._mark_defs_key_accessed(key)
         current_info = self._defs_state_info or DefsStateInfo.empty()
         key_info = current_info.info_mapping.get(key)
         if key_info is None:
@@ -170,6 +183,7 @@ class DefinitionsLoadContext:
             return self._pending_reconstruction_metadata[metadata_key]
 
     def add_defs_state_info(self, key: str, version: str) -> None:
+        self._mark_defs_key_accessed(key)
         self._defs_state_info = DefsStateInfo.add_version(self._defs_state_info, key, version)
 
     @contextmanager

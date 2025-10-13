@@ -87,6 +87,10 @@ class DefsStateInfo(DagsterModel):
         info = self.info_mapping.get(key)
         return info.version if info else None
 
+    def for_keys(self, keys: set[str]) -> "DefsStateInfo":
+        """Subsets the DefsStateInfo to only include the keys in the set."""
+        return DefsStateInfo(info_mapping={k: v for k, v in self.info_mapping.items() if k in keys})
+
     @classmethod
     def from_graphql(cls, data: dict[str, Any]) -> "DefsStateInfo":
         return cls(

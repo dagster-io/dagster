@@ -7,12 +7,10 @@ from typing import Optional
 
 import dagster as dg
 import pytest
-from dagster._core.definitions.definitions_load_context import (
-    DefinitionsLoadContext,
-    DefinitionsLoadType,
-)
+from dagster._core.definitions.definitions_load_context import DefinitionsLoadType
 from dagster._core.definitions.repository_definition.repository_definition import RepositoryLoadData
 from dagster._core.instance_for_test import instance_for_test
+from dagster._core.storage.defs_state.base import DefsStateStorage
 from dagster._utils.env import environ
 from dagster._utils.test.definitions import scoped_definitions_load_context
 from dagster.components.component.state_backed_component import StateBackedComponent
@@ -20,6 +18,8 @@ from dagster.components.core.component_tree import ComponentTreeException
 from dagster.components.testing.utils import create_defs_folder_sandbox
 from dagster.components.utils.defs_state import DefsStateConfig, ResolvedDefsStateConfig
 from dagster_shared.serdes.objects.models.defs_state_info import (
+    CODE_SERVER_STATE_VERSION,
+    LOCAL_STATE_VERSION,
     DefsStateManagementType,
     get_code_server_metadata_key,
 )
@@ -95,8 +95,18 @@ def test_simple_state_backed_component(storage_location: DefsStateManagementType
             defs_path="foo",
         )
 
+        state_storage = DefsStateStorage.get()
+        assert state_storage
+        # add some state versions for other unrelated keys, should not show up in the load context
+        state_storage.set_latest_version("RandomKey1", LOCAL_STATE_VERSION)
+        state_storage.set_latest_version("RandomKey2", CODE_SERVER_STATE_VERSION)
+        state_storage.set_latest_version("RandomKey3", "xyz")
+
         # initial load, no state written, so use "initial"
-        with sandbox.load_component_and_build_defs(defs_path=component_path) as (_, defs):
+        with (
+            scoped_definitions_load_context() as load_context,
+            sandbox.load_component_and_build_defs(defs_path=component_path) as (_, defs),
+        ):
             specs = defs.get_all_asset_specs()
             spec = specs[0]
 
@@ -111,8 +121,20 @@ def test_simple_state_backed_component(storage_location: DefsStateManagementType
             assert len(mats) == 1
             assert mats[0].metadata["foo"] == dg.TextMetadataValue(original_metadata_value)
 
+            # should register that the key was accessed (but has no version)
+            assert load_context.accessed_defs_state_info
+            assert load_context.accessed_defs_state_info.info_mapping.keys() == {
+                "MyStateBackedComponent"
+            }
+            assert (
+                load_context.accessed_defs_state_info.get_version("MyStateBackedComponent") is None
+            )
+
         # reload the definitions, state should be the same
-        with sandbox.load_component_and_build_defs(defs_path=component_path) as (_, defs):
+        with (
+            scoped_definitions_load_context() as load_context,
+            sandbox.load_component_and_build_defs(defs_path=component_path) as (_, defs),
+        ):
             specs = defs.get_all_asset_specs()
             spec = specs[0]
             # metadata should remain the same
@@ -122,19 +144,38 @@ def test_simple_state_backed_component(storage_location: DefsStateManagementType
             refresh_job = defs.get_job_def("state_refresh_job_foo")
             refresh_job.execute_in_process(instance=instance)
 
+            # same as above
+            assert load_context.accessed_defs_state_info
+            assert load_context.accessed_defs_state_info.info_mapping.keys() == {
+                "MyStateBackedComponent"
+            }
+            assert (
+                load_context.accessed_defs_state_info.get_version("MyStateBackedComponent") is None
+            )
+
         # now we reload the definitions, state should be updated to something random
-        with sandbox.load_component_and_build_defs(defs_path=component_path) as (_, defs):
+        with (
+            scoped_definitions_load_context() as load_context,
+            sandbox.load_component_and_build_defs(defs_path=component_path) as (_, defs),
+        ):
             specs = defs.get_all_asset_specs()
             spec = specs[0]
             new_metadata_value = spec.metadata["state_value"]
             assert new_metadata_value != original_metadata_value
 
+            # should have version information available
+            assert load_context.accessed_defs_state_info
+            assert load_context.accessed_defs_state_info.info_mapping.keys() == {
+                "MyStateBackedComponent"
+            }
+            assert (
+                load_context.accessed_defs_state_info.get_version("MyStateBackedComponent")
+                is not None
+            )
+
 
 def test_code_server_state_backed_component() -> None:
-    with (
-        instance_for_test(),
-        create_defs_folder_sandbox() as sandbox,
-    ):
+    with instance_for_test(), create_defs_folder_sandbox() as sandbox:
         component_path = sandbox.scaffold_component(
             component_cls=MyStateBackedComponent,
             defs_yaml_contents={
@@ -148,27 +189,26 @@ def test_code_server_state_backed_component() -> None:
             defs_path="foo",
         )
 
-        with scoped_definitions_load_context(
-            load_type=DefinitionsLoadType.INITIALIZATION,
+        with (
+            scoped_definitions_load_context() as load_context,
+            sandbox.load_component_and_build_defs(defs_path=component_path) as (_, defs),
         ):
-            with sandbox.load_component_and_build_defs(defs_path=component_path) as (_, defs):
-                specs = defs.get_all_asset_specs()
-                spec = specs[0]
-                original_metadata_value = spec.metadata["state_value"]
-                # should automatically load
-                assert original_metadata_value != "initial"
+            specs = defs.get_all_asset_specs()
+            spec = specs[0]
+            original_metadata_value = spec.metadata["state_value"]
+            # should automatically load
+            assert original_metadata_value != "initial"
 
-                repo = defs.get_repository_def()
-                assert repo.repository_load_data is not None
+            repo = defs.get_repository_def()
+            assert repo.repository_load_data is not None
 
-            load_context = DefinitionsLoadContext.get()
             assert load_context.load_type == DefinitionsLoadType.INITIALIZATION
             pending_metadata = load_context.get_pending_reconstruction_metadata()
             key = get_code_server_metadata_key("MyStateBackedComponent")
             assert pending_metadata.keys() == {"defs-state-[MyStateBackedComponent]"}
             # last bit is random
             assert '{"value": "bar_' in pending_metadata[key]
-            assert load_context.defs_state_info is not None
+            assert load_context.accessed_defs_state_info is not None
 
         # now simulate the reconstruction process
         with scoped_definitions_load_context(
@@ -176,7 +216,7 @@ def test_code_server_state_backed_component() -> None:
             repository_load_data=RepositoryLoadData(
                 cacheable_asset_data={},
                 reconstruction_metadata=pending_metadata,
-                defs_state_info=load_context.defs_state_info,
+                defs_state_info=load_context.accessed_defs_state_info,
             ),
         ):
             with sandbox.load_component_and_build_defs(defs_path=component_path) as (_, defs):
@@ -210,10 +250,15 @@ def test_dev_mode_state_backed_component(storage_location: DefsStateManagementTy
             defs_path="foo",
         )
 
-        with scoped_definitions_load_context(
-            load_type=DefinitionsLoadType.INITIALIZATION,
-        ):
+        with scoped_definitions_load_context() as load_context:
+            # nothing accessed yet
+            assert load_context.accessed_defs_state_info is None
+
             with sandbox.load_component_and_build_defs(defs_path=component_path) as (_, defs):
+                assert load_context.accessed_defs_state_info is not None
+                assert load_context.accessed_defs_state_info.info_mapping.keys() == {
+                    "MyStateBackedComponent"
+                }
                 specs = defs.get_all_asset_specs()
                 spec = specs[0]
                 metadata_value = spec.metadata["state_value"]
