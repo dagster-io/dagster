@@ -134,6 +134,8 @@ def define_single_execution_field(executor_def: ExecutorDefinition, description:
 
 
 def define_run_config_schema_type(creation_data: RunConfigSchemaCreationData) -> ConfigType:
+    from dagster._core.remote_representation.code_location import is_implicit_asset_job_name
+
     execution_field = define_single_execution_field(
         creation_data.executor_def,
         "Configure how steps are executed within a run.",
@@ -178,13 +180,14 @@ def define_run_config_schema_type(creation_data: RunConfigSchemaCreationData) ->
         )
     else:
         nodes_field = Field(
-            define_node_shape(
+            define_node_config(
                 nodes=creation_data.nodes,
                 ignored_nodes=creation_data.ignored_nodes,
                 dependency_structure=creation_data.dependency_structure,
                 resource_defs=creation_data.resource_defs,
                 asset_layer=creation_data.asset_layer,
                 input_assets=creation_data.graph_def.input_assets,
+                permissive=is_implicit_asset_job_name(creation_data.job_name),
             ),
             description="Configure runtime parameters for ops or assets.",
         )
@@ -453,7 +456,7 @@ def define_node_field(
             ),
             "outputs": get_outputs_field(node, resource_defs),
             "ops": Field(
-                define_node_shape(
+                define_node_config(
                     nodes=graph_def.nodes,
                     ignored_nodes=None,
                     dependency_structure=graph_def.dependency_structure,
@@ -468,15 +471,16 @@ def define_node_field(
         return node_config_field(fields, ignored=ignored)
 
 
-def define_node_shape(
+def define_node_config(
     nodes: Sequence[Node],
     ignored_nodes: Optional[Sequence[Node]],
     dependency_structure: DependencyStructure,
     resource_defs: Mapping[str, ResourceDefinition],
     asset_layer: AssetLayer,
     input_assets: Mapping[str, Mapping[str, "AssetsDefinition"]],
+    permissive: bool = False,
     parent_handle: Optional[NodeHandle] = None,
-) -> Shape:
+) -> Union[Permissive, Shape]:
     """Examples of what this method is used to generate the schema for:
     1.
         inputs: ...
@@ -495,6 +499,27 @@ def define_node_shape(
 
 
     """
+    fields = _define_node_fields(
+        nodes,
+        ignored_nodes,
+        dependency_structure,
+        resource_defs,
+        asset_layer,
+        input_assets,
+        parent_handle,
+    )
+    return Permissive(fields=fields) if permissive else Shape(fields=fields)
+
+
+def _define_node_fields(
+    nodes: Sequence[Node],
+    ignored_nodes: Optional[Sequence[Node]],
+    dependency_structure: DependencyStructure,
+    resource_defs: Mapping[str, ResourceDefinition],
+    asset_layer: AssetLayer,
+    input_assets: Mapping[str, Mapping[str, "AssetsDefinition"]],
+    parent_handle: Optional[NodeHandle] = None,
+) -> Mapping[str, Optional[Field]]:
     ignored_nodes = check.opt_sequence_param(ignored_nodes, "ignored_nodes", of_type=Node)
 
     fields = {}
@@ -525,7 +550,7 @@ def define_node_shape(
         if node_field:
             fields[node.name] = node_field
 
-    return Shape(fields)
+    return fields
 
 
 def iterate_node_def_config_types(node_def: NodeDefinition) -> Iterator[ConfigType]:
