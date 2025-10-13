@@ -638,25 +638,28 @@ class GrapheneInstigationState(graphene.ObjectType):
 
     def resolve_hasStartPermission(self, graphene_info: ResolveInfo):
         if self._instigator_state.instigator_type == InstigatorType.SCHEDULE:
-            return graphene_info.context.has_permission_for_location(
-                Permissions.START_SCHEDULE, self._instigator_state.repository_selector.location_name
+            return graphene_info.context.has_permission_for_selector(
+                Permissions.START_SCHEDULE,
+                ScheduleSelector.from_instigator_selector(self._instigator_state.selector),
             )
         else:
             check.invariant(self._instigator_state.instigator_type == InstigatorType.SENSOR)
-            return graphene_info.context.has_permission_for_location(
-                Permissions.EDIT_SENSOR, self._instigator_state.repository_selector.location_name
+            return graphene_info.context.has_permission_for_selector(
+                Permissions.EDIT_SENSOR,
+                SensorSelector.from_instigator_selector(self._instigator_state.selector),
             )
 
     def resolve_hasStopPermission(self, graphene_info: ResolveInfo):
         if self._instigator_state.instigator_type == InstigatorType.SCHEDULE:
-            return graphene_info.context.has_permission_for_location(
+            return graphene_info.context.has_permission_for_selector(
                 Permissions.STOP_RUNNING_SCHEDULE,
-                self._instigator_state.repository_selector.location_name,
+                ScheduleSelector.from_instigator_selector(self._instigator_state.selector),
             )
         else:
             check.invariant(self._instigator_state.instigator_type == InstigatorType.SENSOR)
-            return graphene_info.context.has_permission_for_location(
-                Permissions.EDIT_SENSOR, self._instigator_state.repository_selector.location_name
+            return graphene_info.context.has_permission_for_selector(
+                Permissions.EDIT_SENSOR,
+                SensorSelector.from_instigator_selector(self._instigator_state.selector),
             )
 
     def resolve_typeSpecificData(self, _graphene_info: ResolveInfo):

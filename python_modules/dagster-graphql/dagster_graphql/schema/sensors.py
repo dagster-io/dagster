@@ -80,6 +80,7 @@ class GrapheneSensor(graphene.ObjectType):
     targets = graphene.List(graphene.NonNull(GrapheneTarget))
     defaultStatus = graphene.NonNull(GrapheneInstigationStatus)
     canReset = graphene.NonNull(graphene.Boolean)
+    hasCursorUpdatePermissions = graphene.NonNull(graphene.Boolean)
     sensorState = graphene.NonNull(GrapheneInstigationState)
     minIntervalSeconds = graphene.NonNull(graphene.Int)
     description = graphene.String()
@@ -143,6 +144,12 @@ class GrapheneSensor(graphene.ObjectType):
     def resolve_canReset(self, _graphene_info: ResolveInfo):
         return bool(
             self._stored_state and self._stored_state.status != InstigatorStatus.DECLARED_IN_CODE
+        )
+
+    def resolve_hasCursorUpdatePermissions(self, graphene_info: ResolveInfo) -> bool:
+        return graphene_info.context.has_permission_for_selector(
+            Permissions.UPDATE_SENSOR_CURSOR,
+            self._remote_sensor.sensor_selector,
         )
 
     def resolve_sensorState(self, _graphene_info: ResolveInfo):
