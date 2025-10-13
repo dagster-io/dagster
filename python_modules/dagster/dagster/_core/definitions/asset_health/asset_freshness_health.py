@@ -24,7 +24,7 @@ class AssetFreshnessHealthState(LoadableBy[AssetKey]):
     """Maintains the latest freshness state for the asset."""
 
     freshness_state: FreshnessState
-    updated_timestamp: Optional[float]
+    updated_timestamp: Optional[float] = None
 
     @property
     def health_status(self) -> AssetHealthStatus:
