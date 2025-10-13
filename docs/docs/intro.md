@@ -66,7 +66,7 @@ Dagster is a data orchestrator built for data engineers, with integrated lineage
     description="Star our GitHub repository and follow our development through GitHub Discussions."
   />
   <Card
-    label="Youtube"
+    label="YouTube"
     href="https://www.youtube.com/@dagsterio"
     logo="./img/getting-started/icon-youtube.svg"
     description="Watch our latest videos on YouTube."
