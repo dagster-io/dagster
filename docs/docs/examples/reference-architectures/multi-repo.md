@@ -34,20 +34,44 @@ graph LR
 
 ![2048 resolution](/images/examples/reference-architectures/multi-repo.png)
 
-### 1. Set up the `dg.toml`
+### 1. Structure workspaces
 
-There are two separate [code locations](/deployment/code-locations), `data-engineering` and `data-science`. Both are created using the [`create-dagster` CLI](/api/clis/create-dagster).
+In Dagster you define one or more workspaces. These are the Python projects that contain your Dagster code. As your Dagster projects grows it makes sense to have multiple workspaces such as a `data-engineering` workspace and `data-science` workspace with different dependencies.
+
+Both of these workspaces are created using the [`create-dagster` CLI](/api/clis/create-dagster) but are developed separately.
+
+However even though they exist as separate workspaces, both can be included in the same Dagster deployment using a (`dg.toml` file)[api/clis/dg-cli/dg-cli-configuration#user-configuration-file]. This file defines multiple workspaces but ensure that all workspaces as registered as part of the same Dagster deployment.
 
 ```
 .
-├── data-engineering
-├── data-science
+├── data-engineering # workspace
+├── data-science # workspace
 ├── dg.toml
 ├── pyproject.toml
 └── uv.lock
 ```
 
-To launch both of these code locations together, configure a (`dg.toml` file)[api/clis/dg-cli/dg-cli-configuration#user-configuration-file]. This file defines multiple workspaces and ensures each code location is registered with the same Dagster deployment.
+**Dagster Features**
+
+- [Managing workspaces](/guides/build/projects/multiple-projects)
+
+---
+
+### 2. Data engineering code location
+
+Each workspace exists independently. The `data-engineering` workspace focuses on ETL/ELT workflows, database synchronization, and other data movement or transformation jobs. It requires a lighter dependency set optimized for reliability and scalability.
+
+```
+.
+└── data-engineering
+    ├── pyproject.toml
+    ├── README.md
+    └── src
+        └── data_science
+            └── definitions.py
+```
+
+The workspace is deployed to Dagster as a [code location](/deployment/code-locations). A code location consists of the workspace’s code along with its environment. This is where Dagster executes runs within the Dagster instance.
 
 **Dagster Features**
 
@@ -55,32 +79,37 @@ To launch both of these code locations together, configure a (`dg.toml` file)[ap
 
 ---
 
-### 2. Data science code location
+### 3. Data science code location
 
-The data-science code location contains machine learning workflows, experimentation pipelines, and data preparation tasks. Its environment is tuned for heavier numerical computation and may include libraries like `pandas`, `scikit-learn`, or `pytorch`.
-
-```
-.
-└── data-engineering
-    ├── pyproject.toml
-    ├── README.md
-    └── src
-        └── data_engineering
-            └── definitions.py
-```
-
----
-
-### 3. Data engineering code location
-
-The data-engineering code location is focused on ETL/ELT workflows, database synchronization, and other data movement or transformation jobs. It requires a lighter dependency set optimized for reliability and scalability.
+A deployed Dagster instance can have multiple code locations. In addition to the data-engineering code location, a `data-science` code location can be configured for machine learning workflows, experimentation pipelines, and data preparation tasks.
 
 ```
 .
-└── data-engineering
-    ├── pyproject.toml
-    ├── README.md
-    └── src
-        └── data_engineering
-            └── definitions.py
+└── data-science
+    ├── pyproject.toml
+    ├── README.md
+    └── src
+        └── data_science
+            └── definitions.py
 ```
+
+Although the `data-science` code location executes separately, it can still reference assets from the data-engineering code location.
+
+```python
+@dg.asset(
+    deps=[
+        dg.AssetKey("data_engineering_asset") # exists in the data-engineering project
+        ]
+    )
+def data_science_asset(): ...
+```
+
+This enables the asset graph to connect workflows and dependencies, even when they span multiple code locations.
+
+### 4. Managing Access control
+
+When deploying on [Dagster+](/deployment/dagster-plus), you can fine-tune access to code locations for different users. This allows certain users to view and depend on assets in other code locations without necessarily having permission to edit or execute them.
+
+**Dagster Features**
+
+- [Role-based access control](/deployment/dagster-plus/authentication-and-access-control/rbac)
