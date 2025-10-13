@@ -1,6 +1,6 @@
 import {Box, Caption, Colors, Icon, MonoSmall, Spinner, Tag} from '@dagster-io/ui-components';
 import {useVirtualizer} from '@tanstack/react-virtual';
-import {useEffect, useMemo, useRef} from 'react';
+import {useEffect, useRef} from 'react';
 import styled from 'styled-components';
 
 import {AssetEventGroup} from './groupByPartition';
@@ -153,19 +153,28 @@ export const AssetListRow = styled(Row)<{$focused: boolean}>`
 const AssetEventListPartitionRow = ({group}: {group: AssetEventGroup}) => {
   const {partition, latest, timestamp} = group;
   const failed = latest?.__typename === 'FailedToMaterializeEvent';
+  const tag = () => {
+    switch (latest?.__typename) {
+      case 'MaterializationEvent':
+        return <Tag intent="success">Materialized</Tag>;
+      case 'ObservationEvent':
+        return <Tag intent="success">Observed</Tag>;
+      case 'FailedToMaterializeEvent':
+        if (latest?.materializationFailureType === 'FAILED') {
+          return <Tag intent="danger">Failed</Tag>;
+        } else {
+          return <Tag intent="none">Skipped</Tag>;
+        }
+    }
+    return <Tag intent="none">Missing</Tag>;
+  };
   return (
     <>
       <Box flex={{gap: 4, direction: 'row', alignItems: 'flex-start'}}>
         <Icon name="partition" />
         {partition}
         <div style={{flex: 1}} />
-        {!latest ? (
-          <Tag intent="none">Missing</Tag>
-        ) : failed ? (
-          <Tag intent="danger">Failed</Tag>
-        ) : (
-          <Tag intent="success">Materialized</Tag>
-        )}
+        {tag()}
       </Box>
 
       <Caption color={Colors.textLight()} style={{userSelect: 'none'}}>
@@ -188,22 +197,26 @@ const AssetEventListPartitionRow = ({group}: {group: AssetEventGroup}) => {
 const AssetEventListEventRow = ({group}: {group: AssetEventGroup}) => {
   const {latest, partition, timestamp} = group;
 
-  const icon = useMemo(() => {
+  const icon = () => {
     switch (latest?.__typename) {
       case 'MaterializationEvent':
         return <Icon name="run_success" color={Colors.accentGreen()} size={16} />;
       case 'ObservationEvent':
         return <Icon name="observation" color={Colors.accentGreen()} size={16} />;
       case 'FailedToMaterializeEvent':
-        return <Icon name="run_failed" color={Colors.accentRed()} size={16} />;
+        if (latest?.materializationFailureType === 'FAILED') {
+          return <Icon name="run_failed" color={Colors.accentRed()} size={16} />;
+        } else {
+          return <Icon name="status" color={Colors.accentGray()} size={16} />;
+        }
     }
     return null;
-  }, [latest?.__typename]);
+  };
 
   return (
     <Box flex={{direction: 'column', gap: 4}}>
       <Box flex={{gap: 4, direction: 'row', alignItems: 'center'}}>
-        {icon}
+        {icon()}
         <Timestamp timestamp={{ms: Number(timestamp)}} />
       </Box>
       {partition ? (
