@@ -34,9 +34,9 @@ def get_code_server_metadata_key(key: str) -> str:
     return f"defs-state-[{key}]"
 
 
-class DefsStateStorageLocation(Enum):
-    LOCAL = "LOCAL"
-    REMOTE = "REMOTE"
+class DefsStateManagementType(Enum):
+    VERSIONED_STATE_STORAGE = "VERSIONED_STATE_STORAGE"
+    LOCAL_FILESYSTEM = "LOCAL_FILESYSTEM"
     LEGACY_CODE_SERVER_SNAPSHOTS = "LEGACY_CODE_SERVER_SNAPSHOTS"
 
 
@@ -52,13 +52,13 @@ class DefsKeyStateInfo(DagsterModel):
         return cls(version=data["version"], create_timestamp=data["createTimestamp"])
 
     @property
-    def storage_location(self) -> DefsStateStorageLocation:
+    def management_type(self) -> DefsStateManagementType:
         if self.version == LOCAL_STATE_VERSION:
-            return DefsStateStorageLocation.LOCAL
+            return DefsStateManagementType.LOCAL_FILESYSTEM
         elif self.version == CODE_SERVER_STATE_VERSION:
-            return DefsStateStorageLocation.LEGACY_CODE_SERVER_SNAPSHOTS
+            return DefsStateManagementType.LEGACY_CODE_SERVER_SNAPSHOTS
         else:
-            return DefsStateStorageLocation.REMOTE
+            return DefsStateManagementType.VERSIONED_STATE_STORAGE
 
 
 @whitelist_for_serdes

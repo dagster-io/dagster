@@ -12,7 +12,7 @@ from dagster_shared import check
 from dagster_shared.serdes.objects.models.defs_state_info import (
     CODE_SERVER_STATE_VERSION,
     LOCAL_STATE_VERSION,
-    DefsStateStorageLocation,
+    DefsStateManagementType,
     get_local_state_path,
 )
 from typing_extensions import Self
@@ -26,6 +26,7 @@ from dagster._core.errors import DagsterInvalidInvocationError
 from dagster._core.storage.defs_state.base import DefsStateStorage
 from dagster.components.component.component import Component
 from dagster.components.core.context import ComponentLoadContext
+from dagster.components.utils.defs_state import DefsStateConfig
 
 if TYPE_CHECKING:
     from pydantic import BaseModel
@@ -43,8 +44,8 @@ class StateBackedComponent(Component):
         return loaded_component
 
     @property
-    def _state_storage_location(self) -> DefsStateStorageLocation:
-        return DefsStateStorageLocation.REMOTE
+    @abstractmethod
+    def defs_state_config(self) -> DefsStateConfig: ...
 
     def get_defs_state_key(self) -> str:
         """Returns a key that uniquely identifies the state for this component."""
@@ -94,17 +95,17 @@ class StateBackedComponent(Component):
                 "This is likely the result of an internal framework error."
             )
 
-        if self._state_storage_location == DefsStateStorageLocation.REMOTE:
+        if self.defs_state_config.type == DefsStateManagementType.VERSIONED_STATE_STORAGE:
             await self._store_versioned_state_storage_state(key, state_storage)
-        elif self._state_storage_location == DefsStateStorageLocation.LOCAL:
+        elif self.defs_state_config.type == DefsStateManagementType.LOCAL_FILESYSTEM:
             await self._store_local_filesystem_state(key, state_storage)
-        elif self._state_storage_location == DefsStateStorageLocation.LEGACY_CODE_SERVER_SNAPSHOTS:
+        elif self.defs_state_config.type == DefsStateManagementType.LEGACY_CODE_SERVER_SNAPSHOTS:
             raise DagsterInvalidInvocationError(
                 "Attempted to refresh `CODE_SERVER` state explicitly, but this can only happen during code server startup."
             )
         else:
             raise DagsterInvalidInvocationError(
-                f"Invalid state storage location: {self._state_storage_location}"
+                f"Invalid state storage location: {self.defs_state_config.type}"
             )
 
     def build_defs(self, context: ComponentLoadContext) -> Definitions:
@@ -118,7 +119,7 @@ class StateBackedComponent(Component):
             )
 
         if (
-            self._state_storage_location == DefsStateStorageLocation.LEGACY_CODE_SERVER_SNAPSHOTS
+            self.defs_state_config.type == DefsStateManagementType.LEGACY_CODE_SERVER_SNAPSHOTS
             and defs_load_context.load_type == DefinitionsLoadType.INITIALIZATION
         ):
             asyncio.run(self._store_code_server_state(key, state_storage))

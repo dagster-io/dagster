@@ -12,7 +12,7 @@ from dagster_shared.serdes.objects.models.defs_state_info import (
     CODE_SERVER_STATE_VERSION,
     DefsKeyStateInfo,
     DefsStateInfo,
-    DefsStateStorageLocation,
+    DefsStateManagementType,
     get_code_server_metadata_key,
     get_local_state_path,
 )
@@ -177,7 +177,7 @@ class DefinitionsLoadContext:
         if key_info is None:
             yield None
             return
-        elif key_info.storage_location == DefsStateStorageLocation.LOCAL:
+        elif key_info.management_type == DefsStateManagementType.LOCAL_FILESYSTEM:
             # state is stored locally in the .state directory
             state_path = get_local_state_path(key)
             check.invariant(
@@ -186,13 +186,13 @@ class DefinitionsLoadContext:
                 "is being used in an environment with ephemeral local storage.",
             )
             yield state_path
-        elif key_info.storage_location == DefsStateStorageLocation.REMOTE:
+        elif key_info.management_type == DefsStateManagementType.VERSIONED_STATE_STORAGE:
             # state is stored in the remote state storage
             with tempfile.TemporaryDirectory() as temp_dir:
                 state_path = Path(temp_dir) / key
                 state_storage.download_state_to_path(key, key_info.version, state_path)
                 yield state_path
-        elif key_info.storage_location == DefsStateStorageLocation.LEGACY_CODE_SERVER_SNAPSHOTS:
+        elif key_info.management_type == DefsStateManagementType.LEGACY_CODE_SERVER_SNAPSHOTS:
             # state is stored in the reconstruction metadata
             with tempfile.TemporaryDirectory() as temp_dir:
                 state_path = Path(temp_dir) / key
@@ -201,7 +201,7 @@ class DefinitionsLoadContext:
                 yield state_path
         else:
             raise DagsterInvariantViolationError(
-                f"Invalid state storage location: {key_info.storage_location}"
+                f"Invalid state storage location: {key_info.management_type}"
             )
 
 

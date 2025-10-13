@@ -3,11 +3,16 @@ from typing import Optional
 
 import dagster as dg
 from dagster.components.component.state_backed_component import StateBackedComponent
+from dagster.components.utils.defs_state import DefsStateConfig
 
 
 class SampleStateBackedComponent(StateBackedComponent, dg.Model, dg.Resolvable):
     fail_write: bool = False
     defs_state_key_id: Optional[str] = None
+
+    @property
+    def defs_state_config(self) -> DefsStateConfig:
+        return DefsStateConfig.versioned_state_storage()
 
     def get_defs_state_key(self) -> str:
         default_key = super().get_defs_state_key()
