@@ -1,6 +1,7 @@
 import json
 import os
 from decimal import Decimal
+from pathlib import Path
 from typing import Any, cast
 from unittest import mock
 
@@ -326,14 +327,10 @@ def test_attach_metadata(
 def test_row_count_with_relative_path_in_profile(
     test_jaffle_shop_manifest_standalone_duckdb_dbfile: dict[str, Any],
 ) -> None:
-    """Test that fetch_row_counts works correctly when profiles.yml contains relative paths.
-
-    This test verifies that when the dbt profile configuration contains relative paths
-    (e.g., for key files), the adapter operations run from the correct working directory
-    (the dbt project directory) rather than the Dagster execution directory.
+    """This test verifies that adapter operations run from the correct working directory
+    (the dbt project directory) rather than the Dagster execution directory. This was
+    causing issues when users referenced relative filepaths in their profiles.yml files.
     """
-    from pathlib import Path
-
     # Create a temporary test file with a relative path to simulate the issue
     config_dir = test_jaffle_shop_path / "config"
     config_dir.mkdir(exist_ok=True)
@@ -388,7 +385,6 @@ def test_row_count_with_relative_path_in_profile(
         ), "Relative path test metadata not found, indicating working directory issue"
 
     finally:
-        # Clean up the test file
         if test_file.exists():
             test_file.unlink()
         if config_dir.exists() and not any(config_dir.iterdir()):
