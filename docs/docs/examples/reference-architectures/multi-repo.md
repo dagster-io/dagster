@@ -40,7 +40,7 @@ In Dagster you define one or more workspaces. These are the Python projects that
 
 Both of these workspaces are created using the [`create-dagster` CLI](/api/clis/create-dagster) but are developed separately.
 
-However even though they exist as separate workspaces, both can be included in the same Dagster deployment using a (`dg.toml` file)[api/clis/dg-cli/dg-cli-configuration#user-configuration-file]. This file defines multiple workspaces but ensure that all workspaces as registered as part of the same Dagster deployment.
+However even though they exist as separate workspaces, both can be included in the same Dagster deployment using a [`dg.toml` file](/api/clis/dg-cli/dg-cli-configuration#user-configuration-file). This file defines multiple workspaces but ensure that all workspaces as registered as part of the same Dagster deployment.
 
 ```
 .
