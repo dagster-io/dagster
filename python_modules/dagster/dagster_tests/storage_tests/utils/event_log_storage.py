@@ -3325,7 +3325,7 @@ class TestEventLogStorage:
             )
             # get the storage id of the materialization we just stored
             return storage.get_event_records(
-                dg.EventRecordsFilter(DagsterEventType.ASSET_MATERIALIZATION),
+                dg.EventRecordsFilter(DagsterEventType.ASSET_MATERIALIZATION, asset_key=asset_key),
                 limit=1,
                 ascending=False,
             )[0].storage_id
@@ -3406,7 +3406,7 @@ class TestEventLogStorage:
             )
             # get the storage id of the materialization we just stored
             return storage.get_event_records(
-                dg.EventRecordsFilter(dagster_event_type),
+                dg.EventRecordsFilter(dagster_event_type, asset_key=asset_key),
                 limit=1,
                 ascending=False,
             )[0].storage_id
@@ -3561,7 +3561,7 @@ class TestEventLogStorage:
             )
             # get the storage id of the materialization we just stored
             return storage.get_event_records(
-                dg.EventRecordsFilter(dagster_event_type),
+                dg.EventRecordsFilter(dagster_event_type, asset_key=asset_key),
                 limit=1,
                 ascending=False,
             )[0].storage_id
