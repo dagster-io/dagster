@@ -71,7 +71,7 @@
   align-items: center;
   gap: 4px;
   margin-bottom: 4px;
-  padding-top: 0.25rem;
+  padding: 0.125rem 0rem;
 }
 
 .cardTitleWrapper .cardTags {
