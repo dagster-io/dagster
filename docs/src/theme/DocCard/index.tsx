@@ -55,35 +55,37 @@ function ExternalLinkIcon(props: React.SVGProps<SVGSVGElement>) {
 
 function CardLayout({
   item,
-  ...props
+  className,
 }: {
   item: PropSidebarItemCategory | PropSidebarItemLink;
-} & React.ComponentPropsWithoutRef<'a'>): ReactNode {
+  className?: string;
+}): ReactNode {
   const label = item.label;
   const logo: string | null = (item?.customProps?.logo as string) || null;
   const community: boolean = (item?.customProps?.community as boolean) || false;
-  let href, description;
   const categoryItemsPlural = useCategoryItemsPlural();
+  const doc = useDocById(item.type === 'link' ? item.docId ?? undefined : undefined);
+  const logoUrl = useBaseUrl(logo || '');
 
-if (item.type === 'category') {
-  href = findFirstSidebarItemLink(item);
-  // Add safety check to handle cases where a category might not have a valid link
-  if (href === undefined) {
-    href = null; // or another appropriate fallback
+  let href, description;
+  if (item.type === 'category') {
+    href = findFirstSidebarItemLink(item);
+    // Add safety check to handle cases where a category might not have a valid link
+    if (href === undefined) {
+      href = null; // or another appropriate fallback
+    }
+    description = item.description ?? categoryItemsPlural(item.items.length);
+  } else {
+    href = item.href;
+    description = item.description ?? doc?.description;
   }
-  description = item.description ?? categoryItemsPlural(item.items.length);
-} else {
-  href = item.href;
-  const doc = useDocById(item.docId ?? undefined);
-  description = item.description ?? doc?.description;
-}
 
 
   const LinkComponent = Link as any; //Type assertion to bypass linting error
 
   return (
-    <LinkComponent href={href} {...props} className={clsx('card', styles.cardContainer)}>
-      {logo && <img className={styles.cardLogo} src={useBaseUrl(logo)} />}
+    <LinkComponent href={href} className={clsx('card', styles.cardContainer, className)}>
+      {logo && <img className={styles.cardLogo} src={logoUrl} />}
       <div>
         <div className={styles.cardTitleWrapper}>
           <Heading as="h2" className={styles.cardTitle} title={label}>
