@@ -24,6 +24,7 @@ from dagster._core.definitions.definitions_load_context import (
 )
 from dagster._core.errors import DagsterInvalidInvocationError
 from dagster._core.storage.defs_state.base import DefsStateStorage
+from dagster._utils.env import using_dagster_dev
 from dagster.components.component.component import Component
 from dagster.components.core.context import ComponentLoadContext
 from dagster.components.utils.defs_state import DefsStateConfig
@@ -57,35 +58,37 @@ class StateBackedComponent(Component):
         else:
             await asyncio.to_thread(self.write_state_to_path, state_path)
 
-    async def _store_code_server_state(self, key: str, state_storage: DefsStateStorage) -> None:
+    async def _store_code_server_state(self, key: str, state_storage: DefsStateStorage) -> str:
         load_context = DefinitionsLoadContext.get()
         check.invariant(
             load_context.load_type == DefinitionsLoadType.INITIALIZATION,
-            "Attempted to store CODE_SERVER state outside of the initialization phase.",
+            "Attempted to store LEGACY_CODE_SERVER_SNAPSHOTS state outside of the initialization phase.",
         )
         with tempfile.TemporaryDirectory() as temp_dir:
             state_path = Path(temp_dir) / key
             await self._write_state_to_path_async(state_path)
             load_context.add_code_server_defs_state_info(key, state_path.read_text())
             state_storage.set_latest_version(key, CODE_SERVER_STATE_VERSION)
+            return CODE_SERVER_STATE_VERSION
 
-    async def _store_local_filesystem_state(
-        self, key: str, state_storage: DefsStateStorage
-    ) -> None:
+    async def _store_local_filesystem_state(self, key: str, state_storage: DefsStateStorage) -> str:
         state_path = get_local_state_path(key)
         shutil.rmtree(state_path, ignore_errors=True)
         await self._write_state_to_path_async(state_path)
         state_storage.set_latest_version(key, LOCAL_STATE_VERSION)
+        return LOCAL_STATE_VERSION
 
     async def _store_versioned_state_storage_state(
         self, key: str, state_storage: DefsStateStorage
-    ) -> None:
+    ) -> str:
         with tempfile.TemporaryDirectory() as temp_dir:
+            version = str(uuid4())
             state_path = Path(temp_dir) / key
             await self._write_state_to_path_async(state_path)
-            state_storage.upload_state_from_path(key, version=str(uuid4()), path=state_path)
+            state_storage.upload_state_from_path(key, version=version, path=state_path)
+            return version
 
-    async def refresh_state(self) -> None:
+    async def refresh_state(self) -> str:
         """Rebuilds the state for this component and persists it to the current StateStore."""
         key = self.get_defs_state_key()
         state_storage = DefsStateStorage.get()
@@ -96,13 +99,15 @@ class StateBackedComponent(Component):
             )
 
         if self.defs_state_config.type == DefsStateManagementType.VERSIONED_STATE_STORAGE:
-            await self._store_versioned_state_storage_state(key, state_storage)
+            return await self._store_versioned_state_storage_state(key, state_storage)
         elif self.defs_state_config.type == DefsStateManagementType.LOCAL_FILESYSTEM:
-            await self._store_local_filesystem_state(key, state_storage)
+            return await self._store_local_filesystem_state(key, state_storage)
         elif self.defs_state_config.type == DefsStateManagementType.LEGACY_CODE_SERVER_SNAPSHOTS:
-            raise DagsterInvalidInvocationError(
-                "Attempted to refresh `CODE_SERVER` state explicitly, but this can only happen during code server startup."
+            check.invariant(
+                DefinitionsLoadContext.get().load_type == DefinitionsLoadType.INITIALIZATION,
+                "Attempted to refresh `LEGACY_CODE_SERVER_SNAPSHOTS` state explicitly, but this can only happen during code server startup.",
             )
+            return await self._store_code_server_state(key, state_storage)
         else:
             raise DagsterInvalidInvocationError(
                 f"Invalid state storage location: {self.defs_state_config.type}"
@@ -118,11 +123,19 @@ class StateBackedComponent(Component):
                 "This is likely the result of an internal framework error."
             )
 
-        if (
-            self.defs_state_config.type == DefsStateManagementType.LEGACY_CODE_SERVER_SNAPSHOTS
-            and defs_load_context.load_type == DefinitionsLoadType.INITIALIZATION
-        ):
-            asyncio.run(self._store_code_server_state(key, state_storage))
+        if defs_load_context.load_type == DefinitionsLoadType.INITIALIZATION:
+            if (
+                # for code server state management, we always refresh the state
+                (
+                    self.defs_state_config.type
+                    == DefsStateManagementType.LEGACY_CODE_SERVER_SNAPSHOTS
+                )
+                or
+                # automatically refresh in local dev unless the user opts out
+                (using_dagster_dev() and self.defs_state_config.refresh_if_dev)
+            ):
+                version = asyncio.run(self.refresh_state())
+                defs_load_context.add_defs_state_info(key, version)
 
         with DefinitionsLoadContext.get().state_path(key, state_storage) as state_path:
             return self.build_defs_from_state(context, state_path=state_path)
