@@ -8,6 +8,7 @@ from threading import Event
 from typing import TYPE_CHECKING
 from uuid import uuid4
 
+import pytest
 from dagster import asset, materialize, open_pipes_session
 from dagster._core.definitions.asset_checks.asset_check_spec import AssetCheckKey, AssetCheckSpec
 from dagster._core.definitions.data_version import (
@@ -106,6 +107,44 @@ def test_s3_pipes_components(
         )
         assert len(asset_check_executions) == 1
         assert asset_check_executions[0].status == AssetCheckExecutionRecordStatus.SUCCEEDED
+
+
+def test_s3_context_injector(s3_client):
+    context_injector = PipesS3ContextInjector(
+        bucket=_S3_TEST_BUCKET, client=s3_client, key_prefix="custom_prefix/"
+    )
+    pipes_context = {
+        "asset_keys": None,
+        "code_version_by_asset_key": None,
+        "extras": {},
+        "job_name": None,
+        "partition_key": None,
+        "partition_key_range": None,
+        "partition_time_window": None,
+        "provenance_by_asset_key": None,
+        "retry_number": 0,
+        "run_id": "test-run-id",
+    }
+
+    with context_injector.inject_context(pipes_context) as context:  # type: ignore
+        context_key = context["key"]
+        assert context["bucket"] == _S3_TEST_BUCKET
+        assert context_key.startswith("custom_prefix/")
+        assert (
+            json.loads(
+                s3_client.get_object(Bucket=context["bucket"], Key=context_key)["Body"]
+                .read()
+                .decode("utf-8")
+            )
+            == pipes_context
+        )
+
+    # Make sure the object has been deleted
+    with pytest.raises(
+        s3_client.exceptions.NoSuchKey,
+        match="The specified key does not exist",
+    ):
+        s3_client.get_object(Bucket=_S3_TEST_BUCKET, Key=context_key)
 
 
 def test_cloudwatch_logs_reader(cloudwatch_client: "CloudWatchLogsClient", capsys):
