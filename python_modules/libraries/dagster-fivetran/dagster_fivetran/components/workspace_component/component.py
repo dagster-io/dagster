@@ -10,7 +10,11 @@ from dagster._annotations import public
 from dagster._utils.names import clean_name
 from dagster.components.component.state_backed_component import StateBackedComponent
 from dagster.components.resolved.base import resolve_fields
-from dagster.components.utils.defs_state import DefsStateConfig, ResolvedDefsStateConfig
+from dagster.components.utils.defs_state import (
+    DefsStateConfig,
+    DefsStateConfigArgs,
+    ResolvedDefsStateConfig,
+)
 from dagster.components.utils.translation import (
     ComponentTranslator,
     TranslationFn,
@@ -106,10 +110,7 @@ class FivetranAccountComponent(StateBackedComponent, dg.Model, dg.Resolvable):
         default=None,
         description="Function used to translate Fivetran connector table properties into Dagster asset specs.",
     )
-    defs_state: ResolvedDefsStateConfig = DefsStateConfig.legacy_code_server_snapshots()
-
-    def get_defs_state_key(self) -> str:
-        return f"{self.__class__.__name__}[{self.workspace_resource.account_id}]"
+    defs_state: ResolvedDefsStateConfig = DefsStateConfigArgs.legacy_code_server_snapshots()
 
     @cached_property
     def workspace_resource(self) -> FivetranWorkspace:
@@ -125,7 +126,8 @@ class FivetranAccountComponent(StateBackedComponent, dg.Model, dg.Resolvable):
 
     @property
     def defs_state_config(self) -> DefsStateConfig:
-        return self.defs_state
+        default_key = f"{self.__class__.__name__}[{self.workspace_resource.account_id}]"
+        return DefsStateConfig.from_args(self.defs_state, default_key=default_key)
 
     def get_asset_spec(self, props: FivetranConnectorTableProps) -> dg.AssetSpec:
         return self._base_translator.get_asset_spec(props)

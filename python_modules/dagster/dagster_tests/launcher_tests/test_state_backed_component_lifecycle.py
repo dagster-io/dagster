@@ -38,18 +38,19 @@ def _scope_component_defs():
 
     import dagster as dg
     from dagster.components.component.state_backed_component import StateBackedComponent
-    from dagster.components.utils.defs_state import DefsStateConfig
+    from dagster.components.utils.defs_state import (
+        DefsStateConfig,
+        DefsStateConfigArgs,
+        ResolvedDefsStateConfig,
+    )
 
     class TestStateBackedComponent(StateBackedComponent, dg.Model, dg.Resolvable):
         sentinel_file_path: str
-        defs_state: DefsStateConfig = DefsStateConfig.legacy_code_server_snapshots()
+        defs_state: ResolvedDefsStateConfig = DefsStateConfigArgs.legacy_code_server_snapshots()
 
         @property
         def defs_state_config(self) -> DefsStateConfig:
-            return self.defs_state
-
-        def get_defs_state_key(self) -> str:
-            return "test_state_backed_component"
+            return DefsStateConfig.from_args(self.defs_state, default_key=self.__class__.__name__)
 
         def build_defs_from_state(self, context, state_path):
             # because refresh_if_dev is True, we should always have a state path

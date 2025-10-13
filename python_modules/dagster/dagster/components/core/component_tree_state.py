@@ -94,7 +94,7 @@ class ComponentTreeStateTracker:
                 "Component paths: \n"
                 f"  {existing_path}\n"
                 f"  {path}\n"
-                "Configure or override the `get_defs_state_key` method on one or both components to disambiguate."
+                "Configure or override the `get_defs_state_config` method on one or both components to disambiguate."
             )
         self._component_defs_state_key_dict[defs_state_key] = path
 

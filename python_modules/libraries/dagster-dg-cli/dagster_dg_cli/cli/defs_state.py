@@ -58,10 +58,10 @@ def _get_components_to_refresh(
     selected_components = [
         component
         for component in state_backed_components
-        if component.get_defs_state_key() in defs_state_keys
+        if component.defs_state_config.key in defs_state_keys
     ]
     missing_defs_keys = defs_state_keys - {
-        component.get_defs_state_key() for component in selected_components
+        component.defs_state_config.key for component in selected_components
     }
     if missing_defs_keys:
         click.echo("Error: The following defs state keys were not found:")
@@ -69,7 +69,7 @@ def _get_components_to_refresh(
             click.echo(f"  {key}")
         click.echo("Available defs state keys:")
         for key in sorted(
-            [component.get_defs_state_key() for component in state_backed_components]
+            [component.defs_state_config.key for component in state_backed_components]
         ):
             click.echo(f"  {key}")
         exit_with_error("One or more specified defs state keys were not found.")
@@ -80,7 +80,7 @@ async def _refresh_state_for_component(
     component: "StateBackedComponent", statuses: dict[str, ComponentStateRefreshStatus]
 ) -> None:
     """Refreshes the state of a component and tracks its state in the statuses dictionary as it progresses."""
-    key = component.get_defs_state_key()
+    key = component.defs_state_config.key
 
     try:
         await component.refresh_state()
@@ -126,7 +126,7 @@ def get_updated_defs_state_info_task_and_statuses(
 
     # shared dictionary to be used for all subtasks
     statuses = {
-        component.get_defs_state_key(): ComponentStateRefreshStatus(
+        component.defs_state_config.key: ComponentStateRefreshStatus(
             status="refreshing", start_time=time.time()
         )
         for component in components_to_refresh

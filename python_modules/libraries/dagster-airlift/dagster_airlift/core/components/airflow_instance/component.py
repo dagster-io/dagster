@@ -18,7 +18,11 @@ from dagster.components.resolved.context import ResolutionContext
 from dagster.components.resolved.core_models import ResolvedAssetKey, ResolvedAssetSpec
 from dagster.components.resolved.model import Resolver
 from dagster.components.scaffold.scaffold import Scaffolder, ScaffoldRequest, scaffold_with
-from dagster.components.utils.defs_state import DefsStateConfig, ResolvedDefsStateConfig
+from dagster.components.utils.defs_state import (
+    DefsStateConfig,
+    DefsStateConfigArgs,
+    ResolvedDefsStateConfig,
+)
 from dagster_shared.serdes.serdes import deserialize_value, serialize_value
 from pydantic import BaseModel
 from typing_extensions import TypeAlias
@@ -210,15 +214,13 @@ class AirflowInstanceComponent(StateBackedComponent, Resolvable):
     mappings: Optional[Sequence[AirflowDagMapping]] = None
     source_code_retrieval_enabled: Optional[bool] = None
     defs_state: ResolvedDefsStateConfig = field(
-        default_factory=DefsStateConfig.legacy_code_server_snapshots
+        default_factory=DefsStateConfigArgs.legacy_code_server_snapshots
     )
-
-    def get_defs_state_key(self) -> str:
-        return f"{self.__class__.__name__}[{self.name}]"
 
     @property
     def defs_state_config(self) -> DefsStateConfig:
-        return self.defs_state
+        default_key = f"{self.__class__.__name__}[{self.name}]"
+        return DefsStateConfig.from_args(self.defs_state, default_key=default_key)
 
     def _get_instance(self) -> dg_airlift_core.AirflowInstance:
         return dg_airlift_core.AirflowInstance(

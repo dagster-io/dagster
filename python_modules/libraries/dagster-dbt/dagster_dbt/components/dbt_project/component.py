@@ -212,6 +212,7 @@ class DbtProjectComponent(StateBackedComponent, dg.Resolvable):
     @property
     def defs_state_config(self) -> DefsStateConfig:
         return DefsStateConfig(
+            key=f"{self.__class__.__name__}[{self.project.name}]",
             type=DefsStateManagementType.LOCAL_FILESYSTEM,
             refresh_if_dev=self.prepare_if_dev,
         )

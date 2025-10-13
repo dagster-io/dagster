@@ -8,6 +8,7 @@ import sys
 import textwrap
 from pathlib import Path
 from typing import Callable
+from unittest.mock import patch
 
 import yaml
 from dagster_shared import check
@@ -314,10 +315,19 @@ def create_defs_folder_sandbox(
     """
     project_name = project_name or random_importable_name()
 
-    with tempfile.TemporaryDirectory() as project_root_str:
+    with (
+        tempfile.TemporaryDirectory() as project_root_str,
+        patch(
+            "dagster_shared.serdes.objects.models.defs_state_info._global_state_dir",
+        ) as mock_global_state_dir,
+    ):
         project_root = Path(project_root_str)
         defs_folder_path = project_root / "src" / project_name / "defs"
         defs_folder_path.mkdir(parents=True, exist_ok=True)
+
+        # make sure that local state is not persisted across test runs
+        mock_global_state_dir.return_value = project_root / ".mock_global_state"
+
         yield DefsFolderSandbox(
             project_root=project_root,
             defs_folder_path=defs_folder_path,

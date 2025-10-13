@@ -15,7 +15,11 @@ from dagster.components.resolved.base import resolve_fields
 from dagster.components.resolved.context import ResolutionContext
 from dagster.components.resolved.core_models import AssetSpecKeyUpdateKwargs, AssetSpecUpdateKwargs
 from dagster.components.utils import TranslatorResolvingInfo
-from dagster.components.utils.defs_state import DefsStateConfig, ResolvedDefsStateConfig
+from dagster.components.utils.defs_state import (
+    DefsStateConfig,
+    DefsStateConfigArgs,
+    ResolvedDefsStateConfig,
+)
 from dagster.components.utils.translation import (
     ComponentTranslator,
     TranslationFn,
@@ -183,15 +187,13 @@ class PowerBIWorkspaceComponent(StateBackedComponent, Resolvable):
     enable_semantic_model_refresh: Union[bool, list[str]] = False
     translation: Optional[ResolvedMultilayerTranslationFn] = None
     defs_state: ResolvedDefsStateConfig = field(
-        default_factory=DefsStateConfig.legacy_code_server_snapshots
+        default_factory=DefsStateConfigArgs.legacy_code_server_snapshots
     )
-
-    def get_defs_state_key(self) -> str:
-        return f"{self.__class__.__name__}[{self.workspace.workspace_id}]"
 
     @property
     def defs_state_config(self) -> DefsStateConfig:
-        return self.defs_state
+        default_key = f"{self.__class__.__name__}[{self.workspace.workspace_id}]"
+        return DefsStateConfig.from_args(self.defs_state, default_key=default_key)
 
     @cached_property
     def translator(self) -> DagsterPowerBITranslator:

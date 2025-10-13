@@ -10,7 +10,11 @@ from dagster._annotations import superseded
 from dagster._utils.names import clean_name
 from dagster.components.component.state_backed_component import StateBackedComponent
 from dagster.components.resolved.base import resolve_fields
-from dagster.components.utils.defs_state import DefsStateConfig, ResolvedDefsStateConfig
+from dagster.components.utils.defs_state import (
+    DefsStateConfig,
+    DefsStateConfigArgs,
+    ResolvedDefsStateConfig,
+)
 from dagster.components.utils.translation import (
     ComponentTranslator,
     TranslationFn,
@@ -201,14 +205,12 @@ class AirbyteWorkspaceComponent(StateBackedComponent, dg.Model, dg.Resolvable):
         default=None,
         description="Function used to translate Airbyte connection table properties into Dagster asset specs.",
     )
-    defs_state: ResolvedDefsStateConfig = DefsStateConfig.legacy_code_server_snapshots()
-
-    def get_defs_state_key(self) -> str:
-        return f"{self.__class__.__name__}[{self.workspace.workspace_id}]"
+    defs_state: ResolvedDefsStateConfig = DefsStateConfigArgs.legacy_code_server_snapshots()
 
     @property
     def defs_state_config(self) -> DefsStateConfig:
-        return self.defs_state
+        default_key = f"{self.__class__.__name__}[{self.workspace.workspace_id}]"
+        return DefsStateConfig.from_args(self.defs_state, default_key=default_key)
 
     @cached_property
     def translator(self) -> DagsterAirbyteTranslator:
