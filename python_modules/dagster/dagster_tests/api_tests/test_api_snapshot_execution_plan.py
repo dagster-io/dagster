@@ -10,7 +10,10 @@ from dagster._api.snapshot_execution_plan import (
 from dagster._core.definitions.selector import JobSubsetSelector
 from dagster._core.errors import DagsterUserCodeProcessError
 from dagster._core.instance import DagsterInstance
-from dagster._core.remote_representation.external import RemoteExecutionPlan
+from dagster._core.remote_representation.external import (
+    RemoteExecutionPlan,
+    RemoteExecutionPlanSelector,
+)
 from dagster._core.remote_representation.handle import JobHandle
 from dagster._core.snap.execution_plan_snapshot import ExecutionPlanSnapshot
 
@@ -89,10 +92,13 @@ async def test_execution_plan_loader(instance: DagsterInstance):
             await RemoteExecutionPlan.gen_many(
                 workspace,
                 [
-                    foo_selector,
-                    foo_selector,
-                    foo_selector_with_subset,
-                    bar_selector,
+                    RemoteExecutionPlanSelector(job_selector=job_selector, run_config={})
+                    for job_selector in [
+                        foo_selector,
+                        foo_selector,
+                        foo_selector_with_subset,
+                        bar_selector,
+                    ]
                 ],
             )
         )
