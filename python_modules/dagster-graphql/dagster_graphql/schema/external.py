@@ -16,7 +16,10 @@ from dagster._core.remote_representation.handle import RepositoryHandle
 from dagster._core.workspace.context import WorkspaceProcessContext
 from dagster._core.workspace.workspace import CodeLocationEntry, CodeLocationLoadStatus
 from dagster.components.core.load_defs import PLUGIN_COMPONENT_TYPES_JSON_METADATA_KEY
-from dagster_shared.serdes.objects.models.defs_state_info import DefsStateInfo
+from dagster_shared.serdes.objects.models.defs_state_info import (
+    DefsStateInfo,
+    DefsStateManagementType,
+)
 
 from dagster_graphql.implementation.fetch_solids import get_solid, get_solids
 from dagster_graphql.implementation.loader import RepositoryScopedBatchLoader
@@ -555,9 +558,13 @@ class GrapheneWorkspaceLocationEntryOrError(graphene.Union):
         name = "WorkspaceLocationEntryOrError"
 
 
+GrapheneDefsStateManagementType = graphene.Enum.from_enum(DefsStateManagementType)
+
+
 class GrapheneDefsKeyStateInfo(graphene.ObjectType):
     version = graphene.NonNull(graphene.String)
     createTimestamp = graphene.NonNull(graphene.Float)
+    managementType = graphene.NonNull(GrapheneDefsStateManagementType)
 
     class Meta:
         name = "DefsKeyStateInfo"
@@ -582,7 +589,11 @@ class GrapheneDefsStateInfo(graphene.ObjectType):
             keyStateInfo=[
                 GrapheneDefsKeyStateInfoEntry(
                     key,
-                    GrapheneDefsKeyStateInfo(info.version, info.create_timestamp) if info else None,
+                    GrapheneDefsKeyStateInfo(
+                        info.version, info.create_timestamp, info.management_type
+                    )
+                    if info
+                    else None,
                 )
                 for key, info in defs_state_info.info_mapping.items()
             ]
@@ -602,4 +613,5 @@ types = [
     GrapheneDefsStateInfo,
     GrapheneDefsKeyStateInfo,
     GrapheneDefsKeyStateInfoEntry,
+    GrapheneDefsStateManagementType,
 ]
