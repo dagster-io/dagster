@@ -6,7 +6,7 @@ last_update:
 sidebar_position: 20
 ---
 
-[NYT Connections](https://www.nytimes.com/games/connections) is a word puzzle where players find four groups of four related words from a 16-word grid. Each group has a difficulty level: **Yellow** (easiest), **Green**, **Blue**, and **Purple** (hardest). Our DsPy solver needs structured data to learn effective puzzle-solving strategies.
+[NYT Connections](https://www.nytimes.com/games/connections) is a word puzzle where players find four groups of four related words from a 16-word grid. Each group has a difficulty level: **Yellow** (easiest), **Green**, **Blue**, and **Purple** (hardest). Our DSPy solver needs structured data to learn effective puzzle-solving strategies.
 
 ## Data structure and loading
 

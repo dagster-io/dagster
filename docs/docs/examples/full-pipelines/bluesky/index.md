@@ -10,8 +10,6 @@ canonicalUrl: '/examples/full-pipelines/bluesky'
 slug: '/examples/full-pipelines/bluesky'
 ---
 
-# Analyzing Bluesky data
-
 :::note
 
 To see [video of this example](https://www.youtube.com/watch?v=z3trqkKPbsI)

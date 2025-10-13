@@ -10,8 +10,6 @@ canonicalUrl: '/examples/full-pipelines/llm-fine-tuning'
 slug: '/examples/full-pipelines/llm-fine-tuning'
 ---
 
-# Fine-tune an LLM
-
 :::note
 
 To see [video of this example](https://www.youtube.com/watch?v=x-1R2z0eEdg)

@@ -10,15 +10,23 @@ canonicalUrl: '/examples/full-pipelines/dbt'
 slug: '/examples/full-pipelines/dbt'
 ---
 
-In this example, you'll build a pipeline with Dagster that integrates with dbt, including incremental models and tests.
+In this example, you'll build a pipeline with Dagster that:
 
-## Prerequisites
+- Initializes a Dagster dbt project with components
+- Builds dbt tests
+- Models incrementals models
+- Connects upstream and downstream assets across the project
+
+<details>
+  <summary>Prerequisites</summary>
 
 To follow the steps in this guide, you'll need:
 
 - Basic Python knowledge
 - Python 3.9+ installed on your system. Refer to the [Installation guide](/getting-started/installation) for information.
 - Familiar with [dbt](https://www.getdbt.com) and data transformation.
+
+</details>
 
 ## 1. Set up your Dagster environment
 
