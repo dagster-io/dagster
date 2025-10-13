@@ -27,7 +27,7 @@ from dagster._utils import ensure_file
 from dagster._utils.error import serializable_error_info_from_exc_info
 
 SUBSCRIPTION_POLLING_INTERVAL = 5
-DEFAULT_TRUNCATE_COMPUTE_LOGS_UPLOAD_BYTES = str(50 * 1024 * 1024)  # 50MB
+DEFAULT_TRUNCATE_COMPUTE_LOGS_UPLOAD_BYTES = str(500 * 1024 * 1024)  # 500MB
 logger = logging.getLogger("dagster.compute_log_manager")
 
 
