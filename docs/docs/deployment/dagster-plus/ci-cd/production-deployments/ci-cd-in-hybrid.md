@@ -5,6 +5,8 @@ sidebar_position: 7220
 tags: [dagster-plus-feature]
 ---
 
+import UpdateGitHubActionVersion from '@site/docs/partials/_UpdateGitHubActionVersion.md';
+
 :::note
 
 This guide only applies to [Dagster+ Hybrid deployments](/deployment/dagster-plus/hybrid). For Serverless guidance, see [CI/CD in Serverless](/deployment/dagster-plus/ci-cd/production-deployments/ci-cd-in-serverless).
@@ -40,6 +42,8 @@ To configure the workflow:
 After you make the above changes and commit the workflow file, the CI process should be triggered to deploy your GitHub repository to Dagster+.
 
 During the deployment, the agent will attempt to load your code and update the metadata in Dagster+. When that has finished, you should see the GitHub Action complete successfully, and also be able to see the code location under the **Deployment** tag in Dagster+.
+
+<UpdateGitHubActionVersion />
 
 ## Non-GitHub CI/CD provider \{#non-github}
 

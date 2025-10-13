@@ -1,6 +1,14 @@
 import dagster as dg
 import pytest
 from dagster import AssetKey
+from dagster._core.definitions.asset_key import key_prefix_from_coercible
+
+
+def test_key_prefix_from_coercible():
+    assert key_prefix_from_coercible("foo") == ["foo"]
+    assert key_prefix_from_coercible(["foo"]) == ["foo"]
+    assert key_prefix_from_coercible(("foo",)) == ("foo",)
+
 
 # While it's not trivial to achieve, slashes can ponentially sneak into asset keys
 # inside definitions. These tests pin the current behavior around getting forward
