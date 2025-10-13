@@ -7,16 +7,25 @@ from typing import Literal, Optional
 
 import dagster as dg
 import pytest
+from dagster._core.definitions.definitions_load_context import (
+    DefinitionsLoadContext,
+    DefinitionsLoadType,
+)
+from dagster._core.definitions.repository_definition.repository_definition import RepositoryLoadData
 from dagster._core.instance_for_test import instance_for_test
+from dagster._utils.test.definitions import scoped_definitions_load_context
 from dagster.components.component.state_backed_component import StateBackedComponent
 from dagster.components.core.component_tree import ComponentTreeException
 from dagster.components.testing.utils import create_defs_folder_sandbox
-from dagster_shared.serdes.objects.models.defs_state_info import DefsStateStorageLocation
+from dagster_shared.serdes.objects.models.defs_state_info import (
+    DefsStateStorageLocation,
+    get_code_server_metadata_key,
+)
 
 
 class MyStateBackedComponent(StateBackedComponent, dg.Model, dg.Resolvable):
     defs_state_key: Optional[str] = None
-    storage_location: Literal["LOCAL", "REMOTE"] = "REMOTE"
+    storage_location: Literal["LOCAL", "REMOTE", "LEGACY_CODE_SERVER_SNAPSHOTS"] = "REMOTE"
 
     @property
     def _state_storage_location(self) -> DefsStateStorageLocation:
@@ -67,7 +76,11 @@ class MyStateBackedComponent(StateBackedComponent, dg.Model, dg.Resolvable):
 
 
 @pytest.mark.parametrize(
-    "storage_location", [DefsStateStorageLocation.LOCAL, DefsStateStorageLocation.REMOTE]
+    "storage_location",
+    [
+        DefsStateStorageLocation.LOCAL,
+        DefsStateStorageLocation.REMOTE,
+    ],
 )
 def test_simple_state_backed_component(storage_location: DefsStateStorageLocation) -> None:
     with instance_for_test() as instance, create_defs_folder_sandbox() as sandbox:
@@ -113,6 +126,58 @@ def test_simple_state_backed_component(storage_location: DefsStateStorageLocatio
             spec = specs[0]
             new_metadata_value = spec.metadata["state_value"]
             assert new_metadata_value != original_metadata_value
+
+
+def test_code_server_state_backed_component() -> None:
+    with (
+        instance_for_test(),
+        create_defs_folder_sandbox() as sandbox,
+    ):
+        component_path = sandbox.scaffold_component(
+            component_cls=MyStateBackedComponent,
+            defs_yaml_contents={
+                "type": "dagster_tests.components_tests.state_backed_component_tests.test_state_backed_component.MyStateBackedComponent",
+                "attributes": {"storage_location": "LEGACY_CODE_SERVER_SNAPSHOTS"},
+            },
+            defs_path="foo",
+        )
+
+        with scoped_definitions_load_context(
+            load_type=DefinitionsLoadType.INITIALIZATION,
+        ):
+            with sandbox.load_component_and_build_defs(defs_path=component_path) as (_, defs):
+                specs = defs.get_all_asset_specs()
+                spec = specs[0]
+                original_metadata_value = spec.metadata["state_value"]
+                # should automatically load
+                assert original_metadata_value != "initial"
+
+                repo = defs.get_repository_def()
+                assert repo.repository_load_data is not None
+
+            load_context = DefinitionsLoadContext.get()
+            assert load_context.load_type == DefinitionsLoadType.INITIALIZATION
+            pending_metadata = load_context.get_pending_reconstruction_metadata()
+            key = get_code_server_metadata_key("MyStateBackedComponent")
+            assert pending_metadata.keys() == {"defs-state-[MyStateBackedComponent]"}
+            # last bit is random
+            assert '{"value": "bar_' in pending_metadata[key]
+            assert load_context.defs_state_info is not None
+
+        # now simulate the reconstruction process
+        with scoped_definitions_load_context(
+            load_type=DefinitionsLoadType.RECONSTRUCTION,
+            repository_load_data=RepositoryLoadData(
+                cacheable_asset_data={},
+                reconstruction_metadata=pending_metadata,
+                defs_state_info=load_context.defs_state_info,
+            ),
+        ):
+            with sandbox.load_component_and_build_defs(defs_path=component_path) as (_, defs):
+                specs = defs.get_all_asset_specs()
+                spec = specs[0]
+                assert spec.metadata["state_value"] == original_metadata_value
+                assert "bar_" in spec.metadata["state_value"]
 
 
 def test_multiple_components() -> None:

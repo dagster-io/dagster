@@ -10,6 +10,7 @@ from dagster_shared.dagster_model import DagsterModel
 from dagster_shared.serdes import whitelist_for_serdes
 
 LOCAL_STATE_VERSION = "__local__"
+CODE_SERVER_STATE_VERSION = "__code_server__"
 
 
 def _global_state_dir() -> Path:
@@ -26,9 +27,17 @@ def get_local_state_path(key: str) -> Path:
     return get_local_state_dir(key) / "state"
 
 
+def get_code_server_metadata_key(key: str) -> str:
+    """Returns a key for storing defs state in the code server reconstruction metadata. Avoids using the
+    original key directly to avoid potential collisions.
+    """
+    return f"defs-state-[{key}]"
+
+
 class DefsStateStorageLocation(Enum):
     LOCAL = "LOCAL"
     REMOTE = "REMOTE"
+    LEGACY_CODE_SERVER_SNAPSHOTS = "LEGACY_CODE_SERVER_SNAPSHOTS"
 
 
 @whitelist_for_serdes
@@ -46,6 +55,8 @@ class DefsKeyStateInfo(DagsterModel):
     def storage_location(self) -> DefsStateStorageLocation:
         if self.version == LOCAL_STATE_VERSION:
             return DefsStateStorageLocation.LOCAL
+        elif self.version == CODE_SERVER_STATE_VERSION:
+            return DefsStateStorageLocation.LEGACY_CODE_SERVER_SNAPSHOTS
         else:
             return DefsStateStorageLocation.REMOTE
 
