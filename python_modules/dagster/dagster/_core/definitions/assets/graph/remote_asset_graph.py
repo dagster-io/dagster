@@ -463,18 +463,27 @@ class RemoteAssetGraph(BaseAssetGraph[TRemoteAssetNode], ABC, Generic[TRemoteAss
         self,
     ) -> Mapping[AssetCheckKey, RemoteAssetCheckNode]: ...
 
+    # TODO this should just be what is returned from get()
+    def get_remote_asset_check_node(self, key: AssetCheckKey) -> RemoteAssetCheckNode:
+        return self.remote_asset_check_nodes_by_key[key]
+
+    def _get_asset_check_node_from_remote_asset_check_node(
+        self, remote_node: RemoteAssetCheckNode
+    ) -> AssetCheckNode:
+        return AssetCheckNode(
+            remote_node.asset_check.key,
+            remote_node.asset_check.additional_asset_keys,
+            remote_node.asset_check.blocking,
+            remote_node.asset_check.description,
+            remote_node.asset_check.automation_condition,
+            {},  # metadata not yet on AssetCheckNodeSnap
+        )
+
     ##### COMMON ASSET GRAPH INTERFACE
     @cached_property
     def _asset_check_nodes_by_key(self) -> Mapping[AssetCheckKey, AssetCheckNode]:  # pyright: ignore[reportIncompatibleVariableOverride]
         return {
-            k: AssetCheckNode(
-                k,
-                v.asset_check.additional_asset_keys,
-                v.asset_check.blocking,
-                v.asset_check.description,
-                v.asset_check.automation_condition,
-                {},  # metadata not yet on AssetCheckNodeSnap
-            )
+            k: self._get_asset_check_node_from_remote_asset_check_node(v)
             for k, v in self.remote_asset_check_nodes_by_key.items()
         }
 
@@ -484,7 +493,7 @@ class RemoteAssetGraph(BaseAssetGraph[TRemoteAssetNode], ABC, Generic[TRemoteAss
         if isinstance(entity_key, AssetKey):
             return self.get(entity_key).execution_set_entity_keys
         else:  # AssetCheckKey
-            return self.remote_asset_check_nodes_by_key[entity_key].execution_set_entity_keys
+            return self.get_remote_asset_check_node(entity_key).execution_set_entity_keys
 
     ##### REMOTE-SPECIFIC METHODS
 
@@ -684,7 +693,7 @@ class RemoteWorkspaceAssetGraph(RemoteAssetGraph[RemoteWorkspaceAssetNode]):
         if isinstance(key, AssetKey):
             return self.get(key).resolve_to_singular_repo_scoped_node().repository_handle
         else:
-            return self.remote_asset_check_nodes_by_key[key].handle
+            return self.get_remote_asset_check_node(key).handle
 
     def get_repo_scoped_node(
         self, key: EntityKey, repository_selector: "RepositorySelector"
