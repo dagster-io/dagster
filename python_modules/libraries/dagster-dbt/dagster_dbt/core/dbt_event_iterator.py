@@ -1,8 +1,5 @@
-import contextlib
-import os
 from collections.abc import Iterator
 from concurrent.futures import ThreadPoolExecutor
-from pathlib import Path
 from typing import TYPE_CHECKING, Any, Callable, Optional, Union, cast
 
 from dagster import (
@@ -18,6 +15,7 @@ from dagster._core.definitions.asset_checks.asset_check_evaluation import AssetC
 from dagster._core.definitions.metadata import TableMetadataSet, TextMetadataValue
 from dagster._core.errors import DagsterInvalidPropertyError
 from dagster._core.utils import exhaust_iterator_and_yield_results_with_exception, imap
+from dagster._utils import pushd
 from typing_extensions import TypeVar
 
 from dagster_dbt.asset_utils import default_metadata_from_dbt_resource_props
@@ -33,17 +31,6 @@ logger = get_dagster_logger()
 DbtDagsterEventType = Union[
     Output, AssetMaterialization, AssetCheckResult, AssetObservation, AssetCheckEvaluation
 ]
-
-
-@contextlib.contextmanager
-def _change_working_directory(path: Path):
-    """Context manager to temporarily change the working directory."""
-    original_cwd = os.getcwd()
-    try:
-        os.chdir(path)
-        yield
-    finally:
-        os.chdir(original_cwd)
 
 
 # We define DbtEventIterator as a generic type for the sake of type hinting.
@@ -79,7 +66,7 @@ def _fetch_column_metadata(
     dbt_resource_props = _get_dbt_resource_props_from_event(invocation, event)
 
     with (
-        _change_working_directory(invocation.project_dir),
+        pushd(str(invocation.project_dir)),
         adapter.connection_named(f"column_metadata_{dbt_resource_props['unique_id']}"),
     ):
         try:
@@ -184,7 +171,7 @@ def _fetch_row_count_metadata(
 
     try:
         with (
-            _change_working_directory(invocation.project_dir),
+            pushd(str(invocation.project_dir)),
             adapter.connection_named(f"row_count_{unique_id}"),
         ):
             query_result = adapter.execute(
@@ -288,11 +275,12 @@ class DbtEventIterator(Iterator[T]):
         """
 
         def _map_fn(event: DbtDagsterEventType) -> DbtDagsterEventType:
-            result = fn(self._dbt_cli_invocation, event)
-            if result is None:
-                return event
+            with pushd(str(self._dbt_cli_invocation.project_dir)):
+                result = fn(self._dbt_cli_invocation, event)
+                if result is None:
+                    return event
 
-            return event.with_metadata({**event.metadata, **result})
+                return event.with_metadata({**event.metadata, **result})
 
         # If the adapter is DuckDB, we need to wait for the dbt CLI process to complete
         # so that the DuckDB lock is released. This is because DuckDB does not allow for
