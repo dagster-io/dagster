@@ -74,7 +74,6 @@ def external_script() -> Iterator[str]:
         import os  # noqa
         import time
 
-        import boto3
         from dagster_pipes import PipesS3ContextLoader, PipesS3MessageWriter, open_dagster_pipes
 
         # this url has to be hardcoded because it's an external script
