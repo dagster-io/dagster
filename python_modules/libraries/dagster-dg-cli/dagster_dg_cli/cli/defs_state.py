@@ -124,15 +124,23 @@ def get_updated_defs_state_info_task_and_statuses(
         component_tree = ComponentTree.for_project(project_path)
         components_to_refresh = _get_components_to_refresh(component_tree, defs_state_keys)
 
+    # in some cases, multiple components may share the same defs state key. in these cases, it is assumed that
+    # the refresh_state method for each component of the same key will be identical, so we choose an arbitrary one
+    deduplicated_components: dict[str, StateBackedComponent] = {}
+    for component in components_to_refresh:
+        key = component.defs_state_config.key
+        if key not in deduplicated_components:
+            deduplicated_components[key] = component
+
     # shared dictionary to be used for all subtasks
     statuses = {
-        component.defs_state_config.key: ComponentStateRefreshStatus(
-            status="refreshing", start_time=time.time()
-        )
-        for component in components_to_refresh
+        key: ComponentStateRefreshStatus(status="refreshing", start_time=time.time())
+        for key in deduplicated_components.keys()
     }
     refresh_task = asyncio.create_task(
-        _refresh_state_for_components(defs_state_storage, components_to_refresh, statuses)
+        _refresh_state_for_components(
+            defs_state_storage, list(deduplicated_components.values()), statuses
+        )
     )
     return refresh_task, statuses
 
