@@ -16,7 +16,11 @@ from dagster._utils.test.definitions import scoped_definitions_load_context
 from dagster.components.component.state_backed_component import StateBackedComponent
 from dagster.components.core.component_tree import ComponentTreeException
 from dagster.components.testing.utils import create_defs_folder_sandbox
-from dagster.components.utils.defs_state import DefsStateConfig, ResolvedDefsStateConfig
+from dagster.components.utils.defs_state import (
+    DefsStateConfig,
+    DefsStateConfigArgs,
+    ResolvedDefsStateConfig,
+)
 from dagster_shared.serdes.objects.models.defs_state_info import (
     CODE_SERVER_STATE_VERSION,
     LOCAL_STATE_VERSION,
@@ -27,14 +31,14 @@ from dagster_shared.serdes.objects.models.defs_state_info import (
 
 class MyStateBackedComponent(StateBackedComponent, dg.Model, dg.Resolvable):
     defs_state_key: Optional[str] = None
-    defs_state: ResolvedDefsStateConfig = DefsStateConfig.versioned_state_storage()
+    defs_state: ResolvedDefsStateConfig = DefsStateConfigArgs.versioned_state_storage()
 
     @property
     def defs_state_config(self) -> DefsStateConfig:
-        return self.defs_state
-
-    def get_defs_state_key(self) -> str:
-        return self.defs_state_key or super().get_defs_state_key()
+        default_key = self.__class__.__name__
+        if self.defs_state_key is not None:
+            default_key = f"{default_key}[{self.defs_state_key}]"
+        return DefsStateConfig.from_args(self.defs_state, default_key=default_key)
 
     def build_defs_from_state(
         self, context: dg.ComponentLoadContext, state_path: Optional[Path]
@@ -84,13 +88,25 @@ class MyStateBackedComponent(StateBackedComponent, dg.Model, dg.Resolvable):
         DefsStateManagementType.VERSIONED_STATE_STORAGE,
     ],
 )
-def test_simple_state_backed_component(storage_location: DefsStateManagementType) -> None:
+@pytest.mark.parametrize(
+    "key",
+    [
+        None,
+        "CustomDefsStateKey",
+    ],
+)
+def test_simple_state_backed_component(
+    storage_location: DefsStateManagementType, key: Optional[str]
+) -> None:
+    expected_key = key or "MyStateBackedComponent"
     with instance_for_test() as instance, create_defs_folder_sandbox() as sandbox:
         component_path = sandbox.scaffold_component(
             component_cls=MyStateBackedComponent,
             defs_yaml_contents={
                 "type": "dagster_tests.components_tests.state_backed_component_tests.test_state_backed_component.MyStateBackedComponent",
-                "attributes": {"defs_state": {"type": storage_location.value}},
+                "attributes": {
+                    "defs_state": {"type": storage_location.value, **({"key": key} if key else {})}
+                },
             },
             defs_path="foo",
         )
@@ -123,12 +139,8 @@ def test_simple_state_backed_component(storage_location: DefsStateManagementType
 
             # should register that the key was accessed (but has no version)
             assert load_context.accessed_defs_state_info
-            assert load_context.accessed_defs_state_info.info_mapping.keys() == {
-                "MyStateBackedComponent"
-            }
-            assert (
-                load_context.accessed_defs_state_info.get_version("MyStateBackedComponent") is None
-            )
+            assert load_context.accessed_defs_state_info.info_mapping.keys() == {expected_key}
+            assert load_context.accessed_defs_state_info.get_version(expected_key) is None
 
         # reload the definitions, state should be the same
         with (
@@ -146,12 +158,8 @@ def test_simple_state_backed_component(storage_location: DefsStateManagementType
 
             # same as above
             assert load_context.accessed_defs_state_info
-            assert load_context.accessed_defs_state_info.info_mapping.keys() == {
-                "MyStateBackedComponent"
-            }
-            assert (
-                load_context.accessed_defs_state_info.get_version("MyStateBackedComponent") is None
-            )
+            assert load_context.accessed_defs_state_info.info_mapping.keys() == {expected_key}
+            assert load_context.accessed_defs_state_info.get_version(expected_key) is None
 
         # now we reload the definitions, state should be updated to something random
         with (
@@ -165,13 +173,8 @@ def test_simple_state_backed_component(storage_location: DefsStateManagementType
 
             # should have version information available
             assert load_context.accessed_defs_state_info
-            assert load_context.accessed_defs_state_info.info_mapping.keys() == {
-                "MyStateBackedComponent"
-            }
-            assert (
-                load_context.accessed_defs_state_info.get_version("MyStateBackedComponent")
-                is not None
-            )
+            assert load_context.accessed_defs_state_info.info_mapping.keys() == {expected_key}
+            assert load_context.accessed_defs_state_info.get_version(expected_key) is not None
 
 
 def test_code_server_state_backed_component() -> None:
@@ -304,3 +307,92 @@ def test_multiple_components() -> None:
 
         with sandbox.build_all_defs() as defs:
             assert len(defs.get_all_asset_specs()) == 2
+
+
+def test_state_backed_component_migration_from_versioned_to_local_storage() -> None:
+    """Test migrating a component from versioned state storage to local storage.
+
+    This test demonstrates:
+    1. Start with versioned storage, no state available (initial value)
+    2. Run update state job to populate versioned storage
+    3. Reload with versioned storage, should have updated value
+    4. Switch to local storage, should reset to initial value
+    5. Load with DAGSTER_IS_DEV_CLI set, should force local refresh
+    """
+    with instance_for_test() as instance, create_defs_folder_sandbox() as sandbox:
+        # Step 1: Start with versioned storage, no state available
+        component_path = sandbox.scaffold_component(
+            component_cls=MyStateBackedComponent,
+            defs_yaml_contents={
+                "type": "dagster_tests.components_tests.state_backed_component_tests.test_state_backed_component.MyStateBackedComponent",
+                "attributes": {
+                    "defs_state": {
+                        "type": DefsStateManagementType.VERSIONED_STATE_STORAGE.value,
+                    }
+                },
+            },
+            defs_path="migration_test",
+        )
+
+        # Initial load with versioned storage - should be "initial"
+        with (
+            scoped_definitions_load_context(),
+            sandbox.load_component_and_build_defs(defs_path=component_path) as (_, defs),
+        ):
+            specs = defs.get_all_asset_specs()
+            spec = specs[0]
+            initial_metadata_value = spec.metadata["state_value"]
+            assert initial_metadata_value == "initial"
+
+            # Step 2: Run the update state job to populate versioned storage
+            refresh_job = defs.get_job_def("state_refresh_job_migration_test")
+            refresh_job.execute_in_process(instance=instance)
+
+        # Step 3: Reload with versioned storage - should have updated value
+        with (
+            scoped_definitions_load_context(),
+            sandbox.load_component_and_build_defs(defs_path=component_path) as (_, defs),
+        ):
+            specs = defs.get_all_asset_specs()
+            spec = specs[0]
+            versioned_metadata_value = spec.metadata["state_value"]
+            assert versioned_metadata_value != "initial"
+            assert versioned_metadata_value != initial_metadata_value
+
+        # Step 4: Switch to local storage - should reset to initial value
+        sandbox.scaffold_component(
+            component_cls=MyStateBackedComponent,
+            defs_yaml_contents={
+                "type": "dagster_tests.components_tests.state_backed_component_tests.test_state_backed_component.MyStateBackedComponent",
+                "attributes": {
+                    "defs_state": {
+                        "type": DefsStateManagementType.LOCAL_FILESYSTEM.value,
+                    }
+                },
+            },
+            defs_path="migration_test",
+        )
+
+        # Load with local storage - should be back to "initial"
+        with (
+            scoped_definitions_load_context(),
+            sandbox.load_component_and_build_defs(defs_path=component_path) as (_, defs),
+        ):
+            specs = defs.get_all_asset_specs()
+            spec = specs[0]
+            local_metadata_value = spec.metadata["state_value"]
+            assert local_metadata_value == "initial"
+
+        # Step 5: Load with DAGSTER_IS_DEV_CLI set - should force local refresh
+        with (
+            environ({"DAGSTER_IS_DEV_CLI": "1"}),
+            scoped_definitions_load_context(),
+            sandbox.load_component_and_build_defs(defs_path=component_path) as (_, defs),
+        ):
+            specs = defs.get_all_asset_specs()
+            spec = specs[0]
+            dev_metadata_value = spec.metadata["state_value"]
+            # Should have a non-initial value due to forced refresh in dev mode
+            assert dev_metadata_value != "initial"
+            # Should be different from the versioned value since it's a new random value
+            assert dev_metadata_value != versioned_metadata_value

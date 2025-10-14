@@ -39,7 +39,7 @@ class StateBackedComponent(Component):
         """Loads the component and marks its defs_state_key on the component tree."""
         loaded_component = super().load(attributes, context)
         context.component_tree.mark_component_defs_state_key(
-            defs_state_key=loaded_component.get_defs_state_key(),
+            defs_state_key=loaded_component.defs_state_config.key,
             component_path=context.component_path,
         )
         return loaded_component
@@ -47,10 +47,6 @@ class StateBackedComponent(Component):
     @property
     @abstractmethod
     def defs_state_config(self) -> DefsStateConfig: ...
-
-    def get_defs_state_key(self) -> str:
-        """Returns a key that uniquely identifies the state for this component."""
-        return self.__class__.__name__
 
     async def _write_state_to_path_async(self, state_path: Path) -> None:
         if inspect.iscoroutinefunction(self.write_state_to_path):
@@ -90,7 +86,7 @@ class StateBackedComponent(Component):
 
     async def refresh_state(self) -> str:
         """Rebuilds the state for this component and persists it to the current StateStore."""
-        key = self.get_defs_state_key()
+        key = self.defs_state_config.key
         state_storage = DefsStateStorage.get()
         if state_storage is None:
             raise DagsterInvalidInvocationError(
@@ -114,7 +110,7 @@ class StateBackedComponent(Component):
             )
 
     def build_defs(self, context: ComponentLoadContext) -> Definitions:
-        key = self.get_defs_state_key()
+        key = self.defs_state_config.key
         defs_load_context = DefinitionsLoadContext.get()
         state_storage = DefsStateStorage.get()
         if state_storage is None:
@@ -137,7 +133,9 @@ class StateBackedComponent(Component):
                 version = asyncio.run(self.refresh_state())
                 defs_load_context.add_defs_state_info(key, version)
 
-        with DefinitionsLoadContext.get().state_path(key, state_storage) as state_path:
+        with DefinitionsLoadContext.get().state_path(
+            self.defs_state_config, state_storage
+        ) as state_path:
             return self.build_defs_from_state(context, state_path=state_path)
 
     @abstractmethod

@@ -7,9 +7,9 @@ from functools import cached_property
 from pathlib import Path
 from typing import TYPE_CHECKING, Any, ClassVar, Generic, Optional, TypeVar, cast
 
-from dagster_shared import check
 from dagster_shared.serdes.objects.models.defs_state_info import (
     CODE_SERVER_STATE_VERSION,
+    LOCAL_STATE_VERSION,
     DefsKeyStateInfo,
     DefsStateInfo,
     DefsStateManagementType,
@@ -27,6 +27,7 @@ from dagster._core.definitions.metadata.metadata_value import (
 )
 from dagster._core.errors import DagsterInvariantViolationError
 from dagster._core.storage.defs_state.base import DefsStateStorage
+from dagster.components.utils.defs_state import DefsStateConfig
 
 if TYPE_CHECKING:
     from dagster._core.definitions.repository_definition import RepositoryLoadData
@@ -182,34 +183,44 @@ class DefinitionsLoadContext:
         else:
             return self._pending_reconstruction_metadata[metadata_key]
 
-    def add_defs_state_info(self, key: str, version: str) -> None:
+    def add_defs_state_info(
+        self, key: str, version: str, create_timestamp: Optional[float] = None
+    ) -> None:
         self._mark_defs_key_accessed(key)
-        self._defs_state_info = DefsStateInfo.add_version(self._defs_state_info, key, version)
+        self._defs_state_info = DefsStateInfo.add_version(
+            self._defs_state_info, key, version, create_timestamp
+        )
 
     @contextmanager
-    def state_path(self, key: str, state_storage: DefsStateStorage) -> Iterator[Optional[Path]]:
+    def state_path(
+        self, config: DefsStateConfig, state_storage: DefsStateStorage
+    ) -> Iterator[Optional[Path]]:
         """Context manager that creates a temporary path to hold local state for a component."""
         # if no state has ever been written for this key, we return None to indicate that no state is available
+        key = config.key
         key_info = self._get_defs_key_state_info(key)
-        if key_info is None:
-            yield None
-            return
-        elif key_info.management_type == DefsStateManagementType.LOCAL_FILESYSTEM:
-            # state is stored locally in the .state directory
+
+        if config.type == DefsStateManagementType.LOCAL_FILESYSTEM:
+            # it is possible for local state to exist without the defs_state_storage being aware
+            # of it if the state was added during docker build
             state_path = get_local_state_path(key)
-            check.invariant(
-                state_path.exists(),
-                f"Local state path for key `{key}` does not exist. This may happen if `DefsStateStorageType.LOCAL` "
-                "is being used in an environment with ephemeral local storage.",
-            )
+            if not state_path.exists():
+                yield None
+                return
+            self.add_defs_state_info(key, LOCAL_STATE_VERSION, state_path.stat().st_ctime)
             yield state_path
-        elif key_info.management_type == DefsStateManagementType.VERSIONED_STATE_STORAGE:
-            # state is stored in the remote state storage
+        elif config.type == DefsStateManagementType.VERSIONED_STATE_STORAGE:
+            key_info = self._get_defs_key_state_info(key)
+            # this implies that no state has been stored since the management type was changed
+            if key_info is None or key_info.management_type != config.type:
+                yield None
+                return
+            # grab state for storage
             with tempfile.TemporaryDirectory() as temp_dir:
                 state_path = Path(temp_dir) / key
                 state_storage.download_state_to_path(key, key_info.version, state_path)
                 yield state_path
-        elif key_info.management_type == DefsStateManagementType.LEGACY_CODE_SERVER_SNAPSHOTS:
+        elif config.type == DefsStateManagementType.LEGACY_CODE_SERVER_SNAPSHOTS:
             # state is stored in the reconstruction metadata
             with tempfile.TemporaryDirectory() as temp_dir:
                 state_path = Path(temp_dir) / key
@@ -217,9 +228,7 @@ class DefinitionsLoadContext:
                 state_path.write_text(state)
                 yield state_path
         else:
-            raise DagsterInvariantViolationError(
-                f"Invalid state storage location: {key_info.management_type}"
-            )
+            raise DagsterInvariantViolationError(f"Invalid management type: {config.type}")
 
 
 TState = TypeVar("TState", bound=PackableValue)

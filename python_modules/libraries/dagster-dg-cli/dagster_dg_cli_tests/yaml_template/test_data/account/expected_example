@@ -38,5 +38,6 @@ attributes:
     key_prefix:
       - "example_string"
   defs_state:
+    key: "example_string"
     type: "example_string"
     refresh_if_dev: true

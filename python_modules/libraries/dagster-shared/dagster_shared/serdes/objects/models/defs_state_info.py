@@ -73,10 +73,15 @@ class DefsStateInfo(DagsterModel):
 
     @staticmethod
     def add_version(
-        current_info: Optional["DefsStateInfo"], key: str, version: Optional[str]
+        current_info: Optional["DefsStateInfo"],
+        key: str,
+        version: Optional[str],
+        create_timestamp: Optional[float] = None,
     ) -> "DefsStateInfo":
         new_info = (
-            DefsKeyStateInfo(version=version, create_timestamp=time.time()) if version else None
+            DefsKeyStateInfo(version=version, create_timestamp=create_timestamp or time.time())
+            if version
+            else None
         )
         if current_info is None:
             return DefsStateInfo(info_mapping={key: new_info})
