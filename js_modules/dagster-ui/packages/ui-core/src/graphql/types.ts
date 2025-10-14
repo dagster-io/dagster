@@ -1284,6 +1284,7 @@ export type DefinitionTag = {
 export type DefsKeyStateInfo = {
   __typename: 'DefsKeyStateInfo';
   createTimestamp: Scalars['Float']['output'];
+  managementType: DefsStateManagementType;
   version: Scalars['String']['output'];
 };
 
@@ -1297,6 +1298,12 @@ export type DefsStateInfoEntry = {
   info: Maybe<DefsKeyStateInfo>;
   name: Scalars['String']['output'];
 };
+
+export enum DefsStateManagementType {
+  LEGACY_CODE_SERVER_SNAPSHOTS = 'LEGACY_CODE_SERVER_SNAPSHOTS',
+  LOCAL_FILESYSTEM = 'LOCAL_FILESYSTEM',
+  VERSIONED_STATE_STORAGE = 'VERSIONED_STATE_STORAGE',
+}
 
 export type DeleteDynamicPartitionsResult =
   | DeleteDynamicPartitionsSuccess
@@ -8379,6 +8386,10 @@ export const buildDefsKeyStateInfo = (
     __typename: 'DefsKeyStateInfo',
     createTimestamp:
       overrides && overrides.hasOwnProperty('createTimestamp') ? overrides.createTimestamp! : 2.02,
+    managementType:
+      overrides && overrides.hasOwnProperty('managementType')
+        ? overrides.managementType!
+        : DefsStateManagementType.LEGACY_CODE_SERVER_SNAPSHOTS,
     version: overrides && overrides.hasOwnProperty('version') ? overrides.version! : 'dolores',
   };
 };

@@ -2539,11 +2539,18 @@ type DefsStateInfo {
 type DefsKeyStateInfo {
   version: String!
   createTimestamp: Float!
+  managementType: DefsStateManagementType!
 }
 
 type DefsStateInfoEntry {
   name: String!
   info: DefsKeyStateInfo
+}
+
+enum DefsStateManagementType {
+  VERSIONED_STATE_STORAGE
+  LOCAL_FILESYSTEM
+  LEGACY_CODE_SERVER_SNAPSHOTS
 }
 
 input AssetKeyInput {
