@@ -189,3 +189,67 @@ def test_refresh_state_command_dagster_home_not_set():
         )
         assert "please set it to use this command" in result.output
         assert "export DAGSTER_HOME" in result.output
+
+
+def test_refresh_state_command_with_duplicate_keys():
+    """Test that refresh-defs-state deduplicates components with the same defs state key."""
+    with (
+        ProxyRunner.test() as runner,
+        isolated_example_project_foo_bar(
+            runner, in_workspace=False, use_editable_dagster=True, uv_sync=True
+        ) as project_dir,
+        activate_venv(project_dir / ".venv"),
+        dg.instance_for_test(),
+    ):
+        state_storage = DefsStateStorage.get()
+        assert state_storage is not None
+
+        # Create two components with the same defs state key
+        component1_dir = project_dir / "src/foo_bar/defs/component1"
+        component1_dir.mkdir(parents=True, exist_ok=True)
+        shutil.copy(
+            Path(__file__).parent / "sample_state_backed_component.py",
+            component1_dir / "local.py",
+        )
+        with (component1_dir / "defs.yaml").open("w") as f:
+            yaml.dump(
+                {
+                    "type": ".local.SampleStateBackedComponent",
+                    "attributes": {
+                        "defs_state_key_id": "shared",
+                    },
+                },
+                f,
+            )
+
+        component2_dir = project_dir / "src/foo_bar/defs/component2"
+        component2_dir.mkdir(parents=True, exist_ok=True)
+        shutil.copy(
+            Path(__file__).parent / "sample_state_backed_component.py",
+            component2_dir / "local.py",
+        )
+        with (component2_dir / "defs.yaml").open("w") as f:
+            yaml.dump(
+                {
+                    "type": ".local.SampleStateBackedComponent",
+                    "attributes": {
+                        "defs_state_key_id": "shared",
+                    },
+                },
+                f,
+            )
+
+        # Refresh should succeed and only refresh once despite two components sharing the same key
+        result = runner.invoke("utils", "refresh-defs-state")
+        assert_runner_result(result)
+
+        # Verify that only one entry was created in the state storage
+        latest_state_info = state_storage.get_latest_defs_state_info()
+        assert latest_state_info is not None
+        assert latest_state_info.info_mapping.keys() == {"SampleStateBackedComponent[shared]"}
+
+        # The output should only show one refresh status line (not two)
+        # Count how many times the key appears in the output
+        key_count = result.output.count("SampleStateBackedComponent[shared]")
+        # It should appear once in the status display, not twice
+        assert key_count == 1, f"Expected key to appear once, but appeared {key_count} times"

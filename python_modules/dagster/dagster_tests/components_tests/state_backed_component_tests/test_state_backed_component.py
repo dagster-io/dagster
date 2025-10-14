@@ -14,7 +14,7 @@ from dagster._core.storage.defs_state.base import DefsStateStorage
 from dagster._utils.env import environ
 from dagster._utils.test.definitions import scoped_definitions_load_context
 from dagster.components.component.state_backed_component import StateBackedComponent
-from dagster.components.core.component_tree import ComponentTreeException
+from dagster.components.core.component_tree_state import DuplicateDefsStateKeyWarning
 from dagster.components.testing.utils import create_defs_folder_sandbox
 from dagster.components.utils.defs_state import (
     DefsStateConfig,
@@ -287,12 +287,13 @@ def test_multiple_components() -> None:
             defs_path="second",
         )
 
-        with pytest.raises(
-            ComponentTreeException,
-            match="MyStateBackedComponent",
+        # Should emit a warning but not raise an error when components share the same defs state key
+        with pytest.warns(
+            DuplicateDefsStateKeyWarning, match="Multiple components have the same defs state key"
         ):
-            with sandbox.build_all_defs():
-                pass
+            with sandbox.build_all_defs() as defs:
+                # Both components should still load successfully
+                assert len(defs.get_all_asset_specs()) == 2
 
         # now update the defs_state_key
         shutil.rmtree(second_component_path)
@@ -307,6 +308,42 @@ def test_multiple_components() -> None:
 
         with sandbox.build_all_defs() as defs:
             assert len(defs.get_all_asset_specs()) == 2
+
+
+def test_two_components_sharing_same_state_key() -> None:
+    """Test that two components can share the same state key with a warning."""
+    with instance_for_test(), create_defs_folder_sandbox() as sandbox:
+        # Create two components with the same state key by explicitly setting it
+        sandbox.scaffold_component(
+            component_cls=MyStateBackedComponent,
+            defs_yaml_contents={
+                "type": "dagster_tests.components_tests.state_backed_component_tests.test_state_backed_component.MyStateBackedComponent",
+                "attributes": {"defs_state_key": "shared_key"},
+            },
+            defs_path="component_a",
+        )
+
+        sandbox.scaffold_component(
+            component_cls=MyStateBackedComponent,
+            defs_yaml_contents={
+                "type": "dagster_tests.components_tests.state_backed_component_tests.test_state_backed_component.MyStateBackedComponent",
+                "attributes": {"defs_state_key": "shared_key"},
+            },
+            defs_path="component_b",
+        )
+
+        # Should emit a warning but not raise an error
+        with pytest.warns(
+            DuplicateDefsStateKeyWarning,
+            match="Multiple components have the same defs state key: MyStateBackedComponent\\[shared_key\\]",
+        ):
+            with sandbox.build_all_defs() as defs:
+                # Both components should load successfully
+                specs = defs.get_all_asset_specs()
+                assert len(specs) == 2
+                # Verify both assets were created
+                assert any("component_a" in spec.key.to_user_string() for spec in specs)
+                assert any("component_b" in spec.key.to_user_string() for spec in specs)
 
 
 def test_state_backed_component_migration_from_versioned_to_local_storage() -> None:
