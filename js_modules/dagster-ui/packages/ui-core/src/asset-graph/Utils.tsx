@@ -1,6 +1,8 @@
 import {pathHorizontalDiagonal, pathVerticalDiagonal} from '@vx/shape';
 import memoize from 'lodash/memoize';
+import {FeatureFlag} from 'shared/app/FeatureFlags.oss';
 
+import {featureEnabled} from '../app/Flags';
 import {AssetNodeKeyFragment} from './types/AssetNode.types';
 import {COMMON_COLLATOR} from '../app/commonCollator';
 import {
@@ -278,13 +280,15 @@ export const itemWithAssetKey = (key: {path: string[]}) => {
 export const isGroupId = (str: string) => /^[^@:]+@[^@:]+:.+$/.test(str);
 
 export const groupIdForNode = (node: GraphNode) =>
-  [
-    node.definition.repository.name,
-    '@',
-    node.definition.repository.location.name,
-    ':',
-    node.definition.groupName,
-  ].join('');
+  featureEnabled(FeatureFlag.flagAssetGraphGroupsPerCodeLocation)
+    ? [
+        node.definition.repository.name,
+        '@',
+        node.definition.repository.location.name,
+        ':',
+        node.definition.groupName,
+      ].join('')
+    : `global@global:${node.definition.groupName}`;
 
 // Inclusive
 export const getUpstreamNodes = memoize(

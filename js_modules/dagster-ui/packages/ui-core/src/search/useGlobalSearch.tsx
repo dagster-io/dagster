@@ -13,8 +13,10 @@ import {
 import {AssetFilterSearchResultType, SearchResult, SearchResultType} from './types';
 import {useShowAssetsWithoutDefinitions} from '../app/UserSettingsDialog/useShowAssetsWithoutDefinitions';
 import {useShowStubAssets} from '../app/UserSettingsDialog/useShowStubAssets';
+import {useFeatureFlags} from '../app/useFeatureFlags';
 import {displayNameForAssetKey, isHiddenAssetGroupJob} from '../asset-graph/Utils';
 import {assetDetailsPathForKey} from '../assets/assetDetailsPathForKey';
+import {globalAssetGraphPathToString} from '../assets/globalAssetGraphPathToString';
 import {AssetTableFragment} from '../assets/types/AssetTableFragment.types';
 import {useAllAssets} from '../assets/useAllAssets';
 import {buildTagString} from '../ui/tagAsString';
@@ -23,7 +25,10 @@ import {assetOwnerAsString} from '../workspace/assetOwnerAsString';
 import {buildRepoPathForHuman} from '../workspace/buildRepoAddress';
 import {workspacePath} from '../workspace/workspacePath';
 
-const primaryDataToSearchResults = (locationEntries: WorkspaceState['locationEntries']) => {
+const primaryDataToSearchResults = (
+  locationEntries: WorkspaceState['locationEntries'],
+  flagAssetGraphGroupsPerCodeLocation: boolean,
+) => {
   const firstEntry = locationEntries[0];
   const manyLocations =
     locationEntries.length > 1 ||
@@ -59,9 +64,14 @@ const primaryDataToSearchResults = (locationEntries: WorkspaceState['locationEnt
             ...flat,
             {
               label: groupName,
-              description: manyLocations ? `Asset group in ${repoPath}` : 'Asset group',
+              description:
+                manyLocations && flagAssetGraphGroupsPerCodeLocation
+                  ? `Asset group in ${repoPath}`
+                  : 'Asset group',
               node: assetGroup,
-              href: workspacePath(repoName, locationName, `/asset-groups/${groupName}`),
+              href: flagAssetGraphGroupsPerCodeLocation
+                ? workspacePath(repoName, locationName, `/asset-groups/${groupName}`)
+                : globalAssetGraphPathToString({opsQuery: `group:"${groupName}"`, opNames: []}),
               type: SearchResultType.AssetGroup,
             },
           ];
@@ -289,6 +299,8 @@ export const useGlobalSearch = ({searchContext}: {searchContext: 'global' | 'cat
 
   const {assets: _assets, loading: assetsLoading} = useAllAssets();
   const {showAssetsWithoutDefinitions} = useShowAssetsWithoutDefinitions();
+  const {flagAssetGraphGroupsPerCodeLocation} = useFeatureFlags();
+
   const {showStubAssets} = useShowStubAssets();
   const assets = _assets.filter((asset) => {
     if (!showStubAssets && asset.definition?.isAutoCreatedStub) {
@@ -316,14 +328,23 @@ export const useGlobalSearch = ({searchContext}: {searchContext: 'global' | 'cat
     if (loadingNonAssets) {
       return;
     }
-    const results = primaryDataToSearchResults(locationEntries);
+    const results = primaryDataToSearchResults(
+      locationEntries,
+      flagAssetGraphGroupsPerCodeLocation,
+    );
     const augmentedResults = augmentSearchResults(results);
     if (!primarySearch.current) {
       primarySearch.current = createSearchWorker('primary', fuseOptions);
     }
     primarySearch.current.update(augmentedResults);
     consumeBufferEffect(primarySearchBuffer, primarySearch.current);
-  }, [consumeBufferEffect, locationEntries, augmentSearchResults, loadingNonAssets]);
+  }, [
+    consumeBufferEffect,
+    locationEntries,
+    augmentSearchResults,
+    loadingNonAssets,
+    flagAssetGraphGroupsPerCodeLocation,
+  ]);
 
   useEffect(() => {
     if (assetsLoading) {
