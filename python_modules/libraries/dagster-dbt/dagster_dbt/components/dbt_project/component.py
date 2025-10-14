@@ -1,5 +1,6 @@
 import itertools
 import json
+import shutil
 from collections.abc import Iterator, Mapping
 from contextlib import contextmanager
 from contextvars import ContextVar
@@ -11,10 +12,12 @@ from typing import Annotated, Any, Literal, Optional, Union
 import dagster as dg
 from dagster._annotations import public
 from dagster._utils.cached_method import cached_method
+from dagster.components.component.state_backed_component import StateBackedComponent
 from dagster.components.core.component_tree import ComponentTree
 from dagster.components.resolved.core_models import OpSpec, ResolutionContext
 from dagster.components.resolved.model import Resolver
 from dagster.components.scaffold.scaffold import scaffold_with
+from dagster.components.utils.defs_state import DefsStateConfig
 from dagster.components.utils.translation import (
     ComponentTranslator,
     TranslationFn,
@@ -22,6 +25,7 @@ from dagster.components.utils.translation import (
     create_component_translator_cls,
 )
 from dagster_shared import check
+from dagster_shared.serdes.objects.models.defs_state_info import DefsStateManagementType
 from typing_extensions import TypeAlias
 
 from dagster_dbt.asset_decorator import dbt_assets
@@ -101,7 +105,7 @@ def _set_resolution_context(context: ResolutionContext):
 @public
 @scaffold_with(DbtProjectComponentScaffolder)
 @dataclass
-class DbtProjectComponent(dg.Component, dg.Resolvable):
+class DbtProjectComponent(StateBackedComponent, dg.Resolvable):
     """Expose a DBT project to Dagster as a set of assets.
 
     This component assumes that you have already set up a dbt project, for example, the dbt `Jaffle shop <https://github.com/dbt-labs/jaffle-shop>`_. Run `git clone --depth=1 https://github.com/dbt-labs/jaffle-shop.git jaffle_shop && rm -rf jaffle_shop/.git` to copy that project
@@ -205,6 +209,13 @@ class DbtProjectComponent(dg.Component, dg.Resolvable):
         ),
     ] = True
 
+    @property
+    def defs_state_config(self) -> DefsStateConfig:
+        return DefsStateConfig(
+            type=DefsStateManagementType.LOCAL_FILESYSTEM,
+            refresh_if_dev=self.prepare_if_dev,
+        )
+
     @cached_property
     def translator(self) -> "DagsterDbtTranslator":
         return DbtProjectComponentTranslator(self, self.translation_settings)
@@ -241,9 +252,17 @@ class DbtProjectComponent(dg.Component, dg.Resolvable):
             exclude=exclude,
         )
 
-    def build_defs(self, context: dg.ComponentLoadContext) -> dg.Definitions:
-        if self.prepare_if_dev:
-            self.project.prepare_if_dev()
+    def write_state_to_path(self, state_path: Path) -> None:
+        # compile the manifest
+        self.project.preparer.prepare(self.project)
+        # move the manifest to the correct path
+        shutil.copyfile(self.project.manifest_path, state_path)
+
+    def build_defs_from_state(
+        self, context: dg.ComponentLoadContext, state_path: Optional[Path]
+    ) -> dg.Definitions:
+        if state_path is not None:
+            shutil.copyfile(state_path, self.project.manifest_path)
 
         res_ctx = context.resolution_context
 

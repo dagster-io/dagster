@@ -5,8 +5,10 @@ from pathlib import Path
 
 import pytest
 from dagster import AssetKey
+from dagster._core.instance_for_test import instance_for_test
 from dagster._core.test_utils import ensure_dagster_tests_import
 from dagster._utils.env import environ
+from dagster._utils.test.definitions import scoped_definitions_load_context
 from dagster_dbt import DbtProject, DbtProjectComponent
 
 ensure_dagster_tests_import()
@@ -42,6 +44,12 @@ JAFFLE_SHOP_KEYS_WITH_PREFIX = {
     AssetKey(["some_prefix", "stg_orders"]),
     AssetKey(["some_prefix", "stg_payments"]),
 }
+
+
+@pytest.fixture(autouse=True)
+def _setup() -> Iterator:
+    with instance_for_test() as instance, scoped_definitions_load_context():
+        yield instance
 
 
 @pytest.fixture(scope="module")
@@ -80,7 +88,7 @@ def test_python_attributes_group(dbt_path: Path) -> None:
 
 
 def test_load_from_path(dbt_path: Path) -> None:
-    with load_test_component_defs(dbt_path.parent.parent.parent) as defs:
+    with instance_for_test(), load_test_component_defs(dbt_path.parent.parent.parent) as defs:
         assert defs.resolve_asset_graph().get_all_asset_keys() == JAFFLE_SHOP_KEYS_WITH_PREFIX
 
 
