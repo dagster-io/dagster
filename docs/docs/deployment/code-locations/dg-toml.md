@@ -30,9 +30,9 @@ Dagster command-line tools (like `dg`) look for the dg file in the current direc
 dg dev
 ```
 
-## Multiple code locations
+## Multiple workspaces
 
-You can define multiple code locations in a single `dg.toml` file:
+You can define multiple workspaces in a single `dg.toml` file:
 
 ```toml
 # dg.toml
