@@ -35,7 +35,7 @@ class MinimalAssetMaterializationHealthState(LoadableBy[AssetKey]):
     num_failed_partitions: int
     num_currently_materialized_partitions: int
     partitions_snap: Optional[PartitionsSnap]
-    latest_failed_to_materialize_timestamp: Optional[float]
+    latest_failed_to_materialize_timestamp: Optional[float] = None
 
     @property
     def health_status(self) -> AssetHealthStatus:

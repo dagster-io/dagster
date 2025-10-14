@@ -65,6 +65,12 @@ static_partitions = dg.StaticPartitionsDefinition(
 )
 
 
+@dg.asset(partitions_def=static_partitions, output_required=False)
+def always_skips_partitioned():
+    if False:
+        yield dg.Output(1)
+
+
 @dg.asset(partitions_def=static_partitions)
 def random_failure_partitioned_asset(context):
     if should_fail(context.log):
@@ -260,4 +266,5 @@ def get_assets_and_checks():
         random_assets_every_15m_schedule,
         always_skips,
         sometimes_skips,
+        always_skips_partitioned,
     ]

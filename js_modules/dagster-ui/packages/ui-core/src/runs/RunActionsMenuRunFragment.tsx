@@ -8,11 +8,6 @@ export const RUN_ACTIONS_MENU_RUN_FRAGMENT = gql`
         path
       }
     }
-    executionPlan {
-      assetKeys {
-        path
-      }
-    }
     assetCheckSelection {
       name
       assetKey {

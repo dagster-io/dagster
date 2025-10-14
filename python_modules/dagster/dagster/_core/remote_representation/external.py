@@ -326,6 +326,9 @@ class RemoteRepository:
             else self._asset_jobs.get(job_name, [])
         )
 
+    def get_asset_keys_in_job(self, job_name: str) -> Sequence[AssetKey]:
+        return [asset_snap.asset_key for asset_snap in self.get_asset_node_snaps(job_name)]
+
     @cached_property
     def _asset_snaps_by_key(self) -> Mapping[AssetKey, AssetNodeSnap]:
         mapping = {}

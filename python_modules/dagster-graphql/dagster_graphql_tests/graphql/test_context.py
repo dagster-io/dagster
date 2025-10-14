@@ -38,7 +38,7 @@ def test_can_reload_on_remote_repository_error():
                 # note it where the function is *used* that needs to mocked, not
                 # where it is defined.
                 # see https://docs.python.org/3/library/unittest.mock.html#where-to-patch
-                "dagster._api.snapshot_repository.sync_get_streaming_external_repositories_data_grpc"
+                "dagster._api.snapshot_repository.sync_get_external_repositories_data_grpc"
             ) as remote_repository_mock:
                 remote_repository_mock.side_effect = Exception("get_remote_repo_failure")
 

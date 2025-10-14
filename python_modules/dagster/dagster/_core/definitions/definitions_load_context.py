@@ -7,7 +7,15 @@ from functools import cached_property
 from pathlib import Path
 from typing import TYPE_CHECKING, Any, ClassVar, Generic, Optional, TypeVar, cast
 
-from dagster_shared.serdes.objects.models.defs_state_info import DefsStateInfo
+from dagster_shared import check
+from dagster_shared.serdes.objects.models.defs_state_info import (
+    CODE_SERVER_STATE_VERSION,
+    DefsKeyStateInfo,
+    DefsStateInfo,
+    DefsStateManagementType,
+    get_code_server_metadata_key,
+    get_local_state_path,
+)
 from dagster_shared.serdes.serdes import PackableValue, deserialize_value, serialize_value
 
 from dagster._core.definitions.assets.definition.cacheable_assets_definition import (
@@ -17,7 +25,7 @@ from dagster._core.definitions.definitions_class import Definitions
 from dagster._core.definitions.metadata.metadata_value import (
     CodeLocationReconstructionMetadataValue,
 )
-from dagster._core.errors import DagsterInvalidInvocationError, DagsterInvariantViolationError
+from dagster._core.errors import DagsterInvariantViolationError
 from dagster._core.storage.defs_state.base import DefsStateStorage
 
 if TYPE_CHECKING:
@@ -98,6 +106,13 @@ class DefinitionsLoadContext:
     def add_to_pending_reconstruction_metadata(self, key: str, metadata: Any) -> None:
         self._pending_reconstruction_metadata[key] = metadata
 
+    def add_code_server_defs_state_info(self, key: str, metadata: Any) -> None:
+        """Marks state that was stored during the code server initialization process."""
+        self._defs_state_info = DefsStateInfo.add_version(
+            self._defs_state_info, key, CODE_SERVER_STATE_VERSION
+        )
+        self.add_to_pending_reconstruction_metadata(get_code_server_metadata_key(key), metadata)
+
     def get_pending_reconstruction_metadata(self) -> Mapping[str, Any]:
         return self._pending_reconstruction_metadata
 
@@ -139,32 +154,58 @@ class DefinitionsLoadContext:
     def defs_state_info(self) -> Optional[DefsStateInfo]:
         return self._defs_state_info
 
-    def _get_defs_state_version(self, key: str) -> Optional[str]:
+    def _get_defs_key_state_info(self, key: str) -> Optional[DefsKeyStateInfo]:
         """Ensures that if we attempt to access a key that doesn't exist, we mark it as None."""
         current_info = self._defs_state_info or DefsStateInfo.empty()
-        version = current_info.get_version(key)
-        if version is None:
+        key_info = current_info.info_mapping.get(key)
+        if key_info is None:
             self._defs_state_info = DefsStateInfo.add_version(current_info, key, None)
-        return version
+        return key_info
+
+    def _get_defs_state_from_reconstruction_metadata(self, key: str) -> str:
+        metadata_key = get_code_server_metadata_key(key)
+        if self.load_type == DefinitionsLoadType.RECONSTRUCTION:
+            return self.reconstruction_metadata[metadata_key]
+        else:
+            return self._pending_reconstruction_metadata[metadata_key]
+
+    def add_defs_state_info(self, key: str, version: str) -> None:
+        self._defs_state_info = DefsStateInfo.add_version(self._defs_state_info, key, version)
 
     @contextmanager
-    def temp_state_path(self, key: str) -> Iterator[Optional[Path]]:
+    def state_path(self, key: str, state_storage: DefsStateStorage) -> Iterator[Optional[Path]]:
         """Context manager that creates a temporary path to hold local state for a component."""
-        state_storage = DefsStateStorage.get()
-        if state_storage is None:
-            raise DagsterInvalidInvocationError(
-                "Attempted to get a temp state path without a StateStorage in context. "
-                "This is likely the result of an internal framework error."
-            )
         # if no state has ever been written for this key, we return None to indicate that no state is available
-        version = self._get_defs_state_version(key)
-        if version is None:
+        key_info = self._get_defs_key_state_info(key)
+        if key_info is None:
             yield None
             return
-        with tempfile.TemporaryDirectory() as temp_dir:
-            state_path = Path(temp_dir) / key
-            state_storage.download_state_to_path(key, version, state_path)
+        elif key_info.management_type == DefsStateManagementType.LOCAL_FILESYSTEM:
+            # state is stored locally in the .state directory
+            state_path = get_local_state_path(key)
+            check.invariant(
+                state_path.exists(),
+                f"Local state path for key `{key}` does not exist. This may happen if `DefsStateStorageType.LOCAL` "
+                "is being used in an environment with ephemeral local storage.",
+            )
             yield state_path
+        elif key_info.management_type == DefsStateManagementType.VERSIONED_STATE_STORAGE:
+            # state is stored in the remote state storage
+            with tempfile.TemporaryDirectory() as temp_dir:
+                state_path = Path(temp_dir) / key
+                state_storage.download_state_to_path(key, key_info.version, state_path)
+                yield state_path
+        elif key_info.management_type == DefsStateManagementType.LEGACY_CODE_SERVER_SNAPSHOTS:
+            # state is stored in the reconstruction metadata
+            with tempfile.TemporaryDirectory() as temp_dir:
+                state_path = Path(temp_dir) / key
+                state = self._get_defs_state_from_reconstruction_metadata(key)
+                state_path.write_text(state)
+                yield state_path
+        else:
+            raise DagsterInvariantViolationError(
+                f"Invalid state storage location: {key_info.management_type}"
+            )
 
 
 TState = TypeVar("TState", bound=PackableValue)

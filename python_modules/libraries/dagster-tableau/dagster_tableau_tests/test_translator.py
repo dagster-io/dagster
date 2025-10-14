@@ -34,6 +34,8 @@ def test_translator_sheet_spec(workspace_data: TableauWorkspaceData) -> None:
         assert asset_spec.tags == {
             "dagster/storage_kind": "tableau",
             "dagster-tableau/asset_type": "sheet",
+            "dagster/kind/tableau": "",
+            "dagster/kind/sheet": "",
         }
         deps = list(asset_spec.deps)
         assert len(deps) == 1
@@ -59,6 +61,8 @@ def test_translator_dashboard_spec(workspace_data: TableauWorkspaceData, dashboa
     assert asset_spec.tags == {
         "dagster/storage_kind": "tableau",
         "dagster-tableau/asset_type": "dashboard",
+        "dagster/kind/tableau": "",
+        "dagster/kind/dashboard": "",
     }
     deps = list(asset_spec.deps)
     assert len(deps) == 1
@@ -85,6 +89,9 @@ def test_translator_data_source_spec(
     assert asset_spec.tags == {
         "dagster/storage_kind": "tableau",
         "dagster-tableau/asset_type": "data_source",
+        "dagster/kind/tableau": "",
+        "dagster/kind/live": "",
+        "dagster/kind/published datasource": "",
     }
     deps = list(asset_spec.deps)
     assert len(deps) == 0
@@ -104,6 +111,9 @@ def test_translator_data_source_spec(
     assert asset_spec.tags == {
         "dagster/storage_kind": "tableau",
         "dagster-tableau/asset_type": "data_source",
+        "dagster/kind/tableau": "",
+        "dagster/kind/extract": "",
+        "dagster/kind/embedded datasource": "",
     }
     deps = list(asset_spec.deps)
     assert len(deps) == 0
@@ -132,4 +142,6 @@ def test_translator_custom_metadata(workspace_data: TableauWorkspaceData) -> Non
     assert asset_spec.tags == {
         "dagster/storage_kind": "tableau",
         "dagster-tableau/asset_type": "sheet",
+        "dagster/kind/sheet": "",
+        "dagster/kind/tableau": "",
     }

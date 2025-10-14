@@ -361,6 +361,14 @@ class TestAssetChecks(ExecutingGraphQLContextTestMatrix):
                     "checks": [{"name": "my_check"}, {"name": "my_other_check"}]
                 },
             },
+            {
+                "assetKey": {"path": ["owned_asset"]},
+                "assetChecksOrError": {"checks": [{"name": "owned_asset_check"}]},
+            },
+            {
+                "assetKey": {"path": ["unowned_asset"]},
+                "assetChecksOrError": {"checks": [{"name": "unowned_asset_check"}]},
+            },
         ]
 
         res = execute_dagster_graphql(
@@ -385,6 +393,14 @@ class TestAssetChecks(ExecutingGraphQLContextTestMatrix):
             {
                 "assetKey": {"path": ["one"]},
                 "assetChecksOrError": {"checks": [{"name": "my_check"}]},
+            },
+            {
+                "assetKey": {"path": ["owned_asset"]},
+                "assetChecksOrError": {"checks": [{"name": "owned_asset_check"}]},
+            },
+            {
+                "assetKey": {"path": ["unowned_asset"]},
+                "assetChecksOrError": {"checks": [{"name": "unowned_asset_check"}]},
             },
         ]
 

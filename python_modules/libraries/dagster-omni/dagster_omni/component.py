@@ -7,6 +7,7 @@ import dagster as dg
 from dagster._annotations import preview
 from dagster._core.errors import DagsterInvalidDefinitionError
 from dagster.components.component.state_backed_component import StateBackedComponent
+from dagster.components.utils.defs_state import DefsStateConfig, ResolvedDefsStateConfig
 from pydantic import Field
 
 from dagster_omni.objects import OmniDocument, OmniQuery, OmniWorkspaceData
@@ -28,6 +29,11 @@ class OmniComponent(StateBackedComponent, dg.Model, dg.Resolvable):
         default=None,
         description="Defines how to translate an Omni object into an AssetSpec object.",
     )
+    defs_state: ResolvedDefsStateConfig = DefsStateConfig.versioned_state_storage()
+
+    @property
+    def defs_state_config(self) -> DefsStateConfig:
+        return self.defs_state
 
     async def write_state_to_path(self, state_path: Path) -> None:
         """Fetch documents from Omni API and write state to path."""

@@ -47,6 +47,7 @@ from dagster_graphql.implementation.fetch_pipelines import get_job_reference_or_
 from dagster_graphql.implementation.fetch_runs import get_runs, get_stats, get_step_stats
 from dagster_graphql.implementation.fetch_schedules import get_schedules_for_job
 from dagster_graphql.implementation.fetch_sensors import get_sensors_for_job
+from dagster_graphql.implementation.loader import RepositoryScopedBatchLoader
 from dagster_graphql.implementation.utils import (
     UserFacingGraphQLError,
     apply_cursor_limit_reverse,
@@ -1201,9 +1202,14 @@ class GraphenePipeline(GrapheneIPipelineSnapshotMixin, graphene.ObjectType):
         interfaces = (GrapheneSolidContainer, GrapheneIPipelineSnapshot)
         name = "Pipeline"
 
-    def __init__(self, remote_job: RemoteJob):
+    def __init__(
+        self, remote_job: RemoteJob, batch_loader: Optional[RepositoryScopedBatchLoader] = None
+    ):
         super().__init__()
         self._remote_job = check.inst_param(remote_job, "remote_job", RemoteJob)
+        self._batch_loader = check.opt_inst_param(
+            batch_loader, "batch_loader", RepositoryScopedBatchLoader
+        )
 
     def resolve_id(self, _graphene_info: ResolveInfo):
         return self._remote_job.get_remote_origin_id()
@@ -1223,6 +1229,9 @@ class GraphenePipeline(GrapheneIPipelineSnapshotMixin, graphene.ObjectType):
     def resolve_isAssetJob(self, graphene_info: ResolveInfo):
         if is_implicit_asset_job_name(self._remote_job.name):
             return True
+
+        if self._batch_loader:
+            return bool(self._batch_loader.repository.get_asset_keys_in_job(self._remote_job.name))
 
         return bool(
             graphene_info.context.get_asset_keys_in_job(

@@ -2213,14 +2213,26 @@ def define_standard_jobs() -> Sequence[JobDefinition]:
 partitions_def_for_permissions = StaticPartitionsDefinition(["a", "b", "c"])
 
 
-@asset(owners=["test@elementl.com", "team:foo"])
+@asset(
+    owners=["test@elementl.com", "team:foo"],
+)
 def owned_asset():
     return 1
+
+
+@asset_check(asset=owned_asset, description="owned asset check", blocking=True)
+def owned_asset_check(owned_asset):
+    return AssetCheckResult(passed=True)
 
 
 @asset
 def unowned_asset():
     return 2
+
+
+@asset_check(asset=unowned_asset, description="unowned asset check", blocking=True)
+def unowned_asset_check(unowned_asset):
+    return AssetCheckResult(passed=True)
 
 
 @asset(partitions_def=partitions_def_for_permissions, owners=["test@elementl.com", "team:foo"])
@@ -2373,7 +2385,13 @@ def define_resources():
 
 
 def define_asset_checks():
-    return [my_check, asset_3_check, asset_3_other_check]
+    return [
+        my_check,
+        asset_3_check,
+        asset_3_other_check,
+        owned_asset_check,
+        unowned_asset_check,
+    ]
 
 
 asset_jobs = define_asset_jobs()
