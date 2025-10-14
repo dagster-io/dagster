@@ -691,8 +691,7 @@ class BaseWorkspaceRequestContext(LoadingContext):
             return []
 
         repository = location.get_repository(selector.repository_name)
-        snaps = repository.get_asset_node_snaps(job_name=selector.job_name)
-        return [snap.asset_key for snap in snaps]
+        return repository.get_asset_keys_in_job(job_name=selector.job_name)
 
     def get_assets_in_job(
         self,
