@@ -56,6 +56,5 @@ def test_blob_storage_injector_and_messagewriter(
             assert len(asset_check_executions) == 1
             assert asset_check_executions[0].status == AssetCheckExecutionRecordStatus.SUCCEEDED
     finally:
-        pass # TODO
-        # blob_storage_service_client.cleanup()
+        blob_storage_service_client.cleanup()
         
