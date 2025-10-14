@@ -72,6 +72,7 @@ attributes:  # Optional: Attributes details
     freshness_policy: <string>  # Optional: The freshness policy for the asset.
     key: <string>  # Optional: 
     key_prefix: <one of: string, array of string>  # Optional: Prefix the existing asset key with the provided value.
-  defs_state:  # Optional: Configuration for determining how state is stored and persisted for this component.  - `VERSIONED_STATE_STORAGE`: State is stored in your configured `defs_state_storage`. `dg utils refresh-defs-state` may be executed at any time to refresh the state.  - `LOCAL_FILESYSTEM`: State is stored on the local filesystem. `dg utils refresh-defs-state` must be executed while building the deployed container image in order for state to be accessible.  - `LEGACY_CODE_SERVER_SNAPSHOTS`: State is stored in memory in the code server. State is always automatically refreshed when the code server is loaded.
-    type: <one of: object (DefsStateManagementType), string>  # Required: The storage type for state required for loading this object's definitions.
-    refresh_if_dev: <one of: boolean, string>  # Optional:
+  defs_state:  # Optional: Configuration for determining how state is stored and persisted for this component.
+    key: <string>  # Optional: The key for the state. This must be unique per deployment.
+    type: <string>  # Required: 
+    refresh_if_dev: <boolean>  # Optional: Whether to automatically refresh defs state when using `dagster dev` or the `dg` cli.
