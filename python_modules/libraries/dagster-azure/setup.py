@@ -37,6 +37,7 @@ setup(
     install_requires=[
         "azure-core<2.0.0,>=1.7.0",
         "azure-identity<2.0.0,>=1.7.0",
+        "azure-ai-ml<2.0.0,>=1.28.0",
         "azure-storage-blob<13.0.0,>=12.5.0",
         "azure-storage-file-datalake<13.0.0,>=12.5",
         f"dagster{pin}",
