@@ -10,6 +10,7 @@ from dagster._core.definitions.assets.definition.asset_spec import AssetSpec
 from dagster._core.definitions.definitions_class import Definitions
 from dagster._core.test_utils import ensure_dagster_tests_import
 from dagster._utils import alter_sys_path
+from dagster._utils.test.definitions import scoped_definitions_load_context
 from dagster.components.testing import create_defs_folder_sandbox
 from dagster_powerbi import PowerBIWorkspaceComponent
 
@@ -38,9 +39,9 @@ def setup_powerbi_component(
             component_cls=PowerBIWorkspaceComponent,
             defs_yaml_contents=defs_yaml_contents,
         )
-        with sandbox.load_component_and_build_defs(defs_path=defs_path) as (
-            component,
-            defs,
+        with (
+            scoped_definitions_load_context(),
+            sandbox.load_component_and_build_defs(defs_path=defs_path) as (component, defs),
         ):
             assert isinstance(component, PowerBIWorkspaceComponent)
             yield component, defs
@@ -278,50 +279,109 @@ def test_per_content_type_translation(
         assert data_source_def
 
 
+class CustomPowerBIWorkspaceComponent(PowerBIWorkspaceComponent):
+    def get_asset_spec(self, data) -> AssetSpec:
+        # Override to add custom metadata and tags
+        base_spec = super().get_asset_spec(data)
+        return base_spec.replace_attributes(
+            metadata={**base_spec.metadata, "custom_override": "test_value"},
+            tags={**base_spec.tags, "custom_tag": "override_test"},
+        )
+
+
 def test_subclass_override_get_asset_spec(
     workspace_id: str,
     workspace_data_api_mocks,
 ) -> None:
     """Test that subclasses of PowerBIWorkspaceComponent can override get_asset_spec method."""
-    from dagster.components.core.component_tree import ComponentTree
-    from dagster_powerbi.resource import PowerBIServicePrincipal, PowerBIWorkspace
-
-    class CustomPowerBIWorkspaceComponent(PowerBIWorkspaceComponent):
-        def get_asset_spec(self, data) -> AssetSpec:
-            # Override to add custom metadata and tags
-            base_spec = super().get_asset_spec(data)
-            return base_spec.replace_attributes(
-                metadata={**base_spec.metadata, "custom_override": "test_value"},
-                tags={**base_spec.tags, "custom_tag": "override_test"},
+    with create_defs_folder_sandbox() as sandbox:
+        defs_path = sandbox.scaffold_component(
+            component_cls=CustomPowerBIWorkspaceComponent,
+            defs_yaml_contents={
+                "type": "dagster_powerbi_tests.test_components.CustomPowerBIWorkspaceComponent",
+                "attributes": {
+                    "workspace": {
+                        "credentials": {
+                            "token": uuid.uuid4().hex,
+                        },
+                        "workspace_id": workspace_id,
+                    },
+                    "use_workspace_scan": False,
+                },
+            },
+        )
+        with (
+            scoped_definitions_load_context(),
+            sandbox.load_component_and_build_defs(defs_path=defs_path) as (_, defs),
+        ):
+            # Verify that the custom get_asset_spec method is being used
+            assets_def = defs.get_assets_def(
+                AssetKey(["semantic_model", "Sales_Returns_Sample_v201912"])
+            )
+            asset_spec = assets_def.get_asset_spec(
+                AssetKey(["semantic_model", "Sales_Returns_Sample_v201912"])
             )
 
-    defs = CustomPowerBIWorkspaceComponent(
-        workspace=PowerBIWorkspace(
-            credentials=PowerBIServicePrincipal(
-                client_id="test_client_id",
-                client_secret="test_client_secret",
-                tenant_id="test_tenant_id",
-            ),
-            workspace_id=workspace_id,
-        ),
-        use_workspace_scan=False,
-    ).build_defs(ComponentTree.for_test().load_context)
+            # Check that our custom metadata and tags are present
+            assert asset_spec.metadata["custom_override"] == "test_value"
+            assert asset_spec.tags["custom_tag"] == "override_test"
 
-    # Verify that the custom get_asset_spec method is being used
-    assets_def = defs.get_assets_def(AssetKey(["semantic_model", "Sales_Returns_Sample_v201912"]))
-    asset_spec = assets_def.get_asset_spec(
-        AssetKey(["semantic_model", "Sales_Returns_Sample_v201912"])
-    )
+            # Verify that the asset keys are still correct
+            assert defs.resolve_asset_graph().get_all_asset_keys() == {
+                AssetKey(["semantic_model", "Sales_Returns_Sample_v201912"]),
+                AssetKey(["dashboard", "Sales_Returns_Sample_v201912"]),
+                AssetKey(["data_27_09_2019_xlsx"]),
+                AssetKey(["sales_marketing_datas_xlsx"]),
+                AssetKey(["report", "Sales_Returns_Sample_v201912"]),
+            }
 
-    # Check that our custom metadata and tags are present
-    assert asset_spec.metadata["custom_override"] == "test_value"
-    assert asset_spec.tags["custom_tag"] == "override_test"
 
-    # Verify that the asset keys are still correct
-    assert defs.resolve_asset_graph().get_all_asset_keys() == {
-        AssetKey(["semantic_model", "Sales_Returns_Sample_v201912"]),
-        AssetKey(["dashboard", "Sales_Returns_Sample_v201912"]),
-        AssetKey(["data_27_09_2019_xlsx"]),
-        AssetKey(["sales_marketing_datas_xlsx"]),
-        AssetKey(["report", "Sales_Returns_Sample_v201912"]),
-    }
+@pytest.mark.parametrize(
+    "defs_state_type",
+    ["LOCAL_FILESYSTEM", "VERSIONED_STATE_STORAGE"],
+)
+def test_component_load_with_defs_state(
+    workspace_data_api_mocks,
+    workspace_id: str,
+    defs_state_type: str,
+) -> None:
+    import asyncio
+
+    with create_defs_folder_sandbox() as sandbox:
+        defs_path = sandbox.scaffold_component(
+            component_cls=PowerBIWorkspaceComponent,
+            defs_yaml_contents={
+                "type": "dagster_powerbi.PowerBIWorkspaceComponent",
+                "attributes": {
+                    "workspace": {
+                        "credentials": {
+                            "token": uuid.uuid4().hex,
+                        },
+                        "workspace_id": workspace_id,
+                    },
+                    "use_workspace_scan": False,
+                    "defs_state": {"type": defs_state_type},
+                },
+            },
+        )
+        with (
+            scoped_definitions_load_context(),
+            sandbox.load_component_and_build_defs(defs_path=defs_path) as (component, defs),
+        ):
+            # First load, nothing there
+            assert len(defs.resolve_asset_graph().get_all_asset_keys()) == 0
+            assert isinstance(component, PowerBIWorkspaceComponent)
+            asyncio.run(component.refresh_state())
+
+        with (
+            scoped_definitions_load_context(),
+            sandbox.load_component_and_build_defs(defs_path=defs_path) as (component, defs),
+        ):
+            # Second load, should now have assets
+            assert defs.resolve_asset_graph().get_all_asset_keys() == {
+                AssetKey(["semantic_model", "Sales_Returns_Sample_v201912"]),
+                AssetKey(["dashboard", "Sales_Returns_Sample_v201912"]),
+                AssetKey(["data_27_09_2019_xlsx"]),
+                AssetKey(["sales_marketing_datas_xlsx"]),
+                AssetKey(["report", "Sales_Returns_Sample_v201912"]),
+            }

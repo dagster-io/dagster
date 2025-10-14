@@ -18,7 +18,7 @@ from dagster._utils.cached_method import cached_method
 
 class MockPowerBIWorkspace(PowerBIWorkspace):
     @cached_method
-    def _fetch_powerbi_workspace_data(
+    def fetch_powerbi_workspace_data(
         self, use_workspace_scan: bool
     ) -> PowerBIWorkspaceData:
         """Retrieves all Power BI content from the workspace and returns it as a PowerBIWorkspaceData object.
@@ -175,7 +175,7 @@ def test_mock_powerbi_workspace() -> None:
         workspace_id="test_workspace",
     )
 
-    workspace_data = workspace._fetch_powerbi_workspace_data(use_workspace_scan=True)  # noqa: SLF001
+    workspace_data = workspace.fetch_powerbi_workspace_data(use_workspace_scan=True)
 
     # Verify we have the expected content
     assert len(workspace_data.dashboards_by_id) == 2
