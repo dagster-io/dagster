@@ -118,7 +118,7 @@ directory_type = "workspace"
 [workspace]
 
 [[workspace.projects]]
-path = "projects/my-project-1
+path = "projects/my-project-1"
 
 [[workspace.projects]]
 path = "projects/my-project-2"
