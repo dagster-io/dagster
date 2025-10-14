@@ -32,6 +32,7 @@ def azureml_training_job(
 import dagster as dg
 from azure.ai.ml import MLClient
 from azure.identity import DefaultAzureCredential
+from azure.storage.blob import BlobServiceClient
 
 
 @dg.definitions
