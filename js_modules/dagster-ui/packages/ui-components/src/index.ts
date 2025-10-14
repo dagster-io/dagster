@@ -11,7 +11,7 @@ export * from './components/ConfigTypeSchema';
 export * from './components/Countdown';
 export * from './components/CursorControls';
 export * from './components/CustomTooltipProvider';
-export * from './components/DateRangePickerWrapper';
+export * from './components/DayPickerWrapper';
 export * from './components/Delayed';
 export * from './components/Dialog';
 export * from './components/DisclosureTriangleButton';
