@@ -1,40 +1,26 @@
-import React from 'react';
-import Link from '@docusaurus/Link';
-import Heading from '@theme/Heading';
+import React, {type ReactNode} from 'react';
+import type {PropSidebarItemLink} from '@docusaurus/plugin-content-docs';
+import DocCard from '@theme/DocCard';
+
 interface CardProps {
-  title: string;
-  imagePath?: string;
+  label: string;
   href: string;
-  children: React.ReactNode;
+  description?: string;
+  logo?: string;
+  community?: boolean;
 }
 
-const Card: React.FC<CardProps> = ({title, imagePath, href, children}) => (
-  <Link to={href} className="card">
-    {imagePath && (
-      <img
-        style={{
-          marginBottom: '6px',
-          background: 'var(--theme-color-background-default)',
-          transition: 'background 0.5s',
-        }}
-        src={`${imagePath}`}
-        alt={title}
-        width="56"
-        height="56"
-      />
-    )}
-    <Heading as="h3">{title}</Heading>
-    <p>{children}</p>
-  </Link>
-);
+const Card: React.FC<CardProps> = ({label, href, description, logo, community}) => {
+  const item: PropSidebarItemLink = {
+    type: 'link',
+    label,
+    href,
+    description,
+    docId: undefined,
+    customProps: {logo, community},
+  };
 
-interface CardGroupProps {
-  cols: number;
-  children: React.ReactNode;
-}
+  return <DocCard item={item} />;
+};
 
-const CardGroup: React.FC<CardGroupProps> = ({cols, children}) => (
-  <div className={`card-group cols-${cols}`}>{children}</div>
-);
-
-export {Card, CardGroup};
+export {Card};
