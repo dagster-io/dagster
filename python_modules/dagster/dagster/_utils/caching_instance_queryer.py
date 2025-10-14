@@ -1,5 +1,4 @@
 import logging
-import os
 from collections import defaultdict
 from collections.abc import Iterable, Mapping, Sequence
 from datetime import datetime
@@ -874,6 +873,8 @@ class CachingInstanceQueryer(DynamicPartitionsStore):
         asset_key: AssetKey,
         after_cursor: int,
     ) -> Sequence["EventLogRecord"]:
+        from dagster._utils.storage import get_materialization_chunk_size
+
         has_more = True
         cursor = None
 
@@ -883,9 +884,7 @@ class CachingInstanceQueryer(DynamicPartitionsStore):
             result = self.instance.fetch_materializations(
                 AssetRecordsFilter(asset_key=asset_key, after_storage_id=after_cursor),
                 cursor=cursor,
-                limit=int(
-                    os.getenv("DAGSTER_FETCH_MATERIALIZATIONS_AFTER_CURSOR_CHUNK_SIZE", "1000")
-                ),
+                limit=get_materialization_chunk_size(),
             )
             cursor = result.cursor
             has_more = result.has_more
