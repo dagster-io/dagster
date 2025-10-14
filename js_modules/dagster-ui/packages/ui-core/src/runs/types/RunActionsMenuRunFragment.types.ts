@@ -15,10 +15,6 @@ export type RunActionsMenuRunFragment = {
   pipelineSnapshotId: string | null;
   hasRunMetricsEnabled: boolean;
   assetSelection: Array<{__typename: 'AssetKey'; path: Array<string>}> | null;
-  executionPlan: {
-    __typename: 'ExecutionPlan';
-    assetKeys: Array<{__typename: 'AssetKey'; path: Array<string>}>;
-  } | null;
   assetCheckSelection: Array<{
     __typename: 'AssetCheckhandle';
     name: string;
