@@ -243,10 +243,58 @@ class RepositoryScopedAssetInfo:
 
 @whitelist_for_serdes
 @record
+class RemoteConnectionAssetNode(RemoteAssetNode):
+    # identify the connection here somehow
+    asset_node_snap: Annotated[
+        "AssetNodeSnap",
+        ImportFrom("dagster._core.remote_representation.external_data"),
+    ]
+    parent_keys: AbstractSet[AssetKey]
+    child_keys: AbstractSet[AssetKey]
+    check_keys: AbstractSet[AssetCheckKey]  # pyright: ignore[reportIncompatibleMethodOverride]
+    execution_set_entity_keys: AbstractSet[EntityKey]  # pyright: ignore[reportIncompatibleMethodOverride]
+
+    def resolve_to_singular_repo_scoped_node(self) -> "RemoteRepositoryAssetNode":
+        return self
+
+    @property
+    def key(self) -> AssetKey:  # pyright: ignore[reportIncompatibleVariableOverride]
+        return self.asset_node_snap.asset_key
+
+    @property
+    def is_materializable(self) -> bool:
+        return self.asset_node_snap.is_materializable
+
+    @property
+    def is_observable(self) -> bool:
+        return self.asset_node_snap.is_observable
+
+    @property
+    def is_external(self) -> bool:
+        return self.asset_node_snap.is_external
+
+    @property
+    def is_executable(self) -> bool:
+        return self.asset_node_snap.is_executable
+
+
+@whitelist_for_serdes
+@record
+class ConnectionScopedAssetInfo:
+    """RemoteRepositoryAssetNode paired with additional information from that repository.
+    This split allows repository scoped asset graph to be constructed without depending on schedules/sensors
+    as defining schedule/sensors needs an asset graph.
+    """
+
+    asset_node: RemoteConnectionAssetNode
+
+
+@whitelist_for_serdes
+@record
 class RemoteWorkspaceAssetNode(RemoteAssetNode):
     """Asset nodes constructed from a CurrentWorkspace, containing nodes from potentially several RemoteRepositories."""
 
-    repo_scoped_asset_infos: Sequence[RepositoryScopedAssetInfo]
+    repo_scoped_asset_infos: Sequence[Union[RepositoryScopedAssetInfo, ConnectionScopedAssetInfo]]
 
     def __hash__(self):
         # we create sets of these objects in the context of asset graphs but don't want to
@@ -734,8 +782,22 @@ class RemoteWorkspaceAssetGraph(RemoteAssetGraph[RemoteWorkspaceAssetNode]):
             )
         )
 
+        # external_sources = [SnowflakeConnectionExternalAssetFactory()]
+
         asset_infos_by_key: dict[AssetKey, list[RepositoryScopedAssetInfo]] = defaultdict(list)
         asset_checks_by_key: dict[AssetCheckKey, RemoteAssetCheckNode] = {}
+
+        # for source in external_sources:
+        #     nodes = source.create_nodes()
+        #     print(str(nodes))
+        #     for node in nodes:
+        #         assert node.is_observable
+        #         asset_infos_by_key[node.asset_node_snap.asset_key].append(
+        #             ConnectionScopedAssetInfo(
+        #                 asset_node=node,
+        #             )
+        #         )
+
         for repo in repos:
             for key, asset_node in repo.asset_graph.remote_asset_nodes_by_key.items():
                 asset_infos_by_key[key].append(
@@ -758,6 +820,7 @@ class RemoteWorkspaceAssetGraph(RemoteAssetGraph[RemoteWorkspaceAssetNode]):
             node = RemoteWorkspaceAssetNode(
                 repo_scoped_asset_infos=asset_infos,
             )
+            assert node.resolve_to_singular_repo_scoped_node() is not None, "WAT"
             asset_nodes_by_key[key] = node
             if len(asset_infos) > 1:
                 nodes_with_multiple.append(node)

@@ -7,11 +7,13 @@ from functools import cached_property
 from typing import TYPE_CHECKING, Any, Callable, Optional, Union, cast
 
 from dagster_shared.libraries import DagsterLibraryRegistry
+from dagster_shared.record import record
+from dagster_shared.serdes import whitelist_for_serdes
 from dagster_shared.serdes.objects.models.defs_state_info import DefsStateInfo
 
 import dagster._check as check
 from dagster._check import checked
-from dagster._core.code_pointer import CodePointer
+from dagster._core.code_pointer import CodePointer, ModuleCodePointer
 from dagster._core.definitions.assets.job.asset_job import IMPLICIT_ASSET_JOB_NAME
 from dagster._core.definitions.reconstruct import ReconstructableJob, ReconstructableRepository
 from dagster._core.definitions.repository_definition import RepositoryDefinition
@@ -356,14 +358,202 @@ class CodeLocation(AbstractContextManager):
             return DefsStateInfo(info_mapping=combined_mapping)
 
 
+@whitelist_for_serdes
+@record
+class SnowflakeConnectionOrigin(CodeLocationOrigin):
+    def create_location(self, instance: DagsterInstance) -> "SnowflakeConnectionCodeLocation":
+        return SnowflakeConnectionCodeLocation(self)
+
+    @property
+    def is_reload_supported(self) -> bool:
+        return False  # for now
+
+    def get_display_metadata(self) -> Mapping[str, Any]:
+        return {}
+
+    def reload_location(self, instance: "DagsterInstance") -> "InProcessCodeLocation":
+        raise NotImplementedError
+
+    @property
+    def location_name(self) -> str:
+        return "snowflake_connector"
+
+    def loadable_target_origin(self):
+        raise NotImplementedError
+
+
+class SnowflakeConnectionCodeLocation(CodeLocation):
+    def __init__(self, origin):
+        from dagster.observe_prototype.asset_source import SnowflakeConnectionExternalAssetFactory
+
+        self._origin = origin
+
+        source = SnowflakeConnectionExternalAssetFactory()
+        nodes = source.create_nodes()
+
+        self._repositories = {
+            "snowflake_connector": RemoteRepository(
+                repository_snap=RepositorySnap(
+                    name="snowflake_connector",
+                    schedules=[],
+                    partition_sets=[],
+                    asset_nodes=[node.asset_node_snap for node in nodes],
+                    job_datas=[],
+                ),
+                repository_handle=RepositoryHandle(
+                    repository_name="snowflake_connector",
+                    code_location_origin=self._origin,
+                    repository_python_origin=RepositoryPythonOrigin(
+                        executable_path=sys.executable,
+                        code_pointer=ModuleCodePointer(
+                            module="dagster.observe_prototype.snowflake_connector",
+                            fn_name="snowflake_connector",
+                        ),
+                    ),
+                    display_metadata=self.get_display_metadata(),
+                ),
+                auto_materialize_use_sensors=False,
+            )
+        }
+
+    def get_repository(self, name: str) -> RemoteRepository:
+        return self._repositories[name]
+
+    def has_repository(self, name: str) -> bool:
+        return name in self._repositories
+
+    def get_repositories(self) -> Mapping[str, RemoteRepository]:
+        return self._repositories
+
+    def get_execution_plan(
+        self,
+        remote_job: RemoteJob,
+        run_config: Mapping[str, object],
+        step_keys_to_execute: Optional[Sequence[str]],
+        known_state: Optional[KnownExecutionState],
+        instance: Optional[DagsterInstance] = None,
+    ):
+        raise NotImplementedError
+
+    async def gen_execution_plan(
+        self,
+        remote_job: RemoteJob,
+        run_config: Mapping[str, object],
+        step_keys_to_execute: Optional[Sequence[str]],
+        known_state: Optional[KnownExecutionState],
+        instance: Optional[DagsterInstance] = None,
+    ):
+        raise NotImplementedError
+
+    def _get_subset_remote_job_result(self, selector: JobSubsetSelector):
+        raise NotImplementedError
+
+    async def _gen_subset_remote_job_result(self, selector: JobSubsetSelector):
+        raise NotImplementedError
+
+    def get_partition_config(
+        self,
+        repository_handle: RepositoryHandle,
+        job_name: str,
+        partition_name: str,
+        instance: DagsterInstance,
+    ):
+        raise NotImplementedError
+
+    def get_partition_tags_from_repo(
+        self,
+        repository_handle: RepositoryHandle,
+        job_name: str,
+        partition_name: str,
+        instance: DagsterInstance,
+    ):
+        raise NotImplementedError
+
+    def get_partition_names_from_repo(
+        self,
+        repository_handle: RepositoryHandle,
+        job_name: str,
+    ):
+        raise NotImplementedError
+
+    def get_partition_set_execution_params(
+        self,
+        repository_handle: RepositoryHandle,
+        partition_set_name: str,
+        partition_names: Sequence[str],
+        instance: DagsterInstance,
+    ):
+        raise NotImplementedError
+
+    def get_schedule_execution_data(
+        self,
+        instance: DagsterInstance,
+        repository_handle: RepositoryHandle,
+        schedule_name: str,
+        scheduled_execution_time: Optional[TimestampWithTimezone],
+        log_key: Optional[Sequence[str]],
+    ):
+        raise NotImplementedError
+
+    def get_sensor_execution_data(
+        self,
+        instance: DagsterInstance,
+        repository_handle: RepositoryHandle,
+        name: str,
+        last_tick_completion_time: Optional[float],
+        last_run_key: Optional[str],
+        cursor: Optional[str],
+        log_key: Optional[Sequence[str]],
+        last_sensor_start_time: Optional[float],
+    ):
+        raise NotImplementedError
+
+    def get_notebook_data(self, notebook_path: str) -> bytes:
+        raise NotImplementedError
+
+    def get_dagster_library_versions(self) -> Optional[Mapping[str, str]]:
+        return {}
+
+    @property
+    def is_reload_supported(self) -> bool:
+        return False
+
+    @property
+    def origin(self) -> CodeLocationOrigin:
+        return self._origin
+
+    @property
+    def container_image(self) -> Optional[str]:
+        return None
+
+    @property
+    def entry_point(self) -> Optional[Sequence[str]]:
+        return None
+
+    @property
+    def repository_code_pointer_dict(self) -> Mapping[str, CodePointer]:
+        return {}
+
+    @property
+    def executable_path(self) -> Optional[str]:
+        return None
+
+
 class InProcessCodeLocation(CodeLocation):
     def __init__(self, origin: InProcessCodeLocationOrigin, instance: DagsterInstance):
-        from dagster._grpc.server import LoadedRepositories
-
         self._origin = check.inst_param(origin, "origin", InProcessCodeLocationOrigin)
         self._instance = instance
 
-        loadable_target_origin = self._origin.loadable_target_origin
+        raise NotImplementedError
+
+    def get_partition_config(
+        self,
+        repository_handle: RepositoryHandle,
+        job_name: str,
+        partition_name: str,
+        instance: DagsterInstance,
+    ):
+        raise NotImplementedError
         self._loaded_repositories = LoadedRepositories(
             loadable_target_origin,
             entry_point=self._origin.entry_point,

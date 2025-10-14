@@ -351,18 +351,28 @@ class GrapheneAssetNode(graphene.ObjectType):
 
         repo_scoped_node = remote_node.resolve_to_singular_repo_scoped_node()
         self._asset_node_snap = repo_scoped_node.asset_node_snap
-        self._repository_handle = repo_scoped_node.repository_handle
-        self._repository_selector = self._repository_handle.to_selector()
+        self._repository_handle = (
+            repo_scoped_node.repository_handle
+            if isinstance(repo_scoped_node, RemoteRepositoryAssetNode)
+            else None
+        )
+        self._repository_selector = (
+            self._repository_handle.to_selector() if self._repository_handle else None
+        )
 
         self._remote_job = None  # lazily loaded
         self._node_definition_snap = None  # lazily loaded
         self._asset_graph_differ = None  # lazily loaded
 
         super().__init__(
-            id=get_unique_asset_id(
-                self._asset_node_snap.asset_key,
-                self._repository_handle.location_name,
-                self._repository_handle.repository_name,
+            id=(
+                get_unique_asset_id(
+                    self._asset_node_snap.asset_key,
+                    self._repository_handle.location_name,
+                    self._repository_handle.repository_name,
+                )
+                if self._repository_handle
+                else get_unique_asset_id(self._asset_node_snap.asset_key)
             ),
             assetKey=self._asset_node_snap.asset_key,
             description=self._asset_node_snap.description,
