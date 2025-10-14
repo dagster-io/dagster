@@ -40,7 +40,7 @@ To run the examples, you'll need to:
 
 - In Azure, you'll need:
   - An existing Azure ML workspace
-  - An Azure Blob Data Storage Container to be used by dagster. The recomended way to work with dagster-pipes and AzureML is to use Azure Blob Data Storage to communicate between the Dagster orchestrator and the AzureML job.
+  - An Azure Blob Data Storage Container to be used by dagster. The recommended way to work with dagster-pipes and AzureML is to use Azure Blob Data Storage to communicate between the Dagster orchestrator and the AzureML job.
 
 ## Step 1: Create an AzureML environment for dagster pipes.
 
@@ -63,7 +63,7 @@ dependencies:
 
 Call `open_dagster_pipes` in your Azure ML script to create a context that can be used to send messages to Dagster:
 
-<CodeExample path="docs_snippets/docs_snippets/guides/dagster/dagster_pipes/gcp/dataproc_job/train.py" title="train.py" />
+<CodeExample path="docs_snippets/docs_snippets/guides/dagster/dagster_pipes/azure/azureml_job/train.py" title="train.py" />
 
 ::: tip
 
@@ -85,7 +85,7 @@ import ScaffoldAsset from '@site/docs/partials/\_ScaffoldAsset.md';
 
 In the Dagster asset/op code, use the `PipesAzureMLClient` resource to launch the job:
 
-<CodeExample path="docs_snippets/docs_snippets/guides/dagster/dagster_pipes/gcp/dataproc_job/dagster_code.py" startAfter="start_asset_marker" endBefore="end_asset_marker" title="src/<project_name>/defs/assets.py" />
+<CodeExample path="docs_snippets/docs_snippets/guides/dagster/dagster_pipes/azure/azureml_job/dagster_code.py" startAfter="start_asset_marker" endBefore="end_asset_marker" title="src/<project_name>/defs/assets.py" />
 
 This will launch the Azure ML job and wait for it to complete. If the job fails, the Dagster process will raise an exception. If the Dagster process is interrupted while the job is still running, the job will be cancelled (if `forward_termination=True` is set in the client).
 
@@ -93,7 +93,7 @@ This will launch the Azure ML job and wait for it to complete. If the job fails,
 
 Next, add the `PipesAzureMLClient` resource to your project's <PyObject section="definitions" module="dagster" object="Definitions" /> object:
 
-<CodeExample path="docs_snippets/docs_snippets/guides/dagster/dagster_pipes/gcp/dataproc_job/dagster_code.py" startAfter="start_definitions_marker" endBefore="end_definitions_marker" title="src/<project_name>/defs/assets.py" />
 
+<CodeExample path="docs_snippets/docs_snippets/guides/dagster/dagster_pipes/azure/azureml_job/dagster_code.py" startAfter="start_definitions_marker" endBefore="end_definitions_marker" title="src/<project_name>/defs/assets.py" />
 
 Dagster will now be able to launch the Azure ML job from the `azureml_training_job` asset, and receive logs and events from the job.
