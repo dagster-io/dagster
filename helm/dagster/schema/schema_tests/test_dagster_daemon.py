@@ -112,6 +112,32 @@ def test_daemon_command_with_user_deployments(template: HelmTemplate):
     ]
 
 
+def test_daemon_command_with_log_format(template: HelmTemplate):
+    repository = "repository"
+    tag = "tag"
+    helm_values = DagsterHelmValues.construct(
+        dagsterDaemon=Daemon.construct(
+            image=kubernetes.Image.construct(repository=repository, tag=tag),
+            logFormat="json"
+        ),
+        dagsterUserDeployments=UserDeployments.construct(
+            enabled=True,
+            enableSubchart=True,
+            deployments=[create_simple_user_deployment("simple-deployment-one")],
+        ),
+    )
+    daemon_deployments = template.render(helm_values)
+
+    assert len(daemon_deployments) == 1
+
+    command = daemon_deployments[0].spec.template.spec.containers[0].command
+    assert command == [
+        "/bin/bash",
+        "-c",
+        "dagster-daemon run -w /dagster-workspace/workspace.yaml --log-format json",
+    ]
+
+
 def test_daemon_command_without_user_deployments(template: HelmTemplate):
     repository = "repository"
     tag = "tag"
