@@ -1654,7 +1654,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@babel/runtime@npm:*, @babel/runtime@npm:^7.0.0, @babel/runtime@npm:^7.1.2, @babel/runtime@npm:^7.12.13, @babel/runtime@npm:^7.12.5, @babel/runtime@npm:^7.21.0, @babel/runtime@npm:^7.24.4, @babel/runtime@npm:^7.26.10, @babel/runtime@npm:^7.5.5, @babel/runtime@npm:^7.7.2, @babel/runtime@npm:^7.7.6, @babel/runtime@npm:^7.8.4, @babel/runtime@npm:^7.8.7":
+"@babel/runtime@npm:*, @babel/runtime@npm:^7.0.0, @babel/runtime@npm:^7.1.2, @babel/runtime@npm:^7.12.13, @babel/runtime@npm:^7.12.5, @babel/runtime@npm:^7.24.4, @babel/runtime@npm:^7.26.10, @babel/runtime@npm:^7.5.5, @babel/runtime@npm:^7.7.2, @babel/runtime@npm:^7.7.6, @babel/runtime@npm:^7.8.4, @babel/runtime@npm:^7.8.7":
   version: 7.26.10
   resolution: "@babel/runtime@npm:7.26.10"
   dependencies:
@@ -2127,14 +2127,14 @@ __metadata:
     babel-plugin-transform-import-meta: "npm:^2.2.1"
     buildkite-test-collector: "npm:^1.8.1"
     chart.js: "npm:^4.5.0"
-    chartjs-adapter-date-fns: "npm:^2.0.0"
+    chartjs-adapter-date-fns: "npm:^3.0.0"
     chartjs-plugin-zoom: "npm:^1.1.1"
     child-process: "npm:^1.0.2"
     clsx: "npm:^2.1.1"
     codemirror: "npm:^5.65.2"
     cronstrue: "npm:^2.51.0"
     dagre: "dagster-io/dagre#0.8.5"
-    date-fns: "npm:^2.28.0"
+    date-fns: "npm:^4.1.0"
     dayjs: "npm:^1.11.7"
     deepmerge: "npm:^4.2.2"
     eslint: "npm:^8.57.1"
@@ -7933,12 +7933,13 @@ __metadata:
   languageName: node
   linkType: hard
 
-"chartjs-adapter-date-fns@npm:^2.0.0":
-  version: 2.0.1
-  resolution: "chartjs-adapter-date-fns@npm:2.0.1"
+"chartjs-adapter-date-fns@npm:^3.0.0":
+  version: 3.0.0
+  resolution: "chartjs-adapter-date-fns@npm:3.0.0"
   peerDependencies:
     chart.js: ">=2.8.0"
-  checksum: 10/13b1a76988471cd3931ba39501daba221983bd45d12751a4c99e6a1c2622945c69248d6ce4142b26454249060db1b306f084ff541b142c6d1e2afa7996bc0f87
+    date-fns: ">=2.0.0"
+  checksum: 10/29a104882f865e5c674a4edc0a60a5e0cce1fad470ed133d218bd717069a5089475139df4016a976a18b07633b068cc6a31f8b6332f1d8b2d1987913eac475be
   languageName: node
   linkType: hard
 
@@ -8869,12 +8870,10 @@ __metadata:
   languageName: node
   linkType: hard
 
-"date-fns@npm:^2.28.0":
-  version: 2.30.0
-  resolution: "date-fns@npm:2.30.0"
-  dependencies:
-    "@babel/runtime": "npm:^7.21.0"
-  checksum: 10/70b3e8ea7aaaaeaa2cd80bd889622a4bcb5d8028b4de9162cbcda359db06e16ff6e9309e54eead5341e71031818497f19aaf9839c87d1aba1e27bb4796e758a9
+"date-fns@npm:^4.1.0":
+  version: 4.1.0
+  resolution: "date-fns@npm:4.1.0"
+  checksum: 10/d5f6e9de5bbc52310f786099e18609289ed5e30af60a71e0646784c8185ddd1d0eebcf7c96b7faaaefc4a8366f3a3a4244d099b6d0866ee2bec80d1361e64342
   languageName: node
   linkType: hard
 
