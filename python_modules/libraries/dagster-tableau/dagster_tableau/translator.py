@@ -266,7 +266,7 @@ class DagsterTableauTranslator:
                     project_id=workbook_data.properties["projectLuid"],
                 )
             },
-            kinds = {"tableau", "sheet"}
+            kinds={"tableau", "sheet"},
         )
 
     def get_dashboard_spec(self, data: TableauTranslatorData) -> AssetSpec:
@@ -319,16 +319,16 @@ class DagsterTableauTranslator:
                     project_id=workbook_data.properties["projectLuid"],
                 )
             },
-            kinds = {"tableau", "dashboard"}
+            kinds={"tableau", "dashboard"},
         )
 
     def get_data_source_spec(self, data: TableauTranslatorData) -> AssetSpec:
         kinds = {
-                "tableau",
-                *["extract" if data.properties["hasExtracts"] else "live"], 
-                *["published datasource" if data.properties["isPublished"] else "embedded datasource"], 
+            "tableau",
+            *["extract" if data.properties["hasExtracts"] else "live"],
+            *["published datasource" if data.properties["isPublished"] else "embedded datasource"],
         }
-        
+
         return AssetSpec(
             key=AssetKey([_coerce_input_to_valid_name(data.properties["name"])]),
             tags={"dagster/storage_kind": "tableau", **TableauTagSet(asset_type="data_source")},
@@ -342,5 +342,5 @@ class DagsterTableauTranslator:
                     else None,
                 )
             },
-            kinds=kinds
+            kinds=kinds,
         )
