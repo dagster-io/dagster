@@ -21,11 +21,11 @@ from dagster.components.utils.defs_state import (
     DefsStateConfigArgs,
     ResolvedDefsStateConfig,
 )
+from dagster.components.utils.project_paths import get_code_server_metadata_key
 from dagster_shared.serdes.objects.models.defs_state_info import (
     CODE_SERVER_STATE_VERSION,
     LOCAL_STATE_VERSION,
     DefsStateManagementType,
-    get_code_server_metadata_key,
 )
 
 
@@ -64,9 +64,11 @@ class MyStateBackedComponent(StateBackedComponent, dg.Model, dg.Resolvable):
             json.dump({"value": f"bar_{random.randint(1000, 9999)}"}, f)
 
     def _get_state_refresh_defs(self, context: dg.ComponentLoadContext) -> dg.Definitions:
+        project_root = context.project_root
+
         @dg.op
         def refresh_state_op():
-            asyncio.run(self.refresh_state())
+            asyncio.run(self.refresh_state(project_root))
 
         @dg.job(name=f"state_refresh_job_{context.component_path.file_path.stem}")
         def state_refresh_job():

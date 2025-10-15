@@ -13,8 +13,6 @@ from dagster_shared.serdes.objects.models.defs_state_info import (
     DefsKeyStateInfo,
     DefsStateInfo,
     DefsStateManagementType,
-    get_code_server_metadata_key,
-    get_local_state_path,
 )
 from dagster_shared.serdes.serdes import PackableValue, deserialize_value, serialize_value
 
@@ -28,6 +26,10 @@ from dagster._core.definitions.metadata.metadata_value import (
 from dagster._core.errors import DagsterInvariantViolationError
 from dagster._core.storage.defs_state.base import DefsStateStorage
 from dagster.components.utils.defs_state import DefsStateConfig
+from dagster.components.utils.project_paths import (
+    get_code_server_metadata_key,
+    get_local_state_path,
+)
 
 if TYPE_CHECKING:
     from dagster._core.definitions.repository_definition import RepositoryLoadData
@@ -193,9 +195,15 @@ class DefinitionsLoadContext:
 
     @contextmanager
     def state_path(
-        self, config: DefsStateConfig, state_storage: DefsStateStorage
+        self, config: DefsStateConfig, state_storage: DefsStateStorage, project_root: Path
     ) -> Iterator[Optional[Path]]:
-        """Context manager that creates a temporary path to hold local state for a component."""
+        """Context manager that creates a temporary path to hold local state for a component.
+
+        Args:
+            config: The state configuration for the component.
+            state_storage: The state storage instance.
+            project_root: The root directory of the project.
+        """
         # if no state has ever been written for this key, we return None to indicate that no state is available
         key = config.key
         key_info = self._get_defs_key_state_info(key)
@@ -203,7 +211,7 @@ class DefinitionsLoadContext:
         if config.type == DefsStateManagementType.LOCAL_FILESYSTEM:
             # it is possible for local state to exist without the defs_state_storage being aware
             # of it if the state was added during docker build
-            state_path = get_local_state_path(key)
+            state_path = get_local_state_path(key, project_root)
             if not state_path.exists():
                 yield None
                 return
