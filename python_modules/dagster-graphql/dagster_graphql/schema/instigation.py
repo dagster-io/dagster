@@ -33,7 +33,10 @@ from dagster_graphql.implementation.fetch_schedules import get_schedule_next_tic
 from dagster_graphql.implementation.fetch_sensors import get_sensor_next_tick
 from dagster_graphql.implementation.fetch_ticks import get_instigation_ticks
 from dagster_graphql.implementation.loader import RepositoryScopedBatchLoader
-from dagster_graphql.implementation.utils import UserFacingGraphQLError
+from dagster_graphql.implementation.utils import (
+    UserFacingGraphQLError,
+    has_permission_for_definition,
+)
 from dagster_graphql.schema.entity_key import GrapheneAssetCheckHandle, GrapheneAssetKey
 from dagster_graphql.schema.errors import (
     GrapheneError,
@@ -638,16 +641,42 @@ class GrapheneInstigationState(graphene.ObjectType):
 
     def resolve_hasStartPermission(self, graphene_info: ResolveInfo):
         if self._instigator_state.instigator_type == InstigatorType.SCHEDULE:
-            return graphene_info.context.has_permission_for_selector(
-                Permissions.START_SCHEDULE,
-                ScheduleSelector.from_instigator_selector(self._instigator_state.selector),
-            )
+            if self._batch_loader:
+                if self._batch_loader.repository.has_schedule(self._instigator_state.name):
+                    schedule = self._batch_loader.repository.get_schedule(
+                        self._instigator_state.name
+                    )
+                    return has_permission_for_definition(
+                        graphene_info, Permissions.START_SCHEDULE, schedule
+                    )
+                else:
+                    return graphene_info.context.has_permission_for_location(
+                        Permissions.START_SCHEDULE,
+                        self._instigator_state.repository_selector.location_name,
+                    )
+            else:
+                return graphene_info.context.has_permission_for_selector(
+                    Permissions.START_SCHEDULE,
+                    ScheduleSelector.from_instigator_selector(self._instigator_state.selector),
+                )
         else:
             check.invariant(self._instigator_state.instigator_type == InstigatorType.SENSOR)
-            return graphene_info.context.has_permission_for_selector(
-                Permissions.EDIT_SENSOR,
-                SensorSelector.from_instigator_selector(self._instigator_state.selector),
-            )
+            if self._batch_loader:
+                if self._batch_loader.repository.has_sensor(self._instigator_state.name):
+                    sensor = self._batch_loader.repository.get_sensor(self._instigator_state.name)
+                    return has_permission_for_definition(
+                        graphene_info, Permissions.EDIT_SENSOR, sensor
+                    )
+                else:
+                    return graphene_info.context.has_permission_for_location(
+                        Permissions.EDIT_SENSOR,
+                        self._instigator_state.repository_selector.location_name,
+                    )
+            else:
+                return graphene_info.context.has_permission_for_selector(
+                    Permissions.EDIT_SENSOR,
+                    SensorSelector.from_instigator_selector(self._instigator_state.selector),
+                )
 
     def resolve_hasStopPermission(self, graphene_info: ResolveInfo):
         if self._instigator_state.instigator_type == InstigatorType.SCHEDULE:
