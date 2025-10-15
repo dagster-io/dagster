@@ -1,12 +1,12 @@
 import {Box, Colors, FontFamily, Icon, Table, Tag} from '@dagster-io/ui-components';
 import {useMemo} from 'react';
 
-import {DefsStateInfo} from '../graphql/types';
 import {TimeFromNow} from '../ui/TimeFromNow';
+import {DefsStateInfoFragment} from './types/CodeLocationDefsStateQuery.types';
 
 interface Props {
-  latestDefsStateInfo: DefsStateInfo | null;
-  defsStateInfo: DefsStateInfo | null;
+  latestDefsStateInfo: DefsStateInfoFragment | null;
+  defsStateInfo: DefsStateInfoFragment | null;
 }
 
 export const CodeLocationDefsStateComparison = ({latestDefsStateInfo, defsStateInfo}: Props) => {

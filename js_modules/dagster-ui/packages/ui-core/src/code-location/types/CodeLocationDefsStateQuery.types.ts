@@ -2,6 +2,15 @@
 
 import * as Types from '../../graphql/types';
 
+export type DefsStateInfoFragment = {
+  __typename: 'DefsStateInfo';
+  keyStateInfo: Array<{
+    __typename: 'DefsStateInfoEntry';
+    name: string;
+    info: {__typename: 'DefsKeyStateInfo'; version: string; createTimestamp: number} | null;
+  }>;
+};
+
 export type CodeLocationDefsStateQueryVariables = Types.Exact<{
   locationName: Types.Scalars['String']['input'];
 }>;
@@ -42,4 +51,4 @@ export type CodeLocationDefsStateQuery = {
     | null;
 };
 
-export const CodeLocationDefsStateQueryVersion = '48c254f1f69e44eb1010e324b368262b96f00fdc20da873424e12ad76924c2c4';
+export const CodeLocationDefsStateQueryVersion = '2f58b69f8aacec08df30be6ff3edc6d70afc33a63e7bfd09fe0989f90330c853';
