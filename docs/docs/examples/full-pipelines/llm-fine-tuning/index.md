@@ -10,8 +10,6 @@ canonicalUrl: '/examples/full-pipelines/llm-fine-tuning'
 slug: '/examples/full-pipelines/llm-fine-tuning'
 ---
 
-# Fine-tune an LLM
-
 :::note
 
 To see [video of this example](https://www.youtube.com/watch?v=x-1R2z0eEdg)
@@ -25,8 +23,7 @@ In this example, you'll build a pipeline with Dagster that:
 - Creates and validates the data files needed for an OpenAI fine-tuning job
 - Generate a custom model and validate it
 
-<details>
-  <summary>Prerequisites</summary>
+## Prerequisites
 
 To follow the steps in this guide, you'll need:
 
@@ -34,8 +31,6 @@ To follow the steps in this guide, you'll need:
 - Python 3.9+ installed on your system. Refer to the [Installation guide](/getting-started/installation) for information.
 - Familiarity with SQL and Python data manipulation libraries, such as [Pandas](https://pandas.pydata.org).
 - Understanding of data pipelines and the extract, transform, and load process (ETL).
-
-</details>
 
 ## Step 1: Set up your Dagster environment
 

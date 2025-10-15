@@ -10,7 +10,12 @@ canonicalUrl: '/examples/full-pipelines/dbt'
 slug: '/examples/full-pipelines/dbt'
 ---
 
-In this example, you'll build a pipeline with Dagster that integrates with dbt, including incremental models and tests.
+In this example, you'll build a pipeline with Dagster that:
+
+- Initializes a Dagster dbt project with components
+- Builds dbt tests
+- Builds incremental models
+- Connects upstream and downstream assets across the project
 
 ## Prerequisites
 
