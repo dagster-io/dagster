@@ -11,6 +11,12 @@ Related documentation pages: `Using Dagster with Sigma <https://docs.dagster.io/
 
 .. currentmodule:: dagster_sigma
 
+***********
+Component
+***********
+
+.. autoclass:: SigmaOrganizationComponent
+
 *********
 Sigma API
 *********
