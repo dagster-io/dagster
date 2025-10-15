@@ -89,13 +89,15 @@ def _get_components_to_refresh(
 
 
 async def _refresh_state_for_component(
-    component: "StateBackedComponent", statuses: dict[str, ComponentStateRefreshStatus]
+    component: "StateBackedComponent",
+    statuses: dict[str, ComponentStateRefreshStatus],
+    project_root: Path,
 ) -> None:
     """Refreshes the state of a component and tracks its state in the statuses dictionary as it progresses."""
     key = component.defs_state_config.key
 
     try:
-        await component.refresh_state()
+        await component.refresh_state(project_root)
         error = None
     except Exception as e:
         error = e
@@ -112,9 +114,13 @@ async def _refresh_state_for_components(
     defs_state_storage: "DefsStateStorage",
     components: list["StateBackedComponent"],
     statuses: dict[str, ComponentStateRefreshStatus],
+    project_root: Path,
 ) -> Optional["DefsStateInfo"]:
     await asyncio.gather(
-        *[_refresh_state_for_component(component, statuses) for component in components]
+        *[
+            _refresh_state_for_component(component, statuses, project_root)
+            for component in components
+        ]
     )
     return defs_state_storage.get_latest_defs_state_info()
 
@@ -158,7 +164,7 @@ def get_updated_defs_state_info_task_and_statuses(
     }
     refresh_task = asyncio.create_task(
         _refresh_state_for_components(
-            defs_state_storage, list(deduplicated_components.values()), statuses
+            defs_state_storage, list(deduplicated_components.values()), statuses, project_path
         )
     )
     return refresh_task, statuses
