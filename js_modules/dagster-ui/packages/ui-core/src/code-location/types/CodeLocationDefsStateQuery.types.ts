@@ -13,12 +13,7 @@ export type CodeLocationDefsStateQuery = {
     keyStateInfo: Array<{
       __typename: 'DefsStateInfoEntry';
       name: string;
-      info: {
-        __typename: 'DefsKeyStateInfo';
-        version: string;
-        createTimestamp: number;
-        managementType: Types.DefsStateManagementType;
-      } | null;
+      info: {__typename: 'DefsKeyStateInfo'; version: string; createTimestamp: number} | null;
     }>;
   } | null;
   workspaceLocationEntryOrError:
@@ -40,16 +35,11 @@ export type CodeLocationDefsStateQuery = {
           keyStateInfo: Array<{
             __typename: 'DefsStateInfoEntry';
             name: string;
-            info: {
-              __typename: 'DefsKeyStateInfo';
-              version: string;
-              createTimestamp: number;
-              managementType: Types.DefsStateManagementType;
-            } | null;
+            info: {__typename: 'DefsKeyStateInfo'; version: string; createTimestamp: number} | null;
           }>;
         } | null;
       }
     | null;
 };
 
-export const CodeLocationDefsStateQueryVersion = '574502c4307b72bca431bba7be22191dcfcc6a3656566d8677d1abf2efe2b804';
+export const CodeLocationDefsStateQueryVersion = '48c254f1f69e44eb1010e324b368262b96f00fdc20da873424e12ad76924c2c4';

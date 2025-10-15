@@ -9,7 +9,6 @@ export const CODE_LOCATION_DEFS_STATE_QUERY = gql`
         info {
           version
           createTimestamp
-          managementType
         }
       }
     }
@@ -22,7 +21,6 @@ export const CODE_LOCATION_DEFS_STATE_QUERY = gql`
             info {
               version
               createTimestamp
-              managementType
             }
           }
         }
