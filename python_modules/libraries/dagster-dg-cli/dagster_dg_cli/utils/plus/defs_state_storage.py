@@ -79,7 +79,7 @@ class DagsterPlusCliDefsStateStorage(DefsStateStorage[T_DagsterInstance]):
         return self.graphql_client.execute(query, variables=variables)
 
     def _get_artifact_key(self, key: str, version: str) -> str:
-        return f"__state__/{key}/{version}"
+        return f"__state__/{self._sanitize_key(key)}/{version}"
 
     def download_state_to_path(self, key: str, version: str, path: Path) -> None:
         download_artifact(

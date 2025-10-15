@@ -225,13 +225,13 @@ class DefinitionsLoadContext:
                 return
             # grab state for storage
             with tempfile.TemporaryDirectory() as temp_dir:
-                state_path = Path(temp_dir) / key
+                state_path = Path(temp_dir) / "state"
                 state_storage.download_state_to_path(key, key_info.version, state_path)
                 yield state_path
         elif config.type == DefsStateManagementType.LEGACY_CODE_SERVER_SNAPSHOTS:
             # state is stored in the reconstruction metadata
             with tempfile.TemporaryDirectory() as temp_dir:
-                state_path = Path(temp_dir) / key
+                state_path = Path(temp_dir) / "state"
                 state = self._get_defs_state_from_reconstruction_metadata(key)
                 state_path.write_text(state)
                 yield state_path

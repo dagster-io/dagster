@@ -58,7 +58,7 @@ class BlobStorageStateStorage(DefsStateStorage, ConfigurableClass):
         )
 
     def _get_state_path(self, key: str, version: str) -> "UPath":
-        return self._base_path / key / version
+        return self._base_path / self._sanitize_key(key) / version
 
     def download_state_to_path(self, key: str, version: str, path: Path) -> None:
         remote_path = self._get_state_path(key, version)
