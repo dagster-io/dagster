@@ -1633,6 +1633,53 @@ class AssetsDefinition(ResourceAddable, IHasInternalInit):
         hook_defs = check.set_param(hook_defs, "hook_defs", of_type=HookDefinition)
         return self.with_attributes(hook_defs=(hook_defs | self.hook_defs))
 
+    @public
+    def rename_resources(self, resource_mapping: Mapping[str, str]) -> "AssetsDefinition":
+        """Create a copy of this AssetsDefinition with resource keys renamed according to the provided mapping.
+
+        Args:
+            resource_mapping: A mapping from old resource key to new resource key. Only resource 
+                keys that are being renamed need to be included in the mapping.
+
+        Returns:
+            A new AssetsDefinition with resources renamed.
+
+        Example:
+            .. code-block:: python
+
+                assets_with_renamed_resources = my_assets.rename_resources({"old_db": "new_db"})
+        """
+        from dagster._core.definitions.resource_aliasing import (
+            validate_resource_mapping,
+        )
+        from dagster._core.definitions.utils import merge_resource_defs
+
+        # Validate the resource mapping
+        all_resource_keys = set(self.resource_defs.keys())
+        validate_resource_mapping(resource_mapping, all_resource_keys)
+
+        # Remap resource_defs keys
+        new_resource_defs = {}
+        for old_key, resource_def in self.resource_defs.items():
+            new_key = resource_mapping.get(old_key, old_key)
+            new_resource_defs[new_key] = resource_def
+
+        # Remap the node_def if it exists and has rename_resources
+        new_node_def = None
+        if self._computation and hasattr(self._computation.node_def, 'rename_resources'):
+            new_node_def = self._computation.node_def.rename_resources(resource_mapping)
+        elif self._computation:
+            new_node_def = self._computation.node_def
+
+        # Create new AssetsDefinition with updated resources and node_def
+        attributes_dict = self.get_attributes_dict()
+        attributes_dict["resource_defs"] = new_resource_defs
+        if new_node_def:
+            attributes_dict["node_def"] = new_node_def
+
+        with disable_dagster_warnings():
+            return self.__class__(**attributes_dict)
+
     def get_attributes_dict(self) -> dict[str, Any]:
         return dict(
             keys_by_input_name=self.node_keys_by_input_name,
