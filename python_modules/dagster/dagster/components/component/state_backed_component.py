@@ -61,7 +61,7 @@ class StateBackedComponent(Component):
             "Attempted to store LEGACY_CODE_SERVER_SNAPSHOTS state outside of the initialization phase.",
         )
         with tempfile.TemporaryDirectory() as temp_dir:
-            state_path = Path(temp_dir) / key
+            state_path = Path(temp_dir) / "state"
             await self._write_state_to_path_async(state_path)
             load_context.add_code_server_defs_state_info(key, state_path.read_text())
             state_storage.set_latest_version(key, CODE_SERVER_STATE_VERSION)
@@ -81,7 +81,7 @@ class StateBackedComponent(Component):
     ) -> str:
         with tempfile.TemporaryDirectory() as temp_dir:
             version = str(uuid4())
-            state_path = Path(temp_dir) / key
+            state_path = Path(temp_dir) / "state"
             await self._write_state_to_path_async(state_path)
             state_storage.upload_state_from_path(key, version=version, path=state_path)
             return version
