@@ -24,6 +24,7 @@ from dagster_graphql.implementation.loader import RepositoryScopedBatchLoader
 from dagster_graphql.implementation.utils import (
     assert_permission_for_sensor,
     capture_error,
+    has_permission_for_definition,
     require_permission_check,
 )
 from dagster_graphql.schema.asset_selections import GrapheneAssetSelection
@@ -147,9 +148,8 @@ class GrapheneSensor(graphene.ObjectType):
         )
 
     def resolve_hasCursorUpdatePermissions(self, graphene_info: ResolveInfo) -> bool:
-        return graphene_info.context.has_permission_for_selector(
-            Permissions.UPDATE_SENSOR_CURSOR,
-            self._remote_sensor.sensor_selector,
+        return has_permission_for_definition(
+            graphene_info, Permissions.UPDATE_SENSOR_CURSOR, self._remote_sensor
         )
 
     def resolve_sensorState(self, _graphene_info: ResolveInfo):
