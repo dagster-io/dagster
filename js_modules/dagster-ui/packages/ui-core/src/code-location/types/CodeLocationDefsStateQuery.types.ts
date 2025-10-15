@@ -7,7 +7,12 @@ export type DefsStateInfoFragment = {
   keyStateInfo: Array<{
     __typename: 'DefsStateInfoEntry';
     name: string;
-    info: {__typename: 'DefsKeyStateInfo'; version: string; createTimestamp: number} | null;
+    info: {
+      __typename: 'DefsKeyStateInfo';
+      version: string;
+      createTimestamp: number;
+      managementType: Types.DefsStateManagementType;
+    } | null;
   }>;
 };
 
@@ -22,7 +27,12 @@ export type CodeLocationDefsStateQuery = {
     keyStateInfo: Array<{
       __typename: 'DefsStateInfoEntry';
       name: string;
-      info: {__typename: 'DefsKeyStateInfo'; version: string; createTimestamp: number} | null;
+      info: {
+        __typename: 'DefsKeyStateInfo';
+        version: string;
+        createTimestamp: number;
+        managementType: Types.DefsStateManagementType;
+      } | null;
     }>;
   } | null;
   workspaceLocationEntryOrError:
@@ -44,11 +54,16 @@ export type CodeLocationDefsStateQuery = {
           keyStateInfo: Array<{
             __typename: 'DefsStateInfoEntry';
             name: string;
-            info: {__typename: 'DefsKeyStateInfo'; version: string; createTimestamp: number} | null;
+            info: {
+              __typename: 'DefsKeyStateInfo';
+              version: string;
+              createTimestamp: number;
+              managementType: Types.DefsStateManagementType;
+            } | null;
           }>;
         } | null;
       }
     | null;
 };
 
-export const CodeLocationDefsStateQueryVersion = '2f58b69f8aacec08df30be6ff3edc6d70afc33a63e7bfd09fe0989f90330c853';
+export const CodeLocationDefsStateQueryVersion = '5b08179edb0fd7fc5708a72749481eef52efc1b06874a64ea8d7f87ed1a8afbe';

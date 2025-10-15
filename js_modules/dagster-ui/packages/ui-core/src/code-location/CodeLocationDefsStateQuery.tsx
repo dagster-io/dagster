@@ -8,6 +8,7 @@ export const DEFS_STATE_INFO_FRAGMENT = gql`
       info {
         version
         createTimestamp
+        managementType
       }
     }
   }
