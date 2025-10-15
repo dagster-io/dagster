@@ -11,20 +11,11 @@ import DagsterPlus from '@site/docs/partials/\_DagsterPlus.md';
 
 <DagsterPlus />
 
-Dagster+ provides out-of-the-box support for Continuous Integration (CI) with **Branch Deployments**.
-
-Branch Deployments automatically create staging environments of your Dagster code, right in Dagster+. For every push to a branch in your git repository, Dagster+ will create a unique deployment, allowing you to preview the changes in the branch in real-time.
-
-Think of a branch deployment as a branch of your data platform, one where you can preview changes without impacting production or overwriting a testing environment.
-
-Branch deployments offer the following benefits:
-
-- **Improved collaboration.** Branch Deployments make it easy for everyone on your team to stay in the loop on the latest Dagster changes.
-- **Reduced development cycle.** Quickly test and iterate on your changes without impacting production or overwriting a testing environment.
+Branch deployments automatically create staging environments of your Dagster code, right in Dagster+. Every time you push to a branch with an open pull request in the Git repository for your Dagster code, Dagster+ will redeploy the code in the branch, allowing you to preview the changes to the branch in real time, without affecting production or overwriting a test environment.
 
 ## Supported platforms
 
-Branch Deployments can be used with any Git or CI provider. However, setup is easiest with the Dagster GitHub app or Dagster Gitlab app, as parts of the process are automated. For more information, see [Setting up branch deployments](/deployment/dagster-plus/ci-cd/branch-deployments/setting-up-branch-deployments).
+Branch deployments can be used with any Git or CI provider. However, setup is easiest with the Dagster GitHub actions or Dagster Gitlab CI/CD workflow, as parts of the process are automated. For more information, see [Setting up branch deployments](/deployment/dagster-plus/ci-cd/branch-deployments/setting-up-branch-deployments).
 
 ## Change tracking
 
@@ -36,10 +27,10 @@ Below is an example branch deployment setup:
 
 ![Overview of branch deployment architecture](/images/dagster-plus/features/branch-deployments/branch-deployments.png)
 
-1. In your git repository, a new branch is created off of `main`. In the example above, this branch is named `feature-1`.
+1. In your Git repository, a new branch is created from the `main` branch. In the example above, this branch is named `feature-1`. A pull request is created from that branch.
 
-2. Dagster+ is notified of the push and creates a branch deployment named `feature-1`. The branch deployment functions just like your `production` deployment of Dagster+, but contains the Dagster code changes from the `feature-1` branch.
+2. Dagster+ is notified of the new pull request and creates a branch deployment named `feature-1`. The branch deployment functions just like your `production` deployment of Dagster+, but contains the Dagster code changes from the `feature-1` branch.
 
-   In this example, the `feature-1` branch deployment 'talks' to a `cloned schema` in a database. This is completely separate from the `prod schema` associated with the `production` deployment.
+   In this example, the `feature-1` branch deployment communicates with a `cloned schema` in a database. This is completely separate from the `prod schema` associated with the `production` deployment.
 
 3. For every push to the `feature-1` branch, the `feature-1` branch deployment in Dagster+ is rebuilt and redeployed.

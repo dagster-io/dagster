@@ -9,17 +9,7 @@ import DagsterPlus from '@site/docs/partials/\_DagsterPlus.md';
 
 <DagsterPlus />
 
-In this guide, we'll walk you through setting up Branch Deployments for a code location. Once you're finished, any time a PR is created or updated in your repository, it will automatically create or update an associated branch deployment in Dagster+.
-
-<details>
-  <summary>Prerequisites</summary>
-
-To follow the steps in this guide, you'll need:
-
-- **Organization Admin** permissions in Dagster+
-- The ability to run a new agent in your infrastructure (only if you are using a **Hybrid deployment**)
-
-</details>
+This guide covers setting up branch deployments for a code location. Once you've set up branch deployments, any time you create or update a PR in the repository for your code location, it will automatically create or update an associated branch deployment in Dagster+.
 
 :::info
 
@@ -27,67 +17,70 @@ Output created from a branch deployment - such as a database, table, etc. - won'
 
 :::
 
-## Step 1: Choose a method
+## Prerequisites
 
-Choose a method for setting up branch deployments:
+To follow the steps in this guide, you'll need:
+
+- [**Organization Admin** permissions](/deployment/dagster-plus/authentication-and-access-control/rbac/user-roles-permissions) in Dagster+
+- The ability to run a new agent in your infrastructure (only if you are using a **Hybrid deployment**)
+
+## Step 1: Choose a method
 
 <Tabs groupId="method">
   <TabItem value="github" label="GitHub">
 
-You can set up GitHub to automatically create branch deployments for new PRs, using GitHub Actions.
+You can set up GitHub to automatically create branch deployments for new pull requests, using GitHub Actions.
 
 Using this approach to branch deployments may be a good fit if:
 
 - You use **GitHub** for version control
-- You want Dagster to fully automate Branch Deployments
+- You want Dagster to fully automate branch deployments
 
 </TabItem>
 <TabItem value="gitlab" label="GitLab">
 
-You can set up GitLab to automatically create branch deployments for new PRs, using GitLab's CI/CD workflow.
+You can set up GitLab to automatically create branch deployments for new merge request, using GitLab's CI/CD workflow.
 
 Using this approach to branch deployments may be a good fit if:
 
 - You use **GitLab** for version control
-- You want Dagster to fully automate Branch Deployments
+- You want Dagster to fully automate branch deployments
 
 </TabItem>
 <TabItem value="cli" label="dagster-cloud CLI">
 
-You can manually execute dagster-cloud CLI commands to deploy and manage branch deployments.
+You can manually execute dagster-cloud CLI commands to deploy and manage branch deployments. This is a more advanced option than the other methods.
 
-Using this approach to branch deployments may be a good fit if:
+This approach may be a good fit if:
 
 - You don't use GitHub or GitLab for version control
 - You use an alternative CI platform
-- You want full control over Branch Deployment configuration
+- You want full control over branch deployment configuration
 
-This is a more advanced option than the other methods.
-
-  </TabItem>
+</TabItem>
 </Tabs>
 
 ## Step 2: Generate a Dagster+ agent token
 
-In this step, you'll generate a token for the Dagster+ agent. The Dagster+ agent will use this to authenticate to the agent API.
+The first step is to generate a token for the Dagster+ agent. The Dagster+ agent will use this to authenticate to the agent API.
 
 1. Sign in to your Dagster+ instance.
 2. Click the **user menu (your icon) > Organization Settings**.
 3. In the **Organization Settings** page, click the **Tokens** tab.
 4. Click the **Create agent token** button.
-5. After the token has been created, click **Reveal token**.
+5. After the token has been created, click **Reveal token** and copy the token.
 
 Keep the token somewhere handy - you'll need it to complete the setup.
 
 ## Step 3: Create and configure a branch deployment agent
 
-:::note
+:::info
 
-If you are using [Serverless deployment](/deployment/dagster-plus/serverless), you can skip this step.
+If you are using [Dagster+ Serverless](/deployment/dagster-plus/serverless), you can skip this step.
 
 :::
 
-While you can use your existing production agent, we recommend creating a dedicated branch deployment agent. This ensures that your production instance isn't negatively impacted by the workload associated with branch deployments.
+While you can use your existing production agent for branch deployment, we recommend creating a dedicated branch deployment agent. This ensures that your production instance isn't negatively impacted by the workload associated with branch deployments.
 
 <Tabs>
   <TabItem value="ecs" label="Amazon ECS">
@@ -149,7 +142,9 @@ Keep this around, as you'll need it in a later step.
 
 **Step 4.1: Add GitHub CI/CD script to your project**
 :::note
+
 If you used the GitHub app to configure your repository, this step isn't required, and you can skip ahead to Step 4.5.
+
 :::
 
 Copy the following files to your project, and **replace** all references to `quickstart-etl` with the name of your project:
