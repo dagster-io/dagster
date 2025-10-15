@@ -14,7 +14,7 @@ In this example, you'll build a pipeline with Dagster that:
 
 - Initializes a Dagster dbt project with components
 - Builds dbt tests
-- Models incrementals models
+- Builds incremental models
 - Connects upstream and downstream assets across the project
 
 ## Prerequisites
