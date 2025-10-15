@@ -13,7 +13,6 @@ from dagster_shared.serdes.objects.models.defs_state_info import (
     CODE_SERVER_STATE_VERSION,
     LOCAL_STATE_VERSION,
     DefsStateManagementType,
-    get_local_state_path,
 )
 from typing_extensions import Self
 
@@ -28,6 +27,7 @@ from dagster._utils.env import using_dagster_dev
 from dagster.components.component.component import Component
 from dagster.components.core.context import ComponentLoadContext
 from dagster.components.utils.defs_state import DefsStateConfig
+from dagster.components.utils.project_paths import get_local_state_path
 
 if TYPE_CHECKING:
     from pydantic import BaseModel
@@ -67,8 +67,10 @@ class StateBackedComponent(Component):
             state_storage.set_latest_version(key, CODE_SERVER_STATE_VERSION)
             return CODE_SERVER_STATE_VERSION
 
-    async def _store_local_filesystem_state(self, key: str, state_storage: DefsStateStorage) -> str:
-        state_path = get_local_state_path(key)
+    async def _store_local_filesystem_state(
+        self, key: str, state_storage: DefsStateStorage, project_root: Path
+    ) -> str:
+        state_path = get_local_state_path(key, project_root)
         shutil.rmtree(state_path, ignore_errors=True)
         await self._write_state_to_path_async(state_path)
         state_storage.set_latest_version(key, LOCAL_STATE_VERSION)
@@ -84,8 +86,12 @@ class StateBackedComponent(Component):
             state_storage.upload_state_from_path(key, version=version, path=state_path)
             return version
 
-    async def refresh_state(self) -> str:
-        """Rebuilds the state for this component and persists it to the current StateStore."""
+    async def refresh_state(self, project_root: Path) -> str:
+        """Rebuilds the state for this component and persists it to the current StateStore.
+
+        Args:
+            project_root: The root directory of the project.
+        """
         key = self.defs_state_config.key
         state_storage = DefsStateStorage.get()
         if state_storage is None:
@@ -97,7 +103,7 @@ class StateBackedComponent(Component):
         if self.defs_state_config.type == DefsStateManagementType.VERSIONED_STATE_STORAGE:
             return await self._store_versioned_state_storage_state(key, state_storage)
         elif self.defs_state_config.type == DefsStateManagementType.LOCAL_FILESYSTEM:
-            return await self._store_local_filesystem_state(key, state_storage)
+            return await self._store_local_filesystem_state(key, state_storage, project_root)
         elif self.defs_state_config.type == DefsStateManagementType.LEGACY_CODE_SERVER_SNAPSHOTS:
             check.invariant(
                 DefinitionsLoadContext.get().load_type == DefinitionsLoadType.INITIALIZATION,
@@ -130,11 +136,11 @@ class StateBackedComponent(Component):
                 # automatically refresh in local dev unless the user opts out
                 (using_dagster_dev() and self.defs_state_config.refresh_if_dev)
             ):
-                version = asyncio.run(self.refresh_state())
+                version = asyncio.run(self.refresh_state(context.project_root))
                 defs_load_context.add_defs_state_info(key, version)
 
         with DefinitionsLoadContext.get().state_path(
-            self.defs_state_config, state_storage
+            self.defs_state_config, state_storage, context.project_root
         ) as state_path:
             return self.build_defs_from_state(context, state_path=state_path)
 

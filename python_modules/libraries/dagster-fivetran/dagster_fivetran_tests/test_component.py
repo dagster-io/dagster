@@ -123,7 +123,7 @@ def test_component_load_with_defs_state(
             # first load, nothing there
             assert len(defs.resolve_asset_graph().get_all_asset_keys()) == 0
             assert isinstance(component, FivetranAccountComponent)
-            asyncio.run(component.refresh_state())
+            asyncio.run(component.refresh_state(sandbox.project_root))
 
         with (
             scoped_definitions_load_context(),
