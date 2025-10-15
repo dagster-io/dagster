@@ -17,16 +17,13 @@ In this example, you'll build a pipeline with Dagster that:
 - Models incrementals models
 - Connects upstream and downstream assets across the project
 
-<details>
-  <summary>Prerequisites</summary>
+## Prerequisites
 
 To follow the steps in this guide, you'll need:
 
 - Basic Python knowledge
 - Python 3.9+ installed on your system. Refer to the [Installation guide](/getting-started/installation) for information.
 - Familiar with [dbt](https://www.getdbt.com) and data transformation.
-
-</details>
 
 ## 1. Set up your Dagster environment
 

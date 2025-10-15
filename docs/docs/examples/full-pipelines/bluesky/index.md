@@ -22,8 +22,7 @@ In this example, you'll build a pipeline with Dagster that:
 - Modeling data using dbt
 - Representing data in a dashboard with PowerBI
 
-<details>
-  <summary>Prerequisites</summary>
+## Prerequisites
 
 To follow the steps in this guide, you'll need:
 
@@ -32,8 +31,6 @@ To follow the steps in this guide, you'll need:
 - Understanding of data pipelines and the extract, transform, and load process (ETL).
 - Familiar with [dbt](https://www.getdbt.com) and data transformation.
 - Usage of BI tools for dashboards.
-
-</details>
 
 ## Step 1: Set up your Dagster environment
 

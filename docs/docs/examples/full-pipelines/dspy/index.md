@@ -18,8 +18,7 @@ In this example, you'll build an AI system that solves [NYT Connections puzzles]
 - Evaluate puzzle-solving performance with custom metrics
 - Deploy and monitor the AI system in production
 
-<details>
-  <summary>Prerequisites</summary>
+## Prerequisites
 
 To follow the steps in this guide, you'll need:
 
@@ -27,8 +26,6 @@ To follow the steps in this guide, you'll need:
 - Python 3.9+ installed on your system. Refer to the [Installation guide](/getting-started/installation) for information.
 - Understanding of language models and AI pipelines
 - Basic knowledge of the NYT Connections puzzle format
-
-</details>
 
 ## Step 1: Set up your Dagster environment
 

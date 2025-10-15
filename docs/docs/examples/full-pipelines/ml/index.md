@@ -17,8 +17,7 @@ In this example, you'll build a complete CNN-based digit classifier that:
 - Implement configurable training workflows that adapt across development and production environments
 - Create scalable inference services supporting both batch and real-time prediction scenarios
 
-<details>
-  <summary>Prerequisites</summary>
+## Prerequisites
 
 To follow the steps in this guide, you'll need:
 
@@ -26,8 +25,6 @@ To follow the steps in this guide, you'll need:
 - Python 3.9+ installed on your system. Refer to the [Installation guide](/getting-started/installation) for information.
 - Basic familiarity with machine learning concepts (neural networks, training/validation splits)
 - Understanding of PyTorch fundamentals (tensors, models, training loops)
-
-</details>
 
 ## Step 1: Set up your Dagster environment
 

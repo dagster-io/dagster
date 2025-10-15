@@ -18,16 +18,13 @@ In this tutorial, you'll build a full ETL pipeline with Dagster that:
 - Generates one-time reports on demand
 - Visualizes the data with [Evidence](https://evidence.dev/)
 
-<details>
-  <summary>Prerequisites</summary>
+## Prerequisites
 
 To follow the steps in this guide, you'll need:
 
 - Python 3.9+ and [`uv`](https://docs.astral.sh/uv) installed. For more information, see the [Installation guide](/getting-started/installation).
 - Familiarity with Python and SQL.
 - A basic understanding of data pipelines and the extract, transform, and load (ETL) process.
-
-</details>
 
 ## Step 1: Set up your Dagster environment
 
