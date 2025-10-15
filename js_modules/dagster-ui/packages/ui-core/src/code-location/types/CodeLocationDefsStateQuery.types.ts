@@ -2,6 +2,20 @@
 
 import * as Types from '../../graphql/types';
 
+export type DefsStateInfoFragment = {
+  __typename: 'DefsStateInfo';
+  keyStateInfo: Array<{
+    __typename: 'DefsStateInfoEntry';
+    name: string;
+    info: {
+      __typename: 'DefsKeyStateInfo';
+      version: string;
+      createTimestamp: number;
+      managementType: Types.DefsStateManagementType;
+    } | null;
+  }>;
+};
+
 export type CodeLocationDefsStateQueryVariables = Types.Exact<{
   locationName: Types.Scalars['String']['input'];
 }>;
@@ -13,7 +27,12 @@ export type CodeLocationDefsStateQuery = {
     keyStateInfo: Array<{
       __typename: 'DefsStateInfoEntry';
       name: string;
-      info: {__typename: 'DefsKeyStateInfo'; version: string; createTimestamp: number} | null;
+      info: {
+        __typename: 'DefsKeyStateInfo';
+        version: string;
+        createTimestamp: number;
+        managementType: Types.DefsStateManagementType;
+      } | null;
     }>;
   } | null;
   workspaceLocationEntryOrError:
@@ -35,11 +54,16 @@ export type CodeLocationDefsStateQuery = {
           keyStateInfo: Array<{
             __typename: 'DefsStateInfoEntry';
             name: string;
-            info: {__typename: 'DefsKeyStateInfo'; version: string; createTimestamp: number} | null;
+            info: {
+              __typename: 'DefsKeyStateInfo';
+              version: string;
+              createTimestamp: number;
+              managementType: Types.DefsStateManagementType;
+            } | null;
           }>;
         } | null;
       }
     | null;
 };
 
-export const CodeLocationDefsStateQueryVersion = '48c254f1f69e44eb1010e324b368262b96f00fdc20da873424e12ad76924c2c4';
+export const CodeLocationDefsStateQueryVersion = '5b08179edb0fd7fc5708a72749481eef52efc1b06874a64ea8d7f87ed1a8afbe';

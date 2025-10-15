@@ -1,0 +1,23 @@
+/* Compensate for extra spacing in the SVGs themselves. */
+.daggyWordmarkContainer {
+  margin-left: -10px;
+}
+
+@media (prefers-color-scheme: light) {
+  :global(.themeSystem) .daggyDarkMode {
+    display: none;
+  }
+}
+
+@media (prefers-color-scheme: dark) {
+  :global(.themeSystem) .daggyLightMode {
+    display: none;
+  }
+}
+
+:global(.themeLight) .daggyDarkMode,
+:global(.themeLightNoRedGreen) .daggyDarkMode,
+:global(.themeDark) .daggyLightMode,
+:global(.themeDarkNoRedGreen) .daggyLightMode {
+  display: none;
+}

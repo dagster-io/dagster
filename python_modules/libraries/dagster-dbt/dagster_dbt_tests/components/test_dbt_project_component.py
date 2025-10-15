@@ -5,6 +5,7 @@ from collections.abc import Iterator, Mapping
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any, Callable, Optional
+from unittest.mock import patch
 
 import dagster as dg
 import pytest
@@ -15,8 +16,10 @@ from dagster._core.definitions.metadata.source_code import (
     CodeReferencesMetadataValue,
     LocalFileCodeReference,
 )
+from dagster._core.instance_for_test import instance_for_test
 from dagster._core.test_utils import ensure_dagster_tests_import
 from dagster._utils.env import environ
+from dagster._utils.test.definitions import scoped_definitions_load_context
 from dagster.components.core.component_tree import ComponentTree
 from dagster.components.core.load_defs import build_component_defs
 from dagster.components.resolved.context import ResolutionContext
@@ -54,6 +57,21 @@ JAFFLE_SHOP_KEYS = {
     AssetKey("stg_orders"),
     AssetKey("stg_payments"),
 }
+
+
+@pytest.fixture(autouse=True)
+def _setup() -> Iterator:
+    with (
+        instance_for_test() as instance,
+        scoped_definitions_load_context(),
+        # this file doesn't use `create_defs_folder_sandbox` so we need to mock out the local_state_dir
+        tempfile.TemporaryDirectory() as temp_dir,
+        patch(
+            "dagster.components.utils.project_paths.get_local_defs_state_dir",
+            return_value=Path(temp_dir),
+        ),
+    ):
+        yield instance
 
 
 @pytest.fixture(scope="module")
@@ -240,6 +258,10 @@ def test_dependency_on_dbt_project():
     # Ensure DEPENDENCY_ON_DBT_PROJECT_LOCATION_PATH is an importable python module
     sys.path.append(str(DEPENDENCY_ON_DBT_PROJECT_LOCATION_PATH.parent))
 
+    # there's an order of operations issue here, wherein the dependency on the dbt project only
+    # loads the component (and doesn't build definitions), but the dbt project only ensures that
+    # the manifest exists during the build process. we should figure out a more systemtic way to
+    # fix this issue.
     project = DbtProject(
         Path(DEPENDENCY_ON_DBT_PROJECT_LOCATION_PATH) / "defs/jaffle_shop_dbt/jaffle_shop"
     )

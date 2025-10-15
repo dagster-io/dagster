@@ -103,7 +103,7 @@ class _Repository:
 
         repository_definitions = fn()
         context = DefinitionsLoadContext.get()
-        defs_state_info = context.defs_state_info
+        defs_state_info = context.accessed_defs_state_info
 
         if context.load_type == DefinitionsLoadType.INITIALIZATION:
             reconstruction_metadata = context.get_pending_reconstruction_metadata()

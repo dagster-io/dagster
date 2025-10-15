@@ -1,10 +1,11 @@
 import asyncio
 import time
 from pathlib import Path
-from typing import TYPE_CHECKING, Literal, Optional
+from typing import TYPE_CHECKING, Annotated, Literal, Optional
 
 import click
 from dagster_dg_core.utils import exit_with_error
+from dagster_shared.check import ImportFrom
 from dagster_shared.record import record, replace
 
 if TYPE_CHECKING:
@@ -12,20 +13,21 @@ if TYPE_CHECKING:
     from dagster.components.component.state_backed_component import StateBackedComponent
     from dagster.components.core.component_tree import ComponentTree
     from dagster_shared.serdes.objects.models import DefsStateInfo
+    from dagster_shared.serdes.objects.models.defs_state_info import DefsStateManagementType
 
 
 @record
 class ComponentStateRefreshStatus:
     status: Literal["refreshing", "done", "failed"]
+    management_type: Annotated[
+        "DefsStateManagementType",
+        ImportFrom("dagster_shared.serdes.objects.models.defs_state_info"),
+    ]
     error: Optional[Exception] = None
     # For updating: start_time tracks when it began
     # For completed: duration tracks final elapsed time
     start_time: float = 0.0
     duration: Optional[float] = None
-
-    @staticmethod
-    def default() -> "ComponentStateRefreshStatus":
-        return ComponentStateRefreshStatus(status="refreshing", start_time=time.time())
 
 
 def raise_component_state_refresh_errors(statuses: dict[str, ComponentStateRefreshStatus]) -> None:
@@ -47,21 +49,31 @@ def raise_component_state_refresh_errors(statuses: dict[str, ComponentStateRefre
 
 
 def _get_components_to_refresh(
-    component_tree: "ComponentTree", defs_state_keys: Optional[set[str]]
+    component_tree: "ComponentTree",
+    defs_state_keys: Optional[set[str]],
+    management_types: set["DefsStateManagementType"],
 ) -> list["StateBackedComponent"]:
     from dagster.components.component.state_backed_component import StateBackedComponent
 
     state_backed_components = component_tree.get_all_components(of_type=StateBackedComponent)
-    if defs_state_keys is None:
-        return state_backed_components
 
     selected_components = [
         component
         for component in state_backed_components
-        if component.get_defs_state_key() in defs_state_keys
+        if component.defs_state_config.type in management_types
+    ]
+
+    # Filter by defs state keys if specified
+    if defs_state_keys is None:
+        return selected_components
+
+    selected_components = [
+        component
+        for component in selected_components
+        if component.defs_state_config.key in defs_state_keys
     ]
     missing_defs_keys = defs_state_keys - {
-        component.get_defs_state_key() for component in selected_components
+        component.defs_state_config.key for component in selected_components
     }
     if missing_defs_keys:
         click.echo("Error: The following defs state keys were not found:")
@@ -69,7 +81,7 @@ def _get_components_to_refresh(
             click.echo(f"  {key}")
         click.echo("Available defs state keys:")
         for key in sorted(
-            [component.get_defs_state_key() for component in state_backed_components]
+            [component.defs_state_config.key for component in state_backed_components]
         ):
             click.echo(f"  {key}")
         exit_with_error("One or more specified defs state keys were not found.")
@@ -77,13 +89,15 @@ def _get_components_to_refresh(
 
 
 async def _refresh_state_for_component(
-    component: "StateBackedComponent", statuses: dict[str, ComponentStateRefreshStatus]
+    component: "StateBackedComponent",
+    statuses: dict[str, ComponentStateRefreshStatus],
+    project_root: Path,
 ) -> None:
     """Refreshes the state of a component and tracks its state in the statuses dictionary as it progresses."""
-    key = component.get_defs_state_key()
+    key = component.defs_state_config.key
 
     try:
-        await component.refresh_state()
+        await component.refresh_state(project_root)
         error = None
     except Exception as e:
         error = e
@@ -100,9 +114,13 @@ async def _refresh_state_for_components(
     defs_state_storage: "DefsStateStorage",
     components: list["StateBackedComponent"],
     statuses: dict[str, ComponentStateRefreshStatus],
+    project_root: Path,
 ) -> Optional["DefsStateInfo"]:
     await asyncio.gather(
-        *[_refresh_state_for_component(component, statuses) for component in components]
+        *[
+            _refresh_state_for_component(component, statuses, project_root)
+            for component in components
+        ]
     )
     return defs_state_storage.get_latest_defs_state_info()
 
@@ -110,6 +128,7 @@ async def _refresh_state_for_components(
 def get_updated_defs_state_info_task_and_statuses(
     project_path: Path,
     defs_state_storage: "DefsStateStorage",
+    management_types: set["DefsStateManagementType"],
     defs_state_keys: Optional[set[str]] = None,
 ) -> tuple[asyncio.Task[Optional["DefsStateInfo"]], dict[str, ComponentStateRefreshStatus]]:
     """Creates an asyncio.Task that will refresh the defs state for all selected components within the specified project path.
@@ -122,17 +141,31 @@ def get_updated_defs_state_info_task_and_statuses(
 
     with disable_dagster_warnings():
         component_tree = ComponentTree.for_project(project_path)
-        components_to_refresh = _get_components_to_refresh(component_tree, defs_state_keys)
+        components_to_refresh = _get_components_to_refresh(
+            component_tree, defs_state_keys, management_types
+        )
+
+    # in some cases, multiple components may share the same defs state key. in these cases, it is assumed that
+    # the refresh_state method for each component of the same key will be identical, so we choose an arbitrary one
+    deduplicated_components: dict[str, StateBackedComponent] = {}
+    for component in components_to_refresh:
+        key = component.defs_state_config.key
+        if key not in deduplicated_components:
+            deduplicated_components[key] = component
 
     # shared dictionary to be used for all subtasks
     statuses = {
-        component.get_defs_state_key(): ComponentStateRefreshStatus(
-            status="refreshing", start_time=time.time()
+        key: ComponentStateRefreshStatus(
+            status="refreshing",
+            management_type=component.defs_state_config.type,
+            start_time=time.time(),
         )
-        for component in components_to_refresh
+        for key, component in deduplicated_components.items()
     }
     refresh_task = asyncio.create_task(
-        _refresh_state_for_components(defs_state_storage, components_to_refresh, statuses)
+        _refresh_state_for_components(
+            defs_state_storage, list(deduplicated_components.values()), statuses, project_path
+        )
     )
     return refresh_task, statuses
 
@@ -140,13 +173,14 @@ def get_updated_defs_state_info_task_and_statuses(
 async def get_updated_defs_state_info_and_statuses(
     project_path: Path,
     defs_state_storage: "DefsStateStorage",
+    management_types: set["DefsStateManagementType"],
     defs_state_keys: Optional[set[str]] = None,
 ) -> tuple[Optional["DefsStateInfo"], dict[str, ComponentStateRefreshStatus]]:
     """Refreshes the defs state for all selected components within the specified project path,
     and returns the updated defs state info and statuses.
     """
     task, statuses = get_updated_defs_state_info_task_and_statuses(
-        project_path, defs_state_storage, defs_state_keys
+        project_path, defs_state_storage, management_types, defs_state_keys
     )
     await task
     return task.result(), statuses
