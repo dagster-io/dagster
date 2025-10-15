@@ -1,12 +1,12 @@
-import {Box, Colors, FontFamily, Icon, Table, Tag, Tooltip} from '@dagster-io/ui-components';
+import {Box, Colors, FontFamily, Icon, Table, Tag} from '@dagster-io/ui-components';
 import {useMemo} from 'react';
 
-import {DefsStateInfo, DefsStateManagementType} from '../graphql/types';
 import {TimeFromNow} from '../ui/TimeFromNow';
+import {DefsStateInfoFragment} from './types/CodeLocationDefsStateQuery.types';
 
 interface Props {
-  latestDefsStateInfo: DefsStateInfo | null;
-  defsStateInfo: DefsStateInfo | null;
+  latestDefsStateInfo: DefsStateInfoFragment | null;
+  defsStateInfo: DefsStateInfoFragment | null;
 }
 
 export const CodeLocationDefsStateComparison = ({latestDefsStateInfo, defsStateInfo}: Props) => {
@@ -29,13 +29,11 @@ export const CodeLocationDefsStateComparison = ({latestDefsStateInfo, defsStateI
           key,
           latestVersion: latestEntry?.info?.version || null,
           latestTimestamp: latestEntry?.info?.createTimestamp || null,
-          latestManagementType: latestEntry?.info?.managementType || null,
           currentVersion: currentEntry?.info?.version || null,
           currentTimestamp: currentEntry?.info?.createTimestamp || null,
-          currentManagementType: currentEntry?.info?.managementType || null,
         };
       })
-      .sort((a, b) => (b.currentTimestamp || 0) - (a.currentTimestamp || 0));
+      .sort((a, b) => a.key.localeCompare(b.key));
   }, [latestDefsStateInfo, defsStateInfo]);
 
   const truncateVersion = (version: string | null) => {
@@ -45,75 +43,26 @@ export const CodeLocationDefsStateComparison = ({latestDefsStateInfo, defsStateI
     return version.length > 8 ? version.substring(0, 8) : version;
   };
 
-  const renderVersionCell = (
-    version: string | null,
-    managementType: DefsStateManagementType | null,
-  ) => {
-    if (!version || !managementType) {
+  const renderVersionCell = (version: string | null, timestamp: number | null) => {
+    if (!version || !timestamp) {
       return '—';
     }
 
-    // Render pills for special management types
-    if (managementType === DefsStateManagementType.LOCAL_FILESYSTEM) {
-      return (
-        <Tooltip
-          content="State is stored on the local filesystem or in the deployed image"
-          placement="top"
-        >
-          <Tag>local filesystem</Tag>
-        </Tooltip>
-      );
-    }
-
-    if (managementType === DefsStateManagementType.LEGACY_CODE_SERVER_SNAPSHOTS) {
-      return (
-        <Tooltip content="State is stored in-memory on the code server" placement="top">
-          <Tag>code server</Tag>
-        </Tooltip>
-      );
-    }
-
-    // Default: render the version hash for VERSIONED_STATE_STORAGE
     return (
-      <Tooltip content={version} placement="top">
+      <Box flex={{direction: 'row', alignItems: 'center', gap: 8}}>
+        <span style={{fontFamily: FontFamily.monospace}}>{truncateVersion(version)}</span>
         <Tag>
-          <span style={{fontFamily: FontFamily.monospace}}>{truncateVersion(version)}</span>
+          <TimeFromNow unixTimestamp={timestamp} />
         </Tag>
-      </Tooltip>
-    );
-  };
-
-  const renderTimestampCell = (timestamp: number | null) => {
-    if (!timestamp) {
-      return '—';
-    }
-
-    return (
-      <Tag>
-        <TimeFromNow unixTimestamp={timestamp} />
-      </Tag>
+      </Box>
     );
   };
 
   const renderStatusCell = (
     latestVersion: string | null,
     currentVersion: string | null,
-    currentManagementType: DefsStateManagementType | null,
     key: string,
   ) => {
-    // For local filesystem and code server management types, always show "Up to date"
-    if (
-      currentManagementType === DefsStateManagementType.LOCAL_FILESYSTEM ||
-      currentManagementType === DefsStateManagementType.LEGACY_CODE_SERVER_SNAPSHOTS
-    ) {
-      return (
-        <Box flex={{direction: 'row', alignItems: 'center', gap: 8}}>
-          <Icon name="check_circle" color={Colors.accentGreen()} size={16} />
-          <span style={{color: Colors.textGreen()}}>Up to date</span>
-        </Box>
-      );
-    }
-
     if (!latestVersion) {
       return (
         <Box flex={{direction: 'row', alignItems: 'center', gap: 8}}>
@@ -143,27 +92,56 @@ export const CodeLocationDefsStateComparison = ({latestDefsStateInfo, defsStateI
   };
 
   return (
-    <Table style={{width: '100%'}}>
-      <thead>
-        <tr>
-          <th>Defs state key</th>
-          <th>Current state</th>
-          <th>Last updated</th>
-          <th>Status</th>
-        </tr>
-      </thead>
-      <tbody>
-        {comparisonData.map(
-          ({key, currentVersion, currentTimestamp, currentManagementType, latestVersion}) => (
+    <Box>
+      <Table style={{width: '100%'}}>
+        <thead>
+          <tr>
+            <th
+              style={{
+                textAlign: 'left',
+                padding: '8px 12px',
+                borderBottom: `1px solid ${Colors.keylineDefault()}`,
+                width: '25%',
+              }}
+            >
+              Definition Key
+            </th>
+            <th
+              style={{
+                textAlign: 'left',
+                padding: '8px 12px',
+                borderBottom: `1px solid ${Colors.keylineDefault()}`,
+                width: '20%',
+              }}
+            >
+              Current State
+            </th>
+            <th
+              style={{
+                textAlign: 'left',
+                padding: '8px 12px',
+                borderBottom: `1px solid ${Colors.keylineDefault()}`,
+                width: '55%',
+              }}
+            >
+              Status
+            </th>
+          </tr>
+        </thead>
+        <tbody>
+          {comparisonData.map(({key, currentVersion, currentTimestamp, latestVersion}) => (
             <tr key={key}>
-              <td>{key}</td>
-              <td>{renderVersionCell(currentVersion, currentManagementType)}</td>
-              <td>{renderTimestampCell(currentTimestamp)}</td>
-              <td>{renderStatusCell(latestVersion, currentVersion, currentManagementType, key)}</td>
+              <td style={{padding: '8px 12px', fontFamily: FontFamily.monospace}}>{key}</td>
+              <td style={{padding: '8px 12px'}}>
+                {renderVersionCell(currentVersion, currentTimestamp)}
+              </td>
+              <td style={{padding: '8px 12px'}}>
+                {renderStatusCell(latestVersion, currentVersion, key)}
+              </td>
             </tr>
-          ),
-        )}
-      </tbody>
-    </Table>
+          ))}
+        </tbody>
+      </Table>
+    </Box>
   );
 };
