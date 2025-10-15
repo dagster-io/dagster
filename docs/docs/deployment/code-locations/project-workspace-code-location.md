@@ -8,7 +8,9 @@ Dagster uses several related terms to describe how your code is organized and de
 
 ## Project
 
-A **project** follows the general Python convention, a structured collection of source files, libraries, and configuration used for a specific application. The recommended Python project layout (centered around a `pyproject.toml`) looks like this:
+A **Dagster project** follows the general convention for a [Python project packaged for distribution](https://packaging.python.org/en/latest/tutorials/packaging-projects/): a structured collection of source files, libraries, and configuration used for a specific application. Additionally, Dagster projects contain [Dagster definitions](https://docs.dagster.io/api/dagster/definitions).
+
+The recommended Dagster project layout looks like this:
 
 ```
 my-project/
@@ -24,11 +26,8 @@ my-project/
 └── LICENSE.txt
 ```
 
-Dagster adopts this same concept. A Dagster project is simply a Python project containing Dagster definitions. While Dagster is flexible about how you organize your code, it provides an opinionated starting point via the [`create-dagster` CLI](/api/clis/create-dagster).
+While Dagster is flexible about how you organize your code, it provides an opinionated starting point with the [`create-dagster` CLI](/api/clis/create-dagster). For more information on creating Dagster projects from the CLI, see [Creating a new Dagster project](/guides/build/projects/creating-a-new-project).
 
-```bash
-uvx create-dagster@latest project my-project
-```
 
 ```
 my-project/
@@ -45,21 +44,9 @@ my-project/
 └── uv.lock
 ```
 
-The generated `pyproject.toml` defines the root module and registry modules for the project:
 
-```toml
-# pyproject.toml
-...
 
-[tool.dg]
-directory_type = "project"
 
-[tool.dg.project]
-root_module = "my_project"
-registry_modules = [
-    "my_project.components.*",
-]
-```
 
 ## Workspace
 
@@ -69,9 +56,8 @@ A workspace allows you to manage and orchestrate multiple Dagster projects toget
 - Projects have distinct dependencies or environments.
 - You want to deploy multiple projects in a coordinated way.
 
-A workspace acts as an orchestration layer above individual projects, enabling multi-project deployments while maintaining isolation between them.
 
-To create a workspace that includes multiple projects:
+As with projects, Dagster provides an opinionated starting point for workspaces with the [`create-dagster` CLI](/api/clis/create-dagster). For more information on creating Dagster workspaces from the CLI, see [Managing multiple projects with workspaces](/guides/build/projects/multiple-projects).
 
 ```bash
 mkdir projects
@@ -134,4 +120,3 @@ In other words, code locations are how your Dagster deployment interacts with yo
 
 ![Code locations](/images/guides/deploy/code-locations/code-locations.png)
 
-Whenever an asset runs in Dagster, it executes within the context of its code location, both the specific environment and project from which it originates.
