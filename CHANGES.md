@@ -24,9 +24,7 @@
 
 - Fixed broken social media link in docs. (Thanks, [@MandyMeindersma](https://github.com/MandyMeindersma)!)
 
-## Internal Repository Changes
-
-### Bugfixes
+### Dagster Plus
 
 - [ui] Fix home page performance for users with large numbers of automations and jobs.
 - [ui] Fix a sporadic JavaScript error that can crash the page when loading insights charts.
