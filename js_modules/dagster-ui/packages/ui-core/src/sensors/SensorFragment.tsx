@@ -13,6 +13,7 @@ export const SENSOR_FRAGMENT = gql`
     }
     defaultStatus
     canReset
+    hasCursorUpdatePermissions
     sensorState {
       id
       ...InstigationStateFragment

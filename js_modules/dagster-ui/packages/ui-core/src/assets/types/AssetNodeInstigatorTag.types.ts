@@ -17,6 +17,8 @@ export type AssetNodeInstigatorsFragment = {
           id: string;
           selectorId: string;
           status: Types.InstigationStatus;
+          hasStartPermission: boolean;
+          hasStopPermission: boolean;
         };
       }
     | {
@@ -29,6 +31,8 @@ export type AssetNodeInstigatorsFragment = {
           id: string;
           selectorId: string;
           status: Types.InstigationStatus;
+          hasStartPermission: boolean;
+          hasStopPermission: boolean;
           typeSpecificData:
             | {__typename: 'ScheduleData'}
             | {__typename: 'SensorData'; lastCursor: string | null}

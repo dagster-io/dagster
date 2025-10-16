@@ -1508,7 +1508,7 @@ export type WorkspaceRepositoryFragment = {
   displayMetadata: Array<{__typename: 'RepositoryMetadata'; key: string; value: string}>;
 };
 
-export const LocationWorkspaceQueryVersion = 'dc3c765d258d59c8c265f45109e72281af380ac95cb06b3e8faf799e7edba7ef';
+export const LocationWorkspaceQueryVersion = '7176c4113b2f47be7aef8961535e1849749ec94a01a79954ec9c5910fbe435a7';
 
 export const CodeLocationStatusQueryVersion = '5491629a2659feca3a6cf0cc976c6f59c8e78dff1193e07d7850ae4355698b04';
 
