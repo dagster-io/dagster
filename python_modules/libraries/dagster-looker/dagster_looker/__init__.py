@@ -3,6 +3,7 @@ from dagster_shared.libraries import DagsterLibraryRegistry
 from dagster_looker.api.assets import (
     build_looker_pdt_assets_definitions as build_looker_pdt_assets_definitions,
 )
+from dagster_looker.api.components import LookerInstanceComponent as LookerInstanceComponent
 from dagster_looker.api.dagster_looker_api_translator import (
     DagsterLookerApiTranslator as DagsterLookerApiTranslator,
     LookerApiTranslatorStructureData as LookerApiTranslatorStructureData,
