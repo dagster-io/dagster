@@ -1,7 +1,7 @@
 ---
 title: Dagster & Tableau (Component)
 sidebar_label: Tableau
-description: The dagster-tableau library provides a TableauWorkspaceComponent, which can be used to represent Tableau assets as assets in Dagster.
+description: The dagster-tableau library provides a TableauComponent, which can be used to represent Tableau assets as assets in Dagster.
 tags: [dagster-supported, bi]
 source: https://github.com/dagster-io/dagster/tree/master/python_modules/libraries/dagster-tableau
 pypi: https://pypi.org/project/dagster-tableau
@@ -12,7 +12,11 @@ canonicalUrl: '/integrations/libraries/tableau'
 slug: '/integrations/libraries/tableau'
 ---
 
-The [dagster-tableau](/integrations/libraries/tableau) library provides a `TableauWorkspaceComponent` which can be used to easily represent Tableau workbooks, sheets, dashboards, and data sources as assets in Dagster.
+import Beta from '@site/docs/partials/\_Beta.md';
+
+<Beta />
+
+The [dagster-tableau](/integrations/libraries/tableau) library provides a `TableauComponent` which can be used to easily represent Tableau workbooks, sheets, dashboards, and data sources as assets in Dagster.
 
 ## 1. Prepare a Dagster project
 
@@ -44,11 +48,40 @@ The `dg scaffold defs` call will generate a `defs.yaml` file:
 
 Update the `defs.yaml` file with your Tableau workspace connection details. You'll need to provide your connected app credentials and site information. For more information on creating a connected app, see the [Tableau documentation](https://help.tableau.com/current/api/rest_api/en-us/REST/rest_api_concepts_auth.htm#connected-app).
 
+The configuration depends on whether you're using Tableau Cloud or Tableau Server:
+
+<Tabs>
+<TabItem value="Using Dagster with Tableau Cloud">
+
+For Tableau Cloud, set `type: cloud` and provide your `pod_name`:
+
 <CodeExample
   path="docs_snippets/docs_snippets/guides/components/integrations/tableau-component/6-populated-component.yaml"
   title="my_project/defs/tableau_ingest/defs.yaml"
   language="yaml"
 />
+
+</TabItem>
+<TabItem value="Using Dagster with Tableau Server">
+
+For Tableau Server, set `type: server` and provide your `server_name` instead of `pod_name`:
+
+```yaml
+type: dagster_tableau.TableauComponent
+
+attributes:
+  workspace:
+    type: server
+    connected_app_client_id: '{{ env.TABLEAU_CLIENT_ID }}'
+    connected_app_secret_id: '{{ env.TABLEAU_SECRET_ID }}'
+    connected_app_secret_value: '{{ env.TABLEAU_SECRET_VALUE }}'
+    username: '{{ env.TABLEAU_USERNAME }}'
+    site_name: my_site
+    server_name: tableau.example.com
+```
+
+</TabItem>
+</Tabs>
 
 <WideContent maxSize={1100}>
   <CliInvocationExample path="docs_snippets/docs_snippets/guides/components/integrations/tableau-component/7-list-defs.txt" />

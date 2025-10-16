@@ -1,6 +1,6 @@
 ---
-title: Dagster & Looker
-sidebar_label: Looker
+title: Dagster & Looker (Pythonic)
+sidebar_label: Looker (Pythonic)
 description: The Looker integration allows you to monitor your Looker project as assets in Dagster, along with other data assets.
 tags: [dagster-supported, bi]
 source: https://github.com/dagster-io/dagster/tree/master/python_modules/libraries/dagster-looker
@@ -13,6 +13,12 @@ partnerlink: https://www.looker.com/
 import Beta from '@site/docs/partials/\_Beta.md';
 
 <Beta />
+
+:::note
+
+If you are just getting started with the Looker integration, we recommend using the new [Looker component](/integrations/libraries/looker).
+
+:::
 
 This guide provides instructions for using Dagster with Looker using the `dagster-looker` library. Your Looker assets, such as views, explores, and dashboards, can be represented in the Dagster asset graph, allowing you to track lineage and dependencies between Looker assets. You can also use Dagster to orchestrate Looker PDTs, allowing you to trigger refreshes of these materialized tables on a cadence or based on upstream data changes.
 

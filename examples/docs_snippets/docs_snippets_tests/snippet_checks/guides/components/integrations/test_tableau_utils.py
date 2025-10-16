@@ -1,9 +1,7 @@
 from functools import cached_property
 
 from dagster_tableau import TableauCloudWorkspace
-from dagster_tableau.components.tableau_workspace_component import (
-    TableauWorkspaceComponent,
-)
+from dagster_tableau.components.tableau_component import TableauComponent
 from dagster_tableau.translator import (
     TableauContentData,
     TableauContentType,
@@ -78,10 +76,22 @@ class MockTableauWorkspace(TableauCloudWorkspace):
         )
 
 
-class MockTableauComponent(TableauWorkspaceComponent):
-    @cached_property
-    def workspace_resource(self) -> MockTableauWorkspace:
-        return MockTableauWorkspace(**self.workspace.model_dump())
+class MockTableauComponent(TableauComponent):
+    # Store mock data as a class variable to share between methods
+    _mock_data = None
+
+    async def write_state_to_path(self, state_path):
+        """Override to use mock data - we store it directly."""
+        import dagster as dg
+
+        # Create a mock workspace with the same credentials
+        mock_workspace = MockTableauWorkspace(**self.workspace.model_dump())
+
+        # Fetch and store mock data
+        MockTableauComponent._mock_data = mock_workspace.fetch_tableau_workspace_data()
+
+        # Serialize and write to path
+        state_path.write_text(dg.serialize_value(MockTableauComponent._mock_data))
 
 
 def test_mock_tableau_workspace() -> None:
