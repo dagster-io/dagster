@@ -32,7 +32,7 @@ dg dev
 
 ## Multiple code locations
 
-You can define multiple code location in a single `dg.toml` file:
+You can define multiple code locations in a single `dg.toml` file:
 
 ```toml
 # dg.toml
