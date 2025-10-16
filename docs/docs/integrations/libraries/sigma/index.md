@@ -1,7 +1,7 @@
 ---
 title: Dagster & Sigma (Component)
 sidebar_label: Sigma
-description: The dagster-sigma library provides a SigmaOrganizationComponent, which can be used to represent Sigma assets as assets in Dagster.
+description: The dagster-sigma library provides a SigmaComponent, which can be used to represent Sigma assets as assets in Dagster.
 tags: [dagster-supported, bi]
 source: https://github.com/dagster-io/dagster/tree/master/python_modules/libraries/dagster-sigma
 pypi: https://pypi.org/project/dagster-sigma
@@ -12,7 +12,11 @@ canonicalUrl: '/integrations/libraries/sigma'
 slug: '/integrations/libraries/sigma'
 ---
 
-The [dagster-sigma](/integrations/libraries/sigma) library provides a `SigmaOrganizationComponent` which can be used to easily represent Sigma workbooks and datasets as assets in Dagster.
+import Beta from '@site/docs/partials/\_Beta.md';
+
+<Beta />
+
+The [dagster-sigma](/integrations/libraries/sigma) library provides a `SigmaComponent` which can be used to easily represent Sigma workbooks and datasets as assets in Dagster.
 
 ## 1. Prepare a Dagster project
 

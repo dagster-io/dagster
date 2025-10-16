@@ -3,7 +3,7 @@ from dagster_shared.libraries import DagsterLibraryRegistry
 from dagster_sigma.assets import (
     build_materialize_workbook_assets_definition as build_materialize_workbook_assets_definition,
 )
-from dagster_sigma.components import SigmaOrganizationComponent as SigmaOrganizationComponent
+from dagster_sigma.components import SigmaComponent as SigmaComponent
 from dagster_sigma.resource import (
     SigmaBaseUrl as SigmaBaseUrl,
     SigmaFilter as SigmaFilter,

@@ -4,7 +4,7 @@ from pathlib import Path
 from typing import Annotated, Optional, Union
 
 import dagster as dg
-from dagster._annotations import public
+from dagster._annotations import beta, public
 from dagster._core.definitions.assets.definition.asset_spec import AssetSpec
 from dagster.components import ComponentLoadContext, Model, Resolvable, Resolver
 from dagster.components.component.state_backed_component import StateBackedComponent
@@ -151,9 +151,10 @@ class SigmaFilterArgs(Model, Resolvable):
     )
 
 
+@beta
 @public
 @dataclass
-class SigmaOrganizationComponent(StateBackedComponent, Resolvable):
+class SigmaComponent(StateBackedComponent, Resolvable):
     """Pulls in the contents of a Sigma organization into Dagster assets."""
 
     organization: Annotated[
@@ -245,10 +246,10 @@ class SigmaOrganizationComponent(StateBackedComponent, Resolvable):
 
 
 class SigmaComponentTranslator(
-    create_component_translator_cls(SigmaOrganizationComponent, DagsterSigmaTranslator),
-    ComponentTranslator[SigmaOrganizationComponent],
+    create_component_translator_cls(SigmaComponent, DagsterSigmaTranslator),
+    ComponentTranslator[SigmaComponent],
 ):
-    def __init__(self, component: SigmaOrganizationComponent):
+    def __init__(self, component: SigmaComponent):
         self._component = component
 
     def get_asset_spec(self, data: SigmaTranslatorData) -> AssetSpec:
