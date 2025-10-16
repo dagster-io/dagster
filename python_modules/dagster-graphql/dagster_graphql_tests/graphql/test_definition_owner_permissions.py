@@ -740,6 +740,24 @@ class TestDefinitionOwnerPermissions(
             _did_check[permission] = True
             return False
 
+        def _mock_owner_permissions(
+            permission: str,
+            owners: Sequence[str],
+        ) -> bool:
+            return (
+                len(
+                    set(owners).intersection(
+                        set(
+                            [
+                                "test@elementl.com",
+                                "team:foo",
+                            ]
+                        )
+                    )
+                )
+                > 0
+            )
+
         def _mock_selector_ownership(
             permission: str,
             selector: Union[JobSelector, ScheduleSelector, SensorSelector, AssetKey, AssetCheckKey],
@@ -777,6 +795,9 @@ class TestDefinitionOwnerPermissions(
                 context,
                 "viewer_has_any_owner_definition_permissions",
                 side_effect=lambda: True,
+            ),
+            mock.patch.object(
+                context, "has_permission_for_owners", side_effect=_mock_owner_permissions
             ),
             mock.patch.object(
                 context, "has_permission_for_selector", side_effect=_mock_selector_ownership
