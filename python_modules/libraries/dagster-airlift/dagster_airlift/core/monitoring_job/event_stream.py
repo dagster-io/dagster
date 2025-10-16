@@ -18,7 +18,7 @@ from dagster._core.events import (
     StepMaterializationData,
 )
 from dagster._core.execution.context.op_execution_context import OpExecutionContext
-from dagster._core.remote_representation.origin import RemoteJobOrigin
+from dagster._core.remote_origin import RemoteJobOrigin
 from dagster._core.storage.dagster_run import DagsterRun, DagsterRunStatus
 from dagster._core.storage.tags import EXTERNAL_JOB_SOURCE_TAG_KEY
 from dagster._core.utils import make_new_run_id

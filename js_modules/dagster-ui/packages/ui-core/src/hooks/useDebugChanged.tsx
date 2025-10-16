@@ -41,8 +41,10 @@ export const useDebugChanged = <T,>(objects: T[]): void => {
       if (obj !== previousObjects[index]) {
         changes.push({
           index,
+          // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
           previous: previousObjects[index]!,
           current: obj,
+          // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
           differences: getDifferences(previousObjects[index]!, obj!),
         });
       }

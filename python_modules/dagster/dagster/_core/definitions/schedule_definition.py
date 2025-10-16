@@ -10,7 +10,7 @@ from typing import TYPE_CHECKING, Any, Callable, NamedTuple, Optional, TypeVar, 
 from typing_extensions import TypeAlias
 
 import dagster._check as check
-from dagster._annotations import deprecated, deprecated_param, public
+from dagster._annotations import beta_param, deprecated, deprecated_param, public
 from dagster._core.decorator_utils import has_at_least_one_parameter
 from dagster._core.definitions.instigation_logger import InstigationLogger
 from dagster._core.definitions.job_definition import JobDefinition
@@ -27,7 +27,7 @@ from dagster._core.definitions.target import (
     ExecutableDefinition,
 )
 from dagster._core.definitions.unresolved_asset_job_definition import UnresolvedAssetJobDefinition
-from dagster._core.definitions.utils import check_valid_name
+from dagster._core.definitions.utils import check_valid_name, validate_definition_owner
 from dagster._core.errors import (
     DagsterInvalidDefinitionError,
     DagsterInvalidInvocationError,
@@ -140,6 +140,7 @@ def get_or_create_schedule_context(
     return context
 
 
+@public
 class ScheduleEvaluationContext:
     """The context object available as the first argument to various functions defined on a :py:class:`dagster.ScheduleDefinition`.
 
@@ -375,6 +376,7 @@ class DecoratedScheduleFunction(NamedTuple):
     has_context_arg: bool
 
 
+@public
 def build_schedule_context(
     instance: Optional[DagsterInstance] = None,
     scheduled_execution_time: Optional[datetime] = None,
@@ -467,6 +469,7 @@ def validate_and_get_schedule_resource_dict(
     return {k: resources.original_resource_dict.get(k) for k in required_resource_keys}
 
 
+@public
 @deprecated_param(
     param="environment_vars",
     breaking_version="2.0",
@@ -475,6 +478,7 @@ def validate_and_get_schedule_resource_dict(
         " the containing environment, and can safely be deleted."
     ),
 )
+@beta_param(param="owners")
 class ScheduleDefinition(IHasInternalInit):
     """Defines a schedule that targets a job.
 
@@ -575,6 +579,7 @@ class ScheduleDefinition(IHasInternalInit):
             metadata=metadata if metadata is not None else self.metadata,
             should_execute=None,
             target=None,
+            owners=self._owners,
         )
 
     def __init__(
@@ -604,6 +609,7 @@ class ScheduleDefinition(IHasInternalInit):
                 "UnresolvedAssetJobDefinition",
             ]
         ] = None,
+        owners: Optional[Sequence[str]] = None,
     ):
         from dagster._core.definitions.run_config import convert_config_input
 
@@ -684,7 +690,9 @@ class ScheduleDefinition(IHasInternalInit):
                 self._execution_fn = execution_fn
             else:
                 self._execution_fn = check.opt_callable_param(execution_fn, "execution_fn")
-            self._tags = normalize_tags(tags, allow_private_system_tags=False, warning_stacklevel=4)
+            self._tags = normalize_tags(
+                tags, allow_private_system_tags=False, warning_stacklevel=5
+            )  # reset once owners is out of beta_param
             self._tags_fn = None
             self._run_config_fn = None
         else:
@@ -710,7 +718,9 @@ class ScheduleDefinition(IHasInternalInit):
                     "Attempted to provide both tags_fn and tags as arguments"
                     " to ScheduleDefinition. Must provide only one of the two."
                 )
-            self._tags = normalize_tags(tags, allow_private_system_tags=False, warning_stacklevel=4)
+            self._tags = normalize_tags(
+                tags, allow_private_system_tags=False, warning_stacklevel=5
+            )  # reset once owners is out of beta_param
             if tags_fn:
                 self._tags_fn = check.opt_callable_param(
                     tags_fn, "tags_fn", default=lambda _context: cast("Mapping[str, str]", {})
@@ -754,7 +764,9 @@ class ScheduleDefinition(IHasInternalInit):
                     lambda: f"Error occurred during the execution of tags_fn for schedule {name}",
                 ):
                     evaluated_tags = normalize_tags(
-                        tags_fn(context), allow_private_system_tags=False
+                        tags_fn(context),
+                        allow_private_system_tags=False,
+                        warning_stacklevel=5,  # reset once owners is out of beta_param
                     )
 
                 yield RunRequest(
@@ -797,6 +809,11 @@ class ScheduleDefinition(IHasInternalInit):
         self._metadata = normalize_metadata(
             check.opt_mapping_param(metadata, "metadata", key_type=str)
         )
+        if owners:
+            for owner in owners:
+                validate_definition_owner(owner, "schedule", self._name)
+
+        self._owners = owners
 
     @staticmethod
     def dagster_internal_init(
@@ -825,6 +842,7 @@ class ScheduleDefinition(IHasInternalInit):
                 "UnresolvedAssetJobDefinition",
             ]
         ],
+        owners: Optional[Sequence[str]],
     ) -> "ScheduleDefinition":
         return ScheduleDefinition(
             name=name,
@@ -844,6 +862,7 @@ class ScheduleDefinition(IHasInternalInit):
             default_status=default_status,
             required_resource_keys=required_resource_keys,
             target=target,
+            owners=owners,
         )
 
     def __call__(self, *args, **kwargs) -> ScheduleEvaluationFunctionReturn:
@@ -930,6 +949,14 @@ class ScheduleDefinition(IHasInternalInit):
         """Mapping[str, str]: The metadata for this schedule."""
         return self._metadata
 
+    @property
+    def owners(self) -> Optional[Sequence[str]]:
+        return self._owners
+
+    @property
+    def has_job(self) -> bool:
+        return self._target.has_job_def
+
     @public
     @property
     def job(self) -> Union[JobDefinition, UnresolvedAssetJobDefinition]:
@@ -950,7 +977,7 @@ class ScheduleDefinition(IHasInternalInit):
             ScheduleExecutionData: Contains list of run requests, or skip message if present.
 
         """
-        from dagster._core.definitions.partitions.utils import CachingDynamicPartitionsLoader
+        from dagster._core.instance.types import CachingDynamicPartitionsLoader
 
         check.inst_param(context, "context", ScheduleEvaluationContext)
         execution_fn: Callable[..., ScheduleEvaluationFunctionReturn]

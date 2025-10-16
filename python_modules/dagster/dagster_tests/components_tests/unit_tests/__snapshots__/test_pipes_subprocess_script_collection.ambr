@@ -1,0 +1,79 @@
+# serializer version: 1
+# name: test_load_from_path
+  '''
+  ├── multiple_component_instances
+  │   └── component.py
+  │       ├── bar
+  │       └── foo
+  ├── multiple_component_instances_defs_py
+  │   └── component.py
+  │       ├── bar
+  │       └── foo
+  ├── multiple_definitions_calls
+  │   └── defs.py
+  ├── script_python_decl
+  │   ├── component.py
+  │   │   └── load
+  │   └── cool_script.py
+  ├── scripts
+  │   ├── defs.yaml[0] (PythonScriptComponent)
+  │   ├── defs.yaml[1] (PythonScriptComponent)
+  │   └── defs.yaml[2] (PythonScriptComponent)
+  └── triple_dash_scripts
+      ├── defs.yaml[0] (PythonScriptComponent)
+      ├── defs.yaml[1] (PythonScriptComponent)
+      └── defs.yaml[2] (PythonScriptComponent)
+  '''
+# ---
+# name: test_load_from_path.1
+  '''
+  ├── multiple_component_instances (loaded)
+  │   └── component.py (loaded)
+  │       ├── bar (loaded)
+  │       └── foo (loaded)
+  ├── multiple_component_instances_defs_py (loaded)
+  │   └── component.py (loaded)
+  │       ├── bar (loaded)
+  │       └── foo (loaded)
+  ├── multiple_definitions_calls (loaded)
+  │   └── defs.py (loaded)
+  ├── script_python_decl (loaded)
+  │   ├── component.py (loaded)
+  │   │   └── load (loaded)
+  │   └── cool_script.py (loaded)
+  ├── scripts (loaded)
+  │   ├── defs.yaml[0] (PythonScriptComponent) (loaded)
+  │   ├── defs.yaml[1] (PythonScriptComponent) (loaded)
+  │   └── defs.yaml[2] (PythonScriptComponent) (loaded)
+  └── triple_dash_scripts (loaded)
+      ├── defs.yaml[0] (PythonScriptComponent) (loaded)
+      ├── defs.yaml[1] (PythonScriptComponent) (loaded)
+      └── defs.yaml[2] (PythonScriptComponent) (loaded)
+  '''
+# ---
+# name: test_load_from_path.2
+  '''
+  ├── multiple_component_instances (built)
+  │   └── component.py (built)
+  │       ├── bar (built)
+  │       └── foo (built)
+  ├── multiple_component_instances_defs_py (built)
+  │   └── component.py (built)
+  │       ├── bar (built)
+  │       └── foo (built)
+  ├── multiple_definitions_calls (built)
+  │   └── defs.py (built)
+  ├── script_python_decl (built)
+  │   ├── component.py (built)
+  │   │   └── load (built)
+  │   └── cool_script.py (built)
+  ├── scripts (built)
+  │   ├── defs.yaml[0] (PythonScriptComponent) (built)
+  │   ├── defs.yaml[1] (PythonScriptComponent) (built)
+  │   └── defs.yaml[2] (PythonScriptComponent) (built)
+  └── triple_dash_scripts (built)
+      ├── defs.yaml[0] (PythonScriptComponent) (built)
+      ├── defs.yaml[1] (PythonScriptComponent) (built)
+      └── defs.yaml[2] (PythonScriptComponent) (built)
+  '''
+# ---

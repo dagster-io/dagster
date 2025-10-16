@@ -7,8 +7,8 @@ from dagster._core.definitions.assets.definition.cacheable_assets_definition imp
     CacheableAssetsDefinition,
 )
 from dagster._core.test_utils import new_cwd
+from dagster.components.core.component_tree import ComponentTree
 from dagster.components.core.defs_module import CompositeYamlComponent
-from dagster.components.core.tree import ComponentTree
 from dagster_shared.yaml_utils.source_position import LineCol, SourcePosition
 
 

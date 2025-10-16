@@ -17,7 +17,8 @@ from dagster._core.execution.backfill import (
 from dagster._core.execution.plan.resume_retry import ReexecutionStrategy
 from dagster._core.execution.plan.state import KnownExecutionState
 from dagster._core.instance import DagsterInstance
-from dagster._core.remote_representation import CodeLocation, RemoteJob, RemotePartitionSet
+from dagster._core.remote_representation.code_location import CodeLocation
+from dagster._core.remote_representation.external import RemoteJob, RemotePartitionSet
 from dagster._core.remote_representation.external_data import PartitionSetExecutionParamSnap
 from dagster._core.storage.dagster_run import (
     NOT_FINISHED_STATUSES,
@@ -43,7 +44,7 @@ from dagster._utils.error import SerializableErrorInfo
 from dagster._utils.merger import merge_dicts
 
 if TYPE_CHECKING:
-    from dagster._core.remote_representation.origin import RemotePartitionSetOrigin
+    from dagster._core.remote_origin import RemotePartitionSetOrigin
 
 # out of abundance of caution, sleep at checkpoints in case we are pinning CPU by submitting lots
 # of jobs all at once
@@ -74,23 +75,30 @@ def execute_job_backfill_iteration(
             f" {backfill.last_submitted_partition_name}"
         )
 
-    partition_set = _get_partition_set(workspace_process_context, backfill)
-
     # refetch in case the backfill status has changed
     backfill = cast("PartitionBackfill", instance.get_backfill(backfill.backfill_id))
-    if backfill.status == BulkActionStatus.CANCELING:
+    if backfill.status == BulkActionStatus.CANCELING or backfill.status == BulkActionStatus.FAILING:
+        status_once_runs_are_complete = (
+            BulkActionStatus.CANCELED
+            if backfill.status == BulkActionStatus.CANCELING
+            else BulkActionStatus.FAILED
+        )
+
         all_runs_canceled = cancel_backfill_runs_and_cancellation_complete(
-            instance=instance, backfill_id=backfill.backfill_id
+            instance=instance,
+            backfill_id=backfill.backfill_id,
+            logger=logger,
         )
 
         if all_runs_canceled:
             instance.update_backfill(
-                backfill.with_status(BulkActionStatus.CANCELED).with_end_timestamp(
+                backfill.with_status(status_once_runs_are_complete).with_end_timestamp(
                     get_current_timestamp()
                 )
             )
         return
 
+    partition_set = _get_partition_set(workspace_process_context, backfill)
     has_more = True
     while has_more:
         if backfill.status != BulkActionStatus.REQUESTED:
@@ -350,6 +358,7 @@ def submit_backfill_runs(
             job_name=partition_set.job_name,
             op_selection=None,
             asset_selection=backfill_job.asset_selection,
+            run_config=backfill_job.run_config,
         )
         remote_job = code_location.get_job(pipeline_selector)
     else:
@@ -375,7 +384,16 @@ def submit_backfill_runs(
     tags_by_key_or_range: Mapping[Union[str, PartitionKeyRange], Mapping[str, str]]
     run_config_by_key_or_range: Mapping[Union[str, PartitionKeyRange], Mapping[str, Any]]
     if isinstance(partition_names_or_ranges[0], PartitionKeyRange):
-        run_config = partition_set_execution_data.partition_data[0].run_config
+        partition_set_run_config = partition_set_execution_data.partition_data[0].run_config
+
+        if partition_set_run_config and backfill_job.run_config:
+            raise DagsterInvariantViolationError(
+                "Cannot specify both partition-scoped run config and backfill-scoped run config. This can happen "
+                "if you explicitly set a PartitionSet on your job and also specify run config when launching a backfill.",
+            )
+
+        run_config = partition_set_run_config or backfill_job.run_config or {}
+
         tags = {
             k: v
             for k, v in partition_set_execution_data.partition_data[0].tags.items()
@@ -392,7 +410,8 @@ def submit_backfill_runs(
         }
     else:
         run_config_by_key_or_range = {
-            pd.name: pd.run_config for pd in partition_set_execution_data.partition_data
+            pd.name: pd.run_config or backfill_job.run_config or {}
+            for pd in partition_set_execution_data.partition_data
         }
         tags_by_key_or_range = {
             pd.name: pd.tags for pd in partition_set_execution_data.partition_data
@@ -403,6 +422,7 @@ def submit_backfill_runs(
         code_location = workspace.get_code_location(location_name)
 
         dagster_run = create_backfill_run(
+            workspace,
             instance,
             code_location,
             remote_job,
@@ -440,6 +460,7 @@ def submit_backfill_runs(
 
 
 def create_backfill_run(
+    request_context: BaseWorkspaceRequestContext,
     instance: DagsterInstance,
     code_location: CodeLocation,
     remote_job: RemoteJob,
@@ -485,6 +506,7 @@ def create_backfill_run(
             return None
         return instance.create_reexecuted_run(
             parent_run=last_run,
+            request_context=request_context,
             code_location=code_location,
             remote_job=remote_job,
             strategy=ReexecutionStrategy.FROM_FAILURE,

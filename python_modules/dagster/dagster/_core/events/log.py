@@ -27,6 +27,7 @@ from dagster._utils.log import (
     old_fields={"message": ""},
     storage_field_names={"job_name": "pipeline_name"},
 )
+@public
 class EventLogEntry(
     NamedTuple(
         "_EventLogEntry",

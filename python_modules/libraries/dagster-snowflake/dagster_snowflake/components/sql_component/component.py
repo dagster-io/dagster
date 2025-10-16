@@ -1,24 +1,61 @@
-from typing import Annotated
+from functools import cached_property
+from typing import Any, cast
 
-from dagster._core.execution.context.asset_execution_context import AssetExecutionContext
-from dagster.components.base.sql_component import TemplatedSqlComponent
-from pydantic import Field
+import dagster as dg
+from dagster._annotations import preview, public
+from dagster._core.definitions.definitions_class import Definitions
+from dagster.components.core.context import ComponentLoadContext
+from dagster.components.lib.sql_component.sql_client import SQLClient
+from pydantic import BaseModel, create_model
 
 from dagster_snowflake.resources import SnowflakeResource
 
 
-class SnowflakeSqlComponent(TemplatedSqlComponent[SnowflakeResource]):
-    """A component that executes SQL from a file in Snowflake."""
+@public
+@preview
+class SnowflakeConnectionComponentBase(dg.Component, dg.Resolvable, dg.Model, SQLClient):
+    """A component that represents a Snowflake connection. Use this component if you are
+    also using the TemplatedSqlComponent to execute SQL queries, and need to connect to Snowflake.
+    """
 
-    resource_key: Annotated[
-        str, Field(description="The resource key to use for the Snowflake resource.")
-    ] = "snowflake"
+    @cached_property
+    def _snowflake_resource(self) -> SnowflakeResource:
+        return SnowflakeResource(
+            **{
+                (field.alias or field_name): getattr(self, field_name)
+                for field_name, field in self.__class__.model_fields.items()
+            }
+        )
 
-    def execute(self, context: AssetExecutionContext, resource: SnowflakeResource) -> None:
-        """Execute the SQL content using the Snowflake resource."""
-        with resource.get_connection() as conn:
-            conn.cursor().execute(self.sql_content)
+    def connect_and_execute(self, sql: str) -> None:
+        """Connect to the SQL database and execute the SQL query."""
+        return self._snowflake_resource.connect_and_execute(sql)
 
-    @property
-    def resource_keys(self) -> set[str]:
-        return {self.resource_key}
+    def build_defs(self, context: ComponentLoadContext) -> Definitions:
+        return Definitions()
+
+
+def _copy_fields_to_model(
+    copy_from: type[BaseModel], copy_to: type[BaseModel], new_model_cls_name: str
+) -> None:
+    """Given two models, creates a copy of the second model with the fields of the first model."""
+    field_definitions: dict[str, tuple[type, Any]] = {
+        field_name: (cast("type", field.annotation), field)
+        for field_name, field in copy_from.model_fields.items()
+    }
+
+    return create_model(
+        new_model_cls_name,
+        __base__=copy_to,
+        __doc__=copy_to.__doc__,
+        **field_definitions,  # type: ignore
+    )
+
+
+SnowflakeConnectionComponent = public(preview)(
+    _copy_fields_to_model(
+        copy_from=SnowflakeResource,
+        copy_to=SnowflakeConnectionComponentBase,
+        new_model_cls_name="SnowflakeConnectionComponent",
+    )
+)

@@ -7,6 +7,7 @@
 @use 'theme-globals'; //Global styles used across both themes
 @use 'theme-light'; // Import the light theme module
 @use 'theme-dark'; // Import the light theme module
+@use 'components/cta-button'; // Import the CTA button component
 
 /* You can override the default Infima variables here. */
 /* Some styles heavily influenced from: https://github.com/electron/website/blob/main/src/css/custom.scss */
@@ -32,6 +33,15 @@ hr {
 //                                             Navbar                                             //
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 
+//crop logo to daggy icon only when navbar width is taxed
+@media screen and (min-width: 996px) and (max-width: 1348px) {
+  .navbar__brand {
+    width: 1.75rem;
+    min-width: 1.75rem;
+    overflow: hidden;
+    margin-right: 16px !important;
+  }
+}
 
 @media screen and (min-width: 996px) and (max-width: 1272px) {
   // hide version dropdown on smaller sizes
@@ -78,6 +88,11 @@ hr {
 
 .navbar__link {
   font-weight: 500 !important;
+  text-wrap: nowrap;
+}
+
+.navbar__logo {
+  height: 1.75rem;
 }
 
 .breadcrumbs {
@@ -515,6 +530,10 @@ table {
   .footer__bottom {
     text-align: center;
   }
+  // utility class to hide items in below 996px
+  .hide-mobile {
+    display: none;
+  }
 }
 
 @keyframes wiggle {
@@ -576,7 +595,7 @@ dd code {
 /* Card and CardGroup styles */
 .card-group {
   display: grid;
-  gap: 1rem;
+  gap: var(--card-group-gap, 1rem);
   margin-bottom: 2rem;
   &.cols-2 {
     grid-template-columns: repeat(2, 1fr);

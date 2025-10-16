@@ -6,20 +6,11 @@ sidebar_position: 600
 
 After creating components in your `defs` folder, you will want to test them. Dagster provides testing utilities that make testing components simple.
 
-The core function is `get_component_defs_within_project` and it has the following signature:
-
-```python
-def get_component_defs_within_project(
-    *,
-    project_root: Union[str, Path],
-    component_path: Union[str, Path],
-    instance_key: int = 0,
-) -> tuple[Component, Definitions]:
-```
+The core function is `ComponentTree.for_project`, which builds a `ComponentTree` object that can be used to load components and build their definitions.
 
 :::note
 
-`project_root` is the root of the project, typically the folder that contains `pyproject.toml` or `setup.py`. 
+`project_root` is the root of the project, typically the folder that contains `pyproject.toml` or `setup.py`.
 
 :::
 
@@ -33,9 +24,12 @@ import dagster as dg
 from pathlib import Path
 
 def my_project_component_defs(component_path) -> tuple[dg.Component, dg.Definitions]:
-    # Project root is two parents up from the test file 
+    # Project root is two parents up from the test file
     project_root = Path(__file__).parent.parent
-    return dg.get_component_defs_within_project(project_root=project_root, component_path=component_path)
+    tree = dg.ComponentTree.for_project(project_root)
+    component = tree.load_component_at_path(component_path)
+    defs = tree.build_defs_at_path(component_path)
+    return component, defs
 ```
 
 Once you do this, you can load the component and its definitions. This component lives at `my-project/src/my_project/defs/path/to/component`. You only need to specify the path relative to the `defs` folder:
@@ -47,7 +41,7 @@ def test_metadata() -> None:
 
 ## Testing metadata
 
-The `component` instance is useful if you want to test that the appropriate metadata was created by the YAML frontend. You can assert against the schema that the component author has provided. 
+The `component` instance is useful if you want to test that the appropriate metadata was created by the YAML frontend. You can assert against the schema that the component author has provided.
 
 For example, if you are using a `FunctionComponent` in your project, you may want to assert facts about its assets:
 
@@ -69,4 +63,4 @@ def test_function_component_execution() -> None:
     assert dg.materialize(defs.get_assets_def("some_asset")).success
 ```
 
-See [Unit Testing Assets and Ops](https://docs.dagster.io/guides/test/unit-testing-assets-and-ops) for more information about testing definitions.
+See [Unit Testing Assets and Ops](/guides/test/unit-testing-assets-and-ops) for more information about testing definitions.

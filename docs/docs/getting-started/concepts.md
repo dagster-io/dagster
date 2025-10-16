@@ -87,6 +87,8 @@ Dagster provides a variety of abstractions for building and orchestrating data p
 
 An <PyObject section="assets" module="dagster" object="asset" /> represents a logical unit of data such as a table, dataset, or machine learning model. Assets can have dependencies on other assets, forming the data lineage for your pipelines. As the core abstraction in Dagster, assets can interact with many other Dagster entities to facilitate certain tasks. When you define an asset, either with the <PyObject section="assets" module="dagster" object="asset" decorator /> decorator or via a [component](/guides/build/components), the definition is automatically added to a top-level <PyObject section="definitions" module="dagster" object="Definitions" /> object.
 
+To dive deeper into how assets shape the way you design your data platform, [check out our deep-dive on assets](https://dagster.io/blog/software-defined-assets).
+
 | Concept                     | Relationship                                                        |
 | --------------------------- | ------------------------------------------------------------------- |
 | [asset check](#asset-check) | `asset` may use an `asset check`                                    |
@@ -163,8 +165,8 @@ An <PyObject section="asset-checks" module="dagster" object="asset_check" /> is 
 
 Specs are standalone objects that describe the identity and metadata of Dagster entities without defining their behavior. For example, an <PyObject module="dagster" section="assets" object="AssetSpec" /> contains essential information like the asset's <PyObject module="dagster" section="assets" object="AssetKey" displayText="key" /> (its unique identifier) and [tags](/guides/build/assets/metadata-and-tags) (labels for organizing and annotating the asset), but it doesn't include the logic for materializing that asset.
 
-| Concept          | Relationship                                                      |
-| ---------------- | ----------------------------------------------------------------- |
+| Concept         | Relationship                                                      |
+| --------------- | ----------------------------------------------------------------- |
 | [asset](#asset) | `asset spec` may describe the identity and metadata of an `asset` |
 
 ## Code location
@@ -241,8 +243,8 @@ A [code location](/deployment/code-locations) is a collection of Dagster entity 
 
 Components are objects that programmatically build <PyObject section="assets" module="dagster" object="asset" pluralize /> and other Dagster entity definitions, such as <PyObject section="asset-checks" module="dagster" object="asset_check" pluralize />, <PyObject section="schedules-sensors" module="dagster" object="schedule" pluralize />, <PyObject section="resources" module="dagster" object="ResourceDefinition" displayText="resources" />, and <PyObject section="schedules-sensors" module="dagster" object="sensor" pluralize />. They accept schematized configuration parameters (which are specified using YAML or lightweight Python) and use them to build the actual definitions you need. Components are designed to help you quickly bootstrap parts of your Dagster project and serve as templates for repeatable patterns.
 
-| Concept                     | Relationship                                             |
-| --------------------------- | -------------------------------------------------------- |
+| Concept                     | Relationship                                              |
+| --------------------------- | --------------------------------------------------------- |
 | [asset](#asset)             | `component` builds `assets` and other `definitions`       |
 | [asset check](#asset-check) | `component` builds `asset_checks` and other `definitions` |
 | [definitions](#definitions) | `component` builds `assets` and other `definitions`       |
@@ -281,7 +283,7 @@ Components are objects that programmatically build <PyObject section="assets" mo
     Config -.-> Sensor
 ```
 
-A <PyObject section="config" module="dagster" object="Config" displayText="config" /> is used to specify config schema for assets, jobs, schedules, and sensors. A <PyObject section="config" module="dagster" object="RunConfig" />  is a container for all the configuration that can be passed to a run. This allows for parameterization and the reuse of pipelines to serve multiple purposes.
+A <PyObject section="config" module="dagster" object="Config" displayText="config" /> is used to specify config schema for assets, jobs, schedules, and sensors. A <PyObject section="config" module="dagster" object="RunConfig" /> is a container for all the configuration that can be passed to a run. This allows for parameterization and the reuse of pipelines to serve multiple purposes.
 
 | Concept               | Relationship                         |
 | --------------------- | ------------------------------------ |
@@ -331,6 +333,7 @@ A <PyObject section="config" module="dagster" object="Config" displayText="confi
 ```
 
 In Dagster, "definitions" means two things:
+
 - The objects that combine metadata about Dagster entities with Python functions that define how they behave, for example, <PyObject section="assets" module="dagster" object="asset" />, <PyObject section="schedules-sensors" module="dagster" object="ScheduleDefinition" /> , and [resource](/api/dagster/resources) definitions.
 - The top-level <PyObject section="definitions" module="dagster" object="Definitions" /> object that contains references to all the definitions in a Dagster project. Entities included in the `Definitions` object will be deployed and visible within the Dagster UI.
 
@@ -524,7 +527,7 @@ An <PyObject section="ops" module="dagster" object="op" /> is a computational un
 A <PyObject section="partitions" object="PartitionsDefinition" /> represents a logical slice of a dataset or computation mapped to a certain segments (such as increments of time). Partitions enable incremental processing, making workflows more efficient by only running on relevant subsets of data.
 
 | Concept         | Relationship                          |
-| ----------------| ------------------------------------- |
+| --------------- | ------------------------------------- |
 | [asset](#asset) | `partition` may be used by an `asset` |
 
 ## Resource

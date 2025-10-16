@@ -22,6 +22,7 @@ setup(
         f"dagster{pin}",
         f"dagster-webserver{pin}",
         "dagster-dbt",
+        "dbt-core>=1.4.0",
     ],
     extras_require={"test": ["pytest"]},
 )

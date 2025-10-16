@@ -25,7 +25,6 @@ If you want to check whether the generated run config is valid for the config of
   title="src/<project_name>/defs/ops.py"
 />
 
-
 <CodeExample
   path="docs_snippets/docs_snippets/concepts/partitions_schedules_sensors/partitioned_config_test.py"
   startAfter="start_partition_test"

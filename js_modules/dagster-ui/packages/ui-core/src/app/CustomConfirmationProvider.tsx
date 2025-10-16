@@ -10,6 +10,7 @@ interface ConfirmationOptions {
   icon?: ConfirmationDialogProps['icon'];
   intent?: ConfirmationDialogProps['intent'];
   buttonText?: React.ReactNode;
+  style?: ConfirmationDialogProps['style'];
 }
 
 interface ConfirmationDialogProps extends ConfirmationOptions {
@@ -18,6 +19,7 @@ interface ConfirmationDialogProps extends ConfirmationOptions {
   intent?: React.ComponentProps<typeof Button>['intent'];
   onSubmit: () => void;
   onClose: () => void;
+  style?: React.CSSProperties;
 }
 
 const ConfirmationDialog = ({
@@ -29,9 +31,16 @@ const ConfirmationDialog = ({
   description,
   onSubmit,
   onClose,
+  style,
 }: ConfirmationDialogProps) => {
   return (
-    <Dialog icon={title ? (icon ?? 'info') : icon} onClose={onClose} title={title} isOpen={open}>
+    <Dialog
+      icon={title ? (icon ?? 'info') : icon}
+      onClose={onClose}
+      title={title}
+      isOpen={open}
+      style={style}
+    >
       <DialogBody>{description}</DialogBody>
       <DialogFooter topBorder>
         <Button onClick={onClose}>Cancel</Button>

@@ -54,7 +54,7 @@ from dagster._utils.warnings import disable_dagster_warnings
 
 if TYPE_CHECKING:
     from dagster._core.storage.asset_value_loader import AssetValueLoader
-    from dagster.components.core.tree import ComponentTree
+    from dagster.components.core.component_tree import ComponentTree
 
 
 TAssets: TypeAlias = Optional[
@@ -64,7 +64,8 @@ TSchedules: TypeAlias = Optional[
     Iterable[Union[ScheduleDefinition, UnresolvedPartitionedAssetScheduleDefinition]]
 ]
 TSensors: TypeAlias = Optional[Iterable[SensorDefinition]]
-TJobs: TypeAlias = Optional[Iterable[Union[JobDefinition, UnresolvedAssetJobDefinition]]]
+TJob: TypeAlias = Union[JobDefinition, UnresolvedAssetJobDefinition]
+TJobs: TypeAlias = Optional[Iterable[TJob]]
 TAssetChecks: TypeAlias = Optional[Iterable[AssetsDefinition]]
 
 
@@ -324,6 +325,7 @@ class BindResourcesToJobs(list):
 
 
 @record_custom
+@public
 class Definitions(IHaveNew):
     """A set of definitions explicitly available and loadable by Dagster tools.
 
@@ -419,7 +421,9 @@ class Definitions(IHaveNew):
     # After we fix the bug, we should remove AssetsDefinition from the set of accepted types.
     asset_checks: TAssetChecks = None
     metadata: Mapping[str, MetadataValue]
-    component_tree: Optional[Annotated["ComponentTree", ImportFrom("dagster.components.core.tree")]]
+    component_tree: Optional[
+        Annotated["ComponentTree", ImportFrom("dagster.components.core.component_tree")]
+    ]
 
     def __new__(
         cls,
@@ -731,6 +735,22 @@ class Definitions(IHaveNew):
         """
         defs.get_repository_def().validate_loadable()
 
+    @staticmethod
+    def merge_unbound_defs(*def_sets: "Definitions") -> "Definitions":
+        """Merges multiple Definitions objects into a single Definitions object.
+
+        Asserts that input Definitions objects have not yet had their asset graphs resolved,
+        intended for internal use-cases to safeguard against unnecessarily resolving subgraphs.
+        """
+        for i, def_set in enumerate(def_sets):
+            check.invariant(
+                not def_set.has_resolved_repository_def(),
+                f"Definitions object {i} has previously been resolved."
+                " merge_unbound_defs should only be used on definitions that have not been resolved.",
+            )
+
+        return Definitions.merge(*def_sets)
+
     @public
     @staticmethod
     def merge(*def_sets: "Definitions") -> "Definitions":
@@ -812,10 +832,6 @@ class Definitions(IHaveNew):
 
                 component_tree = def_set.component_tree
 
-            check.invariant(
-                not def_set.has_resolved_repository_def(),
-                "Definitions object should have been resolved",
-            )
         return Definitions(
             assets=assets,
             schedules=schedules,
@@ -844,6 +860,11 @@ class Definitions(IHaveNew):
         """Returns an AssetSpec object for every asset contained inside the resolved Definitions object."""
         asset_graph = self.resolve_asset_graph()
         return [asset_node.to_asset_spec() for asset_node in asset_graph.asset_nodes]
+
+    @public
+    def resolve_all_asset_keys(self) -> Sequence[AssetKey]:
+        """Returns an AssetKey object for every asset contained inside the resolved Definitions object."""
+        return [spec.key for spec in self.resolve_all_asset_specs()]
 
     @preview
     def with_reconstruction_metadata(self, reconstruction_metadata: Mapping[str, str]) -> Self:
@@ -1010,13 +1031,19 @@ class Definitions(IHaveNew):
         """Run a provided update function on every contained definition that supports it
         to updated its metadata. Return a new Definitions object containing the updated objects.
         """
+        updated_jobs = _update_jobs_metadata(self.jobs, update)
+        updated_schedules = _update_schedules_metadata(self.schedules, update, updated_jobs)
+        updated_sensors = _update_sensors_metadata(self.sensors, update, updated_jobs)
+        updated_assets = _update_assets_metadata(self.assets, update)
+        updated_asset_checks = _update_checks_metadata(self.asset_checks, update)
+
         return replace(
             self,
-            jobs=_update_jobs_metadata(self.jobs, update),
-            schedules=_update_schedules_metadata(self.schedules, update),
-            sensors=_update_sensors_metadata(self.sensors, update),
-            assets=_update_assets_metadata(self.assets, update),
-            asset_checks=_update_checks_metadata(self.asset_checks, update),
+            jobs=updated_jobs.values(),
+            schedules=updated_schedules,
+            sensors=updated_sensors,
+            assets=updated_assets,
+            asset_checks=updated_asset_checks,
         )
 
 
@@ -1044,6 +1071,7 @@ def _update_assets_metadata(
 def _update_schedules_metadata(
     schedules: TSchedules,
     update: Callable[[RawMetadataMapping], RawMetadataMapping],
+    updated_jobs: Mapping[int, TJob],
 ) -> TSchedules:
     if not schedules:
         return schedules
@@ -1051,7 +1079,21 @@ def _update_schedules_metadata(
     updated_schedules = []
     for schedule in schedules:
         if isinstance(schedule, ScheduleDefinition):
-            updated_schedules.append(schedule.with_attributes(metadata=update(schedule.metadata)))
+            # updated schedule
+            new_attrs: dict[str, Any] = {"metadata": update(schedule.metadata)}
+
+            if schedule.has_job:
+                # use the already updated job if possible to ensure obj equality
+                if id(schedule.job) in updated_jobs:
+                    new_attrs["job"] = updated_jobs[id(schedule.job)]
+
+                else:  # otherwise, update the job metadata too
+                    new_attrs["job"] = schedule.job.with_metadata(
+                        update(schedule.job.metadata or {})
+                    )
+
+            updated_schedules.append(schedule.with_attributes(**new_attrs))
+
         elif isinstance(schedule, UnresolvedPartitionedAssetScheduleDefinition):
             updated_schedules.append(schedule.with_metadata(update(schedule.metadata or {})))
         else:
@@ -1063,6 +1105,7 @@ def _update_schedules_metadata(
 def _update_sensors_metadata(
     sensors: TSensors,
     update: Callable[[RawMetadataMapping], RawMetadataMapping],
+    updated_jobs: Mapping[int, TJob],
 ) -> TSensors:
     if not sensors:
         return sensors
@@ -1070,7 +1113,24 @@ def _update_sensors_metadata(
     updated_sensors = []
     for sensor in sensors:
         if isinstance(sensor, SensorDefinition):
-            updated_sensors.append(sensor.with_attributes(metadata=update(sensor.metadata)))
+            new_attrs: dict[str, Any] = {"metadata": update(sensor.metadata)}
+
+            if sensor.has_jobs:
+                new_sensor_jobs = []
+                for sensor_job in sensor.jobs:
+                    if isinstance(sensor_job, (JobDefinition, UnresolvedAssetJobDefinition)):
+                        # use the already updated job if possible to ensure obj equality
+                        if id(sensor_job) in updated_jobs:
+                            new_sensor_jobs.append(updated_jobs[id(sensor_job)])
+                        else:  # otherwise, update the job metadata too
+                            new_sensor_jobs.append(
+                                sensor_job.with_metadata(update(sensor_job.metadata or {}))
+                            )
+                    else:
+                        new_sensor_jobs.append(sensor_job)  # other types are not updated
+                new_attrs["jobs"] = new_sensor_jobs
+
+            updated_sensors.append(sensor.with_attributes(**new_attrs))
         else:
             check.assert_never(sensor)
 
@@ -1080,16 +1140,14 @@ def _update_sensors_metadata(
 def _update_jobs_metadata(
     jobs: TJobs,
     update: Callable[[RawMetadataMapping], RawMetadataMapping],
-) -> TJobs:
+) -> Mapping[int, TJob]:
     if not jobs:
-        return jobs
+        return {}
 
-    updated_jobs = []
+    updated_jobs = {}
     for job in jobs:
-        if isinstance(job, JobDefinition):
-            updated_jobs.append(job.with_metadata(update(job.metadata)))
-        elif isinstance(job, UnresolvedAssetJobDefinition):
-            updated_jobs.append(job.with_metadata(update(job.metadata or {})))
+        if isinstance(job, (JobDefinition, UnresolvedAssetJobDefinition)):
+            updated_jobs[id(job)] = job.with_metadata(update(job.metadata or {}))
         else:
             check.assert_never(job)
 

@@ -2,7 +2,7 @@ from collections.abc import Sequence
 from typing import NamedTuple, Optional, cast
 
 import dagster._check as check
-from dagster._annotations import beta
+from dagster._annotations import beta, public
 from dagster._core.definitions.partitions.definition.multi import MultiPartitionsDefinition
 from dagster._core.definitions.partitions.definition.partitions_definition import (
     PartitionsDefinition,
@@ -158,6 +158,7 @@ def get_infer_single_to_multi_dimension_deps_result(
     )
 
 
+@public
 @beta
 @whitelist_for_serdes
 class MultiToSingleDimensionPartitionMapping(

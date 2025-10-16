@@ -3,11 +3,8 @@ from datetime import datetime
 from unittest import mock
 
 import dagster as dg
-from dagster._core.remote_representation.external_data import (
-    JobDataSnap,
-    RepositorySnap,
-    TimeWindowPartitionsSnap,
-)
+from dagster._core.definitions.partitions.snap import TimeWindowPartitionsSnap
+from dagster._core.remote_representation.external_data import JobDataSnap, RepositorySnap
 from dagster._core.snap.job_snapshot import _create_job_snapshot_id
 from dagster._core.test_utils import create_test_daemon_workspace_context
 from dagster._serdes import serialize_pp

@@ -12,12 +12,12 @@ from dagster._core.errors import DagsterExecutionInterruptedError
 from dagster._core.execution.context.compute import AssetExecutionContext, OpExecutionContext
 from dagster_dbt import dbt_assets
 from dagster_dbt.asset_utils import build_dbt_asset_selection
+from dagster_dbt.compat import DBT_PYTHON_VERSION
 from dagster_dbt.core.dbt_cli_invocation import PARTIAL_PARSE_FILE_NAME
 from dagster_dbt.core.resource import DbtCliResource
 from dagster_dbt.dagster_dbt_translator import DagsterDbtTranslator, DagsterDbtTranslatorSettings
 from dagster_dbt.dbt_project import DbtProject
 from dagster_dbt.errors import DagsterDbtCliRuntimeError, DagsterDbtProfilesDirectoryNotFoundError
-from dbt.version import __version__ as dbt_version
 from packaging import version
 from pydantic import ValidationError
 from pytest_mock import MockerFixture
@@ -393,7 +393,7 @@ def test_dbt_cli_debug_execution(
 
 
 @pytest.mark.skipif(
-    version.parse(dbt_version) < version.parse("1.7.9"),
+    DBT_PYTHON_VERSION and DBT_PYTHON_VERSION < version.parse("1.7.9"),
     reason="`dbt retry` with `--target-path` support is only available in `dbt-core>=1.7.9`",
 )
 def test_dbt_retry_execution(
@@ -639,7 +639,7 @@ def test_custom_subclass():
 
 
 @pytest.mark.skipif(
-    version.parse(dbt_version) < version.parse("1.8"),
+    DBT_PYTHON_VERSION and DBT_PYTHON_VERSION < version.parse("1.8"),
     reason="Lock issue with Duckdb in test suite for `dbt-core==1.7`",
 )
 def test_metadata(test_jaffle_shop_manifest: dict[str, Any], dbt: DbtCliResource) -> None:

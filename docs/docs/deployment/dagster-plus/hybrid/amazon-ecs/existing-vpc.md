@@ -2,6 +2,7 @@
 description: Deploy a Dagster+ Amazon ECS agent in an existing VPC using CloudFormation.
 sidebar_position: 3200
 title: Existing VPC setup
+tags: [dagster-plus-feature]
 ---
 
 :::note
@@ -61,6 +62,8 @@ After the stack is installed, you'll be prompted to configure it. In the ECS wiz
 - **Deploy VPC Subnet**: A public subnet of the existing VPC to deploy the agent into.
 - **Existing ECS Cluster**: Optionally, the name of an existing ECS cluster to deploy the agent in. Leave blank to create a new cluster
 - **Task Launch Type**: Optionally, the launch type to use for new tasks created by the agent (FARGATE or EC2). Defaults to FARGATE.
+- **AgentCPU**: The amount of AWS CPU to allocate to the agent. Defaults to 256 CPU units.
+- **AgentMemory**: The amount of memory to allocate to the agent. Defaults to 1024 MiB.
 
 The page should look similar to the following image. In this example, our organization name is `hooli` and our deployment is `prod`:
 

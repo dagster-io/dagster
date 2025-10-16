@@ -56,10 +56,7 @@ export const SelectionHealthDataProvider = ({children}: {children: React.ReactNo
         newSelections.add(selection);
         return newSelections;
       });
-      if (!registries[selection]) {
-        registries[selection] = new SelectionRegistry();
-      }
-      const registry = registries[selection]!;
+      const registry = getSelectionRegistry(selection, registries);
       const unwatch = registry.watchSelection(setHealthData, setFilterData);
       forceRerender();
       return () => {
@@ -72,15 +69,18 @@ export const SelectionHealthDataProvider = ({children}: {children: React.ReactNo
 
   return (
     <SelectionHealthDataContext.Provider value={{watchSelection}}>
-      {Array.from(selections).map((selection) => (
-        <SelectionHealthDataObserver
-          key={selection}
-          selection={selection}
-          registry={registries[selection]!}
-          filterListeners={registries[selection]!.getFilterListeners()}
-          healthListeners={registries[selection]!.getHealthListeners()}
-        />
-      ))}
+      {Array.from(selections).map((selection) => {
+        const registry = getSelectionRegistry(selection, registries);
+        return (
+          <SelectionHealthDataObserver
+            key={selection}
+            selection={selection}
+            registry={registry}
+            filterListeners={registry.getFilterListeners()}
+            healthListeners={registry.getHealthListeners()}
+          />
+        );
+      })}
       {children}
     </SelectionHealthDataContext.Provider>
   );
@@ -102,6 +102,7 @@ const SelectionHealthDataObserver = React.memo(
     const skipHealth = !healthListeners.size;
 
     const {assets, loading} = useAllAssets();
+
     const {filtered, loading: filterLoading} = useAssetSelectionFiltering<(typeof assets)[number]>({
       assets,
       assetSelection: selection,
@@ -178,7 +179,7 @@ export const useSelectionHealthData = ({selection}: {selection: string}) => {
   return healthData;
 };
 
-export const useSelectionFilterData = ({selection}: {selection: string}) => {
+export const useSelectionFilterData = ({selection, skip}: {selection: string; skip?: boolean}) => {
   const {watchSelection} = useContext(SelectionHealthDataContext);
 
   const [filterData, setFilterData] = React.useState<SelectionFilterData>(() => ({
@@ -187,8 +188,11 @@ export const useSelectionFilterData = ({selection}: {selection: string}) => {
   }));
 
   useLayoutEffect(() => {
+    if (skip) {
+      return;
+    }
     return watchSelection({selection, setFilterData});
-  }, [selection, watchSelection]);
+  }, [selection, watchSelection, skip]);
   return filterData;
 };
 
@@ -229,4 +233,14 @@ export class SelectionRegistry {
   public getHealthListeners() {
     return this.registry.getListeners('setHealthData');
   }
+}
+
+function getSelectionRegistry(
+  selection: string,
+  registries: Record<string, SelectionRegistry>,
+): SelectionRegistry {
+  if (!registries[selection]) {
+    registries[selection] = new SelectionRegistry();
+  }
+  return registries[selection];
 }

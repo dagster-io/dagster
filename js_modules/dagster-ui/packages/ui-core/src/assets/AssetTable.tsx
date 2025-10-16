@@ -5,22 +5,19 @@ import {
   Colors,
   Icon,
   Menu,
-  MenuItem,
   NonIdealState,
   Popover,
 } from '@dagster-io/ui-components';
 import groupBy from 'lodash/groupBy';
 import * as React from 'react';
-import {useContext, useMemo} from 'react';
-import {AssetWipeDialog} from 'shared/assets/AssetWipeDialog.oss';
+import {useMemo} from 'react';
 import {useCatalogExtraDropdownOptions} from 'shared/assets/catalog/useCatalogExtraDropdownOptions.oss';
 
 import {LaunchAssetExecutionButton} from './LaunchAssetExecutionButton';
 import {AssetTableFragment} from './types/AssetTableFragment.types';
 import {AssetViewType} from './useAssetView';
 import {RefetchQueriesFunction} from '../apollo-client';
-import {CloudOSSContext} from '../app/CloudOSSContext';
-import {useUnscopedPermissions} from '../app/Permissions';
+import {useWipeMaterializations} from './useWipeMaterializations';
 import {QueryRefreshCountdown, RefreshState} from '../app/QueryRefresh';
 import {useSelectionReducer} from '../hooks/useSelectionReducer';
 import {InvalidSelectionQueryNotice} from '../pipelines/GraphNotices';
@@ -203,50 +200,19 @@ interface MoreActionsDropdownProps {
 
 const MoreActionsDropdown = React.memo((props: MoreActionsDropdownProps) => {
   const {selected, clearSelection, requery} = props;
-  const [showBulkWipeDialog, setShowBulkWipeDialog] = React.useState<boolean>(false);
-  const {
-    permissions: {canWipeAssets},
-  } = useUnscopedPermissions();
 
-  const {
-    featureContext: {canSeeWipeMaterializationAction},
-  } = useContext(CloudOSSContext);
-
-  if (!canWipeAssets || !canSeeWipeMaterializationAction) {
-    return null;
-  }
-
-  const disabled = selected.length === 0;
+  const {menuItem, dialog} = useWipeMaterializations({
+    selected,
+    onComplete: clearSelection,
+    requery,
+  });
 
   return (
     <>
-      <Popover
-        position="bottom-right"
-        content={
-          <Menu>
-            <MenuItem
-              text="Wipe materializations"
-              onClick={() => setShowBulkWipeDialog(true)}
-              icon={
-                <Icon name="delete" color={disabled ? Colors.textDisabled() : Colors.accentRed()} />
-              }
-              disabled={disabled}
-              intent="danger"
-            />
-          </Menu>
-        }
-      >
+      <Popover position="bottom-right" content={<Menu>{menuItem}</Menu>}>
         <Button icon={<Icon name="expand_more" />} />
       </Popover>
-      <AssetWipeDialog
-        assetKeys={selected.map((asset) => asset.key)}
-        isOpen={showBulkWipeDialog}
-        onClose={() => setShowBulkWipeDialog(false)}
-        onComplete={() => {
-          clearSelection();
-        }}
-        requery={requery}
-      />
+      {dialog}
     </>
   );
 });

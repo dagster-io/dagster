@@ -19,15 +19,15 @@ In addition to the [previous prerequisites](/deployment/oss/deployment-options/k
 
 ### Components
 
-| Component name       | Type                                                                                                                                                                     | Image                                                                                                                |
-| -------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | -------------------------------------------------------------------------------------------------------------------- |
-| Celery               | [Deployment](https://kubernetes.io/docs/concepts/workloads/controllers/deployment)                                                                                      | [dagster/dagster-celery-k8s](https://hub.docker.com/r/dagster/dagster-celery-k8s) _(Released weekly)_                |
-| Daemon               | [Deployment](https://kubernetes.io/docs/concepts/workloads/controllers/deployment)                                                                                      | [dagster/dagster-celery-k8s](https://hub.docker.com/r/dagster/dagster-celery-k8s) _(Released weekly)_                |
+| Component name       | Type                                                                                                                                                                   | Image                                                                                                                |
+| -------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------- |
+| Celery               | [Deployment](https://kubernetes.io/docs/concepts/workloads/controllers/deployment)                                                                                     | [dagster/dagster-celery-k8s](https://hub.docker.com/r/dagster/dagster-celery-k8s) _(Released weekly)_                |
+| Daemon               | [Deployment](https://kubernetes.io/docs/concepts/workloads/controllers/deployment)                                                                                     | [dagster/dagster-celery-k8s](https://hub.docker.com/r/dagster/dagster-celery-k8s) _(Released weekly)_                |
 | Dagster webserver    | [Deployment](https://kubernetes.io/docs/concepts/workloads/controllers/deployment) behind a [Service](https://kubernetes.io/docs/concepts/services-networking/service) | [dagster/dagster-celery-k8s](https://hub.docker.com/r/dagster/dagster-celery-k8s) _(Released weekly)_                |
-| Database             | PostgreSQL                                                                                                                                                               | [postgres](https://hub.docker.com/_/postgres) _(Optional)_                                                           |
+| Database             | PostgreSQL                                                                                                                                                             | [postgres](https://hub.docker.com/_/postgres) _(Optional)_                                                           |
 | Flower _(Optional)_  | [Deployment](https://kubernetes.io/docs/concepts/workloads/controllers/deployment) behind a [Service](https://kubernetes.io/docs/concepts/services-networking/service) | [mher/flower](https://hub.docker.com/r/mher/flower)                                                                  |
-| Run worker           | [Job](https://kubernetes.io/docs/concepts/workloads/controllers/job)                                                                                                    | User-provided or [dagster/user-code-example](https://hub.docker.com/r/dagster/user-code-example) _(Released weekly)_ |
-| Step job             | [Job](https://kubernetes.io/docs/concepts/workloads/controllers/job)                                                                                                    | User-provided or [dagster/user-code-example](https://hub.docker.com/r/dagster/user-code-example) _(Released weekly)_ |
+| Run worker           | [Job](https://kubernetes.io/docs/concepts/workloads/controllers/job)                                                                                                   | User-provided or [dagster/user-code-example](https://hub.docker.com/r/dagster/user-code-example) _(Released weekly)_ |
+| Step job             | [Job](https://kubernetes.io/docs/concepts/workloads/controllers/job)                                                                                                   | User-provided or [dagster/user-code-example](https://hub.docker.com/r/dagster/user-code-example) _(Released weekly)_ |
 | User code deployment | [Deployment](https://kubernetes.io/docs/concepts/workloads/controllers/deployment) behind a [Service](https://kubernetes.io/docs/concepts/services-networking/service) | User-provided or [dagster/user-code-example](https://hub.docker.com/r/dagster/user-code-example) _(Released weekly)_ |
 
 The Helm chart can be configured to use this architecture by configuring the `runLauncher.type` field in your `values.yaml` file to be `CeleryK8sRunLauncher` instead of the default `K8sRunLauncher`. The resulting architecture is similar to the architecture described in the [Helm deployment guide](/deployment/oss/deployment-options/kubernetes/deploying-to-kubernetes), with the following changes:
@@ -125,7 +125,7 @@ To use the queues, `dagster-celery/queue` can be set on op tags.
 By default, all ops will be sent to the default Celery queue named `dagster`.
 
 ```python
-@op(
+@dg.op(
   tags = {
     'dagster-celery/queue': 'snowflake_queue',
   }
@@ -139,7 +139,7 @@ def my_op(context):
 Users can set `dagster-celery/run_priority` on job tags to configure the baseline priority of all ops from that job. To set priority at the op level, users can set `dagster-celery/priority` on the op tags. When priorities are set on both a job and an op, the sum of both priorities will be used.
 
 ```python
-@op(
+@dg.op(
   tags = {
     'dagster-celery/priority': 2,
   }
@@ -147,7 +147,7 @@ Users can set `dagster-celery/run_priority` on job tags to configure the baselin
 def my_op(context):
   context.log.info('running')
 
-@job(
+@dg.job(
   tags = {
     'dagster-celery/run_priority': 3,
   }
@@ -161,6 +161,7 @@ def my_job():
 In a real deployment, users will likely want to set up an external message broker like Redis rather than RabbitMQ, which can be done by configuring `rabbitmq` and `redis` sections of `values.yaml`.
 
 ```yaml
+# values.yaml
 rabbitmq:
   enabled: false
 

@@ -1,0 +1,470 @@
+{
+    "$defs": {
+        "DailyPartitionsDefinitionModel": {
+            "additionalProperties": false,
+            "properties": {
+                "type": {
+                    "const": "daily",
+                    "default": "daily",
+                    "enum": [
+                        "daily"
+                    ],
+                    "title": "Type",
+                    "type": "string"
+                },
+                "start_date": {
+                    "title": "Start Date",
+                    "type": "string"
+                },
+                "end_date": {
+                    "anyOf": [
+                        {
+                            "type": "string"
+                        },
+                        {
+                            "type": "null"
+                        }
+                    ],
+                    "default": null,
+                    "title": "End Date"
+                },
+                "timezone": {
+                    "anyOf": [
+                        {
+                            "type": "string"
+                        },
+                        {
+                            "type": "null"
+                        }
+                    ],
+                    "default": null,
+                    "title": "Timezone"
+                },
+                "minute_offset": {
+                    "default": 0,
+                    "title": "Minute Offset",
+                    "type": "integer"
+                },
+                "hour_offset": {
+                    "default": 0,
+                    "title": "Hour Offset",
+                    "type": "integer"
+                }
+            },
+            "required": [
+                "start_date"
+            ],
+            "title": "DailyPartitionsDefinitionModel",
+            "type": "object"
+        },
+        "HourlyPartitionsDefinitionModel": {
+            "additionalProperties": false,
+            "properties": {
+                "type": {
+                    "const": "hourly",
+                    "default": "hourly",
+                    "enum": [
+                        "hourly"
+                    ],
+                    "title": "Type",
+                    "type": "string"
+                },
+                "start_date": {
+                    "title": "Start Date",
+                    "type": "string"
+                },
+                "end_date": {
+                    "anyOf": [
+                        {
+                            "type": "string"
+                        },
+                        {
+                            "type": "null"
+                        }
+                    ],
+                    "default": null,
+                    "title": "End Date"
+                },
+                "timezone": {
+                    "anyOf": [
+                        {
+                            "type": "string"
+                        },
+                        {
+                            "type": "null"
+                        }
+                    ],
+                    "default": null,
+                    "title": "Timezone"
+                },
+                "minute_offset": {
+                    "default": 0,
+                    "title": "Minute Offset",
+                    "type": "integer"
+                }
+            },
+            "required": [
+                "start_date"
+            ],
+            "title": "HourlyPartitionsDefinitionModel",
+            "type": "object"
+        },
+        "StaticPartitionsDefinitionModel": {
+            "additionalProperties": false,
+            "properties": {
+                "type": {
+                    "const": "static",
+                    "default": "static",
+                    "enum": [
+                        "static"
+                    ],
+                    "title": "Type",
+                    "type": "string"
+                },
+                "partition_keys": {
+                    "items": {
+                        "type": "string"
+                    },
+                    "title": "Partition Keys",
+                    "type": "array"
+                }
+            },
+            "required": [
+                "partition_keys"
+            ],
+            "title": "StaticPartitionsDefinitionModel",
+            "type": "object"
+        },
+        "TimeWindowPartitionsDefinitionModel": {
+            "additionalProperties": false,
+            "properties": {
+                "type": {
+                    "const": "time_window",
+                    "default": "time_window",
+                    "enum": [
+                        "time_window"
+                    ],
+                    "title": "Type",
+                    "type": "string"
+                },
+                "start_date": {
+                    "title": "Start Date",
+                    "type": "string"
+                },
+                "end_date": {
+                    "anyOf": [
+                        {
+                            "type": "string"
+                        },
+                        {
+                            "type": "null"
+                        }
+                    ],
+                    "default": null,
+                    "title": "End Date"
+                },
+                "timezone": {
+                    "anyOf": [
+                        {
+                            "type": "string"
+                        },
+                        {
+                            "type": "null"
+                        }
+                    ],
+                    "default": null,
+                    "title": "Timezone"
+                },
+                "fmt": {
+                    "title": "Fmt",
+                    "type": "string"
+                },
+                "cron_schedule": {
+                    "title": "Cron Schedule",
+                    "type": "string"
+                }
+            },
+            "required": [
+                "start_date",
+                "fmt",
+                "cron_schedule"
+            ],
+            "title": "TimeWindowPartitionsDefinitionModel",
+            "type": "object"
+        },
+        "WeeklyPartitionsDefinitionModel": {
+            "additionalProperties": false,
+            "properties": {
+                "type": {
+                    "const": "weekly",
+                    "default": "weekly",
+                    "enum": [
+                        "weekly"
+                    ],
+                    "title": "Type",
+                    "type": "string"
+                },
+                "start_date": {
+                    "title": "Start Date",
+                    "type": "string"
+                },
+                "end_date": {
+                    "anyOf": [
+                        {
+                            "type": "string"
+                        },
+                        {
+                            "type": "null"
+                        }
+                    ],
+                    "default": null,
+                    "title": "End Date"
+                },
+                "timezone": {
+                    "anyOf": [
+                        {
+                            "type": "string"
+                        },
+                        {
+                            "type": "null"
+                        }
+                    ],
+                    "default": null,
+                    "title": "Timezone"
+                },
+                "minute_offset": {
+                    "default": 0,
+                    "title": "Minute Offset",
+                    "type": "integer"
+                },
+                "hour_offset": {
+                    "default": 0,
+                    "title": "Hour Offset",
+                    "type": "integer"
+                },
+                "day_offset": {
+                    "default": 0,
+                    "title": "Day Offset",
+                    "type": "integer"
+                }
+            },
+            "required": [
+                "start_date"
+            ],
+            "title": "WeeklyPartitionsDefinitionModel",
+            "type": "object"
+        }
+    },
+    "additionalProperties": false,
+    "properties": {
+        "deps": {
+            "anyOf": [
+                {
+                    "items": {
+                        "type": "string"
+                    },
+                    "type": "array"
+                },
+                {
+                    "type": "string"
+                },
+                {
+                    "type": "null"
+                }
+            ],
+            "default": null,
+            "description": "The asset keys for the upstream assets that this asset depends on.",
+            "examples": [
+                [
+                    "my_database/my_schema/upstream_table"
+                ]
+            ],
+            "title": "Deps"
+        },
+        "description": {
+            "anyOf": [
+                {
+                    "type": "string"
+                },
+                {
+                    "type": "null"
+                }
+            ],
+            "default": null,
+            "description": "Human-readable description of the asset.",
+            "examples": [
+                "Refined sales data"
+            ],
+            "title": "Description"
+        },
+        "metadata": {
+            "anyOf": [
+                {
+                    "type": "object"
+                },
+                {
+                    "type": "string"
+                }
+            ],
+            "default": "__DAGSTER_UNSET_DEFAULT__",
+            "description": "Additional metadata for the asset.",
+            "title": "Metadata"
+        },
+        "group_name": {
+            "anyOf": [
+                {
+                    "type": "string"
+                },
+                {
+                    "type": "null"
+                }
+            ],
+            "default": null,
+            "description": "Used to organize assets into groups, defaults to 'default'.",
+            "examples": [
+                "staging"
+            ],
+            "title": "Group Name"
+        },
+        "skippable": {
+            "anyOf": [
+                {
+                    "type": "boolean"
+                },
+                {
+                    "type": "null"
+                },
+                {
+                    "type": "string"
+                }
+            ],
+            "default": null,
+            "description": "Whether this asset can be omitted during materialization, causing downstream dependencies to skip.",
+            "title": "Skippable"
+        },
+        "code_version": {
+            "anyOf": [
+                {
+                    "type": "string"
+                },
+                {
+                    "type": "null"
+                }
+            ],
+            "default": null,
+            "description": "A version representing the code that produced the asset. Increment this value when the code changes.",
+            "examples": [
+                "3"
+            ],
+            "title": "Code Version"
+        },
+        "owners": {
+            "anyOf": [
+                {
+                    "items": {
+                        "type": "string"
+                    },
+                    "type": "array"
+                },
+                {
+                    "type": "null"
+                },
+                {
+                    "type": "string"
+                }
+            ],
+            "default": null,
+            "description": "A list of strings representing owners of the asset. Each string can be a user's email address, or a team name prefixed with `team:`, e.g. `team:finops`.",
+            "examples": [
+                [
+                    "team:analytics",
+                    "nelson@hooli.com"
+                ]
+            ],
+            "title": "Owners"
+        },
+        "tags": {
+            "anyOf": [
+                {
+                    "additionalProperties": {
+                        "type": "string"
+                    },
+                    "type": "object"
+                },
+                {
+                    "type": "string"
+                }
+            ],
+            "default": "__DAGSTER_UNSET_DEFAULT__",
+            "description": "Tags for filtering and organizing.",
+            "examples": [
+                {
+                    "team": "analytics",
+                    "tier": "prod"
+                }
+            ],
+            "title": "Tags"
+        },
+        "kinds": {
+            "anyOf": [
+                {
+                    "items": {
+                        "type": "string"
+                    },
+                    "type": "array"
+                },
+                {
+                    "type": "string"
+                }
+            ],
+            "default": "__DAGSTER_UNSET_DEFAULT__",
+            "description": "A list of strings representing the kinds of the asset. These will be made visible in the Dagster UI.",
+            "examples": [
+                [
+                    "snowflake"
+                ]
+            ],
+            "title": "Kinds"
+        },
+        "automation_condition": {
+            "anyOf": [
+                {
+                    "type": "string"
+                },
+                {
+                    "type": "null"
+                }
+            ],
+            "default": null,
+            "description": "The condition under which the asset will be automatically materialized.",
+            "title": "Automation Condition"
+        },
+        "partitions_def": {
+            "anyOf": [
+                {
+                    "$ref": "#/$defs/HourlyPartitionsDefinitionModel"
+                },
+                {
+                    "$ref": "#/$defs/DailyPartitionsDefinitionModel"
+                },
+                {
+                    "$ref": "#/$defs/WeeklyPartitionsDefinitionModel"
+                },
+                {
+                    "$ref": "#/$defs/TimeWindowPartitionsDefinitionModel"
+                },
+                {
+                    "$ref": "#/$defs/StaticPartitionsDefinitionModel"
+                },
+                {
+                    "type": "string"
+                }
+            ],
+            "default": null,
+            "description": "The partitions definition for the asset.",
+            "title": "Partitions Def"
+        }
+    },
+    "title": "SharedAssetKwargsModel",
+    "type": "object"
+}

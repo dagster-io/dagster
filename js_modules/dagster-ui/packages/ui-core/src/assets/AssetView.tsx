@@ -156,7 +156,7 @@ const AssetViewImpl = ({assetKey, headerBreadcrumbs, writeAssetVisit, currentPat
     // We don't render <AssetLoadingDefinitionState /> here like the other tabs because
     // AssetPartitions makes graphql requests and we want to avoid a request waterfall.
     // Instead AssetPartitions will render the AssetLoadingDefinitionState itself.
-    if (!isLoading && !definition?.isMaterializable) {
+    if (!isLoading && !definition) {
       return <Redirect to={assetDetailsPathForKey(assetKey, {view: 'events'})} />;
     }
 
@@ -269,7 +269,11 @@ const AssetViewImpl = ({assetKey, headerBreadcrumbs, writeAssetVisit, currentPat
     refresh,
   );
 
-  if (definitionQueryResult.data?.assetOrError.__typename === 'AssetNotFoundError') {
+  if (
+    definitionQueryResult.data?.assetOrError.__typename === 'AssetNotFoundError' ||
+    (definitionQueryResult.data?.assetOrError.__typename === 'Asset' &&
+      !definitionQueryResult.data.assetOrError.hasDefinitionOrRecord)
+  ) {
     const assetSelection = getAssetSelectionQueryString();
     let nextPath = `/assets/${currentPath.join('/')}?view=folder${assetSelection ? `&asset-selection=${assetSelection}` : ''}`;
     if (observeEnabled()) {
@@ -417,6 +421,7 @@ export const ASSET_VIEW_DEFINITION_QUERY = gql`
         key {
           path
         }
+        hasDefinitionOrRecord
         assetMaterializations(limit: 1) {
           timestamp
           runId

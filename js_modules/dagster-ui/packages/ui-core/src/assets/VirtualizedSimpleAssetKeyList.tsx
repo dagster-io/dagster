@@ -30,6 +30,7 @@ export const VirtualizedSimpleAssetKeyList = ({
     <div style={{...style, overflowY: 'auto'}} ref={parentRef}>
       <Inner $totalHeight={totalHeight}>
         {items.map(({index, key, size, start}) => {
+          // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
           const assetKey = assetKeys[index]!;
           return (
             <Row key={key} $height={size} $start={start}>

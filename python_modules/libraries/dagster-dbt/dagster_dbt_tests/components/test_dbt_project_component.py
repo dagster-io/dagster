@@ -5,7 +5,9 @@ from collections.abc import Iterator, Mapping
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any, Callable, Optional
+from unittest.mock import patch
 
+import dagster as dg
 import pytest
 from click.testing import CliRunner
 from dagster import AssetKey, AssetSpec, BackfillPolicy
@@ -14,16 +16,22 @@ from dagster._core.definitions.metadata.source_code import (
     CodeReferencesMetadataValue,
     LocalFileCodeReference,
 )
+from dagster._core.instance_for_test import instance_for_test
 from dagster._core.test_utils import ensure_dagster_tests_import
 from dagster._utils.env import environ
+from dagster._utils.test.definitions import scoped_definitions_load_context
+from dagster.components.core.component_tree import ComponentTree
 from dagster.components.core.load_defs import build_component_defs
-from dagster.components.core.tree import ComponentTree
+from dagster.components.resolved.context import ResolutionContext
 from dagster.components.resolved.core_models import AssetAttributesModel, OpSpec
 from dagster.components.resolved.errors import ResolutionException
-from dagster.components.testing import TestOpCustomization, TestTranslation
+from dagster.components.testing.test_cases import TestOpCustomization, TestTranslation
 from dagster_dbt import DbtProject, DbtProjectComponent
 from dagster_dbt.cli.app import project_app_typer_click_object
-from dagster_dbt.components.dbt_project.component import get_projects_from_dbt_component
+from dagster_dbt.components.dbt_project.component import (
+    _set_resolution_context,
+    get_projects_from_dbt_component,
+)
 from dagster_shared import check
 
 ensure_dagster_tests_import()
@@ -49,6 +57,21 @@ JAFFLE_SHOP_KEYS = {
     AssetKey("stg_orders"),
     AssetKey("stg_payments"),
 }
+
+
+@pytest.fixture(autouse=True)
+def _setup() -> Iterator:
+    with (
+        instance_for_test() as instance,
+        scoped_definitions_load_context(),
+        # this file doesn't use `create_defs_folder_sandbox` so we need to mock out the local_state_dir
+        tempfile.TemporaryDirectory() as temp_dir,
+        patch(
+            "dagster.components.utils.project_paths.get_local_defs_state_dir",
+            return_value=Path(temp_dir),
+        ),
+    ):
+        yield instance
 
 
 @pytest.fixture(scope="module")
@@ -235,17 +258,33 @@ def test_dependency_on_dbt_project():
     # Ensure DEPENDENCY_ON_DBT_PROJECT_LOCATION_PATH is an importable python module
     sys.path.append(str(DEPENDENCY_ON_DBT_PROJECT_LOCATION_PATH.parent))
 
+    # there's an order of operations issue here, wherein the dependency on the dbt project only
+    # loads the component (and doesn't build definitions), but the dbt project only ensures that
+    # the manifest exists during the build process. we should figure out a more systemtic way to
+    # fix this issue.
     project = DbtProject(
         Path(DEPENDENCY_ON_DBT_PROJECT_LOCATION_PATH) / "defs/jaffle_shop_dbt/jaffle_shop"
     )
     project.preparer.prepare(project)
 
     defs = build_component_defs(DEPENDENCY_ON_DBT_PROJECT_LOCATION_PATH / "defs")
+
     assert AssetKey("downstream_of_customers") in defs.resolve_asset_graph().get_all_asset_keys()
     downstream_of_customers_def = defs.resolve_assets_def("downstream_of_customers")
     assert set(downstream_of_customers_def.asset_deps[AssetKey("downstream_of_customers")]) == {
         AssetKey("customers")
     }
+
+    assert (
+        AssetKey("downstream_of_customers_two") in defs.resolve_asset_graph().get_all_asset_keys()
+    )
+    downstream_of_customers_two_def = defs.resolve_assets_def("downstream_of_customers_two")
+    assert set(
+        downstream_of_customers_two_def.asset_deps[AssetKey("downstream_of_customers_two")]
+    ) == {AssetKey("customers")}
+
+    assert defs.resolve_job_def("run_customers")
+    assert defs.resolve_schedule_def("run_customers_schedule")
 
 
 def test_spec_is_available_in_scope(dbt_path: Path) -> None:
@@ -316,6 +355,54 @@ def test_state_path(
     assert comp.project.profile == "profile"
 
 
+@pytest.mark.parametrize(
+    ["cli_args", "expected_args"],
+    [
+        (
+            None,
+            [
+                "build",
+            ],
+        ),
+        (
+            ["build", "--foo"],
+            ["build", "--foo"],
+        ),
+        (
+            [
+                "run",
+                {
+                    "--vars": {
+                        "start_date": "{{ partition_key_range.start }}",
+                        "end_date": "{{ foo }}",
+                    }
+                },
+                {"--threads": 2},
+            ],
+            [
+                "run",
+                "--vars",
+                '{"start_date": "2021-01-01", "end_date": "2021-01-01"}',
+                "--threads",
+                "2",
+            ],
+        ),
+    ],
+)
+def test_cli_args(dbt_path: Path, cli_args: Optional[list[str]], expected_args: list[str]) -> None:
+    args = {"cli_args": cli_args} if cli_args else {}
+
+    comp = load_component_for_test(
+        DbtProjectComponent,
+        {"project": str(dbt_path), **args},
+    )
+    context = dg.build_asset_context(
+        partition_key_range=dg.PartitionKeyRange(start="2021-01-01", end="2021-01-01"),
+    )
+    with _set_resolution_context(ResolutionContext.default().with_scope(foo="2021-01-01")):
+        assert comp.get_cli_args(context) == expected_args
+
+
 def test_python_interface(dbt_path: Path):
     context = ComponentTree.for_test().load_context
     assert DbtProjectComponent(
@@ -380,3 +467,53 @@ project: {dbt_path!s}
 prepare_if_dev: False
     """)
     assert not c.prepare_if_dev
+
+
+def test_subclass_override_get_asset_spec(dbt_path: Path) -> None:
+    """Test that we can subclass DbtProjectComponent and override get_asset_spec method."""
+
+    @dataclass
+    class CustomDbtProjectComponent(DbtProjectComponent):
+        def get_asset_spec(
+            self, manifest: Mapping[str, Any], unique_id: str, project: Optional[DbtProject]
+        ) -> dg.AssetSpec:
+            # Get the base asset spec from the parent implementation
+            base_spec = super().get_asset_spec(manifest, unique_id, project)
+
+            # Add custom tags to demonstrate the override works
+            custom_tags = {
+                "custom_override": "true",
+                "model_name": manifest["nodes"][unique_id]["name"],
+            }
+
+            # Return the spec with our custom modifications
+            return base_spec.replace_attributes(tags={**base_spec.tags, **custom_tags})
+
+    defs = build_component_defs_for_test(CustomDbtProjectComponent, {"project": str(dbt_path)})
+
+    # Test that our custom get_asset_spec method is being used
+    assets_def = defs.resolve_assets_def(AssetKey("stg_customers"))
+    asset_spec = assets_def.get_asset_spec(AssetKey("stg_customers"))
+
+    # Verify that our custom tags were added
+    assert asset_spec.tags["custom_override"] == "true"
+    assert asset_spec.tags["model_name"] == "stg_customers"
+    # Verify code references are still added automatically
+    refs = check.inst(
+        assets_def.metadata_by_key[AssetKey("stg_customers")]["dagster/code_references"],
+        CodeReferencesMetadataValue,
+    )
+    assert len(refs.code_references) == 1
+    assert isinstance(refs.code_references[0], LocalFileCodeReference)
+    assert refs.code_references[0].file_path.endswith("models/staging/stg_customers.sql")
+
+    # Verify that the base functionality still works (e.g., original metadata is preserved)
+    assert "dagster-dbt/materialization_type" in asset_spec.metadata
+    assert "dagster/table_name" in asset_spec.metadata
+
+    # Test with another asset to ensure it works across different models
+    assets_def_orders = defs.resolve_assets_def(AssetKey("stg_orders"))
+    asset_spec_orders = assets_def_orders.get_asset_spec(AssetKey("stg_orders"))
+
+    assert asset_spec_orders.tags["custom_override"] == "true"
+    assert asset_spec_orders.tags["model_name"] == "stg_orders"

@@ -7,7 +7,9 @@ interface KeyboardTagProps {
 
 export const KeyboardTag = styled.div<KeyboardTagProps>`
   ${(props) => {
-    return props.$withinTooltip ? `color: ${Colors.accentWhite()}` : `color: ${Colors.textLight()}`;
+    return props.$withinTooltip
+      ? `color: ${Colors.accentWhite()}`
+      : `color: ${Colors.textDefault()}`;
   }};
   background: ${Colors.backgroundGray()};
   border-radius: 4px;

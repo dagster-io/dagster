@@ -1,6 +1,6 @@
 import * as dagre from 'dagre';
 
-import {AssetNodeFacet} from './AssetNodeFacets';
+import {AssetNodeFacet} from './AssetNodeFacetsUtil';
 import {GraphData, GraphId, GraphNode, groupIdForNode, isGroupId} from './Utils';
 import type {IBounds, IPoint} from '../graph/common';
 import {ChangeReason} from '../graphql/types';
@@ -57,6 +57,7 @@ export type LayoutAssetGraphConfig = dagre.GraphLabel & {
 
 export type LayoutAssetGraphOptions = {
   direction: AssetLayoutDirection;
+  flagAssetGraphGroupsPerCodeLocation: boolean;
   overrides?: Partial<LayoutAssetGraphConfig>;
   facets?: AssetNodeFacet[] | false;
 };
@@ -248,6 +249,7 @@ export const layoutAssetGraphImpl = (
     if (!isGroupId(id)) {
       nodes[id] = {id, bounds};
     } else if (!expandedGroupsSet.has(id)) {
+      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
       const group = groups[id]!;
       group.bounds = bounds;
     }
@@ -262,6 +264,7 @@ export const layoutAssetGraphImpl = (
       const nodeLayout = nodes[node.id];
       if (nodeLayout && node.definition.groupName) {
         const groupId = groupIdForNode(node);
+        // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
         const group = groups[groupId]!;
         group.bounds =
           group.bounds.width === 0

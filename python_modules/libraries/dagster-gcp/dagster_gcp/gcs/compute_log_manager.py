@@ -44,7 +44,7 @@ class GCSComputeLogManager(TruncatingCloudStorageComputeLogManager, Configurable
             prefix: "dagster-test-"
             upload_interval: 30
 
-    There are more configuration examples in the instance documentation guide: https://docs.dagster.io/guides/deploy/dagster-instance-configuration#compute-log-storage
+    There are more configuration examples in the instance documentation guide: https://docs.dagster.io/deployment/oss/oss-instance-configuration#compute-log-storage
 
     Args:
         bucket (str): The name of the GCS bucket to which to log.

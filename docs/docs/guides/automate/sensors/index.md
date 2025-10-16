@@ -2,6 +2,8 @@
 description: Sensors enable you to take action in response to events that occur either internally within Dagster or in external systems by checking for events at regular intervals and either performing an action or providing an explanation for why the action was skipped.
 sidebar_position: 30
 title: Sensors
+canonicalUrl: '/guides/automate/sensors'
+slug: '/guides/automate/sensors'
 ---
 
 Sensors enable you to take action in response to events that occur either internally within Dagster or in external systems. They check for events at regular intervals and either perform an action or provide an explanation for why the action was skipped.
@@ -22,7 +24,7 @@ Examples of actions include:
 
 :::tip
 
-An alternative to polling with sensors is to push events to Dagster using the [Dagster API](/guides/operate/graphql).
+An alternative to polling with sensors is to push events to Dagster using the [Dagster GraphQL API](/api/graphql).
 
 :::
 
@@ -42,13 +44,17 @@ Sensors are defined with the `@sensor` decorator. The following example includes
 
 :::tip
 
-You can scaffold assets and sensors from the command line with the `dg scaffold` command. For more information, see the [`dg` CLI docs](/api/dg/dg-cli#dg-scaffold).
+You can scaffold assets and sensors from the command line with the `dg scaffold` command. For more information, see the [`dg` CLI docs](/api/clis/dg-cli/dg-cli-reference#dg-scaffold).
 
 :::
 
 If the sensor finds new files, it starts a run of `my_job`. If not, it skips the run and logs `No new files found` in the Dagster UI.
 
-<CodeExample path="docs_snippets/docs_snippets/guides/automation/simple-sensor-example.py" language="python" title="src/<project_name>/defs/assets.py" />
+<CodeExample
+  path="docs_snippets/docs_snippets/guides/automation/simple-sensor-example.py"
+  language="python"
+  title="src/<project_name>/defs/assets.py"
+/>
 
 :::tip
 Unless a sensor has a `default_status` of `DefaultSensorStatus.RUNNING`, it won't be enabled when first deployed to a Dagster instance. To find and enable the sensor, click **Automation > Sensors** in the Dagster UI.
@@ -87,7 +93,11 @@ When dealing with a large number of events, you may want to implement a cursor t
 
 The following example demonstrates how you might use a cursor to only create `RunRequests` for files in a directory that have been updated since the last time the sensor ran.
 
-<CodeExample path="docs_snippets/docs_snippets/guides/automation/sensor-cursor.py" language="python" title="src/<project_name>/defs/assets.py" />
+<CodeExample
+  path="docs_snippets/docs_snippets/guides/automation/sensor-cursor.py"
+  language="python"
+  title="src/<project_name>/defs/assets.py"
+/>
 
 For sensors that consume multiple event streams, you may need to serialize and deserialize a more complex data structure in and out of the cursor string to keep track of the sensor's progress over the multiple streams.
 

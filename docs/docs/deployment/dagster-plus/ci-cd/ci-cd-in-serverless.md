@@ -3,7 +3,10 @@ description: Implement CI/CD for your Dagster+ Serverless deployment with GitHub
 sidebar_position: 7100
 title: CI/CD in Dagster+ Serverless
 sidebar_label: CI/CD in Serverless
+tags: [dagster-plus-feature]
 ---
+
+import UpdateGitHubActionVersion from '@site/docs/partials/_UpdateGitHubActionVersion.md';
 
 :::note
 
@@ -11,7 +14,7 @@ This guide only applies to [Dagster+ Serverless deployments](/deployment/dagster
 
 :::
 
-If you're a GitHub or GitLab user, you can use our predefined workflows to seamlessly deploy and synchronize your code to Dagster+. You can also use other Git providers or a local Git repository with our [dagster-cloud CLI](/deployment/dagster-plus/management/dagster-cloud-cli) to run your own CI/CD process.
+If you're a GitHub or GitLab user, you can use our predefined workflows to seamlessly deploy and synchronize your code to Dagster+. You can also use other Git providers or a local Git repository with our [dagster-cloud CLI](/api/clis/dagster-cloud-cli) to run your own CI/CD process.
 
 :::note
 
@@ -36,6 +39,8 @@ If you're a GitHub user, with a single click our GitHub app with GitHub Actions 
 
 :::
 
+<UpdateGitHubActionVersion />
+
 </TabItem>
 
 <TabItem value="GitLab" label="With GitLab">
@@ -46,7 +51,7 @@ If you're a GitLab user, with a single click our GitLab app can set up a repo co
 
 <TabItem value="Other" label="Other Git providers or local development">
 
-If you don't want to use our automated GitHub/GitLab process, we offer [the powerful `dagster-cloud` command-line interface (CLI)](/deployment/dagster-plus/management/dagster-cloud-cli) that you can use in another CI environment or locally.
+If you don't want to use our automated GitHub/GitLab process, we offer [the powerful `dagster-cloud` command-line interface (CLI)](/api/clis/dagster-cloud-cli) that you can use in another CI environment or locally.
 
 First, [create a new project](/getting-started/quickstart) with the Dagster open source CLI.
 
@@ -55,14 +60,14 @@ The example below uses our [quickstart_etl example project](https://github.com/d
 ```shell
 pip install dagster
 dagster project from-example \
-  --name my-dagster-project \
+  --name my-project \
   --example quickstart_etl
 ```
 
 :::note
 If using a different project, ensure that `dagster-cloud` is included as a dependency in your `setup.py` or `requirements.txt` file.
 
-For example, in `my-dagster-project/setup.py`:
+For example, in `my-project/setup.py`:
 
 ```python
 install_requires=[
@@ -74,7 +79,7 @@ install_requires=[
 
 :::
 
-Next, install the [`dagster-cloud` CLI](/deployment/dagster-plus/management/dagster-cloud-cli/installing-and-configuring) and use its `configure` command to authenticate it to your Dagster+ organization.
+Next, install the [`dagster-cloud` CLI](/api/clis/dagster-cloud-cli/installing-and-configuring) and use its `configure` command to authenticate it to your Dagster+ organization.
 
 **Note:** The CLI requires a recent version of Python 3 and Docker.
 
@@ -83,12 +88,12 @@ pip install dagster-cloud
 dagster-cloud configure
 ```
 
-You can also configure the `dagster-cloud` tool non-interactively; see [the CLI docs](/deployment/dagster-plus/management/dagster-cloud-cli/installing-and-configuring) for more information.
+You can also configure the `dagster-cloud` tool non-interactively; see [the CLI docs](/api/clis/dagster-cloud-cli/installing-and-configuring) for more information.
 
 Finally, deploy your project to Dagster+ using the `serverless` command:
 
 ```shell
-dagster-cloud serverless deploy-python-executable ./my-dagster-project \
+dagster-cloud serverless deploy-python-executable ./my-project \
   --location-name example \
   --package-name quickstart_etl \
   --python-version 3.12

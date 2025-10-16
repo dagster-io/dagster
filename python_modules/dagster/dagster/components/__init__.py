@@ -25,6 +25,10 @@ from dagster.components.lib.executable_component.python_script_component import 
 from dagster.components.lib.executable_component.uv_run_component import (
     UvRunComponent as UvRunComponent,
 )
+from dagster.components.lib.sql_component.sql_component import (
+    SqlComponent as SqlComponent,
+    TemplatedSqlComponent as TemplatedSqlComponent,
+)
 from dagster.components.resolved.base import Resolvable as Resolvable
 from dagster.components.resolved.context import ResolutionContext as ResolutionContext
 from dagster.components.resolved.core_models import (

@@ -4,6 +4,8 @@ from unittest.mock import patch
 
 import pytest
 import responses
+from dagster._core.test_utils import instance_for_test
+from dagster._utils.test.definitions import scoped_definitions_load_context
 from dagster_fivetran.resources import (
     FIVETRAN_API_BASE,
     FIVETRAN_API_VERSION,
@@ -532,7 +534,11 @@ def group_id_fixture() -> str:
 def fetch_workspace_data_api_mocks_fixture(
     connector_id: str, destination_id: str, group_id: str
 ) -> Iterator[responses.RequestsMock]:
-    with responses.RequestsMock() as response:
+    with (
+        responses.RequestsMock() as response,
+        instance_for_test(),
+        scoped_definitions_load_context(),
+    ):
         response.add(
             method=responses.GET,
             url=f"{FIVETRAN_API_BASE}/{FIVETRAN_API_VERSION}/groups",

@@ -17,6 +17,7 @@ from dagster import (
     StringSource,
     _check as check,
 )
+from dagster._annotations import public
 from dagster._config.config_schema import UserConfigSchema
 from dagster._core.execution.compute_logs import mirror_stream_to_file
 from dagster._core.storage.compute_log_manager import (
@@ -41,6 +42,7 @@ IO_TYPE_EXTENSION: Final[Mapping[ComputeIOType, str]] = {
 MAX_FILENAME_LENGTH: Final = 255
 
 
+@public
 class LocalComputeLogManager(ComputeLogManager, ConfigurableClass):
     """Stores copies of stdout & stderr for each compute step locally on disk."""
 

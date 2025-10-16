@@ -1,5 +1,6 @@
 import os
 import subprocess
+import sys
 from pathlib import Path
 from typing import Literal, Optional, get_args
 
@@ -7,27 +8,24 @@ import create_dagster.version_check
 import dagster_shared.check as check
 import pytest
 import tomlkit
+from create_dagster.scaffold import _get_editable_dagster_from_env
 from dagster_dg_core.shared_options import DEFAULT_EDITABLE_DAGSTER_PROJECTS_ENV_VAR
 from dagster_dg_core.utils import (
     create_toml_node,
     discover_git_root,
-    ensure_dagster_dg_tests_import,
     get_toml_node,
     has_toml_node,
     modify_toml_as_dict,
 )
 from dagster_shared.libraries import get_published_pypi_versions
-from typing_extensions import TypeAlias
-
-ensure_dagster_dg_tests_import()
-
-from dagster_dg_core.utils import ensure_dagster_dg_tests_import
-from dagster_dg_core_tests.utils import (
+from dagster_shared.utils import environ
+from dagster_test.dg_utils.utils import (
     ProxyRunner,
     assert_runner_result,
     clear_module_from_cache,
     isolated_example_workspace,
 )
+from typing_extensions import TypeAlias
 
 # ########################
 # ##### WORKSPACE
@@ -87,7 +85,7 @@ def test_scaffold_workspace_already_exists_failure(monkeypatch) -> None:
         result = runner.invoke_create_dagster(
             "workspace",
             "dagster-workspace",
-            "--use-editable-dagster",
+            "--no-uv-sync",
         )
         assert_runner_result(result, exit_0=False)
         assert "already exists" in result.output
@@ -135,7 +133,10 @@ def test_scaffold_workspace_already_exists_failure(monkeypatch) -> None:
     ],
 )
 def test_scaffold_project_success(
-    monkeypatch, cli_args: tuple[str, ...], input_str: Optional[str], opts: dict[str, object]
+    monkeypatch,
+    cli_args: tuple[str, ...],
+    input_str: Optional[str],
+    opts: dict[str, object],
 ) -> None:
     use_preexisting_venv = check.opt_bool_elem(opts, "use_preexisting_venv") or False
     no_uv = check.opt_bool_elem(opts, "no_uv") or False
@@ -152,7 +153,9 @@ def test_scaffold_project_success(
                 subprocess.run(["uv", "venv"], check=True)
 
         result = runner.invoke_create_dagster(
-            "project", "--use-editable-dagster", *cli_args, input=input_str
+            "project",
+            *cli_args,
+            input=input_str,
         )
         assert_runner_result(result)
 
@@ -164,6 +167,13 @@ def test_scaffold_project_success(
         assert Path("foo-bar/src/foo_bar/defs").exists()
         assert Path("foo-bar/tests").exists()
         assert Path("foo-bar/pyproject.toml").exists()
+        # Standalone projects should have README.md and .gitignore
+        assert Path("foo-bar/README.md").exists()
+        assert Path("foo-bar/.gitignore").exists()
+
+        # Verify README.md contains the project name
+        readme_content = Path("foo-bar/README.md").read_text()
+        assert "foo_bar" in readme_content
 
         # this indicates user opts to create venv and uv.lock
         if not use_preexisting_venv and (
@@ -197,6 +207,9 @@ def test_scaffold_project_inside_workspace_success(monkeypatch) -> None:
         assert Path("projects/foo-bar/src/foo_bar/defs").exists()
         assert Path("projects/foo-bar/tests").exists()
         assert Path("projects/foo-bar/pyproject.toml").exists()
+        # Workspace projects should NOT have README.md and .gitignore
+        assert not Path("projects/foo-bar/README.md").exists()
+        assert not Path("projects/foo-bar/.gitignore").exists()
 
         # Check project TOML content
         toml = tomlkit.parse(Path("projects/foo-bar/pyproject.toml").read_text())
@@ -231,6 +244,10 @@ def test_scaffold_project_inside_workspace_success(monkeypatch) -> None:
         )
         assert_runner_result(result)
 
+        # Verify the second workspace project also doesn't have README.md and .gitignore
+        assert not Path("other_projects/baz/README.md").exists()
+        assert not Path("other_projects/baz/.gitignore").exists()
+
         # Check workspace TOML content
         raw_toml = Path("dg.toml").read_text()
         toml = tomlkit.parse(raw_toml)
@@ -259,6 +276,9 @@ def test_scaffold_project_inside_workspace_applies_scaffold_project_options(monk
             "--uv-sync",
         )
         assert_runner_result(result)
+        # Workspace projects should NOT have README.md and .gitignore
+        assert not Path("projects/foo-bar/README.md").exists()
+        assert not Path("projects/foo-bar/.gitignore").exists()
         # Check that use_editable_dagster was applied
         toml = tomlkit.parse(Path("projects/foo-bar/pyproject.toml").read_text())
         assert has_toml_node(toml, ("tool", "uv", "sources", "dagster"))
@@ -268,29 +288,25 @@ EditableOption: TypeAlias = Literal["--use-editable-dagster"]
 
 
 @pytest.mark.parametrize("option", get_args(EditableOption))
-@pytest.mark.parametrize("value_source", ["env_var", "arg"])
-def test_scaffold_project_editable_dagster_success(
-    value_source: str, option: EditableOption, monkeypatch
-) -> None:
+def test_scaffold_project_editable_dagster_success(option: EditableOption, monkeypatch) -> None:
     dagster_git_repo_dir = discover_git_root(Path(__file__))
-    if value_source == "env_var":
-        monkeypatch.setenv("DAGSTER_GIT_REPO_DIR", str(dagster_git_repo_dir))
-        editable_args = [option, "--"]
-    else:
-        editable_args = [option, str(dagster_git_repo_dir)]
     with (
         ProxyRunner.test() as runner,
         isolated_example_workspace(runner, use_editable_dagster=False),
+        environ({"DAGSTER_GIT_REPO_DIR": str(dagster_git_repo_dir)}),
     ):
         result = runner.invoke_create_dagster(
             "project",
             "--uv-sync",
-            *editable_args,
+            "--use-editable-dagster",
             "projects/foo-bar",
         )
         assert_runner_result(result)
         assert Path("projects/foo-bar").exists()
         assert Path("projects/foo-bar/pyproject.toml").exists()
+        # Workspace projects should NOT have README.md and .gitignore
+        assert not Path("projects/foo-bar/README.md").exists()
+        assert not Path("projects/foo-bar/.gitignore").exists()
         with open("projects/foo-bar/pyproject.toml") as f:
             toml = tomlkit.parse(f.read())
             validate_pyproject_toml_with_editable(toml, option, dagster_git_repo_dir)
@@ -384,7 +400,11 @@ def test_scaffold_project_use_editable_dagster_env_var_succeeds(monkeypatch) -> 
     dagster_git_repo_dir = discover_git_root(Path(__file__))
     monkeypatch.setenv("DAGSTER_GIT_REPO_DIR", str(dagster_git_repo_dir))
     monkeypatch.setenv(DEFAULT_EDITABLE_DAGSTER_PROJECTS_ENV_VAR, "1")
-    with ProxyRunner.test() as runner, runner.isolated_filesystem():
+    with (
+        ProxyRunner.test() as runner,
+        runner.isolated_filesystem(),
+        environ({"DAGSTER_GIT_REPO_DIR": str(dagster_git_repo_dir)}),
+    ):
         # We need to use subprocess rather than runner here because the environment variable affects
         # CLI defaults set at process startup.
         subprocess.check_output(["create-dagster", "project", "--uv-sync", "foo-bar"], text=True)
@@ -395,16 +415,55 @@ def test_scaffold_project_use_editable_dagster_env_var_succeeds(monkeypatch) -> 
             )
 
 
+def test_scaffold_project_normal_package_installation_works(monkeypatch) -> None:
+    with ProxyRunner.test() as runner, runner.isolated_filesystem():
+        result = runner.invoke_create_dagster("project", "--no-uv-sync", "foo-bar")
+        assert_runner_result(result)
+
+        venv_dir = Path("test_venv")
+        subprocess.run([sys.executable, "-m", "venv", str(venv_dir)], check=True)
+        venv_python = venv_dir / "bin" / "python"
+        root = _get_editable_dagster_from_env()
+        subprocess.run(
+            [venv_python, "-m", "pip", "install", "uv"],
+            check=True,
+        )
+        subprocess.run(
+            [
+                venv_python,
+                "-m",
+                "uv",
+                "pip",
+                "install",
+                "./foo-bar",
+                "-e",
+                f"{root}/python_modules/dagster",
+                "-e",
+                f"{root}/python_modules/libraries/dagster-shared",
+            ],
+            check=True,
+        )
+
+        result = subprocess.run(
+            [
+                venv_python,
+                "-c",
+                "import foo_bar.definitions; foo_bar.definitions.defs()",
+            ],
+            check=True,
+        )
+
+
 @pytest.mark.parametrize("option", get_args(EditableOption))
 def test_scaffold_project_editable_dagster_no_env_var_no_value_fails(
-    option: EditableOption, monkeypatch
+    option: EditableOption,
 ) -> None:
-    monkeypatch.setenv("DAGSTER_GIT_REPO_DIR", "")
     with (
         ProxyRunner.test() as runner,
         isolated_example_workspace(runner, use_editable_dagster=False),
+        environ({"DAGSTER_GIT_REPO_DIR": ""}),
     ):
-        result = runner.invoke_create_dagster("project", option, "--", "bar")
+        result = runner.invoke_create_dagster("project", "--no-uv-sync", option, "--", "bar")
         assert_runner_result(result, exit_0=False)
         assert "requires the `DAGSTER_GIT_REPO_DIR`" in result.output
 

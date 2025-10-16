@@ -312,10 +312,12 @@ const ResourceConfig = (props: {
               resourceDetails.configFields.map((field) => {
                 const defaultValue = field.defaultValueAsJson;
                 const type = configuredValues.hasOwnProperty(field.name)
-                  ? configuredValues[field.name]!.type
+                  ? // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+                    configuredValues[field.name]!.type
                   : null;
                 const actualValue = configuredValues.hasOwnProperty(field.name)
-                  ? configuredValues[field.name]!.value
+                  ? // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+                    configuredValues[field.name]!.value
                   : defaultValue;
 
                 const isDefault = type === 'VALUE' && defaultValue === actualValue;

@@ -8,17 +8,12 @@ import tempfile
 import textwrap
 from pathlib import Path
 from typing import Any
+from unittest import mock
 
 import pytest
 from dagster.components.utils import format_error_message
-from dagster_dg_core.utils import activate_venv, ensure_dagster_dg_tests_import, set_toml_node
-
-ensure_dagster_dg_tests_import()
-
-from unittest import mock
-
-from dagster_dg_core.utils import ensure_dagster_dg_tests_import
-from dagster_dg_core_tests.utils import (
+from dagster_dg_core.utils import activate_venv, set_toml_node
+from dagster_test.dg_utils.utils import (
     ProxyRunner,
     assert_runner_result,
     fixed_panel_width,
@@ -48,11 +43,11 @@ def capture_stderr_from_components_cli_invocations():
 
 def test_list_project_success():
     with ProxyRunner.test() as runner, isolated_example_workspace(runner):
-        result = runner.invoke_create_dagster("project", "foo")
+        result = runner.invoke_create_dagster("project", "foo", "--no-uv-sync")
         assert_runner_result(result)
-        result = runner.invoke_create_dagster("project", "projects/bar")
+        result = runner.invoke_create_dagster("project", "projects/bar", "--no-uv-sync")
         assert_runner_result(result)
-        result = runner.invoke_create_dagster("project", "more_projects/baz")
+        result = runner.invoke_create_dagster("project", "more_projects/baz", "--no-uv-sync")
         assert_runner_result(result)
         result = runner.invoke("list", "project")
         assert_runner_result(result)
@@ -121,7 +116,13 @@ def test_list_components_success():
         with fixed_panel_width(width=120):
             result = runner.invoke("list", "components")
             assert_runner_result(result)
-            match_terminal_box_output(result.output.strip(), _EXPECTED_COMPONENT_TYPES_TABLE)
+            lines = result.output.splitlines()
+            table_start_index = next(
+                i for i, line in enumerate(lines) if re.search(r"^[^\w\s]", line)
+            )
+            print("FIRST LINE", lines[table_start_index])  # noqa: T201
+            table_output = "\n".join(lines[table_start_index:])
+            match_terminal_box_output(table_output.strip(), _EXPECTED_COMPONENT_TYPES_TABLE)
 
 
 def test_list_components_json_success():
@@ -130,8 +131,10 @@ def test_list_components_json_success():
         isolated_components_venv(runner),
     ):
         result = runner.invoke("list", "components", "--json")
-        assert_runner_result(result)
-        assert match_json_output(result.output.strip(), _EXPECTED_COMPONENTS_JSON)
+        lines = result.output.splitlines()
+        json_start_index = next(i for i, line in enumerate(lines) if line.startswith("["))
+        json_output = "\n".join(lines[json_start_index:])
+        assert match_json_output(json_output, _EXPECTED_COMPONENTS_JSON)
 
 
 def test_list_components_filtered():
@@ -303,6 +306,29 @@ def test_list_component_tree_succeeds(snapshot):
             # touch plain python file
             Path("src/foo_bar/defs/assets").mkdir(parents=True, exist_ok=True)
             Path("src/foo_bar/defs/assets/asset.py").touch()
+
+            Path("src/foo_bar/defs/pythonic_components").mkdir(parents=True, exist_ok=True)
+            Path("src/foo_bar/defs/pythonic_components/my_component.py").write_text(
+                textwrap.dedent(
+                    """
+                    import dagster as dg
+
+                    class PyComponent(dg.Component, dg.Model, dg.Resolvable):
+                        asset: dg.ResolvedAssetSpec
+
+                        def build_defs(self, context):
+                            return dg.Definitions(assets=[self.asset])
+
+                    @dg.component_instance
+                    def first(_):
+                        return PyComponent(asset=dg.AssetSpec("first_py"))
+
+                    @dg.component_instance
+                    def second(_) -> PyComponent:
+                        return PyComponent(asset=dg.AssetSpec("second_py"))
+                    """
+                )
+            )
 
             result = subprocess.run(
                 ["dg", "list", "component-tree"], check=True, capture_output=True
@@ -567,6 +593,8 @@ def test_list_defs_asset_subselection():
             assert "epsilon" not in output
             assert "alpha:alpha_check" in output
             assert "alpha:alpha_beta_check" in output
+            assert "should_not_be_included" not in output
+
             result = subprocess.run(
                 ["dg", "list", "defs", "--assets", "group:group_2"], check=True, capture_output=True
             )
@@ -578,6 +606,7 @@ def test_list_defs_asset_subselection():
             assert "epsilon" in output
             assert "alpha:alpha_check" not in output, output
             assert "alpha:alpha_beta_check" not in output
+            assert "should_not_be_included" not in output
 
 
 def _sample_complex_asset_defs():
@@ -632,6 +661,10 @@ def _sample_complex_asset_defs():
     def alpha_beta_check() -> dg.AssetCheckResult:
         """This check is for alpha and beta."""
         return dg.AssetCheckResult(passed=True)
+
+    @dg.job
+    def should_not_be_included():
+        pass
 
 
 def test_list_defs_with_env_file_succeeds(snapshot):

@@ -15,13 +15,20 @@ from dagster._core.definitions.definitions_class import Definitions
 from dagster._core.definitions.metadata.source_code import CodeReference, LocalFileCodeReference
 from dagster._core.definitions.utils import validate_component_owner
 from dagster.components.component.component_scaffolder import DefaultComponentScaffolder
-from dagster.components.component.template_vars import get_static_template_vars
+from dagster.components.component.template_vars import get_context_free_static_template_vars
 from dagster.components.resolved.base import Resolvable
+from dagster.components.resolved.model import Model
 from dagster.components.scaffold.scaffold import scaffold_with
 
 if TYPE_CHECKING:
     from dagster.components.core.context import ComponentLoadContext
     from dagster.components.core.decl import ComponentDecl
+
+
+class EmptyAttributesModel(Model):
+    """Represents a model that should explicitly have no fields set."""
+
+    pass
 
 
 @public
@@ -255,11 +262,12 @@ class Component(ABC):
         if cls_from_get_schema:
             return cls_from_get_schema
 
-        return None
+        # explicitly mark that the component has no attributes
+        return EmptyAttributesModel
 
     @classmethod
     def get_additional_scope(cls) -> Mapping[str, Any]:
-        return get_static_template_vars(cls)
+        return get_context_free_static_template_vars(cls)
 
     @abstractmethod
     def build_defs(self, context: "ComponentLoadContext") -> Definitions: ...
@@ -267,9 +275,15 @@ class Component(ABC):
     @classmethod
     def load(cls, attributes: Optional[BaseModel], context: "ComponentLoadContext") -> Self:
         if issubclass(cls, Resolvable):
+            context_with_injected_scope = context.with_rendering_scope(
+                {
+                    "load_component_at_path": context.load_component_at_path,
+                    "build_defs_at_path": context.build_defs_at_path,
+                }
+            )
             return (
                 cls.resolve_from_model(
-                    context.resolution_context.at_path("attributes"),
+                    context_with_injected_scope.resolution_context.at_path("attributes"),
                     attributes,
                 )
                 if attributes
@@ -329,7 +343,7 @@ class Component(ABC):
         Returns:
             A Component instance.
         """
-        from dagster.components.core.tree import ComponentTree
+        from dagster.components.core.component_tree import ComponentTree
 
         model_cls = cls.get_model_cls()
         assert model_cls
@@ -349,8 +363,8 @@ class Component(ABC):
         Returns:
             A Component instance.
         """
+        from dagster.components.core.component_tree import ComponentTree
         from dagster.components.core.defs_module import load_yaml_component_from_path
-        from dagster.components.core.tree import ComponentTree
 
         return load_yaml_component_from_path(
             context=context or ComponentTree.for_test().load_context,

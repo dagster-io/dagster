@@ -1,4 +1,5 @@
 import inspect
+import sys
 from collections.abc import Mapping
 from enum import Enum
 from typing import Annotated, Any, Literal, Optional, TypeVar, Union
@@ -34,6 +35,15 @@ from dagster._core.errors import (
     DagsterInvalidPythonicConfigDefinitionError,
 )
 from dagster._utils.typing_api import is_closed_python_optional_type
+
+if sys.version_info >= (3, 10):
+    # Support models being built with the `Foo | Bar` syntax,
+    # not just `Union[Foo, Bar]`
+    from types import UnionType
+
+    _UNION_TYPES = [Union, UnionType]
+else:
+    _UNION_TYPES = [Union]
 
 
 # This is from https://github.com/dagster-io/dagster/pull/11470
@@ -250,7 +260,7 @@ def _convert_pydantic_discriminated_union_field(pydantic_field: ModelFieldCompat
     field_type = pydantic_field.annotation
     discriminator = pydantic_field.discriminator if pydantic_field.discriminator else None
 
-    if not get_origin(field_type) == Union:
+    if get_origin(field_type) not in _UNION_TYPES:
         raise DagsterInvalidDefinitionError("Discriminated union must be a Union type.")
 
     sub_fields = get_args(field_type)

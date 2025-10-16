@@ -2,15 +2,15 @@
 
 from dagster_dask import dask_executor
 
-from dagster import job, op
+import dagster as dg
 
 
-@op
+@dg.op
 def hello_world():
     return "Hello, World!"
 
 
-@job(executor_def=dask_executor)
+@dg.job(executor_def=dask_executor)
 def local_dask_job():
     hello_world()
 

@@ -120,6 +120,7 @@ export const CodeLocationAssetsList = ({repoAddress}: Props) => {
         </HeaderRow>
         <Inner $totalHeight={totalHeight}>
           {virtualItems.map(({index, key, size, start}) => {
+            // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
             const item = flattened[index]!;
             if (item.type === 'group') {
               return (

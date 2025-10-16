@@ -93,6 +93,7 @@ def stringify_asset_key_to_input_name(asset_key: AssetKey) -> str:
     return "_".join(asset_key.path).replace("-", "_")
 
 
+@public
 class AssetsDefinition(ResourceAddable, IHasInternalInit):
     """Defines a set of assets that are produced by the same op or graph.
 

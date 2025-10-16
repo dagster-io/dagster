@@ -19,7 +19,7 @@ There are several ways to partition your data in Dagster:
 
 :::note
 
-We recommend limiting the number of partitions for each asset to 25,000 or fewer. Assets with partition counts exceeding this limit will likely have slower load times in the UI.
+We recommend limiting the number of partitions for each asset to 100,000 or fewer. Assets with partition counts exceeding this limit will likely have slower load times in the UI.
 
 :::
 
@@ -62,6 +62,18 @@ In this example:
 
 - Because the partition values are unknown in advance, `DynamicPartitionsDefinition` is used to define `region_partitions`
 - When triggered, the `all_regions_sensor` will dynamically add all regions to the partition set. Once it kicks off runs, it will dynamically kick off runs for all regions. In this example, that would be six times; one for each region.
+
+## Partitions with custom calendars \{#custom-calendar-partitions}
+
+Sometimes you want to partition an asset or create a schedule for a partition that is more complex or involves a custom calendar. In these cases, you can include additional logic besides cron syntax.
+
+In this example:
+
+- The holidays are defined
+- The <PyObject section="partitions" module="dagster" object="TimeWindowPartitionsDefinition" /> creates a partition using the `cron_schedule`, but excludes the defined holidays
+- The `market_data` asset is partition by the cron schedule (every Monday through Friday), except for the holidays listed
+
+<CodeExample path="docs_snippets/docs_snippets/guides/data-modeling/partitioning/custom_calendar_partitioning.py" language="python" title="src/<project_name>/defs/assets.py"/>
 
 ## Materializing partitioned assets
 

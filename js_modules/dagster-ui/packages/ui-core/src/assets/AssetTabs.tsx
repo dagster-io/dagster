@@ -1,4 +1,4 @@
-import {Tab, Tabs} from '@dagster-io/ui-components';
+import {Tab, Tabs, Tooltip} from '@dagster-io/ui-components';
 import qs from 'qs';
 import {useMemo} from 'react';
 
@@ -17,9 +17,20 @@ export const AssetTabs = (props: Props) => {
     <Tabs size="large" selectedTabId={selectedTab}>
       {tabs
         .filter((tab) => !tab.hidden)
-        .map(({id, title, to, disabled}) => {
+        .map(({id, title, to, tooltip, disabled}) => {
           if (disabled) {
-            return <Tab disabled key={id} id={id} title={title} />;
+            return (
+              <Tab
+                disabled
+                key={id}
+                id={id}
+                title={
+                  <Tooltip content={tooltip || ''} canShow={!!tooltip} placement="top">
+                    {title}
+                  </Tooltip>
+                }
+              />
+            );
           }
           return <TabLink key={id} id={id} title={title} to={to} disabled={disabled} />;
         })}
@@ -40,6 +51,7 @@ export type AssetTabConfigInput = {
   definition:
     | {
         isMaterializable: boolean;
+        isObservable: boolean;
         automationCondition: {__typename: 'AutomationCondition'} | null | undefined;
         partitionDefinition: {__typename: 'PartitionDefinition'} | null | undefined;
       }
@@ -53,6 +65,7 @@ export type AssetTabConfig = {
   title: string;
   to: string;
   disabled?: boolean;
+  tooltip?: string;
   hidden?: boolean;
 };
 
@@ -71,7 +84,7 @@ export const buildAssetTabMap = (input: AssetTabConfigInput) => {
       id: 'partitions',
       title: 'Partitions',
       to: buildAssetViewParams({view: 'partitions'}),
-      hidden: !definition?.partitionDefinition || !definition?.isMaterializable,
+      hidden: !definition?.partitionDefinition,
     } as AssetTabConfig,
     checks: {
       id: 'checks',

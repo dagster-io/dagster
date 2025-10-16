@@ -35,12 +35,13 @@ if TYPE_CHECKING:
     from dagster._core.definitions.partitions.partitioned_schedule import (
         UnresolvedPartitionedAssetScheduleDefinition,
     )
-    from dagster.components.core.tree import ComponentTree
+    from dagster.components.core.component_tree import ComponentTree
 
 T = TypeVar("T")
 Resolvable = Callable[[], T]
 
 
+@public
 class RepositoryData(ABC):
     """Users should usually rely on the :py:func:`@repository <repository>` decorator to create new
     repositories, which will in turn call the static constructors on this class. However, users may

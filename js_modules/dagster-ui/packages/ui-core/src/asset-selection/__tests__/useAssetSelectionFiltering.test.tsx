@@ -298,6 +298,7 @@ describe('useAssetSelectionFiltering', () => {
 
     await waitFor(() => {
       expect(result.current.filtered).toHaveLength(1);
+      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
       expect(result.current.filtered[0]!.key.path).toEqual(['asset1']);
     });
   });
@@ -346,6 +347,7 @@ describe('useAssetSelectionFiltering', () => {
       }),
     );
 
+    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
     const callArgs = mockUseAssetGraphData.mock.calls[0]!;
     const config = callArgs[1];
     expect(config.hideNodesMatching).toBeDefined();

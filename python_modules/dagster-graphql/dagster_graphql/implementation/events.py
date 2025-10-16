@@ -29,6 +29,7 @@ from dagster._core.definitions.metadata import (
     MetadataValue,
     TableColumnLineageMetadataValue,
 )
+from dagster._core.definitions.metadata.metadata_value import ObjectMetadataValue
 from dagster._core.definitions.metadata.source_code import LocalFileCodeReference
 from dagster._core.events import (
     DagsterEventType,
@@ -83,12 +84,12 @@ def iterate_metadata_entries(metadata: Mapping[str, MetadataValue]) -> Iterator[
         if isinstance(value, PathMetadataValue):
             yield GraphenePathMetadataEntry(
                 label=key,
-                path=value.path,
+                path=value.value,
             )
         elif isinstance(value, NotebookMetadataValue):
             yield GrapheneNotebookMetadataEntry(
                 label=key,
-                path=value.path,
+                path=value.value,
             )
         elif isinstance(value, JsonMetadataValue):
             yield GrapheneJsonMetadataEntry(
@@ -98,17 +99,17 @@ def iterate_metadata_entries(metadata: Mapping[str, MetadataValue]) -> Iterator[
         elif isinstance(value, TextMetadataValue):
             yield GrapheneTextMetadataEntry(
                 label=key,
-                text=value.text,
+                text=value.value,
             )
         elif isinstance(value, UrlMetadataValue):
             yield GrapheneUrlMetadataEntry(
                 label=key,
-                url=value.url,
+                url=value.value,
             )
         elif isinstance(value, MarkdownMetadataValue):
             yield GrapheneMarkdownMetadataEntry(
                 label=key,
-                md_str=value.md_str,
+                md_str=value.value,
             )
         elif isinstance(value, PythonArtifactMetadataValue):
             yield GraphenePythonArtifactMetadataEntry(
@@ -119,13 +120,16 @@ def iterate_metadata_entries(metadata: Mapping[str, MetadataValue]) -> Iterator[
         elif isinstance(value, FloatMetadataValue):
             float_val = value.value
 
-            # coerce NaN to null
-            if float_val is not None and isnan(float_val):
+            # coerce NaN and inf/-inf to null
+            if float_val is not None and (
+                isnan(float_val) or (float_val in [float("inf"), float("-inf")])
+            ):
                 float_val = None
 
             yield GrapheneFloatMetadataEntry(
                 label=key,
                 floatValue=float_val,
+                floatRepr=str(value.value),
             )
         elif isinstance(value, IntMetadataValue):
             # coerce > 32 bit ints to null
@@ -212,6 +216,9 @@ def iterate_metadata_entries(metadata: Mapping[str, MetadataValue]) -> Iterator[
             yield GrapheneTimestampMetadataEntry(label=key, timestamp=value.value)
         elif isinstance(value, PoolMetadataValue):
             yield GraphenePoolMetadataEntry(label=key, pool=value.pool)
+        elif isinstance(value, ObjectMetadataValue):
+            # x-process available value is just class name, so treat as text
+            yield GrapheneTextMetadataEntry(label=key, text=value.value)
         else:
             # skip rest for now
             check.not_implemented(f"{type(value)} unsupported metadata entry for now")

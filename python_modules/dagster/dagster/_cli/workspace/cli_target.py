@@ -23,13 +23,13 @@ from dagster._core.definitions.repository_definition.valid_definitions import (
 )
 from dagster._core.instance import DagsterInstance
 from dagster._core.origin import DEFAULT_DAGSTER_ENTRY_POINT, RepositoryPythonOrigin
-from dagster._core.remote_representation.code_location import CodeLocation
-from dagster._core.remote_representation.external import RemoteJob, RemoteRepository
-from dagster._core.remote_representation.origin import (
+from dagster._core.remote_origin import (
     CodeLocationOrigin,
     GrpcServerCodeLocationOrigin,
     InProcessCodeLocationOrigin,
 )
+from dagster._core.remote_representation.code_location import CodeLocation
+from dagster._core.remote_representation.external import RemoteJob, RemoteRepository
 from dagster._core.workspace.context import WorkspaceProcessContext, WorkspaceRequestContext
 from dagster._core.workspace.load_target import (
     CompositeTarget,
@@ -466,6 +466,7 @@ def _get_code_pointer_dict_from_python_pointer_opts(
         working_directory=working_directory,
         attribute=params.attribute,
         autoload_defs_module_name=params.autoload_defs_module_name,
+        resolve_lazy_defs=True,
     )
 
     # repository_name -> code_pointer

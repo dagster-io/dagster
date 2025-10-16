@@ -3,8 +3,8 @@ from typing import TYPE_CHECKING, Optional
 
 import dagster._check as check
 from dagster._config import validate_config_from_snap
-from dagster._core.remote_representation import RepresentedJob
 from dagster._core.remote_representation.external_data import DEFAULT_MODE_NAME
+from dagster._core.remote_representation.represented import RepresentedJob
 
 from dagster_graphql.implementation.external import get_remote_job_or_raise
 from dagster_graphql.implementation.utils import JobSubsetSelector, UserFacingGraphQLError
@@ -16,7 +16,7 @@ if TYPE_CHECKING:
     from dagster_graphql.schema.run_config import GrapheneRunConfigSchema
 
 
-def resolve_run_config_schema_or_error(
+async def resolve_run_config_schema_or_error(
     graphene_info: ResolveInfo, selector: JobSubsetSelector, mode: Optional[str] = None
 ) -> "GrapheneRunConfigSchema":
     from dagster_graphql.schema.run_config import GrapheneRunConfigSchema
@@ -29,7 +29,7 @@ def resolve_run_config_schema_or_error(
     if mode and mode != DEFAULT_MODE_NAME:
         return GrapheneModeNotFoundError(selector=selector, mode=mode)
 
-    remote_job = get_remote_job_or_raise(graphene_info, selector)
+    remote_job = await get_remote_job_or_raise(graphene_info, selector)
 
     return GrapheneRunConfigSchema(
         represented_job=remote_job,

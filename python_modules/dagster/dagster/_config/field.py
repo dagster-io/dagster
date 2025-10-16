@@ -178,6 +178,7 @@ def has_implicit_default(config_type):
     return all_optional_type(config_type)
 
 
+@public
 class Field:
     """Defines the schema for a configuration field.
 

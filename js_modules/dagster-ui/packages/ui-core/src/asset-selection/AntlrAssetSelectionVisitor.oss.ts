@@ -260,6 +260,7 @@ export class AntlrAssetSelectionVisitor
     }
     return new Set(
       matchingAssetKeys
+        // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
         .map((key) => this.allAssetsByKey.get(tokenForAssetKey(key))!)
         .filter(Boolean),
     );

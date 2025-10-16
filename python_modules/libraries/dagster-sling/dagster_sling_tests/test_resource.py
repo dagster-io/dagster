@@ -85,3 +85,37 @@ def test_sling_resource_prepares_environment_variables():
     env = sling_resource.prepare_environment()
     assert "SLING_SOURCE" not in env
     assert "SLING_TARGET" not in env
+
+
+def test_clean_line_preserves_inf_in_stream_names():
+    """Test that _clean_line preserves 'INF' in stream names like CUSTOMERINFO.
+
+    Regression test for issue #32208: stream names containing 'INF' should not
+    have the 'INF' string stripped out when parsing Sling logs.
+    """
+    sling_resource = SlingResource(connections=[])
+
+    # Test various log formats with INF in the stream name
+    test_cases = [
+        # Standard Sling log format with INF log level and INF in stream name
+        (
+            "1:04PM INF running stream public.CUSTOMERINFO",
+            "running stream public.CUSTOMERINFO",
+        ),
+        # Log without timestamp prefix
+        ("running stream public.CUSTOMERINFO", "running stream public.CUSTOMERINFO"),
+        # Multiple INF occurrences in message
+        (
+            "2:15PM INF processing INFO table with CUSTOMERINFO data",
+            "processing INFO table with CUSTOMERINFO data",
+        ),
+        # Different log levels
+        ("3:30PM WRN warning about CUSTOMERINFO", "warning about CUSTOMERINFO"),
+        ("4:45PM ERR error in CUSTOMERINFO processing", "error in CUSTOMERINFO processing"),
+        # Edge case: INF at different positions
+        ("11:59AM INF INFORMATION system active", "INFORMATION system active"),
+    ]
+
+    for input_line, expected_output in test_cases:
+        result = sling_resource._clean_line(input_line)  # noqa: SLF001
+        assert result == expected_output, f"Failed for input: {input_line}"

@@ -20,7 +20,7 @@ from pydantic import BaseModel
 from typing_extensions import TypeAlias, TypeGuard, get_args, get_origin
 
 import dagster._check as check
-from dagster._annotations import deprecated
+from dagster._annotations import deprecated, public
 from dagster._config.field import Field as DagsterField
 from dagster._config.field_utils import config_dictionary_from_values
 from dagster._config.pythonic_config.attach_other_object_to_context import (
@@ -524,10 +524,13 @@ class ConfigurableResourceFactory(
                 post_processed_config,
             )
 
-        with self.from_resource_context_cm(
-            build_init_resource_context(config=post_processed_config.value),
-            nested_resources=self.nested_resources,
-        ) as out:
+        with (
+            build_init_resource_context(config=post_processed_config.value) as context,
+            self.from_resource_context_cm(
+                context,
+                nested_resources=self.nested_resources,
+            ) as out,
+        ):
             yield out
 
     @classmethod
@@ -589,6 +592,7 @@ class ConfigurableResourceFactory(
             yield value
 
 
+@public
 class ConfigurableResource(ConfigurableResourceFactory[TResValue]):
     """Base class for Dagster resources that utilize structured config.
 

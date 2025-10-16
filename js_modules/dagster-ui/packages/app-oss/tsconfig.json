@@ -29,6 +29,6 @@
     "lib": ["dom", "dom.iterable", "esnext"],
     "incremental": true
   },
-  "include": ["src", "custom-next-env.d.ts"],
-  "exclude": ["node_modules", "next-env.d.ts"]
+  "include": ["src", "typings.d.ts", "next-env.d.ts"],
+  "exclude": ["node_modules"]
 }

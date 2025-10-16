@@ -14,7 +14,7 @@ import styled from 'styled-components';
 
 import {Inner, Row} from './VirtualizedTable';
 import {AppContext} from '../app/AppContext';
-import {useFeatureFlags} from '../app/Flags';
+import {useFeatureFlags} from '../app/useFeatureFlags';
 import {isHiddenAssetGroupJob} from '../asset-graph/Utils';
 import {useStateWithStorage} from '../hooks/useStateWithStorage';
 import {LeftNavItem} from '../nav/LeftNavItem';
@@ -209,6 +209,7 @@ export const SectionedLeftNav = ({visibleRepos}: Props) => {
     count: flattened.length,
     getScrollElement: () => parentRef.current,
     estimateSize: (index: number) => {
+      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
       const item = flattened[index]!;
       switch (item.type) {
         case 'code-location':
@@ -239,7 +240,9 @@ export const SectionedLeftNav = ({visibleRepos}: Props) => {
     <Container ref={parentRef}>
       <Inner $totalHeight={totalHeight}>
         {items.map(({index, key, size, start}) => {
+          // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
           const row: RowType = flattened[index]!;
+          // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
           const type = row!.type;
 
           if (type === 'code-location') {

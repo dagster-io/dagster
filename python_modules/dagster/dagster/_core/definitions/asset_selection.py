@@ -6,6 +6,7 @@ from collections.abc import Iterable, Sequence
 from functools import reduce
 from typing import AbstractSet, Optional, Union, cast  # noqa: UP035
 
+from dagster_shared.error import DagsterError
 from dagster_shared.serdes import whitelist_for_serdes
 from typing_extensions import TypeAlias, TypeGuard
 
@@ -21,7 +22,7 @@ from dagster._core.definitions.asset_key import (
 )
 from dagster._core.definitions.assets.definition.assets_definition import AssetsDefinition
 from dagster._core.definitions.assets.graph.asset_graph import AssetGraph
-from dagster._core.definitions.assets.graph.base_asset_graph import BaseAssetGraph, BaseAssetNode
+from dagster._core.definitions.assets.graph.base_asset_graph import BaseAssetGraph
 from dagster._core.definitions.resolved_asset_deps import resolve_similar_asset_names
 from dagster._core.definitions.source_asset import SourceAsset
 from dagster._core.errors import DagsterInvalidSubsetError
@@ -53,6 +54,13 @@ def is_coercible_to_asset_selection(
     )
 
 
+class DagsterInvalidAssetSelectionError(DagsterError):
+    """An error raised when an invalid asset selection is provided."""
+
+    pass
+
+
+@public
 class AssetSelection(ABC):
     """An AssetSelection defines a query over a set of assets and asset checks, normally all that are defined in a project.
 
@@ -546,7 +554,7 @@ class AssetSelection(ABC):
             tag_str = string[len("tag:") :]
             return cls.tag_string(tag_str)
 
-        check.failed(f"Invalid selection string: {string}")
+        raise DagsterInvalidAssetSelectionError(f"Invalid selection string: {string}")
 
     @classmethod
     def from_coercible(cls, selection: CoercibleToAssetSelection) -> "AssetSelection":
@@ -577,7 +585,7 @@ class AssetSelection(ABC):
         ):
             return cls.assets(*cast("Sequence[AssetKey]", selection))
         else:
-            check.failed(
+            raise DagsterError(
                 "selection argument must be one of str, Sequence[str], Sequence[AssetKey],"
                 " Sequence[AssetsDefinition], Sequence[SourceAsset], AssetSelection. Was"
                 f" {type(selection)}."
@@ -886,7 +894,7 @@ class MaterializableAssetSelection(ChainedAssetSelection):
         return {
             asset_key
             for asset_key in self.child.resolve_inner(asset_graph, allow_missing=allow_missing)
-            if cast("BaseAssetNode", asset_graph.get(asset_key)).is_materializable
+            if asset_key in asset_graph.materializable_asset_keys
         }
 
 
@@ -933,16 +941,12 @@ class GroupsAssetSelection(AssetSelection):
     def resolve_inner(
         self, asset_graph: BaseAssetGraph, allow_missing: bool
     ) -> AbstractSet[AssetKey]:
-        base_set = (
-            asset_graph.get_all_asset_keys()
-            if self.include_sources
-            else asset_graph.materializable_asset_keys
-        )
         return {
             key
             for group in self.selected_groups
-            for key in asset_graph.asset_keys_for_group(group)
-            if key is not None and key in base_set
+            for key in asset_graph.asset_keys_for_group(
+                group, require_materializable=not self.include_sources
+            )
         }
 
     def to_serializable_asset_selection(self, asset_graph: BaseAssetGraph) -> "AssetSelection":
@@ -968,28 +972,23 @@ class KindAssetSelection(AssetSelection):
         asset_graph: BaseAssetGraph,
         allow_missing: bool,
     ) -> AbstractSet[AssetKey]:
-        base_set = (
-            asset_graph.get_all_asset_keys()
-            if self.include_sources
-            else asset_graph.materializable_asset_keys
-        )
+        base_nodes = {
+            node.key: node
+            for node in asset_graph.asset_nodes
+            if self.include_sources or node.is_materializable
+        }
 
         if self.kind_str is None:
             return {
-                key
-                for key in base_set
-                if (
-                    not any(
-                        tag_key.startswith(KIND_PREFIX)
-                        for tag_key in (asset_graph.get(key).tags or {})
-                    )
-                )
+                node.key
+                for key, node in base_nodes.items()
+                if (not any(tag_key.startswith(KIND_PREFIX) for tag_key in (node.tags or {})))
             }
         else:
             return {
                 key
-                for key in base_set
-                if asset_graph.get(key).tags.get(f"{KIND_PREFIX}{self.kind_str}") is not None
+                for key, node in base_nodes.items()
+                if node.tags.get(f"{KIND_PREFIX}{self.kind_str}") is not None
             }
 
     def to_selection_str(self) -> str:
@@ -1008,13 +1007,13 @@ class TagAssetSelection(AssetSelection):
     def resolve_inner(
         self, asset_graph: BaseAssetGraph, allow_missing: bool
     ) -> AbstractSet[AssetKey]:
-        base_set = (
-            asset_graph.get_all_asset_keys()
-            if self.include_sources
-            else asset_graph.materializable_asset_keys
-        )
+        base_nodes = {
+            node.key: node
+            for node in asset_graph.asset_nodes
+            if self.include_sources or node.is_materializable
+        }
 
-        return {key for key in base_set if asset_graph.get(key).tags.get(self.key) == self.value}
+        return {key for key, node in base_nodes.items() if node.tags.get(self.key) == self.value}
 
     def to_selection_str(self) -> str:
         if self.value:
@@ -1031,11 +1030,7 @@ class OwnerAssetSelection(AssetSelection):
     def resolve_inner(
         self, asset_graph: BaseAssetGraph, allow_missing: bool
     ) -> AbstractSet[AssetKey]:
-        return {
-            key
-            for key in asset_graph.get_all_asset_keys()
-            if self.selected_owner in asset_graph.get(key).owners
-        }
+        return {node.key for node in asset_graph.asset_nodes if self.selected_owner in node.owners}
 
     def to_selection_str(self) -> str:
         if self.selected_owner is None:
@@ -1072,12 +1067,8 @@ class CodeLocationAssetSelection(AssetSelection):
             asset_keys = set()
             location = location_name.split("@")[1]
             name = location_name.split("@")[0]
-            for asset_key in asset_graph.remote_asset_nodes_by_key:
-                repo_handle = (
-                    asset_graph.get(asset_key)
-                    .resolve_to_singular_repo_scoped_node()
-                    .repository_handle
-                )
+            for asset_key, node in asset_graph.remote_asset_nodes_by_key.items():
+                repo_handle = node.resolve_to_singular_repo_scoped_node().repository_handle
                 if repo_handle.location_name == location and repo_handle.repository_name == name:
                     asset_keys.add(asset_key)
             return asset_keys
@@ -1085,13 +1076,11 @@ class CodeLocationAssetSelection(AssetSelection):
         # Otherwise, filter only by location name
         return {
             key
-            for key in asset_graph.remote_asset_nodes_by_key
+            for key, node in asset_graph.remote_asset_nodes_by_key.items()
             if (
-                asset_graph.get(key)
-                .resolve_to_singular_repo_scoped_node()
-                .repository_handle.location_name
+                node.resolve_to_singular_repo_scoped_node().repository_handle.location_name
+                == self.selected_code_location
             )
-            == self.selected_code_location
         }
 
     def to_selection_str(self) -> str:

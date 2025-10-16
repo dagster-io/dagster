@@ -9,8 +9,9 @@ import {KNOWN_TAGS} from '../../graph/OpTags';
 import {buildAssetKey, buildAssetNode, buildStaleCause} from '../../graphql/types';
 import {AssetNode, AssetNodeMinimal} from '../AssetNode';
 import {AssetNode2025} from '../AssetNode2025';
-import {AllAssetNodeFacets, AssetNodeFacet} from '../AssetNodeFacets';
+import {AllAssetNodeFacets} from '../AssetNodeFacets';
 import {AssetNodeFacetsPicker} from '../AssetNodeFacetsPicker';
+import {AssetNodeFacet} from '../AssetNodeFacetsUtil';
 import {AssetNodeLink} from '../ForeignNode';
 import {tokenForAssetKey} from '../Utils';
 import * as Mocks from '../__fixtures__/AssetNode.fixtures';
@@ -149,7 +150,9 @@ export const PartnerTags = () => {
     function SetCacheEntry() {
       const assetKey = buildAssetKey({path: [liveData.stepKey]});
       const key = tokenForAssetKey(assetKey);
+      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
       const entry = {[key]: liveData!};
+      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
       const {staleStatus, staleCauses} = liveData!;
       const staleEntry = {
         [key]: buildAssetNode({

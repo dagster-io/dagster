@@ -4,6 +4,7 @@ from dataclasses import dataclass
 from typing import Optional
 
 import dagster as dg
+from dagster._core.definitions.freshness import InternalFreshnessPolicy, TimeWindowFreshnessPolicy
 from dagster.components.resolved.context import ResolutionContext
 from dagster.components.resolved.core_models import AssetSpecKwargs, resolve_asset_spec
 
@@ -38,11 +39,17 @@ def test_asset_spec():
             "timezone": "America/New_York",
             "minute_offset": 0,
         },
+        freshness_policy="{{sample_freshness_policy}}",
     )
 
     kitchen_sink_spec = resolve_asset_spec(
         model=kitchen_sink_model,
-        context=ResolutionContext.default(),
+        context=ResolutionContext.default().with_scope(
+            sample_freshness_policy=InternalFreshnessPolicy.time_window(
+                fail_window=datetime.timedelta(minutes=10),
+                warn_window=datetime.timedelta(minutes=5),
+            )
+        ),
     )
 
     assert kitchen_sink_spec.key == dg.AssetKey("kitchen_sink")
@@ -67,6 +74,11 @@ def test_asset_spec():
     )
     assert partitions_def.timezone == "America/New_York"
     assert partitions_def.minute_offset == 0
+
+    assert kitchen_sink_spec.freshness_policy == TimeWindowFreshnessPolicy.from_timedeltas(
+        fail_window=datetime.timedelta(minutes=10),
+        warn_window=datetime.timedelta(minutes=5),
+    )
 
 
 def test_asset_spec_daily_partitions_def():

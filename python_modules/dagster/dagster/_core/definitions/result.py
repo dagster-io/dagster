@@ -7,7 +7,7 @@ from dagster_shared.check.decorator import checked
 from dagster_shared.record import IHaveNew, LegacyNamedTupleMixin, record_custom
 
 import dagster._check as check
-from dagster._annotations import PublicAttr
+from dagster._annotations import PublicAttr, public
 from dagster._core.definitions.asset_checks.asset_check_result import AssetCheckResult
 from dagster._core.definitions.data_version import DataVersion
 from dagster._core.definitions.events import AssetKey, CoercibleToAssetKey
@@ -60,6 +60,7 @@ T = TypeVar("T")
 
 
 @record_custom(checked=False)
+@public
 class MaterializeResult(AssetResult, Generic[T], IHaveNew, LegacyNamedTupleMixin):
     """An object representing a successful materialization of an asset. These can be returned from
     @asset and @multi_asset decorated functions to pass metadata or specify specific assets were
@@ -105,6 +106,7 @@ class MaterializeResult(AssetResult, Generic[T], IHaveNew, LegacyNamedTupleMixin
         )
 
 
+@public
 @record_custom(checked=False)
 class ObserveResult(AssetResult, IHaveNew, LegacyNamedTupleMixin):
     """An object representing a successful observation of an asset. These can be returned from an

@@ -5,16 +5,18 @@ import threading
 import traceback
 from collections.abc import Mapping, Sequence
 from contextlib import ExitStack
-from typing import IO, Any, Optional
+from typing import IO, TYPE_CHECKING, Any, Optional
 
 from dagster_shared import seven
 
-from dagster._core.instance import DagsterInstance
 from dagster._core.log_manager import LOG_RECORD_METADATA_ATTR
 from dagster._core.storage.compute_log_manager import ComputeIOType, ComputeLogManager
 from dagster._core.utils import coerce_valid_log_level
 from dagster._utils.error import serializable_error_info_from_exc_info
 from dagster._utils.log import create_console_logger
+
+if TYPE_CHECKING:
+    from dagster._core.instance import DagsterInstance
 
 
 class DispatchingLogHandler(logging.Handler):
@@ -92,7 +94,7 @@ class InstigationLogger(logging.Logger):
     def __init__(
         self,
         log_key: Optional[Sequence[str]] = None,
-        instance: Optional[DagsterInstance] = None,
+        instance: Optional["DagsterInstance"] = None,
         repository_name: Optional[str] = None,
         instigator_name: Optional[str] = None,
         level: int = logging.NOTSET,
@@ -166,7 +168,7 @@ class InstigationLogger(logging.Logger):
 
 
 def get_instigation_log_records(
-    instance: DagsterInstance, log_key: Sequence[str]
+    instance: "DagsterInstance", log_key: Sequence[str]
 ) -> Sequence[Mapping[str, Any]]:
     log_data = instance.compute_log_manager.get_log_data(log_key)
     raw_logs = log_data.stderr.decode("utf-8") if log_data.stderr else ""

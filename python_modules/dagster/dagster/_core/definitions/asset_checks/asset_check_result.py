@@ -2,7 +2,7 @@ from collections.abc import Mapping
 from typing import TYPE_CHECKING, AbstractSet, NamedTuple, Optional  # noqa: UP035
 
 import dagster._check as check
-from dagster._annotations import PublicAttr
+from dagster._annotations import PublicAttr, public
 from dagster._core.definitions.asset_checks.asset_check_evaluation import (
     AssetCheckEvaluation,
     AssetCheckEvaluationTargetMaterializationData,
@@ -25,6 +25,7 @@ if TYPE_CHECKING:
     from dagster._core.execution.context.compute import StepExecutionContext
 
 
+@public
 class AssetCheckResult(
     NamedTuple(
         "_AssetCheckResult",

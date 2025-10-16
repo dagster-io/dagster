@@ -20,6 +20,7 @@ if TYPE_CHECKING:
     InitLoggerFunction = Callable[[InitLoggerContext], logging.Logger]
 
 
+@public
 class LoggerDefinition(AnonymousConfigurableDefinition):
     """Core class for defining loggers.
 
@@ -128,6 +129,7 @@ def logger(
 ) -> "LoggerDefinition": ...
 
 
+@public
 def logger(
     config_schema: Union[CoercableToConfigSchema, "InitLoggerFunction"] = None,
     description: Optional[str] = None,
@@ -158,6 +160,7 @@ def logger(
     return _wrap
 
 
+@public
 def build_init_logger_context(
     logger_config: Any = None,
     job_def: Optional["JobDefinition"] = None,

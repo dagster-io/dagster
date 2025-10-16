@@ -110,6 +110,7 @@ def validate_kind_tags(kinds: Optional[AbstractSet[str]]) -> None:
     breaking_version="1.10.0",
     additional_warn_text="use `automation_condition` instead",
 )
+@public
 @record_custom
 class AssetSpec(IHasInternalInit, IHaveNew, LegacyNamedTupleMixin):
     """Specifies the core attributes of an asset, except for the function that materializes or
@@ -422,6 +423,7 @@ def map_asset_specs(
 ) -> Sequence[Union["AssetsDefinition", AssetSpec]]: ...
 
 
+@public
 def map_asset_specs(
     func: Callable[[AssetSpec], AssetSpec], iterable: Iterable[Union["AssetsDefinition", AssetSpec]]
 ) -> Sequence[Union["AssetsDefinition", AssetSpec]]:

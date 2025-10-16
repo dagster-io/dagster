@@ -92,7 +92,7 @@ def build_freshness_checks_from_dbt_assets(
     asset_key_to_assets_def: dict[AssetKey, AssetsDefinition] = {}
     asset_key_to_resource_props: Mapping[AssetKey, Mapping[str, Any]] = {}
     for assets_def in dbt_assets:
-        manifest, translator = get_manifest_and_translator_from_dbt_assets([assets_def])
+        manifest, translator, _ = get_manifest_and_translator_from_dbt_assets([assets_def])
         asset_key_to_resource_props_for_def = get_asset_keys_to_resource_props(manifest, translator)
         for asset_key in asset_to_keys_iterable(assets_def):
             if asset_key not in asset_key_to_resource_props_for_def:

@@ -124,6 +124,7 @@ class RunStatusSensorCursor(
         return deserialize_value(json_str, RunStatusSensorCursor)
 
 
+@public
 class RunStatusSensorContext:
     """The ``context`` object available to a decorated function of ``run_status_sensor``."""
 
@@ -296,6 +297,7 @@ class RunStatusSensorContext:
         )
 
 
+@public
 class RunFailureSensorContext(RunStatusSensorContext):
     """The ``context`` object available to a decorated function of ``run_failure_sensor``.
 
@@ -333,6 +335,7 @@ class RunFailureSensorContext(RunStatusSensorContext):
         return [cast("DagsterEvent", record.event_log_entry.dagster_event) for record in records]
 
 
+@public
 @beta_param(param="repository_def")
 def build_run_status_sensor_context(
     sensor_name: str,
@@ -444,6 +447,7 @@ def run_failure_sensor(
     breaking_version="2.0",
     additional_warn_text="Use `monitored_jobs` instead.",
 )
+@public
 @deprecated_param(
     param="monitor_all_repositories",
     breaking_version="2.0",
@@ -579,6 +583,7 @@ def run_failure_sensor(
     return inner
 
 
+@public
 class RunStatusSensorDefinition(SensorDefinition):
     """Define a sensor that reacts to a given status of job execution, where the decorated
     function will be evaluated when a run is at the given status.
@@ -1026,6 +1031,7 @@ class RunStatusSensorDefinition(SensorDefinition):
     breaking_version="2.0",
     additional_warn_text="Use `monitored_jobs` instead.",
 )
+@public
 @deprecated_param(
     param="monitor_all_repositories",
     breaking_version="2.0",

@@ -3,15 +3,14 @@ from collections.abc import Mapping, Sequence
 from dataclasses import MISSING, fields, is_dataclass
 from enum import Enum, auto
 from functools import partial
-from types import GenericAlias
 from typing import Annotated, Any, Final, Literal, Optional, TypeVar, Union, get_args, get_origin
 
 import yaml
 from dagster_shared.record import get_record_annotations, get_record_defaults, is_record, record
+from dagster_shared.utils import safe_is_subclass
 from dagster_shared.yaml_utils import try_parse_yaml_with_source_position
 from pydantic import BaseModel, PydanticSchemaGenerationError, create_model
 from pydantic.fields import Field, FieldInfo
-from typing_extensions import TypeGuard
 
 from dagster import _check as check
 from dagster._annotations import public
@@ -30,6 +29,7 @@ except ImportError:
 class _TypeContainer(Enum):
     SEQUENCE = auto()
     OPTIONAL = auto()
+    DICT = auto()
 
 
 _DERIVED_MODEL_REGISTRY = {}
@@ -236,15 +236,15 @@ def _is_implicitly_resolved_type(annotation):
     if annotation in (int, float, str, bool, Any, type(None), list, dict):
         return True
 
-    if _safe_is_subclass(annotation, Enum):
+    if safe_is_subclass(annotation, Enum):
         return True
 
-    if _safe_is_subclass(annotation, Resolvable):
+    if safe_is_subclass(annotation, Resolvable):
         # ensure valid Resolvable subclass
         annotation.model()
         return False
 
-    if _safe_is_subclass(annotation, BaseModel):
+    if safe_is_subclass(annotation, BaseModel):
         _ensure_non_resolvable_model_compliance(annotation)
         return True
 
@@ -263,7 +263,7 @@ def _is_implicitly_resolved_type(annotation):
 
 
 def _is_resolvable_type(annotation):
-    return _is_implicitly_resolved_type(annotation) or _safe_is_subclass(annotation, Resolvable)
+    return _is_implicitly_resolved_type(annotation) or safe_is_subclass(annotation, Resolvable)
 
 
 @record
@@ -289,7 +289,7 @@ def _get_annotations(
                 field_info=None,
             )
         return annotations
-    elif _safe_is_subclass(resolved_type, BaseModel):
+    elif safe_is_subclass(resolved_type, BaseModel):
         for name, field_info in resolved_type.model_fields.items():
             has_default = not field_info.is_required()
             annotations[name] = AnnotationInfo(
@@ -358,33 +358,34 @@ def _get_init_kwargs(
 
 def resolve_fields(
     model: BaseModel,
-    resolved_cls: type[Resolvable],
+    resolved_cls: type,
     context: "ResolutionContext",
 ) -> Mapping[str, Any]:
     """Returns a mapping of field names to resolved values for those fields."""
+    alias_name_by_field_name = {
+        field_name: (
+            annotation_info.field_info.alias
+            if annotation_info.field_info and annotation_info.field_info.alias
+            else field_name
+        )
+        for field_name, annotation_info in _get_annotations(resolved_cls).items()
+    }
     field_resolvers = {
-        field_name: _get_resolver(annotation_info.type, field_name)
+        (field_name): _get_resolver(annotation_info.type, field_name)
         for field_name, annotation_info in _get_annotations(resolved_cls).items()
     }
 
-    return {
+    out = {
         field_name: resolver.execute(context=context, model=model, field_name=field_name)
         for field_name, resolver in field_resolvers.items()
         # filter out unset fields to trigger defaults
         if (resolver.model_field_name or field_name) in model.model_dump(exclude_unset=True)
         and getattr(model, resolver.model_field_name or field_name) != _Unset
     }
+    return {alias_name_by_field_name[k]: v for k, v in out.items()}
 
 
 T = TypeVar("T")
-
-
-def _safe_is_subclass(obj, cls: type[T]) -> TypeGuard[type[T]]:
-    return (
-        isinstance(obj, type)
-        and not isinstance(obj, GenericAlias)  # prevent exceptions on 3.9
-        and issubclass(obj, cls)
-    )
 
 
 def _get_resolver(annotation: Any, field_name: str) -> "Resolver":
@@ -437,7 +438,7 @@ def _dig_for_resolver(annotation, path: Sequence[_TypeContainer]) -> Optional[Re
 
     origin = get_origin(annotation)
     args = get_args(annotation)
-    if _safe_is_subclass(annotation, Resolvable):
+    if safe_is_subclass(annotation, Resolvable):
         return Resolver(
             partial(
                 _resolve_at_path,
@@ -499,6 +500,14 @@ def _dig_for_resolver(annotation, path: Sequence[_TypeContainer]) -> Optional[Re
         if res:
             return res
 
+    elif origin is dict:
+        key_type, value_type = args
+        if key_type != str:
+            raise ResolutionException(f"dict key type must be str, got {key_type}")
+        value_res = _dig_for_resolver(value_type, [*path, _TypeContainer.DICT])
+        if value_res:
+            return value_res
+
 
 def _wrap(ttype, path: Sequence[_TypeContainer]):
     result_type = ttype
@@ -508,6 +517,8 @@ def _wrap(ttype, path: Sequence[_TypeContainer]):
         elif container is _TypeContainer.SEQUENCE:
             # use tuple instead of Sequence for perf
             result_type = tuple[result_type, ...]
+        elif container is _TypeContainer.DICT:
+            result_type = dict[str, result_type]
         else:
             check.assert_never(container)
     return result_type
@@ -531,6 +542,11 @@ def _resolve_at_path(
             _resolve_at_path(context.at_path(idx), i, inner_path, resolver)
             for idx, i in enumerate(value)
         ]
+    elif container is _TypeContainer.DICT:
+        return {
+            k: _resolve_at_path(context.at_path(k), v, inner_path, resolver)
+            for k, v in value.items()
+        }
 
     check.assert_never(container)
 

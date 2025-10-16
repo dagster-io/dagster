@@ -59,6 +59,7 @@ export const SelectionInputAutoCompleteResults = React.memo(
           <Container ref={menuRef} style={{maxHeight: '300px', overflowY: 'auto'}}>
             <Inner $totalHeight={totalHeight}>
               {items.map(({index, key, size, start}) => {
+                // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
                 const result = results!.list[index]!;
                 return (
                   <Row key={key} $height={size} $start={start}>

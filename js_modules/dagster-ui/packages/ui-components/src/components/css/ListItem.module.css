@@ -20,7 +20,8 @@
     inset 0 1px 0 0 var(--color-keyline-default);
 }
 
-.listItem:has(+ .listItem:hover) {
+/* If the next sibling row is hovered, remove the box shadow of this row to avoid double keylines */
+*:has(> .listItem):has(+ * > .listItem:hover) .listItem {
   box-shadow: none;
 }
 
@@ -39,7 +40,7 @@
 .listItemAnchor:visited,
 .listItemAnchor:hover,
 .listItemAnchor:active {
-  color: var(--color-text-light);
+  color: var(--color-text-default);
   text-decoration: none;
 }
 
@@ -60,7 +61,7 @@
 }
 
 .listItem .listItemAnchor div[role='img'] {
-  background-color: var(--color-text-light);
+  background-color: var(--color-text-default);
   transition: background-color 0.1s ease-in-out;
 }
 

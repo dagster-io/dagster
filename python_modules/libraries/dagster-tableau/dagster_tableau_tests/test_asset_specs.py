@@ -59,7 +59,7 @@ def test_fetch_tableau_workspace_data(
     assert len(actual_workspace_data.workbooks_by_id) == 1
     assert len(actual_workspace_data.sheets_by_id) == 2
     assert len(actual_workspace_data.dashboards_by_id) == 1
-    assert len(actual_workspace_data.data_sources_by_id) == 2
+    assert len(actual_workspace_data.data_sources_by_id) == 3
 
 
 @responses.activate
@@ -154,9 +154,9 @@ def test_translator_spec(
         all_assets = load_tableau_asset_specs(resource)
         all_assets_keys = [asset.key for asset in all_assets]
 
-        # 2 sheet, 1 dashboard and 2 data source as external assets
-        assert len(all_assets) == 5
-        assert len(all_assets_keys) == 5
+        # 2 sheet, 1 dashboard and 3 data source as external assets
+        assert len(all_assets) == 6
+        assert len(all_assets_keys) == 6
 
         # Sanity check outputs, translator tests cover details here
         sheet_asset_spec = next(
@@ -172,6 +172,13 @@ def test_translator_spec(
             if "workbook" in spec.key.path[0] and "dashboard" in spec.key.path[1]
         )
         assert dashboard_asset_spec.key.path == ["test_workbook", "dashboard", "dashboard_sales"]
+        asset_deps_iter = iter(dashboard_asset_spec.deps)
+        assert next(asset_deps_iter).asset_key.path == [
+            "test_workbook",
+            "sheet",
+            "sales",
+        ]
+        assert next(asset_deps_iter).asset_key.path == ["hidden_sheet_datasource"]
 
         iter_data_source = iter(spec for spec in all_assets if "datasource" in spec.key.path[0])
         published_data_source_asset_spec = next(iter_data_source)
@@ -248,6 +255,7 @@ def test_translator_custom_metadata(
         assert asset_spec.metadata["custom"] == "metadata"
         assert asset_spec.key.path == ["prefix", "superstore_datasource"]
         assert asset_spec.tags["dagster/storage_kind"] == "tableau"
+        assert asset_spec.kinds == {"tableau", "live", "published datasource"}
 
 
 @responses.activate
@@ -301,7 +309,7 @@ def test_parse_asset_specs(
                 specs=all_assets, include_data_sources_with_extracts=False
             )
         )
-        assert len(external_asset_specs) == 2
+        assert len(external_asset_specs) == 3
         assert len(materializable_asset_specs) == 3
 
         # Data source with extracts are considered as materializable assets
@@ -310,7 +318,7 @@ def test_parse_asset_specs(
                 specs=all_assets, include_data_sources_with_extracts=True
             )
         )
-        assert len(external_asset_specs) == 1
+        assert len(external_asset_specs) == 2
         assert len(materializable_asset_specs) == 4
 
 

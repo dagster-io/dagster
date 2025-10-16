@@ -117,3 +117,60 @@ The following environment variables must be configured in Vercel:
 - `ALGOLIA_INDEX_NAME`
 
 These variables are not loaded when `process.env.ENV === 'development'`.
+
+---
+
+## API Documentation Control
+
+This section documents current behavior (some of which is nonideal) and documents the todos to fix them.
+
+### Documentation Pathways
+
+#### Path 1: Explicit RST Directives (Primary Control)
+
+The primary mechanism for controlling what appears in documentation is manual curation through RST files located in `sphinx/sections/api/apidocs/`. These files explicitly list symbols using Sphinx autodoc directives:
+
+- `.. autodecorator::` - Documents decorators (e.g., `@asset`, `@op`, `@job`)
+- `.. autofunction::` - Documents standalone functions
+- `.. autoclass::` - Documents classes
+- `.. click::` - Documents CLI commands from `click` commands and groups
+
+**Key characteristic**: These directives currently do not inspect the `@public` annotation system. If a symbol is explicitly listed in an RST file, it will be documented regardless of whether it has the `@public` annotation.
+
+#### Path 2: @public Annotation Filtering (Class Members Only)
+
+The `@public` annotation system provides automatic filtering, but **only applies to class members** when using `autoclass` with the `:members:` option. The custom `dagster_sphinx` extension (in `sphinx/_ext/dagster-sphinx/`) filters class members based on the `is_public()` function from `dagster._annotations`.
+
+### How Symbols Reach Documentation
+
+1. **Top-level exports** (like `dagster.asset`):
+
+   - Exported in module `__init__.py` files
+   - Explicitly documented in RST files with appropriate autodoc directives
+   - May or may not have `@public` annotation (not required)
+
+2. **Class members**:
+
+   - Must be marked with `@public` annotation to appear in documentation
+   - Only filtered when parent class uses `:members:` option in RST files
+
+3. **Special cases**:
+   - `dagster_pipes` modules: All symbols considered public regardless of annotations
+   - Explicitly documented symbols: RST directives override annotation requirements
+
+### Docstring Validation Implications
+
+For comprehensive docstring validation, check symbols that are:
+
+1. **Explicitly documented in RST files** via any autodoc directive
+2. **Marked with `@public` annotation** (for class members)
+3. **Located in `dagster_pipes` modules** (special case)
+
+The RST files serve as the **authoritative source** for what constitutes the public API surface, making them essential for determining validation scope.
+
+### Architecture Files
+
+- **RST Documentation**: `sphinx/sections/api/apidocs/**/*.rst`
+- **Public Annotations**: `python_modules/dagster/dagster/_annotations.py`
+- **Sphinx Extension**: `sphinx/_ext/dagster-sphinx/dagster_sphinx/__init__.py`
+- **Build Configuration**: `sphinx/conf.py`

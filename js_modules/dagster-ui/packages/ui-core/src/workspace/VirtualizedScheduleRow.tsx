@@ -188,6 +188,7 @@ export const VirtualizedScheduleRow = (props: ScheduleRowProps) => {
                   >
                     Next tick:&nbsp;
                     <TimestampDisplay
+                      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
                       timestamp={scheduleData.scheduleState.nextTick.timestamp!}
                       timezone={scheduleData.executionTimezone}
                       timeFormat={{showSeconds: false, showTimezone: true}}

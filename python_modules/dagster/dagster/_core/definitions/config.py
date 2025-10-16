@@ -4,6 +4,7 @@ from typing import Any, Callable, NamedTuple, Optional, Union, cast
 from typing_extensions import TypeAlias
 
 import dagster._check as check
+from dagster._annotations import public
 from dagster._builtins import BuiltinEnum
 from dagster._config import (
     ConfigType,
@@ -25,6 +26,7 @@ def is_callable_valid_config_arg(config: Union[Callable[..., Any], Mapping[str, 
     return BuiltinEnum.contains(config) or is_supported_config_python_builtin(config)
 
 
+@public
 class ConfigMapping(
     NamedTuple(
         "_ConfigMapping",

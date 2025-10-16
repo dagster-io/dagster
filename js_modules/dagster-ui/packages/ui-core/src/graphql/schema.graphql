@@ -629,6 +629,10 @@ type Asset {
   definition: AssetNode
   latestEventSortKey: ID
   assetHealth: AssetHealth
+  latestMaterializationTimestamp: Float
+  hasDefinitionOrRecord: Boolean!
+  latestFailedToMaterializeTimestamp: Float
+  freshnessStatusChangedTimestamp: Float
 }
 
 type AssetResultEventHistoryConnection {
@@ -1221,6 +1225,7 @@ type FieldsNotDefinedConfigError implements PipelineConfigValidationError {
 interface IPipelineSnapshot {
   name: String!
   description: String
+  owners: [DefinitionOwner!]!
   pipelineSnapshotId: String!
   dagsterTypes: [DagsterType!]!
   dagsterTypeOrError(dagsterTypeName: String!): DagsterTypeOrError!
@@ -1235,6 +1240,16 @@ interface IPipelineSnapshot {
   sensors: [Sensor!]!
   parentSnapshotId: String
   graphName: String!
+}
+
+union DefinitionOwner = UserDefinitionOwner | TeamDefinitionOwner
+
+type UserDefinitionOwner {
+  email: String!
+}
+
+type TeamDefinitionOwner {
+  team: String!
 }
 
 type Logger {
@@ -1275,6 +1290,7 @@ type Pipeline implements SolidContainer & IPipelineSnapshot {
   solidHandle(handleID: String!): SolidHandle
   solidHandles(parentHandleID: String): [SolidHandle!]!
   modes: [Mode!]!
+  owners: [DefinitionOwner!]!
   pipelineSnapshotId: String!
   dagsterTypes: [DagsterType!]!
   dagsterTypeOrError(dagsterTypeName: String!): DagsterTypeOrError!
@@ -1593,6 +1609,7 @@ type PipelineSnapshot implements SolidContainer & IPipelineSnapshot & PipelineRe
   solidHandle(handleID: String!): SolidHandle
   solidHandles(parentHandleID: String): [SolidHandle!]!
   modes: [Mode!]!
+  owners: [DefinitionOwner!]!
   pipelineSnapshotId: String!
   dagsterTypes: [DagsterType!]!
   dagsterTypeOrError(dagsterTypeName: String!): DagsterTypeOrError!
@@ -1773,6 +1790,7 @@ type WorkspaceLocationEntry {
   displayMetadata: [RepositoryMetadata!]!
   updatedTimestamp: Float!
   versionKey: String!
+  defsStateInfo: DefsStateInfo
   permissions: [Permission!]!
   featureFlags: [FeatureFlag!]!
 }
@@ -1878,6 +1896,7 @@ type Schedule {
   futureTick(tickTimestamp: Int!): DryRunInstigationTick!
   potentialTickTimestamps(startTimestamp: Float, upperLimit: Int, lowerLimit: Int): [Float!]!
   assetSelection: AssetSelection
+  owners: [DefinitionOwner!]!
   tags: [DefinitionTag!]!
   metadataEntries: [MetadataEntry!]!
 }
@@ -2321,6 +2340,7 @@ type ExecutionPlan {
   steps: [ExecutionStep!]!
   artifactsPersisted: Boolean!
   assetSelection: [String!]!
+  assetKeys: [AssetKey!]!
 }
 
 type ExecutionStep {
@@ -2395,6 +2415,7 @@ type Job implements SolidContainer & IPipelineSnapshot {
   solidHandle(handleID: String!): SolidHandle
   solidHandles(parentHandleID: String): [SolidHandle!]!
   modes: [Mode!]!
+  owners: [DefinitionOwner!]!
   pipelineSnapshotId: String!
   dagsterTypes: [DagsterType!]!
   dagsterTypeOrError(dagsterTypeName: String!): DagsterTypeOrError!
@@ -2511,6 +2532,27 @@ union RepositoryOrError = PythonError | Repository | RepositoryNotFoundError
 
 union WorkspaceLocationEntryOrError = WorkspaceLocationEntry | PythonError
 
+type DefsStateInfo {
+  keyStateInfo: [DefsStateInfoEntry!]!
+}
+
+type DefsKeyStateInfo {
+  version: String!
+  createTimestamp: Float!
+  managementType: DefsStateManagementType!
+}
+
+type DefsStateInfoEntry {
+  name: String!
+  info: DefsKeyStateInfo
+}
+
+enum DefsStateManagementType {
+  VERSIONED_STATE_STORAGE
+  LOCAL_FILESYSTEM
+  LEGACY_CODE_SERVER_SNAPSHOTS
+}
+
 input AssetKeyInput {
   path: [String!]!
 }
@@ -2578,6 +2620,7 @@ input LaunchBackfillParams {
   forceSynchronousSubmission: Boolean
   title: String
   description: String
+  runConfigData: RunConfigData
 }
 
 input PartitionSetSelector {
@@ -2687,6 +2730,7 @@ enum BulkActionStatus {
   CANCELING
   COMPLETED_SUCCESS
   COMPLETED_FAILED
+  FAILING
 }
 
 type DaemonHealth {
@@ -2797,6 +2841,7 @@ type RunRequest {
   tags: [PipelineTag!]!
   runConfigYaml: String!
   assetSelection: [AssetKey!]
+  assetChecks: [AssetCheckhandle!]
   jobName: String
 }
 
@@ -2939,6 +2984,7 @@ type FloatMetadataEntry implements MetadataEntry {
   label: String!
   description: String
   floatValue: Float
+  floatRepr: String!
 }
 
 type IntMetadataEntry implements MetadataEntry {
@@ -3309,6 +3355,7 @@ type Sensor {
   metadata: SensorMetadata!
   sensorType: SensorType!
   assetSelection: AssetSelection
+  owners: [DefinitionOwner!]!
   tags: [DefinitionTag!]!
   metadataEntries: [MetadataEntry!]!
 }
@@ -3669,6 +3716,7 @@ type Query {
     limit: Int!
     cursor: String
   ): [AssetCheckExecution!]!
+  latestDefsStateInfo: DefsStateInfo
 }
 
 union WorkspaceOrError = Workspace | PythonError

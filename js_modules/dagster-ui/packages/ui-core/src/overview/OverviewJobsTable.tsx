@@ -1,9 +1,8 @@
-import {Tag, Tooltip} from '@dagster-io/ui-components';
 import {useVirtualizer} from '@tanstack/react-virtual';
 import {useMemo, useRef} from 'react';
 
 import {OVERVIEW_COLLAPSED_KEY} from './OverviewExpansionKey';
-import {useFeatureFlags} from '../app/Flags';
+import {useFeatureFlags} from '../app/useFeatureFlags';
 import {Container, Inner, TABLE_HEADER_HEIGHT} from '../ui/VirtualizedTable';
 import {findDuplicateRepoNames} from '../ui/findDuplicateRepoNames';
 import {useRepoExpansionState} from '../ui/useRepoExpansionState';
@@ -86,7 +85,9 @@ export const OverviewJobsTable = ({repos}: Props) => {
             }}
           >
             {items.map(({index, key}) => {
+              // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
               const row: RowType = flattened[index]!;
+              // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
               const type = row!.type;
 
               if (type === 'header') {
@@ -100,14 +101,7 @@ export const OverviewJobsTable = ({repos}: Props) => {
                     onToggleAll={onToggleAll}
                     expanded={expandedKeys.includes(repoAddressAsHumanString(row.repoAddress))}
                     showLocation={duplicateRepoNames.has(row.repoAddress.name)}
-                    rightElement={
-                      <Tooltip
-                        content={row.jobCount === 1 ? '1 job' : `${row.jobCount} jobs`}
-                        placement="top"
-                      >
-                        <Tag>{row.jobCount}</Tag>
-                      </Tooltip>
-                    }
+                    rightElement={<></>}
                   />
                 );
               }

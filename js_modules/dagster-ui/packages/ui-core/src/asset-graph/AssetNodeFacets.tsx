@@ -1,19 +1,8 @@
 import {useMemo} from 'react';
 
+import {AssetNodeFacet} from './AssetNodeFacetsUtil';
 import {assertUnreachable} from '../app/Util';
 import {useStateWithStorage} from '../hooks/useStateWithStorage';
-
-export enum AssetNodeFacet {
-  UnsyncedTag = 'unsynced-tag',
-  Description = 'description',
-  Owner = 'owner',
-  LatestEvent = 'latest-event',
-  Checks = 'checks',
-  Freshness = 'freshness',
-  Status = 'status',
-  KindTag = 'kind-tag',
-  Automation = 'automation',
-}
 
 export const AllAssetNodeFacets = [
   AssetNodeFacet.UnsyncedTag,

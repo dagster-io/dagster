@@ -15,7 +15,6 @@
 typeCheckingMode = "standard"
 
 include = [
-  ".buildkite/dagster-buildkite",
   "docs/sphinx/_ext/dagster-sphinx",
   "python_modules",
   "examples",
@@ -35,6 +34,10 @@ exclude = [
   ".git",
   "**/.venv*",
   "**/build",
+]
+
+extraPaths = [
+  ".buildkite/buildkite-shared"
 ]
 
 # These two settings point pyright to a python environment to resolve imports against. This virtual
@@ -84,8 +87,15 @@ filterwarnings = [
   "ignore::pytest.PytestCollectionWarning",
 ]
 
+markers = [
+  "unit: Fast unit tests with no external dependencies",
+  "integration: Tests requiring real git operations or other I/O",
+  "e2e: End-to-end tests requiring GitHub authentication",
+  "slow: Tests that take more than 1 second",
+]
+
 timeout = 240
-addopts = "-ra --force-flaky --max-runs=2 --no-success-flaky-report"
+addopts = "-ra"
 
 # ########################
 # ##### RUFF
@@ -312,3 +322,5 @@ exclude = ["examples/docs_snippets/docs_snippets/guides/etl/transform-dbt/dbt_de
 
 [tool.dagster]
 module_name = "dagster_test.toys.repo"
+
+

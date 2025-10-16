@@ -4,14 +4,14 @@ from abc import abstractmethod
 from collections.abc import Mapping, Sequence
 from contextlib import AbstractContextManager
 from functools import cached_property
-from typing import TYPE_CHECKING, AbstractSet, Any, Optional, Union, cast  # noqa: UP035
+from typing import TYPE_CHECKING, Any, Optional, Union, cast
 
 from dagster_shared.libraries import DagsterLibraryRegistry
+from dagster_shared.serdes.objects.models.defs_state_info import DefsStateInfo
 
 import dagster._check as check
 from dagster._check import checked
 from dagster._core.code_pointer import CodePointer
-from dagster._core.definitions.asset_key import AssetKey
 from dagster._core.definitions.assets.job.asset_job import IMPLICIT_ASSET_JOB_NAME
 from dagster._core.definitions.reconstruct import ReconstructableJob, ReconstructableRepository
 from dagster._core.definitions.repository_definition import RepositoryDefinition
@@ -26,7 +26,11 @@ from dagster._core.execution.api import create_execution_plan
 from dagster._core.execution.plan.state import KnownExecutionState
 from dagster._core.instance import DagsterInstance
 from dagster._core.origin import RepositoryPythonOrigin
-from dagster._core.remote_representation import RemoteJobSubsetResult
+from dagster._core.remote_origin import (
+    CodeLocationOrigin,
+    GrpcServerCodeLocationOrigin,
+    InProcessCodeLocationOrigin,
+)
 from dagster._core.remote_representation.external import (
     RemoteExecutionPlan,
     RemoteJob,
@@ -34,18 +38,13 @@ from dagster._core.remote_representation.external import (
 )
 from dagster._core.remote_representation.external_data import (
     PartitionNamesSnap,
+    RemoteJobSubsetResult,
     RepositorySnap,
     ScheduleExecutionErrorSnap,
     SensorExecutionErrorSnap,
-    partition_set_snap_name_for_job_name,
 )
 from dagster._core.remote_representation.grpc_server_registry import GrpcServerRegistry
 from dagster._core.remote_representation.handle import JobHandle, RepositoryHandle
-from dagster._core.remote_representation.origin import (
-    CodeLocationOrigin,
-    GrpcServerCodeLocationOrigin,
-    InProcessCodeLocationOrigin,
-)
 from dagster._core.snap.execution_plan_snapshot import snapshot_from_execution_plan
 from dagster._grpc.impl import (
     get_external_schedule_execution,
@@ -64,7 +63,7 @@ from dagster._utils.merger import merge_dicts
 if TYPE_CHECKING:
     from dagster._core.definitions.schedule_definition import ScheduleExecutionData
     from dagster._core.definitions.sensor_definition import SensorExecutionData
-    from dagster._core.remote_representation import (
+    from dagster._core.remote_representation.external_data import (
         PartitionConfigSnap,
         PartitionExecutionErrorSnap,
         PartitionSetExecutionParamSnap,
@@ -131,16 +130,23 @@ class CodeLocation(AbstractContextManager):
     ) -> RemoteExecutionPlan: ...
 
     def _get_remote_job_from_subset_result(
-        self, repo_handle: RepositoryHandle, subset_result: RemoteJobSubsetResult
+        self,
+        selector: JobSubsetSelector,
+        subset_result: RemoteJobSubsetResult,
     ) -> RemoteJob:
         if subset_result.repository_python_origin:
             # Prefer the python origin from the result if it is set, in case the code location
             # just updated and any origin information (most frequently the image) has changed
             repo_handle = RepositoryHandle(
-                repository_name=repo_handle.repository_name,
-                code_location_origin=repo_handle.code_location_origin,
+                repository_name=selector.repository_name,
+                code_location_origin=self.origin,
                 repository_python_origin=subset_result.repository_python_origin,
-                display_metadata=repo_handle.display_metadata,
+                display_metadata=self.get_display_metadata(),
+            )
+        else:
+            repo_handle = RepositoryHandle.from_location(
+                repository_name=selector.repository_name,
+                code_location=self,
             )
 
         job_data_snap = subset_result.job_data_snap
@@ -164,24 +170,12 @@ class CodeLocation(AbstractContextManager):
         if not selector.is_subset_selection:
             return self.get_repository(selector.repository_name).get_full_job(selector.job_name)
 
-        repo_handle = self.get_repository(selector.repository_name).handle
         subset_result = self._get_subset_remote_job_result(selector)
-        return self._get_remote_job_from_subset_result(repo_handle, subset_result)
+        return self._get_remote_job_from_subset_result(selector, subset_result)
 
-    async def gen_job(self, selector: JobSubsetSelector) -> RemoteJob:
-        """Return the RemoteJob for a specific pipeline. Subclasses only
-        need to implement gen_subset_remote_job_result to handle the case where
-        an op selection is specified, which requires access to the underlying JobDefinition
-        to generate the subsetted pipeline snapshot.
-        """
-        if not selector.is_subset_selection:
-            return self.get_repository(selector.repository_name).get_full_job(selector.job_name)
-
-        repo_handle = self.get_repository(selector.repository_name).handle
-
+    async def gen_subset_job(self, selector: JobSubsetSelector) -> RemoteJob:
         subset_result = await self._gen_subset_remote_job_result(selector)
-
-        return self._get_remote_job_from_subset_result(repo_handle, subset_result)
+        return self._get_remote_job_from_subset_result(selector, subset_result)
 
     @abstractmethod
     def _get_subset_remote_job_result(self, selector: JobSubsetSelector) -> RemoteJobSubsetResult:
@@ -209,41 +203,6 @@ class CodeLocation(AbstractContextManager):
     ) -> Union["PartitionConfigSnap", "PartitionExecutionErrorSnap"]:
         pass
 
-    def get_partition_tags(
-        self,
-        repository_handle: RepositoryHandle,
-        job_name: str,
-        partition_name: str,
-        instance: DagsterInstance,
-        selected_asset_keys: Optional[AbstractSet[AssetKey]],
-    ) -> Union["PartitionTagsSnap", "PartitionExecutionErrorSnap"]:
-        from dagster._core.remote_representation.external_data import PartitionTagsSnap
-
-        if is_implicit_asset_job_name(job_name):
-            # Implicit asset jobs never have custom tag-for-partition functions, and the
-            # PartitionsDefinitions on the assets are always available on the host, so we can just
-            # determine the tags using information on the host.
-            # In addition to the performance benefits, this is convenient in the case where the
-            # implicit asset job has assets with different PartitionsDefinitions, as the gRPC
-            # API for getting partition tags from the code server doesn't support an asset selection.
-            remote_repo = self.get_repository(repository_handle.repository_name)
-            return PartitionTagsSnap(
-                name=partition_name,
-                tags=remote_repo.get_partition_tags_for_implicit_asset_job(
-                    partition_name=partition_name,
-                    job_name=job_name,
-                    selected_asset_keys=selected_asset_keys,
-                    instance=instance,
-                ),
-            )
-        else:
-            return self.get_partition_tags_from_repo(
-                repository_handle=repository_handle,
-                job_name=job_name,
-                partition_name=partition_name,
-                instance=instance,
-            )
-
     @abstractmethod
     def get_partition_tags_from_repo(
         self,
@@ -253,38 +212,6 @@ class CodeLocation(AbstractContextManager):
         instance: DagsterInstance,
     ) -> Union["PartitionTagsSnap", "PartitionExecutionErrorSnap"]:
         pass
-
-    def get_partition_names(
-        self,
-        repository_handle: RepositoryHandle,
-        job_name: str,
-        instance: DagsterInstance,
-        selected_asset_keys: Optional[AbstractSet[AssetKey]],
-    ) -> Union[PartitionNamesSnap, "PartitionExecutionErrorSnap"]:
-        remote_repo = self.get_repository(repository_handle.repository_name)
-        partition_set_name = partition_set_snap_name_for_job_name(job_name)
-
-        if remote_repo.has_partition_set(partition_set_name):
-            partition_set = remote_repo.get_partition_set(partition_set_name)
-
-            # Prefer to return the names without calling out to user code if there's a corresponding
-            # partition set that allows it
-            if partition_set.has_partition_name_data():
-                return PartitionNamesSnap(
-                    partition_names=partition_set.get_partition_names(instance=instance)
-                )
-            else:
-                return self.get_partition_names_from_repo(repository_handle, job_name)
-        else:
-            # Asset jobs might have no corresponding partition set but still have partitioned
-            # assets, so we get the partition names using the assets.
-            return PartitionNamesSnap(
-                partition_names=remote_repo.get_partition_names_for_asset_job(
-                    job_name=job_name,
-                    selected_asset_keys=selected_asset_keys,
-                    instance=instance,
-                )
-            )
 
     @abstractmethod
     def get_partition_names_from_repo(
@@ -398,6 +325,25 @@ class CodeLocation(AbstractContextManager):
     @abstractmethod
     def get_dagster_library_versions(self) -> Optional[Mapping[str, str]]: ...
 
+    def get_defs_state_info(self) -> Optional[DefsStateInfo]:
+        all_infos = list(
+            filter(
+                None,
+                [repo.repository_snap.defs_state_info for repo in self.get_repositories().values()],
+            )
+        )
+        if len(all_infos) == 0:
+            return None
+        elif len(all_infos) == 1:
+            return all_infos[0]
+        else:
+            # in theory this would be extremely rare, as having multiple
+            # repositories in the same location has long been deprecated
+            combined_mapping = {}
+            for info in all_infos:
+                combined_mapping.update(info.info_mapping)
+            return DefsStateInfo(info_mapping=combined_mapping)
+
 
 class InProcessCodeLocation(CodeLocation):
     def __init__(self, origin: InProcessCodeLocationOrigin, instance: DagsterInstance):
@@ -412,6 +358,10 @@ class InProcessCodeLocation(CodeLocation):
             entry_point=self._origin.entry_point,
             container_image=self._origin.container_image,
             container_context=self._origin.container_context,
+            # for InProcessCodeLocations, we always use the latest available state versions
+            defs_state_info=self._instance.defs_state_storage.get_latest_defs_state_info()
+            if self._instance.defs_state_storage
+            else None,
         )
 
         self._repository_code_pointer_dict = self._loaded_repositories.code_pointers_by_repo_name
@@ -698,9 +648,7 @@ class GrpcServerCodeLocation(CodeLocation):
     ):
         from dagster._api.get_server_id import sync_get_server_id
         from dagster._api.list_repositories import sync_list_repositories_grpc
-        from dagster._api.snapshot_repository import (
-            sync_get_streaming_external_repositories_data_grpc,
-        )
+        from dagster._api.snapshot_repository import sync_get_external_repositories_data_grpc
         from dagster._grpc.client import DagsterGrpcClient, client_heartbeat_thread
 
         self._origin = check.inst_param(origin, "origin", CodeLocationOrigin)
@@ -779,7 +727,7 @@ class GrpcServerCodeLocation(CodeLocation):
 
             self._container_context = list_repositories_response.container_context
 
-            self._repository_snaps = sync_get_streaming_external_repositories_data_grpc(
+            self._repository_snaps = sync_get_external_repositories_data_grpc(
                 self.client,
                 self,
             )
@@ -978,7 +926,9 @@ class GrpcServerCodeLocation(CodeLocation):
             asset_selection=selector.asset_selection,
             asset_check_selection=selector.asset_check_selection,
         )
-        if subset.job_data_snap:
+        # Omit the parent job snapshot for __ASSET_JOB, since it is potentialy very large
+        # and unlikely to be useful (unlike subset selections of other jobs)
+        if subset.job_data_snap and not is_implicit_asset_job_name(selector.job_name):
             full_job = self.get_repository(selector.repository_name).get_full_job(selector.job_name)
             subset = copy(
                 subset,

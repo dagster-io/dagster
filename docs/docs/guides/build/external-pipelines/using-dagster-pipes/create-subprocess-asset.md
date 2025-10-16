@@ -19,7 +19,7 @@ In this part of the tutorial, you'll create a Dagster asset that, in its executi
 First we will create a new Dagster project:
 
 ```bash
-uvx -U create-dagster project external_pipeline
+uvx create-dagster@latest project external_pipeline
 ```
 
 ## Step 2: Scaffold and define the asset

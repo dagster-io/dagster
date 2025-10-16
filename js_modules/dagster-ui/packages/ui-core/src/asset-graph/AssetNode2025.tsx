@@ -13,7 +13,8 @@ import {
   AssetNodeContainer,
   AssetNodeRowBox,
 } from './AssetNode';
-import {AssetNodeFacet, labelForFacet} from './AssetNodeFacets';
+import {labelForFacet} from './AssetNodeFacets';
+import {AssetNodeFacet} from './AssetNodeFacetsUtil';
 import {AssetNodeFreshnessRow, AssetNodeFreshnessRowOld} from './AssetNodeFreshnessRow';
 import {AssetNodeHealthRow} from './AssetNodeHealthRow';
 import {assetNodeLatestEventContent, buildAssetNodeStatusContent} from './AssetNodeStatusContent';
@@ -241,6 +242,7 @@ export const AssetNodeAutomationRowWithData = ({
           </Tooltip>
         ) : null}
         {hasAutomationCondition ? (
+          // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
           <Tooltip content={automationData.automationCondition!.label!} placement="top">
             <AutomationConditionEvaluationLink
               definition={definition}
@@ -304,6 +306,7 @@ const AssetNodeStatusRow = ({
 
 const SingleOwnerOrTooltip = ({owners}: {owners: AssetNodeFragment['owners']}) => {
   if (owners.length === 1) {
+    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
     const owner = owners[0]!;
     return (
       <div className={styles.UserDisplayWrapNoPadding}>
@@ -365,6 +368,7 @@ export const AutomationConditionEvaluationLink = ({
         <EvaluationDetailDialog
           isOpen={isOpen}
           onClose={() => setOpen(false)}
+          // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
           evaluationID={automationData.lastAutoMaterializationEvaluationRecord!.evaluationId}
           assetKeyPath={definition.assetKey.path}
         />

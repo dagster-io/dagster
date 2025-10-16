@@ -1,4 +1,3 @@
-import {Meta} from '@storybook/react';
 import {HTMLProps, useCallback, useState} from 'react';
 
 import {BaseButton} from '../BaseButton';
@@ -17,7 +16,7 @@ import {Tooltip} from '../Tooltip';
 export default {
   title: 'ListItem',
   component: ListItem,
-} as Meta;
+};
 
 export const Default = () => {
   return (
@@ -407,6 +406,27 @@ export const SmallList = () => {
           </Box>
         }
         right={<div>Right</div>}
+      />
+    </div>
+  );
+};
+
+export const BigPadding = () => {
+  return (
+    <div style={{width: '400px'}}>
+      <ListItem
+        index={0}
+        padding={{vertical: 48, horizontal: 48}}
+        renderLink={renderLink}
+        href="/jobs/foo"
+        left={<div>Left</div>}
+        right={
+          <HorizontalControls
+            controls={[
+              {key: 'menu', control: <Button intent="none" icon={<Icon name="more_horiz" />} />},
+            ]}
+          />
+        }
       />
     </div>
   );

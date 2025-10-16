@@ -17,11 +17,11 @@ from click.testing import Result
 from dagster import Component
 from dagster._utils import alter_sys_path, pushd
 from dagster._utils.pydantic_yaml import enrich_validation_errors_with_source_position
+from dagster.components.core.component_tree import ComponentTree
 from dagster.components.core.defs_module import (
     asset_post_processor_list_from_post_processing_dict,
     context_with_injected_scope,
 )
-from dagster.components.core.tree import ComponentTree
 from dagster.components.resolved.core_models import post_process_defs
 from dagster.components.utils import ensure_loadable_path
 from dagster_shared import check

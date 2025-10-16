@@ -1,7 +1,7 @@
 ---
 title: 'Unconnected inputs in op jobs'
 description: "Learn to work with unconnected inputs in Dagster op jobs."
-sidebar_position: 400
+sidebar_position: 500
 ---
 
 import OpsNote from '@site/docs/partials/\_OpsNote.md';
@@ -24,7 +24,7 @@ Values for these inputs can be provided in a few ways. Dagster will check the fo
 
 - **Default values** - <PyObject section="ops" module="dagster" object="In" /> accepts a `default_value` argument.
 
-**Unsure if I/O managers are right for you?** Check out the [Before you begin](/guides/build/io-managers/#before-you-begin) section of the I/O manager documentation.
+**Unsure if I/O managers are right for you?** Check out the [Before you begin](/guides/build/io-managers#before-you-begin) section of the I/O manager documentation.
 
 ## Working with Dagster types
 

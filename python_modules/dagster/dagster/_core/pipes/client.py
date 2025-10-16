@@ -24,6 +24,7 @@ if TYPE_CHECKING:
     from dagster._core.pipes.context import PipesMessageHandler
 
 
+@public
 class PipesClient(ABC):
     """Pipes client base class.
 
@@ -138,6 +139,7 @@ class PipesClientCompletedInvocation:
         return self._session.get_custom_messages()
 
 
+@public
 class PipesContextInjector(ABC):
     @abstractmethod
     @contextmanager
@@ -165,6 +167,7 @@ class PipesContextInjector(ABC):
         """
 
 
+@public
 class PipesMessageReader(ABC):
     @abstractmethod
     @contextmanager

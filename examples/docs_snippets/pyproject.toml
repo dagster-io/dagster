@@ -9,12 +9,14 @@ line-length = 88
 # Ignore a specific file
 extend-exclude = [
   "docs_snippets/guides/dg/creating-dg-plugin/2-empty-component.py",
+  "docs_snippets/guides/components/creating-an-inline-component/generated/2-asset-with-schedule-init.py",
   "docs_snippets/guides/dg/migrating-project/13-initial-definitions.py",
   "docs_snippets/guides/components/shell-script-component/generated/2-shell-command-empty.py",
   "docs_snippets/guides/components/migrating-definitions/2-definitions-before.py",
   "docs_snippets/guides/dg/migrating-definitions/7-definitions-after-all.py",
   "docs_snippets/guides/components/integrations/dlt-component/5-loads.py",
   "docs_snippets/guides/components/integrations/dlt-component/7-customized-loads.py",
+  "docs_snippets/guides/components/python-components/python-component.py",
 ]
 
 [tool.ruff.lint]

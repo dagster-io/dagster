@@ -29,11 +29,16 @@ export const SimpleStakeholderAssetStatus = ({
     return <span />;
   }
 
-  if ((liveData.inProgressRunIds || []).length > 0) {
+  const [inProgressRunId] = liveData.inProgressRunIds || [];
+  if (inProgressRunId) {
     return (
       <Caption>
-        Materializing in{' '}
-        <AssetRunLink assetKey={assetNode.assetKey} runId={liveData.inProgressRunIds[0]!} />
+        <Tag intent="none">
+          <Box flex={{gap: 4, alignItems: 'center'}}>
+            <StatusCaseDot statusCase={StatusCase.MATERIALIZING} />
+            <AssetRunLink assetKey={assetNode.assetKey} runId={inProgressRunId} />
+          </Box>
+        </Tag>
       </Caption>
     );
   }

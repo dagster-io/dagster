@@ -8,6 +8,7 @@ from typing import IO, Callable, Final, NamedTuple, Optional
 from typing_extensions import Self
 
 import dagster._check as check
+from dagster._annotations import public
 from dagster._core.captured_log_api import LogLineCursor
 from dagster._core.instance import MayHaveInstanceWeakref, T_DagsterInstance
 from dagster._record import record
@@ -180,6 +181,7 @@ def _has_max_data(chunk: Optional[bytes]) -> bool:
     return chunk and len(chunk) >= MAX_BYTES_CHUNK_READ  # type: ignore
 
 
+@public
 class ComputeLogManager(ABC, MayHaveInstanceWeakref[T_DagsterInstance]):
     """Abstract base class for capturing the unstructured logs (stdout/stderr) in the current
     process, stored / retrieved with a provided log_key.

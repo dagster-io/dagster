@@ -1,8 +1,9 @@
-from collections.abc import Mapping
+from collections.abc import Mapping, Sequence
 from datetime import datetime
 from typing import Any, Callable, Optional, Union
 
 import dagster._check as check
+from dagster._annotations import public
 from dagster._core.definitions.partitions.definition.time_window import (
     TimeWindowPartitionsDefinition,
 )
@@ -13,6 +14,7 @@ from dagster._core.definitions.partitions.definition.time_window_subclasses impo
     WeeklyPartitionsDefinition,
 )
 from dagster._core.definitions.partitions.partitioned_config import PartitionedConfig
+from dagster._core.definitions.timestamp import TimestampWithTimezone
 
 
 def wrap_time_window_tags_fn(
@@ -41,6 +43,7 @@ def wrap_time_window_run_config_fn(
     return _run_config_wrapper
 
 
+@public
 def hourly_partitioned_config(
     start_date: Union[datetime, str],
     minute_offset: int = 0,
@@ -48,6 +51,7 @@ def hourly_partitioned_config(
     fmt: Optional[str] = None,
     end_offset: int = 0,
     tags_for_partition_fn: Optional[Callable[[datetime, datetime], Mapping[str, str]]] = None,
+    exclusions: Optional[Sequence[Union[str, datetime, TimestampWithTimezone]]] = None,
 ) -> Callable[
     [Callable[[datetime, datetime], Mapping[str, Any]]],
     PartitionedConfig[HourlyPartitionsDefinition],
@@ -81,13 +85,24 @@ def hourly_partitioned_config(
         tags_for_partition_fn (Optional[Callable[[str], Mapping[str, str]]]): A function that
             accepts a partition time window and returns a dictionary of tags to attach to runs for
             that partition.
+        exclusions (Optional[Sequence[Union[str, datetime]]]): Specifies a sequence of cron strings
+            or datetime objects that should be excluded from the partition set. Every tick of the
+            cron schedule that matches an excluded datetime or matches the tick of an excluded
+            cron string will be excluded from the partition set.
 
     .. code-block:: python
 
-        @hourly_partitioned_config(start_date=datetime(2022, 03, 12))
+        from datetime import datetime
+        from dagster import hourly_partitioned_config
+
+        @hourly_partitioned_config(start_date=datetime(2022, 3, 12))
+        def my_hourly_partitioned_config(start: datetime, end: datetime):
+            return {"start": start.strftime("%Y-%m-%d %H:%M"), "end": end.strftime("%Y-%m-%d %H:%M")}
         # creates partitions (2022-03-12-00:00, 2022-03-12-01:00), (2022-03-12-01:00, 2022-03-12-02:00), ...
 
-        @hourly_partitioned_config(start_date=datetime(2022, 03, 12), minute_offset=15)
+        @hourly_partitioned_config(start_date=datetime(2022, 3, 12), minute_offset=15)
+        def my_offset_hourly_partitioned_config(start: datetime, end: datetime):
+            return {"start": start.strftime("%Y-%m-%d %H:%M"), "end": end.strftime("%Y-%m-%d %H:%M")}
         # creates partitions (2022-03-12-00:15, 2022-03-12-01:15), (2022-03-12-01:15, 2022-03-12-02:15), ...
     """
 
@@ -102,6 +117,7 @@ def hourly_partitioned_config(
             timezone=timezone,
             fmt=fmt,
             end_offset=end_offset,
+            exclusions=exclusions,
         )
         return PartitionedConfig(
             run_config_for_partition_key_fn=wrap_time_window_run_config_fn(fn, partitions_def),
@@ -115,6 +131,7 @@ def hourly_partitioned_config(
     return inner
 
 
+@public
 def daily_partitioned_config(
     start_date: Union[datetime, str],
     minute_offset: int = 0,
@@ -123,6 +140,7 @@ def daily_partitioned_config(
     fmt: Optional[str] = None,
     end_offset: int = 0,
     tags_for_partition_fn: Optional[Callable[[datetime, datetime], Mapping[str, str]]] = None,
+    exclusions: Optional[Sequence[Union[str, datetime, TimestampWithTimezone]]] = None,
 ) -> Callable[
     [Callable[[datetime, datetime], Mapping[str, Any]]],
     PartitionedConfig[DailyPartitionsDefinition],
@@ -157,13 +175,24 @@ def daily_partitioned_config(
         tags_for_partition_fn (Optional[Callable[[str], Mapping[str, str]]]): A function that
             accepts a partition time window and returns a dictionary of tags to attach to runs for
             that partition.
+        exclusions (Optional[Sequence[Union[str, datetime]]]): Specifies a sequence of cron strings
+            or datetime objects that should be excluded from the partition set. Every tick of the
+            cron schedule that matches an excluded datetime or matches the tick of an excluded
+            cron string will be excluded from the partition set.
 
     .. code-block:: python
 
+        from datetime import datetime
+        from dagster import daily_partitioned_config
+
         @daily_partitioned_config(start_date="2022-03-12")
+        def my_partitioned_config(start: datetime, end: datetime):
+            return {"start": start.strftime("%Y-%m-%d"), "end": end.strftime("%Y-%m-%d")}
         # creates partitions (2022-03-12-00:00, 2022-03-13-00:00), (2022-03-13-00:00, 2022-03-14-00:00), ...
 
         @daily_partitioned_config(start_date="2022-03-12", minute_offset=15, hour_offset=16)
+        def my_offset_partitioned_config(start: datetime, end: datetime):
+            return {"start": start.strftime("%Y-%m-%d"), "end": end.strftime("%Y-%m-%d")}
         # creates partitions (2022-03-12-16:15, 2022-03-13-16:15), (2022-03-13-16:15, 2022-03-14-16:15), ...
     """
 
@@ -179,6 +208,7 @@ def daily_partitioned_config(
             timezone=timezone,
             fmt=fmt,
             end_offset=end_offset,
+            exclusions=exclusions,
         )
 
         return PartitionedConfig(
@@ -193,6 +223,7 @@ def daily_partitioned_config(
     return inner
 
 
+@public
 def weekly_partitioned_config(
     start_date: Union[datetime, str],
     minute_offset: int = 0,
@@ -202,6 +233,7 @@ def weekly_partitioned_config(
     fmt: Optional[str] = None,
     end_offset: int = 0,
     tags_for_partition_fn: Optional[Callable[[datetime, datetime], Mapping[str, str]]] = None,
+    exclusions: Optional[Sequence[Union[str, datetime, TimestampWithTimezone]]] = None,
 ) -> Callable[
     [Callable[[datetime, datetime], Mapping[str, Any]]],
     PartitionedConfig[WeeklyPartitionsDefinition],
@@ -240,13 +272,24 @@ def weekly_partitioned_config(
         tags_for_partition_fn (Optional[Callable[[str], Mapping[str, str]]]): A function that
             accepts a partition time window and returns a dictionary of tags to attach to runs for
             that partition.
+        exclusions (Optional[Sequence[Union[str, datetime]]]): Specifies a sequence of cron strings
+            or datetime objects that should be excluded from the partition set. Every tick of the
+            cron schedule that matches an excluded datetime or matches the tick of an excluded
+            cron string will be excluded from the partition set.
 
     .. code-block:: python
 
+        from datetime import datetime
+        from dagster import weekly_partitioned_config
+
         @weekly_partitioned_config(start_date="2022-03-12")
+        def my_weekly_partitioned_config(start: datetime, end: datetime):
+            return {"start": start.strftime("%Y-%m-%d"), "end": end.strftime("%Y-%m-%d")}
         # creates partitions (2022-03-13-00:00, 2022-03-20-00:00), (2022-03-20-00:00, 2022-03-27-00:00), ...
 
         @weekly_partitioned_config(start_date="2022-03-12", minute_offset=15, hour_offset=3, day_offset=6)
+        def my_offset_weekly_partitioned_config(start: datetime, end: datetime):
+            return {"start": start.strftime("%Y-%m-%d"), "end": end.strftime("%Y-%m-%d")}
         # creates partitions (2022-03-12-03:15, 2022-03-19-03:15), (2022-03-19-03:15, 2022-03-26-03:15), ...
     """
 
@@ -263,6 +306,7 @@ def weekly_partitioned_config(
             timezone=timezone,
             fmt=fmt,
             end_offset=end_offset,
+            exclusions=exclusions,
         )
         return PartitionedConfig(
             run_config_for_partition_key_fn=wrap_time_window_run_config_fn(fn, partitions_def),
@@ -276,6 +320,7 @@ def weekly_partitioned_config(
     return inner
 
 
+@public
 def monthly_partitioned_config(
     start_date: Union[datetime, str],
     minute_offset: int = 0,
@@ -285,6 +330,7 @@ def monthly_partitioned_config(
     fmt: Optional[str] = None,
     end_offset: int = 0,
     tags_for_partition_fn: Optional[Callable[[datetime, datetime], Mapping[str, str]]] = None,
+    exclusions: Optional[Sequence[Union[str, datetime, TimestampWithTimezone]]] = None,
 ) -> Callable[
     [Callable[[datetime, datetime], Mapping[str, Any]]],
     PartitionedConfig[MonthlyPartitionsDefinition],
@@ -322,13 +368,24 @@ def monthly_partitioned_config(
         tags_for_partition_fn (Optional[Callable[[str], Mapping[str, str]]]): A function that
             accepts a partition time window and returns a dictionary of tags to attach to runs for
             that partition.
+        exclusions (Optional[Sequence[Union[str, datetime]]]): Specifies a sequence of cron strings
+            or datetime objects that should be excluded from the partition set. Every tick of the
+            cron schedule that matches an excluded datetime or matches the tick of an excluded
+            cron string will be excluded from the partition set.
 
     .. code-block:: python
 
+        from datetime import datetime
+        from dagster import monthly_partitioned_config
+
         @monthly_partitioned_config(start_date="2022-03-12")
+        def my_monthly_partitioned_config(start: datetime, end: datetime):
+            return {"start": start.strftime("%Y-%m-%d"), "end": end.strftime("%Y-%m-%d")}
         # creates partitions (2022-04-01-00:00, 2022-05-01-00:00), (2022-05-01-00:00, 2022-06-01-00:00), ...
 
         @monthly_partitioned_config(start_date="2022-03-12", minute_offset=15, hour_offset=3, day_offset=5)
+        def my_offset_monthly_partitioned_config(start: datetime, end: datetime):
+            return {"start": start.strftime("%Y-%m-%d"), "end": end.strftime("%Y-%m-%d")}
         # creates partitions (2022-04-05-03:15, 2022-05-05-03:15), (2022-05-05-03:15, 2022-06-05-03:15), ...
     """
 
@@ -345,6 +402,7 @@ def monthly_partitioned_config(
             timezone=timezone,
             fmt=fmt,
             end_offset=end_offset,
+            exclusions=exclusions,
         )
 
         return PartitionedConfig(

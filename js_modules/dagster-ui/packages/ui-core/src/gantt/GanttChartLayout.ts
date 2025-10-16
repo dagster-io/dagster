@@ -105,6 +105,7 @@ export const buildLayout = (params: BuildLayoutParams) => {
       if (isDynamicStep(box.node.name) && !isDynamicStep(highestYParent.node.name)) {
         continue;
       }
+      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
       const onTargetY = boxesByY[`${highestYParent.y}`]!;
       const taken = onTargetY.find((r) => r.x === box.x);
       if (taken) {
@@ -120,8 +121,10 @@ export const buildLayout = (params: BuildLayoutParams) => {
         continue;
       }
 
+      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
       boxesByY[`${box.y}`] = boxesByY[`${box.y}`]!.filter((b) => b !== box);
       box.y = highestYParent.y;
+      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
       boxesByY[`${box.y}`]!.push(box);
 
       changed = true;
@@ -135,13 +138,16 @@ export const buildLayout = (params: BuildLayoutParams) => {
     // resulting tree rather than placed randomly before their mutual dependents.
     let bottomY = 0;
     for (const y of Object.keys(boxesByY)) {
+      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
       const row = boxesByY[y]!;
       if (!row.length) {
         continue;
       }
+      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
       let x = row[0]!.root
         ? LEFT_INSET
-        : parents[row[0]!.node.name]![0]!.x + FLAT_INSET_FROM_PARENT;
+        : // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+          parents[row[0]!.node.name]![0]!.x + FLAT_INSET_FROM_PARENT;
       for (const box of row) {
         box.x = x;
         box.y = bottomY;
@@ -238,6 +244,7 @@ const addChildren = (boxes: GanttChartBox[], box: GanttChartBox, params: BuildLa
         boxes.push(depBox);
         added.push(depBox);
       } else {
+        // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
         depBox = boxes[depBoxIdx]!;
         ensureSubtreeAfterParentInArray(boxes, box, depBox);
       }
@@ -318,6 +325,7 @@ const cloneLayout = ({boxes, markers}: GanttChartLayout): GanttChartLayout => {
   }
 
   boxes.forEach((box, ii) => {
+    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
     nextBoxes[ii]!.children = box.children.map((c) => map.get(c));
   });
 
@@ -336,6 +344,7 @@ const positionAndSplitBoxes = (
   // Apply X values + widths to boxes, and break apart retries into their own boxes by looking
   // at the transitions recorded for each step.
   for (let ii = boxes.length - 1; ii >= 0; ii--) {
+    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
     const box = boxes[ii]!;
     const meta = metadata.steps[box.node.name];
     if (!meta) {
@@ -360,8 +369,10 @@ const positionAndSplitBoxes = (
 
     // Move the children (used to draw outbound lines) to the last box
     for (let jj = 0; jj < runBoxes.length - 1; jj++) {
+      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
       runBoxes[jj]!.children = [runBoxes[jj + 1]!];
     }
+    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
     runBoxes[runBoxes.length - 1]!.children = box.children;
 
     Object.assign(box, runBoxes[0]);
@@ -503,6 +514,7 @@ export const interestingQueriesFor = (metadata: IRunMetadataDict, layout: GanttC
   const results: {name: string; value: string}[] = [];
 
   const errorsQuery = Object.keys(metadata.steps)
+    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
     .filter((k) => metadata.steps[k]!.state === IStepState.FAILED)
     .map((k) => `+${k}`)
     .join(', ');
@@ -514,8 +526,11 @@ export const interestingQueriesFor = (metadata: IRunMetadataDict, layout: GanttC
     .filter((k) => metadata.steps[k]?.end && metadata.steps[k]?.start)
     .sort(
       (a, b) =>
+        // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
         metadata.steps[b]!.end! -
+        // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
         metadata.steps[b]!.start! -
+        // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
         (metadata.steps[a]!.end! - metadata.steps[a]!.start!),
     )
     .slice(0, 5)

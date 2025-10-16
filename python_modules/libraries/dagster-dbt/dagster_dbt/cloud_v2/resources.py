@@ -13,7 +13,7 @@ from dagster import (
     get_dagster_logger,
     multi_asset_check,
 )
-from dagster._annotations import beta
+from dagster._annotations import public
 from dagster._config.pythonic_config.resource import ResourceDependency
 from dagster._core.definitions.definitions_load_context import StateBackedDefinitionsLoader
 from dagster._record import record
@@ -57,19 +57,42 @@ def get_dagster_adhoc_job_name(
     return clean_name(name).upper()
 
 
-@beta
+@public
 class DbtCloudCredentials(NamedTuple):
-    """The DbtCloudCredentials to access your dbt Cloud Workspace."""
+    """The DbtCloudCredentials to access your dbt Cloud workspace.
+
+    Args:
+        account_id (int): The ID of your dbt Cloud account.
+        token (str): Your dbt Cloud API token.
+        access_url (str): Your dbt Cloud workspace URL.
+    """
 
     account_id: int
     token: str
     access_url: str
 
 
-@beta
+@public
 class DbtCloudWorkspace(ConfigurableResource):
     """This class represents a dbt Cloud workspace and provides utilities
     to interact with dbt Cloud APIs.
+
+    Args:
+        credentials (DbtCloudCredentials): An instance of DbtCloudCredentials class.
+        project_id (int): The ID of the dbt cloud project to use for this resource.
+        environment_id (int): The ID of the environment to use for the dbt Cloud
+            project used in this resource.
+        adhoc_job_name (Optional[str]): The name of the ad hoc job that will be
+            created by Dagster in your dbt Cloud workspace. This ad hoc job is
+            used to parse your project and materialize your dbt Cloud assets.
+            If not provided, this job name will be generated using your project
+            ID and environment ID.
+        request_max_retries (int): The maximum number of times requests to the
+            dbt Cloud API should be retried before failing.
+        request_retry_delay (float): Time (in seconds) to wait between each
+            request retry.
+        request_timeout: Time (in seconds) after which the requests to dbt Cloud
+            are declared timed out.
     """
 
     credentials: ResourceDependency[DbtCloudCredentials]
@@ -227,7 +250,8 @@ class DbtCloudWorkspace(ConfigurableResource):
             args=["parse"],
             client=self.get_client(),
         )
-        run_handler.wait_for_success()
+        run = run_handler.wait()
+        run.raise_for_status()
         return DbtCloudWorkspaceData(
             project_id=self.project_id,
             environment_id=self.environment_id,
@@ -317,13 +341,21 @@ class DbtCloudWorkspace(ConfigurableResource):
             if isinstance(spec, AssetCheckSpec)
         ]
 
+    @public
     def cli(
         self,
         args: Sequence[str],
         dagster_dbt_translator: Optional[DagsterDbtTranslator] = None,
         context: Optional[AssetExecutionContext] = None,
     ) -> DbtCloudCliInvocation:
-        """Creates a dbt cli invocation with the dbt Cloud client."""
+        """Creates a dbt CLI invocation with the dbt Cloud client.
+
+        Args:
+            args: (Sequence[str]): The dbt CLI command to execute.
+            dagster_dbt_translator (Optional[DagsterDbtTranslator]): Allows customizing how to map
+                dbt models, seeds, etc. to asset keys and asset metadata.
+            context (Optional[AssetExecutionContext]): The execution context.
+        """
         dagster_dbt_translator = validate_opt_translator(dagster_dbt_translator)
         dagster_dbt_translator = dagster_dbt_translator or DagsterDbtTranslator()
 
@@ -361,7 +393,6 @@ class DbtCloudWorkspace(ConfigurableResource):
         )
 
 
-@beta
 def load_dbt_cloud_asset_specs(
     workspace: DbtCloudWorkspace,
     dagster_dbt_translator: Optional[DagsterDbtTranslator] = None,
@@ -377,7 +408,6 @@ def load_dbt_cloud_asset_specs(
     )
 
 
-@beta
 def load_dbt_cloud_check_specs(
     workspace: DbtCloudWorkspace,
     dagster_dbt_translator: Optional[DagsterDbtTranslator] = None,
@@ -393,7 +423,6 @@ def load_dbt_cloud_check_specs(
     )
 
 
-@beta
 @record
 class DbtCloudWorkspaceDefsLoader(StateBackedDefinitionsLoader[DbtCloudWorkspaceData]):
     workspace: DbtCloudWorkspace

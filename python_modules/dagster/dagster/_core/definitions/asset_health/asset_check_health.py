@@ -25,6 +25,9 @@ class AssetCheckHealthState(LoadableBy[AssetKey]):
     failing_checks: set[AssetCheckKey]
     warning_checks: set[AssetCheckKey]
     all_checks: set[AssetCheckKey]
+    latest_passing_check_timestamp: Optional[float] = None
+    latest_failing_check_timestamp: Optional[float] = None
+    latest_warning_check_timestamp: Optional[float] = None
 
     @classmethod
     def default(cls) -> "AssetCheckHealthState":
@@ -33,6 +36,9 @@ class AssetCheckHealthState(LoadableBy[AssetKey]):
             failing_checks=set(),
             warning_checks=set(),
             all_checks=set(),
+            latest_passing_check_timestamp=None,
+            latest_failing_check_timestamp=None,
+            latest_warning_check_timestamp=None,
         )
 
     @property
@@ -76,6 +82,10 @@ class AssetCheckHealthState(LoadableBy[AssetKey]):
         passing_checks = set()
         warning_checks = set()
         failing_checks = set()
+
+        latest_passing_check_timestamp = None
+        latest_failing_check_timestamp = None
+        latest_warning_check_timestamp = None
 
         check_records = await AssetCheckSummaryRecord.gen_many(
             loading_context,
@@ -125,20 +135,55 @@ class AssetCheckHealthState(LoadableBy[AssetKey]):
                     and last_check_evaluation.severity == AssetCheckSeverity.WARN
                 ):
                     warning_checks.add(check_key)
+                    if check_record.last_completed_check_execution_record is not None and (
+                        latest_warning_check_timestamp is None
+                        or latest_warning_check_timestamp
+                        < check_record.last_completed_check_execution_record.create_timestamp
+                    ):
+                        latest_warning_check_timestamp = (
+                            check_record.last_completed_check_execution_record.create_timestamp
+                        )
                 else:
                     failing_checks.add(check_key)
+                    if check_record.last_completed_check_execution_record is not None and (
+                        latest_failing_check_timestamp is None
+                        or latest_failing_check_timestamp
+                        < check_record.last_completed_check_execution_record.create_timestamp
+                    ):
+                        latest_failing_check_timestamp = (
+                            check_record.last_completed_check_execution_record.create_timestamp
+                        )
             elif last_check_execution_status == AssetCheckExecutionResolvedStatus.EXECUTION_FAILED:
                 # EXECUTION_FAILED checks don't have an evaluation and we want to report them as failures
                 failing_checks.add(check_key)
+                if check_record.last_completed_check_execution_record is not None and (
+                    latest_failing_check_timestamp is None
+                    or latest_failing_check_timestamp
+                    < check_record.last_completed_check_execution_record.create_timestamp
+                ):
+                    latest_failing_check_timestamp = (
+                        check_record.last_completed_check_execution_record.create_timestamp
+                    )
             else:
                 # asset check passed
                 passing_checks.add(check_key)
+                if check_record.last_completed_check_execution_record is not None and (
+                    latest_passing_check_timestamp is None
+                    or latest_passing_check_timestamp
+                    < check_record.last_completed_check_execution_record.create_timestamp
+                ):
+                    latest_passing_check_timestamp = (
+                        check_record.last_completed_check_execution_record.create_timestamp
+                    )
 
         return AssetCheckHealthState(
             passing_checks=passing_checks,
             failing_checks=failing_checks,
             warning_checks=warning_checks,
             all_checks=check_keys,
+            latest_passing_check_timestamp=latest_passing_check_timestamp,
+            latest_failing_check_timestamp=latest_failing_check_timestamp,
+            latest_warning_check_timestamp=latest_warning_check_timestamp,
         )
 
     @classmethod
@@ -148,11 +193,7 @@ class AssetCheckHealthState(LoadableBy[AssetKey]):
         asset_check_health_states = context.instance.get_asset_check_health_state_for_assets(
             list(keys)
         )
-
-        if asset_check_health_states is None:
-            return [None for _ in keys]
-        else:
-            return [asset_check_health_states.get(key) for key in keys]
+        return [asset_check_health_states.get(key) for key in keys]
 
 
 @whitelist_for_serdes
@@ -194,13 +235,19 @@ async def get_asset_check_status_and_metadata(
     asset_check_health_state = await AssetCheckHealthState.gen(context, asset_key)
     # captures streamline disabled or consumer state doesn't exist
     if asset_check_health_state is None:
-        if context.instance.streamline_read_asset_health_required():
+        if context.instance.streamline_read_asset_health_required("asset-check-health"):
             return AssetHealthStatus.UNKNOWN, None
 
         # Note - this will only compute check health if there is a definition for the asset and checks in the
         # asset graph. If check results are reported for assets or checks that are not in the asset graph, those
         # results will not be picked up. If we add storage methods to get all check results for an asset by
         # asset key, rather than by check keys, we could compute check health for the asset in this case.
+
+        if not context.asset_graph.has(
+            asset_key
+        ) or not context.asset_graph.get_check_keys_for_assets({asset_key}):
+            return AssetHealthStatus.NOT_APPLICABLE, None
+
         remote_check_nodes = context.asset_graph.get_checks_for_asset(asset_key)
         asset_check_health_state = await AssetCheckHealthState.compute_for_asset_checks(
             {remote_check_node.asset_check.key for remote_check_node in remote_check_nodes},

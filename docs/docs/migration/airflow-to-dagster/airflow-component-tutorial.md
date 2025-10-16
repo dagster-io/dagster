@@ -4,10 +4,6 @@ sidebar_position: 20
 description: The dagster-airlift library provides an AirflowInstanceComponent, which you can use to peer a Dagster project with an Airflow instance.
 ---
 
-import DgComponentsRc from '@site/docs/partials/\_DgComponentsRc.md';
-
-<DgComponentsRc />
-
 The [dagster-airlift](/integrations/libraries/airlift) library provides an `AirflowInstanceComponent` which can be used to represent Airflow DAGs in Dagster, allowing easy interoperability between Airflow and Dagster.
 
 ## Setup and peering
@@ -16,7 +12,7 @@ The [dagster-airlift](/integrations/libraries/airlift) library provides an `Airf
 
 To begin, you'll need a Dagster project. You can use an [existing components-ready project](/guides/build/projects/moving-to-components/migrating-project) or create a new one:
 
-uvx -U create-dagster project my-project && cd my-project
+uvx create-dagster@latest project my-project && cd my-project
 
 Activate the project virtual environment:
 
@@ -74,4 +70,3 @@ You can manually define which assets are produced by a given Airflow DAG by edit
 If you have a more specific mapping from a task within the dag to a set of assets, you can also set these mappings at the task level:
 
 <CodeExample path="docs_snippets/docs_snippets/integrations/airlift_v2/represent_airflow_dags_in_dagster/component_task_mappings.yaml" />
-

@@ -15,16 +15,18 @@ from dagster._core.definitions.partitions.utils.base import (
     generate_partition_key_based_definition_id,
 )
 from dagster._core.errors import DagsterInvalidInvocationError, DagsterUnknownPartitionError
-from dagster._core.instance import DynamicPartitionsStore
 from dagster._core.storage.tags import PARTITION_NAME_TAG
 from dagster._core.types.pagination import PaginatedResults
 
 if TYPE_CHECKING:
     from dagster._core.definitions.partitions.subset.partitions_subset import PartitionsSubset
+    from dagster._core.instance import DynamicPartitionsStore
+
 
 T_str = TypeVar("T_str", bound=str, default=str, covariant=True)
 
 
+@public
 class PartitionsDefinition(ABC, Generic[T_str]):
     """Defines a set of partitions, which can be attached to a software-defined asset or job.
 
@@ -42,7 +44,7 @@ class PartitionsDefinition(ABC, Generic[T_str]):
     def get_partition_keys(
         self,
         current_time: Optional[datetime] = None,
-        dynamic_partitions_store: Optional[DynamicPartitionsStore] = None,
+        dynamic_partitions_store: Optional["DynamicPartitionsStore"] = None,
     ) -> Sequence[T_str]:
         """Returns a list of strings representing the partition keys of the PartitionsDefinition.
 

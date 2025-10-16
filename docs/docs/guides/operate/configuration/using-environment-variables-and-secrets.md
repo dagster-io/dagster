@@ -75,8 +75,8 @@ In this section, we'll demonstrate how to access environment variables once they
 
 To access environment variables in your code, you can either use the [`os.getenv`](https://docs.python.org/3/library/os.html#os.getenv) function or the Dagster <PyObject section="resources" module="dagster" object="EnvVar"/> class.
 
-* **When you use `os.getenv`**, the variable's value is retrieved when Dagster loads the code location and **will** be visible in the UI.
-* **When you use EnvVar**, the variable's value is retrieved at runtime and **won't** be visible in the UI.
+- **When you use `os.getenv`**, the variable's value is retrieved when Dagster loads the code location and **will** be visible in the UI.
+- **When you use EnvVar**, the variable's value is retrieved at runtime and **won't** be visible in the UI.
 
 Using the `EnvVar` approach has a few unique benefits:
 
@@ -163,7 +163,7 @@ For more information, see the [Handling secrets](#handling-secrets) and [Per-env
 
 :::note
 
-The example code in this section follows the structure of a Dagster project created with the [`create-dagster CLI](/api/dg/create-dagster). To create a Dagster project with this structure, see [Creating a new Dagster project](/guides/build/projects/creating-a-new-project).
+The example code in this section follows the structure of a Dagster project created with the [`create-dagster CLI](/api/clis/create-dagster). To create a Dagster project with this structure, see [Creating a new Dagster project](/guides/build/projects/creating-a-new-project).
 
 :::
 

@@ -16,7 +16,7 @@ First, create a new shell and navigate to the root of the tutorial directory. Yo
 
 ```bash
 source .venv/bin/activate
-uv pip install 'dagster-airlift[core]' dagster-webserver dagster
+uv add 'dagster-airlift[core]' dagster-webserver dagster
 ```
 
 :::note dagster-airlift API

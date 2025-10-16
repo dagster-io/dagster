@@ -23,6 +23,7 @@ from dagster_shared.serdes.serdes import (
     UnpackContext,
     is_whitelisted_for_serdes_object,
 )
+from dagster_shared.utils.timing import format_duration
 
 import dagster._check as check
 from dagster._annotations import public
@@ -70,7 +71,6 @@ from dagster._utils.error import (
     serializable_error_info_from_exc_info,
     truncate_event_error_info,
 )
-from dagster._utils.timing import format_duration
 
 if TYPE_CHECKING:
     from dagster._core.definitions.events import ObjectStoreOperation
@@ -108,6 +108,7 @@ EventSpecificData = Union[
 ]
 
 
+@public
 class DagsterEventType(str, Enum):
     """The types of events that may be yielded by op and job execution."""
 
@@ -272,6 +273,8 @@ BATCH_WRITABLE_EVENTS = {
     DagsterEventType.ASSET_MATERIALIZATION,
     DagsterEventType.ASSET_OBSERVATION,
     DagsterEventType.ASSET_FAILED_TO_MATERIALIZE,
+    DagsterEventType.ASSET_MATERIALIZATION_PLANNED,
+    DagsterEventType.ASSET_CHECK_EVALUATION_PLANNED,
 }
 
 ASSET_EVENTS = {
@@ -451,6 +454,7 @@ class DagsterEventBatchMetadata(NamedTuple):
         "job_name": "pipeline_name",
     },
 )
+@public
 class DagsterEvent(
     NamedTuple(
         "_DagsterEvent",

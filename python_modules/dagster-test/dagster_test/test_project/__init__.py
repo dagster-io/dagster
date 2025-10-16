@@ -15,17 +15,14 @@ from dagster._core.origin import (
     JobPythonOrigin,
     RepositoryPythonOrigin,
 )
-from dagster._core.remote_representation import (
+from dagster._core.remote_origin import (
     GrpcServerCodeLocationOrigin,
     InProcessCodeLocationOrigin,
-    RemoteJob,
-    RemoteSchedule,
-)
-from dagster._core.remote_representation.origin import (
     RemoteInstigatorOrigin,
     RemoteJobOrigin,
     RemoteRepositoryOrigin,
 )
+from dagster._core.remote_representation.external import RemoteJob, RemoteSchedule
 from dagster._core.test_utils import in_process_test_workspace
 from dagster._core.types.loadable_target_origin import LoadableTargetOrigin
 from dagster._serdes import create_snapshot_id
@@ -82,7 +79,7 @@ def find_local_test_image(docker_image):
 def build_and_tag_test_image(tag):
     check.str_param(tag, "tag")
 
-    base_python = "3.11"
+    base_python = "3.12"
 
     # Build and tag local dagster test image
     return subprocess.check_output(["./build.sh", base_python, tag], cwd=get_test_repo_path())
@@ -95,7 +92,7 @@ def get_test_project_recon_job(
     filename: Optional[str] = None,
 ) -> "ReOriginatedReconstructableJobForTest":
     filename = filename or "repo.py"
-    return ReOriginatedReconstructableJobForTest(  # type: ignore # ignored for update, fix me!
+    return ReOriginatedReconstructableJobForTest(
         ReconstructableRepository.for_file(
             file_relative_path(__file__, f"test_jobs/{filename}"),
             "define_demo_execution_repo",

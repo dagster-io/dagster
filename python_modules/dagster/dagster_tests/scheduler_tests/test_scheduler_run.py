@@ -9,17 +9,17 @@ from typing import Optional, cast
 
 import dagster as dg
 import pytest
-from dagster import AssetExecutionContext, DefaultScheduleStatus, schedule
+from dagster import AssetExecutionContext, AssetKey, DefaultScheduleStatus, schedule
+from dagster._core.definitions.run_request import RunRequest
 from dagster._core.instance import DagsterInstance
-from dagster._core.remote_representation import (
-    CodeLocation,
-    GrpcServerCodeLocation,
+from dagster._core.remote_origin import (
     GrpcServerCodeLocationOrigin,
+    ManagedGrpcPythonEnvCodeLocationOrigin,
     RemoteInstigatorOrigin,
     RemoteRepositoryOrigin,
 )
+from dagster._core.remote_representation.code_location import CodeLocation, GrpcServerCodeLocation
 from dagster._core.remote_representation.external import RemoteRepository, RemoteSchedule
-from dagster._core.remote_representation.origin import ManagedGrpcPythonEnvCodeLocationOrigin
 from dagster._core.scheduler.instigation import (
     InstigatorState,
     InstigatorStatus,
@@ -478,6 +478,16 @@ def asset1():
     return "asset1"
 
 
+@dg.asset_check(asset=asset1)
+def asset_1_check_1():
+    return dg.AssetCheckResult(passed=True)
+
+
+@dg.asset_check(asset=asset1)
+def asset_1_check_2():
+    return dg.AssetCheckResult(passed=True)
+
+
 @dg.asset
 def asset2(asset1):
     return asset1 + "asset2"
@@ -489,6 +499,11 @@ asset_job = dg.define_asset_job("asset_job")
 @schedule(job=asset_job, cron_schedule="@daily")
 def asset_selection_schedule():
     return dg.RunRequest(asset_selection=[asset1.key])
+
+
+@schedule(job=asset_job, cron_schedule="@daily")
+def asset_check_selection_schedule():
+    return RunRequest(asset_selection=[asset1.key], asset_check_keys=[asset_1_check_1.check_key])
 
 
 @schedule(job=asset_job, cron_schedule="@daily")
@@ -598,8 +613,11 @@ def the_repo():
         empty_schedule,
         many_requests_schedule,
         [asset1, asset2, source_asset],
+        asset_1_check_1,
+        asset_1_check_2,
         asset_selection_schedule,
         stale_asset_selection_schedule,
+        asset_check_selection_schedule,
         source_asset_observation_schedule,
         static_partitioned_asset1,
         static_partitioned_asset1_schedule,
@@ -2873,6 +2891,55 @@ class TestSchedulerRun:
                 freeze_datetime,
                 TickStatus.SUCCESS,
                 [run.run_id for run in runs],
+            )
+
+    @pytest.mark.parametrize("executor", get_schedule_executors())
+    def test_asset_check_selection(
+        self,
+        scheduler_instance: DagsterInstance,
+        workspace_context: WorkspaceProcessContext,
+        remote_repo: RemoteRepository,
+        executor: ThreadPoolExecutor,
+    ):
+        # TestSchedulerRun::test_asset_check_selection
+        freeze_datetime = feb_27_2019_one_second_to_midnight()
+        schedule = remote_repo.get_schedule("asset_check_selection_schedule")
+        schedule_origin = schedule.get_remote_origin()
+
+        with freeze_time(freeze_datetime):
+            scheduler_instance.start_schedule(schedule)
+
+            ticks = scheduler_instance.get_ticks(schedule_origin.get_id(), schedule.selector_id)
+
+            # launch_scheduled_runs does nothing before the first tick
+            evaluate_schedules(workspace_context, executor, get_current_datetime())
+            scheduler_instance.get_ticks(schedule_origin.get_id(), schedule.selector_id)
+
+        freeze_datetime = freeze_datetime + relativedelta(seconds=2)
+        with freeze_time(freeze_datetime):
+            evaluate_schedules(workspace_context, executor, get_current_datetime())
+
+            assert scheduler_instance.get_runs_count() == 1
+            ticks = scheduler_instance.get_ticks(schedule_origin.get_id(), schedule.selector_id)
+            assert len(ticks) == 1
+
+            expected_datetime = create_datetime(year=2019, month=2, day=28)
+
+            validate_tick(
+                ticks[0],
+                schedule,
+                expected_datetime,
+                TickStatus.SUCCESS,
+                [run.run_id for run in scheduler_instance.get_runs()],
+            )
+
+            wait_for_all_runs_to_start(scheduler_instance)
+            run = next(iter(scheduler_instance.get_runs()))
+            assert run.asset_selection == {AssetKey("asset1")}
+            assert run.asset_check_selection == {asset_1_check_1.check_key}
+
+            validate_run_started(
+                scheduler_instance, run, execution_time=create_datetime(2019, 2, 28)
             )
 
     @pytest.mark.parametrize("executor", get_schedule_executors())

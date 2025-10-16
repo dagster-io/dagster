@@ -2,6 +2,7 @@
 description: Set up the Dagster+ agent on a Kubernetes cluster using Helm. Configure secrets, manage deployments, and perform rolling upgrades.
 sidebar_position: 2100
 title: Kubernetes agent setup
+tags: [dagster-plus-feature]
 ---
 
 This page provides instructions for running the Dagster+ agent on a [Kubernetes](https://kubernetes.io) cluster.
@@ -10,7 +11,7 @@ This page provides instructions for running the Dagster+ agent on a [Kubernetes]
 
 ### Prerequisites
 
-You'll need a Kubernetes cluster. This can be a self-hosted Kubernetes cluster or a managed offering like [Amazon EKS](https://aws.amazon.com/eks), [Azure AKS](https://azure.microsoft.com/en-us/products/kubernetes-service), or [Google GKE](https://cloud.google.com/kubernetes-engine).
+You'll need a Kubernetes cluster running a currently supported [Kubernetes release](https://kubernetes.io/releases/). This can be a self-hosted Kubernetes cluster or a managed offering like [Amazon EKS](https://aws.amazon.com/eks), [Azure AKS](https://azure.microsoft.com/en-us/products/kubernetes-service), or [Google GKE](https://cloud.google.com/kubernetes-engine).
 
 You'll also need access to a container registry to which you can push images and from which pods in the Kubernetes cluster can pull images. This can be a self-hosted registry or a managed offering like [Amazon ECR](https://aws.amazon.com/ecr), [Azure ACR](https://azure.microsoft.com/en-us/products/container-registry), or [Google GCR](https://cloud.google.com/artifact-registry).
 
@@ -90,12 +91,14 @@ An exhaustive list of settings is available on the [Kubernetes agent configurati
 
 ### Configure your agents to serve branch deployments
 
-[Branch deployments](/deployment/dagster-plus/ci-cd/branch-deployments/index.md) are lightweight staging environments created for each code change. To configure your Dagster+ agent to manage them:
+[Branch deployments](/deployment/dagster-plus/ci-cd/branch-deployments) are lightweight staging environments created for each code change. To configure your Dagster+ agent to manage them:
 
 ```yaml
 # values.yaml
 dagsterCloud:
-  branchDeployment: true
+  deployments: # can omit full deployments to serve only branch deployments in a new agent
+    - prod
+  branchDeployments: true
 ```
 
 ```shell
@@ -124,7 +127,8 @@ Work load balanced across agents isn't sticky; there's no guarantee the agent th
 
 ```yaml
 # values.yaml
-isolatedAgents: true
+isolatedAgents:
+  enabled: true
 ```
 
 ```shell
@@ -250,6 +254,7 @@ helm --namespace dagster-cloud upgrade agent \
 Modify the [`dagster_cloud.yaml` file](/deployment/code-locations/dagster-cloud-yaml) in your project's Git repository:
 
 ```yaml file=dagster_cloud.yaml
+# dagster_cloud.yaml
 location:
   - location_name: cloud-examples
     image: dagster/dagster-cloud-examples:latest
@@ -275,6 +280,7 @@ If you need to request secrets from a secret manager like AWS Secrets Manager or
 Modify the [`dagster_cloud.yaml` file](/deployment/code-locations/dagster-cloud-yaml) in your project's Git repository:
 
 ```yaml file=dagster_cloud.yaml
+# dagster_cloud.yaml
 locations:
   - location_name: cloud-examples
     image: dagster/dagster-cloud-examples:latest
@@ -315,6 +321,7 @@ You may wish to run data pipelines from project A in Kubernetes cluster A, and p
   Specify an agent queue for the on-prem agent:
 
   ```yaml file=values.yaml
+  # values.yaml
   dagsterCloud:
     agentQueues:
       additionalQueues:
@@ -332,6 +339,7 @@ You may wish to run data pipelines from project A in Kubernetes cluster A, and p
   Specify an agent queue for the agent on AWS:
 
   ```yaml file=values.yaml
+  # values.yaml
   dagsterCloud:
     agentQueues:
       additionalQueues:
@@ -349,6 +357,7 @@ You may wish to run data pipelines from project A in Kubernetes cluster A, and p
 - Create separate code locations for each project
 - Update the `dagster_cloud.yaml` file for each code location
   ```yaml file=dagster_cloud.yaml
+  # dagster_cloud.yaml
   locations:
     - location_name: project-a
       ...
@@ -362,6 +371,7 @@ You may wish to run data pipelines from project A in Kubernetes cluster A, and p
 Code locations without an `agent_queue` will be routed to a default queue. By default, all agents will serve this default queue. You can specify which agent should serve the default queue using the `includeDefaultQueue` setting:
 
 ```yaml file=values.yaml
+# values.yaml
 dagsterCloud:
   agentQueues:
     includeDefaultQueue: true
@@ -399,6 +409,7 @@ First determine if you want to change the requested resource for everything in a
 Modify the [`dagster_cloud.yaml` file](/deployment/code-locations/dagster-cloud-yaml) in your project's Git repository:
 
 ```yaml file=dagster_cloud.yaml
+# dagster_cloud.yaml
 locations:
   - location_name: cloud-examples
     image: dagster/dagster-cloud-examples:latest

@@ -1,6 +1,7 @@
 import sys
 import tempfile
 from abc import ABC, abstractmethod
+from collections.abc import Generator
 from contextlib import contextmanager
 from unittest.mock import patch
 
@@ -16,7 +17,7 @@ from dagster._core.storage.root import LocalArtifactStorage
 from dagster._core.storage.runs import InMemoryRunStorage
 from dagster._core.test_utils import instance_for_test
 from dagster._core.types.loadable_target_origin import LoadableTargetOrigin
-from dagster._core.workspace.context import WorkspaceProcessContext
+from dagster._core.workspace.context import WorkspaceProcessContext, WorkspaceRequestContext
 from dagster._core.workspace.load_target import (
     GrpcServerTarget,
     ModuleTarget,
@@ -768,7 +769,10 @@ def manage_graphql_context(context_variant):
 
 class _GraphQLContextTestSuite(ABC):
     @abstractmethod
-    def yield_graphql_context(self, request):
+    @contextmanager
+    def yield_graphql_context(
+        self, class_scoped_context
+    ) -> Generator[WorkspaceRequestContext, None, None]:
         pass
 
     @contextmanager
@@ -837,22 +841,35 @@ def make_graphql_context_test_suite(context_variants):
                 yield graphql_context
 
         @pytest.fixture(name="graphql_context")
-        def yield_graphql_context(self, class_scoped_graphql_context):  # pyright: ignore[reportIncompatibleMethodOverride]
-            instance = class_scoped_graphql_context.instance
+        def graphql_context_fixture(self, class_scoped_graphql_context):
+            with self.yield_graphql_context(class_scoped_graphql_context) as context:
+                yield context
+
+        @pytest.fixture(name="graphql_client")
+        def graphql_client_fixture(self, graphql_context):
+            with self.yield_graphql_client(graphql_context) as client:
+                yield client
+
+        @contextmanager
+        def yield_graphql_context(
+            self, class_scoped_context
+        ) -> Generator[WorkspaceRequestContext, None, None]:
+            instance = class_scoped_context.instance
             instance.wipe()
             instance.wipe_all_schedules()
-            yield class_scoped_graphql_context.create_request_context()
+            with class_scoped_context.create_request_context() as request_context:
+                yield request_context
             # ensure that any runs launched by the test are cleaned up
             # Since launcher is lazy loaded, we don't need to do anyting if it's None
             if instance._run_launcher:  # noqa: SLF001
                 instance._run_launcher.join()  # noqa: SLF001
 
-        @pytest.fixture(name="graphql_client")
-        def yield_graphql_client(self, graphql_context):
+        @contextmanager
+        def yield_graphql_client(self, context) -> Generator[DagsterGraphQLClient, None, None]:
             class MockedGraphQLClient:
                 def execute(self, gql_query: DocumentNode, variable_values=None):
                     return execute_dagster_graphql(
-                        graphql_context,
+                        context,
                         print_ast(gql_query),  # convert doc back to str
                         variable_values,
                     ).data

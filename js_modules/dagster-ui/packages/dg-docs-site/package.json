@@ -14,7 +14,7 @@
     "@dagster-io/dg-docs-components": "workspace:*",
     "clsx": "^2.1.1",
     "highlight.js": "^11.11.1",
-    "next": "^15.2.3",
+    "next": "^15.4.7",
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
     "react-markdown": "^10.1.0",
@@ -27,11 +27,11 @@
     "@types/node": "^20",
     "@types/react": "^18.3.9",
     "@types/react-dom": "^18.3.0",
-    "eslint": "^9",
+    "eslint": "^9.31.0",
     "eslint-config-next": "15.2.1",
     "eslint-config-prettier": "^10.1.1",
     "eslint-plugin-prettier": "^5.2.3",
     "prettier": "^3.5.3",
-    "typescript": "^5"
+    "typescript": "^5.9.2"
   }
 }

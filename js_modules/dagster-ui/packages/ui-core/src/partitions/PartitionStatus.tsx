@@ -273,7 +273,9 @@ export const PartitionStatus = React.memo(
                   left: 0,
                   width: indexToPct(
                     Math.min(
+                      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
                       partitionNames.indexOf(selected[selected.length - 1]!),
+                      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
                       partitionNames.indexOf(selected[0]!),
                     ),
                   ),
@@ -284,13 +286,17 @@ export const PartitionStatus = React.memo(
                 style={{
                   left: `min(calc(100% - 3px), ${indexToPct(
                     Math.min(
+                      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
                       partitionNames.indexOf(selected[0]!),
+                      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
                       partitionNames.indexOf(selected[selected.length - 1]!),
                     ),
                   )})`,
                   width: indexToPct(
                     Math.abs(
+                      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
                       partitionNames.indexOf(selected[selected.length - 1]!) -
+                        // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
                         partitionNames.indexOf(selected[0]!),
                     ) + 1,
                   ),
@@ -305,7 +311,9 @@ export const PartitionStatus = React.memo(
                     partitionNames.length -
                       1 -
                       Math.max(
+                        // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
                         partitionNames.indexOf(selected[selected.length - 1]!),
+                        // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
                         partitionNames.indexOf(selected[0]!),
                       ),
                   ),
@@ -354,7 +362,8 @@ function useColorSegments(
       ? opRunStatusToColorRanges(partitionNames, splitPartitions, _statusForKey)
       : _ranges && splitPartitions
         ? splitColorSegments(partitionNames, assetHealthToColorSegments(_ranges))
-        : assetHealthToColorSegments(_ranges!);
+        : // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+          assetHealthToColorSegments(_ranges!);
   }, [splitPartitions, partitionNames, _ranges, _statusForKey]);
 }
 
@@ -366,7 +375,9 @@ function splitColorSegments(partitionNames: string[], segments: ColorSegment[]):
   for (const segment of segments) {
     for (let idx = segment.start.idx; idx <= segment.end.idx; idx++) {
       result.push({
+        // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
         start: {idx, key: partitionNames[idx]!},
+        // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
         end: {idx, key: partitionNames[idx]!},
         label: segment.label,
         style: segment.style,

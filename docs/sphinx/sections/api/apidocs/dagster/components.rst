@@ -12,9 +12,14 @@ Using Components
 .. autoclass:: ComponentLoadContext
    :members:
 
+.. autoclass:: ComponentTree
+   :members:
+
 
 Building Components
 -------------------
+
+.. autodecorator:: template_var
 
 .. autoclass:: Component
     :members:

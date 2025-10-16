@@ -46,7 +46,9 @@ export const AssetCheckOverview = ({
       executions
         .filter((e) => e.evaluation)
         .map((e) => ({
+          // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
           metadataEntries: e.evaluation!.metadataEntries,
+          // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
           timestamp: `${Math.round(e.evaluation!.timestamp * 1000)}`,
         }))
         .map((e) => ({latest: e, all: [e], timestamp: e.timestamp})),

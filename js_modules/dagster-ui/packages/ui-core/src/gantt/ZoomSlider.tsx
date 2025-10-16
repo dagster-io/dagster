@@ -13,6 +13,7 @@ export const ZoomSlider = React.memo((props: {value: number; onChange: (v: numbe
       $fillColor={Colors.accentGray()}
       className="bp5-slider bp5-slider-unlabeled"
       onMouseDown={(e: React.MouseEvent) => {
+        // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
         const rect = e.currentTarget.closest('.bp5-slider')!.getBoundingClientRect();
 
         let initialX: number;

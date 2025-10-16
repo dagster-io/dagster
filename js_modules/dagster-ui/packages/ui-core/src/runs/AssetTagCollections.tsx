@@ -94,6 +94,7 @@ export function useAdjustChildVisibilityToFill(moreLabelFn: (count: number) => s
     }
 
     const tagsEls = children.slice(0, -1);
+    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
     const moreEl = children.pop()!;
 
     const apply = () => {

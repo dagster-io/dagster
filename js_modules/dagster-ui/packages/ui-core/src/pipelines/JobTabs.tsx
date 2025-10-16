@@ -34,7 +34,7 @@ export const JobTabs = (props: Props) => {
   }, [matchingTab, tabs]);
 
   return (
-    <Tabs size="large" selectedTabId={selectedTab!.id}>
+    <Tabs size="large" selectedTabId={selectedTab?.id}>
       {tabs
         .filter((tab) => !tab.isHidden)
         .map((tab) => {

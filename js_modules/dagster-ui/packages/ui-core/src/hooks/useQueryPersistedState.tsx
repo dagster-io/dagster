@@ -182,13 +182,13 @@ function areQueriesEqual(queryA: qs.ParsedQs, queryB: qs.ParsedQs) {
 }
 
 function inferTypeOfQueryParam<T>(q: any): T {
-  return q === 'false' ? false : q === 'true' ? true : q;
+  return q === 'false' ? (false as T) : q === 'true' ? (true as T) : q;
 }
 
 function inferTypeOfQueryParams<T>(qs: {[key: string]: any}) {
   const result: {[key: string]: any} = {};
   for (const key of Object.keys(qs)) {
-    result[key] = inferTypeOfQueryParam<any>(qs[key]);
+    result[key] = inferTypeOfQueryParam<T>(qs[key]);
   }
   return result as T;
 }

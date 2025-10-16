@@ -2,6 +2,7 @@ from collections.abc import Mapping, Sequence
 from typing import TYPE_CHECKING, Any, Optional, Union
 
 import dagster._check as check
+from dagster._annotations import public
 from dagster._core.definitions.assets.definition.asset_spec import AssetSpec
 from dagster._core.definitions.assets.definition.assets_definition import AssetsDefinition
 from dagster._core.definitions.resource_requirement import ResourceKeyRequirement
@@ -20,6 +21,7 @@ if TYPE_CHECKING:
 EPHEMERAL_JOB_NAME = "__ephemeral_asset_job__"
 
 
+@public
 def materialize(
     assets: Sequence[Union[AssetsDefinition, AssetSpec, SourceAsset]],
     run_config: Any = None,
@@ -113,6 +115,7 @@ def materialize(
     )
 
 
+@public
 def materialize_to_memory(
     assets: Sequence[Union[AssetsDefinition, AssetSpec, SourceAsset]],
     run_config: Any = None,

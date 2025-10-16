@@ -71,6 +71,7 @@ export const hashObject = weakMapMemoize((obj: any): string => {
 
   // Process the object iteratively
   while (stack.length > 0) {
+    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
     const current = stack[stack.length - 1]!;
 
     // Start processing a new item
@@ -140,6 +141,7 @@ export const hashObject = weakMapMemoize((obj: any): string => {
           current.state = 2;
         }
       } else if (current.type === TYPE_OBJECT) {
+        // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
         const keys = current.keys!;
 
         if (current.index > 0) {
@@ -147,6 +149,7 @@ export const hashObject = weakMapMemoize((obj: any): string => {
         }
 
         if (current.index < keys.length) {
+          // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
           const key = keys[current.index++]!;
           hashChunk(key);
           hashChunk(smallBuffer[4]); // ':'

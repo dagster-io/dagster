@@ -119,6 +119,7 @@ from dagster_graphql.schema.backfill import (
 from dagster_graphql.schema.entity_key import GrapheneAssetKey
 from dagster_graphql.schema.env_vars import GrapheneEnvVarWithConsumersListOrError
 from dagster_graphql.schema.external import (
+    GrapheneDefsStateInfo,
     GrapheneRepositoriesOrError,
     GrapheneRepositoryConnection,
     GrapheneRepositoryOrError,
@@ -649,6 +650,11 @@ class GrapheneQuery(graphene.ObjectType):
         description="Retrieve the executions for a given asset check.",
     )
 
+    latestDefsStateInfo = graphene.Field(
+        GrapheneDefsStateInfo,
+        description="Retrieve the latest available DefsStateInfo for the current workspace.",
+    )
+
     @capture_error
     def resolve_repositoriesOrError(
         self,
@@ -687,7 +693,7 @@ class GrapheneQuery(graphene.ObjectType):
         return fetch_location_statuses(graphene_info.context)
 
     @capture_error
-    def resolve_pipelineSnapshotOrError(
+    async def resolve_pipelineSnapshotOrError(
         self,
         graphene_info: ResolveInfo,
         snapshotId: Optional[str] = None,
@@ -696,10 +702,10 @@ class GrapheneQuery(graphene.ObjectType):
         if activePipelineSelector:
             job_selector = pipeline_selector_from_graphql(activePipelineSelector)
             if snapshotId:
-                return get_job_snapshot_or_error_from_snap_or_selector(
+                return await get_job_snapshot_or_error_from_snap_or_selector(
                     graphene_info, job_selector, snapshotId
                 )
-            return get_job_snapshot_or_error_from_job_selector(graphene_info, job_selector)
+            return await get_job_snapshot_or_error_from_job_selector(graphene_info, job_selector)
         elif snapshotId:
             return get_job_snapshot_or_error_from_snapshot_id(graphene_info, snapshotId)
         else:
@@ -832,9 +838,11 @@ class GrapheneQuery(graphene.ObjectType):
         )
 
     @capture_error
-    def resolve_pipelineOrError(self, graphene_info: ResolveInfo, params: GraphenePipelineSelector):
+    async def resolve_pipelineOrError(
+        self, graphene_info: ResolveInfo, params: GraphenePipelineSelector
+    ):
         return GraphenePipeline(
-            get_remote_job_or_raise(graphene_info, pipeline_selector_from_graphql(params))
+            await get_remote_job_or_raise(graphene_info, pipeline_selector_from_graphql(params))
         )
 
     @capture_error
@@ -988,41 +996,41 @@ class GrapheneQuery(graphene.ObjectType):
         return get_run_group(graphene_info, runId)
 
     @capture_error
-    def resolve_isPipelineConfigValid(
+    async def resolve_isPipelineConfigValid(
         self,
         graphene_info: ResolveInfo,
         pipeline: GraphenePipelineSelector,
         mode: str,
         runConfigData: Optional[Any] = None,  # custom scalar (GrapheneRunConfigData)
     ):
-        return validate_pipeline_config(
+        return await validate_pipeline_config(
             graphene_info,
             pipeline_selector_from_graphql(pipeline),
             parse_run_config_input(runConfigData or {}, raise_on_error=False),
         )
 
     @capture_error
-    def resolve_executionPlanOrError(
+    async def resolve_executionPlanOrError(
         self,
         graphene_info: ResolveInfo,
         pipeline: GraphenePipelineSelector,
         mode: str,
         runConfigData: Optional[Any] = None,  # custom scalar (GrapheneRunConfigData)
     ):
-        return get_execution_plan(
+        return await get_execution_plan(
             graphene_info,
             pipeline_selector_from_graphql(pipeline),
             parse_run_config_input(runConfigData or {}, raise_on_error=True),  # type: ignore  # (possible str)
         )
 
     @capture_error
-    def resolve_runConfigSchemaOrError(
+    async def resolve_runConfigSchemaOrError(
         self,
         graphene_info: ResolveInfo,
         selector: GraphenePipelineSelector,
         mode: Optional[str] = None,
     ):
-        return resolve_run_config_schema_or_error(
+        return await resolve_run_config_schema_or_error(
             graphene_info, pipeline_selector_from_graphql(selector), mode
         )
 
@@ -1127,7 +1135,7 @@ class GrapheneQuery(graphene.ObjectType):
             asset_keys=[
                 AssetKey.from_graphql_input(asset_key_input) for asset_key_input in assetKeys
             ]
-            if assetKeys
+            if assetKeys is not None
             else None,
         )
 
@@ -1147,7 +1155,7 @@ class GrapheneQuery(graphene.ObjectType):
         )
 
     def resolve_assetOrError(self, graphene_info: ResolveInfo, assetKey: GrapheneAssetKeyInput):
-        return get_asset(graphene_info, AssetKey.from_graphql_input(assetKey))
+        return get_asset(AssetKey.from_graphql_input(assetKey))
 
     def resolve_assetNodeAdditionalRequiredKeys(
         self,
@@ -1209,21 +1217,7 @@ class GrapheneQuery(graphene.ObjectType):
     ):
         asset_keys = set(AssetKey.from_graphql_input(asset_key) for asset_key in assetKeys)
 
-        remote_nodes = {
-            graphene_info.context.asset_graph.get(asset_key)
-            for asset_key in asset_keys
-            if graphene_info.context.asset_graph.has(asset_key)
-        }
-
-        # Build mapping of asset key to the step keys required to generate the asset
-        step_keys_by_asset: dict[AssetKey, Sequence[str]] = {
-            remote_node.key: remote_node.resolve_to_singular_repo_scoped_node().asset_node_snap.op_names
-            for remote_node in remote_nodes
-        }
-
-        AssetRecord.prepare(graphene_info.context, asset_keys)
-
-        return get_assets_latest_info(graphene_info, step_keys_by_asset)
+        return get_assets_latest_info(graphene_info, asset_keys)
 
     @capture_error
     def resolve_logsForRun(
@@ -1381,3 +1375,10 @@ class GrapheneQuery(graphene.ObjectType):
             limit=limit,
             cursor=cursor,
         )
+
+    def resolve_latestDefsStateInfo(self, graphene_info: ResolveInfo):
+        defs_state_storage = graphene_info.context.instance.defs_state_storage
+        latest_info = (
+            defs_state_storage.get_latest_defs_state_info() if defs_state_storage else None
+        )
+        return GrapheneDefsStateInfo(latest_info) if latest_info else None

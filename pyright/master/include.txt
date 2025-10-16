@@ -1,4 +1,3 @@
-.buildkite/dagster-buildkite
 docs/sphinx/_ext/dagster-sphinx
 python_modules
 examples

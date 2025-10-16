@@ -8,12 +8,8 @@ pypi: https://pypi.org/project/dagster-dbt/
 sidebar_custom_props:
   logo: images/integrations/dbt/dbt.svg
 partnerlink:
-sidebar_position: 500
+sidebar_position: 600
 ---
-
-import Beta from '@site/docs/partials/\_Beta.md';
-
-<Beta />
 
 <p>{frontMatter.description}</p>
 

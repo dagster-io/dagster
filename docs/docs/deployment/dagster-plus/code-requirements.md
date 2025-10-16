@@ -3,6 +3,7 @@ description: Dagster+ code must load from a single entry point and be able to be
 sidebar_label: Code requirements
 sidebar_position: 200
 title: Dagster+ code requirements
+tags: [dagster-plus-feature]
 ---
 
 Your Dagster project must meet a few requirements to run in Dagster+.
@@ -28,7 +29,7 @@ To work with Dagster+, your Dagster code:
 
 - **Must be loaded from a single entry point: either a Python file or package.** This entry point can load repositories from other files or packages.
 
-- **Must run in an environment where the `dagster` and `dagster-cloud` 0.13.2 or later Python packages are installed.**
+- **Must run in an environment where the `dagster`, `dagster-dg-cli` and `dagster-cloud` 0.13.2 or later Python packages are installed.**
 
 **Note**:
 

@@ -56,5 +56,5 @@ def create_non_sda_asset(context: OpExecutionContext):
 
 
 @job
-def big_honkin_assets_job():
+def big_honkin_non_sda_job():
     create_non_sda_asset()

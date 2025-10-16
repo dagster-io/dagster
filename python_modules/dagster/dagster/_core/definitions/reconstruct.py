@@ -22,6 +22,7 @@ from dagster_shared.utils.hash import hash_collection
 from typing_extensions import TypeAlias
 
 import dagster._check as check
+from dagster._annotations import public
 from dagster._core.code_pointer import (
     CodePointer,
     CustomPointer,
@@ -330,6 +331,7 @@ class ReconstructableJob(  # pyright: ignore[reportIncompatibleVariableOverride]
         return self._hash
 
 
+@public
 def reconstructable(target: Callable[..., "JobDefinition"]) -> ReconstructableJob:
     """Create a :py:class:`~dagster._core.definitions.reconstructable.ReconstructableJob` from a
     function that returns a :py:class:`~dagster.JobDefinition`/:py:class:`~dagster.JobDefinition`,
@@ -483,10 +485,10 @@ def build_reconstructable_job(
             from dagster import JobDefinition, job, build_reconstructable_job
 
             class JobFactory:
-                def make_job(*args, **kwargs):
+                def make_job(self, *args, **kwargs):
 
                     @job
-                    def _job(...):
+                    def _job():
                         ...
 
                     return _job
@@ -497,9 +499,9 @@ def build_reconstructable_job(
 
             factory = JobFactory()
 
-            foo_job_args = (...,...)
+            foo_job_args = (..., ...)
 
-            foo_job_kwargs = {...:...}
+            foo_job_kwargs = {...}
 
             foo_job = factory.make_job(*foo_job_args, **foo_job_kwargs)
 
@@ -651,6 +653,7 @@ def def_from_pointer(
         raise DagsterInvariantViolationError(
             f"Error invoking function at {pointer.describe()} with no arguments. "
             "Reconstructable target must be callable with no arguments"
+            f"Got {target}, {pointer.describe()}"
         )
 
     return _check_is_loadable(target())
@@ -731,9 +734,11 @@ def repository_def_from_target_def(
     from dagster._core.definitions.definitions_load_context import DefinitionsLoadContext
 
     repo_def = _repository_def_from_target_def_inner(target, None)
+    context = DefinitionsLoadContext.get()
     return (
-        repo_def.replace_reconstruction_metadata(
-            DefinitionsLoadContext.get().get_pending_reconstruction_metadata()
+        repo_def.replace_repository_load_data(
+            context.get_pending_reconstruction_metadata(),
+            context.accessed_defs_state_info,
         )
         if repo_def
         else None
@@ -769,8 +774,10 @@ def initialize_repository_def_from_pointer(
             f"Received a {type(target)}"
         )
 
-    return check.inst(repo_def, RepositoryDefinition).replace_reconstruction_metadata(
-        DefinitionsLoadContext.get().get_pending_reconstruction_metadata()
+    context = DefinitionsLoadContext.get()
+    return check.inst(repo_def, RepositoryDefinition).replace_repository_load_data(
+        context.get_pending_reconstruction_metadata(),
+        context.accessed_defs_state_info,
     )
 
 
@@ -811,6 +818,7 @@ def reconstruct_repository_def_from_pointer(
                 if curr_repo_load_data
                 else {},
                 reconstruction_metadata=curr_context.get_pending_reconstruction_metadata(),
+                defs_state_info=curr_context.accessed_defs_state_info,
             ),
         )
     else:
@@ -829,6 +837,8 @@ def reconstruct_repository_def_from_pointer(
             f"Received a {type(target)}"
         )
 
-    return check.inst(repo_def, RepositoryDefinition).replace_reconstruction_metadata(
-        DefinitionsLoadContext.get().get_pending_reconstruction_metadata()
+    context = DefinitionsLoadContext.get()
+    return check.inst(repo_def, RepositoryDefinition).replace_repository_load_data(
+        context.get_pending_reconstruction_metadata(),
+        context.accessed_defs_state_info,
     )

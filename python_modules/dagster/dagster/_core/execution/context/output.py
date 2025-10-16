@@ -38,6 +38,7 @@ if TYPE_CHECKING:
 RUN_ID_PLACEHOLDER = "__EPHEMERAL_RUN_ID"
 
 
+@public
 @deprecated_param(
     param="metadata",
     breaking_version="2.0",
@@ -813,6 +814,7 @@ def get_output_context(
     )
 
 
+@public
 @deprecated_param(
     param="metadata",
     breaking_version="2.0",
@@ -834,6 +836,7 @@ def build_output_context(
     partition_key: Optional[str] = None,
     # deprecated
     metadata: Optional[Mapping[str, RawMetadataValue]] = None,
+    output_metadata: Optional[Mapping[str, RawMetadataValue]] = None,
 ) -> "OutputContext":
     """Builds output context from provided parameters.
 
@@ -861,6 +864,8 @@ def build_output_context(
             output.
         partition_key: Optional[str]: String value representing partition key to execute with.
         metadata (Optional[Mapping[str, Any]]): Deprecated. Use definition_metadata instead.
+        output_metadata (Optional[Mapping[str, Any]]): A dict of the metadata that is assigned to the
+            output at execution time.
 
     Examples:
         .. code-block:: python
@@ -894,6 +899,7 @@ def build_output_context(
     op_def = check.opt_inst_param(op_def, "op_def", OpDefinition)
     asset_key = AssetKey.from_coercible(asset_key) if asset_key else None
     partition_key = check.opt_str_param(partition_key, "partition_key")
+    output_metadata = check.opt_mapping_param(output_metadata, "output_metadata", key_type=str)
 
     return OutputContext(
         step_key=step_key,
@@ -912,4 +918,5 @@ def build_output_context(
         op_def=op_def,
         asset_key=asset_key,
         partition_key=partition_key,
+        output_metadata=output_metadata,
     )

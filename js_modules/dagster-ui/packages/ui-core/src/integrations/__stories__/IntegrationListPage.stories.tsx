@@ -1,5 +1,4 @@
 import {Box, Colors} from '@dagster-io/ui-components';
-import {Meta} from '@storybook/react';
 import {useIntegrationsProvider} from 'shared/integrations/useIntegrationsProvider.oss';
 
 import {IntegrationListPage} from '../IntegrationListPage';
@@ -9,7 +8,7 @@ import {IntegrationFrontmatter} from '../types';
 export default {
   title: 'Integrations/IntegrationListPage',
   component: IntegrationListPage,
-} as Meta;
+};
 
 export const Default = () => {
   const provider = useIntegrationsProvider();

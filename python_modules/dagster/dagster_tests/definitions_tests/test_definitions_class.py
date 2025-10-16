@@ -25,7 +25,7 @@ from dagster._core.definitions.metadata.metadata_value import MetadataValue
 from dagster._core.definitions.partitions.context import PartitionLoadingContext
 from dagster._core.types.pagination import PaginatedResults
 from dagster._utils.test.definitions import scoped_definitions_load_context
-from dagster.components.core.tree import ComponentTree
+from dagster.components.core.component_tree import ComponentTree
 
 
 def get_all_assets_from_defs(defs: Definitions):
@@ -317,13 +317,17 @@ def test_kitchen_sink_on_create_helper_and_definitions():
     def an_op():
         pass
 
+    @dg.op(required_resource_keys={"a_resource_key"})
+    def other_op():
+        pass
+
     @dg.job
     def a_job():
         an_op()
 
     @dg.job
     def sensor_target():
-        an_op()
+        other_op()
 
     @dg.job
     def schedule_target():
@@ -348,7 +352,12 @@ def test_kitchen_sink_on_create_helper_and_definitions():
     repo = dg.create_repository_using_definitions_args(
         name="foobar",
         assets=[an_asset, another_asset],
-        jobs=[a_job, another_asset_job],
+        jobs=[
+            a_job,
+            another_asset_job,
+            sensor_target,
+            schedule_target,
+        ],
         schedules=[a_schedule],
         sensors=[a_sensor],
         resources={"a_resource_key": "the resource"},
@@ -382,7 +391,12 @@ def test_kitchen_sink_on_create_helper_and_definitions():
     # test the kitchen sink since we have created it
     defs = dg.Definitions(
         assets=[an_asset, another_asset],
-        jobs=[a_job, another_asset_job],
+        jobs=[
+            a_job,
+            another_asset_job,
+            sensor_target,
+            schedule_target,
+        ],
         schedules=[a_schedule],
         sensors=[a_sensor],
         resources={"a_resource_key": "the resource"},
@@ -901,6 +915,33 @@ def test_executor_conflict_on_merge():
         dg.DagsterInvariantViolationError, match="Definitions objects 0 and 1 both have an executor"
     ):
         Definitions.merge(defs1, defs2)
+
+
+def test_merge_resolved_defs():
+    defs1 = dg.Definitions(assets=[dg.AssetSpec("asset1")])
+    defs2 = dg.Definitions(assets=[dg.AssetSpec("asset2")])
+
+    merged_one = Definitions.merge_unbound_defs(defs1, defs2)
+
+    defs1.resolve_all_asset_specs()
+
+    merged_two = Definitions.merge(defs1, defs2)
+
+    assert merged_one.__dict__ == merged_two.__dict__
+
+
+def test_merge_unbound_defs_err_resolved():
+    defs1 = dg.Definitions(assets=[dg.AssetSpec("asset1")])
+    defs2 = dg.Definitions(assets=[dg.AssetSpec("asset2")])
+
+    Definitions.merge_unbound_defs(defs1, defs2)
+
+    defs1.resolve_all_asset_specs()
+    with pytest.raises(
+        CheckError,
+        match="Definitions object 0 has previously been resolved.",
+    ):
+        Definitions.merge_unbound_defs(defs1, defs2)
 
 
 def test_executor_conflict_on_merge_same_value():

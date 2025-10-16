@@ -62,18 +62,24 @@ const removeEdgesToHiddenAssets = (graphData: GraphData, allNodes: WorkspaceAsse
   const notSourceAsset = (id: string) => !!allNodesById[id];
 
   for (const node of Object.keys(graphData.upstream)) {
+    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
     for (const edge of Object.keys(graphData.upstream[node]!)) {
       if (!graphData.nodes[edge] && notSourceAsset(node)) {
+        // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
         delete graphData.upstream[node]![edge];
+        // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
         delete graphData.downstream[edge]![node];
       }
     }
   }
 
   for (const node of Object.keys(graphData.downstream)) {
+    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
     for (const edge of Object.keys(graphData.downstream[node]!)) {
       if (!graphData.nodes[edge] && notSourceAsset(node)) {
+        // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
         delete graphData.upstream[edge]![node];
+        // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
         delete graphData.downstream[node]![edge];
       }
     }

@@ -68,6 +68,9 @@ export class WorkspaceStatusPoller {
   }
 
   private async loadFromServer() {
+    if (document.visibilityState === 'hidden') {
+      return;
+    }
     const {data, error} = await this.getData<
       CodeLocationStatusQuery,
       CodeLocationStatusQueryVariables

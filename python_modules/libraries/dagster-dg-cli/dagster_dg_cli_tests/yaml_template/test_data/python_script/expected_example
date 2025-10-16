@@ -1,0 +1,50 @@
+type: "dagster.PythonScriptComponent"
+attributes:
+  assets:
+    -
+      deps:
+        - "example_string"
+      description: "example_string"
+      metadata:
+        key: "value"
+      group_name: "example_string"
+      skippable: true
+      code_version: "example_string"
+      owners:
+        - "example_string"
+      tags:
+        key: "value"
+      kinds:
+        - "example_string"
+      automation_condition: "example_string"
+      partitions_def:
+        type: "example_string"
+        start_date: "example_string"
+        end_date: "example_string"
+        timezone: "example_string"
+        minute_offset: 1
+      freshness_policy: "example_string"
+      key: "example_string"
+  checks:
+    -
+      name: "example_string"
+      asset: "example_string"
+      additional_deps:
+        - "example_string"
+      description: "example_string"
+      blocking: true
+      metadata:
+        key: "value"
+      automation_condition: "example_string"
+  execution:
+    name: "example_string"
+    tags:
+      key: "value"
+    description: "example_string"
+    pool: "example_string"
+    backfill_policy:
+      type: "example_string"
+    type: "example_string"
+    path: "example_string"
+    args:
+      - "example_string"

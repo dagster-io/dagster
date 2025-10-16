@@ -104,6 +104,7 @@ def _define_shape_key_hash(fields, description, field_aliases):
     return "Shape." + compute_fields_hash(fields, description, field_aliases=field_aliases)
 
 
+@public
 class Shape(_ConfigHasFields):
     """Schema for configuration data with string keys and typed values via :py:class:`Field`.
 
@@ -154,6 +155,7 @@ class Shape(_ConfigHasFields):
         self._initialized = True
 
 
+@public
 class Map(ConfigType):
     """Defines a config dict with arbitrary scalar keys and typed values.
 
@@ -226,6 +228,7 @@ def _define_permissive_dict_key(fields, description):
     )
 
 
+@public
 class Permissive(_ConfigHasFields):
     """Defines a config dict with a partially specified schema.
 
@@ -273,6 +276,7 @@ def _define_selector_key(fields, description):
     return "Selector." + compute_fields_hash(fields, description=description)
 
 
+@public
 class Selector(_ConfigHasFields):
     """Define a config field requiring the user to select one option.
 
@@ -520,6 +524,7 @@ class IntEnvVar(int):
         return self.name
 
 
+@public
 class EnvVar(str):
     """Class used to represent an environment variable in the Dagster config system.
 

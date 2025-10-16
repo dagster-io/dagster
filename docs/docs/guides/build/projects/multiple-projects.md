@@ -4,10 +4,6 @@ sidebar_position: 400
 description: Manage multiple isolated Dagster projects using dg, each with unique environments, by creating a workspace directory with create-dagster project.
 ---
 
-import DgComponentsRc from '@site/docs/partials/\_DgComponentsRc.md';
-
-<DgComponentsRc />
-
 :::note
 
 If you're just getting started, we recommend [creating a single project](/guides/build/projects/creating-a-new-project) instead of a workspace with multiple projects.
@@ -24,7 +20,7 @@ When a `dg` command runs in a workspace, it will create a subprocess for each pr
 
 ## 1. Create a new workspace and first project
 
-To scaffold a new workspace called `dagster-workspace`, run `uvx -U create-dagster workspace` and respond yes to the prompt to run `uv sync` after scaffolding:
+To scaffold a new workspace called `dagster-workspace`, run `uvx create-dagster@latest workspace` and respond yes to the prompt to run `uv sync` after scaffolding:
 
 <CliInvocationExample path="docs_snippets/docs_snippets/guides/dg/workspace/1-dg-scaffold-workspace.txt" />
 
@@ -40,7 +36,7 @@ You'll need to activate this virtual environment anytime you open a new terminal
 
 :::
 
-Now we'll create a project inside our workspace called `project-1`. Run `uvx -U create-dagster project` with the path of the project:
+Now we'll create a project inside our workspace called `project-1`. Run `uvx create-dagster@latest project` with the path of the project:
 
 <CliInvocationExample path="docs_snippets/docs_snippets/guides/dg/workspace/3-dg-scaffold-project.txt" />
 

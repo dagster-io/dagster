@@ -18,6 +18,14 @@ from dagster_dbt.cloud import (
     dbt_cloud_run_op as dbt_cloud_run_op,
     load_assets_from_dbt_cloud_job as load_assets_from_dbt_cloud_job,
 )
+from dagster_dbt.cloud_v2 import (
+    DbtCloudCredentials as DbtCloudCredentials,
+    DbtCloudWorkspace as DbtCloudWorkspace,
+    build_dbt_cloud_polling_sensor as build_dbt_cloud_polling_sensor,
+    dbt_cloud_assets as dbt_cloud_assets,
+    load_dbt_cloud_asset_specs as load_dbt_cloud_asset_specs,
+    load_dbt_cloud_check_specs as load_dbt_cloud_check_specs,
+)
 from dagster_dbt.components.dbt_project.component import DbtProjectComponent as DbtProjectComponent
 from dagster_dbt.core.dbt_cli_event import DbtCliEventMessage as DbtCliEventMessage
 from dagster_dbt.core.dbt_cli_invocation import DbtCliInvocation as DbtCliInvocation
@@ -56,10 +64,17 @@ from typing import Any, Final, Tuple  # noqa: F401, UP035
 from dagster._annotations import deprecated
 from dagster._utils.warnings import deprecation_warning
 from dagster_shared.libraries import DagsterLibraryRegistry
-from dbt.version import __version__ as __dbt_version__
+
+from dagster_dbt.compat import DBT_PYTHON_VERSION
 
 DagsterLibraryRegistry.register("dagster-dbt", __version__)
-DagsterLibraryRegistry.register("dbt-core", __dbt_version__, is_dagster_package=False)
+
+if DBT_PYTHON_VERSION is not None:
+    DagsterLibraryRegistry.register(
+        "dbt-core", DBT_PYTHON_VERSION.base_version, is_dagster_package=False
+    )
+else:
+    DagsterLibraryRegistry.register("dbt-fusion", "unknown", is_dagster_package=False)
 
 
 _DEPRECATED: Final[Mapping[str, tuple[str, str, str]]] = {

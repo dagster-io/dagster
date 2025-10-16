@@ -13,7 +13,7 @@ from dagster_shared.serdes.serdes import (
 from typing_extensions import TypeAlias, TypeVar
 
 import dagster._check as check
-from dagster._annotations import PublicAttr, deprecated, deprecated_param
+from dagster._annotations import PublicAttr, deprecated, deprecated_param, public
 from dagster._core.definitions.asset_key import AssetKey
 from dagster._core.definitions.metadata.external_metadata import (
     EXTERNAL_METADATA_TYPE_INFER as EXTERNAL_METADATA_TYPE_INFER,
@@ -222,6 +222,7 @@ T_MetadataValue = TypeVar("T_MetadataValue", bound=MetadataValue, covariant=True
     param="entry_data", breaking_version="2.0", additional_warn_text="Use `value` instead."
 )
 @whitelist_for_serdes(storage_name="EventMetadataEntry")
+@public
 class MetadataEntry(
     NamedTuple(
         "_MetadataEntry",

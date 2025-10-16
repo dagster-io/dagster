@@ -8,7 +8,7 @@ from typing import Optional, Union
 import dagster as dg
 import pytest
 from dagster._utils import pushd
-from dagster.components.core.tree import ComponentTree, LegacyAutoloadingComponentTree
+from dagster.components.core.component_tree import ComponentTree, LegacyAutoloadingComponentTree
 
 from dagster_tests.components_tests.utils import create_project_from_components
 

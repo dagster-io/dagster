@@ -219,6 +219,7 @@ export const useCodeLocationsStatus = (): StatusAndMessage | null => {
 
       const toastContent = () => {
         if (addedEntries.length === 1) {
+          // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
           const entryId = addedEntries[0]!;
           const locationName = currEntriesById[entryId]?.name;
           // The entry should be in the entry map, but guard against errors just in case.
@@ -263,7 +264,8 @@ export const useCodeLocationsStatus = (): StatusAndMessage | null => {
           <Box flex={{direction: 'row', justifyContent: 'space-between', gap: 24, grow: 1}}>
             {currentlyLoading.length === 1 ? (
               <span>
-                Updating <strong>{currentlyLoading[0]!.name}</strong>
+                {/* eslint-disable-next-line @typescript-eslint/no-non-null-assertion */}
+                <strong>{currentlyLoading[0]!.name}</strong>
               </span>
             ) : (
               <span>Updating {currentlyLoading.length} code locations</span>

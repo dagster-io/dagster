@@ -16,7 +16,7 @@ This guide assumes basic familiarity with Dagster and Python decorators.
 
 ## Step 1: Input
 
-For this guide, let's imagine a tool that replicates data between two databases. It's configured using a `replication.yaml` configuration file, in which a user is able to define source and destination databases, along with the tables that they would like to replicate between these systems.
+For this guide, let's imagine a tool that replicates data between two databases. It's configured using a `replication.yaml` configuration file, in which a user can define source and destination databases, along with the tables that they would like to replicate between these systems.
 
 ```yml
 connections:

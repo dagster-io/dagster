@@ -1,0 +1,26 @@
+from pathlib import Path
+
+# Paths
+DATA_DIR = Path("./data")
+MODELS_DIR = Path("./models")
+
+# Model Configuration
+DEFAULT_BATCH_SIZE = 64
+DEFAULT_LEARNING_RATE = 0.001
+DEFAULT_EPOCHS = 30
+ACCURACY_THRESHOLD = 0.90
+
+# Data Processing
+VALIDATION_SPLIT = 0.2
+RANDOM_SEED = 42
+
+# MNIST Constants
+MNIST_MEAN = 0.1307
+MNIST_STD = 0.3081
+NUM_CLASSES = 10
+
+# Training Constants
+EARLY_STOPPING_PATIENCE = 7
+MIN_DELTA = 0.001
+LR_STEP_SIZE = 10
+LR_GAMMA = 0.1

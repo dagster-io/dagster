@@ -1,5 +1,5 @@
 import dagster as dg
-from dagster.components.core.tree import ComponentTree
+from dagster.components.core.component_tree import ComponentTree
 
 
 def test_component_does_not_implement_resolved_anything():

@@ -2,6 +2,7 @@
 title: Managing branch deployments across multiple deployments
 description: Frequent use cases and troubleshooting tips for managing branch deployments when your organization has multiple Dagster+ deployments or environments.
 sidebar_position: 7350
+tags: [dagster-plus-feature]
 ---
 
 This guide will present frequent use cases and troubleshooting tips for managing branch deployments when your organization has multiple Dagster+ deployments or environments.
@@ -21,6 +22,7 @@ We will be leveraging the following configuration options across agent configura
 The `deployment(s)`, `branch_deployment`, and `agent_queues` configuration settings are available in the `dagster.yaml`.
 
 ```yaml
+# dagster.yaml
 dagster_cloud_api:
   # Deployment: a string that identifies the singular full deployment to be served by this agent.
   # This configuration should not be used in conjunction with the 'deployments' configuration option.
@@ -80,6 +82,7 @@ For more information about the Helm chart and its values, refer to:
 Whether in the context of a full deployment or a branch deployment, you can configure the code location to be served on a specific agent queue:
 
 ```yaml
+# dagster_cloud.yaml
 locations:
   - location_name: <location name>
     # The named queue that this code location will be served on. If not set, the default queue is used.
@@ -147,7 +150,7 @@ dagster_cloud_api:
 
 There is an organization-scoped setting `max_concurrent_branch_deployment_runs` that controls concurrency across all branch deployments. By default its value is 50.
 
-Modifying organization-scoped settings can only be done using the [dagster-cloud CLI](/deployment/dagster-plus/management/dagster-cloud-cli). The CLI must be [authenticated](/deployment/dagster-plus/management/dagster-cloud-cli/installing-and-configuring#setting-up-the-configuration-file) with a user token for a user that has the [Organization Admin role](/deployment/dagster-plus/authentication-and-access-control/rbac/user-roles-permissions#dagster-user-roles).
+Modifying organization-scoped settings can only be done using the [dagster-cloud CLI](/api/clis/dagster-cloud-cli). The CLI must be [authenticated](/api/clis/dagster-cloud-cli/installing-and-configuring#setting-up-the-configuration-file) with a user token for a user that has the [Organization Admin role](/deployment/dagster-plus/authentication-and-access-control/rbac/user-roles-permissions#dagster-user-roles).
 
 To view the organization settings in the terminal:
 

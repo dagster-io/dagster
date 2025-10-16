@@ -5,6 +5,7 @@ from contextlib import ExitStack
 from typing import TYPE_CHECKING, AbstractSet, Any, NamedTuple, Optional, Union, cast  # noqa: UP035
 
 import dagster._check as check
+from dagster._annotations import public
 from dagster._core.definitions.assets.definition.assets_definition import AssetsDefinition
 from dagster._core.definitions.composition import PendingNodeInvocation
 from dagster._core.definitions.dependency import Node, NodeHandle
@@ -517,6 +518,10 @@ class DirectOpExecutionContext(OpExecutionContext, BaseDirectExecutionContext):
         check.failed("Tried to access partition_key for a non-partitioned run")
 
     @property
+    def has_partition_key_range(self) -> bool:
+        return self._partition_key_range is not None
+
+    @property
     def partition_keys(self) -> Sequence[str]:
         key_range = self.partition_key_range
         partitions_def = self.assets_def.partitions_def
@@ -930,6 +935,7 @@ def _validate_resource_requirements(
                 ensure_requirements_satisfied(resource_defs, [requirement])
 
 
+@public
 def build_op_context(
     resources: Optional[Mapping[str, Any]] = None,
     op_config: Any = None,
@@ -997,6 +1003,7 @@ def build_op_context(
     )
 
 
+@public
 def build_asset_check_context(
     resources: Optional[Mapping[str, Any]] = None,
     resources_config: Optional[Mapping[str, Any]] = None,
@@ -1029,6 +1036,7 @@ def build_asset_check_context(
     return DirectAssetCheckExecutionContext(op_execution_context=op_context)
 
 
+@public
 def build_asset_context(
     resources: Optional[Mapping[str, Any]] = None,
     resources_config: Optional[Mapping[str, Any]] = None,

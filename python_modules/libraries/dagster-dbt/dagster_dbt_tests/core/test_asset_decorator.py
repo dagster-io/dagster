@@ -47,9 +47,9 @@ from dagster_dbt.asset_utils import (
     DBT_DEFAULT_SELECT,
     DUPLICATE_ASSET_KEY_ERROR_MESSAGE,
 )
+from dagster_dbt.compat import DBT_PYTHON_VERSION
 from dagster_dbt.core.resource import DbtCliResource
 from dagster_dbt.dagster_dbt_translator import DagsterDbtTranslator, DagsterDbtTranslatorSettings
-from dbt.version import __version__ as dbt_version
 from packaging import version
 
 from dagster_dbt_tests.dbt_projects import (
@@ -250,7 +250,9 @@ def _get_snapshot_id(manifest, _):
     )
     def my_dbt_assets(): ...
 
-    job = Definitions(assets=[my_dbt_assets]).resolve_implicit_global_asset_job_def()
+    defs = Definitions(assets=[my_dbt_assets])
+    job = defs.get_implicit_global_asset_job_def()
+
     return job.get_job_snapshot_id()
 
 
@@ -263,6 +265,9 @@ def test_snapshot_id(
         results = pool.map(partial(_get_snapshot_id, test_jaffle_shop_manifest), range(5))
 
     assert len(set(results)) == 1
+
+    # this should only update if the dbt project or asset producing code changes
+    assert results[0] == "29a3a4ac386555a3e738867b8b25765ffb17a145"
 
 
 @pytest.mark.parametrize("name", [None, "custom"])
@@ -1207,7 +1212,7 @@ def test_dbt_with_semantic_models_and_saved_queries(
 
 
 @pytest.mark.skipif(
-    version.parse(dbt_version) < version.parse("1.8.0"),
+    DBT_PYTHON_VERSION and DBT_PYTHON_VERSION < version.parse("1.8.0"),
     reason="dbt unit test support is only available in `dbt-core>=1.8.0`",
 )
 @pytest.mark.parametrize("select", ["fqn:*", "tag:test"])

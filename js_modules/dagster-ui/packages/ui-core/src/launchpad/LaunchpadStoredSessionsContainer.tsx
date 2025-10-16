@@ -12,7 +12,8 @@ import {
   useExecutionSessionStorage,
   useInitialDataForMode,
 } from '../app/ExecutionSessionStorage';
-import {useFeatureFlags} from '../app/Flags';
+import {useFeatureFlags} from '../app/useFeatureFlags';
+import {ConfigEditorRunConfigSchemaFragment} from '../configeditor/types/ConfigEditorUtils.types';
 import {useSetStateUpdateCallback} from '../hooks/useSetStateUpdateCallback';
 import {RepoAddress} from '../workspace/types';
 
@@ -22,10 +23,12 @@ interface Props {
   partitionSets: LaunchpadSessionPartitionSetsFragment;
   repoAddress: RepoAddress;
   rootDefaultYaml: string | undefined;
+  runConfigSchema: ConfigEditorRunConfigSchemaFragment | undefined;
 }
 
 export const LaunchpadStoredSessionsContainer = (props: Props) => {
-  const {launchpadType, pipeline, partitionSets, repoAddress, rootDefaultYaml} = props;
+  const {launchpadType, pipeline, partitionSets, repoAddress, rootDefaultYaml, runConfigSchema} =
+    props;
 
   const {flagDisableAutoLoadDefaults} = useFeatureFlags();
   const initialDataForMode = useInitialDataForMode(
@@ -40,6 +43,7 @@ export const LaunchpadStoredSessionsContainer = (props: Props) => {
     onSave((data) => applyCreateSession(data, initialDataForMode));
   };
 
+  // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
   const currentSession = data.sessions[data.current]!;
 
   const onSaveSession = useSetStateUpdateCallback<IExecutionSessionChanges>(
@@ -60,6 +64,7 @@ export const LaunchpadStoredSessionsContainer = (props: Props) => {
         partitionSets={partitionSets}
         repoAddress={repoAddress}
         rootDefaultYaml={rootDefaultYaml}
+        runConfigSchema={runConfigSchema}
       />
     </>
   );

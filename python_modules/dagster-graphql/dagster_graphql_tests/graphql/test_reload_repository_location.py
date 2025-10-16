@@ -4,7 +4,7 @@ from unittest import mock
 
 from dagster import file_relative_path, repository
 from dagster._core.code_pointer import CodePointer
-from dagster._core.remote_representation import ManagedGrpcPythonEnvCodeLocationOrigin
+from dagster._core.remote_origin import ManagedGrpcPythonEnvCodeLocationOrigin
 from dagster._core.remote_representation.external_data import RepositorySnap
 from dagster._core.types.loadable_target_origin import LoadableTargetOrigin
 from dagster._core.workspace.load import location_origins_from_yaml_paths
@@ -297,7 +297,7 @@ class TestReloadRepositoriesOutOfProcess(OutOfProcessTestSuite):
                 # note it where the function is *used* that needs to mocked, not
                 # where it is defined.
                 # see https://docs.python.org/3/library/unittest.mock.html#where-to-patch
-                "dagster._api.snapshot_repository.sync_get_streaming_external_repositories_data_grpc"
+                "dagster._api.snapshot_repository.sync_get_external_repositories_data_grpc"
             ) as remote_repository_mock:
 
                 @repository

@@ -2,6 +2,7 @@ import {useVirtualizer} from '@tanstack/react-virtual';
 import * as React from 'react';
 import styled from 'styled-components';
 
+import {BaseTag} from './BaseTag';
 import {Box} from './Box';
 import {Checkbox} from './Checkbox';
 import {Colors} from './Color';
@@ -9,7 +10,6 @@ import {Icon} from './Icon';
 import {Menu, MenuItem} from './Menu';
 import {MiddleTruncate} from './MiddleTruncate';
 import {Popover} from './Popover';
-import {Tag} from './Tag';
 import {TextInput, TextInputStyles} from './TextInput';
 import {Inner, Row, Container as VirtualContainer} from './VirtualizedTable';
 import {useViewport} from './useViewport';
@@ -45,29 +45,36 @@ type Props = {
   rowHeight?: number;
   closeOnSelect?: boolean;
   usePortal?: boolean;
+  disabled?: boolean;
 };
 
-const defaultRenderTag = (tag: string, tagProps: TagSelectorTagProps) => {
+const defaultRenderTag = (tag: string, tagProps: TagSelectorTagProps, disabled?: boolean) => {
   return (
-    <Tag key={tag}>
-      <div
-        style={{
-          display: 'grid',
-          gridTemplateColumns: '1fr auto',
-          gap: 4,
-          justifyContent: 'space-between',
-          alignItems: 'center',
-          maxWidth: '120px',
-        }}
-        data-tooltip={tag}
-        data-tooltip-style={TagSelectorDefaultTagTooltipStyle}
-      >
-        <MiddleTruncate text={tag} />
-        <Box style={{cursor: 'pointer'}} onClick={tagProps.remove}>
-          <Icon name="close" />
-        </Box>
-      </div>
-    </Tag>
+    <BaseTag
+      fillColor={Colors.backgroundGray()}
+      textColor={disabled ? Colors.textDisabled() : Colors.textDefault()}
+      label={
+        <div
+          style={{
+            display: 'grid',
+            gridTemplateColumns: `1fr ${disabled ? '' : 'auto'}`,
+            gap: 4,
+            justifyContent: 'space-between',
+            alignItems: 'center',
+            maxWidth: '120px',
+          }}
+          data-tooltip={tag}
+          data-tooltip-style={TagSelectorDefaultTagTooltipStyle}
+        >
+          <MiddleTruncate text={tag} />
+          {disabled ? null : (
+            <Box style={{cursor: 'pointer'}} onClick={tagProps.remove}>
+              <Icon name="close" color={disabled ? Colors.textDisabled() : Colors.textDefault()} />
+            </Box>
+          )}
+        </div>
+      }
+    />
   );
 };
 
@@ -105,6 +112,7 @@ export const TagSelector = ({
   rowHeight = MENU_ITEM_HEIGHT,
   closeOnSelect,
   usePortal,
+  disabled,
 }: Props) => {
   const [isDropdownOpen, setIsDropdownOpen] = React.useState(false);
   const {viewport, containerProps} = useViewport();
@@ -132,8 +140,12 @@ export const TagSelector = ({
       >
         <Inner $totalHeight={totalHeight}>
           {items.map(({index, start, end}) => {
-            const tag = allTags[index]!;
-            function content() {
+            const tagAtIndex = allTags[index];
+            if (!tagAtIndex) {
+              return null;
+            }
+
+            function content(tag: string) {
               const selected = selectedTags.includes(tag);
               const toggle = () => {
                 setSelectedTags(
@@ -148,9 +160,10 @@ export const TagSelector = ({
               }
               return defaultRenderDropdownItem(tag, {toggle, selected});
             }
+
             return (
-              <Row key={tag} $height={end - start} $start={start}>
-                {content()}
+              <Row key={tagAtIndex} $height={end - start} $start={start}>
+                {content(tagAtIndex)}
               </Row>
             );
           })}
@@ -181,23 +194,27 @@ export const TagSelector = ({
       return <Placeholder>{placeholder || 'Select tags'}</Placeholder>;
     }
     const tags = selectedTags.map((tag) =>
-      (renderTag || defaultRenderTag)(tag, {
-        remove: (ev) => {
-          setSelectedTags(selectedTags.filter((t) => t !== tag));
-          ev.stopPropagation();
+      (renderTag || defaultRenderTag)(
+        tag,
+        {
+          remove: (ev) => {
+            setSelectedTags(selectedTags.filter((t) => t !== tag));
+            ev.stopPropagation();
+          },
         },
-      }),
+        disabled,
+      ),
     );
     if (renderTagList) {
       return renderTagList(tags);
     }
     return tags;
-  }, [selectedTags, renderTagList, placeholder, renderTag, setSelectedTags]);
+  }, [selectedTags, renderTagList, placeholder, renderTag, setSelectedTags, disabled]);
 
   return (
     <Popover
       placement="bottom-start"
-      isOpen={isDropdownOpen}
+      isOpen={isDropdownOpen && !disabled}
       onInteraction={(nextOpenState, e) => {
         const target = e?.target;
         if (isDropdownOpen && target instanceof HTMLElement) {
@@ -217,18 +234,22 @@ export const TagSelector = ({
         onClick={() => {
           setIsDropdownOpen((isOpen) => !isOpen);
         }}
+        $disabled={disabled}
         {...containerProps}
       >
         <TagSelectorTagsContainer flex={{grow: 1, gap: 6}}>{tagsContent}</TagSelectorTagsContainer>
         <div style={{cursor: 'pointer'}}>
-          <Icon name={isDropdownOpen ? 'expand_less' : 'expand_more'} />
+          <Icon
+            name={isDropdownOpen ? 'expand_less' : 'expand_more'}
+            color={disabled ? Colors.textDisabled() : Colors.textDefault()}
+          />
         </div>
       </TagSelectorContainer>
     </Popover>
   );
 };
 
-export const TagSelectorContainer = styled.div`
+export const TagSelectorContainer = styled.div<{$disabled?: boolean}>`
   display: flex;
   flex-direction: row;
   align-items: center;
@@ -237,6 +258,16 @@ export const TagSelectorContainer = styled.div`
 
   min-height: 32px;
   padding: 4px 8px;
+
+  ${({$disabled}) =>
+    $disabled &&
+    `
+      box-shadow:
+      ${Colors.borderDisabled()} inset 0px 0px 0px 1px,
+      ${Colors.keylineDefault()} inset 2px 2px 1.5px;
+      background-color: ${Colors.backgroundDisabled()};
+       color: ${Colors.textDisabled()};
+    `}
 `;
 
 const Placeholder = styled.div`

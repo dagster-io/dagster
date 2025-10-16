@@ -26,6 +26,7 @@ from dagster._core.definitions.declarative_automation.serialized_objects import 
     AutomationConditionSnapshot,
     OperatorType,
     get_serializable_candidate_subset,
+    get_serializable_true_subset,
 )
 from dagster._core.definitions.partitions.subset import (
     AllPartitionsSubset,
@@ -57,6 +58,7 @@ if TYPE_CHECKING:
 T_AutomationCondition = TypeVar("T_AutomationCondition", bound="AutomationCondition")
 
 
+@public
 class AutomationCondition(ABC, Generic[T_EntityKey]):
     """An AutomationCondition represents a condition of an asset that impacts whether it should be
     automatically executed. For example, you can have a condition which becomes true whenever the
@@ -143,8 +145,7 @@ class AutomationCondition(ABC, Generic[T_EntityKey]):
 
     def get_node_unique_id(self, *, parent_unique_id: Optional[str], index: Optional[int]) -> str:
         """Returns a unique identifier for this condition within the broader condition tree."""
-        parts = [str(parent_unique_id), str(index), self.name]
-        return non_secure_md5_hash_str("".join(parts).encode())
+        return non_secure_md5_hash_str(f"{parent_unique_id}{index}{self.name}".encode())
 
     def get_backcompat_node_unique_ids(
         self, *, parent_unique_id: Optional[str] = None, index: Optional[int] = None
@@ -304,14 +305,14 @@ class AutomationCondition(ABC, Generic[T_EntityKey]):
     ) -> Union[Self, T_AutomationCondition]:
         """Replaces all instances of ``old`` across any sub-conditions with ``new``.
 
-        If ``old`` is a string, then conditions with a label matching
+        If ``old`` is a string, then conditions with a label or name matching
         that string will be replaced.
 
         Args:
             old (Union[AutomationCondition, str]): The condition to replace.
             new (AutomationCondition): The condition to replace with.
         """
-        return new if old in [self, self.get_label()] else self
+        return new if old in [self, self.name, self.get_label()] else self
 
     @public
     @staticmethod
@@ -403,7 +404,9 @@ class AutomationCondition(ABC, Generic[T_EntityKey]):
     @public
     @staticmethod
     def run_in_progress() -> "BuiltinAutomationCondition":
-        """Returns an AutomationCondition that is true if the target is part of an in-progress run."""
+        """Returns an AutomationCondition that is true if the target is part of an in-progress run
+        that has not yet executed it.
+        """
         from dagster._core.definitions.declarative_automation.operands import (
             RunInProgressAutomationCondition,
         )
@@ -413,7 +416,9 @@ class AutomationCondition(ABC, Generic[T_EntityKey]):
     @public
     @staticmethod
     def backfill_in_progress() -> "BuiltinAutomationCondition":
-        """Returns an AutomationCondition that is true if the target is part of an in-progress backfill."""
+        """Returns an AutomationCondition that is true if the target is part of an in-progress backfill
+        that has not yet executed it.
+        """
         from dagster._core.definitions.declarative_automation.operands import (
             BackfillInProgressAutomationCondition,
         )
@@ -434,7 +439,7 @@ class AutomationCondition(ABC, Generic[T_EntityKey]):
     @staticmethod
     def in_progress() -> "BuiltinAutomationCondition":
         """Returns an AutomationCondition that is true for an asset partition if it is part of an
-        in-progress run or backfill.
+        in-progress run or backfill that has not yet executed it.
         """
         return (
             AutomationCondition.run_in_progress() | AutomationCondition.backfill_in_progress()
@@ -540,6 +545,58 @@ class AutomationCondition(ABC, Generic[T_EntityKey]):
         )
 
         return LatestRunExecutedWithTagsCondition(tag_keys=tag_keys, tag_values=tag_values)
+
+    @staticmethod
+    def all_new_updates_have_run_tags(
+        *,
+        tag_keys: Optional[Set[str]] = None,
+        tag_values: Optional[Mapping[str, str]] = None,
+    ) -> "BuiltinAutomationCondition":
+        """Returns an AutomationCondition that is true if all new materializations since the
+        previous tick were executed in runs with the provided tags. Can be used to prevent
+        certain run tags from triggering downstream declarative automation conditions - for
+        example, `AutomationCondition.newly_updated() &~ AutomationCondition.all_new_updates_have_run_tags(tag_keys={"exclude_tag"})`
+        will prevent any runs with the tag `exclude_tag` from triggering the condition.
+
+        Args:
+            tag_keys (Optional[AbstractSet[str]]): If provided, the condition will only be true if
+                all new materializations since the previous tick were executed in runs with
+                all of the provided tags.
+            tag_values (Optional[Mapping[str, str]]): If provided, the condition will only be true if the
+                all new materializations since the previous tick were executed in runs with
+                all of the provided values for the specified keys.
+        """
+        from dagster._core.definitions.declarative_automation.operands import (
+            AllNewUpdatesHaveRunTagsCondition,
+        )
+
+        return AllNewUpdatesHaveRunTagsCondition(tag_keys=tag_keys, tag_values=tag_values)
+
+    @staticmethod
+    def any_new_update_has_run_tags(
+        *,
+        tag_keys: Optional[Set[str]] = None,
+        tag_values: Optional[Mapping[str, str]] = None,
+    ) -> "BuiltinAutomationCondition":
+        """Returns an AutomationCondition that is true if any new materializations since the
+        previous tick were executed in runs with the provided tags. Can be used to only allow
+        certain run tags to trigger downstream declarative automation conditions - for example,
+        `AutomationCondition.newly_updated() & AutomationCondition.any_new_update_has_run_tags(tag_keys={"include_tag"})`
+        will only trigger for the partitions that were executed in runs with the tag `include_tag`.
+
+        Args:
+            tag_keys (Optional[AbstractSet[str]]): If provided, the condition will only be true if
+                any new materializations since the previous tick were executed in runs with
+                all of the provided tags.
+            tag_values (Optional[Mapping[str, str]]): If provided, the condition will only be true if the
+                any new materializations since the previous tick were executed in runs with
+                all of the provided values for the specified keys.
+        """
+        from dagster._core.definitions.declarative_automation.operands import (
+            AnyNewUpdateHasRunTagsCondition,
+        )
+
+        return AnyNewUpdateHasRunTagsCondition(tag_keys=tag_keys, tag_values=tag_values)
 
     @public
     @staticmethod
@@ -758,6 +815,7 @@ class BuiltinAutomationCondition(AutomationCondition[T_EntityKey]):
         return copy(self, label=label)
 
 
+@public
 @hidden_param(param="subsets_with_metadata", breaking_version="", emit_runtime_warning=False)
 @hidden_param(param="structured_cursor", breaking_version="", emit_runtime_warning=False)
 @hidden_param(param="metadata", breaking_version="", emit_runtime_warning=False)
@@ -860,10 +918,8 @@ class AutomationResult(Generic[T_EntityKey]):
         if not self.condition.requires_cursor:
             return None
         return AutomationConditionNodeCursor(
-            true_subset=self.get_serializable_subset(),
-            candidate_subset=get_serializable_candidate_subset(
-                self._context.candidate_subset.convert_to_serializable_subset()
-            ),
+            true_subset=get_serializable_true_subset(self.true_subset),
+            candidate_subset=get_serializable_candidate_subset(self._context.candidate_subset),
             subsets_with_metadata=self._subsets_with_metadata,
             metadata=self._metadata,
             extra_state=self._extra_state,
@@ -873,10 +929,8 @@ class AutomationResult(Generic[T_EntityKey]):
     def serializable_evaluation(self) -> AutomationConditionEvaluation:
         return AutomationConditionEvaluation(
             condition_snapshot=self.condition.get_node_snapshot(self.condition_unique_id),
-            true_subset=self.get_serializable_subset(),
-            candidate_subset=get_serializable_candidate_subset(
-                self._context.candidate_subset.convert_to_serializable_subset()
-            ),
+            true_subset=get_serializable_true_subset(self.true_subset),
+            candidate_subset=get_serializable_candidate_subset(self._context.candidate_subset),
             subsets_with_metadata=self._subsets_with_metadata,
             metadata=self._metadata,
             start_timestamp=self._start_timestamp,

@@ -1223,3 +1223,37 @@ def test_hidden_annotations() -> None:
         match="vanilla_func got an unexpected keyword argument 'hidden_param'",
     ):
         vanilla_func(hidden_param="foo")
+
+
+def test_classes() -> None:
+    @public
+    class Public:
+        def bar(self):
+            pass
+
+    assert is_public(Public)
+
+    class NotPublic:
+        def bar(self):
+            pass
+
+    assert is_public(Public)
+    assert not is_public(NotPublic)
+
+    @public
+    class DerivedFromNotPublic(NotPublic):
+        def bar(self):
+            pass
+
+    assert is_public(Public)
+    assert not is_public(NotPublic)
+    assert is_public(DerivedFromNotPublic)
+
+    class DerivedFromPublic(Public):
+        def bar(self):
+            pass
+
+    assert is_public(Public)
+    assert not is_public(NotPublic)
+    assert is_public(DerivedFromNotPublic)
+    assert not is_public(DerivedFromPublic)

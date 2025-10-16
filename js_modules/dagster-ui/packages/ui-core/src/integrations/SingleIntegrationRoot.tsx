@@ -12,9 +12,11 @@ import {useIntegrationsProvider} from 'shared/integrations/useIntegrationsProvid
 
 import {SingleIntegrationPage} from './SingleIntegrationPage';
 import {IntegrationConfig} from './types';
+import {useTrackPageView} from '../app/analytics';
 import {AnchorButton} from '../ui/AnchorButton';
 
 export const SingleIntegrationRoot = () => {
+  useTrackPageView();
   const {integrationId} = useParams<{integrationId: string}>();
   const [loading, setLoading] = useState(true);
   const [integration, setIntegration] = useState<IntegrationConfig | null>(null);

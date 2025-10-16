@@ -27,14 +27,14 @@ class PythonScriptComponent(ExecutableComponent):
     Accepts a path to a Python script which will be executed in a dagster-pipes subprocess using your installed `python` executable.
 
     Examples:
-    ```yaml
-    type: dagster.PythonScriptComponent
-    attributes:
-      execution:
-        path: update_table.py
-      assets:
-        - key: my_table
-    ```
+        .. code-block:: yaml
+
+            type: dagster.PythonScriptComponent
+            attributes:
+              execution:
+                path: update_table.py
+              assets:
+                - key: my_table
     """
 
     execution: ScriptSpec

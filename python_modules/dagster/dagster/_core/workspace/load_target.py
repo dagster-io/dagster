@@ -5,7 +5,7 @@ from typing import Optional, Union, cast
 
 from dagster_shared.record import record
 
-from dagster._core.remote_representation.origin import (
+from dagster._core.remote_origin import (
     CodeLocationOrigin,
     GrpcServerCodeLocationOrigin,
     InProcessCodeLocationOrigin,
@@ -99,6 +99,61 @@ def is_valid_modules_list(modules: list[dict[str, str]]) -> bool:
     return True
 
 
+def get_target_from_toml_data(
+    data: dict,
+) -> Union["ModuleTarget", "AutoloadDefsModuleTarget", list["ModuleTarget"], None]:
+    dagster_block = data.get("tool", {}).get("dagster", {})
+
+    if "module_name" in dagster_block or "modules" in dagster_block:
+        assert validate_dagster_block_for_module_name_or_modules(dagster_block) is True
+
+    if "module_name" in dagster_block:
+        return ModuleTarget(
+            module_name=dagster_block.get("module_name"),
+            attribute=None,
+            working_directory=os.getcwd(),
+            location_name=dagster_block.get("code_location_name"),
+        )
+    elif "modules" in dagster_block and is_valid_modules_list(dagster_block.get("modules")):
+        return [
+            ModuleTarget(
+                module_name=module.get("name"),
+                attribute=None,
+                working_directory=os.getcwd(),
+                location_name=dagster_block.get("code_location_name"),
+            )
+            for module in dagster_block.get("modules")
+            if module.get("type") == "module"
+        ]
+
+    # This allows `dagster dev` to work with projects scaffolded by the new `dg` CLI
+    # without the need to include a `tool.dagster` section.
+    dg_block = data.get("tool", {}).get("dg", {}).get("project", {})
+    if dg_block:
+        if dg_block.get("autoload_defs"):
+            default_autoload_defs_module_name = f"{dg_block['root_module']}.defs"
+            autoload_defs_module_name = dg_block.get(
+                "defs_module", default_autoload_defs_module_name
+            )
+            return AutoloadDefsModuleTarget(
+                autoload_defs_module_name=autoload_defs_module_name,
+                working_directory=os.getcwd(),
+                location_name=dg_block.get("code_location_name"),
+            )
+
+        default_module_name = f"{dg_block['root_module']}.definitions"
+        module_name = dg_block.get("code_location_target_module", default_module_name)
+
+        return ModuleTarget(
+            module_name=module_name,
+            attribute=None,
+            working_directory=os.getcwd(),
+            location_name=dg_block.get("code_location_name"),
+        )
+
+    return None
+
+
 def get_origins_from_toml(
     path: str,
 ) -> Sequence[ManagedGrpcPythonEnvCodeLocationOrigin]:
@@ -108,57 +163,13 @@ def get_origins_from_toml(
         data = tomli.load(f)
         if not isinstance(data, dict):
             return []
-
-        dagster_block = data.get("tool", {}).get("dagster", {})
-
-        if "module_name" in dagster_block or "modules" in dagster_block:
-            assert validate_dagster_block_for_module_name_or_modules(dagster_block) is True
-
-        if "module_name" in dagster_block:
-            return ModuleTarget(
-                module_name=dagster_block.get("module_name"),
-                attribute=None,
-                working_directory=os.getcwd(),
-                location_name=dagster_block.get("code_location_name"),
-            ).create_origins()
-        elif "modules" in dagster_block and is_valid_modules_list(dagster_block.get("modules")):
-            origins = []
-            for module in dagster_block.get("modules"):
-                if module.get("type") == "module":
-                    origins.extend(
-                        ModuleTarget(
-                            module_name=module.get("name"),
-                            attribute=None,
-                            working_directory=os.getcwd(),
-                            location_name=dagster_block.get("code_location_name"),
-                        ).create_origins()
-                    )
-            return origins
-
-        # This allows `dagster dev` to work with projects scaffolded by the new `dg` CLI
-        # without the need to include a `tool.dagster` section.
-        dg_block = data.get("tool", {}).get("dg", {}).get("project", {})
-        if dg_block:
-            if dg_block.get("autoload_defs"):
-                default_autoload_defs_module_name = f"{dg_block['root_module']}.defs"
-                autoload_defs_module_name = dg_block.get(
-                    "defs_module", default_autoload_defs_module_name
-                )
-                return AutoloadDefsModuleTarget(
-                    autoload_defs_module_name=autoload_defs_module_name,
-                    working_directory=os.getcwd(),
-                    location_name=dg_block.get("code_location_name"),
-                ).create_origins()
-
-            default_module_name = f"{dg_block['root_module']}.definitions"
-            module_name = dg_block.get("code_location_target_module", default_module_name)
-
-            return ModuleTarget(
-                module_name=module_name,
-                attribute=None,
-                working_directory=os.getcwd(),
-                location_name=dg_block.get("code_location_name"),
-            ).create_origins()
+        target = get_target_from_toml_data(data)
+        if isinstance(target, ModuleTarget):
+            return target.create_origins()
+        elif isinstance(target, AutoloadDefsModuleTarget):
+            return target.create_origins()
+        elif isinstance(target, list):
+            return [origin for target in target for origin in target.create_origins()]
         else:
             return []
 

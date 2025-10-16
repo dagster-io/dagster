@@ -6,22 +6,8 @@ import time
 from pathlib import Path
 
 import pytest
-from dagster_dg_core.utils import (
-    create_toml_node,
-    ensure_dagster_dg_tests_import,
-    modify_toml_as_dict,
-    pushd,
-)
+from dagster_dg_core.utils import activate_venv, create_toml_node, modify_toml_as_dict, pushd
 from dagster_shared.ipc import interrupt_ipc_subprocess
-
-ensure_dagster_dg_tests_import()
-from dagster_dg_core.utils import activate_venv
-from dagster_dg_core_tests.utils import (
-    COMPONENT_INTEGRATION_TEST_DIR,
-    ProxyRunner,
-    assert_runner_result,
-    create_project_from_components,
-)
 from dagster_test.components.test_utils.test_cases import (
     BASIC_COMPONENT_TYPE_FILEPATH,
     BASIC_INVALID_VALUE,
@@ -30,6 +16,12 @@ from dagster_test.components.test_utils.test_cases import (
     COMPONENT_VALIDATION_TEST_CASES,
     ComponentValidationTestCase,
     msg_includes_all_of,
+)
+from dagster_test.dg_utils.utils import (
+    COMPONENT_INTEGRATION_TEST_DIR,
+    ProxyRunner,
+    assert_runner_result,
+    create_project_from_components,
 )
 
 ENV_VAR_TEST_CASES = [
@@ -86,7 +78,11 @@ def test_check_yaml(test_case: ComponentValidationTestCase) -> None:
         ) as tmpdir,
     ):
         with pushd(tmpdir):
-            result = runner.invoke("check", "yaml")
+            # Enable validation for ENV_VAR_TEST_CASES since default is now False
+            cmd_args = ["check", "yaml"]
+            if test_case in ENV_VAR_TEST_CASES:
+                cmd_args.append("--validate-requirements")
+            result = runner.invoke(*cmd_args)
             if test_case.should_error:
                 assert_runner_result(result, exit_0=False)
                 assert test_case.check_error_msg
@@ -102,9 +98,7 @@ def test_check_yaml(test_case: ComponentValidationTestCase) -> None:
     ids=[str(case.component_path) for case in ENV_VAR_TEST_CASES],
 )
 def test_check_yaml_no_env_var_validation(test_case: ComponentValidationTestCase) -> None:
-    """Tests that the check CLI does not validate env vars when the
-    --no-validate-requirements flag is provided.
-    """
+    """Tests that the check CLI does not validate env vars when the --no-validate-requirements flag is provided (default)."""
     with (
         ProxyRunner.test() as runner,
         create_project_from_components(
@@ -114,9 +108,12 @@ def test_check_yaml_no_env_var_validation(test_case: ComponentValidationTestCase
         ) as tmpdir,
     ):
         with pushd(tmpdir):
-            result = runner.invoke("check", "yaml", "--no-validate-requirements")
+            # Test both default behavior (no validation) and explicit --no-validate-requirements
+            result_default = runner.invoke("check", "yaml")
+            assert_runner_result(result_default)
 
-            assert_runner_result(result)
+            result_explicit = runner.invoke("check", "yaml", "--no-validate-requirements")
+            assert_runner_result(result_explicit)
 
 
 def test_check_yaml_succeeds_non_default_defs_module() -> None:

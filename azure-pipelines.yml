@@ -8,7 +8,7 @@ parameters:
   - name: py3_versions
     type: object
     default:
-      - "3.10"
+      - "3.12"
   - name: dagster_core_py3_env_suffixes
     type: object
     default:
@@ -22,7 +22,7 @@ parameters:
 jobs:
   - job: "dagster"
     pool:
-      vmImage: "windows-2019"
+      vmImage: "windows-2025"
     strategy:
       matrix:
         ${{ each py_version in parameters.py3_versions }}:
@@ -57,8 +57,3 @@ jobs:
           tox -e $env:TOX_ENV
           cd $env:PATH_BACK_TO_REPO_ROOT
         displayName: "Run tests"
-      - task: PublishTestResults@2
-        inputs:
-          testResultsFiles: "**/test_results.xml"
-          testRunTitle: "$(PACKAGE_ROOT) $(TOX_ENV)"
-        condition: succeededOrFailed()

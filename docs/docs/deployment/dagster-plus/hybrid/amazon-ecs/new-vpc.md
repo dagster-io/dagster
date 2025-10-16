@@ -3,6 +3,7 @@ description: Set up and deploy a Dagster+ Amazon ECS agent in a new VPC using Cl
   with Dagster+.
 sidebar_position: 3100
 title: New VPC setup
+tags: [dagster-plus-feature]
 ---
 
 :::note
@@ -72,6 +73,8 @@ After the stack is installed, you'll be prompted to configure it. In the ECS wiz
 - **Dagster+ Deployment**: Enter the name of the Dagster+ deployment you want to use. Leave this field empty if the agent will only serve Branch deployments.
 - **Enable Branch Deployments**: Whether to have this agent serve your ephemeral [Branch deployments](/deployment/dagster-plus/ci-cd/branch-deployments). Only a single agent should have this setting enabled.
 - **Agent Token**: Paste the agent token you generated in [Step 1](#step-1-generate-a-dagster-agent-token).
+- **AgentCPU**: The amount of AWS CPU to allocate to the agent. Defaults to 256 CPU units.
+- **AgentMemory**: The amount of memory to allocate to the agent. Defaults to 1024 MiB.
 
 The page should look similar to the following image. In this example, our organization name is `hooli` and our deployment is `prod`:
 

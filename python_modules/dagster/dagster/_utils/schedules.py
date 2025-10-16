@@ -868,8 +868,11 @@ def get_smallest_cron_interval(
 ) -> datetime.timedelta:
     """Find the smallest interval between cron ticks for a given cron schedule.
 
-    Uses a naive, sampling-based approach to find the minimum interval by generating
-    consecutive cron ticks and measuring the gaps between them.
+    Uses a sampling-based approach to find the minimum interval by generating
+    consecutive cron ticks and measuring the gaps between them. Sampling stops
+    early if either of these limits is reached:
+      - A maximum of 1000 generated ticks
+      - A time horizon of 20 years past the sampling start
 
     Args:
         cron_string: A cron string
@@ -892,6 +895,8 @@ def get_smallest_cron_interval(
 
     # Start sampling from a year ago to capture seasonal variations (DST, leap years)
     sampling_start = start_time - datetime.timedelta(days=365)
+    # Cap the lookahead horizon to avoid extremely distant datetimes (e.g., year ~3000 on Windows)
+    horizon_deadline = sampling_start + relativedelta(years=20)
 
     # Generate consecutive cron ticks
     cron_iter = schedule_execution_time_iterator(
@@ -905,11 +910,32 @@ def get_smallest_cron_interval(
     prev_tick = next(cron_iter)
     min_interval = None
 
-    # Sample 1000 ticks to cover various edge cases
+    # Sample up to 1000 ticks, but also stop at the 20-year horizon
     for _ in range(999):
         try:
             current_tick = next(cron_iter)
+            # Stop if we've gone beyond our lookahead horizon
+            if current_tick > horizon_deadline:
+                break
             interval = current_tick - prev_tick
+
+            # Handle DST transitions where two ticks can have the same wall clock time
+            # but different fold values (indicating they're actually different points in time)
+            if interval == datetime.timedelta(seconds=0):
+                # Check if this is a DST ambiguous time scenario where both ticks
+                # represent the same local time but different actual moments
+                if (
+                    current_tick.hour == prev_tick.hour
+                    and current_tick.minute == prev_tick.minute
+                    and current_tick.second == prev_tick.second
+                    and current_tick.fold != prev_tick.fold
+                ):
+                    # This is a DST fall-back transition - skip this zero interval
+                    # as it's not representative of the true minimum cron interval
+                    prev_tick = current_tick
+                    continue
+                # We've encountered a genuine zero interval (which shouldn't happen)
+                raise Exception("Encountered a genuine zero interval")
 
             # Update minimum interval
             if min_interval is None or interval < min_interval:

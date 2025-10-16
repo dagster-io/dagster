@@ -1,0 +1,14 @@
+type: my_project.defs.assets_with_schedules.asset_with_schedule.AssetWithSchedule
+attributes:
+  asset_key: ["foo"]
+  cron_schedule: "*/10 * * * *"
+---
+type: my_project.defs.assets_with_schedules.asset_with_schedule.AssetWithSchedule
+attributes:
+  asset_key: ["bar"]
+  cron_schedule: "*/20 * * * *"
+---
+type: my_project.defs.assets_with_schedules.asset_with_schedule.AssetWithSchedule
+attributes:
+  asset_key: ["baz"]
+  cron_schedule: "*/30 * * * *"

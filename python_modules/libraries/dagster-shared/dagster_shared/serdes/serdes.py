@@ -643,31 +643,31 @@ class ObjectSerializer(Serializer, Generic[T]):
     ) -> Iterator[tuple[str, JsonSerializableValue]]:
         yield "__class__", self.get_storage_name()
         for key, inner_value in self.object_as_mapping(self.before_pack(value)).items():
-            if (key in self.skip_when_empty_fields and inner_value in EMPTY_VALUES_TO_SKIP) or (
-                key in self.skip_when_none_fields and inner_value is None
-            ):
-                continue
             storage_key = self.storage_field_names.get(key, key)
             custom = self.field_serializers.get(key)
             if custom:
-                yield (
-                    storage_key,
-                    custom.pack(
-                        inner_value,
-                        whitelist_map=whitelist_map,
-                        descent_path=f"{descent_path}.{key}",
-                    ),
+                field_value = custom.pack(
+                    inner_value,
+                    whitelist_map=whitelist_map,
+                    descent_path=f"{descent_path}.{key}",
                 )
             else:
-                yield (
-                    storage_key,
-                    _transform_for_serialization(
-                        inner_value,
-                        whitelist_map=whitelist_map,
-                        object_handler=object_handler,
-                        descent_path=f"{descent_path}.{key}",
-                    ),
-                )
+                field_value = inner_value
+
+            if (key in self.skip_when_empty_fields and field_value in EMPTY_VALUES_TO_SKIP) or (
+                key in self.skip_when_none_fields and field_value is None
+            ):
+                continue
+
+            yield (
+                storage_key,
+                _transform_for_serialization(
+                    field_value,
+                    whitelist_map=whitelist_map,
+                    object_handler=object_handler,
+                    descent_path=f"{descent_path}.{key}",
+                ),
+            )
         for key, default in self.old_fields.items():
             yield key, default
 

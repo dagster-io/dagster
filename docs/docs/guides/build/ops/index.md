@@ -2,6 +2,8 @@
 title: 'Ops'
 description: Ops are the core unit of computation in Dagster and contain the logic of your orchestration graph.
 sidebar_position: 90
+canonicalUrl: "/guides/build/ops"
+slug: "/guides/build/ops"
 ---
 
 import OpsNote from '@site/docs/partials/\_OpsNote.md';

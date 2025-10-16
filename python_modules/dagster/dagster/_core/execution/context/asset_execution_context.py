@@ -83,6 +83,7 @@ def _get_deprecation_kwargs(attr: str) -> Mapping[str, Any]:
     return deprecation_kwargs
 
 
+@public
 class AssetExecutionContext:
     def __init__(self, op_execution_context: OpExecutionContext) -> None:
         self._op_execution_context = check.inst_param(

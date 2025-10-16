@@ -1,5 +1,6 @@
 import importlib
 import json
+import re
 import subprocess
 import textwrap
 from pathlib import Path
@@ -10,14 +11,9 @@ from dagster_dg_core.utils import (
     activate_venv,
     create_toml_node,
     cross_platfrom_string_path,
-    ensure_dagster_dg_tests_import,
     modify_toml_as_dict,
 )
-
-ensure_dagster_dg_tests_import()
-
-from dagster_dg_core.utils import ensure_dagster_dg_tests_import
-from dagster_dg_core_tests.utils import (
+from dagster_test.dg_utils.utils import (
     ProxyRunner,
     assert_runner_result,
     isolated_example_component_library_foo_bar,
@@ -40,14 +36,18 @@ def test_scaffold_defs_dynamic_subcommand_generation() -> None:
 
         normalized_output = standardize_box_characters(result.output)
         # These are wrapped in a table so it's hard to check exact output.
+        # The " +\w" at the end is used to ensure that a help message is generated for the
+        # component.
         for line in [
-            "╭─ Commands",
-            "│ dagster_test.components.AllMetadataEmptyComponent",
-            "│ dagster_test.components.ComplexAssetComponent",
-            "│ dagster_test.components.SimpleAssetComponent",
-            "│ dagster_test.components.SimplePipesScriptComponent",
+            r"╭─ Commands",
+            r"│ dagster_test.components.AllMetadataEmptyComponent +\w",
+            r"│ dagster_test.components.ComplexAssetComponent +\w",
+            r"│ dagster_test.components.SimpleAssetComponent +\w",
+            r"│ dagster_test.components.SimplePipesScriptComponent +\w",
         ]:
-            assert standardize_box_characters(line) in normalized_output
+            assert re.search(standardize_box_characters(line), normalized_output), (
+                f"Expected line not found: {line}"
+            )
 
 
 @pytest.mark.parametrize(
@@ -94,30 +94,33 @@ def test_scaffold_defs_validation_failure() -> None:
             "scaffold", "defs", "dagster_test.components.SimplePipesScriptComponent", "qux"
         )
         assert_runner_result(result, exit_0=False)
+        # Get pydantic version to make test robust across versions
+        import pydantic
+
+        pydantic_version = ".".join(pydantic.__version__.split(".")[:2])  # Get major.minor version
+
         assert (
             result.output.strip()
-            == textwrap.dedent("""
-            Error validating scaffold parameters for `dagster_test.components.SimplePipesScriptComponent`:
-
-            [
-                {
+            == textwrap.dedent(f"""
+            Error validating scaffold parameters for `dagster_test.components.SimplePipesScriptComponent`:\\n\\n[
+                {{
                     "type": "missing",
                     "loc": [
                         "asset_key"
                     ],
                     "msg": "Field required",
-                    "input": {},
-                    "url": "https://errors.pydantic.dev/2.11/v/missing"
-                },
-                {
+                    "input": {{}},
+                    "url": "https://errors.pydantic.dev/{pydantic_version}/v/missing"
+                }},
+                {{
                     "type": "missing",
                     "loc": [
                         "filename"
                     ],
                     "msg": "Field required",
-                    "input": {},
-                    "url": "https://errors.pydantic.dev/2.11/v/missing"
-                }
+                    "input": {{}},
+                    "url": "https://errors.pydantic.dev/{pydantic_version}/v/missing"
+                }}
             ]
         """).strip()
         )

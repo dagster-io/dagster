@@ -2,8 +2,8 @@ from typing import Callable
 
 import dagster as dg
 from dagster.components.component.template_vars import is_template_var
+from dagster.components.core.component_tree import ComponentTree
 from dagster.components.core.context import ComponentLoadContext
-from dagster.components.core.tree import ComponentTree
 
 
 def test_template_udf_decorator():

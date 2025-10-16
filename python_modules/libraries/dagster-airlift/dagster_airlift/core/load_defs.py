@@ -250,7 +250,7 @@ def build_defs_from_airflow_instance(
         defs=defs, assets=fully_resolved_assets_definitions
     )
 
-    return Definitions.merge(
+    return Definitions.merge_unbound_defs(
         defs_with_airflow_assets,
         Definitions(
             sensors=[

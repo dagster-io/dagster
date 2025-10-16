@@ -38,6 +38,7 @@ from dagster._core.utils import toposort
 from dagster._utils.cached_method import cached_method
 
 if TYPE_CHECKING:
+    from dagster._core.definitions.assets.definition.asset_spec import AssetExecutionType
     from dagster._core.definitions.assets.graph.asset_graph_subset import AssetGraphSubset
     from dagster._core.definitions.auto_materialize_policy import AutoMaterializePolicy
     from dagster._core.definitions.declarative_automation.automation_condition import (
@@ -126,6 +127,10 @@ class BaseAssetNode(BaseEntityNode[AssetKey]):
     @property
     @abstractmethod
     def is_executable(self) -> bool: ...
+
+    @property
+    @abstractmethod
+    def execution_type(self) -> "AssetExecutionType": ...
 
     @property
     @abstractmethod
@@ -360,8 +365,18 @@ class BaseAssetGraph(ABC, Generic[T_AssetNode]):
     def unpartitioned_asset_keys(self) -> AbstractSet[AssetKey]:
         return {node.key for node in self.asset_nodes if not node.is_partitioned}
 
-    def asset_keys_for_group(self, group_name: str) -> AbstractSet[AssetKey]:
-        return {node.key for node in self.asset_nodes if node.group_name == group_name}
+    @cached_method
+    def asset_keys_for_group(
+        self, group_name: str, require_materializable: bool = False
+    ) -> AbstractSet[AssetKey]:
+        if require_materializable:
+            return {
+                node.key
+                for node in self.asset_nodes
+                if node.group_name == group_name and node.is_materializable
+            }
+        else:
+            return {node.key for node in self.asset_nodes if node.group_name == group_name}
 
     @cached_method
     def asset_keys_for_partitions_def(

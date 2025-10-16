@@ -122,13 +122,16 @@ export const SidebarOp = ({
       </Box>
     );
   }
+  // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
   const pools = solidContainer!.solidHandle!.solid.definition.pools;
   return (
     <>
       <SidebarOpInvocation
         key={`${handleID}-inv`}
+        // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
         solid={solidContainer!.solidHandle!.solid}
         onEnterSubgraph={
+          // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
           solidContainer!.solidHandle!.solid.definition.__typename === 'CompositeSolidDefinition'
             ? onEnterSubgraph
             : undefined
@@ -149,6 +152,7 @@ export const SidebarOp = ({
         <SidebarOpExecutionGraphs
           key={`${handleID}-graphs`}
           handleID={handleID}
+          // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
           solidName={solidContainer!.solidHandle!.solid.name}
           pipelineName={explorerPath.pipelineName}
           repoAddress={repoAddress}
@@ -157,6 +161,7 @@ export const SidebarOp = ({
       <SidebarOpDefinition
         key={`${handleID}-def`}
         showingSubgraph={showingSubgraph}
+        // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
         definition={solidContainer!.solidHandle!.solid.definition}
         getInvocations={getInvocations}
         onClickInvocation={({handleID}) => onClickOp({path: handleID.split('.')})}

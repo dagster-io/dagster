@@ -50,7 +50,7 @@ from dagster._core.errors import DagsterInvalidDefinitionError
 if TYPE_CHECKING:
     from dagster._core.definitions.asset_checks.asset_check_spec import AssetCheckKey
     from dagster._core.definitions.events import AssetKey
-    from dagster.components.core.tree import ComponentTree
+    from dagster.components.core.component_tree import ComponentTree
 
 # We throw an error if the user attaches an instance of a custom `PartitionsDefinition` subclass to
 # a definition-- we can't support custom PartitionsDefinition subclasses due to us needing to load

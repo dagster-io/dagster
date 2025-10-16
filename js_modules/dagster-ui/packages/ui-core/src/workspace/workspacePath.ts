@@ -5,7 +5,7 @@ import {buildRepoPathForURL} from './buildRepoAddress';
 import {RepoAddress} from './types';
 import {isHiddenAssetGroupJob, tokenForAssetKey} from '../asset-graph/Utils';
 import {globalAssetGraphPathToString} from '../assets/globalAssetGraphPathToString';
-import {Run} from '../graphql/types';
+import {AssetKey} from '../graphql/types';
 import {isExternalRun} from '../runs/externalRuns';
 
 export const workspacePath = (repoName: string, repoLocation: string, path = '') => {
@@ -45,15 +45,22 @@ export const workspacePathFromAddress = (repoAddress: RepoAddress, path = '') =>
 };
 
 type RunDetails = {
-  run: Pick<
-    Run,
-    | 'id'
-    | 'pipelineName'
-    | 'assetSelection'
-    | 'assetCheckSelection'
-    | 'hasReExecutePermission'
-    | 'tags'
-  >;
+  run: {
+    id: string;
+    pipelineName: string;
+    executionPlan?: null | {assetKeys: AssetKey[]};
+    assetCheckSelection:
+      | null
+      | {
+          name: string;
+          assetKey: AssetKey;
+        }[];
+    tags: {
+      key: string;
+      value: string;
+    }[];
+    hasReExecutePermission: boolean;
+  };
   repositoryName?: string;
   repositoryLocationName?: string;
   isJob: boolean;
@@ -71,9 +78,8 @@ export const workspacePipelineLinkForRun = ({
   isJob,
 }: RunDetails) => {
   if (isHiddenAssetGroupJob(run.pipelineName)) {
-    const opsQuery = (run.assetSelection || [])
-      .map((key) => `key:"${tokenForAssetKey(key)}"`)
-      .join(' or ');
+    const keys = run.executionPlan?.assetKeys ?? [];
+    const opsQuery = keys.map((key) => `key:"${tokenForAssetKey(key)}"`).join(' or ');
 
     return {
       disabledReason: null,
@@ -83,7 +89,7 @@ export const workspacePipelineLinkForRun = ({
     };
   }
 
-  const isAssetJob = run.assetCheckSelection?.length || run.assetSelection?.length;
+  const isAssetJob = run.assetCheckSelection?.length || run.executionPlan?.assetKeys?.length;
   const isExternalJob = isExternalRun(run);
   const path = isAssetJob || isExternalJob ? '/' : `/playground/setup-from-run/${run.id}`;
   const to =

@@ -1,9 +1,19 @@
+import tempfile
 from abc import ABC, abstractmethod
-from collections.abc import Mapping, Sequence
+from collections.abc import Iterator, Mapping, Sequence
+from contextlib import contextmanager
 from enum import Enum
 from functools import cached_property
+from pathlib import Path
 from typing import TYPE_CHECKING, Any, ClassVar, Generic, Optional, TypeVar, cast
 
+from dagster_shared.serdes.objects.models.defs_state_info import (
+    CODE_SERVER_STATE_VERSION,
+    LOCAL_STATE_VERSION,
+    DefsKeyStateInfo,
+    DefsStateInfo,
+    DefsStateManagementType,
+)
 from dagster_shared.serdes.serdes import PackableValue, deserialize_value, serialize_value
 
 from dagster._core.definitions.assets.definition.cacheable_assets_definition import (
@@ -14,6 +24,12 @@ from dagster._core.definitions.metadata.metadata_value import (
     CodeLocationReconstructionMetadataValue,
 )
 from dagster._core.errors import DagsterInvariantViolationError
+from dagster._core.storage.defs_state.base import DefsStateStorage
+from dagster.components.utils.defs_state import DefsStateConfig
+from dagster.components.utils.project_paths import (
+    get_code_server_metadata_key,
+    get_local_state_path,
+)
 
 if TYPE_CHECKING:
     from dagster._core.definitions.repository_definition import RepositoryLoadData
@@ -56,10 +72,27 @@ class DefinitionsLoadContext:
         self._repository_load_data = repository_load_data
         self._pending_reconstruction_metadata = {}
 
+        defs_state_info = repository_load_data.defs_state_info if repository_load_data else None
+
+        # keep track of the keys that have been accessed during the load process
+        self._accessed_defs_state_keys = (
+            set() if defs_state_info is None else set(defs_state_info.info_mapping.keys())
+        )
+        if load_type == DefinitionsLoadType.INITIALIZATION and defs_state_info is None:
+            # defs_state_info is passed in during INITIALIZATION if explicit state versions
+            # are provided via CLI arguments, otherwise we use the latest available state info
+            state_storage = DefsStateStorage.get()
+            self._defs_state_info = (
+                state_storage.get_latest_defs_state_info() if state_storage else None
+            )
+        else:
+            self._defs_state_info = defs_state_info
+
     @classmethod
     def get(cls) -> "DefinitionsLoadContext":
         """Get the current DefinitionsLoadContext. If it has not been set, the
-        context is assumed to be initialization.
+        context is assumed to be in initialization, and the state versions are
+        set to the latest available versions.
         """
         return DefinitionsLoadContext._instance or cls(load_type=DefinitionsLoadType.INITIALIZATION)
 
@@ -80,6 +113,13 @@ class DefinitionsLoadContext:
 
     def add_to_pending_reconstruction_metadata(self, key: str, metadata: Any) -> None:
         self._pending_reconstruction_metadata[key] = metadata
+
+    def add_code_server_defs_state_info(self, key: str, metadata: Any) -> None:
+        """Marks state that was stored during the code server initialization process."""
+        self._defs_state_info = DefsStateInfo.add_version(
+            self._defs_state_info, key, CODE_SERVER_STATE_VERSION
+        )
+        self.add_to_pending_reconstruction_metadata(get_code_server_metadata_key(key), metadata)
 
     def get_pending_reconstruction_metadata(self) -> Mapping[str, Any]:
         return self._pending_reconstruction_metadata
@@ -117,6 +157,86 @@ class DefinitionsLoadContext:
             if self._repository_load_data
             else {}
         )
+
+    @property
+    def accessed_defs_state_info(self) -> Optional[DefsStateInfo]:
+        return (
+            self._defs_state_info.for_keys(self._accessed_defs_state_keys)
+            if self._defs_state_info
+            else None
+        )
+
+    def _mark_defs_key_accessed(self, key: str) -> None:
+        self._accessed_defs_state_keys.add(key)
+
+    def _get_defs_key_state_info(self, key: str) -> Optional[DefsKeyStateInfo]:
+        """Ensures that if we attempt to access a key that doesn't exist, we mark it as None."""
+        self._mark_defs_key_accessed(key)
+        current_info = self._defs_state_info or DefsStateInfo.empty()
+        key_info = current_info.info_mapping.get(key)
+        if key_info is None:
+            self._defs_state_info = DefsStateInfo.add_version(current_info, key, None)
+        return key_info
+
+    def _get_defs_state_from_reconstruction_metadata(self, key: str) -> str:
+        metadata_key = get_code_server_metadata_key(key)
+        if self.load_type == DefinitionsLoadType.RECONSTRUCTION:
+            return self.reconstruction_metadata[metadata_key]
+        else:
+            return self._pending_reconstruction_metadata[metadata_key]
+
+    def add_defs_state_info(
+        self, key: str, version: str, create_timestamp: Optional[float] = None
+    ) -> None:
+        self._mark_defs_key_accessed(key)
+        self._defs_state_info = DefsStateInfo.add_version(
+            self._defs_state_info, key, version, create_timestamp
+        )
+
+    @contextmanager
+    def state_path(
+        self, config: DefsStateConfig, state_storage: DefsStateStorage, project_root: Path
+    ) -> Iterator[Optional[Path]]:
+        """Context manager that creates a temporary path to hold local state for a component.
+
+        Args:
+            config: The state configuration for the component.
+            state_storage: The state storage instance.
+            project_root: The root directory of the project.
+        """
+        # if no state has ever been written for this key, we return None to indicate that no state is available
+        key = config.key
+        key_info = self._get_defs_key_state_info(key)
+
+        if config.type == DefsStateManagementType.LOCAL_FILESYSTEM:
+            # it is possible for local state to exist without the defs_state_storage being aware
+            # of it if the state was added during docker build
+            state_path = get_local_state_path(key, project_root)
+            if not state_path.exists():
+                yield None
+                return
+            self.add_defs_state_info(key, LOCAL_STATE_VERSION, state_path.stat().st_ctime)
+            yield state_path
+        elif config.type == DefsStateManagementType.VERSIONED_STATE_STORAGE:
+            key_info = self._get_defs_key_state_info(key)
+            # this implies that no state has been stored since the management type was changed
+            if key_info is None or key_info.management_type != config.type:
+                yield None
+                return
+            # grab state for storage
+            with tempfile.TemporaryDirectory() as temp_dir:
+                state_path = Path(temp_dir) / "state"
+                state_storage.download_state_to_path(key, key_info.version, state_path)
+                yield state_path
+        elif config.type == DefsStateManagementType.LEGACY_CODE_SERVER_SNAPSHOTS:
+            # state is stored in the reconstruction metadata
+            with tempfile.TemporaryDirectory() as temp_dir:
+                state_path = Path(temp_dir) / "state"
+                state = self._get_defs_state_from_reconstruction_metadata(key)
+                state_path.write_text(state)
+                yield state_path
+        else:
+            raise DagsterInvariantViolationError(f"Invalid management type: {config.type}")
 
 
 TState = TypeVar("TState", bound=PackableValue)

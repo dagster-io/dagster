@@ -2,6 +2,7 @@
 description: Configure Dagster+ Kubernetes agents using Helm charts for per-deployment and per-location settings.
 sidebar_position: 2200
 title: Kubernetes agent configuration
+tags: [dagster-plus-feature]
 ---
 
 This reference describes the various configuration options Dagster+ currently supports for [Kubernetes agents](/deployment/dagster-plus/hybrid/kubernetes/setup).
@@ -18,6 +19,24 @@ helm show values dagster-plus/dagster-plus-agent
 
 You can also view the chart values on [ArtifactHub](https://artifacthub.io/packages/helm/dagster-cloud/dagster-cloud-agent?modal=values).
 
+## Agent configuration
+
+The [`dagsterCloudAgent`](https://artifacthub.io/packages/helm/dagster-cloud/dagster-cloud-agent?modal=values) value of the Helm chart provides the ability to add configuration to the Dagster+ agent.
+
+The following `values.yaml` example file shows how to configure the resources for a Dagster+ agent:
+
+```yaml
+# values.yaml
+dagsterCloudAgent:
+  resources:
+    requests:
+      cpu: '1000m'
+      memory: '2Gi'
+    limits:
+      cpu: '2000m'
+      memory: '4Gi'
+```
+
 ## Per-deployment configuration
 
 The [`workspace`](https://artifacthub.io/packages/helm/dagster-cloud/dagster-cloud-agent?modal=values) value of the Helm chart provides the ability to add configuration for all jobs that are spun up by the agent, across all repositories. To add secrets or mounted volumes to all Kubernetes Pods, you can specify your desired configuration under this value.
@@ -32,7 +51,6 @@ The following example [`dagster_cloud.yaml`](/deployment/code-locations/dagster-
 
 ```yaml
 # dagster_cloud.yaml
-
 locations:
   - location_name: cloud-examples
     image: dagster/dagster-cloud-examples:latest
@@ -105,7 +123,6 @@ Using the `container_context.k8s.env_vars` and `container_context.k8s.env_secret
 
 ```yaml
 # dagster_cloud.yaml
-
 location:
   - location_name: cloud-examples
     image: dagster/dagster-cloud-examples:latest
@@ -137,10 +154,11 @@ By default, each Dagster job will run in its own Kubernetes pod, with each op ru
 You can also configure your Dagster job with the <PyObject section="libraries" module="dagster_k8s" object="k8s_job_executor" /> to run each op in its own Kubernetes pod. For example:
 
 ```python
-from dagster import job
+# jobs.py
+import dagster as dg
 from dagster_k8s import k8s_job_executor
 
-@job(executor_def=k8s_job_executor)
+@dg.job(executor_def=k8s_job_executor)
 def k8s_job():
     ...
 ```

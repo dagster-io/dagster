@@ -1,4 +1,3 @@
-import {Meta} from '@storybook/react';
 import * as React from 'react';
 
 import {Box} from '../Box';
@@ -31,7 +30,7 @@ const JOB_STYLES: React.CSSProperties = {
 export default {
   title: 'Tooltip',
   component: Tooltip,
-} as Meta;
+};
 
 export const Default = () => {
   const content = (

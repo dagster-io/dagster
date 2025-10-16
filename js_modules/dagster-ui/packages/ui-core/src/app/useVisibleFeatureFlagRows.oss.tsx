@@ -28,7 +28,11 @@ export const useVisibleFeatureFlagRows = (): FeatureFlagRow[] => [
     flagType: FeatureFlag.flagDisableAutoLoadDefaults,
   },
   {
-    key: 'Docs in app (experimental)',
-    flagType: FeatureFlag.flagDocsInApp,
+    key: 'Show separate asset graph groups per code location',
+    flagType: FeatureFlag.flagAssetGraphGroupsPerCodeLocation,
+  },
+  {
+    key: 'Use new navigation layout',
+    flagType: FeatureFlag.flagNavigationUpdate,
   },
 ];

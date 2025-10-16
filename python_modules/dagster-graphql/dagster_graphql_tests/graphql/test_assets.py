@@ -85,6 +85,23 @@ GET_ASSETS_QUERY = """
     }
 """
 
+GET_ASSETS_BY_KEYS_QUERY = """
+    query AssetKeyQuery($assetKeys: [AssetKeyInput!]) {
+        assetsOrError(assetKeys: $assetKeys) {
+            __typename
+            ...on AssetConnection {
+                nodes {
+                    id
+                    key {
+                        path
+                    }
+                }
+                cursor
+            }
+        }
+    }
+"""
+
 GET_ASSET_MATERIALIZATION = """
     query AssetQuery($assetKey: AssetKeyInput!) {
         assetOrError(assetKey: $assetKey) {
@@ -98,6 +115,7 @@ GET_ASSET_MATERIALIZATION = """
                         partitions
                     }
                 }
+                hasDefinitionOrRecord
             }
             ... on AssetNotFoundError {
                 __typename
@@ -1084,6 +1102,41 @@ class TestAssetAwareEventLog(ExecutingGraphQLContextTestMatrix):
 
         snapshot.assert_match(result.data)
 
+    def test_assets_by_keys(self, graphql_context: WorkspaceRequestContext, snapshot):
+        _create_run(graphql_context, "multi_asset_job")
+        result = execute_dagster_graphql(graphql_context, GET_ASSETS_BY_KEYS_QUERY)
+        assert result.data
+        assert result.data["assetsOrError"]
+        assert len(result.data["assetsOrError"]["nodes"]) > 1
+
+        result = execute_dagster_graphql(
+            graphql_context,
+            GET_ASSETS_BY_KEYS_QUERY,
+            variables={"assetKeys": None},
+        )
+        assert result.data
+        assert result.data["assetsOrError"]
+        assert len(result.data["assetsOrError"]["nodes"]) > 1
+
+        result = execute_dagster_graphql(
+            graphql_context,
+            GET_ASSETS_BY_KEYS_QUERY,
+            variables={"assetKeys": []},
+        )
+        assert result.data
+        assert result.data["assetsOrError"]
+        assert len(result.data["assetsOrError"]["nodes"]) == 0
+
+        result = execute_dagster_graphql(
+            graphql_context,
+            GET_ASSETS_BY_KEYS_QUERY,
+            variables={"assetKeys": [{"path": ["a"]}]},
+        )
+        assert result.data
+        assert result.data["assetsOrError"]
+        assert len(result.data["assetsOrError"]["nodes"]) == 1
+        assert result.data["assetsOrError"]["nodes"][0]["key"]["path"] == ["a"]
+
     def test_asset_key_pagination(self, graphql_context: WorkspaceRequestContext):
         _create_run(graphql_context, "multi_asset_job")
 
@@ -1158,6 +1211,8 @@ class TestAssetAwareEventLog(ExecutingGraphQLContextTestMatrix):
             GET_ASSET_MATERIALIZATION,
             variables={"assetKey": {"path": ["a"]}},
         )
+        assert result.data["assetOrError"]["hasDefinitionOrRecord"]
+
         assert result.data
         snapshot.assert_match(result.data)
 
@@ -1184,7 +1239,22 @@ class TestAssetAwareEventLog(ExecutingGraphQLContextTestMatrix):
             variables={"assetKey": {"path": ["bogus", "asset"]}},
         )
         assert result.data
+        assert not result.data["assetOrError"]["hasDefinitionOrRecord"]
         snapshot.assert_match(result.data)
+
+        graphql_context.instance.report_runless_asset_event(
+            AssetMaterialization(AssetKey(["bogus", "asset"]))
+        )
+
+        graphql_context.clear_loaders()
+
+        result = execute_dagster_graphql(
+            graphql_context,
+            GET_ASSET_MATERIALIZATION,
+            variables={"assetKey": {"path": ["bogus", "asset"]}},
+        )
+        assert result.data
+        assert result.data["assetOrError"]["hasDefinitionOrRecord"]
 
     def test_additional_required_keys_query(self, graphql_context: WorkspaceRequestContext):
         result = execute_dagster_graphql(
@@ -2195,7 +2265,7 @@ class TestAssetAwareEventLog(ExecutingGraphQLContextTestMatrix):
 
         assert result["asset_1"]["latestRun"] is None
         assert result["asset_1"]["latestMaterialization"] is None
-        assert FAKE_KEY not in result
+        assert result[FAKE_KEY]["latestRun"] is None
 
         # Test with 1 run on all assets
         first_run_id = _create_run(graphql_context, "failure_assets_job")
@@ -3009,6 +3079,8 @@ class TestAssetAwareEventLog(ExecutingGraphQLContextTestMatrix):
                 ["one"],
                 ["check_in_op_asset"],
                 ["asset_3"],
+                ["owned_asset"],
+                ["unowned_asset"],
             ]:
                 assert a["hasAssetChecks"] is True
             else:
@@ -3647,7 +3719,7 @@ class TestPersistentInstanceAssetInProgress(ExecutingGraphQLContextTestMatrix):
 
             for i in range(2):
                 queued_runs.append(
-                    create_valid_pipeline_run(graphql_context, job, execution_params, code_location)
+                    create_valid_pipeline_run(graphql_context, job, execution_params)
                 )
 
             in_progress_run_id = queued_runs[0].run_id

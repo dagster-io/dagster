@@ -1,6 +1,6 @@
 import pytest
 from dagster._core.test_utils import ensure_dagster_tests_import
-from dagster.components.core.tree import ComponentTreeException
+from dagster.components.core.component_tree import ComponentTreeException
 from dagster.components.resolved.context import ResolutionException
 from dagster_test.components.test_utils.test_cases import (
     BASIC_COMPONENT_TYPE_FILEPATH,

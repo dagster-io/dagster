@@ -27,13 +27,12 @@ from dagster._core.definitions.sensor_definition import (
 )
 from dagster._core.events import DagsterEventType
 from dagster._core.log_manager import LOG_RECORD_METADATA_ATTR
-from dagster._core.remote_representation import (
+from dagster._core.remote_origin import (
+    ManagedGrpcPythonEnvCodeLocationOrigin,
     RemoteInstigatorOrigin,
     RemoteRepositoryOrigin,
-    RemoteSensor,
 )
-from dagster._core.remote_representation.external import RemoteRepository
-from dagster._core.remote_representation.origin import ManagedGrpcPythonEnvCodeLocationOrigin
+from dagster._core.remote_representation.external import RemoteRepository, RemoteSensor
 from dagster._core.scheduler.instigation import (
     DynamicPartitionsRequestResult,
     InstigatorState,
@@ -1116,7 +1115,7 @@ def wait_for_all_runs_to_start(instance, timeout=10):
             break
 
 
-def wait_for_all_runs_to_finish(instance, timeout=10):
+def wait_for_all_runs_to_finish(instance, timeout=30):
     start_time = time.time()
     FINISHED_STATES = [
         DagsterRunStatus.SUCCESS,

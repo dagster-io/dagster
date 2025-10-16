@@ -1,8 +1,10 @@
 import {pathHorizontalDiagonal, pathVerticalDiagonal} from '@vx/shape';
 import memoize from 'lodash/memoize';
+import {FeatureFlag} from 'shared/app/FeatureFlags.oss';
 
+import {featureEnabled} from '../app/Flags';
 import {AssetNodeKeyFragment} from './types/AssetNode.types';
-import {COMMON_COLLATOR} from '../app/Util';
+import {COMMON_COLLATOR} from '../app/commonCollator';
 import {
   AssetCheckLiveFragment,
   AssetLatestInfoFragment,
@@ -134,6 +136,7 @@ export const graphHasCycles = (graphData: GraphData) => {
   };
   let hasCycles = false;
   while (nodes.size !== 0 && !hasCycles) {
+    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
     hasCycles = search([], nodes.values().next().value!);
   }
   return hasCycles;
@@ -277,13 +280,15 @@ export const itemWithAssetKey = (key: {path: string[]}) => {
 export const isGroupId = (str: string) => /^[^@:]+@[^@:]+:.+$/.test(str);
 
 export const groupIdForNode = (node: GraphNode) =>
-  [
-    node.definition.repository.name,
-    '@',
-    node.definition.repository.location.name,
-    ':',
-    node.definition.groupName,
-  ].join('');
+  featureEnabled(FeatureFlag.flagAssetGraphGroupsPerCodeLocation)
+    ? [
+        node.definition.repository.name,
+        '@',
+        node.definition.repository.location.name,
+        ':',
+        node.definition.groupName,
+      ].join('')
+    : `global@global:${node.definition.groupName}`;
 
 // Inclusive
 export const getUpstreamNodes = memoize(

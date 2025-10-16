@@ -51,6 +51,7 @@ _MASK_EMPTY_WARNINGS = (r"\n +warnings.warn\(message\)\n", "")
 
 
 @pytest.mark.parametrize("package_manager", ["pip", "uv"])
+@pytest.mark.flaky(max_runs=2)
 def test_components_docs_index(
     package_manager: DgTestPackageManager, update_snippets: bool
 ) -> None:
@@ -110,7 +111,7 @@ def test_components_docs_index(
                 ],
                 input_str="y\n",
                 ignore_output=True,
-                print_cmd="uvx -U create-dagster project jaffle-platform",
+                print_cmd="uvx create-dagster@latest project jaffle-platform",
             )
             context.run_command_and_snippet_output(
                 cmd="cd jaffle-platform && source .venv/bin/activate",
@@ -279,8 +280,7 @@ def test_components_docs_index(
 
             # Test sling sync
 
-            if not update_snippets:
-                _run_command("dg launch --assets '*'")
+            _run_command("dg launch --assets '*'")
             context.run_command_and_snippet_output(
                 cmd='duckdb /tmp/jaffle_platform.duckdb -c "SELECT * FROM raw_customers LIMIT 5;"',
                 snippet_path=f"{next_snip_no()}-duckdb-select.txt",

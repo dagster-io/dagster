@@ -990,7 +990,7 @@ def test_graph_asset_partition_mapping():
     @dg.op(ins={"in1": dg.In(dg.Nothing)})
     def my_op(context):
         assert context.partition_key == "a"
-        assert context.asset_partition_keys_for_input("in1") == ["a"]
+        assert context.asset_partition_keys_for_input("in1") == ["a", "b", "c"]
 
     @dg.graph_asset(
         partitions_def=partitions_def,
@@ -998,6 +998,8 @@ def test_graph_asset_partition_mapping():
     )
     def my_asset(asset1):
         return my_op(asset1)
+
+    assert my_asset.get_partition_mapping(dg.AssetKey("asset1")) == dg.AllPartitionMapping()
 
     assert dg.materialize_to_memory([asset1, my_asset], partition_key="a").success
 

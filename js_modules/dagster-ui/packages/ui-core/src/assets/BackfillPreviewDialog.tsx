@@ -80,6 +80,7 @@ export const BackfillPreviewDialog = ({
         <BackfillPreviewTableHeader />
         <Inner $totalHeight={totalHeight}>
           {items.map(({index, size, start}) => {
+            // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
             const {assetKey, partitionDefinition, backfillPolicy} = assets[index]!;
             const token = tokenForAssetKey(assetKey);
             const partitions = partitionsByAssetToken[token];

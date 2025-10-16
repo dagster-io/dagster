@@ -6,6 +6,7 @@ from functools import cached_property
 from pathlib import Path
 from typing import Any, Final, Optional
 
+import dagster_shared.check as check
 from dagster_shared.record import record
 from dagster_shared.serdes.serdes import whitelist_for_serdes
 from dagster_shared.seven import resolve_module_pattern
@@ -19,12 +20,10 @@ from dagster_dg_core.config import (
     DgRawBuildConfig,
     DgRawCliConfig,
     DgWorkspaceProjectSpec,
-    discover_config_file,
-    has_dg_user_file_config,
-    load_dg_root_file_config,
-    load_dg_user_file_config,
-    load_dg_workspace_file_config,
+    discover_and_validate_config_files,
+    is_workspace_file_config,
     modify_dg_toml_config,
+    raise_file_config_validation_error,
 )
 from dagster_dg_core.error import DgError
 from dagster_dg_core.utils import (
@@ -34,7 +33,6 @@ from dagster_dg_core.utils import (
     NOT_WORKSPACE_OR_PROJECT_ERROR_MESSAGE,
     exit_with_error,
     generate_project_and_activated_venv_mismatch_warning,
-    generate_tool_dg_cli_in_project_in_workspace_error_message,
     get_activated_venv,
     get_logger,
     get_toml_node,
@@ -119,7 +117,6 @@ class DgContext:
                 )
             exit_with_error(NOT_PROJECT_ERROR_MESSAGE)
         _validate_project_venv_activated(context)
-        _validate_autoload_defs(context)
         return context
 
     @classmethod
@@ -187,63 +184,41 @@ class DgContext:
         cls,
         path: Path,
         command_line_config: DgRawCliConfig,
+        *,
+        emit_log: bool = False,
     ) -> Self:
-        root_config_path = discover_config_file(path)
-        workspace_config_path = discover_config_file(
-            path, lambda x: bool(x.get("directory_type") == "workspace")
-        )
+        result = discover_and_validate_config_files(path)
 
-        cli_config_warning: Optional[str] = None
-        if root_config_path:
-            root_path = root_config_path.parent
-            root_file_config = load_dg_root_file_config(root_config_path)
-            if workspace_config_path is None:
-                workspace_root_path = None
-                container_workspace_file_config = None
-
-            # Only load the workspace config if the workspace root is different from the first
-            # detected root.
-            elif workspace_config_path == root_config_path:
-                workspace_root_path = workspace_config_path.parent
-                container_workspace_file_config = None
-            else:
-                workspace_root_path = workspace_config_path.parent
-                container_workspace_file_config = load_dg_workspace_file_config(
-                    workspace_config_path
+        if result.has_root_file and result.root_result.has_errors:
+            raise_file_config_validation_error(result.root_result.message, path)
+        elif result.has_container_workspace_file:
+            if result.container_workspace_result.has_errors:
+                raise_file_config_validation_error(
+                    result.container_workspace_result.message,
+                    check.not_none(result.container_workspace_file_path),
                 )
-                if "cli" in root_file_config:
-                    del root_file_config["cli"]
-                    # We have to emit this _after_ we merge all configs to ensure we have the right
-                    # suppression list.
-                    cli_config_warning = generate_tool_dg_cli_in_project_in_workspace_error_message(
-                        root_path, workspace_root_path
-                    )
-        else:
-            root_path = Path.cwd()
-            workspace_root_path = None
-            root_file_config = None
-            container_workspace_file_config = None
+            elif not is_workspace_file_config(result.container_workspace_result.config):
+                raise_file_config_validation_error("Expected a workspace configuration.", path)
 
-        user_config = load_dg_user_file_config() if has_dg_user_file_config() else None
         config = DgConfig.from_partial_configs(
-            root_file_config=root_file_config,
-            container_workspace_file_config=container_workspace_file_config,
+            root_file_config=result.root_config,
+            container_workspace_file_config=result.container_workspace_config,
             command_line_config=command_line_config,
-            user_config=user_config,
+            user_config=result.user_config,
         )
-        if cli_config_warning:
+        if result.cli_config_warning:
             emit_warning(
-                "cli_config_in_workspace_project", cli_config_warning, config.cli.suppress_warnings
+                "cli_config_in_workspace_project",
+                result.cli_config_warning,
+                config.cli.suppress_warnings,
             )
 
-        context = cls(
+        return cls(
             config=config,
-            root_path=root_path,
-            workspace_root_path=workspace_root_path,
+            root_path=result.root_path,
+            workspace_root_path=result.workspace_root_path,
             cli_opts=command_line_config,
         )
-
-        return context
 
     @classmethod
     def default(cls) -> Self:
@@ -415,9 +390,6 @@ class DgContext:
     def target_args(self) -> Mapping[str, str]:
         if not self.config.project:
             raise DgError("`target_args` are only available in a Dagster project context")
-
-        if self.config.project.autoload_defs:
-            return {"autoload_defs_module_name": self.defs_module_name}
 
         return {"module_name": self.code_location_target_module_name}
 
@@ -676,33 +648,6 @@ def _validate_plugin_entry_point(context: DgContext) -> None:
                 """,
                 context.config.cli.suppress_warnings,
             )
-
-
-def _validate_autoload_defs(context: DgContext) -> None:
-    """If the project has autoload_defs enabled, warn on the presence of a sibling definitions.py."""
-    if not context.config.project:
-        raise DgError("`_validate_autoload_defs` is only available in a Dagster project context")
-
-    # We only issue this warning for the default code location target module setting, since we catch
-    # a non-default setting during config validation.
-    if (
-        context.config.project.autoload_defs
-        and (
-            context.root_module_path / f"{_DEFAULT_PROJECT_CODE_LOCATION_TARGET_MODULE}.py"
-        ).exists()
-    ):
-        emit_warning(
-            "autoload_defs_with_definitions_py",
-            f"""
-            `project.autoload_defs` is enabled, but a code location load target module was also found at:
-
-                {context.code_location_target_path}
-
-            When `project.autoload_defs` is enabled, the code location load target module is not
-            automatically loaded. Consider removing the module at the above path to avoid confusion.
-        """,
-            context.config.cli.suppress_warnings,
-        )
 
 
 DG_UPDATE_CHECK_INTERVAL = datetime.timedelta(hours=1)

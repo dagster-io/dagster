@@ -1,5 +1,6 @@
 from typing import Any
 
+from dagster._annotations import public
 from dagster._core.definitions.events import Failure, TypeCheck
 from dagster._core.definitions.graph_definition import GraphDefinition
 from dagster._core.definitions.job_base import InMemoryJob
@@ -11,6 +12,7 @@ from dagster._core.types.dagster_type import resolve_dagster_type
 from dagster._utils.typing_api import is_typing_type
 
 
+@public
 def check_dagster_type(dagster_type: Any, value: Any) -> TypeCheck:
     """Test a custom Dagster type.
 

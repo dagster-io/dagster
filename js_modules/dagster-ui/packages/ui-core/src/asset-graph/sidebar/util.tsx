@@ -9,11 +9,14 @@ import {GraphNode} from '../Utils';
 export type FolderNodeGroupType = {
   id: string;
   level: number;
+  openAlways?: boolean;
   groupNode: {
     groupName: string;
     assets: GraphNode[];
-    repositoryName: string;
-    repositoryLocationName: string;
+
+    // remove when groups-outside-code-location feature flag is shipped
+    repositoryName?: string;
+    repositoryLocationName?: string;
   };
 };
 
@@ -30,6 +33,7 @@ export function nodePathKey(node: {path: string; id: string} | {id: string}) {
 }
 
 export function getDisplayName(node: {assetKey: AssetKeyInput}) {
+  // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
   return node.assetKey.path[node.assetKey.path.length - 1]!;
 }
 

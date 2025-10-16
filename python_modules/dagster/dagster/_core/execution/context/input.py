@@ -30,6 +30,7 @@ if TYPE_CHECKING:
     breaking_version="2.0",
     additional_warn_text="Use `definition_metadata` instead.",
 )
+@public
 class InputContext:
     """The ``context`` object available to the load_input method of :py:class:`InputManager`.
 
@@ -534,6 +535,7 @@ class InputContext:
         return result
 
 
+@public
 @deprecated_param(
     param="metadata",
     breaking_version="2.0",

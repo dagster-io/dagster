@@ -3,19 +3,16 @@ from pathlib import Path
 from types import ModuleType
 from typing import Optional
 
-from dagster_shared import check
+import dagster_shared.check as check
 from dagster_shared.serdes.objects.package_entry import json_for_all_components
-from dagster_shared.utils.config import (
-    get_canonical_defs_module_name,
-    load_toml_as_dict,
-    locate_dg_config_in_folder,
-)
+from dagster_shared.utils.warnings import normalize_renamed_param
 
 from dagster._annotations import deprecated, public
 from dagster._core.definitions.definitions_class import Definitions
+from dagster._symbol_annotations.lifecycle import deprecated_param
 from dagster._utils.warnings import suppress_dagster_warnings
 from dagster.components.component.component import Component
-from dagster.components.core.tree import ComponentTree, LegacyAutoloadingComponentTree
+from dagster.components.core.component_tree import ComponentTree, LegacyAutoloadingComponentTree
 
 PLUGIN_COMPONENT_TYPES_JSON_METADATA_KEY = "plugin_component_types_json"
 
@@ -83,8 +80,17 @@ def build_defs_for_component(component: Component) -> Definitions:
 
 
 @public
+@deprecated_param(
+    param="project_root",
+    breaking_version="2.0",
+    additional_warn_text="Use `path_within_project` instead.",
+)
 @suppress_dagster_warnings
-def load_from_defs_folder(*, project_root: Path) -> Definitions:
+def load_from_defs_folder(
+    *,
+    path_within_project: Optional[Path] = None,
+    project_root: Optional[Path] = None,
+) -> Definitions:
     """Constructs a Definitions object by automatically discovering and loading all Dagster
     definitions from a project's defs folder structure.
 
@@ -101,10 +107,13 @@ def load_from_defs_folder(*, project_root: Path) -> Definitions:
     * Enriching definitions with plugin component metadata from entry points
 
     Args:
-        project_root (Path): The absolute path to the dg project root directory. This should be the directory containing the project's configuration file (dg.toml or pyproject.toml with [tool.dg] section).
+        path_within_project (Path): A path within the dg project directory.
+            This directory or a parent of should contain the project's configuration file
+            (dg.toml or pyproject.toml with [tool.dg] section).
 
     Returns:
-        Definitions: A merged Definitions object containing all discovered definitions from the project's defs folder, enriched with component metadata.
+        Definitions: A merged Definitions object containing all discovered definitions
+            from the project's defs folder, enriched with component metadata.
 
     Example:
         .. code-block:: python
@@ -118,32 +127,16 @@ def load_from_defs_folder(*, project_root: Path) -> Definitions:
                 return dg.load_from_defs_folder(project_root=project_path)
 
     """
-    root_config_path = locate_dg_config_in_folder(project_root)
-    toml_config = load_toml_as_dict(
-        check.not_none(
-            root_config_path,
-            additional_message=f"No config file found at project root {project_root}",
-        )
+    path_within_project = normalize_renamed_param(
+        path_within_project,
+        "path_within_project",
+        project_root,
+        "project_root",
     )
 
-    if root_config_path and root_config_path.stem == "dg":
-        project = toml_config.get("project", {})
-    else:
-        project = toml_config.get("tool", {}).get("dg", {}).get("project", {})
-
-    root_module_name = project.get("root_module")
-    defs_module_name = project.get("defs_module")
-    check.invariant(
-        defs_module_name or root_module_name,
-        f"Either defs_module or root_module must be set in the project config {root_config_path}",
-    )
-    defs_module_name = get_canonical_defs_module_name(defs_module_name, root_module_name)
-
-    defs_module = importlib.import_module(defs_module_name)
-
-    return load_defs(
-        defs_module, project_root=project_root, terminate_autoloading_on_keyword_files=False
-    )
+    return ComponentTree.for_project(
+        path_within_project=check.not_none(path_within_project, "Must provide path_within_project")
+    ).build_defs()
 
 
 # Public method so optional Nones are fine

@@ -18,9 +18,26 @@ This guide assumes familiarity with [assets](/guides/build/assets) and [resource
 To run the example code in this article, you'll need:
 
 - Install the necessary Python libraries:
-  ```bash
-  uv pip install requests
-  ```
+
+<Tabs groupId="package-manager">
+   <TabItem value="uv" label="uv">
+      Install the required dependencies:
+
+         ```shell
+         uv add requests
+         ```
+
+   </TabItem>
+
+   <TabItem value="pip" label="pip">
+      Install the required dependencies:
+
+         ```shell
+         pip install requests
+         ```
+
+   </TabItem>
+</Tabs>
 
 </details>
 
@@ -68,7 +85,7 @@ In this example, there's a new `home_sunrise` asset. Rather than hard-coding the
 
 <CodeExample path="docs_snippets/docs_snippets/guides/external-systems/apis/env_var_configuration.py" language="python" startAfter="start_env_var_configuration_defs" endBefore="end_env_var_configuration_defs" title="src/<project_name>/defs/resources.py" />
 
-When you materialize `home_sunrise`, Dagster will read the values set for the `HOME_LATITUDE`, `HOME_LONGITUDE`, and `HOME_TIMZONE` environment variables and initialize a `SunResource` with those values.
+When you materialize `home_sunrise`, Dagster will read the values set for the `HOME_LATITUDE`, `HOME_LONGITUDE`, and `HOME_TIMEZONE` environment variables and initialize a `SunResource` with those values.
 
 The initialized `SunResource` will be provided to the `sun_resource` parameter.
 

@@ -24,6 +24,11 @@ export type SensorDryRunMutation = {
             jobName: string | null;
             tags: Array<{__typename: 'PipelineTag'; key: string; value: string}>;
             assetSelection: Array<{__typename: 'AssetKey'; path: Array<string>}> | null;
+            assetChecks: Array<{
+              __typename: 'AssetCheckhandle';
+              name: string;
+              assetKey: {__typename: 'AssetKey'; path: Array<string>};
+            }> | null;
           }> | null;
           error: {
             __typename: 'PythonError';
@@ -63,4 +68,4 @@ export type DynamicPartitionRequestFragment = {
   type: Types.DynamicPartitionsRequestType;
 };
 
-export const SensorDryRunMutationVersion = '018c498063838a146dbc76607bc84c92c235eaa73a3859b1c94b469bc76f5170';
+export const SensorDryRunMutationVersion = '41baf2a82bbd8cd13f8c34ca3dfdd506fef6d5607c366328e20a50ebac662d0a';

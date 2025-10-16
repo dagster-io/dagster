@@ -45,6 +45,7 @@ def is_io_manager_context_provided(
     return len(get_function_params(fn)) >= 1
 
 
+@public
 class IOManagerDefinition(ResourceDefinition, IInputManagerDefinition, IOutputManagerDefinition):
     """Definition of an IO manager resource.
 
@@ -130,6 +131,7 @@ class IOManagerDefinition(ResourceDefinition, IInputManagerDefinition, IOutputMa
         return IOManagerDefinition(resource_fn=lambda _init_context: value, description=description)
 
 
+@public
 class IOManager(InputManager, OutputManager):
     """Base class for user-provided IO managers.
 
@@ -178,6 +180,7 @@ def io_manager(
 ) -> Callable[[IOManagerFunction], IOManagerDefinition]: ...
 
 
+@public
 def io_manager(
     config_schema: Union[IOManagerFunction, CoercableToConfigSchema] = None,
     description: Optional[str] = None,

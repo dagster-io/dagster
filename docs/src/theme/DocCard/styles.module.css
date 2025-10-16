@@ -1,33 +1,30 @@
+/* TODO: Refactor with scss to simplify/match other docs styling, merge with card styling in custom.scss */
+/* TODO: This duplicates/conflicts with .card styles set in custom.scss. Try to create a more cohesive card styling system */
+
 .cardContainer {
   --ifm-link-color: var(--ifm-color-emphasis-800);
   --ifm-link-hover-color: var(--ifm-color-emphasis-700);
   --ifm-link-hover-decoration: none;
-
-  box-shadow: 0 1.5px 3px 0 rgb(0 0 0 / 15%);
-  border: 1px solid var(--ifm-color-emphasis-200);
   transition: all var(--ifm-transition-fast) ease;
-  transition-property: border, box-shadow;
   padding: 1rem !important;
-}
-
-.cardContainer:hover {
-  border-color: var(--ifm-color-primary);
-  box-shadow: 0 3px 6px 0 rgb(0 0 0 / 20%);
+  display: flex;
+  flex-direction: row;
+  align-items: flex-start;
+  gap: 0.75rem;
+  height: 100%;
+  justify-self: stretch;
 }
 
 .cardContainer *:last-child {
   margin-bottom: 0;
 }
 
-.cardTitleContainer {
-  display: flex;
-}
-
 .cardTitle {
   font-size: 1rem;
   font-weight: 500;
-  margin-bottom: 0.5rem;
-  padding-top: 0.2rem;
+  margin: 0 !important;
+  padding: 0px !important;
+  line-height: 1.25rem;
 }
 
 .cardSubtitle {
@@ -38,19 +35,45 @@
 }
 
 .cardTags {
-  padding-left: 8px;
-  padding-right: 8px;
-  background: var(--theme-color-background-blue);
-  border-radius: 16px;
-  font-size: 0.8rem;
+  padding: 4px 8px;
+  background: var(--theme-color-background-gray);
+  border-radius: 8px;
+  font-size: 0.75rem;
+  line-height: 1rem;
   font-weight: 400;
+  color: var(--theme-color-text-light);
 }
 
 .cardDescription {
-  font-size: 0.8rem !important;
+  font-size: 0.875rem !important;
   font-weight: 400 !important;
+  line-height: 1.25rem !important;
   display: -webkit-box;
   -webkit-line-clamp: 3;
+  line-clamp: 3;
   -webkit-box-orient: vertical;
   overflow: hidden;
+  color: var(--theme-color-text-light);
+}
+
+.cardLogo {
+  width: 4rem;
+  height: 4rem;
+  background: var(--dagster-white);
+  padding: 0.25rem;
+  flex-shrink: 0;
+  border-radius: 4px !important;
+}
+
+.cardTitleWrapper {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: 4px;
+  margin-bottom: 4px;
+  padding: 0.125rem 0rem;
+}
+
+.cardTitleWrapper .cardTags {
+  margin-left: 8px;
 }

@@ -44,7 +44,7 @@ In order to proxy a task, you must do two things:
 1. Ensure all associated assets are executable in Dagster by providing asset definitions in place of bare asset specs.
 2. Set the `proxied: False` status in the `proxied_state` YAML folder to `proxied: True`.
 
-Any task marked as proxied will use the <PyObject section="libraries" module="dagster_airlift" object="in_airflow.DefaultProxyTaskToDagsterOperator" displayText="DefaultProxyTaskToDagsterOperator" /> when executed as part of the DAG. This operator will use the [Dagster GraphQL API](/guides/operate/graphql) to initiate a Dagster run of the assets corresponding to the task.
+Any task marked as proxied will use the <PyObject section="libraries" module="dagster_airlift" object="in_airflow.DefaultProxyTaskToDagsterOperator" displayText="DefaultProxyTaskToDagsterOperator" /> when executed as part of the DAG. This operator will use the [Dagster GraphQL API](/api/graphql) to initiate a Dagster run of the assets corresponding to the task.
 
 The proxied file acts as the source of truth for proxied state. The information is attached to the DAG and then accessed by Dagster via the REST API.
 

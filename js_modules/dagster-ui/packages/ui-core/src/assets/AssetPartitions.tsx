@@ -74,6 +74,7 @@ export const AssetPartitions = ({
   dataRefreshHint,
   isLoadingDefinition,
 }: Props) => {
+  // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
   const assetHealth = usePartitionHealthData([assetKey], dataRefreshHint)[0]!;
   const [selections, setSelections] = usePartitionDimensionSelections({
     knownDimensionNames: assetPartitionDimensions,
@@ -123,6 +124,7 @@ export const AssetPartitions = ({
     params,
     setParams,
     dimensionCount: selections.length,
+    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
     defaultKeyInDimension: (dimensionIdx) => dimensionKeysInSelection(dimensionIdx)[0]!,
   });
 
@@ -137,9 +139,11 @@ export const AssetPartitions = ({
       assetHealth.rangesForSingleDimension(
         idx,
         idx === 1 && focusedDimensionKeys[0]
-          ? [selectionRangeWithSingleKey(focusedDimensionKeys[0], selections[0]!.dimension)]
+          ? // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+            [selectionRangeWithSingleKey(focusedDimensionKeys[0], selections[0]!.dimension)]
           : timeDimensionIdx !== -1 && idx !== timeDimensionIdx
-            ? selections[timeDimensionIdx]!.selectedRanges
+            ? // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+              selections[timeDimensionIdx]!.selectedRanges
             : undefined,
       ),
     );
@@ -156,12 +160,15 @@ export const AssetPartitions = ({
     }
     // Special case: If you have cleared the time selection in the top bar, we
     // clear all dimension columns, (even though you still have a dimension 2 selection)
+    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
     if (timeDimensionIdx !== -1 && selections[timeDimensionIdx]!.selectedRanges.length === 0) {
       return [];
     }
 
+    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
     const {dimension, selectedRanges} = selections[idx]!;
     const allKeys = dimension.partitionKeys;
+    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
     const sortType = getSort(sortTypes, idx, selections[idx]!.dimension.type);
 
     const filterResultsBySearch = (keys: string[]) => {
@@ -181,6 +188,7 @@ export const AssetPartitions = ({
     // Get the health ranges, and then explode them into a `matching` set of keys
     // that have the requested statuses.
     const healthRangesInSelection = rangesClippedToSelection(
+      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
       rangesForEachDimension[idx]!,
       selectedRanges,
     );
@@ -236,15 +244,20 @@ export const AssetPartitions = ({
       {timeDimensionIdx !== -1 && (
         <Box padding={{vertical: 16, horizontal: 24}} border="bottom">
           <DimensionRangeWizard
+            // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
             dimensionType={selections[timeDimensionIdx]!.dimension.type}
+            // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
             partitionKeys={selections[timeDimensionIdx]!.dimension.partitionKeys}
+            // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
             health={{ranges: rangesForEachDimension[timeDimensionIdx]!}}
+            // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
             selected={selections[timeDimensionIdx]!.selectedKeys}
             setSelected={(selectedKeys) =>
               setSelections(
                 selections.map((r, idx) => (idx === timeDimensionIdx ? {...r, selectedKeys} : r)),
               )
             }
+            showQuickSelectOptionsForStatuses={false}
           />
         </Box>
       )}
@@ -386,6 +399,7 @@ export const AssetPartitions = ({
                     }
                     const dimensionKeyIdx = selection.dimension.partitionKeys.indexOf(dimensionKey);
                     return partitionStatusAtIndex(
+                      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
                       rangesForEachDimension[idx]!,
                       dimensionKeyIdx,
                     ).filter((s) => statusFilters.includes(s));
@@ -432,5 +446,6 @@ function getSort(sortTypes: Array<SortType>, idx: number, definitionType: Partit
     ? definitionType === PartitionDefinitionType.TIME_WINDOW
       ? SortType.REVERSE_CREATION
       : SortType.CREATION
-    : sortTypes[idx]!;
+    : // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+      sortTypes[idx]!;
 }

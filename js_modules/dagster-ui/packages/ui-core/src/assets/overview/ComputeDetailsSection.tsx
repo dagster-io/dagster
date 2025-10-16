@@ -34,6 +34,7 @@ export const ComputeDetailsSection = ({
         <Tag>
           <UnderlyingOpsOrGraph
             assetNode={assetNode}
+            // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
             repoAddress={repoAddress!}
             hideIfRedundant={false}
           />

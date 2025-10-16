@@ -203,18 +203,8 @@ def get_asset_node(
     return GrapheneAssetNode(remote_node)
 
 
-def get_asset(
-    graphene_info: "ResolveInfo", asset_key: AssetKey
-) -> Union["GrapheneAsset", "GrapheneAssetNotFoundError"]:
-    from dagster_graphql.schema.errors import GrapheneAssetNotFoundError
+def get_asset(asset_key: AssetKey) -> "GrapheneAsset":
     from dagster_graphql.schema.pipelines.pipeline import GrapheneAsset
-
-    check.inst_param(asset_key, "asset_key", AssetKey)
-    instance = graphene_info.context.instance
-
-    has_remote_node = graphene_info.context.asset_graph.has(asset_key)
-    if not has_remote_node and not instance.has_asset_key(asset_key):
-        return GrapheneAssetNotFoundError(asset_key=asset_key)
 
     return GrapheneAsset(key=asset_key)
 
@@ -521,9 +511,9 @@ def build_partition_statuses(
             in_progress_keys = in_progress_partitions_subset.get_partition_keys()
 
             return GrapheneDefaultPartitionStatuses(
-                materializedPartitions=set(materialized_keys)
-                - set(failed_keys)
-                - set(in_progress_keys),
+                materializedPartitions=sorted(
+                    set(materialized_keys) - set(failed_keys) - set(in_progress_keys)
+                ),
                 failedPartitions=failed_keys,
                 unmaterializedPartitions=materialized_partitions_subset.get_partition_keys_not_in_subset(
                     partitions_def=partitions_def

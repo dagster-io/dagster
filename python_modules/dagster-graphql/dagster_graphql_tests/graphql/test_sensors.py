@@ -5,7 +5,7 @@ import sys
 import pytest
 from dagster._core.definitions.run_request import InstigatorType
 from dagster._core.definitions.sensor_definition import SensorType
-from dagster._core.remote_representation import InProcessCodeLocationOrigin, RemoteRepositoryOrigin
+from dagster._core.remote_origin import InProcessCodeLocationOrigin, RemoteRepositoryOrigin
 from dagster._core.remote_representation.external import CompoundID
 from dagster._core.scheduler.instigation import (
     InstigatorState,
@@ -14,9 +14,11 @@ from dagster._core.scheduler.instigation import (
     TickData,
     TickStatus,
 )
+from dagster._core.storage.dagster_run import DagsterRun
+from dagster._core.storage.tags import RUN_KEY_TAG, SENSOR_NAME_TAG
 from dagster._core.test_utils import SingleThreadPoolExecutor, freeze_time, wait_for_futures
 from dagster._core.types.loadable_target_origin import LoadableTargetOrigin
-from dagster._core.utils import make_new_backfill_id
+from dagster._core.utils import make_new_backfill_id, make_new_run_id
 from dagster._core.workspace.context import WorkspaceRequestContext
 from dagster._daemon import get_default_daemon_logger
 from dagster._daemon.sensor import execute_sensor_iteration
@@ -144,6 +146,14 @@ query SensorQuery($sensorSelector: SensorSelector!) {
       minIntervalSeconds
       nextTick {
         timestamp
+      }
+      owners {
+        ... on UserDefinitionOwner {
+          email
+        }
+        ... on TeamDefinitionOwner {
+          team
+        }
       }
       sensorState {
         status
@@ -605,6 +615,43 @@ class TestSensors(NonLaunchableGraphQLContextTestMatrix):
         assert evaluation_result["error"] is None
         assert evaluation_result["dynamicPartitionsRequests"] == []
 
+    def test_dry_run_with_run_key(self, graphql_context: WorkspaceRequestContext):
+        instigator_selector = infer_sensor_selector(graphql_context, "run_key_sensor")
+        result = execute_dagster_graphql(
+            graphql_context,
+            SENSOR_DRY_RUN_MUTATION,
+            variables={"selectorData": instigator_selector, "cursor": "blah"},
+        )
+
+        assert result.data
+        assert result.data["sensorDryRun"]["__typename"] == "DryRunInstigationTick"
+        evaluation_result = result.data["sensorDryRun"]["evaluationResult"]
+        assert evaluation_result["cursor"] == "blah"
+        assert len(evaluation_result["runRequests"]) == 1
+        assert evaluation_result["runRequests"][0]["runConfigYaml"] == "{}\n"
+        assert evaluation_result["skipReason"] is None
+        assert evaluation_result["error"] is None
+        assert evaluation_result["dynamicPartitionsRequests"] == []
+
+        graphql_context.instance.add_run(
+            DagsterRun(
+                job_name="run_key_sensor",
+                run_id=make_new_run_id(),
+                tags={RUN_KEY_TAG: "the_key", SENSOR_NAME_TAG: "run_key_sensor"},
+            )
+        )
+
+        result = execute_dagster_graphql(
+            graphql_context,
+            SENSOR_DRY_RUN_MUTATION,
+            variables={"selectorData": instigator_selector, "cursor": "blah"},
+        )
+        assert result.data
+        assert result.data["sensorDryRun"]["__typename"] == "DryRunInstigationTick"
+        evaluation_result = result.data["sensorDryRun"]["evaluationResult"]
+        # no more run run requests because the key matches
+        assert len(evaluation_result["runRequests"]) == 0
+
     def test_dry_run_with_dynamic_partition_requests(
         self, graphql_context: WorkspaceRequestContext
     ):
@@ -793,6 +840,35 @@ class TestSensors(NonLaunchableGraphQLContextTestMatrix):
         assert sensor["sensorType"] == "STANDARD"
         assert sensor["tags"] == [{"key": "foo", "value": "bar"}]
         assert sensor["metadataEntries"] == [{"label": "foo", "text": "bar"}]
+
+    def test_sensor_owners(self, graphql_context: WorkspaceRequestContext):
+        sensor_selector = infer_sensor_selector(graphql_context, "owned_sensor")
+        result = execute_dagster_graphql(
+            graphql_context,
+            GET_SENSOR_QUERY,
+            variables={"sensorSelector": sensor_selector},
+        )
+        assert result.data
+        assert result.data["sensorOrError"]
+        assert result.data["sensorOrError"]["__typename"] == "Sensor"
+        sensor = result.data["sensorOrError"]
+
+        assert sensor["owners"] is not None
+        assert len(sensor["owners"]) == 2
+
+        # Check the user owner
+        user_owner = None
+        team_owner = None
+        for owner in sensor["owners"]:
+            if owner.get("email"):
+                user_owner = owner
+            elif owner.get("team"):
+                team_owner = owner
+
+        assert user_owner is not None
+        assert user_owner["email"] == "test@elementl.com"
+        assert team_owner is not None
+        assert team_owner["team"] == "foo"
 
 
 class TestReadonlySensorPermissions(ReadonlyGraphQLContextTestMatrix):
@@ -1387,8 +1463,8 @@ def test_repository_batching(graphql_context: WorkspaceRequestContext):
     # each sensor (~5 distinct sensors in the repo)
     # 1) `get_batch_ticks` is called to fetch all the ticks for the sensors
     # 2) `all_instigator_state` is fetched to instantiate GrapheneSensor
-    assert counts.get("DagsterInstance.get_batch_ticks") == 1
-    assert counts.get("DagsterInstance.all_instigator_state") == 1
+    assert counts.get("SchedulingMethods.get_batch_ticks") == 1
+    assert counts.get("SchedulingMethods.all_instigator_state") == 1
 
 
 def test_sensor_ticks_filtered(graphql_context: WorkspaceRequestContext):

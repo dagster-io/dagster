@@ -1,7 +1,7 @@
 import pickle
 import random
 from collections.abc import Sequence
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from typing import Optional, cast
 
 import dagster as dg
@@ -877,6 +877,19 @@ def test_start_not_aligned():
     )
 
 
+def test_time_window_partition_default_month_offset():
+    """Test that we can define a time window partition on a monthly schedule with the default minute, hour and day offsets."""
+    my_date = datetime.strptime("2021-05-01", DATE_FORMAT)
+    partitions_def = TimeWindowPartitionsDefinition(
+        schedule_type=ScheduleType.MONTHLY,
+        start=my_date,
+        fmt="%Y-%m-%d",
+    )
+    assert partitions_def.day_offset == 1
+    assert partitions_def.hour_offset == 0
+    assert partitions_def.minute_offset == 0
+
+
 @pytest.mark.parametrize(
     "case_str",
     [
@@ -1340,6 +1353,17 @@ def test_time_window_partition_len():
     with partition_loading_context(current_time):
         assert partitions_def.get_num_partitions() == len(partitions_def.get_partition_keys())
 
+    partitions_def = dg.TimeWindowPartitionsDefinition(
+        cron_schedule="* * * * *",
+        start="2020-11-01-00:30",
+        timezone="US/Pacific",
+        fmt="%Y-%m-%d-%H:%M",
+    )
+    current_time = datetime.strptime("2020-11-05-02:30", "%Y-%m-%d-%H:%M")
+
+    with partition_loading_context(current_time):
+        assert partitions_def.get_num_partitions() == len(partitions_def.get_partition_keys())
+
     @dg.daily_partitioned_config(start_date="2020-01-01", timezone="US/Pacific")
     def my_daily_dst_transition_partitioned_config(_start, _end):
         return {}
@@ -1360,33 +1384,130 @@ def test_time_window_partition_len():
         assert partitions_def.get_num_partitions() == len(partitions_def.get_partition_keys())
 
 
-def test_get_first_partition_window():
+def test_end_before_start():
+    end_before_start = dg.DailyPartitionsDefinition(start_date="2023-02-01", end_date="2023-01-01")
+    assert end_before_start.get_first_partition_window() is None
+    assert end_before_start.get_last_partition_window() is None
+    assert end_before_start.get_partition_keys() == []
+    assert end_before_start.get_num_partitions() == 0
+
+
+def test_end_equal_start():
+    end_equal_start = dg.DailyPartitionsDefinition(start_date="2023-02-01", end_date="2023-02-01")
+    assert end_equal_start.get_first_partition_window() is None
+    assert end_equal_start.get_last_partition_window() is None
+    assert end_equal_start.get_partition_keys() == []
+    assert end_equal_start.get_num_partitions() == 0
+
+
+def test_get_partition_windows():
     assert dg.DailyPartitionsDefinition(
         start_date="2023-01-01"
     ).get_first_partition_window() == time_window("2023-01-01", "2023-01-02")
+
+    with partition_loading_context(datetime.strptime("2023-02-14", "%Y-%m-%d")):
+        assert dg.DailyPartitionsDefinition(
+            start_date="2023-01-01"
+        ).get_last_partition_window() == time_window("2023-02-13", "2023-02-14")
+
+    with partition_loading_context(
+        effective_dt=datetime(year=2023, month=2, day=13, hour=11, minute=59, second=59)
+    ):
+        assert dg.DailyPartitionsDefinition(
+            start_date="2023-01-01"
+        ).get_last_partition_window() == time_window("2023-02-12", "2023-02-13")
+
+    with partition_loading_context(
+        effective_dt=datetime(year=2023, month=2, day=14, hour=0, minute=0, second=1)
+    ):
+        assert dg.DailyPartitionsDefinition(
+            start_date="2023-01-01"
+        ).get_last_partition_window() == time_window("2023-02-13", "2023-02-14")
+
+    with partition_loading_context(
+        effective_dt=datetime(year=2023, month=2, day=14, hour=0, minute=0, second=1)
+    ):
+        assert dg.DailyPartitionsDefinition(
+            start_date="2023-01-01",
+            end_date="2023-01-18",
+        ).get_last_partition_window() == time_window("2023-01-17", "2023-01-18")
 
     with partition_loading_context(datetime.strptime("2023-01-01", "%Y-%m-%d")):
         assert dg.DailyPartitionsDefinition(
             start_date="2023-01-01", end_offset=1
         ).get_first_partition_window() == time_window("2023-01-01", "2023-01-02")
+        assert dg.DailyPartitionsDefinition(
+            start_date="2023-01-01", end_offset=1
+        ).get_last_partition_window() == time_window("2023-01-01", "2023-01-02")
 
     with partition_loading_context(datetime.strptime("2023-02-14", "%Y-%m-%d")):
+        assert dg.DailyPartitionsDefinition(
+            start_date="2023-01-01", end_offset=1
+        ).get_first_partition_window() == time_window("2023-01-01", "2023-01-02")
+        assert dg.DailyPartitionsDefinition(
+            start_date="2023-01-01", end_offset=1
+        ).get_last_partition_window() == time_window("2023-02-14", "2023-02-15")
+
         assert (
             dg.DailyPartitionsDefinition(
                 start_date="2023-02-15", end_offset=1
             ).get_first_partition_window()
             is None
         )
+        assert (
+            dg.DailyPartitionsDefinition(
+                start_date="2023-02-15", end_offset=1
+            ).get_last_partition_window()
+            is None
+        )
+
+    with partition_loading_context(
+        effective_dt=datetime(year=2023, month=2, day=13, hour=11, minute=59, second=59)
+    ):
+        assert dg.DailyPartitionsDefinition(
+            start_date="2023-01-01", end_offset=1
+        ).get_last_partition_window() == time_window("2023-02-13", "2023-02-14")
+
+    with partition_loading_context(
+        effective_dt=datetime(year=2023, month=2, day=14, hour=0, minute=0, second=1)
+    ):
+        assert dg.DailyPartitionsDefinition(
+            start_date="2023-01-01", end_offset=1
+        ).get_last_partition_window() == time_window("2023-02-14", "2023-02-15")
+
+    with partition_loading_context(datetime.strptime("2023-02-14", "%Y-%m-%d")):
+        # end offset doesn't matter once you pass the end date
+        assert dg.DailyPartitionsDefinition(
+            start_date="2023-01-01",
+            end_date="2023-01-18",
+            end_offset=1,
+        ).get_last_partition_window() == time_window("2023-01-17", "2023-01-18")
+
+    with partition_loading_context(datetime.strptime("2023-01-14", "%Y-%m-%d")):
+        # but does matter before the end date
+        assert dg.DailyPartitionsDefinition(
+            start_date="2023-01-01",
+            end_date="2023-01-18",
+            end_offset=1,
+        ).get_last_partition_window() == time_window("2023-01-14", "2023-01-15")
 
     with partition_loading_context(datetime.strptime("2023-01-02", "%Y-%m-%d")):
         assert dg.DailyPartitionsDefinition(
             start_date="2023-01-01", end_offset=2
         ).get_first_partition_window() == time_window("2023-01-01", "2023-01-02")
 
+    with partition_loading_context(datetime.strptime("2023-02-14", "%Y-%m-%d")):
+        assert dg.DailyPartitionsDefinition(
+            start_date="2023-01-01", end_offset=2
+        ).get_last_partition_window() == time_window("2023-02-15", "2023-02-16")
+
     with partition_loading_context(datetime.strptime("2023-01-15", "%Y-%m-%d")):
         assert dg.MonthlyPartitionsDefinition(
             start_date="2023-01-01", end_offset=1
         ).get_first_partition_window() == time_window("2023-01-01", "2023-02-01")
+        assert dg.MonthlyPartitionsDefinition(
+            start_date="2023-01-01", end_offset=1
+        ).get_last_partition_window() == time_window("2023-01-01", "2023-02-01")
 
     with partition_loading_context(datetime.strptime("2023-01-16", "%Y-%m-%d")):
         assert (
@@ -1395,11 +1516,48 @@ def test_get_first_partition_window():
             ).get_first_partition_window()
             is None
         )
+        assert (
+            dg.DailyPartitionsDefinition(
+                start_date="2023-01-15", end_offset=-1
+            ).get_last_partition_window()
+            is None
+        )
 
     with partition_loading_context(datetime.strptime("2023-01-17", "%Y-%m-%d")):
         assert dg.DailyPartitionsDefinition(
-            start_date="2023-01-15", end_offset=-1
+            start_date="2023-01-15",
+            end_offset=-1,
         ).get_first_partition_window() == time_window("2023-01-15", "2023-01-16")
+
+    with partition_loading_context(datetime.strptime("2023-02-17", "%Y-%m-%d")):
+        assert dg.DailyPartitionsDefinition(
+            start_date="2023-01-15",
+            end_offset=-1,
+        ).get_last_partition_window() == time_window("2023-02-15", "2023-02-16")
+
+    with partition_loading_context(datetime.strptime("2023-02-17", "%Y-%m-%d")):
+        # end offset doesn't matter once you pass the end date
+
+        assert dg.DailyPartitionsDefinition(
+            start_date="2023-01-15",
+            end_offset=-1,
+            end_date="2023-01-18",
+        ).get_last_partition_window() == time_window("2023-01-17", "2023-01-18")
+
+    with partition_loading_context(
+        effective_dt=datetime(year=2023, month=2, day=17, hour=0, minute=0, second=1)
+    ):
+        assert dg.DailyPartitionsDefinition(
+            start_date="2023-01-15",
+            end_offset=-1,
+        ).get_last_partition_window() == time_window("2023-02-15", "2023-02-16")
+
+    with partition_loading_context(
+        effective_dt=datetime(year=2023, month=2, day=16, hour=23, minute=59, second=59)
+    ):
+        assert dg.DailyPartitionsDefinition(
+            start_date="2023-01-15", end_offset=-1
+        ).get_last_partition_window() == time_window("2023-02-14", "2023-02-15")
 
     with partition_loading_context(datetime.strptime("2023-01-17", "%Y-%m-%d")):
         assert (
@@ -1408,17 +1566,68 @@ def test_get_first_partition_window():
             ).get_first_partition_window()
             is None
         )
+        assert (
+            dg.DailyPartitionsDefinition(
+                start_date="2023-01-15", end_offset=-2
+            ).get_last_partition_window()
+            is None
+        )
 
     with partition_loading_context(datetime.strptime("2023-01-18", "%Y-%m-%d")):
         assert dg.DailyPartitionsDefinition(
             start_date="2023-01-15", end_offset=-2
         ).get_first_partition_window() == time_window("2023-01-15", "2023-01-16")
+        assert dg.DailyPartitionsDefinition(
+            start_date="2023-01-15", end_offset=-2
+        ).get_last_partition_window() == time_window("2023-01-15", "2023-01-16")
+
+    with partition_loading_context(datetime.strptime("2023-02-18", "%Y-%m-%d")):
+        assert dg.DailyPartitionsDefinition(
+            start_date="2023-01-15", end_offset=-2
+        ).get_first_partition_window() == time_window("2023-01-15", "2023-01-16")
+        assert dg.DailyPartitionsDefinition(
+            start_date="2023-01-15", end_offset=-2
+        ).get_last_partition_window() == time_window("2023-02-15", "2023-02-16")
+
+    negative_ten_offset = dg.DailyPartitionsDefinition(
+        start_date="2023-01-15",
+        end_date="2023-02-15",
+        end_offset=-10,
+    )
+
+    with partition_loading_context(datetime.strptime("2023-02-15", "%Y-%m-%d")):
+        assert negative_ten_offset.get_last_partition_window() == time_window(
+            "2023-02-04", "2023-02-05"
+        )
+
+    with partition_loading_context(datetime.strptime("2023-02-20", "%Y-%m-%d")):
+        # even though we are past the end date, the end_offset still applies
+        assert negative_ten_offset.get_last_partition_window() == time_window(
+            "2023-02-09", "2023-02-10"
+        )
+
+    with partition_loading_context(datetime.strptime("2023-02-25", "%Y-%m-%d")):
+        assert negative_ten_offset.get_last_partition_window() == time_window(
+            "2023-02-14", "2023-02-15"
+        )
+
+    # end_date kicks in
+    with partition_loading_context(datetime.strptime("2023-02-26", "%Y-%m-%d")):
+        assert negative_ten_offset.get_last_partition_window() == time_window(
+            "2023-02-14", "2023-02-15"
+        )
 
     with partition_loading_context(datetime.strptime("2023-01-15", "%Y-%m-%d")):
         assert (
             dg.MonthlyPartitionsDefinition(
                 start_date="2023-01-01", end_offset=-1
             ).get_first_partition_window()
+            is None
+        )
+        assert (
+            dg.MonthlyPartitionsDefinition(
+                start_date="2023-01-01", end_offset=-1
+            ).get_last_partition_window()
             is None
         )
 
@@ -1429,16 +1638,20 @@ def test_get_first_partition_window():
             ).get_first_partition_window()
             is None
         )
+        assert (
+            dg.DailyPartitionsDefinition(
+                start_date="2023-01-15", end_offset=1
+            ).get_last_partition_window()
+            is None
+        )
 
     with partition_loading_context(datetime.strptime("2023-01-15", "%Y-%m-%d")):
         assert dg.DailyPartitionsDefinition(
             start_date="2023-01-15", end_offset=1
         ).get_first_partition_window() == time_window("2023-01-15", "2023-01-16")
-
-    with partition_loading_context(datetime.strptime("2023-01-15", "%Y-%m-%d")):
         assert dg.DailyPartitionsDefinition(
             start_date="2023-01-15", end_offset=1
-        ).get_first_partition_window() == time_window("2023-01-15", "2023-01-16")
+        ).get_last_partition_window() == time_window("2023-01-15", "2023-01-16")
 
     with partition_loading_context(
         effective_dt=datetime(year=2023, month=1, day=13, hour=12, minute=0, second=0)
@@ -1449,12 +1662,24 @@ def test_get_first_partition_window():
             ).get_first_partition_window()
             is None
         )
+        assert (
+            dg.DailyPartitionsDefinition(
+                start_date="2023-01-15", end_offset=1
+            ).get_last_partition_window()
+            is None
+        )
 
     with partition_loading_context(datetime.strptime("2023-01-15", "%Y-%m-%d")):
         assert (
             dg.MonthlyPartitionsDefinition(
                 start_date="2023-01-01", end_offset=-1
             ).get_first_partition_window()
+            is None
+        )
+        assert (
+            dg.MonthlyPartitionsDefinition(
+                start_date="2023-01-01", end_offset=-1
+            ).get_last_partition_window()
             is None
         )
 
@@ -1465,11 +1690,28 @@ def test_get_first_partition_window():
             ).get_first_partition_window()
             is None
         )
+        assert (
+            dg.MonthlyPartitionsDefinition(
+                start_date="2023-01-01", end_offset=-1
+            ).get_last_partition_window()
+            is None
+        )
 
     with partition_loading_context(datetime.strptime("2023-03-01", "%Y-%m-%d")):
         assert dg.MonthlyPartitionsDefinition(
             start_date="2023-01-01", end_offset=-1
         ).get_first_partition_window() == time_window("2023-01-01", "2023-02-01")
+        assert dg.MonthlyPartitionsDefinition(
+            start_date="2023-01-01", end_offset=-1
+        ).get_last_partition_window() == time_window("2023-01-01", "2023-02-01")
+
+    with partition_loading_context(datetime.strptime("2023-04-01", "%Y-%m-%d")):
+        assert dg.MonthlyPartitionsDefinition(
+            start_date="2023-01-01", end_offset=-1
+        ).get_first_partition_window() == time_window("2023-01-01", "2023-02-01")
+        assert dg.MonthlyPartitionsDefinition(
+            start_date="2023-01-01", end_offset=-1
+        ).get_last_partition_window() == time_window("2023-02-01", "2023-03-01")
 
 
 def test_invalid_cron_schedule():
@@ -2085,3 +2327,158 @@ def test_reverse_pagination_negative_end_offset():
     assert get_paginated_partition_keys(
         partitions_def, current_time=current_time, ascending=False
     ) == list(reversed(all_keys))
+
+
+def test_exclusions():
+    company_holidays = [
+        create_datetime(2025, 1, 1),
+        create_datetime(2025, 1, 20),
+        create_datetime(2025, 2, 17),
+        create_datetime(2025, 5, 26),
+        create_datetime(2025, 6, 19),
+        create_datetime(2025, 7, 4),
+        create_datetime(2025, 9, 1),
+        create_datetime(2025, 11, 27),
+        create_datetime(2025, 11, 28),
+        create_datetime(2025, 12, 24),
+        create_datetime(2025, 12, 25),
+    ]
+    daily_calendar = TimeWindowPartitionsDefinition(
+        start="2025-01-01",
+        end="2026-01-01",
+        fmt="%Y-%m-%d",
+        cron_schedule="0 0 * * *",
+    )
+    weekday_calendar = TimeWindowPartitionsDefinition(
+        start="2025-01-01",
+        end="2026-01-01",
+        fmt="%Y-%m-%d",
+        cron_schedule="0 0 * * *",
+        exclusions=[
+            "0 0 * * 6-7",  # exclude weekends
+        ],
+    )
+    dagsterlabs_calendar = TimeWindowPartitionsDefinition(
+        start="2025-01-01",
+        end="2026-01-01",
+        fmt="%Y-%m-%d",
+        cron_schedule="0 0 * * *",  # weekdays only
+        exclusions=[
+            "0 0 * * 6-7",  # exclude weekends
+            *company_holidays,  # exclude company holidays
+        ],
+    )
+
+    assert daily_calendar.get_first_partition_key() == "2025-01-01"
+    assert weekday_calendar.get_first_partition_key() == "2025-01-01"
+    assert dagsterlabs_calendar.get_first_partition_key() == "2025-01-02"
+
+    # normal weekday
+    assert dagsterlabs_calendar.get_next_partition_key("2025-01-09") == "2025-01-10"
+    # respects weekends
+    assert dagsterlabs_calendar.get_next_partition_key("2025-01-10") == "2025-01-13"
+    # respects holiday weekends
+    assert dagsterlabs_calendar.get_next_partition_key("2025-01-17") == "2025-01-21"
+    all_keys = set(dagsterlabs_calendar.get_partition_keys())
+    assert all_keys.intersection(company_holidays) == set()
+
+    saturday_key = "2025-01-11"
+    holiday_key = "2025-01-20"
+    next_year = datetime.strptime("2026-01-01", "%Y-%m-%d")
+    with partition_loading_context(effective_dt=next_year):
+        assert daily_calendar.get_num_partitions() == 365
+        daily_keys = set(daily_calendar.get_partition_keys())
+        assert saturday_key in daily_keys
+        assert holiday_key in daily_keys
+        assert weekday_calendar.get_num_partitions() == 261
+        weekday_keys = set(weekday_calendar.get_partition_keys())
+        assert saturday_key not in weekday_keys
+        assert holiday_key in weekday_keys
+        assert dagsterlabs_calendar.get_num_partitions() == 250
+        dagsterlabs_keys = set(dagsterlabs_calendar.get_partition_keys())
+        assert saturday_key not in dagsterlabs_keys
+        assert holiday_key not in dagsterlabs_keys
+
+    # get the time window for a Friday
+    monday = datetime.strptime("2025-01-13", "%Y-%m-%d")
+    window = weekday_calendar.get_prev_partition_window(monday)
+    assert window
+    assert window.start == datetime.strptime("2025-01-10", "%Y-%m-%d").replace(tzinfo=timezone.utc)
+    assert window.end == datetime.strptime("2025-01-11", "%Y-%m-%d").replace(tzinfo=timezone.utc)
+
+    # get the time window for a Friday
+    monday = datetime.strptime("2025-01-13", "%Y-%m-%d")
+    window = weekday_calendar.get_prev_partition_window(monday)
+    assert window
+    assert window.start == datetime.strptime("2025-01-10", "%Y-%m-%d").replace(tzinfo=timezone.utc)
+    assert window.end == datetime.strptime("2025-01-11", "%Y-%m-%d").replace(tzinfo=timezone.utc)
+
+    # get the time window for the day before a holiday
+    with partition_loading_context(effective_dt=next_year):
+        assert dagsterlabs_calendar.get_next_partition_key("2025-12-23") == "2025-12-26"
+
+    after_christmas = datetime.strptime("2025-12-26", "%Y-%m-%d")
+    window = dagsterlabs_calendar.get_prev_partition_window(after_christmas)
+    assert window
+    assert window.start == datetime.strptime("2025-12-23", "%Y-%m-%d").replace(tzinfo=timezone.utc)
+    assert window.end == datetime.strptime("2025-12-24", "%Y-%m-%d").replace(tzinfo=timezone.utc)
+
+
+def test_exclusions_with_end_offset():
+    partitions_def = dg.DailyPartitionsDefinition(
+        start_date="2021-05-05",
+        end_offset=2,
+        exclusions=[
+            datetime.strptime("2021-06-04", DATE_FORMAT),
+        ],
+    )
+    current_time = datetime.strptime("2021-06-05", DATE_FORMAT)
+    partition_context = PartitionLoadingContext(
+        temporal_context=TemporalContext(
+            effective_dt=current_time,
+            last_event_id=None,
+        ),
+        dynamic_partitions_store=None,
+    )
+
+    paginated_results = partitions_def.get_paginated_partition_keys(
+        context=partition_context, limit=5, ascending=False, cursor=None
+    )
+
+    assert paginated_results.results == [
+        "2021-06-06",
+        "2021-06-05",
+        "2021-06-03",
+        "2021-06-02",
+        "2021-06-01",
+    ]
+
+
+def test_exclusions_with_negative_end_offset():
+    partitions_def = dg.DailyPartitionsDefinition(
+        start_date="2021-05-05",
+        end_offset=-2,
+        exclusions=[
+            datetime.strptime("2021-06-01", DATE_FORMAT),
+        ],
+    )
+    current_time = datetime.strptime("2021-06-05", DATE_FORMAT)
+    partition_context = PartitionLoadingContext(
+        temporal_context=TemporalContext(
+            effective_dt=current_time,
+            last_event_id=None,
+        ),
+        dynamic_partitions_store=None,
+    )
+
+    paginated_results = partitions_def.get_paginated_partition_keys(
+        context=partition_context, limit=5, ascending=False, cursor=None
+    )
+
+    assert paginated_results.results == [
+        "2021-06-02",
+        "2021-05-31",
+        "2021-05-30",
+        "2021-05-29",
+        "2021-05-28",
+    ]

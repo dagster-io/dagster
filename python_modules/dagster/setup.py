@@ -81,7 +81,7 @@ setup(
     python_requires=">=3.9,<3.14",
     install_requires=[
         # cli
-        "click>=5.0,<8.2",
+        "click>=5.0,<9.0",
         "coloredlogs>=6.1,<=14.0",
         "Jinja2",
         # core (not explicitly expressed atm)
@@ -89,8 +89,8 @@ setup(
         "alembic>=1.2.1,!=1.6.3,!=1.7.0,!=1.11.0",
         f"grpcio>={GRPC_VERSION_FLOOR}",
         f"grpcio-health-checking>={GRPC_VERSION_FLOOR}",
-        "protobuf>=3.20.0,<6; python_version<'3.11'",  # min protobuf version to be compatible with both protobuf 3 and greater
-        "protobuf>=4,<6; python_version>='3.11'",
+        "protobuf>=3.20.0,<7; python_version<'3.11'",  # min protobuf version to be compatible with both protobuf 3 and greater
+        "protobuf>=4,<7; python_version>='3.11'",
         "python-dotenv",
         "pytz",
         "requests",
@@ -99,11 +99,11 @@ setup(
         "tabulate",
         "tomli<3",
         "tqdm<5",
-        'tzdata; platform_system=="Windows"',
+        "tzdata",
         "structlog",
         "sqlalchemy>=1.0,<3",
         "toposort>=1.0",
-        "watchdog>=0.8.3,<6",
+        "watchdog>=0.8.3,<7",
         'psutil>=1.0; platform_system=="Windows"',
         # https://github.com/mhammond/pywin32/issues/1439
         'pywin32!=226; platform_system=="Windows"',

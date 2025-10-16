@@ -67,6 +67,7 @@ from dagster._core.execution.plan.step import (
     UnresolvedMappedExecutionStep,
 )
 from dagster._core.execution.retries import RetryMode
+from dagster._core.execution.step_dependency_config import StepDependencyConfig
 from dagster._core.instance import DagsterInstance, InstanceRef
 from dagster._core.storage.mem_io_manager import mem_io_manager
 from dagster._core.system_config.objects import ResolvedRunConfig
@@ -890,6 +891,7 @@ class ExecutionPlan(
         max_concurrent: Optional[int] = None,
         tag_concurrency_limits: Optional[list[dict[str, Any]]] = None,
         instance_concurrency_context: Optional[InstanceConcurrencyContext] = None,
+        step_dependency_config: StepDependencyConfig = StepDependencyConfig.default(),
     ) -> "ActiveExecution":
         from dagster._core.execution.plan.active import ActiveExecution
 
@@ -900,6 +902,7 @@ class ExecutionPlan(
             max_concurrent,
             tag_concurrency_limits,
             instance_concurrency_context=instance_concurrency_context,
+            step_dependency_config=step_dependency_config,
         )
 
     def step_handle_for_single_step_plans(

@@ -33,6 +33,7 @@ export function VirtualizedItemListForDialog<A>({
     <Container ref={container} style={{padding}}>
       <Inner $totalHeight={totalHeight}>
         {virtualItems.map(({index, key, size, start}) => {
+          // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
           const assetKey = items[index]!;
           return (
             <Row

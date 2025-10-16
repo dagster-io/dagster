@@ -10,9 +10,11 @@ export class DeferredCallbackRegistry<TCallbacks extends Record<string, (...args
     this.targetFn = fn;
 
     // Execute all queued callbacks
-    while (this.queue.length > 0) {
-      const callbacks = this.queue.shift()!;
-
+    while (true) {
+      const callbacks = this.queue.shift();
+      if (!callbacks) {
+        break;
+      }
       fn(callbacks);
     }
   }
@@ -36,6 +38,7 @@ export class DeferredCallbackRegistry<TCallbacks extends Record<string, (...args
         if (!this.listeners[key]) {
           this.listeners[key] = new Set();
         }
+        // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
         this.listeners[key]!.add(wrapped as unknown as TCallbacks[typeof key]);
         this.listeners[key] = new Set(this.listeners[key]);
         addedCallbacks.push({key, callback: wrapped});

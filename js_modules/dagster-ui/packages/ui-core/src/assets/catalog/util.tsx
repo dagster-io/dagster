@@ -42,6 +42,7 @@ export function getGroupedAssets(assets: AssetTableFragment[]) {
                 label: owner.team,
                 link: linkToAssetTableWithAssetOwnerFilter(owner),
               };
+              // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
               acc.owners[owner.team]!.assets.push(asset);
               break;
             case 'UserAssetOwner':
@@ -50,6 +51,7 @@ export function getGroupedAssets(assets: AssetTableFragment[]) {
                 label: owner.email,
                 link: linkToAssetTableWithAssetOwnerFilter(owner),
               };
+              // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
               acc.owners[owner.email]!.assets.push(asset);
               break;
             default:
@@ -63,6 +65,7 @@ export function getGroupedAssets(assets: AssetTableFragment[]) {
           label: groupName,
           link: linkToAssetTableWithCrossCodeLocationGroupFilter(groupName),
         };
+        // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
         acc.groupName[groupName]!.assets.push(asset);
       }
       if (repository) {
@@ -72,6 +75,7 @@ export function getGroupedAssets(assets: AssetTableFragment[]) {
           label: name,
           link: linkToCodeLocationInCatalog(repository.name, repository.location.name),
         };
+        // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
         acc.repository[name]!.assets.push(asset);
       }
       if (tags) {
@@ -82,6 +86,7 @@ export function getGroupedAssets(assets: AssetTableFragment[]) {
             label: stringValue,
             link: linkToAssetTableWithTagFilter(tag),
           };
+          // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
           acc.tags[stringValue]!.assets.push(asset);
         });
       }
@@ -92,6 +97,7 @@ export function getGroupedAssets(assets: AssetTableFragment[]) {
             label: kind,
             link: linkToAssetTableWithKindFilter(kind),
           };
+          // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
           acc.kinds[kind]!.assets.push(asset);
         });
       }

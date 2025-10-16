@@ -5,6 +5,7 @@ from typing import IO, Any, Optional
 from typing_extensions import Self
 
 import dagster._check as check
+from dagster._annotations import public
 from dagster._core.storage.compute_log_manager import (
     CapturedLogContext,
     CapturedLogMetadata,
@@ -15,6 +16,7 @@ from dagster._core.storage.compute_log_manager import (
 from dagster._serdes import ConfigurableClass, ConfigurableClassData
 
 
+@public
 class NoOpComputeLogManager(ComputeLogManager, ConfigurableClass):
     """When enabled for a Dagster instance, stdout and stderr will not be available for any step."""
 

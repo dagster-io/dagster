@@ -3,9 +3,10 @@ description: Dagster+ Serverless secures data and secrets with container sandbox
 sidebar_label: Security & data protection
 sidebar_position: 4000
 title: Serverless security & data protection
+tags: [dagster-plus-feature]
 ---
 
-Unlike [Hybrid deployments](/deployment/dagster-plus/hybrid), Dagster+ Serverless deployments require direct access to your data, secrets and source code.
+Unlike [Hybrid deployments](/deployment/dagster-plus/hybrid), Dagster+ Serverless deployments require direct access to your data, secrets, and source code.
 
 Secrets and source code are built into the image directly. Images are stored in a per-customer container registry with restricted access.
 User code is securely sandboxed using modern container sandboxing techniques.
@@ -27,7 +28,7 @@ In Serverless, code that uses the default [I/O manager](/guides/build/io-manager
 
 However, this automatic change also means potentially sensitive data could be **stored** and not just processed or orchestrated by Dagster+.
 
-To prevent this, you can use [another I/O manager](/guides/build/io-managers/#built-in) that stores data in your infrastructure or [adapt your code to avoid using an I/O manager](/guides/build/io-managers/#before-you-begin).
+To prevent this, you can use [another I/O manager](/guides/build/io-managers#built-in) that stores data in your infrastructure or [adapt your code to avoid using an I/O manager](/guides/build/io-managers#before-you-begin).
 
 :::note
 You must have [boto3](https://pypi.org/project/boto3) or `dagster-cloud[serverless]` installed as a project dependency otherwise the Dagster+ managed storage can fail and silently fall back to using the default I/O manager.

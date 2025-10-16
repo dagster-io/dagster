@@ -11,8 +11,11 @@ from click.testing import CliRunner
 from dagster._core.definitions.assets.definition.asset_spec import AssetSpec
 from dagster._core.definitions.assets.definition.assets_definition import AssetsDefinition
 from dagster._core.definitions.job_definition import JobDefinition
+from dagster._core.instance_for_test import instance_for_test
+from dagster._core.storage.defs_state.base import DefsStateStorage
 from dagster._core.test_utils import ensure_dagster_tests_import
 from dagster._utils import pushd
+from dagster._utils.test.definitions import scoped_definitions_load_context
 from dagster_airlift.constants import (
     DAG_MAPPING_METADATA_KEY,
     SOURCE_CODE_METADATA_KEY,
@@ -28,6 +31,12 @@ from dagster_tests.components_tests.utils import (
     build_component_defs_for_test,
     temp_code_location_bar,
 )
+
+
+@pytest.fixture(autouse=True)
+def _setup() -> Iterator:
+    with instance_for_test() as instance, scoped_definitions_load_context():
+        yield instance
 
 
 @pytest.fixture
@@ -67,6 +76,8 @@ def component_for_test(temp_cwd: Path):
 
 
 def test_load_dags_basic(component_for_test: type[AirflowInstanceComponent]) -> None:
+    state_storage = DefsStateStorage.get()
+    assert state_storage is not None
     defs = build_component_defs_for_test(
         component_type=component_for_test,
         attrs={
@@ -150,11 +161,11 @@ def test_scaffold_airlift_python():
         with open("bar/defs/qux/component.py") as f:
             file_contents = f.read()
             assert file_contents == (
-                """from dagster import component, ComponentLoadContext
+                """import dagster as dg
 from dagster_airlift.core.components import AirflowInstanceComponent
 
-@component_instance
-def load(context: ComponentLoadContext) -> AirflowInstanceComponent: ...
+@dg.component_instance
+def load(context: dg.ComponentLoadContext) -> AirflowInstanceComponent: ...
 """
             )
 

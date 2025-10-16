@@ -84,6 +84,7 @@ export const JobBackfillsTable = ({
             if (cursor) {
               setCursorStack((current) => [...current, cursor]);
             }
+            // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
             const nextCursor = backfills && backfills[backfills.length - 1]!.id;
             if (!nextCursor) {
               return;

@@ -3,6 +3,7 @@ description: Configure PingOne to use single sign-on (SSO) with your Dagster+ or
 sidebar_label: PingOne SSO
 sidebar_position: 8260
 title: Setting up PingOne SSO for Dagster+
+tags: [dagster-plus-feature]
 ---
 
 In this guide, you'll configure PingOne to use single sign-on (SSO) with your Dagster+ organization.
@@ -15,7 +16,7 @@ To complete the steps in this guide, you'll need:
 - **The following in PingOne:**
   - An existing PingOne account
   - Organization admin permissions
-- **To install the [`dagster-cloud` CLI](/deployment/dagster-plus/management/dagster-cloud-cli/installing-and-configuring)**
+- **To install the [`dagster-cloud` CLI](/api/clis/dagster-cloud-cli/installing-and-configuring)**
 - **The following in Dagster+:**
   - A Pro plan
   - [Access to a user token](/deployment/dagster-plus/management/tokens/user-tokens)

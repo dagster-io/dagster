@@ -9,7 +9,7 @@ from dagster._cli.workspace.cli_target import (
     repository_options,
 )
 from dagster._core.instance import DagsterInstance
-from dagster._core.remote_representation import RemoteJob
+from dagster._core.remote_representation.external import RemoteJob
 from dagster_shared.cli import WorkspaceOpts, workspace_options
 
 
@@ -91,7 +91,7 @@ def test_repository_target_argument_one_repo_and_specified_wrong():
     assert (
         """Job "not_present" not found in repository """
         """"hello_world_repository". Found ['hello_world_job'] instead."""
-    ) in result.stdout
+    ) in result.output
 
 
 MULTI_JOB_WORKSPACE = dg.file_relative_path(__file__, "multi_job/multi_job.yaml")
@@ -116,4 +116,4 @@ def test_must_provide_name_to_multi_job():
     assert (
         """Must provide --job as there is more than one job in """
         """multi_job. Options are: ['job_one', 'job_two']."""
-    ) in result.stdout
+    ) in result.output

@@ -1,3 +1,4 @@
+# ruff: noqa: I001 - import order differs between CI and local due to package installation differences
 import json
 import subprocess
 import tempfile
@@ -8,22 +9,18 @@ import pytest
 import responses
 import yaml
 from dagster_aws.ecs.container_context import EcsContainerContext
-from dagster_dg_cli.cli.plus.constants import DgPlusAgentPlatform
-from dagster_dg_cli.cli.scaffold import REGISTRY_INFOS
-from dagster_dg_cli.utils.plus import gql
-from dagster_dg_core.utils import ensure_dagster_dg_tests_import, pushd
+from dagster_dg_core.utils import pushd
 from dagster_docker.container_context import DockerContainerContext
 from dagster_k8s.container_context import K8sContainerContext
-
-ensure_dagster_dg_tests_import()
-
-
-from dagster_dg_core_tests.utils import (
+from dagster_test.dg_utils.utils import (
     ProxyRunner,
     isolated_example_project_foo_bar,
     isolated_example_workspace,
 )
 
+from dagster_dg_cli.cli.plus.constants import DgPlusAgentPlatform
+from dagster_dg_cli.cli.scaffold.github_actions import REGISTRY_INFOS
+from dagster_dg_cli.utils.plus import gql
 from dagster_dg_cli_tests.cli_tests.plus_tests.utils import (
     PYTHON_VERSION,
     mock_gql_response,
@@ -174,7 +171,11 @@ def test_scaffold_build_artifacts_command_workspace(
     (Path("foo") / "container_context.yaml").write_text(modified_container_context_yaml)
     (Path("foo") / "Dockerfile").write_text("junk")
 
-    result = runner.invoke("scaffold", "build-artifacts", input="N\nN\nN\nN\n")
+    result = runner.invoke(
+        "scaffold",
+        "build-artifacts",
+        input="N\nN\nN\nN\nN\nN\nN\nN\nN\nN\nN\n",
+    )
     assert result.exit_code == 0, result.output + " " + str(result.exception)
     assert "Build config already exists" in result.output
     assert "Dockerfile already exists" in result.output
@@ -183,7 +184,11 @@ def test_scaffold_build_artifacts_command_workspace(
     assert (Path("foo") / "container_context.yaml").read_text() == modified_container_context_yaml
     assert (Path("foo") / "Dockerfile").read_text() == "junk"
 
-    result = runner.invoke("scaffold", "build-artifacts", input="Y\nY\nY\nY\nY\n")
+    result = runner.invoke(
+        "scaffold",
+        "build-artifacts",
+        input="Y\nY\nY\nY\nY\nY\nY\nY\nY\nY\nY\n",
+    )
     assert result.exit_code == 0, result.output + " " + str(result.exception)
 
     assert "Build config already exists" in result.output
@@ -209,7 +214,7 @@ def test_scaffold_build_artifacts_command_project(
         assert not Path("Dockerfile").exists()
 
         runner = setup_populated_git_workspace
-        result = runner.invoke("scaffold", "build-artifacts")
+        result = runner.invoke("scaffold", "build-artifacts", "-y")
         assert result.exit_code == 0, result.output + " " + str(result.exception)
 
         assert Path("build.yaml").exists()
@@ -224,7 +229,11 @@ def test_scaffold_build_artifacts_command_project(
 
         Path("Dockerfile").write_text("junk")
 
-        result = runner.invoke("scaffold", "build-artifacts", input="N\nN\nN\n")
+        result = runner.invoke(
+            "scaffold",
+            "build-artifacts",
+            input="N\nN\nN\nN\nN\nN\nN\nN\nN\nN\nN\n",
+        )
         assert result.exit_code == 0, result.output + " " + str(result.exception)
         assert "Build config already exists" in result.output
         assert "Dockerfile already exists" in result.output
@@ -233,7 +242,11 @@ def test_scaffold_build_artifacts_command_project(
         assert Path("container_context.yaml").read_text() == modified_container_context_yaml
         assert Path("Dockerfile").read_text() == "junk"
 
-        result = runner.invoke("scaffold", "build-artifacts", input="Y\nY\nY\n")
+        result = runner.invoke(
+            "scaffold",
+            "build-artifacts",
+            input="Y\nY\nY\nY\nY\nY\nY\nY\nY\nY\nY\n",
+        )
         assert result.exit_code == 0, result.output + " " + str(result.exception)
         assert "Build config already exists" in result.output
         assert "Dockerfile already exists" in result.output

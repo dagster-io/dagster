@@ -71,6 +71,7 @@ class DagsterTypeKind(PythonEnum):
     REGULAR = "REGULAR"
 
 
+@public
 class DagsterType:
     """Define a type in dagster. These can be used in the inputs and outputs of ops.
 
@@ -528,6 +529,7 @@ def isinstance_type_check_fn(
     return type_check
 
 
+@public
 class PythonObjectDagsterType(DagsterType):
     """Define a type in dagster whose typecheck is an isinstance check.
 
@@ -815,6 +817,7 @@ _PYTHON_TYPE_TO_DAGSTER_TYPE_MAPPING_REGISTRY: t.Dict[type, DagsterType] = {}
 as_dagster_type are registered here so that we can remap the Python types to runtime types."""
 
 
+@public
 def make_python_type_usable_as_dagster_type(
     python_type: TypingType[t.Any], dagster_type: DagsterType
 ) -> None:

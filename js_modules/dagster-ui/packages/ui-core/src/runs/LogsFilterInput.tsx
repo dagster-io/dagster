@@ -91,6 +91,7 @@ export const LogsFilterInput = (props: Props) => {
 
       const [token, value] = queryString.split(':');
       if (token && token in perProvider) {
+        // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
         const {fuse, all} = perProvider[token]!;
         const results = value
           ? fuse.search(value).map((result) => `${token}:${result.item}`)

@@ -1,4 +1,4 @@
-import {Meta, StoryFn} from '@storybook/react';
+import {StoryFn} from '@storybook/nextjs';
 import faker from 'faker';
 
 import {StorybookProvider} from '../../testing/StorybookProvider';
@@ -8,7 +8,7 @@ import {TerminationDialog, Props as TerminationDialogProps} from '../Termination
 export default {
   title: 'TerminationDialog',
   component: TerminationDialog,
-} as Meta;
+};
 
 const Template: StoryFn<TerminationDialogProps> = (props) => (
   <StorybookProvider>
@@ -29,8 +29,11 @@ ForceTerminationCheckbox.args = {
     console.log('Close!');
   },
   selectedRuns: {
+    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
     [runIDs[0]!]: true,
+    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
     [runIDs[1]!]: false,
+    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
     [runIDs[2]!]: true,
   },
 };
@@ -42,8 +45,11 @@ ForceTerminationNoCheckbox.args = {
     console.log('Close!');
   },
   selectedRuns: {
+    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
     [runIDs[0]!]: false,
+    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
     [runIDs[1]!]: false,
+    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
     [runIDs[2]!]: false,
   },
 };

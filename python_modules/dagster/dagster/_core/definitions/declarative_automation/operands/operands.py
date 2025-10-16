@@ -1,6 +1,5 @@
 import datetime
-from collections.abc import Mapping, Set
-from typing import TYPE_CHECKING, Optional
+from typing import Optional
 
 from dagster_shared.serdes import whitelist_for_serdes
 from dagster_shared.serdes.utils import SerializableTimeDelta
@@ -15,11 +14,10 @@ from dagster._core.definitions.declarative_automation.automation_context import 
 from dagster._core.definitions.declarative_automation.operands.subset_automation_condition import (
     SubsetAutomationCondition,
 )
+from dagster._core.definitions.partitions.snap.snap import PartitionsSnap
+from dagster._core.definitions.partitions.subset.key_ranges import KeyRangesPartitionsSubset
 from dagster._record import record
 from dagster._utils.schedules import reverse_cron_string_iterator
-
-if TYPE_CHECKING:
-    from dagster._core.storage.dagster_run import RunRecord
 
 
 @whitelist_for_serdes
@@ -55,10 +53,19 @@ class InitialEvaluationCondition(BuiltinAutomationCondition):
         if previous_requested_subset is None:
             return True
 
-        previous_subset_value_type = type(previous_requested_subset.get_internal_value())
+        previous_subset_value = previous_requested_subset.get_internal_value()
+        previous_subset_value_type = type(previous_subset_value)
 
         current_subset = context.asset_graph_view.get_empty_subset(key=context.root_context.key)
         current_subset_value_type = type(current_subset.get_internal_value())
+        # if we have a key ranges subset, we can compare the partitions snapshot
+        if isinstance(previous_subset_value, KeyRangesPartitionsSubset):
+            current_partitions_snap = (
+                PartitionsSnap.from_def(context.partitions_def) if context.partitions_def else None
+            )
+            previous_partitions_snap = previous_subset_value.partitions_snap
+            return previous_partitions_snap != current_partitions_snap
+
         return previous_subset_value_type != current_subset_value_type
 
     def evaluate(self, context: AutomationContext) -> AutomationResult:
@@ -131,15 +138,25 @@ class WillBeRequestedCondition(SubsetAutomationCondition):
         return "will_be_requested"
 
     def _executable_with_root_context_key(self, context: AutomationContext) -> bool:
-        # TODO: once we can launch backfills via the asset daemon, this can be removed
         from dagster._core.definitions.assets.graph.asset_graph import executable_in_same_run
 
         root_key = context.root_context.key
-        return executable_in_same_run(
+        if not executable_in_same_run(
             asset_graph=context.asset_graph_view.asset_graph,
             child_key=root_key,
             parent_key=context.key,
-        )
+        ):
+            return False
+        elif not isinstance(context.key, AssetKey):
+            return True
+        else:
+            # if the parent is an asset key, it must be materializable in order
+            # for updates to be guaranteed to count as updates to the downstream
+            # for the purposes of the `newly_updated` condition. therefore, we
+            # need this check to prevent cases where we combine an observable
+            # source execution and a materialization in the same run with the
+            # expectation that the observation will result in a new data version
+            return context.asset_graph.get(context.key).is_materializable
 
     def compute_subset(self, context: AutomationContext) -> EntitySubset:
         current_result = context.request_subsets_by_key.get(context.key)
@@ -158,71 +175,6 @@ class NewlyRequestedCondition(SubsetAutomationCondition):
 
     def compute_subset(self, context: AutomationContext) -> EntitySubset:
         return context.get_previous_requested_subset(context.key) or context.get_empty_subset()
-
-
-@whitelist_for_serdes
-@record
-class LatestRunExecutedWithRootTargetCondition(SubsetAutomationCondition):
-    @property
-    def name(self) -> str:
-        return "executed_with_root_target"
-
-    async def compute_subset(self, context: AutomationContext) -> EntitySubset:  # pyright: ignore[reportIncompatibleMethodOverride]
-        def _filter_fn(run_record: "RunRecord") -> bool:
-            if context.key == context.root_context.key:
-                # this happens when this is evaluated for a self-dependent asset. in these cases,
-                # it does not make sense to consider the asset as having been executed with itself
-                # as the partition key of the target is necessarily different than the partition
-                # key of the query key
-                return False
-            asset_selection = run_record.dagster_run.asset_selection or set()
-            check_selection = run_record.dagster_run.asset_check_selection or set()
-            return context.root_context.key in (asset_selection | check_selection)
-
-        return await context.asset_graph_view.compute_latest_run_matches_subset(
-            from_subset=context.candidate_subset, filter_fn=_filter_fn
-        )
-
-
-@whitelist_for_serdes
-@record
-class LatestRunExecutedWithTagsCondition(SubsetAutomationCondition):
-    tag_keys: Optional[Set[str]] = None
-    tag_values: Optional[Mapping[str, str]] = None
-
-    @property
-    def name(self) -> str:
-        name = "executed_with_tags"
-        props = []
-        if self.tag_keys is not None:
-            tag_key_str = ",".join(sorted(self.tag_keys))
-            props.append(f"tag_keys={{{tag_key_str}}}")
-        if self.tag_values is not None:
-            tag_value_str = ",".join(
-                [f"{key}:{value}" for key, value in sorted(self.tag_values.items())]
-            )
-            props.append(f"tag_values={{{tag_value_str}}}")
-
-        if props:
-            name += f"({', '.join(props)})"
-        return name
-
-    async def compute_subset(self, context: AutomationContext) -> EntitySubset:  # pyright: ignore[reportIncompatibleMethodOverride]
-        def _filter_fn(run_record: "RunRecord") -> bool:
-            if self.tag_keys and not all(
-                key in run_record.dagster_run.tags for key in self.tag_keys
-            ):
-                return False
-            if self.tag_values and not all(
-                run_record.dagster_run.tags.get(key) == value
-                for key, value in self.tag_values.items()
-            ):
-                return False
-            return True
-
-        return await context.asset_graph_view.compute_latest_run_matches_subset(
-            from_subset=context.candidate_subset, filter_fn=_filter_fn
-        )
 
 
 @whitelist_for_serdes

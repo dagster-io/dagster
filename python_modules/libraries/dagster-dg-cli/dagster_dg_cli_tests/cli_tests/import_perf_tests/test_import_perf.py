@@ -22,6 +22,7 @@ def test_import_perf():
         capture_output=True,
     )
     import_profile = result.stderr.decode("utf-8")
+
     import_profile_lines = import_profile.split("\n")
     import_names = [line.split("|")[-1].strip() for line in import_profile_lines]
 
@@ -46,6 +47,7 @@ def test_import_perf():
         "tomlkit",
         "watchdog",
         "dotenv",
+        "claude_code_sdk",
     ]
     expensive_imports = [
         f"`{lib}`"

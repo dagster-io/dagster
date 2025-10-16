@@ -6,6 +6,9 @@ from dagster_shared.serdes import whitelist_for_serdes
 
 import dagster._check as check
 from dagster._core.definitions.asset_health.asset_health import AssetHealthStatus
+from dagster._core.definitions.asset_health.asset_materialization_health import (
+    MinimalAssetMaterializationHealthState,
+)
 from dagster._core.definitions.asset_key import AssetKey
 from dagster._core.definitions.freshness import FreshnessState, FreshnessStateRecord
 from dagster._core.loader import LoadableBy, LoadingContext
@@ -21,6 +24,7 @@ class AssetFreshnessHealthState(LoadableBy[AssetKey]):
     """Maintains the latest freshness state for the asset."""
 
     freshness_state: FreshnessState
+    updated_timestamp: Optional[float] = None
 
     @property
     def health_status(self) -> AssetHealthStatus:
@@ -46,9 +50,11 @@ class AssetFreshnessHealthState(LoadableBy[AssetKey]):
             # freshness policy has no evaluations yet
             return cls(
                 freshness_state=FreshnessState.UNKNOWN,
+                updated_timestamp=None,
             )
         return cls(
             freshness_state=freshness_state_record.freshness_state,
+            updated_timestamp=freshness_state_record.updated_at.timestamp(),
         )
 
     @classmethod
@@ -58,11 +64,7 @@ class AssetFreshnessHealthState(LoadableBy[AssetKey]):
         asset_freshness_health_states = (
             context.instance.get_asset_freshness_health_state_for_assets(list(keys))
         )
-
-        if asset_freshness_health_states is None:
-            return [None for _ in keys]
-        else:
-            return [asset_freshness_health_states.get(key) for key in keys]
+        return [asset_freshness_health_states.get(key) for key in keys]
 
 
 @whitelist_for_serdes
@@ -82,7 +84,7 @@ async def get_freshness_status_and_metadata(
     if (
         asset_freshness_health_state is None
     ):  # if streamline reads are off or no streamline state exists for the asset compute it from the DB
-        if context.instance.streamline_read_asset_health_required():
+        if context.instance.streamline_read_asset_health_required("asset-freshness-health"):
             return AssetHealthStatus.UNKNOWN, None
 
         if (
@@ -95,14 +97,22 @@ async def get_freshness_status_and_metadata(
             context,
         )
 
-    asset_record = await AssetRecord.gen(context, asset_key)
-    materialization_timestamp = (
-        asset_record.asset_entry.last_materialization.timestamp
-        if asset_record
-        and asset_record.asset_entry
-        and asset_record.asset_entry.last_materialization
-        else None
+    asset_materialization_health_state = await MinimalAssetMaterializationHealthState.gen(
+        context, asset_key
     )
+    if asset_materialization_health_state is None:
+        asset_record = await AssetRecord.gen(context, asset_key)
+        materialization_timestamp = (
+            asset_record.asset_entry.last_materialization.timestamp
+            if asset_record
+            and asset_record.asset_entry
+            and asset_record.asset_entry.last_materialization
+            else None
+        )
+    else:
+        materialization_timestamp = (
+            asset_materialization_health_state.latest_materialization_timestamp
+        )
 
     if asset_freshness_health_state.freshness_state == FreshnessState.PASS:
         return AssetHealthStatus.HEALTHY, AssetHealthFreshnessMetadata(

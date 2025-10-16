@@ -266,6 +266,7 @@ class DagsterTableauTranslator:
                     project_id=workbook_data.properties["projectLuid"],
                 )
             },
+            kinds={"tableau", "sheet"},
         )
 
     def get_dashboard_spec(self, data: TableauTranslatorData) -> AssetSpec:
@@ -282,6 +283,20 @@ class DagsterTableauTranslator:
             for sheet_id in sheet_ids
         ]
 
+        dashboard_upstream_data_source_ids = data.properties.get("data_source_ids", [])
+
+        data_source_keys = [
+            self.get_asset_spec(
+                TableauTranslatorData(
+                    content_data=data.workspace_data.data_sources_by_id[data_source_id],
+                    workspace_data=data.workspace_data,
+                )
+            ).key
+            for data_source_id in dashboard_upstream_data_source_ids
+        ]
+
+        upstream_keys = sheet_keys + data_source_keys
+
         workbook_id = data.properties["workbook"]["luid"]
         workbook_data = data.workspace_data.workbooks_by_id[workbook_id]
         asset_key = AssetKey(
@@ -294,7 +309,7 @@ class DagsterTableauTranslator:
 
         return AssetSpec(
             key=asset_key,
-            deps=sheet_keys if sheet_keys else None,
+            deps=upstream_keys if upstream_keys else None,
             tags={"dagster/storage_kind": "tableau", **TableauTagSet(asset_type="dashboard")},
             metadata={
                 **TableauViewMetadataSet(
@@ -304,9 +319,16 @@ class DagsterTableauTranslator:
                     project_id=workbook_data.properties["projectLuid"],
                 )
             },
+            kinds={"tableau", "dashboard"},
         )
 
     def get_data_source_spec(self, data: TableauTranslatorData) -> AssetSpec:
+        kinds = {
+            "tableau",
+            *["extract" if data.properties["hasExtracts"] else "live"],
+            *["published datasource" if data.properties["isPublished"] else "embedded datasource"],
+        }
+
         return AssetSpec(
             key=AssetKey([_coerce_input_to_valid_name(data.properties["name"])]),
             tags={"dagster/storage_kind": "tableau", **TableauTagSet(asset_type="data_source")},
@@ -320,4 +342,5 @@ class DagsterTableauTranslator:
                     else None,
                 )
             },
+            kinds=kinds,
         )

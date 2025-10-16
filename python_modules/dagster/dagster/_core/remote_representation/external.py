@@ -9,9 +9,9 @@ from typing import TYPE_CHECKING, AbstractSet, Callable, Optional, Union  # noqa
 from dagster_shared.error import DagsterError
 
 import dagster._check as check
-from dagster import AssetSelection
 from dagster._config.snap import ConfigFieldSnap, ConfigSchemaSnapshot
 from dagster._core.definitions.asset_checks.asset_check_spec import AssetCheckKey
+from dagster._core.definitions.asset_selection import AssetSelection
 from dagster._core.definitions.assets.job.asset_job import IMPLICIT_ASSET_JOB_NAME
 from dagster._core.definitions.automation_condition_sensor_definition import (
     DEFAULT_AUTOMATION_CONDITION_SENSOR_NAME,
@@ -39,6 +39,12 @@ from dagster._core.execution.plan.handle import ResolvedFromDynamicStepHandle, S
 from dagster._core.instance import DagsterInstance
 from dagster._core.loader import LoadableBy
 from dagster._core.origin import JobPythonOrigin, RepositoryPythonOrigin
+from dagster._core.remote_origin import (
+    RemoteInstigatorOrigin,
+    RemoteJobOrigin,
+    RemotePartitionSetOrigin,
+    RemoteRepositoryOrigin,
+)
 from dagster._core.remote_representation.external_data import (
     DEFAULT_MODE_NAME,
     AssetCheckNodeSnap,
@@ -66,12 +72,6 @@ from dagster._core.remote_representation.handle import (
     RepositoryHandle,
 )
 from dagster._core.remote_representation.job_index import JobIndex
-from dagster._core.remote_representation.origin import (
-    RemoteInstigatorOrigin,
-    RemoteJobOrigin,
-    RemotePartitionSetOrigin,
-    RemoteRepositoryOrigin,
-)
 from dagster._core.remote_representation.represented import RepresentedJob
 from dagster._core.snap import ExecutionPlanSnapshot
 from dagster._core.snap.job_snapshot import JobSnap
@@ -283,6 +283,9 @@ class RemoteRepository:
     def get_all_jobs(self) -> Sequence["RemoteJob"]:
         return [self.get_full_job(pn) for pn in self._job_map]
 
+    def get_job_map_entry(self, job_name: str) -> Union[JobDataSnap, JobRefSnap]:
+        return self._job_map[job_name]
+
     @property
     def handle(self) -> RepositoryHandle:
         return self._handle
@@ -323,6 +326,9 @@ class RemoteRepository:
             else self._asset_jobs.get(job_name, [])
         )
 
+    def get_asset_keys_in_job(self, job_name: str) -> Sequence[AssetKey]:
+        return [asset_snap.asset_key for asset_snap in self.get_asset_node_snaps(job_name)]
+
     @cached_property
     def _asset_snaps_by_key(self) -> Mapping[AssetKey, AssetNodeSnap]:
         mapping = {}
@@ -352,57 +358,6 @@ class RemoteRepository:
         )
 
         return RemoteRepositoryAssetGraph.build(self)
-
-    def get_partition_names_for_asset_job(
-        self,
-        job_name: str,
-        selected_asset_keys: Optional[AbstractSet[AssetKey]],
-        instance: DagsterInstance,
-    ) -> Sequence[str]:
-        partitions_def = self._get_partitions_def_for_job(
-            job_name=job_name, selected_asset_keys=selected_asset_keys
-        )
-        if not partitions_def:
-            return []
-        return partitions_def.get_partition_keys(dynamic_partitions_store=instance)
-
-    def get_partition_tags_for_implicit_asset_job(
-        self,
-        job_name: str,
-        selected_asset_keys: Optional[AbstractSet[AssetKey]],
-        instance: DagsterInstance,
-        partition_name: str,
-    ) -> Mapping[str, str]:
-        return check.not_none(
-            self._get_partitions_def_for_job(
-                job_name=job_name, selected_asset_keys=selected_asset_keys
-            )
-        ).get_tags_for_partition_key(partition_name)
-
-    def _get_partitions_def_for_job(
-        self,
-        job_name: str,
-        selected_asset_keys: Optional[AbstractSet[AssetKey]],
-    ) -> Optional[PartitionsDefinition]:
-        asset_nodes = self.get_asset_node_snaps(job_name)
-        unique_partitions_defs: set[PartitionsDefinition] = set()
-        for asset_node in asset_nodes:
-            if selected_asset_keys is not None and asset_node.asset_key not in selected_asset_keys:
-                continue
-
-            if asset_node.partitions is not None:
-                unique_partitions_defs.add(asset_node.partitions.get_partitions_definition())
-
-        if len(unique_partitions_defs) == 0:
-            # Assets are all unpartitioned
-            return None
-        if len(unique_partitions_defs) == 1:
-            return next(iter(unique_partitions_defs))
-        else:
-            check.failed(
-                "There is no PartitionsDefinition shared by all the provided assets."
-                f" {len(unique_partitions_defs)} unique PartitionsDefinitions."
-            )
 
     @cached_property
     def _sensor_mappings(
@@ -560,6 +515,10 @@ class RemoteJob(RepresentedJob, LoadableBy[JobSubsetSelector, "BaseWorkspaceRequ
     @property
     def description(self):
         return self._job_index.job_snapshot.description
+
+    @property
+    def owners(self) -> Optional[Sequence[str]]:
+        return getattr(self._job_index.job_snapshot, "owners", None)
 
     @property
     def node_names_in_topological_order(self):
@@ -743,7 +702,7 @@ class RemoteExecutionPlan(LoadableBy[JobSubsetSelector, "BaseWorkspaceRequestCon
         tasks = [
             context.gen_execution_plan(
                 check.not_none(remote_jobs_by_key[key]),
-                run_config={},
+                run_config=key.run_config or {},
                 step_keys_to_execute=None,
                 known_state=None,
             )
@@ -954,6 +913,10 @@ class RemoteSchedule:
     @property
     def metadata(self) -> Mapping[str, MetadataValue]:
         return self._schedule_snap.metadata
+
+    @property
+    def owners(self) -> Optional[Sequence[str]]:
+        return getattr(self._schedule_snap, "owners", None)
 
     def get_remote_origin(self) -> RemoteInstigatorOrigin:
         return self.handle.get_remote_origin()
@@ -1187,6 +1150,10 @@ class RemoteSensor:
     @property
     def tags(self) -> Mapping[str, str]:
         return self._sensor_snap.tags
+
+    @property
+    def owners(self) -> Optional[Sequence[str]]:
+        return getattr(self._sensor_snap, "owners", None)
 
     @property
     def default_status(self) -> DefaultSensorStatus:

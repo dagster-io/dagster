@@ -22,9 +22,9 @@ import ProjectCreationPrereqs from '@site/docs/partials/\_ProjectCreationPrereqs
       1. Open your terminal and scaffold a new Dagster project:
 
          ```shell
-         uvx -U create-dagster project dagster-quickstart
+         uvx create-dagster@latest project dagster-quickstart
          ```
-      
+
       2. Respond `y` to the prompt to run `uv sync` after scaffolding
 
          ![Responding y to uv sync prompt](/images/getting-started/quickstart/uv_sync_yes.png)
@@ -52,8 +52,9 @@ import ProjectCreationPrereqs from '@site/docs/partials/\_ProjectCreationPrereqs
       5. Install the required dependencies in the virtual environment:
 
          ```shell
-         uv pip install pandas
+         uv add pandas
          ```
+
    </TabItem>
 
    <TabItem value="pip" label="pip">
@@ -67,7 +68,7 @@ import ProjectCreationPrereqs from '@site/docs/partials/\_ProjectCreationPrereqs
          ```shell
          cd dagster-quickstart
          ```
-      
+
       3. Create and activate a virtual environment:
 
          <Tabs>
@@ -94,12 +95,13 @@ import ProjectCreationPrereqs from '@site/docs/partials/\_ProjectCreationPrereqs
          ```shell
          pip install pandas
          ```
-      
+
       5. Install your project as an editable package:
 
          ```shell
          pip install --editable .
          ```
+
    </TabItem>
 </Tabs>
 
@@ -142,54 +144,54 @@ Your new Dagster project should have the following structure:
 
 ## Step 2: Scaffold an assets file
 
-Use the [`dg scaffold defs`](/api/dg/dg-cli#dg-scaffold) command to generate an assets file on the command line:
+Use the [`dg scaffold defs`](/api/clis/dg-cli/dg-cli-reference#dg-scaffold) command to generate an assets file on the command line:
 
-   ```shell
-   dg scaffold defs dagster.asset assets.py
-   ```
+```shell
+dg scaffold defs dagster.asset assets.py
+```
 
-   This will add a new file `assets.py` to the `defs` directory:
+This will add a new file `assets.py` to the `defs` directory:
 
-   ```shell
-   src
-   └── dagster_quickstart
+```shell
+src
+└── dagster_quickstart
+   ├── __init__.py
+   └── defs
       ├── __init__.py
-      └── defs
-         ├── __init__.py
-         └── assets.py
-   ```
+      └── assets.py
+```
 
 ## Step 3: Add data
 
 Next, create a `sample_data.csv` file. This file will act as the data source for your Dagster pipeline:
 
-   ```shell
-   mkdir src/dagster_quickstart/defs/data && touch src/dagster_quickstart/defs/data/sample_data.csv
-   ```
+```shell
+mkdir src/dagster_quickstart/defs/data && touch src/dagster_quickstart/defs/data/sample_data.csv
+```
 
-  In your preferred editor, copy the following data into this file:
+In your preferred editor, copy the following data into this file:
 
-  <CodeExample
-      path="docs_snippets/docs_snippets/getting-started/quickstart/sample_data.csv"
-      language="csv"
-      title="src/dagster_quickstart/defs/data/sample_data.csv"
-   />
+<CodeExample
+  path="docs_snippets/docs_snippets/getting-started/quickstart/sample_data.csv"
+  language="csv"
+  title="src/dagster_quickstart/defs/data/sample_data.csv"
+/>
 
 ## Step 4: Define the asset
 
 To define the assets for the ETL pipeline, open `src/dagster_quickstart/defs/assets.py` file in your preferred editor and copy in the following code:
 
 <CodeExample
-   path="docs_snippets/docs_snippets/getting-started/quickstart/assets.py"
-   language="python"
-   title="src/dagster_quickstart/defs/assets.py"
+  path="docs_snippets/docs_snippets/getting-started/quickstart/assets.py"
+  language="python"
+  title="src/dagster_quickstart/defs/assets.py"
 />
 
-At this point, you can list the Dagster definitions in your project with [`dg list defs`](/api/dg/dg-cli#dg-list). You should see the asset you just created:
+At this point, you can list the Dagster definitions in your project with [`dg list defs`](/api/clis/dg-cli/dg-cli-reference#dg-list). You should see the asset you just created:
 
 <CliInvocationExample path="docs_snippets/docs_snippets/getting-started/quickstart/dg_list_defs.txt" />
 
-You can also load and validate your Dagster definitions with [`dg check defs`](/api/dg/dg-cli#dg-check):
+You can also load and validate your Dagster definitions with [`dg check defs`](/api/clis/dg-cli/dg-cli-reference#dg-check):
 
 <CliInvocationExample path="docs_snippets/docs_snippets/getting-started/quickstart/dg_check_defs.txt" />
 
@@ -217,11 +219,12 @@ You can also load and validate your Dagster definitions with [`dg check defs`](/
 
 :::tip
 
-You can also run the pipeline by using the [`dg launch --assets`](/api/dg/dg-cli#dg-launch) command and passing an [asset selection](/guides/build/assets/asset-selection-syntax):
+You can also run the pipeline by using the [`dg launch --assets`](/api/clis/dg-cli/dg-cli-reference#dg-launch) command and passing an [asset selection](/guides/build/assets/asset-selection-syntax):
 
 ```
 dg launch --assets "*"
 ```
+
 :::
 
 ## Step 6: Verify the results
@@ -246,5 +249,6 @@ id,name,age,city,age_group
 
 Congratulations! You've just built and run your first pipeline with Dagster. Next, you can:
 
-- Continue with the [ETL pipeline tutorial](/etl-pipeline-tutorial) to learn how to build a more complex ETL pipeline
+- Follow the [Tutorial](/dagster-basics-tutorial) to learn how to build a more complex ETL pipeline
 - [Create your own Dagster project](/guides/build/projects/creating-a-new-project) and [add assets](/guides/build/assets/defining-assets) to it
+- Check out our [Python primer series](https://dagster.io/blog/python-packages-primer-1) for an in-depth tour of Python modules, packages and imports

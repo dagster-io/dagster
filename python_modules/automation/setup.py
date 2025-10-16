@@ -18,13 +18,21 @@ setup(
     install_requires=[
         "autoflake",
         "boto3",
+        "click",
         "packaging>=20.9",
         "pandas",
+        "pathspec",
         "pytablereader",
+        "pydantic",
+        "pyyaml",
         "requests",
+        "rich",
         "twine>=1.15.0",
+        "sphinx",
         "virtualenv>=20.27.0",
         "urllib3",
+        "watchdog",
+        "deepeval!=3.6.5",
     ],
     extras_require={
         "buildkite": [
@@ -35,6 +43,9 @@ setup(
         "console_scripts": [
             "dagster-image = automation.docker.cli:main",
             "dagster-graphql-client = automation.graphql.python_client.cli:main",
+            "dagster-docs = automation.dagster_docs:main",
+            "dagster-eval = automation.eval.cli:main",
+            "dagster-dev = automation.dagster_dev.cli:main",
         ]
     },
 )

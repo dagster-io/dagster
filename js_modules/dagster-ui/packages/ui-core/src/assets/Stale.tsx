@@ -209,6 +209,7 @@ const StaleCausesPopoverSummary = ({
         </Subtitle2>
       </Box>
       {Object.entries(grouped).map(([label, causes], idx) => {
+        // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
         const isSelf = isEqual(assetKey.path, causes[0]!.key.path);
         return (
           <Box key={label}>
@@ -217,6 +218,7 @@ const StaleCausesPopoverSummary = ({
               border={idx === 0 ? 'bottom' : 'top-and-bottom'}
             >
               <CaptionSubtitle>
+                {/* eslint-disable-next-line @typescript-eslint/no-non-null-assertion */}
                 {getCollapsedHeaderLabel(isSelf, causes[0]!.category, causes.length)}
               </CaptionSubtitle>
             </Box>

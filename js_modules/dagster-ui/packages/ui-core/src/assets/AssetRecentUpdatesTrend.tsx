@@ -1,166 +1,99 @@
-import {
-  Body,
-  Box,
-  Colors,
-  Icon,
-  Popover,
-  Skeleton,
-  useDelayedState,
-} from '@dagster-io/ui-components';
-import React, {useMemo} from 'react';
+import {Body, Box, Colors, Icon, Popover} from '@dagster-io/ui-components';
+import React, {ReactNode, useMemo} from 'react';
 import {Link} from 'react-router-dom';
-import styled from 'styled-components';
 
-import {AssetHealthSummary} from './AssetHealthSummary';
-import {
-  AssetFailedToMaterializeFragment,
-  AssetObservationFragment,
-  AssetSuccessfulMaterializationFragment,
-} from './types/useRecentAssetEvents.types';
-import {useRecentAssetEvents} from './useRecentAssetEvents';
-import {useRefreshAtInterval} from '../app/QueryRefresh';
 import {Timestamp} from '../app/time/Timestamp';
-import {AssetLatestInfoFragment} from '../asset-data/types/AssetBaseDataProvider.types';
-import {AssetHealthFragment} from '../asset-data/types/AssetHealthDataProvider.types';
-import {AssetEventHistoryEventTypeSelector} from '../graphql/types';
-import {TimeFromNow} from '../ui/TimeFromNow';
+import {RunStatus} from '../graphql/types';
+import {PezItem, calculatePezOpacity} from '../ui/PezItem';
 
-const INTERVAL_MSEC = 30 * 1000;
+interface Props {
+  latestInfo?: EventForPopover;
+  events: EventForPopover[];
+}
 
-export const AssetRecentUpdatesTrend = React.memo(({asset}: {asset: AssetHealthFragment}) => {
-  // Wait 100ms to avoid querying during fast scrolling of the table
-  const shouldQuery = useDelayedState(500);
-  const {
-    events: _events,
-    latestInfo,
-    loading,
-    refetch,
-  } = useRecentAssetEvents(shouldQuery ? asset.key : undefined, 5, [
-    AssetEventHistoryEventTypeSelector.MATERIALIZATION,
-    AssetEventHistoryEventTypeSelector.FAILED_TO_MATERIALIZE,
-    AssetEventHistoryEventTypeSelector.OBSERVATION,
-  ]);
+export const AssetRecentUpdatesTrend = React.memo(({latestInfo, events}: Props) => {
+  const items = latestInfo ? [latestInfo, ...events.slice(0, 4)] : events.slice(0, 5);
+  const emptyItems = new Array(Math.max(5 - items.length, 0)).fill(null);
+  const allItems = [...items, ...emptyItems].reverse();
 
-  const {events} = useMemo(() => {
-    if (!latestInfo?.inProgressRunIds.length && !latestInfo?.unstartedRunIds.length) {
-      return {events: _events};
-    }
-    return {events: [latestInfo, ..._events]};
-  }, [latestInfo, _events]);
+  const states = allItems.map((event, index) => {
+    const opacity = calculatePezOpacity(index, 5);
 
-  useRefreshAtInterval({
-    refresh: refetch,
-    intervalMs: INTERVAL_MSEC,
-    enabled: shouldQuery,
-  });
-
-  const states = useMemo(() => {
-    return new Array(5).fill(null).map((_, _index) => {
-      const index = 4 - _index;
-      const event = events[index];
-      if (!event) {
-        return <Pill key={index} $index={index} $color={Colors.backgroundDisabled()} />;
-      }
-      if (event.__typename === 'AssetLatestInfo') {
-        return (
-          <EventPopover key={index} event={event}>
-            <Pill $index={index} $color={Colors.accentBlue()} />
-          </EventPopover>
-        );
-      }
-      if (event.__typename === 'FailedToMaterializeEvent') {
-        return (
-          <EventPopover key={index} event={event}>
-            <Pill $index={index} $color={Colors.accentRed()} />
-          </EventPopover>
-        );
-      }
-      return (
-        <EventPopover key={index} event={event}>
-          <Pill $index={index} $color={Colors.accentGreen()} />
-        </EventPopover>
-      );
-    });
-  }, [events]);
-
-  const lastEvent = _events[0];
-
-  return (
-    <Box flex={{direction: 'row', gap: 12, alignItems: 'center'}}>
-      {(loading || !shouldQuery) && !lastEvent ? (
-        <Skeleton $width={100} $height={21} />
-      ) : (
-        <>
-          <EventPopover event={lastEvent}>
-            {lastEvent ? (
-              <Body color={Colors.textLight()}>
-                <TimeFromNow
-                  unixTimestamp={Number(lastEvent.timestamp) / 1000}
-                  showTooltip={false}
-                />
-              </Body>
-            ) : (
-              ' - '
-            )}
-          </EventPopover>
-          <Box flex={{direction: 'row', alignItems: 'center', gap: 2}}>{states}</Box>
-          <div style={{height: 13, width: 1, background: Colors.keylineDefault()}} />
-        </>
-      )}
-      <AssetHealthSummary assetKey={asset.key} iconOnly />
-    </Box>
-  );
-});
-
-const Pill = styled.div<{$index: number; $color: string}>`
-  border-radius: 2px;
-  height: 16px;
-  width: 6px;
-  background: ${({$color}) => $color};
-  opacity: ${({$index}) => OPACITIES[$index] ?? 1};
-  &:hover {
-    box-shadow: 0 0 0 1px ${Colors.accentGrayHover()};
-  }
-`;
-
-const OPACITIES: Record<number, number> = {
-  0: 1,
-  1: 0.8,
-  2: 0.66,
-  3: 0.4,
-  4: 0.2,
-};
-
-const EventPopover = React.memo(
-  ({
-    event,
-    children,
-  }: {
-    event:
-      | AssetFailedToMaterializeFragment
-      | AssetObservationFragment
-      | AssetSuccessfulMaterializationFragment
-      | AssetLatestInfoFragment
-      | undefined;
-    children: React.ReactNode;
-  }) => {
-    const {content, icon, runId, timestamp} = useMemo(() => {
+    const key = () => {
       switch (event?.__typename) {
         case 'AssetLatestInfo':
-          if (event.latestRun?.status === 'STARTED') {
+          return event.latestRun?.id ?? index;
+        case 'FailedToMaterializeEvent':
+        case 'ObservationEvent':
+        case 'MaterializationEvent':
+          return event.runId;
+        default:
+          return index;
+      }
+    };
+
+    if (!event) {
+      return <PezItem key={key()} opacity={opacity} color={Colors.backgroundDisabled()} />;
+    }
+
+    const color = () => {
+      switch (event.__typename) {
+        case 'AssetLatestInfo':
+          return Colors.accentBlue();
+        case 'FailedToMaterializeEvent':
+          return Colors.accentRed();
+        default:
+          return Colors.accentGreen();
+      }
+    };
+
+    return (
+      <EventPopover key={key()} event={event}>
+        <PezItem opacity={opacity} color={color()} />
+      </EventPopover>
+    );
+  });
+
+  return <Box flex={{direction: 'row', alignItems: 'center', gap: 2}}>{states}</Box>;
+});
+
+type EventForPopover =
+  | {
+      __typename: 'AssetLatestInfo';
+      latestRun: null | {
+        id: string;
+        status: RunStatus;
+        startTime: number | null;
+      };
+    }
+  | {__typename: 'FailedToMaterializeEvent'; runId: string; timestamp: string}
+  | {__typename: 'ObservationEvent'; runId: string; timestamp: string}
+  | {__typename: 'MaterializationEvent'; runId: string; timestamp: string};
+
+export const EventPopover = React.memo(
+  ({event, children}: {event?: EventForPopover; children: ReactNode}) => {
+    const {content, icon, runId, timestamp} = useMemo(() => {
+      switch (event?.__typename) {
+        case 'AssetLatestInfo': {
+          const {latestRun} = event;
+          if (!latestRun) {
+            return {content: null, icon: null};
+          }
+          if (latestRun.status === 'STARTED') {
             return {
               content: <Body>In progress</Body>,
               icon: <Icon name="run_started" color={Colors.accentBlue()} />,
-              runId: event.latestRun!.id,
-              timestamp: Number(event.latestRun!.startTime) * 1000,
+              runId: latestRun.id,
+              timestamp: Number(latestRun.startTime) * 1000,
             };
           }
           return {
             content: <Body>Queued</Body>,
             icon: <Icon name="run_queued" color={Colors.accentBlue()} />,
-            runId: event.latestRun!.id,
+            runId: latestRun.id,
             timestamp: null,
           };
+        }
         case 'FailedToMaterializeEvent':
           return {
             content: <Body>Failed</Body>,
@@ -186,12 +119,15 @@ const EventPopover = React.memo(
           return {content: null, icon: null};
       }
     }, [event]);
+
     if (!event) {
       return children;
     }
+
     return (
       <Popover
         interactionKind="hover"
+        placement="top"
         content={
           <Box border="all">
             {timestamp ? (

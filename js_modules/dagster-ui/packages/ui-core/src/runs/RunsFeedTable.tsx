@@ -176,20 +176,14 @@ export const RunsFeedTable = ({
 
     if (entries.length === 0 && !loading) {
       const anyFilter = !!Object.keys(filter || {}).length;
-      if (emptyState) {
-        return (
-          <div style={{overflow: 'hidden'}}>
-            <IndeterminateLoadingBar $loading={loading} />
-            {header}
-            <div style={{minHeight: 82}}>{emptyState()}</div>
-          </div>
-        );
-      }
-
       return (
         <div style={{overflow: 'hidden'}}>
           {header}
-          <RunTableEmptyState anyFilter={anyFilter} />
+          {emptyState ? (
+            <div style={{minHeight: 82}}>{emptyState()}</div>
+          ) : (
+            <RunTableEmptyState anyFilter={anyFilter} />
+          )}
         </div>
       );
     }
@@ -212,7 +206,6 @@ export const RunsFeedTable = ({
           onClose={() => setDialog(null)}
         />
 
-        <IndeterminateLoadingBar $loading={loading} />
         <Container ref={parentRef} style={scroll ? {overflow: 'auto'} : {overflow: 'visible'}}>
           {header}
           {entries.length === 0 && loading && (
@@ -251,11 +244,14 @@ export const RunsFeedTable = ({
 
   return (
     <Box
-      flex={{direction: 'column', gap: 8}}
+      flex={{direction: 'column'}}
       padding={{vertical: 12}}
       style={scroll ? {height: '100%', minHeight: 0} : {}}
     >
-      {actionBar}
+      <Box flex={{direction: 'column', gap: 8}} padding={{bottom: 12}}>
+        {actionBar}
+      </Box>
+      <IndeterminateLoadingBar $loading={loading} />
       {content()}
     </Box>
   );

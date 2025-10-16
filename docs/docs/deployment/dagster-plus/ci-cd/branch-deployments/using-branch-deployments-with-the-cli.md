@@ -2,9 +2,10 @@
 description: Setting up branch deployments with a general continuous integration (CI) or git platform, using the dagster-cloud CLI.
 sidebar_position: 7330
 title: Using branch deployments with the dagster-cloud CLI
+tags: [dagster-plus-feature]
 ---
 
-In this article, we'll walk you through setting up branch deployments with a general continuous integration (CI) or Git platform, using the [`dagster-cloud` CLI](/deployment/dagster-plus/management/dagster-cloud-cli).
+In this article, we'll walk you through setting up branch deployments with a general continuous integration (CI) or Git platform, using the [`dagster-cloud` CLI](/api/clis/dagster-cloud-cli).
 
 Using this approach to branch deployments may be a good fit if:
 
@@ -25,7 +26,7 @@ Branch deployments are only available in Dagster+.
 Using Branch Deployments requires setting up two components: the Branch Deployment agent and CI platform. You'll need:
 
 - **Organization Admin** permissions in Dagster+
-- To install the [`dagster-cloud` CLI](/deployment/dagster-plus/management/dagster-cloud-cli/installing-and-configuring)
+- To install the [`dagster-cloud` CLI](/api/clis/dagster-cloud-cli/installing-and-configuring)
 - The ability to configure your CI platform
 - The ability to run a new agent in your infrastructure. This isn't required if you're using [Serverless deployment](/deployment/dagster-plus/serverless).
 

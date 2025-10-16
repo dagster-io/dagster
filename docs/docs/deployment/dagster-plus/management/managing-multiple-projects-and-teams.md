@@ -2,6 +2,7 @@
 title: 'Managing multiple projects and teams with Dagster+ Hybrid'
 description: Manage multiple projects with Dagster+ Hybrid deployments.
 sidebar_position: 8000
+tags: [dagster-plus-feature]
 ---
 
 In this guide, we'll cover some strategies for managing multiple projects/code bases and teams in a Dagster+ account.
@@ -40,7 +41,6 @@ Whether you use a single repository or multiple, you can use a [`dagster_cloud.y
 
    ```yaml
    # dagster_cloud.yml
-
    locations:
      - location_name: project_a
        code_source:
@@ -58,7 +58,6 @@ Whether you use a single repository or multiple, you can use a [`dagster_cloud.y
 
    ```yaml
    # .github/workflows/dagster-cloud-deploy.yml
-
    jobs:
      dagster-cloud-deploy:
        # ...

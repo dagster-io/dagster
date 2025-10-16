@@ -9,10 +9,10 @@ import pytest
 from dagster._core.definitions.selector import JobSubsetSelector
 from dagster._core.events import DagsterEvent, DagsterEventType
 from dagster._core.instance import DagsterInstance
+from dagster._core.remote_origin import ManagedGrpcPythonEnvCodeLocationOrigin
 from dagster._core.remote_representation.code_location import GrpcServerCodeLocation
 from dagster._core.remote_representation.external import RemoteJob
 from dagster._core.remote_representation.handle import JobHandle, RepositoryHandle
-from dagster._core.remote_representation.origin import ManagedGrpcPythonEnvCodeLocationOrigin
 from dagster._core.storage.dagster_run import IN_PROGRESS_RUN_STATUSES, DagsterRunStatus
 from dagster._core.storage.tags import PRIORITY_TAG
 from dagster._core.test_utils import (
@@ -156,6 +156,7 @@ class QueuedRunCoordinatorDaemonTests(ABC):
             job_snapshot=subset_job.job_snapshot,
             parent_job_snapshot=subset_job.parent_job_snapshot,
             status=DagsterRunStatus.NOT_STARTED,
+            asset_graph=workspace.asset_graph,
             **kwargs,
         )
         instance.submit_run(run.run_id, workspace)
@@ -176,9 +177,18 @@ class QueuedRunCoordinatorDaemonTests(ABC):
 
     def test_attempt_to_launch_runs_filter(self, instance, workspace_context, daemon, job_handle):
         queued_run_id, non_queued_run_id = [make_new_run_id() for _ in range(2)]
-        self.create_queued_run(instance, job_handle, run_id=queued_run_id)
+        self.create_queued_run(
+            instance,
+            job_handle,
+            run_id=queued_run_id,
+            asset_graph=workspace_context.create_request_context().asset_graph,
+        )
         self.create_run(
-            instance, job_handle, run_id=non_queued_run_id, status=DagsterRunStatus.NOT_STARTED
+            instance,
+            job_handle,
+            run_id=non_queued_run_id,
+            status=DagsterRunStatus.NOT_STARTED,
+            asset_graph=workspace_context.create_request_context().asset_graph,
         )
 
         list(daemon.run_iteration(workspace_context))
@@ -190,9 +200,19 @@ class QueuedRunCoordinatorDaemonTests(ABC):
     ):
         queued_run_id = make_new_run_id()
         non_queued_run_id = make_new_run_id()
-        self.create_run(instance, job_handle, run_id=queued_run_id, status=DagsterRunStatus.STARTED)
         self.create_run(
-            instance, job_handle, run_id=non_queued_run_id, status=DagsterRunStatus.NOT_STARTED
+            instance,
+            job_handle,
+            run_id=queued_run_id,
+            status=DagsterRunStatus.STARTED,
+            asset_graph=workspace_context.create_request_context().asset_graph,
+        )
+        self.create_run(
+            instance,
+            job_handle,
+            run_id=non_queued_run_id,
+            status=DagsterRunStatus.NOT_STARTED,
+            asset_graph=workspace_context.create_request_context().asset_graph,
         )
 
         list(daemon.run_iteration(workspace_context))
@@ -230,6 +250,7 @@ class QueuedRunCoordinatorDaemonTests(ABC):
                 job_handle,
                 run_id=run_id,
                 status=status,
+                asset_graph=workspace_context.create_request_context().asset_graph,
             )
 
         # add more queued runs than should be launched
@@ -239,6 +260,7 @@ class QueuedRunCoordinatorDaemonTests(ABC):
                 instance,
                 job_handle,
                 run_id=run_id,
+                asset_graph=workspace_context.create_request_context().asset_graph,
             )
 
         list(daemon.run_iteration(workspace_context))
@@ -265,6 +287,7 @@ class QueuedRunCoordinatorDaemonTests(ABC):
                 job_handle,
                 run_id=run_id,
                 status=status,
+                asset_graph=workspace_context.create_request_context().asset_graph,
             )
 
         # add more queued runs
@@ -274,6 +297,7 @@ class QueuedRunCoordinatorDaemonTests(ABC):
                 instance,
                 job_handle,
                 run_id=run_id,
+                asset_graph=workspace_context.create_request_context().asset_graph,
             )
 
         list(daemon.run_iteration(workspace_context))
@@ -282,11 +306,27 @@ class QueuedRunCoordinatorDaemonTests(ABC):
 
     def test_priority(self, instance, workspace_context, job_handle, daemon):
         default_run_id, hi_pri_run_id, lo_pri_run_id = [make_new_run_id() for _ in range(3)]
-        self.create_run(instance, job_handle, run_id=default_run_id, status=DagsterRunStatus.QUEUED)
-        self.create_queued_run(
-            instance, job_handle, run_id=lo_pri_run_id, tags={PRIORITY_TAG: "-1"}
+        self.create_run(
+            instance,
+            job_handle,
+            run_id=default_run_id,
+            status=DagsterRunStatus.QUEUED,
+            asset_graph=workspace_context.create_request_context().asset_graph,
         )
-        self.create_queued_run(instance, job_handle, run_id=hi_pri_run_id, tags={PRIORITY_TAG: "3"})
+        self.create_queued_run(
+            instance,
+            job_handle,
+            run_id=lo_pri_run_id,
+            tags={PRIORITY_TAG: "-1"},
+            asset_graph=workspace_context.create_request_context().asset_graph,
+        )
+        self.create_queued_run(
+            instance,
+            job_handle,
+            run_id=hi_pri_run_id,
+            tags={PRIORITY_TAG: "3"},
+            asset_graph=workspace_context.create_request_context().asset_graph,
+        )
 
         list(daemon.run_iteration(workspace_context))
 
@@ -303,6 +343,7 @@ class QueuedRunCoordinatorDaemonTests(ABC):
             job_handle,
             run_id=bad_pri_run_id,
             tags={PRIORITY_TAG: "foobar"},
+            asset_graph=workspace_context.create_request_context().asset_graph,
         )
 
         list(daemon.run_iteration(workspace_context))
@@ -326,12 +367,26 @@ class QueuedRunCoordinatorDaemonTests(ABC):
     )
     def test_tag_limits(self, workspace_context, job_handle, daemon, instance):
         tiny_run_id, tiny_run_id_2, large_run_id = [make_new_run_id() for _ in range(3)]
-        self.create_queued_run(instance, job_handle, run_id=tiny_run_id, tags={"database": "tiny"})
         self.create_queued_run(
-            instance, job_handle, run_id=tiny_run_id_2, tags={"database": "tiny"}
+            instance,
+            job_handle,
+            run_id=tiny_run_id,
+            tags={"database": "tiny"},
+            asset_graph=workspace_context.create_request_context().asset_graph,
         )
         self.create_queued_run(
-            instance, job_handle, run_id=large_run_id, tags={"database": "large"}
+            instance,
+            job_handle,
+            run_id=tiny_run_id_2,
+            tags={"database": "tiny"},
+            asset_graph=workspace_context.create_request_context().asset_graph,
+        )
+        self.create_queued_run(
+            instance,
+            job_handle,
+            run_id=large_run_id,
+            tags={"database": "large"},
+            asset_graph=workspace_context.create_request_context().asset_graph,
         )
 
         list(daemon.run_iteration(workspace_context))
@@ -360,12 +415,26 @@ class QueuedRunCoordinatorDaemonTests(ABC):
     )
     def test_tag_limits_just_key(self, workspace_context, job_handle, daemon, instance):
         tiny_run_id, tiny_run_id_2, large_run_id = [make_new_run_id() for _ in range(3)]
-        self.create_queued_run(instance, job_handle, run_id=tiny_run_id, tags={"database": "tiny"})
         self.create_queued_run(
-            instance, job_handle, run_id=tiny_run_id_2, tags={"database": "tiny"}
+            instance,
+            job_handle,
+            run_id=tiny_run_id,
+            tags={"database": "tiny"},
+            asset_graph=workspace_context.create_request_context().asset_graph,
         )
         self.create_queued_run(
-            instance, job_handle, run_id=large_run_id, tags={"database": "large"}
+            instance,
+            job_handle,
+            run_id=tiny_run_id_2,
+            tags={"database": "tiny"},
+            asset_graph=workspace_context.create_request_context().asset_graph,
+        )
+        self.create_queued_run(
+            instance,
+            job_handle,
+            run_id=large_run_id,
+            tags={"database": "large"},
+            asset_graph=workspace_context.create_request_context().asset_graph,
         )
 
         list(daemon.run_iteration(workspace_context))
@@ -407,24 +476,28 @@ class QueuedRunCoordinatorDaemonTests(ABC):
             job_handle,
             run_id=run_id_1,
             tags={"database": "tiny", "user": "johann"},
+            asset_graph=workspace_context.create_request_context().asset_graph,
         )
         self.create_queued_run(
             instance,
             job_handle,
             run_id=run_id_2,
             tags={"database": "tiny"},
+            asset_graph=workspace_context.create_request_context().asset_graph,
         )
         self.create_queued_run(
             instance,
             job_handle,
             run_id=run_id_3,
             tags={"user": "johann"},
+            asset_graph=workspace_context.create_request_context().asset_graph,
         )
         self.create_queued_run(
             instance,
             job_handle,
             run_id=run_id_4,
             tags={"user": "johann"},
+            asset_graph=workspace_context.create_request_context().asset_graph,
         )
 
         list(daemon.run_iteration(workspace_context))
@@ -455,10 +528,34 @@ class QueuedRunCoordinatorDaemonTests(ABC):
     )
     def test_overlapping_tag_limits(self, workspace_context, daemon, job_handle, instance):
         run_id_1, run_id_2, run_id_3, run_id_4 = [make_new_run_id() for _ in range(4)]
-        self.create_queued_run(instance, job_handle, run_id=run_id_1, tags={"foo": "bar"})
-        self.create_queued_run(instance, job_handle, run_id=run_id_2, tags={"foo": "bar"})
-        self.create_queued_run(instance, job_handle, run_id=run_id_3, tags={"foo": "other"})
-        self.create_queued_run(instance, job_handle, run_id=run_id_4, tags={"foo": "other"})
+        self.create_queued_run(
+            instance,
+            job_handle,
+            run_id=run_id_1,
+            tags={"foo": "bar"},
+            asset_graph=workspace_context.create_request_context().asset_graph,
+        )
+        self.create_queued_run(
+            instance,
+            job_handle,
+            run_id=run_id_2,
+            tags={"foo": "bar"},
+            asset_graph=workspace_context.create_request_context().asset_graph,
+        )
+        self.create_queued_run(
+            instance,
+            job_handle,
+            run_id=run_id_3,
+            tags={"foo": "other"},
+            asset_graph=workspace_context.create_request_context().asset_graph,
+        )
+        self.create_queued_run(
+            instance,
+            job_handle,
+            run_id=run_id_4,
+            tags={"foo": "other"},
+            asset_graph=workspace_context.create_request_context().asset_graph,
+        )
 
         list(daemon.run_iteration(workspace_context))
 
@@ -486,17 +583,36 @@ class QueuedRunCoordinatorDaemonTests(ABC):
     )
     def test_limits_per_unique_value(self, workspace_context, job_handle, daemon, instance):
         run_id_1, run_id_2, run_id_3, run_id_4 = [make_new_run_id() for _ in range(4)]
-        self.create_queued_run(instance, job_handle, run_id=run_id_1, tags={"foo": "bar"})
+        self.create_queued_run(
+            instance,
+            job_handle,
+            run_id=run_id_1,
+            tags={"foo": "bar"},
+            asset_graph=workspace_context.create_request_context().asset_graph,
+        )
         self.create_queued_run(
             instance,
             job_handle,
             run_id=run_id_2,
             tags={"foo": "bar"},
+            asset_graph=workspace_context.create_request_context().asset_graph,
         )
         list(daemon.run_iteration(workspace_context))
 
-        self.create_queued_run(instance, job_handle, run_id=run_id_3, tags={"foo": "other"})
-        self.create_queued_run(instance, job_handle, run_id=run_id_4, tags={"foo": "other"})
+        self.create_queued_run(
+            instance,
+            job_handle,
+            run_id=run_id_3,
+            tags={"foo": "other"},
+            asset_graph=workspace_context.create_request_context().asset_graph,
+        )
+        self.create_queued_run(
+            instance,
+            job_handle,
+            run_id=run_id_4,
+            tags={"foo": "other"},
+            asset_graph=workspace_context.create_request_context().asset_graph,
+        )
 
         list(daemon.run_iteration(workspace_context))
 
@@ -532,10 +648,34 @@ class QueuedRunCoordinatorDaemonTests(ABC):
         instance,
     ):
         run_id_1, run_id_2, run_id_3, run_id_4 = [make_new_run_id() for _ in range(4)]
-        self.create_queued_run(instance, job_handle, run_id=run_id_1, tags={"foo": "bar"})
-        self.create_queued_run(instance, job_handle, run_id=run_id_2, tags={"foo": "bar"})
-        self.create_queued_run(instance, job_handle, run_id=run_id_3, tags={"foo": "other"})
-        self.create_queued_run(instance, job_handle, run_id=run_id_4, tags={"foo": "other-2"})
+        self.create_queued_run(
+            instance,
+            job_handle,
+            run_id=run_id_1,
+            tags={"foo": "bar"},
+            asset_graph=workspace_context.create_request_context().asset_graph,
+        )
+        self.create_queued_run(
+            instance,
+            job_handle,
+            run_id=run_id_2,
+            tags={"foo": "bar"},
+            asset_graph=workspace_context.create_request_context().asset_graph,
+        )
+        self.create_queued_run(
+            instance,
+            job_handle,
+            run_id=run_id_3,
+            tags={"foo": "other"},
+            asset_graph=workspace_context.create_request_context().asset_graph,
+        )
+        self.create_queued_run(
+            instance,
+            job_handle,
+            run_id=run_id_4,
+            tags={"foo": "other-2"},
+            asset_graph=workspace_context.create_request_context().asset_graph,
+        )
 
         list(daemon.run_iteration(workspace_context))
 
@@ -571,11 +711,41 @@ class QueuedRunCoordinatorDaemonTests(ABC):
         instance,
     ):
         run_id_1, run_id_2, run_id_3, run_id_4, run_id_5 = [make_new_run_id() for _ in range(5)]
-        self.create_queued_run(instance, job_handle, run_id=run_id_1, tags={"foo": "bar"})
-        self.create_queued_run(instance, job_handle, run_id=run_id_2, tags={"foo": "baz"})
-        self.create_queued_run(instance, job_handle, run_id=run_id_3, tags={"foo": "bar"})
-        self.create_queued_run(instance, job_handle, run_id=run_id_4, tags={"foo": "baz"})
-        self.create_queued_run(instance, job_handle, run_id=run_id_5, tags={"foo": "baz"})
+        self.create_queued_run(
+            instance,
+            job_handle,
+            run_id=run_id_1,
+            tags={"foo": "bar"},
+            asset_graph=workspace_context.create_request_context().asset_graph,
+        )
+        self.create_queued_run(
+            instance,
+            job_handle,
+            run_id=run_id_2,
+            tags={"foo": "baz"},
+            asset_graph=workspace_context.create_request_context().asset_graph,
+        )
+        self.create_queued_run(
+            instance,
+            job_handle,
+            run_id=run_id_3,
+            tags={"foo": "bar"},
+            asset_graph=workspace_context.create_request_context().asset_graph,
+        )
+        self.create_queued_run(
+            instance,
+            job_handle,
+            run_id=run_id_4,
+            tags={"foo": "baz"},
+            asset_graph=workspace_context.create_request_context().asset_graph,
+        )
+        self.create_queued_run(
+            instance,
+            job_handle,
+            run_id=run_id_5,
+            tags={"foo": "baz"},
+            asset_graph=workspace_context.create_request_context().asset_graph,
+        )
 
         list(daemon.run_iteration(workspace_context))
 
@@ -591,8 +761,18 @@ class QueuedRunCoordinatorDaemonTests(ABC):
     ):
         """Verifies that no repository location is created when runs are dequeued."""
         queued_run_id_1, queued_run_id_2 = [make_new_run_id() for _ in range(2)]
-        self.create_queued_run(instance, job_handle, run_id=queued_run_id_1)
-        self.create_queued_run(instance, job_handle, run_id=queued_run_id_2)
+        self.create_queued_run(
+            instance,
+            job_handle,
+            run_id=queued_run_id_1,
+            asset_graph=workspace_context.create_request_context().asset_graph,
+        )
+        self.create_queued_run(
+            instance,
+            job_handle,
+            run_id=queued_run_id_2,
+            asset_graph=workspace_context.create_request_context().asset_graph,
+        )
 
         original_method = GrpcServerCodeLocation.__init__
 
@@ -640,9 +820,24 @@ class QueuedRunCoordinatorDaemonTests(ABC):
     )
     def test_skip_error_runs(self, job_handle, daemon, instance, workspace_context):
         good_run_id = make_new_run_id()
-        self.create_queued_run(instance, job_handle, run_id=BAD_RUN_ID_UUID)
-        self.create_queued_run(instance, job_handle, run_id=good_run_id)
-        self.create_queued_run(instance, job_handle, run_id=BAD_USER_CODE_RUN_ID_UUID)
+        self.create_queued_run(
+            instance,
+            job_handle,
+            run_id=BAD_RUN_ID_UUID,
+            asset_graph=workspace_context.create_request_context().asset_graph,
+        )
+        self.create_queued_run(
+            instance,
+            job_handle,
+            run_id=good_run_id,
+            asset_graph=workspace_context.create_request_context().asset_graph,
+        )
+        self.create_queued_run(
+            instance,
+            job_handle,
+            run_id=BAD_USER_CODE_RUN_ID_UUID,
+            asset_graph=workspace_context.create_request_context().asset_graph,
+        )
 
         list(daemon.run_iteration(workspace_context))
 
@@ -667,9 +862,24 @@ class QueuedRunCoordinatorDaemonTests(ABC):
         ]
         fixed_iteration_time = time.time() - 3600 * 24 * 365
 
-        self.create_queued_run(instance, job_handle, run_id=BAD_RUN_ID_UUID)
-        self.create_queued_run(instance, job_handle, run_id=good_run_id)
-        self.create_queued_run(instance, job_handle, run_id=BAD_USER_CODE_RUN_ID_UUID)
+        self.create_queued_run(
+            instance,
+            job_handle,
+            run_id=BAD_RUN_ID_UUID,
+            asset_graph=workspace_context.create_request_context().asset_graph,
+        )
+        self.create_queued_run(
+            instance,
+            job_handle,
+            run_id=good_run_id,
+            asset_graph=workspace_context.create_request_context().asset_graph,
+        )
+        self.create_queued_run(
+            instance,
+            job_handle,
+            run_id=BAD_USER_CODE_RUN_ID_UUID,
+            asset_graph=workspace_context.create_request_context().asset_graph,
+        )
 
         list(daemon.run_iteration(workspace_context, fixed_iteration_time=fixed_iteration_time))
 
@@ -687,11 +897,13 @@ class QueuedRunCoordinatorDaemonTests(ABC):
             tags={
                 "dagster/priority": "5",
             },
+            asset_graph=workspace_context.create_request_context().asset_graph,
         )
         self.create_queued_run(
             instance,
             other_location_job_handle,
             run_id=good_run_other_location_id,
+            asset_graph=workspace_context.create_request_context().asset_graph,
         )
         list(daemon.run_iteration(workspace_context, fixed_iteration_time=fixed_iteration_time))
 
@@ -759,6 +971,7 @@ class QueuedRunCoordinatorDaemonTests(ABC):
             instance,
             job_handle,
             run_id=BAD_USER_CODE_RUN_ID_UUID,
+            asset_graph=workspace_context.create_request_context().asset_graph,
         )
 
         # fails on initial dequeue
@@ -804,6 +1017,7 @@ class QueuedRunCoordinatorDaemonTests(ABC):
             job_handle,
             run_id=run_id_1,
             tags={"other-tag": "value", "test": "value"},
+            asset_graph=workspace_context.create_request_context().asset_graph,
         )
 
         self.create_queued_run(
@@ -811,6 +1025,7 @@ class QueuedRunCoordinatorDaemonTests(ABC):
             job_handle,
             run_id=run_id_2,
             tags={"other-tag": "value", "test": "value"},
+            asset_graph=workspace_context.create_request_context().asset_graph,
         )
 
         list(daemon.run_iteration(workspace_context))
@@ -837,12 +1052,14 @@ class QueuedRunCoordinatorDaemonTests(ABC):
             job_handle,
             run_id=lo_pri_run_id,
             tags={"test": "value", PRIORITY_TAG: "-100"},
+            asset_graph=workspace_context.create_request_context().asset_graph,
         )
         self.create_queued_run(
             instance,
             job_handle,
             run_id=hi_pri_run_id,
             tags={"test": "value", PRIORITY_TAG: "100"},
+            asset_graph=workspace_context.create_request_context().asset_graph,
         )
 
         list(daemon.run_iteration(workspace_context))
@@ -1409,7 +1626,7 @@ class QueuedRunCoordinatorDaemonTests(ABC):
 
 class TestQueuedRunCoordinatorDaemon(QueuedRunCoordinatorDaemonTests):
     @pytest.fixture
-    def instance(self, run_coordinator_config, concurrency_config):  # pyright: ignore[reportIncompatibleMethodOverride]
+    def instance(self, run_coordinator_config, concurrency_config):
         overrides = {
             "concurrency": concurrency_config,
             "run_coordinator": {

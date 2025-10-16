@@ -265,7 +265,7 @@ def test_multipartitions_subset_addition(initial, added):
     assert initial_subset.get_partition_keys() == set(initial_subset_keys)
     assert added_subset.get_partition_keys() == set(added_subset_keys + initial_subset_keys)
     with partition_loading_context(effective_dt=current_day):
-        assert added_subset.get_partition_keys_not_in_subset(multipartitions_def) == set(
+        assert sorted(added_subset.get_partition_keys_not_in_subset(multipartitions_def)) == sorted(
             expected_keys_not_in_updated_subset
         )
 

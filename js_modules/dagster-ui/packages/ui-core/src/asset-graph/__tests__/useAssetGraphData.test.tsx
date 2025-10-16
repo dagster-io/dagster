@@ -81,10 +81,15 @@ describe('calculateGraphDistances', () => {
     const TWO_GRAPHS = cloneDeep(TEST_GRAPH);
 
     // Break the test graph in two at E
+    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
     TWO_GRAPHS.find((item) => item.name === 'E')!.outputs = [];
+    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
     TWO_GRAPHS.find((item) => item.name === 'D')!.outputs = [];
+    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
     TWO_GRAPHS.find((item) => item.name === 'F')!.inputs = [];
+    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
     TWO_GRAPHS.find((item) => item.name === 'G')!.inputs = [];
+    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
     TWO_GRAPHS.find((item) => item.name === 'H')!.inputs = [
       {dependsOn: [{solid: {name: 'F'}}, {solid: {name: 'G'}}]},
     ];

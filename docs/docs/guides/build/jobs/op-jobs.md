@@ -1,6 +1,6 @@
 ---
 description: Op jobs execute a graph of Dagster ops, and can by launched from the UI, or by a schedule or sensor.
-sidebar_position: 200
+sidebar_position: 300
 title: Op jobs
 ---
 
@@ -96,7 +96,7 @@ Supplying a <PyObject section="config" module="dagster" object="ConfigMapping" /
 
 Instead of needing to configure every op and resource individually when launching the op job, you can supply a smaller number of values to the outer config. The <PyObject section="config" module="dagster" object="ConfigMapping" /> will then translate it into config for all the job's ops and resources.
 
-<CodeExample path="docs_snippets/docs_snippets/concepts/ops_jobs_graphs/jobs_with_config_mapping.py" title="src/<project_name>/defs/assets.py"/>
+<CodeExample path="docs_snippets/docs_snippets/concepts/ops_jobs_graphs/jobs_with_config_mapping.py" title="src/<project_name>/defs/assets.py" trimMain={false} />
 
 ## Testing op jobs
 

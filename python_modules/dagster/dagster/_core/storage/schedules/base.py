@@ -2,6 +2,7 @@ import abc
 from collections.abc import Mapping, Sequence
 from typing import Optional
 
+from dagster._annotations import public
 from dagster._core.definitions.asset_key import EntityKey, T_EntityKey
 from dagster._core.definitions.declarative_automation.serialized_objects import (
     AutomationConditionEvaluationWithRunIds,
@@ -20,6 +21,7 @@ from dagster._core.storage.sql import AlembicVersion
 from dagster._utils import PrintFn
 
 
+@public
 class ScheduleStorage(abc.ABC, MayHaveInstanceWeakref[T_DagsterInstance]):
     """Abstract class for managing persistance of scheduler artifacts."""
 

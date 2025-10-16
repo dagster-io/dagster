@@ -63,11 +63,12 @@ from dagster._core.instance_for_test import (
     instance_for_test as instance_for_test,
 )
 from dagster._core.launcher import RunLauncher
-from dagster._core.remote_representation import RemoteRepository
+from dagster._core.loader import LoadingContext
+from dagster._core.remote_origin import InProcessCodeLocationOrigin
 from dagster._core.remote_representation.code_location import CodeLocation
+from dagster._core.remote_representation.external import RemoteRepository
 from dagster._core.remote_representation.external_data import RepositorySnap
 from dagster._core.remote_representation.handle import RepositoryHandle
-from dagster._core.remote_representation.origin import InProcessCodeLocationOrigin
 from dagster._core.run_coordinator import RunCoordinator, SubmitRunContext
 from dagster._core.secrets import SecretsLoader
 from dagster._core.storage.dagster_run import DagsterRun, DagsterRunStatus, RunsFilter
@@ -169,6 +170,8 @@ def create_run_for_test(
     op_selection=None,
     asset_graph=None,
 ):
+    from unittest import mock
+
     return instance.create_run(
         job_name=job_name,
         run_id=run_id,
@@ -187,7 +190,7 @@ def create_run_for_test(
         asset_selection=asset_selection,
         asset_check_selection=asset_check_selection,
         op_selection=op_selection,
-        asset_graph=asset_graph,
+        asset_graph=asset_graph or mock.MagicMock(),
     )
 
 
@@ -828,3 +831,19 @@ def get_paginated_partition_keys(
             raise Exception("Too many pages")
 
     return all_results
+
+
+class BasicLoadingContext(LoadingContext):
+    def __init__(self, instance: Optional[DagsterInstance] = None):
+        from unittest import mock
+
+        self._loaders = {}
+        self._instance = instance or mock.MagicMock()
+
+    @property
+    def loaders(self):
+        return self._loaders
+
+    @property
+    def instance(self):
+        return self._instance

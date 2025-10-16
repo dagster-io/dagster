@@ -2,7 +2,7 @@ from collections.abc import Iterable, Sequence
 from typing import TYPE_CHECKING, NamedTuple, Optional, Union
 
 import dagster._check as check
-from dagster._annotations import PublicAttr
+from dagster._annotations import PublicAttr, public
 from dagster._core.definitions.asset_checks.asset_check_spec import AssetCheckKey
 from dagster._core.definitions.events import AssetKey, CoercibleToAssetKey
 from dagster._core.definitions.partitions.mapping import PartitionMapping
@@ -21,6 +21,7 @@ CoercibleToAssetDep = Union[
 ]
 
 
+@public
 class AssetDep(
     NamedTuple(
         "_AssetDep",

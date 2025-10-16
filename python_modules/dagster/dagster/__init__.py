@@ -379,6 +379,7 @@ from dagster._core.definitions.partitions.partitioned_config import (
     dynamic_partitioned_config as dynamic_partitioned_config,
     hourly_partitioned_config as hourly_partitioned_config,
     monthly_partitioned_config as monthly_partitioned_config,
+    partitioned_config as partitioned_config,
     static_partitioned_config as static_partitioned_config,
     weekly_partitioned_config as weekly_partitioned_config,
 )
@@ -661,6 +662,7 @@ from dagster.components.components import (
     DefinitionsComponent as DefinitionsComponent,  # back-compat
     DefsFolderComponent as DefsFolderComponent,
 )
+from dagster.components.core.component_tree import ComponentTree as ComponentTree
 from dagster.components.core.context import ComponentLoadContext as ComponentLoadContext
 from dagster.components.core.load_defs import (
     build_component_defs as build_component_defs,
@@ -670,6 +672,10 @@ from dagster.components.core.load_defs import (
 )
 from dagster.components.definitions import definitions as definitions
 from dagster.components.lib.shim_components.resources import resources as resources
+from dagster.components.lib.sql_component.sql_component import (
+    SqlComponent as SqlComponent,
+    TemplatedSqlComponent as TemplatedSqlComponent,
+)
 from dagster.components.resolved.base import Resolvable as Resolvable
 from dagster.components.resolved.context import ResolutionContext as ResolutionContext
 from dagster.components.resolved.core_models import (
@@ -689,11 +695,10 @@ from dagster.components.scaffold.scaffold import (
     scaffold_with as scaffold_with,
 )
 from dagster.components.testing import (
-    component_defs as component_defs,
-    defs_from_component_yaml_path as defs_from_component_yaml_path,
     get_all_components_defs_within_project as get_all_components_defs_within_project,
     get_component_defs_within_project as get_component_defs_within_project,
 )
+from dagster.components.testing.utils import component_defs as component_defs
 from dagster.version import __version__ as __version__
 
 DagsterLibraryRegistry.register("dagster", __version__)

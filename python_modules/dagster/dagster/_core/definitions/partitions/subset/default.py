@@ -28,13 +28,53 @@ class DefaultPartitionsSubset(
         check.opt_set_param(subset, "subset")
         return super().__new__(cls, subset or set())
 
+    @property
+    def is_empty(self) -> bool:
+        return len(self.subset) == 0
+
     def get_partition_keys_not_in_subset(
         self, partitions_def: PartitionsDefinition
     ) -> Iterable[str]:
-        return set(partitions_def.get_partition_keys()) - set(self.subset)
+        return [key for key in partitions_def.get_partition_keys() if key not in self.subset]
 
     def get_partition_keys(self) -> Iterable[str]:
         return self.subset
+
+    def __sub__(self, other: "PartitionsSubset") -> "PartitionsSubset":
+        if not isinstance(other, DefaultPartitionsSubset):
+            return super().__sub__(other)
+
+        if self is other:
+            return self.empty_subset()
+        if other.is_empty:
+            return self
+
+        return DefaultPartitionsSubset(self.subset - other.subset)
+
+    def __or__(self, other: "PartitionsSubset") -> "PartitionsSubset":
+        if not isinstance(other, DefaultPartitionsSubset):
+            return super().__or__(other)
+
+        if self is other or other.is_empty:
+            return self
+
+        if self.is_empty:
+            return other
+
+        return DefaultPartitionsSubset(self.subset | other.subset)
+
+    def __and__(self, other: "PartitionsSubset") -> "PartitionsSubset":
+        if not isinstance(other, DefaultPartitionsSubset):
+            return super().__and__(other)
+
+        if self is other:
+            return self
+        if other.is_empty:
+            return other
+        if self.is_empty:
+            return self
+
+        return DefaultPartitionsSubset(self.subset & other.subset)
 
     def get_ranges_for_keys(self, partition_keys: Sequence[str]) -> Sequence[PartitionKeyRange]:
         cur_range_start = None

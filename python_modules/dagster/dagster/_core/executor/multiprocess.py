@@ -8,6 +8,8 @@ from multiprocessing.context import BaseContext as MultiprocessingBaseContext
 from multiprocessing.process import BaseProcess
 from typing import TYPE_CHECKING, Any, Optional
 
+from dagster_shared.utils.timing import format_duration
+
 from dagster import _check as check
 from dagster._core.definitions.metadata import MetadataValue
 from dagster._core.definitions.reconstruct import ReconstructableJob
@@ -27,6 +29,7 @@ from dagster._core.execution.plan.plan import ExecutionPlan
 from dagster._core.execution.plan.state import KnownExecutionState
 from dagster._core.execution.plan.step import ExecutionStep
 from dagster._core.execution.retries import RetryMode
+from dagster._core.execution.step_dependency_config import StepDependencyConfig
 from dagster._core.executor.base import Executor
 from dagster._core.executor.child_process_executor import (
     ChildProcessCommand,
@@ -38,7 +41,7 @@ from dagster._core.executor.child_process_executor import (
 from dagster._core.instance import DagsterInstance
 from dagster._utils import get_run_crash_explanation, start_termination_thread
 from dagster._utils.error import SerializableErrorInfo, serializable_error_info_from_exc_info
-from dagster._utils.timing import TimerResult, format_duration, time_execution_scope
+from dagster._utils.timing import TimerResult, time_execution_scope
 
 if TYPE_CHECKING:
     from dagster._core.instance.ref import InstanceRef
@@ -116,8 +119,13 @@ class MultiprocessExecutor(Executor):
         tag_concurrency_limits: Optional[list[dict[str, Any]]] = None,
         start_method: Optional[str] = None,
         explicit_forkserver_preload: Optional[Sequence[str]] = None,
+        step_dependency_config: StepDependencyConfig = StepDependencyConfig.default(),
     ):
         self._retries = check.inst_param(retries, "retries", RetryMode)
+        self._step_dependency_config = check.inst_param(
+            step_dependency_config, "step_dependency_config", StepDependencyConfig
+        )
+
         if not max_concurrent:
             env_var_default = os.getenv("DAGSTER_MULTIPROCESS_EXECUTOR_MAX_CONCURRENT")
             max_concurrent = (
@@ -145,6 +153,10 @@ class MultiprocessExecutor(Executor):
     @property
     def retries(self) -> RetryMode:
         return self._retries
+
+    @property
+    def step_dependency_config(self) -> StepDependencyConfig:
+        return self._step_dependency_config
 
     def execute(
         self, plan_context: PlanOrchestrationContext, execution_plan: ExecutionPlan
@@ -201,6 +213,7 @@ class MultiprocessExecutor(Executor):
                     max_concurrent=limit,
                     tag_concurrency_limits=tag_concurrency_limits,
                     instance_concurrency_context=instance_concurrency_context,
+                    step_dependency_config=self._step_dependency_config,
                 )
             )
             active_iters: dict[str, Iterator[Optional[DagsterEvent]]] = {}

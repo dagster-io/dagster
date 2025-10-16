@@ -1,6 +1,6 @@
 ---
 description: An asset job is a type of Dagster job that targets a selection of assets and can be launched manually from the UI, or programmatically by schedules or sensors.
-sidebar_position: 100
+sidebar_position: 200
 title: Asset jobs
 ---
 
@@ -27,7 +27,7 @@ You can target one or multiple assets, or create multiple jobs that target overl
 
 ## Making asset jobs available to Dagster tools
 
-Jobs are loaded automatically with [`dg`](/api/dg) and there is no need to explicity define a [`Definitions`](/api/dagster/definitions) object for them. If you include schedules or sensors, the [code location](/deployment/code-locations) will automatically include jobs that those schedules or sensors target.
+Jobs are loaded automatically with [`dg`](/api/clis) and there is no need to explicity define a [`Definitions`](/api/dagster/definitions) object for them. If you include schedules or sensors, the [code location](/deployment/code-locations) will automatically include jobs that those schedules or sensors target.
 
 <CodeExample path="docs_snippets/docs_snippets/concepts/assets/jobs_to_definitions.py" title="src/<project_name>/defs/assets.py"/>
 
@@ -43,6 +43,8 @@ You can run an asset job in a variety of ways:
 - Via the command line
 - Via the GraphQL API
 - In the UI
+
+For more information, see [Executing jobs](/guides/build/jobs/job-execution).
 
 ## Examples
 

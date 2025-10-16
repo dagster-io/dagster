@@ -4,6 +4,7 @@ from contextlib import contextmanager
 from typing import AbstractSet, Any, Callable, NamedTuple, Optional, Union, cast  # noqa: UP035
 
 import dagster._check as check
+from dagster._annotations import public
 from dagster._core.definitions import IJob, JobDefinition
 from dagster._core.definitions.events import AssetKey
 from dagster._core.definitions.job_base import InMemoryJob
@@ -24,6 +25,7 @@ from dagster._core.execution.plan.execute_plan import inner_plan_execution_itera
 from dagster._core.execution.plan.plan import ExecutionPlan
 from dagster._core.execution.plan.state import KnownExecutionState
 from dagster._core.execution.retries import RetryMode
+from dagster._core.execution.step_dependency_config import StepDependencyConfig
 from dagster._core.instance import DagsterInstance, InstanceRef
 from dagster._core.selector import parse_step_selection
 from dagster._core.storage.dagster_run import DagsterRun, DagsterRunStatus
@@ -275,6 +277,7 @@ def ephemeral_instance_if_missing(
             yield ephemeral_instance
 
 
+@public
 class ReexecutionOptions(NamedTuple):
     """Reexecution options for python-based execution in Dagster.
 
@@ -313,6 +316,7 @@ class ReexecuteFromFailureOption(ReexecutionOptions):
     """Marker subclass used to calculate reexecution information later."""
 
 
+@public
 def execute_job(
     job: ReconstructableJob,
     instance: "DagsterInstance",
@@ -388,8 +392,8 @@ def execute_job(
 
         instance = DagsterInstance.get()
 
-        options = ReexecutionOptions.from_failure(run_id=failed_run_id, instance)
-        execute_job(reconstructable(job), instance, reexecution_options=options)
+        options = ReexecutionOptions.from_failure(run_id=failed_run_id, instance=instance)
+        execute_job(reconstructable(job), instance=instance, reexecution_options=options)
 
     Parameters:
         job (ReconstructableJob): A reconstructable pointer to a :py:class:`JobDefinition`.
@@ -585,6 +589,7 @@ def execute_plan_iterator(
     instance: DagsterInstance,
     retry_mode: Optional[RetryMode] = None,
     run_config: Optional[Mapping[str, object]] = None,
+    step_dependency_config: StepDependencyConfig = StepDependencyConfig.default(),
 ) -> Iterator[DagsterEvent]:
     check.inst_param(execution_plan, "execution_plan", ExecutionPlan)
     check.inst_param(job, "job", IJob)
@@ -607,6 +612,7 @@ def execute_plan_iterator(
                 run_config=run_config,
                 dagster_run=dagster_run,
                 instance=instance,
+                step_dependency_config=step_dependency_config,
             ),
         )
     )

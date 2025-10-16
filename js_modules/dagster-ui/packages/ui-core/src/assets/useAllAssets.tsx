@@ -33,7 +33,12 @@ const DEFAULT_BATCH_LIMIT = 1000;
 export function useAllAssetsNodes() {
   const {assetEntries, loadingAssets: loading} = useContext(WorkspaceContext);
   const allAssetNodes = useMemo(() => getAllAssetNodes(assetEntries), [assetEntries]);
-  return {assets: allAssetNodes, loading};
+
+  const allAssetKeys = useMemo(() => {
+    return new Set(allAssetNodes.map((node) => tokenForAssetKey(node.key)));
+  }, [allAssetNodes]);
+
+  return {assets: allAssetNodes, allAssetKeys, loading};
 }
 
 export function useAllAssets({
@@ -100,6 +105,8 @@ export function useAllAssets({
     error,
   };
 }
+
+export type Asset = ReturnType<typeof useAllAssets>['assets'][number];
 
 const getFetchManager = weakMapMemoize((client: ApolloClient<any>) => new FetchManager(client));
 
@@ -192,6 +199,7 @@ class FetchManager {
     }
 
     if (didChange) {
+      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
       this._subscribers.forEach((callback) => callback(this._assetsOrError!));
     }
     if (this._subscribers.size) {
@@ -339,6 +347,7 @@ const getAssets = weakMapMemoize((allAssetNodes: WorkspaceAssetFragment[]) => {
       materializableAsset || observableAsset || nonGeneratedAsset || assetWithRepo || anyAsset;
 
     softwareDefinedAssets.push(
+      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
       combineAssetDefinitions(assetToReturn!, softwareDefinedAssetsByAssetKey[key]!),
     );
   });
@@ -406,7 +415,7 @@ const MERGE_BOOLEAN_KEYS = [
   'isExecutable',
   'isObservable',
   'isMaterializable',
-  'isAutoCreatedStub',
+  'hasAssetChecks', // maps to check_keys
 ] as const;
 
 const combineAssetDefinitions = weakMapMemoize(

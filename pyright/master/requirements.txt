@@ -53,7 +53,7 @@
 -e python_modules/libraries/dagster-deltalake-polars/
 -e python_modules/libraries/dagster-dlt/
 -e python_modules/libraries/dagster-dg-core[test]
--e python_modules/libraries/dagster-dg-cli
+-e python_modules/libraries/dagster-dg-cli[ai]
 -e python_modules/libraries/dagster-cloud-cli[test]
 -e python_modules/libraries/dagster-docker/
 -e python_modules/libraries/dagster-duckdb/
@@ -105,7 +105,6 @@ dagster-weaviate
 dagster-qdrant
 
 ### OTHER
-pandas_gbq  # (quickstart_gcp)
 wordcloud  # (quickstart-*)
 
 ### CONSTRAINED BEYOND RUNTIME
@@ -132,10 +131,7 @@ fastapi>=0.115.6 # producing a bizarrely early version of fastapi without this
 -e examples/docs_snippets[full]
 -e examples/feature_graph_backed_assets
 # -e examples/project_fully_featured
-# -e examples/quickstart_aws  # (analyzed but not installed)
 # -e examples/quickstart_etl  # (analyzed but not installed)
-# -e examples/quickstart_gcp  # (analyzed but not installed)
-# -e examples/quickstart_snowflake  # (analyzed but not installed)
 -e examples/tutorial_notebook_assets
 -e examples/with_great_expectations
 -e examples/with_openai
@@ -154,3 +150,4 @@ fastapi>=0.115.6 # producing a bizarrely early version of fastapi without this
 # -e examples/docs_projects/project_ask_ai_dagster
 # -e examples/docs_projects/project_llm_fine_tune
 # -e examples/docs_projects/project_components_pdf_extraction
+# -e examples/docs_projects/project_dbt

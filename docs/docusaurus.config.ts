@@ -20,6 +20,7 @@ const config: Config = {
     mermaid: true,
   },
   themes: ['@docusaurus/theme-mermaid'],
+  clientModules: [require.resolve('./src/clientModules/disableSlashSearch.js')],
   i18n: {defaultLocale: 'en', locales: ['en']},
   plugins: [
     require.resolve('docusaurus-plugin-sass'),
@@ -39,7 +40,7 @@ const config: Config = {
           keywords: {boost: 75},
           content: {boost: 2},
         },
-        excludeRoutes: ['/api/python-api/**/*', '/about/changelog', '/migration/upgrading'],
+        excludeRoutes: ['/tags', '/tags/**/*', '/about/**/*', '/migration/upgrading'],
       },
     ],
   ],
@@ -156,6 +157,20 @@ const config: Config = {
               position: 'right',
               className: 'feedback-nav-link',
             },
+        {
+          to: 'https://dagster.plus/',
+          label: 'Sign in',
+          position: 'right',
+          className: 'hide-mobile',
+          style: {order: 98, margin: '0px 16px 0px 48px'},
+        },
+        {
+          to: 'https://dagster.plus/signup',
+          label: 'Try Dagster+',
+          position: 'right',
+          className: 'cta-button hide-mobile',
+          style: {order: 99, margin: '0px 0px 2px 0px'},
+        },
       ],
     },
     image: 'images/og.png',
@@ -207,7 +222,7 @@ const config: Config = {
           lastVersion: 'current',
           versions: {
             current: {
-              label: 'Latest (1.11.2)',
+              label: 'Latest (1.11.14)',
               path: '/',
             },
           },

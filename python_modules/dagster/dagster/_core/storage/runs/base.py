@@ -5,6 +5,7 @@ from typing import TYPE_CHECKING, Optional, Union
 
 from typing_extensions import TypedDict
 
+from dagster._annotations import public
 from dagster._core.events import DagsterEvent
 from dagster._core.execution.backfill import BulkActionsFilter, BulkActionStatus, PartitionBackfill
 from dagster._core.execution.telemetry import RunTelemetryData
@@ -24,7 +25,7 @@ from dagster._daemon.types import DaemonHeartbeat
 from dagster._utils import PrintFn
 
 if TYPE_CHECKING:
-    from dagster._core.remote_representation.origin import RemoteJobOrigin
+    from dagster._core.remote_origin import RemoteJobOrigin
 
 
 class RunGroupInfo(TypedDict):
@@ -32,6 +33,7 @@ class RunGroupInfo(TypedDict):
     runs: Sequence[DagsterRun]
 
 
+@public
 class RunStorage(ABC, MayHaveInstanceWeakref[T_DagsterInstance], DaemonCursorStorage):
     """Abstract base class for storing pipeline run history.
 

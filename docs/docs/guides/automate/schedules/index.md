@@ -2,6 +2,8 @@
 description: Schedules enable automated execution of Dagster jobs at specified intervals ranging from common frequencies like hourly, daily, or weekly to more complex patterns defined with cron expressions.
 sidebar_position: 10
 title: Schedules
+canonicalUrl: '/guides/automate/schedules'
+slug: '/guides/automate/schedules'
 ---
 
 Schedules enable automated execution of jobs at specified intervals. These intervals can range from common frequencies like hourly, daily, or weekly, to more complex patterns defined using cron expressions.
@@ -20,7 +22,11 @@ To follow the steps in this guide, you'll need:
 
 A basic schedule is defined by a `JobDefinition` and a `cron_schedule` using the `ScheduleDefinition` class. A job can be thought of as a selection of assets or operations executed together.
 
-<CodeExample path="docs_snippets/docs_snippets/guides/automation/simple-schedule-example.py" language="python" title="src/<project_name>/defs/assets.py" />
+<CodeExample
+  path="docs_snippets/docs_snippets/guides/automation/simple-schedule-example.py"
+  language="python"
+  title="src/<project_name>/defs/assets.py"
+/>
 
 ## Run schedules in a different timezone
 
@@ -46,14 +52,22 @@ If using partitions and jobs, you can create a schedule using the partition with
 
 If you have a [partitioned asset](/guides/build/partitions-and-backfills) and job:
 
-<CodeExample path="docs_snippets/docs_snippets/guides/automation/schedule-with-partition.py" language="python" title="src/<project_name>/defs/assets.py" />
+<CodeExample
+  path="docs_snippets/docs_snippets/guides/automation/schedule-with-partition.py"
+  language="python"
+  title="src/<project_name>/defs/assets.py"
+/>
 
 </TabItem>
 <TabItem value="ops" label="Ops">
 
 If you have a partitioned op job:
 
-<CodeExample path="docs_snippets/docs_snippets/guides/automation/schedule-with-partition-ops.py" language="python" title="src/<project_name>/defs/assets.py" />
+<CodeExample
+  path="docs_snippets/docs_snippets/guides/automation/schedule-with-partition-ops.py"
+  language="python"
+  title="src/<project_name>/defs/assets.py"
+/>
 
 </TabItem>
 </Tabs>

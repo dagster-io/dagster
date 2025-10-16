@@ -1,7 +1,7 @@
 from datetime import datetime
 
 from dagster import FloatMetadataValue
-from dagster_dbt.core.dbt_cli_event import DbtCliEventMessage
+from dagster_dbt.core.dbt_cli_event import DbtCoreCliEventMessage
 from dagster_dbt.dagster_dbt_translator import DagsterDbtTranslator
 
 
@@ -58,7 +58,7 @@ def test_microbatch_log_model_result_to_asset():
         "logs": [],
     }
 
-    event_message = DbtCliEventMessage(
+    event_message = DbtCoreCliEventMessage(
         raw_event=microbatch_log_model_result,
         event_history_metadata=microbatch_event_history_metadata,
     )
@@ -149,7 +149,7 @@ def test_incremental_log_model_result_to_asset():
         "logs": [],
     }
 
-    event_message = DbtCliEventMessage(
+    event_message = DbtCoreCliEventMessage(
         raw_event=incremental_log_model_result,
         event_history_metadata=incremental_event_history_metadata,
     )

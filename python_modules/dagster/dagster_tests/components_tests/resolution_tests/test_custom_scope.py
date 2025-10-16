@@ -3,7 +3,7 @@ from pathlib import Path
 
 import dagster as dg
 from dagster import AutomationCondition
-from dagster.components.core.tree import ComponentTree
+from dagster.components.core.component_tree import ComponentTree
 
 
 def test_custom_scope() -> None:

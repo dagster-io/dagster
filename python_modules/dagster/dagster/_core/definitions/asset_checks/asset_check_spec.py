@@ -12,7 +12,7 @@ from dagster_shared.record import (
 from dagster_shared.serdes import whitelist_for_serdes
 from typing_extensions import TypeAlias
 
-from dagster._annotations import PublicAttr
+from dagster._annotations import PublicAttr, public
 from dagster._core.definitions.asset_key import AssetCheckKey, AssetKey, CoercibleToAssetKey
 
 if TYPE_CHECKING:
@@ -24,6 +24,7 @@ if TYPE_CHECKING:
     from dagster._core.definitions.source_asset import SourceAsset
 
 
+@public
 @whitelist_for_serdes
 class AssetCheckSeverity(Enum):
     """Severity level for an AssetCheckResult.
@@ -48,6 +49,7 @@ LazyAssetDep: TypeAlias = Annotated[
 ]
 
 
+@public
 @record_custom
 class AssetCheckSpec(IHaveNew, LegacyNamedTupleMixin):
     name: PublicAttr[str]

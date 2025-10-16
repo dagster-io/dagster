@@ -4,11 +4,9 @@ sidebar_position: 250
 description: Using schedules in Dagster dg projects for entities such as assets and jobs.
 ---
 
-
-
 :::note Prerequisites
 
-Before following this guide, you will need to [create a project](/guides/build/projects/creating-a-new-project) with the [`create-dagster` CLI](/api/dg/create-dagster).
+Before following this guide, you will need to [create a project](/guides/build/projects/creating-a-new-project) with the [`create-dagster` CLI](/api/clis/create-dagster).
 
 :::
 
@@ -37,6 +35,9 @@ dg scaffold defs dagster.schedule path/to/schedules.py
 
 which will create
 
-<CodeExample path="docs_snippets/docs_snippets/concepts/automate/scaffolded-schedule-defs.py"  title="src/<project_name>/defs/schedules.py" />
+<CodeExample
+  path="docs_snippets/docs_snippets/concepts/automate/scaffolded-schedule-defs.py"
+  title="src/<project_name>/defs/schedules.py"
+/>
 
 and you can fill out the schedule dictionary as needed.

@@ -13,9 +13,10 @@ To follow the steps in this guide, you'll need to install [Python 3.9](https://w
 
 :::
 
-To get started with Dagster, you can scaffold a new project with the [`create-dagster` CLI](/api/dg/create-dagster) (recommended), manually create a new project, or update an existing project to install Dagster dependencies.
-* [Installation requirements for using the `create-dagster` CLI](#installation-requirements-for-using-the-create-dagster-cli)
-* [Installation requirements for manually creating or updating a project](#installation-requirements-for-manually-creating-or-updating-a-project)
+To get started with Dagster, you can scaffold a new project with the [`create-dagster` CLI](/api/clis/create-dagster) (recommended), manually create a new project, or update an existing project to install Dagster dependencies.
+
+- [Installation requirements for using the `create-dagster` CLI](#installation-requirements-for-using-the-create-dagster-cli)
+- [Installation requirements for manually creating or updating a project](#installation-requirements-for-manually-creating-or-updating-a-project)
 
 ## Installation requirements for using the `create-dagster` CLI
 
@@ -30,7 +31,7 @@ Install the Python package manager [`uv`](https://docs.astral.sh/uv/getting-star
 
 Installing `uv` will install the [`uvx` command](https://docs.astral.sh/uv/guides/tools), which allows you to execute commands without having to install packages directly. You can run the `create-dagster` command using `uvx`:
 
-<CliInvocationExample contents="uvx -U create-dagster project my-project" />
+<CliInvocationExample contents="uvx create-dagster@latest project my-project" />
 
 </TabItem>
 
@@ -65,12 +66,12 @@ After installation, you can run the `create-dagster` command:
 If you prefer to set up Dagster manually or are installing it into an existing project, you can install Dagster directly into your Python environment:
 
 <Tabs>
-<TabItem value="uv" label="uv">
-  <CliInvocationExample contents="uv add dagster dagster-webserver dagster-dg-cli" />
-</TabItem>
-<TabItem value="pip" label="pip">
-  <CliInvocationExample contents="pip install dagster dagster-webserver dagster-dg-cli" />
-</TabItem>
+  <TabItem value="uv" label="uv">
+    <CliInvocationExample contents="uv add dagster dagster-webserver dagster-dg-cli" />
+  </TabItem>
+  <TabItem value="pip" label="pip">
+    <CliInvocationExample contents="pip install dagster dagster-webserver dagster-dg-cli" />
+  </TabItem>
 </Tabs>
 
 ## Verifying your Dagster installation
@@ -102,5 +103,5 @@ If you run into trouble during the installation process, reach out to the [Dagst
 ## Next steps
 
 - Follow the [Quickstart](/getting-started/quickstart) to get up and running with a basic Dagster project
-- Follow the [ETL pipeline tutorial](/etl-pipeline-tutorial) to learn how to build a more complex ETL pipeline
+- Follow the [Tutorial](/dagster-basics-tutorial) to learn how to build a more complex ETL pipeline
 - Add [assets](/guides/build/assets/defining-assets) to your Dagster project

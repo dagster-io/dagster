@@ -2,6 +2,7 @@
 description: Create and revoke agent tokens for authenticating Dagster+ hybrid agents.
 sidebar_position: 3200
 title: Managing agent tokens in Dagster+
+tags: [dagster-plus-feature]
 ---
 
 In this guide, we'll walk you through creating and revoking agent tokens in Dagster+.

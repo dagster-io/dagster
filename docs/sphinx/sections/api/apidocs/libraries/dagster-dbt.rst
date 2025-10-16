@@ -1,16 +1,31 @@
-#################
 dbt (dagster-dbt)
 #################
 
-Dagster orchestrates dbt alongside other technologies, so you can combine dbt with Spark, Python,
-etc. in a single workflow. Dagster's software-defined asset abstractions make it simple to define
-data assets that depend on specific dbt models, or to define the computation required to compute
+Dagster orchestrates `dbt <https://www.getdbt.com/>`_ alongside other technologies, so you can combine dbt with Spark, Python,
+and other tools in a single workflow. Dagster's software-defined asset abstractions make it simple to define
+data assets that depend on specific dbt models, or define the computation required to compute
 the sources that your dbt models depend on.
 
-Related documentation pages: `dbt <https://docs.dagster.io/integrations/libraries/dbt>`_ and
-`dbt Cloud <https://docs.dagster.io/integrations/dbt-cloud>`_.
+For more information on using the dbt and dbt Cloud integrations, see the `Dagster & dbt <https://docs.dagster.io/integrations/libraries/dbt>`_ and
+`Dagster & dbt Cloud <https://docs.dagster.io/integrations/libraries/dbt/dbt-cloud>`_ docs.
 
 .. currentmodule:: dagster_dbt
+
+*******************
+DbtProjectComponent
+*******************
+
+.. autoclass:: DbtProjectComponent
+
+To use the dbt component, see the `dbt component integration guide <https://docs.dagster.io/integrations/libraries/dbt>`_.
+
+Component YAML
+==============
+
+When you scaffold a dbt component definition, the following ``defs.yaml`` configuration file will be created:
+
+.. literalinclude:: ../../../../../../examples/docs_snippets/docs_snippets/guides/components/integrations/dbt-component/7-component.yaml
+    :language: yaml
 
 ***********
 dagster-dbt
@@ -68,6 +83,24 @@ CLI Resource
 .. autoclass:: dagster_dbt.core.dbt_cli_invocation.DbtEventIterator
 
 .. autoclass:: DbtCliEventMessage
+
+************
+dbt Cloud v2
+************
+
+Updated interfaces to manage dbt projects invoked by the hosted dbt Cloud service.
+
+Assets (dbt Cloud v2)
+=====================
+
+.. autodecorator:: dbt_cloud_assets
+
+Resources (dbt Cloud v2)
+========================
+
+.. autoclass:: DbtCloudCredentials
+
+.. autoclass:: DbtCloudWorkspace
 
 *********
 dbt Cloud

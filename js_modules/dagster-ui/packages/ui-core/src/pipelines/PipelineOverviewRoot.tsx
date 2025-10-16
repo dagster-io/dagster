@@ -77,6 +77,7 @@ export const PipelineOverviewRoot = (props: Props) => {
             ...explorerPath,
             opNames: [tokenForAssetKey(node.assetKey)],
             opsQuery: '',
+            // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
             pipelineName: node.jobName!,
           })}`,
         ),

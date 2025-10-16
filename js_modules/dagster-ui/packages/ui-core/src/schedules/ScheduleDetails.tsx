@@ -22,6 +22,7 @@ import {AutomationTargetList} from '../automation/AutomationTargetList';
 import {AutomationAssetSelectionFragment} from '../automation/types/AutomationAssetSelectionFragment.types';
 import {InstigationStatus} from '../graphql/types';
 import {RepositoryLink} from '../nav/RepositoryLink';
+import {DefinitionOwners} from '../owners/DefinitionOwners';
 import {EvaluateTickButtonSchedule} from '../ticks/EvaluateTickButtonSchedule';
 import {TickStatusTag} from '../ticks/TickStatusTag';
 import {RepoAddress} from '../workspace/types';
@@ -75,6 +76,14 @@ export const ScheduleDetails = (props: {
               <td>{schedule.description}</td>
             </tr>
           ) : null}
+          {schedule.owners.length > 0 && (
+            <tr>
+              <td>Owners</td>
+              <td>
+                <DefinitionOwners owners={schedule.owners} />
+              </td>
+            </tr>
+          )}
           <tr>
             <td>Latest tick</td>
             <td>
@@ -97,6 +106,7 @@ export const ScheduleDetails = (props: {
               <td>Next tick</td>
               <td>
                 <TimestampDisplay
+                  // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
                   timestamp={futureTicks.results[0].timestamp!}
                   timezone={executionTimezone}
                   timeFormat={TIME_FORMAT}

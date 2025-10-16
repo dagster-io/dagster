@@ -4,6 +4,7 @@ from collections.abc import Mapping
 from typing import TYPE_CHECKING, NamedTuple, Optional, cast
 
 import dagster._check as check
+from dagster._annotations import public
 from dagster._core.definitions.partitions.context import (
     PartitionLoadingContext,
     partition_loading_context,
@@ -110,6 +111,7 @@ class PartitionDimensionKey(
         )
 
 
+@public
 class MultiPartitionKey(str):
     """A multi-dimensional partition key stores the partition key for each dimension.
     Subclasses the string class to keep partition key type as a string.

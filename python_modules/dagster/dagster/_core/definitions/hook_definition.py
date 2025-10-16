@@ -2,7 +2,7 @@ from collections.abc import Iterator
 from typing import AbstractSet, Any, Callable, NamedTuple, Optional  # noqa: UP035
 
 import dagster._check as check
-from dagster._annotations import PublicAttr
+from dagster._annotations import PublicAttr, public
 from dagster._core.decorator_utils import get_function_params
 from dagster._core.definitions.resource_requirement import (
     HookResourceRequirement,
@@ -12,6 +12,7 @@ from dagster._core.definitions.utils import check_valid_name
 from dagster._core.errors import DagsterInvalidInvocationError
 
 
+@public
 class HookDefinition(
     NamedTuple(
         "_HookDefinition",

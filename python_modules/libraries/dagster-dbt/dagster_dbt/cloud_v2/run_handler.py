@@ -9,30 +9,22 @@ from dagster import (
     AssetMaterialization,
     MetadataValue,
     Output,
+    get_dagster_logger,
 )
-from dagster._annotations import beta
 from dagster._record import record
 from dateutil import parser
-from dbt.contracts.results import NodeStatus, TestStatus
-from dbt.node_types import NodeType
-from dbt.version import __version__ as dbt_version
-from packaging import version
 
 from dagster_dbt.asset_utils import build_dbt_specs, get_asset_check_key_for_test
 from dagster_dbt.cloud_v2.client import DbtCloudWorkspaceClient
-from dagster_dbt.cloud_v2.types import DbtCloudJobRunStatusType, DbtCloudRun
+from dagster_dbt.cloud_v2.types import DbtCloudRun
+from dagster_dbt.compat import REFABLE_NODE_TYPES, NodeStatus, NodeType, TestStatus
 from dagster_dbt.dagster_dbt_translator import DagsterDbtTranslator
-
-IS_DBT_CORE_VERSION_LESS_THAN_1_8_0 = version.parse(dbt_version) < version.parse("1.8.0")
-if IS_DBT_CORE_VERSION_LESS_THAN_1_8_0:
-    REFABLE_NODE_TYPES = NodeType.refable()  # type: ignore
-else:
-    from dbt.node_types import REFABLE_NODE_TYPES as REFABLE_NODE_TYPES
 
 COMPLETED_AT_TIMESTAMP_METADATA_KEY = "dagster_dbt/completed_at_timestamp"
 
+logger = get_dagster_logger()
 
-@beta
+
 @record
 class DbtCloudJobRunHandler:
     """Handles the process of a dbt Cloud job run."""
@@ -55,12 +47,10 @@ class DbtCloudJobRunHandler:
             client=client,
         )
 
-    def wait_for_success(
-        self, timeout: Optional[float] = None
-    ) -> Optional[DbtCloudJobRunStatusType]:
+    def wait(self, timeout: Optional[float] = None) -> DbtCloudRun:
         run_details = self.client.poll_run(run_id=self.run_id, poll_timeout=timeout)
         dbt_cloud_run = DbtCloudRun.from_run_details(run_details=run_details)
-        return dbt_cloud_run.status
+        return dbt_cloud_run
 
     def get_run_results(self) -> Mapping[str, Any]:
         return self.client.get_run_results_json(run_id=self.run_id)
@@ -79,7 +69,6 @@ def get_completed_at_timestamp(result: Mapping[str, Any]) -> float:
     return parser.parse(result["timing"][-1]["completed_at"]).timestamp()
 
 
-@beta
 @record
 class DbtCloudJobRunResults:
     """Represents the run results of a dbt Cloud job run."""
@@ -130,7 +119,15 @@ class DbtCloudJobRunResults:
         invocation_id: str = self.run_results["metadata"]["invocation_id"]
         for result in self.run_results["results"]:
             unique_id: str = result["unique_id"]
-            dbt_resource_props: Mapping[str, Any] = manifest["nodes"][unique_id]
+            dbt_resource_props: Mapping[str, Any] = manifest["nodes"].get(unique_id)
+            if not dbt_resource_props:
+                logger.warning(
+                    f"Unique ID {unique_id} not found in manifest. "
+                    f"This can happen if you are parsing old runs fetched via the sensor, "
+                    f"or if your manifest is out of date. "
+                    f"Reloading your code location will fix the latter."
+                )
+                continue
             select: str = ".".join(dbt_resource_props["fqn"])
 
             default_metadata = {
@@ -182,7 +179,7 @@ class DbtCloudJobRunResults:
                         asset_key=spec.key,
                         metadata=metadata,
                     )
-            elif resource_type == NodeType.Test and result_status == NodeStatus.Pass:
+            elif resource_type == NodeType.Test:
                 metadata = {
                     **default_metadata,
                     "status": result_status,

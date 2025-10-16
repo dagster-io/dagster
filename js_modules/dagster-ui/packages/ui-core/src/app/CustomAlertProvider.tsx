@@ -54,6 +54,7 @@ export const CustomAlertProvider = () => {
 
   const onCopy = React.useCallback(
     (e: React.MouseEvent) => {
+      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
       const copyElement = copySelector ? body.current!.querySelector(copySelector) : body.current;
       const copyText =
         copyElement instanceof HTMLElement ? copyElement.innerText : copyElement?.textContent;

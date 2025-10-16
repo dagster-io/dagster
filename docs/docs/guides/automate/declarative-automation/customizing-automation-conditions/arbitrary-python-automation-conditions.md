@@ -26,7 +26,10 @@ import ScaffoldSensor from '@site/docs/partials/\_ScaffoldSensor.md';
 
 To do this, add an automation condition sensor to your definitions with the `use_user_code_server` flag set to `True`:
 
-<CodeExample path="docs_snippets/docs_snippets/concepts/declarative_automation/sensors/arbitrary_python.py" title="src/<project_name>/defs/sensors.py" />
+<CodeExample
+  path="docs_snippets/docs_snippets/concepts/declarative_automation/sensors/arbitrary_python.py"
+  title="src/<project_name>/defs/sensors.py"
+/>
 
 This will allow your sensor to target automation conditions containing custom python code.
 
@@ -34,7 +37,12 @@ This will allow your sensor to target automation conditions containing custom py
 
 You can create your own subclass of `AutomationCondition`, defining the `evaluate()` method. For example, imagine you want to avoid executing anything on a company holiday. To do this, you can first define a condition which detects if it's currently a company holiday:
 
-<CodeExample path="docs_snippets/docs_snippets/concepts/declarative_automation/sensors/custom_condition.py" startAfter="start_custom_condition" endBefore="end_custom_condition" title="src/<project_name>/defs/sensors.py" />
+<CodeExample
+  path="docs_snippets/docs_snippets/concepts/declarative_automation/sensors/custom_condition.py"
+  startAfter="start_custom_condition"
+  endBefore="end_custom_condition"
+  title="src/<project_name>/defs/sensors.py"
+/>
 
 In this example, we build up a subset of the evaluated asset for which this condition is True. We use `EntitySubsets`, rather than a pure `True` / `False` to account for partitioned assets, for which individual partitions may have different results.
 
@@ -42,4 +50,9 @@ In our case, the condition will be applied the same regardless of if it's partit
 
 Once this condition is defined, you can use this condition as part of a broader expression, for example:
 
-<CodeExample path="docs_snippets/docs_snippets/concepts/declarative_automation/sensors/custom_condition.py" startAfter="start_conditional" endBefore="end_conditional" title="src/<project_name>/defs/sensors.py" />
+<CodeExample
+  path="docs_snippets/docs_snippets/concepts/declarative_automation/sensors/custom_condition.py"
+  startAfter="start_conditional"
+  endBefore="end_conditional"
+  title="src/<project_name>/defs/sensors.py"
+/>

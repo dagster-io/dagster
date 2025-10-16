@@ -4,6 +4,7 @@ from collections.abc import Iterable, Mapping, Sequence
 from typing import TYPE_CHECKING, AbstractSet, NamedTuple, Optional, Union  # noqa: UP035
 
 import dagster._check as check
+from dagster._annotations import public
 from dagster._core.assets import AssetDetails
 from dagster._core.definitions.asset_checks.asset_check_spec import AssetCheckKey
 from dagster._core.definitions.data_version import DATA_VERSION_TAG
@@ -171,6 +172,7 @@ class AssetEntry(
         return max(event_ids) if event_ids else None
 
 
+@public
 class AssetRecord(
     NamedTuple("_NamedTuple", [("storage_id", int), ("asset_entry", AssetEntry)]),
     LoadableBy[AssetKey],
@@ -238,6 +240,7 @@ class PoolLimit:
     from_default: bool
 
 
+@public
 class EventLogStorage(ABC, MayHaveInstanceWeakref[T_DagsterInstance]):
     """Abstract base class for storing structured event logs from pipeline runs.
 
@@ -757,11 +760,23 @@ class EventLogStorage(ABC, MayHaveInstanceWeakref[T_DagsterInstance]):
         context: LoadingContext,
     ) -> Sequence[Optional["AssetStatusCacheValue"]]:
         """Get the cached status information for each asset."""
+        from dagster._core.workspace.context import BaseWorkspaceRequestContext
+
         values = []
+
+        if isinstance(context, BaseWorkspaceRequestContext):
+            dynamic_partitions_loader = context.dynamic_partitions_loader
+        else:
+            dynamic_partitions_loader = None
+
         for asset_key, partitions_def in partitions_defs_by_key:
             values.append(
                 get_and_update_asset_status_cache_value(
-                    self._instance, asset_key, partitions_def, loading_context=context
+                    self._instance,
+                    asset_key,
+                    partitions_def,
+                    dynamic_partitions_loader=dynamic_partitions_loader,
+                    loading_context=context,
                 )
             )
         return values

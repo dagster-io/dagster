@@ -1412,6 +1412,58 @@ class PipesDbfsMessageWriter(PipesBlobStoreMessageWriter):
             return {}
 
 
+# #########################################
+# ##### IO - Databricks Serverless
+# #########################################
+
+
+class PipesUnityCatalogVolumesContextLoader(PipesContextLoader):
+    """Context loader that reads context from a JSON file on Unity Catalog Volumes."""
+
+    @contextmanager
+    def load_context(self, params: PipesParams) -> Iterator[PipesContextData]:
+        path = _assert_env_param_type(params, "path", str, self.__class__)
+        with open(path) as f:
+            yield json.load(f)
+
+
+class PipesUnityCatalogVolumesMessageWriter(PipesBlobStoreMessageWriter):
+    """Message writer that writes messages by periodically writing message chunks
+    to a directory on Unity Catalog Volumes.
+    """
+
+    def make_channel(
+        self,
+        params: PipesParams,
+    ) -> "PipesBufferedFilesystemMessageWriterChannel":
+        path = _assert_env_param_type(params, "path", str, self.__class__)
+        return PipesBufferedFilesystemMessageWriterChannel(
+            path=path,
+            interval=self.interval,
+        )
+
+
+DAGSTER_PIPES_CONTEXT_WIDGET_KEY = DAGSTER_PIPES_CONTEXT_ENV_VAR
+DAGSTER_PIPES_MESSAGES_WIDGET_KEY = DAGSTER_PIPES_MESSAGES_ENV_VAR
+
+
+class PipesDatabricksNotebookWidgetsParamsLoader(PipesParamsLoader):
+    """Params loader that extracts params from widgets (base params) in a Databricks Notebook."""
+
+    def __init__(self, widgets: Any):
+        self.widgets = widgets
+
+    def is_dagster_pipes_process(self) -> bool:
+        # use the presence of the pipes context to discern if we are in a pipes process
+        return self.widgets.get(DAGSTER_PIPES_CONTEXT_WIDGET_KEY) is not None
+
+    def load_context_params(self) -> PipesParams:
+        return decode_param(self.widgets.get(DAGSTER_PIPES_CONTEXT_WIDGET_KEY))
+
+    def load_messages_params(self) -> PipesParams:
+        return decode_param(self.widgets.get(DAGSTER_PIPES_MESSAGES_WIDGET_KEY))
+
+
 # ########################
 # ##### CONTEXT
 # ########################

@@ -8,14 +8,13 @@ import {useMaterializationAction} from '../assets/LaunchAssetExecutionButton';
 import {EXECUTION_PLAN_TO_GRAPH_FRAGMENT} from '../gantt/toGraphQueryItems';
 import {ReexecutionStrategy} from '../graphql/types';
 import {canRunAllSteps, canRunFromFailure} from '../runs/RunActionButtons';
-import {RunTimeFragment} from '../runs/types/RunUtils.types';
 import {useJobReexecution} from '../runs/useJobReExecution';
 import {MenuLink} from '../ui/MenuLink';
 import {RepoAddress} from '../workspace/types';
 import {workspacePipelinePath} from '../workspace/workspacePath';
 
 interface Props {
-  job: {isJob: boolean; name: string; runs: RunTimeFragment[]};
+  job: {isJob: boolean; name: string; runs: {id: string}[]};
   repoAddress: RepoAddress;
   isAssetJob: boolean | 'loading';
 }
@@ -175,7 +174,9 @@ const RUN_RE_EXECUTION_QUERY = gql`
         }
         executionPlan {
           artifactsPersisted
-          assetSelection
+          assetKeys {
+            path
+          }
           ...ExecutionPlanToGraphFragment
         }
       }

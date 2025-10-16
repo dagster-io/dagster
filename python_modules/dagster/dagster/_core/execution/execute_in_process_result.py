@@ -13,6 +13,7 @@ from dagster._core.execution.plan.outputs import StepOutputHandle
 from dagster._core.storage.dagster_run import DagsterRun
 
 
+@public
 class ExecuteInProcessResult(ExecutionResult):
     """Result object returned by in-process testing APIs.
 

@@ -4,13 +4,9 @@ sidebar_position: 250
 description: Using sensors in Dagster dg projects for entities such as assets and jobs.
 ---
 
-import DgComponentsRc from '@site/docs/partials/\_DgComponentsRc.md';
-
-<DgComponentsRc />
-
 :::note Prerequisites
 
-Before following this guide, you will need to [create a project](/guides/build/projects/creating-a-new-project) with the [`create-dagster` CLI](/api/dg/create-dagster).
+Before following this guide, you will need to [create a project](/guides/build/projects/creating-a-new-project) with the [`create-dagster` CLI](/api/clis/create-dagster).
 
 :::
 
@@ -31,10 +27,6 @@ src
 
 ## Scaffolding sensors
 
-import ScaffoldSensor from '@site/docs/partials/\_ScaffoldSensor.md';
-
-<ScaffoldSensor />
-
 To create a sensor dictionary like the above, you can run the following:
 
 ```bash
@@ -43,6 +35,9 @@ dg scaffold defs dagster.sensor sensors.py
 
 which will create
 
-<CodeExample path="docs_snippets/docs_snippets/concepts/automate/scaffolded-sensor-defs.py" title="src/<project_name>/defs/sensors.py" />
+<CodeExample
+  path="docs_snippets/docs_snippets/concepts/automate/scaffolded-sensor-defs.py"
+  title="src/<project_name>/defs/sensors.py"
+/>
 
 and you can fill out the sensor dictionary as needed.

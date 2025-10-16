@@ -396,9 +396,13 @@ describe('AutomationStateChangeDialog', () => {
       expect(screen.getByText(/could not start 2 automations/i)).toBeVisible();
       const errorItems = screen.getAllByRole('listitem');
 
+      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
       expect(errorItems[0]!.textContent).toMatch(/louisiana/i);
+      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
       expect(errorItems[0]!.textContent).toMatch(/lol u cannot/i);
+      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
       expect(errorItems[1]!.textContent).toMatch(/colorado/i);
+      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
       expect(errorItems[1]!.textContent).toMatch(/lol u cannot/i);
     });
   });
@@ -600,9 +604,13 @@ describe('AutomationStateChangeDialog', () => {
       expect(screen.getByText(/could not stop 2 automations/i)).toBeVisible();
       const errorItems = screen.getAllByRole('listitem');
 
+      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
       expect(errorItems[0]!.textContent).toMatch(/oregon/i);
+      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
       expect(errorItems[0]!.textContent).toMatch(/lol u cannot/i);
+      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
       expect(errorItems[1]!.textContent).toMatch(/hawaii/i);
+      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
       expect(errorItems[1]!.textContent).toMatch(/lol u cannot/i);
     });
   });

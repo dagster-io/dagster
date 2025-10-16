@@ -49,7 +49,7 @@ import {AssetGraphLayout, GroupLayout} from './layout';
 import {AssetGraphFetchScope, useAssetGraphData, useFullAssetGraphData} from './useAssetGraphData';
 import {AssetLocation, useFindAssetLocation} from './useFindAssetLocation';
 import {useFullScreen, useFullScreenAllowedView} from '../app/AppTopNav/AppTopNavContext';
-import {useFeatureFlags} from '../app/Flags';
+import {useFeatureFlags} from '../app/useFeatureFlags';
 import {AssetLiveDataRefreshButton} from '../asset-data/AssetLiveDataProvider';
 import {LaunchAssetExecutionButton} from '../assets/LaunchAssetExecutionButton';
 import {AssetKey} from '../assets/types';
@@ -184,9 +184,11 @@ const AssetGraphExplorerWithData = ({
     Object.values(assetGraphData.nodes).forEach((node) => {
       const groupId = groupIdForNode(node);
       groupedAssets[groupId] = groupedAssets[groupId] || [];
+      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
       groupedAssets[groupId]!.push(node);
     });
     const counts: Record<string, number> = {};
+    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
     Object.keys(groupedAssets).forEach((key) => (counts[key] = groupedAssets[key]!.length));
     return {allGroups: Object.keys(groupedAssets), allGroupCounts: counts, groupedAssets};
   }, [assetGraphData]);
@@ -194,7 +196,7 @@ const AssetGraphExplorerWithData = ({
   const [direction, setDirection] = useLayoutDirectionState();
   const [facets, setFacets] = useSavedAssetNodeFacets();
 
-  const {flagAssetNodeFacets} = useFeatureFlags();
+  const {flagAssetNodeFacets, flagAssetGraphGroupsPerCodeLocation} = useFeatureFlags();
 
   const [expandedGroups, setExpandedGroups] = useQueryAndLocalStoragePersistedState<string[]>({
     localStorageKey: `asset-graph-open-graph-nodes-${viewType}-${explorerPath.pipelineName}`,
@@ -217,8 +219,12 @@ const AssetGraphExplorerWithData = ({
     assetGraphData,
     expandedGroups,
     useMemo(
-      () => ({direction, facets: flagAssetNodeFacets ? Array.from(facets) : false}),
-      [direction, facets, flagAssetNodeFacets],
+      () => ({
+        direction,
+        flagAssetGraphGroupsPerCodeLocation,
+        facets: flagAssetNodeFacets ? Array.from(facets) : false,
+      }),
+      [direction, facets, flagAssetGraphGroupsPerCodeLocation, flagAssetNodeFacets],
     ),
     dataLoading,
   );
@@ -226,10 +232,12 @@ const AssetGraphExplorerWithData = ({
   const viewportEl = React.useRef<SVGViewportRef>();
 
   const selectedTokens =
+    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
     explorerPath.opNames[explorerPath.opNames.length - 1]!.split(',').filter(Boolean);
   const selectedGraphNodes = Object.values(assetGraphData.nodes).filter((node) =>
     selectedTokens.includes(tokenForAssetKey(node.definition.assetKey)),
   );
+  // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
   const lastSelectedNode = selectedGraphNodes[selectedGraphNodes.length - 1]!;
 
   const selectedDefinitions = selectedGraphNodes.map((a) => a.definition);
@@ -274,12 +282,14 @@ const AssetGraphExplorerWithData = ({
           }
         }
 
+        // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
         const existing = explorerPath.opNames[0]!.split(',');
         nextOpsNameSelection = (
           existing.includes(token) ? without(existing, token) : uniq([...existing, ...tokensToAdd])
         ).join(',');
       }
 
+      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
       const nextCenter = layout?.nodes[nextOpsNameSelection[nextOpsNameSelection.length - 1]!];
       if (nextCenter) {
         viewportEl.current?.zoomToSVGCoords(nextCenter.bounds.x, nextCenter.bounds.y, true);
@@ -387,6 +397,7 @@ const AssetGraphExplorerWithData = ({
       const assets = groupedAssets[groupId] || [];
       const childNodeTokens = assets.map((n) => tokenForAssetKey(n.assetKey));
 
+      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
       const existing = explorerPath.opNames[0]!.split(',');
 
       const nextOpsNameSelection = childNodeTokens.every((token) => existing.includes(token))
@@ -448,11 +459,17 @@ const AssetGraphExplorerWithData = ({
   );
 
   const onFilterToGroup = (group: AssetGroup | GroupLayout) => {
-    const codeLocationFilter = buildRepoPathForHuman(
-      group.repositoryName,
-      group.repositoryLocationName,
-    );
-    onChangeAssetSelection(`group:"${group.groupName}" and code_location:"${codeLocationFilter}"`);
+    const filters: string[] = [`group:"${group.groupName}"`];
+
+    if (group.repositoryName && group.repositoryLocationName) {
+      const codeLocationFilter = buildRepoPathForHuman(
+        group.repositoryName,
+        group.repositoryLocationName,
+      );
+      filters.push(`code_location:"${codeLocationFilter}"`);
+    }
+
+    onChangeAssetSelection(filters.join(' and '));
   };
 
   const svgViewport = layout ? (
@@ -589,6 +606,7 @@ const AssetGraphExplorerWithData = ({
           {Object.values(layout.nodes)
             .filter((node) => !isNodeOffscreen(node.bounds, viewportRect))
             .map(({id, bounds}) => {
+              // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
               const graphNode = assetGraphData.nodes[id]!;
               const path = JSON.parse(id);
               if (scale < GROUPS_ONLY_SCALE) {
@@ -677,9 +695,6 @@ const AssetGraphExplorerWithData = ({
   const {isFullScreen, toggleFullScreen} = useFullScreen();
 
   const toggleFullScreenButton = useMemo(() => {
-    if (viewType === AssetGraphViewType.CATALOG) {
-      return null;
-    }
     return (
       <Tooltip content={isFullScreen ? 'Collapse' : 'Expand'}>
         <Button
@@ -688,7 +703,7 @@ const AssetGraphExplorerWithData = ({
         />
       </Tooltip>
     );
-  }, [viewType, toggleFullScreen, isFullScreen]);
+  }, [toggleFullScreen, isFullScreen]);
 
   const explorer = (
     <SplitPanelContainer
@@ -796,9 +811,11 @@ const AssetGraphExplorerWithData = ({
                     <LaunchAssetExecutionButton
                       preferredJobName={explorerPath.pipelineName}
                       scope={
-                        selectedDefinitions.length
-                          ? {selected: selectedDefinitions}
-                          : {all: allDefinitionsForMaterialize}
+                        nextLayoutLoading
+                          ? {all: []}
+                          : selectedDefinitions.length
+                            ? {selected: selectedDefinitions}
+                            : {all: allDefinitionsForMaterialize}
                       }
                       additionalDropdownOptions={extraDropdownOptions}
                     />
@@ -859,15 +876,15 @@ const AssetGraphExplorerWithData = ({
     />
   );
 
-  if (showSidebar) {
-    return (
-      <SplitPanelContainer
-        key="explorer-wrapper"
-        identifier="explorer-wrapper"
-        firstMinSize={300}
-        firstInitialPercent={0}
-        secondMinSize={400}
-        first={
+  return (
+    <SplitPanelContainer
+      key="explorer-wrapper"
+      identifier="explorer-wrapper"
+      firstMinSize={300}
+      firstInitialPercent={0}
+      secondMinSize={400}
+      first={
+        showSidebar ? (
           <AssetGraphExplorerSidebar
             viewType={viewType}
             allAssetKeys={allAssetKeys}
@@ -885,18 +902,19 @@ const AssetGraphExplorerWithData = ({
             onFilterToGroup={onFilterToGroup}
             loading={loading}
           />
-        }
-        second={explorer}
-      />
-    );
-  }
-  return explorer;
+        ) : null
+      }
+      second={explorer}
+    />
+  );
 };
 
 export interface AssetGroup {
   groupName: string;
-  repositoryName: string;
-  repositoryLocationName: string;
+
+  // remove when groups-outside-code-location feature flag is shipped
+  repositoryName?: string;
+  repositoryLocationName?: string;
 }
 
 const SVGContainer = styled.svg`

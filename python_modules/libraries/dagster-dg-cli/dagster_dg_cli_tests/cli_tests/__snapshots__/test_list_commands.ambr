@@ -3,8 +3,12 @@
   '''
   ├── assets
   │   └── ...
-  └── my_function
-      └── defs.yaml (FunctionComponent)
+  ├── my_function
+  │   └── defs.yaml (FunctionComponent)
+  └── pythonic_components
+      └── my_component.py
+          ├── first
+          └── second
   '''
 # ---
 # name: test_list_defs_complex_assets_succeeds
@@ -37,6 +41,11 @@
   │              │ ├────────────────────────┼───────┼───────────────────────────────────┤                                │
   │              │ │ alpha:alpha_check      │ alpha │ This check is for alpha.          │                                │
   │              │ └────────────────────────┴───────┴───────────────────────────────────┘                                │
+  │ Jobs         │ ┏━━━━━━━━━━━━━━━━━━━━━━━━┳━━━━━━━━━━━━━┓                                                              │
+  │              │ ┃ Key                    ┃ Description ┃                                                              │
+  │              │ ┡━━━━━━━━━━━━━━━━━━━━━━━━╇━━━━━━━━━━━━━┩                                                              │
+  │              │ │ should_not_be_included │             │                                                              │
+  │              │ └────────────────────────┴─────────────┘                                                              │
   └──────────────┴───────────────────────────────────────────────────────────────────────────────────────────────────────┘
   '''
 # ---
@@ -109,7 +118,7 @@
           {
               "name": "my_job",
               "description": null,
-              "source": null
+              "source": "src/foo_bar/defs/mydefs/defs.yaml:1"
           }
       ],
       "resources": [
@@ -122,13 +131,13 @@
           {
               "name": "my_schedule",
               "cron_schedule": "@daily",
-              "source": null
+              "source": "src/foo_bar/defs/mydefs/defs.yaml:1"
           }
       ],
       "sensors": [
           {
               "name": "my_sensor",
-              "source": null
+              "source": "src/foo_bar/defs/mydefs/defs.yaml:1"
           }
       ]
   }

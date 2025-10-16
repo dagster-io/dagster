@@ -186,6 +186,7 @@ export const OpsRootWithData = (props: OpsRootWithDataProps) => {
   React.useEffect(() => {
     // If the user has typed in a search that brings us to a single result, autoselect it
     if (sorted.length === 1 && (!selected || sorted[0] !== selected)) {
+      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
       onClickOp(sorted[0]!.definition.name);
     }
 
@@ -279,6 +280,7 @@ const OpList = (props: OpListProps) => {
     <Container ref={containerRef}>
       <Inner $totalHeight={totalHeight}>
         {virtualItems.map(({index, size, start}) => {
+          // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
           const solid = items[index]!;
           return (
             <Row key={solid.definition.name} $height={size} $start={start}>

@@ -183,6 +183,7 @@ export const AssetChecks = ({
               <Container ref={containerRef}>
                 <Inner $totalHeight={totalHeight}>
                   {items.map(({index, size, start}) => {
+                    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
                     const check = filteredChecks[index]!;
                     return (
                       <CheckRow

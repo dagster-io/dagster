@@ -1,4 +1,5 @@
 import base64
+import io
 import json
 import os
 import random
@@ -33,8 +34,122 @@ from databricks.sdk import WorkspaceClient
 from databricks.sdk.service import files, jobs
 from pydantic import Field
 
+_CONTEXT_FILENAME = "context.json"
 
-class PipesDatabricksClient(PipesClient, TreatAsResourceParam):
+
+# #########################
+# ##### Base Class
+# #########################
+
+
+class BasePipesDatabricksClient(PipesClient):
+    def __init__(
+        self,
+        client: WorkspaceClient,
+        context_injector: Optional[PipesContextInjector] = None,
+        message_reader: Optional[PipesMessageReader] = None,
+        poll_interval_seconds: float = 5,
+        forward_termination: bool = True,
+    ):
+        self.client = client
+        self.context_injector = check.opt_inst_param(
+            context_injector,
+            "context_injector",
+            PipesContextInjector,
+        )
+        self.message_reader = check.opt_inst_param(
+            message_reader,
+            "message_reader",
+            PipesMessageReader,
+        )
+        self.poll_interval_seconds = check.numeric_param(
+            poll_interval_seconds, "poll_interval_seconds"
+        )
+        self.forward_termination = check.bool_param(forward_termination, "forward_termination")
+
+    def run(
+        self,
+        *,
+        context: Union[OpExecutionContext, AssetExecutionContext],
+        extras: Optional[PipesExtras] = None,
+        **kwargs,
+    ):
+        raise NotImplementedError()
+
+    def _poll_til_success(
+        self, context: Union[OpExecutionContext, AssetExecutionContext], run_id: int
+    ) -> None:
+        # poll the Databricks run until it reaches RunResultState.SUCCESS, raising otherwise
+
+        last_observed_state = None
+        while True:
+            run_state = self._get_run_state(run_id)
+            if run_state.life_cycle_state != last_observed_state:
+                context.log.info(
+                    f"[pipes] Databricks run {run_id} observed state transition to {run_state.life_cycle_state}"
+                )
+            last_observed_state = run_state.life_cycle_state
+
+            if run_state.life_cycle_state in (
+                jobs.RunLifeCycleState.TERMINATED,
+                jobs.RunLifeCycleState.SKIPPED,
+            ):
+                if run_state.result_state == jobs.RunResultState.SUCCESS:
+                    break
+                else:
+                    raise DagsterPipesExecutionError(
+                        f"Error running Databricks job: {run_state.state_message}"
+                    )
+            elif run_state.life_cycle_state == jobs.RunLifeCycleState.INTERNAL_ERROR:
+                raise DagsterPipesExecutionError(
+                    f"Error running Databricks job: {run_state.state_message}"
+                )
+
+            time.sleep(self.poll_interval_seconds)
+
+    def _poll_til_terminating(self, run_id: int) -> None:
+        # Wait to see the job enters a state that indicates the underlying task is no longer executing
+        # TERMINATING: "The task of this run has completed, and the cluster and execution context are being cleaned up."
+        while True:
+            run_state = self._get_run_state(run_id)
+            if run_state.life_cycle_state in (
+                jobs.RunLifeCycleState.TERMINATING,
+                jobs.RunLifeCycleState.TERMINATED,
+                jobs.RunLifeCycleState.SKIPPED,
+                jobs.RunLifeCycleState.INTERNAL_ERROR,
+            ):
+                return
+
+            time.sleep(self.poll_interval_seconds)
+
+    def _get_run_state(self, run_id: int) -> jobs.RunState:
+        run = self.client.jobs.get_run(run_id)
+        if run.state is None:
+            check.failed("Databricks job run state is None")
+        return run.state
+
+    def _extract_dagster_metadata(self, run_id: int) -> RawMetadataMapping:
+        metadata: RawMetadataMapping = {}
+
+        run = self.client.jobs.get_run(run_id)
+
+        metadata["Databricks Job Run ID"] = str(run_id)
+
+        if run_page_url := run.run_page_url:
+            metadata["Databricks Job Run URL"] = run_page_url
+
+        return metadata
+
+    def get_task_fields_which_support_cli_parameters(self) -> set[str]:
+        return {"spark_python_task", "python_wheel_task"}
+
+
+# #########################
+# ##### Databricks
+# #########################
+
+
+class PipesDatabricksClient(BasePipesDatabricksClient, TreatAsResourceParam):
     """Pipes client for databricks.
 
     Args:
@@ -65,22 +180,14 @@ class PipesDatabricksClient(PipesClient, TreatAsResourceParam):
         poll_interval_seconds: float = 5,
         forward_termination: bool = True,
     ):
-        self.client = client
         self.env = env
-        self.context_injector = check.opt_inst_param(
-            context_injector,
-            "context_injector",
-            PipesContextInjector,
-        ) or PipesDbfsContextInjector(client=self.client)
-        self.message_reader = check.opt_inst_param(
-            message_reader,
-            "message_reader",
-            PipesMessageReader,
+        super().__init__(
+            client=client,
+            context_injector=context_injector,
+            message_reader=message_reader,
+            poll_interval_seconds=poll_interval_seconds,
+            forward_termination=forward_termination,
         )
-        self.poll_interval_seconds = check.numeric_param(
-            poll_interval_seconds, "poll_interval_seconds"
-        )
-        self.forward_termination = check.bool_param(forward_termination, "forward_termination")
 
     @classmethod
     def _is_dagster_maintained(cls) -> bool:
@@ -165,11 +272,12 @@ class PipesDatabricksClient(PipesClient, TreatAsResourceParam):
             PipesClientCompletedInvocation: Wrapper containing results reported by the external
                 process.
         """
+        context_injector = self.context_injector or PipesDbfsContextInjector(client=self.client)
         message_reader = self.message_reader or self.get_default_message_reader(task)
         with open_pipes_session(
             context=context,
             extras=extras,
-            context_injector=self.context_injector,
+            context_injector=context_injector,
             message_reader=message_reader,
         ) as pipes_session:
             submit_task_dict = task.as_dict()
@@ -221,6 +329,13 @@ class PipesDatabricksClient(PipesClient, TreatAsResourceParam):
                     )
                     break
 
+            # use env vars to pass pipes context in case of notebook_task
+            if submit_task_dict.get("notebook_task"):
+                existing_params = submit_task_dict["notebook_task"].get("base_parameters", {})
+                # merge the existing parameters with the CLI arguments
+                existing_params = {**existing_params, **session.get_bootstrap_env_vars()}
+                submit_task_dict["notebook_task"]["base_parameters"] = existing_params
+
         else:
             pipes_env_vars = session.get_bootstrap_env_vars()
 
@@ -236,76 +351,6 @@ class PipesDatabricksClient(PipesClient, TreatAsResourceParam):
         }
 
         return submit_task_dict
-
-    def get_task_fields_which_support_cli_parameters(self) -> set[str]:
-        return {"spark_python_task", "python_wheel_task"}
-
-    def _poll_til_success(
-        self, context: Union[OpExecutionContext, AssetExecutionContext], run_id: int
-    ) -> None:
-        # poll the Databricks run until it reaches RunResultState.SUCCESS, raising otherwise
-
-        last_observed_state = None
-        while True:
-            run_state = self._get_run_state(run_id)
-            if run_state.life_cycle_state != last_observed_state:
-                context.log.info(
-                    f"[pipes] Databricks run {run_id} observed state transition to {run_state.life_cycle_state}"
-                )
-            last_observed_state = run_state.life_cycle_state
-
-            if run_state.life_cycle_state in (
-                jobs.RunLifeCycleState.TERMINATED,
-                jobs.RunLifeCycleState.SKIPPED,
-            ):
-                if run_state.result_state == jobs.RunResultState.SUCCESS:
-                    break
-                else:
-                    raise DagsterPipesExecutionError(
-                        f"Error running Databricks job: {run_state.state_message}"
-                    )
-            elif run_state.life_cycle_state == jobs.RunLifeCycleState.INTERNAL_ERROR:
-                raise DagsterPipesExecutionError(
-                    f"Error running Databricks job: {run_state.state_message}"
-                )
-
-            time.sleep(self.poll_interval_seconds)
-
-    def _poll_til_terminating(self, run_id: int) -> None:
-        # Wait to see the job enters a state that indicates the underlying task is no longer executing
-        # TERMINATING: "The task of this run has completed, and the cluster and execution context are being cleaned up."
-        while True:
-            run_state = self._get_run_state(run_id)
-            if run_state.life_cycle_state in (
-                jobs.RunLifeCycleState.TERMINATING,
-                jobs.RunLifeCycleState.TERMINATED,
-                jobs.RunLifeCycleState.SKIPPED,
-                jobs.RunLifeCycleState.INTERNAL_ERROR,
-            ):
-                return
-
-            time.sleep(self.poll_interval_seconds)
-
-    def _get_run_state(self, run_id: int) -> jobs.RunState:
-        run = self.client.jobs.get_run(run_id)
-        if run.state is None:
-            check.failed("Databricks job run state is None")
-        return run.state
-
-    def _extract_dagster_metadata(self, run_id: int) -> RawMetadataMapping:
-        metadata: RawMetadataMapping = {}
-
-        run = self.client.jobs.get_run(run_id)
-
-        metadata["Databricks Job Run ID"] = str(run_id)
-
-        if run_page_url := run.run_page_url:
-            metadata["Databricks Job Run URL"] = run_page_url
-
-        return metadata
-
-
-_CONTEXT_FILENAME = "context.json"
 
 
 @contextmanager
@@ -510,3 +555,302 @@ class PipesDbfsLogReader(PipesChunkedLogReader):
                 self.log_path = f"dbfs:{match.path}"
 
         return self.log_path
+
+
+# ####################################
+# ##### Databricks Serverless
+# ####################################
+
+
+class PipesDatabricksServerlessClient(BasePipesDatabricksClient, TreatAsResourceParam):
+    """Pipes client for Databricks Serverless.
+
+    Args:
+        client (WorkspaceClient): A databricks `WorkspaceClient` object.
+        volume_path (str): Path to the volume that will be used by this client to read and write temporary files.
+        context_injector (Optional[PipesContextInjector]): A context injector to use to inject
+            context into the k8s container process. Defaults to :py:class:`PipesUnityCatalogVolumesContextInjector`.
+        message_reader (Optional[PipesMessageReader]): A message reader to use to read messages
+            from the Databricks Serverless job. Defaults to :py:class:`PipesUnityCatalogVolumesMessageReader`.
+        poll_interval_seconds (float): How long to sleep between checking the status of the job run.
+            Defaults to 5.
+        forward_termination (bool): Whether to cancel the Databricks Serverless job if the orchestration process
+            is interrupted or canceled. Defaults to True.
+    """
+
+    def __init__(
+        self,
+        client: WorkspaceClient,
+        volume_path: str,
+        context_injector: Optional[PipesContextInjector] = None,
+        message_reader: Optional[PipesMessageReader] = None,
+        poll_interval_seconds: float = 5,
+        forward_termination: bool = True,
+    ):
+        self.volume_path = volume_path
+        super().__init__(
+            client=client,
+            context_injector=context_injector,
+            message_reader=message_reader,
+            poll_interval_seconds=poll_interval_seconds,
+            forward_termination=forward_termination,
+        )
+
+    @classmethod
+    def _is_dagster_maintained(cls) -> bool:
+        return True
+
+    def run(  # pyright: ignore[reportIncompatibleMethodOverride]
+        self,
+        *,
+        context: Union[OpExecutionContext, AssetExecutionContext],
+        extras: Optional[PipesExtras] = None,
+        task: jobs.SubmitTask,
+        submit_args: Optional[Mapping[str, Any]] = None,
+    ) -> PipesClientCompletedInvocation:
+        """Synchronously execute a Databricks job with the pipes protocol.
+
+        Args:
+            task (databricks.sdk.service.jobs.SubmitTask): Specification of the Databricks Serverless
+                task to run.
+
+                Field `task_key` must be provided. One of the following task fields must be provided: `notebook_task`,
+                `spark_python_task` or `python_wheel_task`. For Python tasks, field `environment_key` must be provided.
+
+                Note that when `environment_key` is provided, `environments` must be passed
+                in the `submit_args` of this method.
+            context (Union[OpExecutionContext, AssetExecutionContext]): The context from the executing op or asset.
+            extras (Optional[PipesExtras]): An optional dict of extra parameters to pass to the
+                subprocess.
+            submit_args (Optional[Mapping[str, Any]]): Additional keyword arguments that will be
+                forwarded as-is to `WorkspaceClient.jobs.submit`.
+
+        Returns:
+            PipesClientCompletedInvocation: Wrapper containing results reported by the external
+                process.
+        """
+        context_injector = self.context_injector or PipesUnityCatalogVolumesContextInjector(
+            client=self.client, volume_path=self.volume_path
+        )
+        message_reader = self.message_reader or PipesUnityCatalogVolumesMessageReader(
+            client=self.client,
+            volume_path=self.volume_path,
+        )
+        with open_pipes_session(
+            context=context,
+            extras=extras,
+            context_injector=context_injector,
+            message_reader=message_reader,
+        ) as pipes_session:
+            submit_task_dict = task.as_dict()
+
+            submit_task_dict = self._enrich_submit_task_dict(
+                context=context, session=pipes_session, submit_task_dict=submit_task_dict
+            )
+
+            submit_task = jobs.SubmitTask.from_dict(submit_task_dict)
+            run_id = self.client.jobs.submit(
+                tasks=[submit_task],
+                **(submit_args or {}),
+            ).bind()["run_id"]
+
+            try:
+                self._poll_til_success(context, run_id)
+            except DagsterExecutionInterruptedError:
+                if self.forward_termination:
+                    context.log.info("[pipes] execution interrupted, canceling Databricks job.")
+                    self.client.jobs.cancel_run(run_id)
+                    self._poll_til_terminating(run_id)
+
+        return PipesClientCompletedInvocation(
+            pipes_session, metadata=self._extract_dagster_metadata(run_id)
+        )
+
+    def _enrich_submit_task_dict(
+        self,
+        context: Union[OpExecutionContext, AssetExecutionContext],
+        session: PipesSession,
+        submit_task_dict: dict[str, Any],
+    ) -> dict[str, Any]:
+        if "notebook_task" in submit_task_dict:
+            existing_params = submit_task_dict["notebook_task"].get("base_parameters", {})
+
+            # merge the existing parameters with the CLI arguments
+            existing_params = {**existing_params, **session.get_bootstrap_env_vars()}
+
+            submit_task_dict["notebook_task"]["base_parameters"] = existing_params
+        else:
+            cli_args = session.get_bootstrap_cli_arguments()  # this is a mapping
+
+            for task_type in self.get_task_fields_which_support_cli_parameters():
+                if task_type in submit_task_dict:
+                    existing_params = submit_task_dict[task_type].get("parameters", [])
+
+                    # merge the existing parameters with the CLI arguments
+                    for key, value in cli_args.items():
+                        existing_params.extend([key, value])
+
+                    submit_task_dict[task_type]["parameters"] = existing_params
+                    context.log.debug(
+                        f"Passing Pipes bootstrap parameters "
+                        f'via Databricks parameters as "{key}.parameters". '  # pyright: ignore[reportPossiblyUnboundVariable]
+                        f"Make sure to use the PipesCliArgsParamsLoader in the task."
+                    )
+                    break
+
+        submit_task_dict["tags"] = {
+            **submit_task_dict.get("tags", {}),
+            **session.default_remote_invocation_info,
+        }
+
+        return submit_task_dict
+
+
+@contextmanager
+def volumes_tempdir(files_client: files.FilesAPI, volume_path: str) -> Iterator[str]:
+    dirname = "".join(random.choices(string.ascii_letters, k=30))
+    tempdir = f"{volume_path}/tmp/{dirname}"
+    files_client.create_directory(tempdir)
+    try:
+        yield tempdir
+    finally:
+        delete_volume_directory_recursive(files_client, tempdir)
+        pass
+
+
+def delete_volume_directory_recursive(volumes_client: files.FilesAPI, directory_path: str) -> None:
+    """Recursively delete a directory and all its contents in Unity Catalog Volumes.
+
+    Args:
+        volumes_client: The Files API client
+        directory_path: Path to directory
+    """
+    # List all contents in the directory
+    contents = list(volumes_client.list_directory_contents(directory_path))
+
+    # Delete each item recursively
+    for item in contents:
+        item_path = f"{directory_path.rstrip('/')}/{item.name}"
+
+        if item.is_directory:
+            # Recursively delete subdirectory
+            delete_volume_directory_recursive(volumes_client, item_path)
+        else:
+            volumes_client.delete(item_path)
+
+    # Finally delete the empty directory
+    volumes_client.delete_directory(directory_path)
+
+
+class PipesUnityCatalogVolumesContextInjector(PipesContextInjector):
+    """A context injector that injects context into a Databricks Serverless job
+     by writing a JSON file to Unity Catalog Volumes.
+
+    Args:
+        client (WorkspaceClient): A databricks `WorkspaceClient` object.
+    """
+
+    def __init__(self, *, client: WorkspaceClient, volume_path: str):
+        super().__init__()
+        self.files_client = files.FilesAPI(client.api_client)
+        self.volume_path = volume_path
+
+    @contextmanager
+    def inject_context(self, context: "PipesContextData") -> Iterator[PipesParams]:  # pyright: ignore[reportIncompatibleMethodOverride]
+        """Inject context to external environment by writing it to an automatically-generated
+        Unity Catalog Volumes temporary file as JSON and exposing the path to the file.
+
+        Args:
+            context (PipesContextData): The context data to inject.
+
+        Yields:
+            PipesParams: A dict of parameters that can be used by the external process to locate and
+                load the injected context data.
+        """
+        with volumes_tempdir(self.files_client, self.volume_path) as tempdir:
+            path = os.path.join(tempdir, _CONTEXT_FILENAME)
+
+            contents = io.BytesIO(json.dumps(context).encode("utf-8"))
+            self.files_client.upload(path, contents=contents, overwrite=True)
+            yield {"path": path}
+
+    def no_messages_debug_text(self) -> str:
+        return (
+            "Attempted to inject context via a temporary file in Unity Catalog Volumes. Expected"
+            " PipesUnityCatalogVolumesContextLoader to be explicitly passed to open_dagster_pipes in the external"
+            " process."
+        )
+
+
+class PipesUnityCatalogVolumesMessageReader(PipesBlobStoreMessageReader):
+    """Message reader that reads messages by periodically reading message chunks from an
+    automatically-generated temporary directory in Unity Catalog Volumes.
+
+    Args:
+        interval (float): interval in seconds between attempts to download a chunk
+        client (WorkspaceClient): A databricks `WorkspaceClient` object.
+        include_stdio_in_messages (bool): Whether to send stdout/stderr to Dagster via Pipes messages. Defaults to True.
+    """
+
+    def __init__(
+        self,
+        *,
+        interval: float = 10,
+        client: WorkspaceClient,
+        volume_path: str,
+        include_stdio_in_messages: bool = True,
+    ):
+        self.include_stdio_in_messages = check.bool_param(
+            include_stdio_in_messages, "include_stdio_in_messages"
+        )
+
+        super().__init__(
+            interval=interval,
+        )
+        self.files_client = files.FilesAPI(client.api_client)
+        self.volume_path = volume_path
+
+    @contextmanager
+    def get_params(self) -> Iterator[PipesParams]:
+        with ExitStack() as stack:
+            params: PipesParams = {}
+            params["path"] = stack.enter_context(
+                volumes_tempdir(self.files_client, self.volume_path)
+            )
+            params[PipesBlobStoreMessageWriter.INCLUDE_STDIO_IN_MESSAGES_KEY] = (
+                self.include_stdio_in_messages
+            )
+            yield params
+
+    def messages_are_readable(self, params: PipesParams) -> bool:
+        """Check if the messages directory exists and is readable."""
+        try:
+            # The API returns an error if there is no directory at the specified path
+            self.files_client.list_directory_contents(params["path"])
+            return True
+        except Exception:
+            return False
+
+    def download_messages_chunk(self, index: int, params: PipesParams) -> Optional[str]:
+        """Download a specific message chunk from Unity Catalog Volume."""
+        message_path = f"{params['path']}/{index}.json"
+
+        try:
+            download_response = self.files_client.download(message_path)
+            response_contents = check.not_none(
+                download_response.contents, "Read message with null data."
+            )
+            # Databricks sdk returns a BinaryIO object
+            return response_contents.read().decode("utf-8")
+        # An error here is an expected result, since an IOError will be thrown if the next message
+        # chunk doesn't yet exist. Swallowing the error here is equivalent to doing a no-op on a
+        # status check showing a non-existent file.
+        except OSError:
+            return None
+
+    def no_messages_debug_text(self) -> str:
+        return (
+            "Attempted to read messages from a temporary directory in Unity Catalog Volumes. Expected"
+            " PipesUnityCatalogVolumesMessageWriter to be explicitly passed to open_dagster_pipes in the external"
+            " process."
+        )

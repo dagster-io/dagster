@@ -106,3 +106,37 @@ def test_with_attributes():
 
     assert updated.metadata["foo"] == dg.TextMetadataValue("baz")
     assert updated.metadata["four"] == dg.IntMetadataValue(4)
+
+    name_sensor = dg.SensorDefinition(job_name="foo", evaluation_fn=fn)
+    updated_name_sensor = name_sensor.with_attributes(metadata={"foo": "bar"})
+    assert updated_name_sensor.metadata["foo"] == dg.TextMetadataValue("bar")
+
+    assert updated_name_sensor.targets == name_sensor.targets
+
+    empty_sensor = dg.SensorDefinition(evaluation_fn=fn)
+    updated_empty_sensor = empty_sensor.with_attributes(metadata={"foo": "bar"})
+    assert updated_empty_sensor.metadata["foo"] == dg.TextMetadataValue("bar")
+    assert updated_empty_sensor.targets == empty_sensor.targets
+
+
+def test_owners():
+    def eval_fn():
+        pass
+
+    sensor = dg.SensorDefinition(
+        evaluation_fn=eval_fn, job_name="test_job", owners=["user@example.com", "team:data"]
+    )
+    assert sensor.owners == ["user@example.com", "team:data"]
+
+
+def test_owners_validation():
+    def eval_fn():
+        pass
+
+    # Test invalid team name with special characters
+    with pytest.raises(dg.DagsterInvalidDefinitionError, match="contains invalid characters"):
+        dg.SensorDefinition(evaluation_fn=eval_fn, job_name="test_job", owners=["team:bad-name"])
+
+    # Test empty team name
+    with pytest.raises(dg.DagsterInvalidDefinitionError, match="Team name cannot be empty"):
+        dg.SensorDefinition(evaluation_fn=eval_fn, job_name="test_job", owners=["team:"])

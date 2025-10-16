@@ -2,6 +2,7 @@
 description: Configure OneLogin to use single sign-on (SSO) with your Dagster+ organization.
 sidebar_position: 8250
 title: OneLogin SSO
+tags: [dagster-plus-feature]
 ---
 
 In this guide, you'll configure OneLogin to use single sign-on (SSO) with your Dagster+ organization.
@@ -14,7 +15,7 @@ To follow the steps in this guide, you'll need:
 - **The following in OneLogin:**
   - An existing OneLogin account
   - Admin permissions
-- **To install the [`dagster-cloud` CLI](/deployment/dagster-plus/management/dagster-cloud-cli/installing-and-configuring)**
+- **To install the [`dagster-cloud` CLI](/api/clis/dagster-cloud-cli/installing-and-configuring)**
 - **The following in Dagster+:**
   - A Pro plan
   - [Access to a user token](/deployment/dagster-plus/management/tokens/user-tokens)

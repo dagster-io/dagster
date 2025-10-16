@@ -21,6 +21,7 @@ from dagster._utils import mkdir_p
 IOStream: TypeAlias = Union[TextIO, BinaryIO]
 
 
+@public
 class FileHandle(ABC):
     """A reference to a file as manipulated by a FileManager.
 
@@ -41,6 +42,7 @@ class FileHandle(ABC):
         raise NotImplementedError()
 
 
+@public
 class LocalFileHandle(FileHandle):
     """A reference to a file on a local filesystem."""
 
@@ -60,6 +62,7 @@ class LocalFileHandle(FileHandle):
         return self._path
 
 
+@public
 class FileManager(ABC):
     """Base class for all file managers in dagster.
 

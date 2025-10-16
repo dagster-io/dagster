@@ -4,7 +4,7 @@ description: dg allows you to create a special type of Python package, called a 
 sidebar_position: 100
 ---
 
-The easiest way to start building a Dagster project is by using the [`create-dagster` CLI](/api/dg/create-dagster). This CLI tool allows you to create a special type of Python package, called a _project_, that defines a [Dagster code location](/deployment/code-locations/managing-code-locations-with-definitions).
+The easiest way to start building a Dagster project is by using the [`create-dagster` CLI](/api/clis/create-dagster). This CLI tool allows you to create a special type of Python package, called a _project_, that defines a [Dagster code location](/deployment/code-locations/managing-code-locations-with-definitions).
 
 import ProjectCreationPrereqs from '@site/docs/partials/\_ProjectCreationPrereqs.md';
 
@@ -17,7 +17,7 @@ import ProjectCreationPrereqs from '@site/docs/partials/\_ProjectCreationPrereqs
    1. Open your terminal and scaffold a new Dagster project. You can replace `my-project` with a different project name if you wish:
 
       ```shell
-      uvx -U create-dagster project my-project
+      uvx create-dagster@latest project my-project
       ```
    
    2. Respond `y` to the prompt to run `uv sync` after scaffolding

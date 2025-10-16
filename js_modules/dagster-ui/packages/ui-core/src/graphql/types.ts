@@ -105,9 +105,13 @@ export type Asset = {
   assetMaterializations: Array<MaterializationEvent>;
   assetObservations: Array<ObservationEvent>;
   definition: Maybe<AssetNode>;
+  freshnessStatusChangedTimestamp: Maybe<Scalars['Float']['output']>;
+  hasDefinitionOrRecord: Scalars['Boolean']['output'];
   id: Scalars['String']['output'];
   key: AssetKey;
   latestEventSortKey: Maybe<Scalars['ID']['output']>;
+  latestFailedToMaterializeTimestamp: Maybe<Scalars['Float']['output']>;
+  latestMaterializationTimestamp: Maybe<Scalars['Float']['output']>;
 };
 
 export type AssetAssetEventHistoryArgs = {
@@ -883,6 +887,7 @@ export enum BulkActionStatus {
   COMPLETED_FAILED = 'COMPLETED_FAILED',
   COMPLETED_SUCCESS = 'COMPLETED_SUCCESS',
   FAILED = 'FAILED',
+  FAILING = 'FAILING',
   REQUESTED = 'REQUESTED',
 }
 
@@ -1268,11 +1273,37 @@ export type DefaultPartitionStatuses = {
   unmaterializedPartitions: Array<Scalars['String']['output']>;
 };
 
+export type DefinitionOwner = TeamDefinitionOwner | UserDefinitionOwner;
+
 export type DefinitionTag = {
   __typename: 'DefinitionTag';
   key: Scalars['String']['output'];
   value: Scalars['String']['output'];
 };
+
+export type DefsKeyStateInfo = {
+  __typename: 'DefsKeyStateInfo';
+  createTimestamp: Scalars['Float']['output'];
+  managementType: DefsStateManagementType;
+  version: Scalars['String']['output'];
+};
+
+export type DefsStateInfo = {
+  __typename: 'DefsStateInfo';
+  keyStateInfo: Array<DefsStateInfoEntry>;
+};
+
+export type DefsStateInfoEntry = {
+  __typename: 'DefsStateInfoEntry';
+  info: Maybe<DefsKeyStateInfo>;
+  name: Scalars['String']['output'];
+};
+
+export enum DefsStateManagementType {
+  LEGACY_CODE_SERVER_SNAPSHOTS = 'LEGACY_CODE_SERVER_SNAPSHOTS',
+  LOCAL_FILESYSTEM = 'LOCAL_FILESYSTEM',
+  VERSIONED_STATE_STORAGE = 'VERSIONED_STATE_STORAGE',
+}
 
 export type DeleteDynamicPartitionsResult =
   | DeleteDynamicPartitionsSuccess
@@ -1569,6 +1600,7 @@ export type ExecutionParams = {
 export type ExecutionPlan = {
   __typename: 'ExecutionPlan';
   artifactsPersisted: Scalars['Boolean']['output'];
+  assetKeys: Array<AssetKey>;
   assetSelection: Array<Scalars['String']['output']>;
   steps: Array<ExecutionStep>;
 };
@@ -1866,6 +1898,7 @@ export type FieldsNotDefinedConfigError = PipelineConfigValidationError & {
 export type FloatMetadataEntry = MetadataEntry & {
   __typename: 'FloatMetadataEntry';
   description: Maybe<Scalars['String']['output']>;
+  floatRepr: Scalars['String']['output'];
   floatValue: Maybe<Scalars['Float']['output']>;
   label: Scalars['String']['output'];
 };
@@ -2067,6 +2100,7 @@ export type IPipelineSnapshot = {
   >;
   modes: Array<Mode>;
   name: Scalars['String']['output'];
+  owners: Array<DefinitionOwner>;
   parentSnapshotId: Maybe<Scalars['String']['output']>;
   pipelineSnapshotId: Scalars['String']['output'];
   runs: Array<Run>;
@@ -2363,6 +2397,7 @@ export type Job = IPipelineSnapshot &
     >;
     modes: Array<Mode>;
     name: Scalars['String']['output'];
+    owners: Array<DefinitionOwner>;
     parentSnapshotId: Maybe<Scalars['String']['output']>;
     partition: Maybe<PartitionTagsAndConfig>;
     partitionKeysOrError: PartitionKeys;
@@ -2454,6 +2489,7 @@ export type LaunchBackfillParams = {
   partitionNames?: InputMaybe<Array<Scalars['String']['input']>>;
   partitionsByAssets?: InputMaybe<Array<InputMaybe<PartitionsByAssetSelector>>>;
   reexecutionSteps?: InputMaybe<Array<Scalars['String']['input']>>;
+  runConfigData?: InputMaybe<Scalars['RunConfigData']['input']>;
   selector?: InputMaybe<PartitionSetSelector>;
   tags?: InputMaybe<Array<ExecutionTag>>;
   title?: InputMaybe<Scalars['String']['input']>;
@@ -3722,6 +3758,7 @@ export type Pipeline = IPipelineSnapshot &
     >;
     modes: Array<Mode>;
     name: Scalars['String']['output'];
+    owners: Array<DefinitionOwner>;
     parentSnapshotId: Maybe<Scalars['String']['output']>;
     partition: Maybe<PartitionTagsAndConfig>;
     partitionKeysOrError: PartitionKeys;
@@ -3962,6 +3999,7 @@ export type PipelineSnapshot = IPipelineSnapshot &
     >;
     modes: Array<Mode>;
     name: Scalars['String']['output'];
+    owners: Array<DefinitionOwner>;
     parentSnapshotId: Maybe<Scalars['String']['output']>;
     pipelineSnapshotId: Scalars['String']['output'];
     runTags: Array<PipelineTag>;
@@ -4082,6 +4120,7 @@ export type Query = {
   instigationStateOrError: InstigationStateOrError;
   instigationStatesOrError: InstigationStatesOrError;
   isPipelineConfigValid: PipelineConfigValidationResult;
+  latestDefsStateInfo: Maybe<DefsStateInfo>;
   locationStatusesOrError: WorkspaceLocationStatusEntriesOrError;
   logsForRun: EventConnectionOrError;
   partitionBackfillOrError: PartitionBackfillOrError;
@@ -5043,6 +5082,7 @@ export type RunQueueConfig = {
 
 export type RunRequest = {
   __typename: 'RunRequest';
+  assetChecks: Maybe<Array<AssetCheckhandle>>;
   assetSelection: Maybe<Array<AssetKey>>;
   jobName: Maybe<Scalars['String']['output']>;
   runConfigYaml: Scalars['String']['output'];
@@ -5278,6 +5318,7 @@ export type Schedule = {
   >;
   mode: Scalars['String']['output'];
   name: Scalars['String']['output'];
+  owners: Array<DefinitionOwner>;
   partitionSet: Maybe<PartitionSet>;
   pipelineName: Scalars['String']['output'];
   potentialTickTimestamps: Array<Scalars['Float']['output']>;
@@ -5423,6 +5464,7 @@ export type Sensor = {
   minIntervalSeconds: Scalars['Int']['output'];
   name: Scalars['String']['output'];
   nextTick: Maybe<DryRunInstigationTick>;
+  owners: Array<DefinitionOwner>;
   sensorState: InstigationState;
   sensorType: SensorType;
   tags: Array<DefinitionTag>;
@@ -5863,6 +5905,11 @@ export type TeamAssetOwner = {
   team: Scalars['String']['output'];
 };
 
+export type TeamDefinitionOwner = {
+  __typename: 'TeamDefinitionOwner';
+  team: Scalars['String']['output'];
+};
+
 export type TerminatePipelineExecutionFailure = {
   message: Scalars['String']['output'];
   run: Run;
@@ -6071,6 +6118,11 @@ export type UserAssetOwner = {
   email: Scalars['String']['output'];
 };
 
+export type UserDefinitionOwner = {
+  __typename: 'UserDefinitionOwner';
+  email: Scalars['String']['output'];
+};
+
 export type WaitingOnKeysRuleEvaluationData = {
   __typename: 'WaitingOnKeysRuleEvaluationData';
   waitingOnAssetKeys: Maybe<Array<AssetKey>>;
@@ -6084,6 +6136,7 @@ export type Workspace = {
 
 export type WorkspaceLocationEntry = {
   __typename: 'WorkspaceLocationEntry';
+  defsStateInfo: Maybe<DefsStateInfo>;
   displayMetadata: Array<RepositoryMetadata>;
   featureFlags: Array<FeatureFlag>;
   id: Scalars['ID']['output'];
@@ -6301,6 +6354,14 @@ export const buildAsset = (
         : relationshipsToOmit.has('AssetNode')
           ? ({} as AssetNode)
           : buildAssetNode({}, relationshipsToOmit),
+    freshnessStatusChangedTimestamp:
+      overrides && overrides.hasOwnProperty('freshnessStatusChangedTimestamp')
+        ? overrides.freshnessStatusChangedTimestamp!
+        : 5.61,
+    hasDefinitionOrRecord:
+      overrides && overrides.hasOwnProperty('hasDefinitionOrRecord')
+        ? overrides.hasDefinitionOrRecord!
+        : true,
     id: overrides && overrides.hasOwnProperty('id') ? overrides.id! : 'omnis',
     key:
       overrides && overrides.hasOwnProperty('key')
@@ -6312,6 +6373,14 @@ export const buildAsset = (
       overrides && overrides.hasOwnProperty('latestEventSortKey')
         ? overrides.latestEventSortKey!
         : 'b9e5eeed-491e-4839-9bbf-1dedd727f77b',
+    latestFailedToMaterializeTimestamp:
+      overrides && overrides.hasOwnProperty('latestFailedToMaterializeTimestamp')
+        ? overrides.latestFailedToMaterializeTimestamp!
+        : 3.33,
+    latestMaterializationTimestamp:
+      overrides && overrides.hasOwnProperty('latestMaterializationTimestamp')
+        ? overrides.latestMaterializationTimestamp!
+        : 1.04,
   };
 };
 
@@ -8307,6 +8376,55 @@ export const buildDefinitionTag = (
   };
 };
 
+export const buildDefsKeyStateInfo = (
+  overrides?: Partial<DefsKeyStateInfo>,
+  _relationshipsToOmit: Set<string> = new Set(),
+): {__typename: 'DefsKeyStateInfo'} & DefsKeyStateInfo => {
+  const relationshipsToOmit: Set<string> = new Set(_relationshipsToOmit);
+  relationshipsToOmit.add('DefsKeyStateInfo');
+  return {
+    __typename: 'DefsKeyStateInfo',
+    createTimestamp:
+      overrides && overrides.hasOwnProperty('createTimestamp') ? overrides.createTimestamp! : 2.02,
+    managementType:
+      overrides && overrides.hasOwnProperty('managementType')
+        ? overrides.managementType!
+        : DefsStateManagementType.LEGACY_CODE_SERVER_SNAPSHOTS,
+    version: overrides && overrides.hasOwnProperty('version') ? overrides.version! : 'dolores',
+  };
+};
+
+export const buildDefsStateInfo = (
+  overrides?: Partial<DefsStateInfo>,
+  _relationshipsToOmit: Set<string> = new Set(),
+): {__typename: 'DefsStateInfo'} & DefsStateInfo => {
+  const relationshipsToOmit: Set<string> = new Set(_relationshipsToOmit);
+  relationshipsToOmit.add('DefsStateInfo');
+  return {
+    __typename: 'DefsStateInfo',
+    keyStateInfo:
+      overrides && overrides.hasOwnProperty('keyStateInfo') ? overrides.keyStateInfo! : [],
+  };
+};
+
+export const buildDefsStateInfoEntry = (
+  overrides?: Partial<DefsStateInfoEntry>,
+  _relationshipsToOmit: Set<string> = new Set(),
+): {__typename: 'DefsStateInfoEntry'} & DefsStateInfoEntry => {
+  const relationshipsToOmit: Set<string> = new Set(_relationshipsToOmit);
+  relationshipsToOmit.add('DefsStateInfoEntry');
+  return {
+    __typename: 'DefsStateInfoEntry',
+    info:
+      overrides && overrides.hasOwnProperty('info')
+        ? overrides.info!
+        : relationshipsToOmit.has('DefsKeyStateInfo')
+          ? ({} as DefsKeyStateInfo)
+          : buildDefsKeyStateInfo({}, relationshipsToOmit),
+    name: overrides && overrides.hasOwnProperty('name') ? overrides.name! : 'voluptas',
+  };
+};
+
 export const buildDeleteDynamicPartitionsSuccess = (
   overrides?: Partial<DeleteDynamicPartitionsSuccess>,
   _relationshipsToOmit: Set<string> = new Set(),
@@ -8812,6 +8930,7 @@ export const buildExecutionPlan = (
       overrides && overrides.hasOwnProperty('artifactsPersisted')
         ? overrides.artifactsPersisted!
         : true,
+    assetKeys: overrides && overrides.hasOwnProperty('assetKeys') ? overrides.assetKeys! : [],
     assetSelection:
       overrides && overrides.hasOwnProperty('assetSelection') ? overrides.assetSelection! : [],
     steps: overrides && overrides.hasOwnProperty('steps') ? overrides.steps! : [],
@@ -9271,6 +9390,7 @@ export const buildFloatMetadataEntry = (
     __typename: 'FloatMetadataEntry',
     description:
       overrides && overrides.hasOwnProperty('description') ? overrides.description! : 'iusto',
+    floatRepr: overrides && overrides.hasOwnProperty('floatRepr') ? overrides.floatRepr! : 'omnis',
     floatValue: overrides && overrides.hasOwnProperty('floatValue') ? overrides.floatValue! : 5.68,
     label: overrides && overrides.hasOwnProperty('label') ? overrides.label! : 'velit',
   };
@@ -9564,6 +9684,7 @@ export const buildIPipelineSnapshot = (
       overrides && overrides.hasOwnProperty('metadataEntries') ? overrides.metadataEntries! : [],
     modes: overrides && overrides.hasOwnProperty('modes') ? overrides.modes! : [],
     name: overrides && overrides.hasOwnProperty('name') ? overrides.name! : 'autem',
+    owners: overrides && overrides.hasOwnProperty('owners') ? overrides.owners! : [],
     parentSnapshotId:
       overrides && overrides.hasOwnProperty('parentSnapshotId')
         ? overrides.parentSnapshotId!
@@ -10091,6 +10212,7 @@ export const buildJob = (
       overrides && overrides.hasOwnProperty('metadataEntries') ? overrides.metadataEntries! : [],
     modes: overrides && overrides.hasOwnProperty('modes') ? overrides.modes! : [],
     name: overrides && overrides.hasOwnProperty('name') ? overrides.name! : 'rerum',
+    owners: overrides && overrides.hasOwnProperty('owners') ? overrides.owners! : [],
     parentSnapshotId:
       overrides && overrides.hasOwnProperty('parentSnapshotId')
         ? overrides.parentSnapshotId!
@@ -10255,6 +10377,8 @@ export const buildLaunchBackfillParams = (
         : [],
     reexecutionSteps:
       overrides && overrides.hasOwnProperty('reexecutionSteps') ? overrides.reexecutionSteps! : [],
+    runConfigData:
+      overrides && overrides.hasOwnProperty('runConfigData') ? overrides.runConfigData! : 'sit',
     selector:
       overrides && overrides.hasOwnProperty('selector')
         ? overrides.selector!
@@ -12398,6 +12522,7 @@ export const buildPipeline = (
       overrides && overrides.hasOwnProperty('metadataEntries') ? overrides.metadataEntries! : [],
     modes: overrides && overrides.hasOwnProperty('modes') ? overrides.modes! : [],
     name: overrides && overrides.hasOwnProperty('name') ? overrides.name! : 'veritatis',
+    owners: overrides && overrides.hasOwnProperty('owners') ? overrides.owners! : [],
     parentSnapshotId:
       overrides && overrides.hasOwnProperty('parentSnapshotId')
         ? overrides.parentSnapshotId!
@@ -12830,6 +12955,7 @@ export const buildPipelineSnapshot = (
       overrides && overrides.hasOwnProperty('metadataEntries') ? overrides.metadataEntries! : [],
     modes: overrides && overrides.hasOwnProperty('modes') ? overrides.modes! : [],
     name: overrides && overrides.hasOwnProperty('name') ? overrides.name! : 'beatae',
+    owners: overrides && overrides.hasOwnProperty('owners') ? overrides.owners! : [],
     parentSnapshotId:
       overrides && overrides.hasOwnProperty('parentSnapshotId')
         ? overrides.parentSnapshotId!
@@ -13129,6 +13255,12 @@ export const buildQuery = (
         : relationshipsToOmit.has('InvalidSubsetError')
           ? ({} as InvalidSubsetError)
           : buildInvalidSubsetError({}, relationshipsToOmit),
+    latestDefsStateInfo:
+      overrides && overrides.hasOwnProperty('latestDefsStateInfo')
+        ? overrides.latestDefsStateInfo!
+        : relationshipsToOmit.has('DefsStateInfo')
+          ? ({} as DefsStateInfo)
+          : buildDefsStateInfo({}, relationshipsToOmit),
     locationStatusesOrError:
       overrides && overrides.hasOwnProperty('locationStatusesOrError')
         ? overrides.locationStatusesOrError!
@@ -14496,6 +14628,7 @@ export const buildRunRequest = (
   relationshipsToOmit.add('RunRequest');
   return {
     __typename: 'RunRequest',
+    assetChecks: overrides && overrides.hasOwnProperty('assetChecks') ? overrides.assetChecks! : [],
     assetSelection:
       overrides && overrides.hasOwnProperty('assetSelection') ? overrides.assetSelection! : [],
     jobName: overrides && overrides.hasOwnProperty('jobName') ? overrides.jobName! : 'saepe',
@@ -14903,6 +15036,7 @@ export const buildSchedule = (
       overrides && overrides.hasOwnProperty('metadataEntries') ? overrides.metadataEntries! : [],
     mode: overrides && overrides.hasOwnProperty('mode') ? overrides.mode! : 'in',
     name: overrides && overrides.hasOwnProperty('name') ? overrides.name! : 'ut',
+    owners: overrides && overrides.hasOwnProperty('owners') ? overrides.owners! : [],
     partitionSet:
       overrides && overrides.hasOwnProperty('partitionSet')
         ? overrides.partitionSet!
@@ -15158,6 +15292,7 @@ export const buildSensor = (
         : relationshipsToOmit.has('DryRunInstigationTick')
           ? ({} as DryRunInstigationTick)
           : buildDryRunInstigationTick({}, relationshipsToOmit),
+    owners: overrides && overrides.hasOwnProperty('owners') ? overrides.owners! : [],
     sensorState:
       overrides && overrides.hasOwnProperty('sensorState')
         ? overrides.sensorState!
@@ -15949,6 +16084,18 @@ export const buildTeamAssetOwner = (
   };
 };
 
+export const buildTeamDefinitionOwner = (
+  overrides?: Partial<TeamDefinitionOwner>,
+  _relationshipsToOmit: Set<string> = new Set(),
+): {__typename: 'TeamDefinitionOwner'} & TeamDefinitionOwner => {
+  const relationshipsToOmit: Set<string> = new Set(_relationshipsToOmit);
+  relationshipsToOmit.add('TeamDefinitionOwner');
+  return {
+    __typename: 'TeamDefinitionOwner',
+    team: overrides && overrides.hasOwnProperty('team') ? overrides.team! : 'quas',
+  };
+};
+
 export const buildTerminatePipelineExecutionFailure = (
   overrides?: Partial<TerminatePipelineExecutionFailure>,
   _relationshipsToOmit: Set<string> = new Set(),
@@ -16356,6 +16503,18 @@ export const buildUserAssetOwner = (
   };
 };
 
+export const buildUserDefinitionOwner = (
+  overrides?: Partial<UserDefinitionOwner>,
+  _relationshipsToOmit: Set<string> = new Set(),
+): {__typename: 'UserDefinitionOwner'} & UserDefinitionOwner => {
+  const relationshipsToOmit: Set<string> = new Set(_relationshipsToOmit);
+  relationshipsToOmit.add('UserDefinitionOwner');
+  return {
+    __typename: 'UserDefinitionOwner',
+    email: overrides && overrides.hasOwnProperty('email') ? overrides.email! : 'tempora',
+  };
+};
+
 export const buildWaitingOnKeysRuleEvaluationData = (
   overrides?: Partial<WaitingOnKeysRuleEvaluationData>,
   _relationshipsToOmit: Set<string> = new Set(),
@@ -16393,6 +16552,12 @@ export const buildWorkspaceLocationEntry = (
   relationshipsToOmit.add('WorkspaceLocationEntry');
   return {
     __typename: 'WorkspaceLocationEntry',
+    defsStateInfo:
+      overrides && overrides.hasOwnProperty('defsStateInfo')
+        ? overrides.defsStateInfo!
+        : relationshipsToOmit.has('DefsStateInfo')
+          ? ({} as DefsStateInfo)
+          : buildDefsStateInfo({}, relationshipsToOmit),
     displayMetadata:
       overrides && overrides.hasOwnProperty('displayMetadata') ? overrides.displayMetadata! : [],
     featureFlags:

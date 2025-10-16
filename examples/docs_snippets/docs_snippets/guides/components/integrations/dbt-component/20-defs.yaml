@@ -1,0 +1,19 @@
+type: dagster_dbt.DbtProjectComponent
+
+template_vars_module: .template_vars
+attributes:
+  project: '{{ project_root }}/dbt'
+  select: "customers"
+  translation:
+    group_name: dbt_models
+    description: "Transforms data using dbt model {{ node.name }}"
+  cli_args:
+    - build
+    - --vars:
+      start_date: "{{ context.partition_time_window.start.strftime('%Y-%m-%d') }}"
+      end_date: "{{ context.partition_time_window.end.strftime('%Y-%m-%d') }}"
+post_processing:
+  assets:
+    - target: "*"
+      attributes:
+        partitions_def: "{{ daily_partitions_def }}"

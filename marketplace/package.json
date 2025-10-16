@@ -13,22 +13,22 @@
   "author": "",
   "license": "ISC",
   "description": "",
-  "packageManager": "yarn@4.8.1",
+  "packageManager": "yarn@4.10.3",
   "dependencies": {
     "express": "^5.1.0"
   },
   "devDependencies": {
     "@types/express": "^5.0.1",
     "@types/node": "^22.14.1",
-    "eslint": "^9.24.0",
+    "eslint": "^9.31.0",
     "eslint-config-prettier": "^10.1.1",
     "eslint-plugin-prettier": "^5.2.6",
     "nodemon": "^3.1.9",
     "prettier": "^3.5.3",
     "to-vfile": "^8.0.0",
     "ts-node": "^10.9.2",
-    "typescript": "^5.8.3",
-    "typescript-eslint": "^8.29.1",
+    "typescript": "^5.9.2",
+    "typescript-eslint": "^8.44.0",
     "vfile-matter": "^5.0.1"
   }
 }

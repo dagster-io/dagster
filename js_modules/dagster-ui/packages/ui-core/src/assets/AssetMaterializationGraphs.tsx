@@ -65,6 +65,7 @@ export const AssetMaterializationGraphs = (props: {
                 <AssetValueGraph
                   label={label}
                   width="100%"
+                  // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
                   data={graphDataByMetadataLabel[label]!}
                   xHover={xHover}
                   onHoverX={(x) => x !== xHover && setXHover(x)}

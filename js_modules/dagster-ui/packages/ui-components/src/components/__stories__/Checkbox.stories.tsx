@@ -1,4 +1,3 @@
-import {Meta} from '@storybook/react';
 import {useState} from 'react';
 
 import {Checkbox} from '../Checkbox';
@@ -9,7 +8,7 @@ import {Group} from '../Group';
 export default {
   title: 'Checkbox',
   component: Checkbox,
-} as Meta;
+};
 
 export const Default = () => {
   const [state, setState] = useState<'true' | 'false' | 'indeterminate'>('false');

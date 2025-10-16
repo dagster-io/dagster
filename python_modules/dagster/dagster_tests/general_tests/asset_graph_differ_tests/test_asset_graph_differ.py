@@ -14,7 +14,10 @@ from dagster._core.definitions.assets.graph.asset_graph_differ import (
     DictDiff,
     ValueDiff,
 )
-from dagster._core.remote_representation.origin import InProcessCodeLocationOrigin
+from dagster._core.definitions.repository_definition.valid_definitions import (
+    SINGLETON_REPOSITORY_NAME,
+)
+from dagster._core.remote_origin import InProcessCodeLocationOrigin
 from dagster._core.types.loadable_target_origin import LoadableTargetOrigin
 from dagster._core.workspace.context import WorkspaceRequestContext
 from dagster._core.workspace.workspace import (
@@ -106,16 +109,36 @@ def get_asset_graph_differ(
         instance, {code_location: "base_asset_graph" for code_location in base_code_locations}
     )
 
+    if code_location_to_diff:
+        branch_asset_graph = (
+            branch_workspace_ctx.get_code_location(code_location_to_diff)
+            .get_repository(SINGLETON_REPOSITORY_NAME)
+            .asset_graph
+        )
+        base_asset_graph = (
+            (
+                base_workspace_ctx.get_code_location(code_location_to_diff)
+                .get_repository(SINGLETON_REPOSITORY_NAME)
+                .asset_graph
+            )
+            if base_workspace_ctx.has_code_location(code_location_to_diff)
+            else None
+        )
+    else:
+        branch_asset_graph = branch_workspace_ctx.asset_graph
+        base_asset_graph = base_workspace_ctx.asset_graph
+
     return AssetGraphDiffer(
-        branch_asset_graph=branch_workspace_ctx.asset_graph,
-        base_asset_graph=base_workspace_ctx.asset_graph,
+        branch_asset_graph=branch_asset_graph,
+        base_asset_graph=base_asset_graph,
     )
 
 
-def test_new_asset(instance):
+@pytest.mark.parametrize("code_location_to_diff", [None, "basic_asset_graph"])
+def test_new_asset(instance, code_location_to_diff):
     differ = get_asset_graph_differ(
         instance=instance,
-        code_location_to_diff="basic_asset_graph",
+        code_location_to_diff=code_location_to_diff,
         base_code_locations=["basic_asset_graph"],
         branch_code_location_to_definitions={"basic_asset_graph": "branch_deployment_new_asset"},
     )
@@ -130,10 +153,11 @@ def test_new_asset(instance):
     ) == AssetDefinitionDiffDetails(change_types=set())
 
 
-def test_removed_asset(instance) -> None:
+@pytest.mark.parametrize("code_location_to_diff", [None, "basic_asset_graph"])
+def test_removed_asset(instance, code_location_to_diff) -> None:
     differ = get_asset_graph_differ(
         instance=instance,
-        code_location_to_diff="basic_asset_graph",
+        code_location_to_diff=code_location_to_diff,
         base_code_locations=["basic_asset_graph"],
         branch_code_location_to_definitions={
             "basic_asset_graph": "branch_deployment_removed_asset"
@@ -152,10 +176,11 @@ def test_removed_asset(instance) -> None:
     ) == AssetDefinitionDiffDetails(change_types=set())
 
 
-def test_new_asset_connected(instance):
+@pytest.mark.parametrize("code_location_to_diff", [None, "basic_asset_graph"])
+def test_new_asset_connected(instance, code_location_to_diff):
     differ = get_asset_graph_differ(
         instance=instance,
-        code_location_to_diff="basic_asset_graph",
+        code_location_to_diff=code_location_to_diff,
         base_code_locations=["basic_asset_graph"],
         branch_code_location_to_definitions={
             "basic_asset_graph": "branch_deployment_new_asset_connected"
@@ -185,10 +210,11 @@ def test_new_asset_connected(instance):
     ) == AssetDefinitionDiffDetails(change_types=set())
 
 
-def test_update_code_version(instance):
+@pytest.mark.parametrize("code_location_to_diff", [None, "code_versions_asset_graph"])
+def test_update_code_version(instance, code_location_to_diff):
     differ = get_asset_graph_differ(
         instance=instance,
-        code_location_to_diff="code_versions_asset_graph",
+        code_location_to_diff=code_location_to_diff,
         base_code_locations=["code_versions_asset_graph"],
         branch_code_location_to_definitions={
             "code_versions_asset_graph": "branch_deployment_update_code_version"
@@ -210,10 +236,11 @@ def test_update_code_version(instance):
     ) == AssetDefinitionDiffDetails(change_types=set())
 
 
-def test_change_inputs(instance):
+@pytest.mark.parametrize("code_location_to_diff", [None, "basic_asset_graph"])
+def test_change_inputs(instance, code_location_to_diff):
     differ = get_asset_graph_differ(
         instance=instance,
-        code_location_to_diff="basic_asset_graph",
+        code_location_to_diff=code_location_to_diff,
         base_code_locations=["basic_asset_graph"],
         branch_code_location_to_definitions={
             "basic_asset_graph": "branch_deployment_change_inputs"
@@ -237,10 +264,11 @@ def test_change_inputs(instance):
     ) == AssetDefinitionDiffDetails(change_types=set())
 
 
-def test_multiple_changes_for_one_asset(instance):
+@pytest.mark.parametrize("code_location_to_diff", [None, "code_versions_asset_graph"])
+def test_multiple_changes_for_one_asset(instance, code_location_to_diff):
     differ = get_asset_graph_differ(
         instance=instance,
-        code_location_to_diff="code_versions_asset_graph",
+        code_location_to_diff=code_location_to_diff,
         base_code_locations=["code_versions_asset_graph"],
         branch_code_location_to_definitions={
             "code_versions_asset_graph": "branch_deployment_multiple_changes"
@@ -269,10 +297,11 @@ def test_multiple_changes_for_one_asset(instance):
     ) == AssetDefinitionDiffDetails(change_types=set())
 
 
-def test_change_then_revert(instance):
+@pytest.mark.parametrize("code_location_to_diff", [None, "code_versions_asset_graph"])
+def test_change_then_revert(instance, code_location_to_diff):
     differ = get_asset_graph_differ(
         instance=instance,
-        code_location_to_diff="code_versions_asset_graph",
+        code_location_to_diff=code_location_to_diff,
         base_code_locations=["code_versions_asset_graph"],
         branch_code_location_to_definitions={
             "code_versions_asset_graph": "branch_deployment_update_code_version"
@@ -310,10 +339,11 @@ def test_change_then_revert(instance):
     ) == AssetDefinitionDiffDetails(change_types=set())
 
 
-def test_large_asset_graph(instance):
+@pytest.mark.parametrize("code_location_to_diff", [None, "huge_asset_graph"])
+def test_large_asset_graph(instance, code_location_to_diff):
     differ = get_asset_graph_differ(
         instance=instance,
-        code_location_to_diff="huge_asset_graph",
+        code_location_to_diff=code_location_to_diff,
         base_code_locations=["huge_asset_graph"],
         branch_code_location_to_definitions={
             "huge_asset_graph": "branch_deployment_restructure_graph"
@@ -335,13 +365,14 @@ def test_large_asset_graph(instance):
         )
 
 
-def test_multiple_code_locations(instance):
+@pytest.mark.parametrize("code_location_to_diff", [None, "basic_asset_graph"])
+def test_multiple_code_locations(instance, code_location_to_diff):
     # There are duplicate asset keys in the asset graphs of basic_asset_graph and code_versions_asset_graph
     # this test ensures that the AssetGraphDiffer constructs AssetGraphs of the intended code location and does not
     # include assets from other code locations
     differ = get_asset_graph_differ(
         instance=instance,
-        code_location_to_diff="basic_asset_graph",
+        code_location_to_diff=code_location_to_diff,
         base_code_locations=["basic_asset_graph", "code_versions_asset_graph"],
         branch_code_location_to_definitions={
             "basic_asset_graph": "branch_deployment_new_asset_connected"
@@ -372,10 +403,11 @@ def test_multiple_code_locations(instance):
     ) == AssetDefinitionDiffDetails(change_types=set())
 
 
-def test_new_code_location(instance):
+@pytest.mark.parametrize("code_location_to_diff", [None, "basic_asset_graph"])
+def test_new_code_location(instance, code_location_to_diff):
     differ = get_asset_graph_differ(
         instance=instance,
-        code_location_to_diff="basic_asset_graph",
+        code_location_to_diff=code_location_to_diff,
         base_code_locations=[],
         branch_code_location_to_definitions={"basic_asset_graph": "branch_deployment_new_asset"},
     )
@@ -401,10 +433,11 @@ def test_new_code_location(instance):
     )
 
 
-def test_change_partitions_definitions(instance):
+@pytest.mark.parametrize("code_location_to_diff", [None, "partitioned_asset_graph"])
+def test_change_partitions_definitions(instance, code_location_to_diff):
     differ = get_asset_graph_differ(
         instance=instance,
-        code_location_to_diff="partitioned_asset_graph",
+        code_location_to_diff=code_location_to_diff,
         base_code_locations=["partitioned_asset_graph"],
         branch_code_location_to_definitions={
             "partitioned_asset_graph": "branch_deployment_change_partitions_def"
@@ -478,10 +511,11 @@ def test_change_partitions_definitions(instance):
     )
 
 
-def test_change_partition_mapping(instance):
+@pytest.mark.parametrize("code_location_to_diff", [None, "partitioned_asset_graph"])
+def test_change_partition_mapping(instance, code_location_to_diff):
     differ = get_asset_graph_differ(
         instance=instance,
-        code_location_to_diff="partitioned_asset_graph",
+        code_location_to_diff=code_location_to_diff,
         base_code_locations=["partitioned_asset_graph"],
         branch_code_location_to_definitions={
             "partitioned_asset_graph": "branch_deployment_change_partition_mappings"
@@ -536,10 +570,11 @@ def test_change_partition_mapping(instance):
     )
 
 
-def test_change_tags(instance):
+@pytest.mark.parametrize("code_location_to_diff", [None, "tags_asset_graph"])
+def test_change_tags(instance, code_location_to_diff):
     differ = get_asset_graph_differ(
         instance=instance,
-        code_location_to_diff="tags_asset_graph",
+        code_location_to_diff=code_location_to_diff,
         base_code_locations=["tags_asset_graph"],
         branch_code_location_to_definitions={"tags_asset_graph": "branch_deployment_change_tags"},
     )
@@ -579,10 +614,11 @@ def test_change_tags(instance):
     ) == AssetDefinitionDiffDetails(change_types=set())
 
 
-def test_change_metadata(instance):
+@pytest.mark.parametrize("code_location_to_diff", [None, "metadata_asset_graph"])
+def test_change_metadata(instance, code_location_to_diff):
     differ = get_asset_graph_differ(
         instance=instance,
-        code_location_to_diff="metadata_asset_graph",
+        code_location_to_diff=code_location_to_diff,
         base_code_locations=["metadata_asset_graph"],
         branch_code_location_to_definitions={
             "metadata_asset_graph": "branch_deployment_change_metadata"

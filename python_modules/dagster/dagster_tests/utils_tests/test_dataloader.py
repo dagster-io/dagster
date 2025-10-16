@@ -2,7 +2,6 @@ import asyncio
 import random
 from collections.abc import Iterable
 from functools import cached_property
-from unittest import mock
 
 import pytest
 from dagster._core.loader import LoadableBy, LoadingContext
@@ -140,22 +139,24 @@ def test_bad_load_fn():
     asyncio.run(_test())
 
 
-class BasicLoadingContext(LoadingContext):
+class MockedLoadingContext(LoadingContext):
     def __init__(self):
+        from unittest import mock
+
         self._loaders = {}
-        self._mock_instance = mock.MagicMock()
+        self._instance = mock.MagicMock()
 
     @property
     def loaders(self):
         return self._loaders
 
     @property
-    def instance(self) -> mock.MagicMock:
-        return self._mock_instance
+    def instance(self):
+        return self._instance
 
 
 @record(kw_only=False)
-class LoadableThing(LoadableBy[str, BasicLoadingContext]):
+class LoadableThing(LoadableBy[str, MockedLoadingContext]):
     key: str
     val: int
 
@@ -163,14 +164,14 @@ class LoadableThing(LoadableBy[str, BasicLoadingContext]):
     def _blocking_batch_load(
         cls,
         keys: Iterable[str],
-        context: BasicLoadingContext,
+        context: MockedLoadingContext,
     ) -> list["LoadableThing"]:
         context.instance.query(keys)
         return [LoadableThing(key, random.randint(0, 100000)) for key in keys]
 
 
 def test_sync_loadable_by() -> None:
-    context = BasicLoadingContext()
+    context = MockedLoadingContext()
 
     # test caching
     a1 = LoadableThing.blocking_get(context, "a")

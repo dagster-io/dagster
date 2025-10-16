@@ -1,16 +1,12 @@
 ---
 title: Using jobs in Dagster projects
-sidebar_position: 250
+sidebar_position: 600
 description: Using jobs in Dagster dg projects for entities such as assets .
 ---
 
-import DgComponentsRc from '@site/docs/partials/\_DgComponentsRc.md';
-
-<DgComponentsRc />
-
 :::note Prerequisites
 
-Before following this guide, you will need to [create a project](/guides/build/projects/creating-a-new-project) with the [`create-dagster` CLI](/api/dg/create-dagster).
+Before following this guide, you will need to [create a project](/guides/build/projects/creating-a-new-project) with the [`create-dagster` CLI](/api/clis/create-dagster).
 
 :::
 

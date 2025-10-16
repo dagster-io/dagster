@@ -18,7 +18,9 @@ function removeCallback(runId: string, callback: ObservedRunCallback) {
   if (!ObservedRuns[runId]) {
     console.log('[ObserveRuns]: Attempted to release runId that has already been released.');
   }
+  // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
   ObservedRuns[runId] = ObservedRuns[runId]!.filter((w) => w !== callback);
+  // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
   if (ObservedRuns[runId]!.length === 0) {
     delete ObservedRuns[runId];
   }

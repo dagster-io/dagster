@@ -236,6 +236,7 @@ const TestContainer = ({
     mocks={
       mocks || [
         buildEventsMock({reported: false}),
+        // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
         buildPartitionHealthMock(MockAssetKey.path[0]!),
         buildSidebarQueryMock(),
       ]
@@ -260,6 +261,7 @@ export const AssetWithReportedMaterialization = () => {
     <TestContainer
       mocks={[
         buildEventsMock({reported: true}),
+        // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
         buildPartitionHealthMock(MockAssetKey.path[0]!),
         buildSidebarQueryMock(),
       ]}
@@ -274,6 +276,7 @@ export const AssetWithPolicies = () => {
     <TestContainer
       mocks={[
         buildEventsMock({reported: false}),
+        // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
         buildPartitionHealthMock(MockAssetKey.path[0]!),
         buildSidebarQueryMock({
           freshnessPolicy: buildFreshnessPolicy({

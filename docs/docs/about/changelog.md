@@ -5,7 +5,7 @@ title: Changelog
 toc_max_heading_level: 2
 ---
 
-import { ChangelogTOC } from '@site/src/components/Changelog';
+import {ChangelogTOC} from '@site/src/components/Changelog';
 
 <Changelog />
 

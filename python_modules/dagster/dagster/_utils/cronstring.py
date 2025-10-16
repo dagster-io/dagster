@@ -9,6 +9,10 @@ def is_basic_hourly(cron_schedule: str) -> bool:
     return cron_schedule == "0 * * * *"
 
 
+def is_basic_minutely(cron_schedule: str) -> bool:
+    return cron_schedule == "* * * * *"
+
+
 def get_fixed_minute_interval(cron_schedule: str) -> Optional[int]:
     """Given a cronstring, returns whether or not it is safe to
     assume there is a fixed number of minutes between every tick. For
@@ -19,6 +23,9 @@ def get_fixed_minute_interval(cron_schedule: str) -> Optional[int]:
     """
     if is_basic_hourly(cron_schedule):
         return 60
+
+    if is_basic_minutely(cron_schedule):
+        return 1
 
     cron_parts = cron_schedule.split()
     is_wildcard = [part == "*" for part in cron_parts]

@@ -1,33 +1,17 @@
-import {
-  Box,
-  Colors,
-  Icon,
-  NonIdealState,
-  Spinner,
-  SpinnerWithText,
-} from '@dagster-io/ui-components';
-import {useCallback, useContext, useMemo} from 'react';
+import {Box, Colors, NonIdealState, Spinner, SpinnerWithText} from '@dagster-io/ui-components';
+import {useContext, useMemo} from 'react';
 
 import {isHiddenAssetGroupJob} from '../asset-graph/Utils';
-import {useQueryPersistedFilterState} from '../hooks/useQueryPersistedFilterState';
-import {TruncatedTextWithFullTextOnHover} from '../nav/getLeftNavItemsForOption';
+import {useQueryPersistedState} from '../hooks/useQueryPersistedState';
+import {filterJobSelectionByQuery} from '../job-selection/AntlrJobSelection';
+import {JobSelectionInput} from '../job-selection/input/JobSelectionInput';
 import {OverviewJobsTable} from '../overview/OverviewJobsTable';
 import {sortRepoBuckets} from '../overview/sortRepoBuckets';
 import {visibleRepoKeys} from '../overview/visibleRepoKeys';
-import {useFilters} from '../ui/BaseFilters/useFilters';
-import {useStaticSetFilter} from '../ui/BaseFilters/useStaticSetFilter';
-import {useCodeLocationFilter} from '../ui/Filters/useCodeLocationFilter';
-import {Tag} from '../ui/Filters/useDefinitionTagFilter';
 import {WorkspaceContext} from '../workspace/WorkspaceContext/WorkspaceContext';
-import {
-  WorkspaceLocationNodeFragment,
-  WorkspacePipelineFragment,
-} from '../workspace/WorkspaceContext/types/WorkspaceQueries.types';
+import {WorkspaceLocationNodeFragment} from '../workspace/WorkspaceContext/types/WorkspaceQueries.types';
 import {buildRepoAddress} from '../workspace/buildRepoAddress';
 import {repoAddressAsHumanString} from '../workspace/repoAddressAsString';
-import {RepoAddress} from '../workspace/types';
-
-const FILTER_FIELDS = ['jobs', 'tags', 'codeLocations'] as const;
 
 export const JobsPageContent = () => {
   const {
@@ -49,75 +33,37 @@ export const JobsPageContent = () => {
     );
   }, [cachedData, visibleRepos]);
 
-  const allJobs = useMemo(() => repoBuckets.flatMap((bucket) => bucket.jobs), [repoBuckets]);
-
-  const {state: _state, setters} = useQueryPersistedFilterState<{
-    jobs: string[];
-    tags: Tag[];
-    codeLocations: RepoAddress[];
-  }>(FILTER_FIELDS);
-
-  const state = useMemo(() => {
-    return {
-      ..._state,
-      codeLocations: _state.codeLocations.map(({name, location}) =>
-        buildRepoAddress(name, location),
-      ),
-    };
-  }, [_state]);
-
-  const codeLocationFilter = useCodeLocationFilter({
-    codeLocations: state.codeLocations,
-    setCodeLocations: setters.setCodeLocations,
+  const [selection, setSelection] = useQueryPersistedState<string>({
+    queryKey: 'selection',
+    defaults: {selection: ''},
+    behavior: 'push',
   });
 
-  const jobFilter = useStaticSetFilter<string>({
-    name: 'Job',
-    icon: 'job',
-    allValues: useMemo(
-      () =>
-        allJobs.map((job) => ({
-          key: job.name,
-          value: job.name,
-          match: [job.name],
-        })),
-      [allJobs],
-    ),
-    renderLabel: ({value}) => (
-      <Box flex={{direction: 'row', gap: 4, alignItems: 'center'}}>
-        <Icon name="job" />
-        <TruncatedTextWithFullTextOnHover text={value} />
-      </Box>
-    ),
-    getStringValue: (x) => x,
-    state: state.jobs,
-    onStateChanged: useCallback(
-      (values) => {
-        setters.setJobs(Array.from(values));
-      },
-      [setters],
-    ),
-  });
+  const allJobs = useMemo(() => {
+    return repoBuckets.flatMap((bucket) => bucket.jobs);
+  }, [repoBuckets]);
 
-  const filters = useMemo(() => [codeLocationFilter, jobFilter], [codeLocationFilter, jobFilter]);
-  const {button: filterButton, activeFiltersJsx} = useFilters({filters});
+  const filteredJobs = useMemo(() => {
+    return filterJobSelectionByQuery(allJobs, selection).all;
+  }, [allJobs, selection]);
 
   const filteredRepoBuckets = useMemo(() => {
     return repoBuckets
       .filter((bucket) => {
-        return !state.codeLocations.length || state.codeLocations.includes(bucket.repoAddress);
+        return Array.from(filteredJobs).some(
+          (job) =>
+            job.repo.name === bucket.repoAddress.name &&
+            job.repo.location === bucket.repoAddress.location,
+        );
       })
       .map((bucket) => ({
         ...bucket,
         jobs: bucket.jobs.filter((job) => {
-          if (state.jobs.length && !state.jobs.includes(job.name)) {
-            return false;
-          }
-          return true;
+          return filteredJobs.has(job);
         }),
       }))
       .filter((bucket) => !!bucket.jobs.length);
-  }, [repoBuckets, state]);
+  }, [repoBuckets, filteredJobs]);
 
   const content = () => {
     if (loading) {
@@ -152,22 +98,9 @@ export const JobsPageContent = () => {
 
   return (
     <>
-      <Box
-        padding={{horizontal: 24, vertical: 8}}
-        flex={{direction: 'row', alignItems: 'center', justifyContent: 'space-between', grow: 0}}
-        border="bottom"
-      >
-        {filterButton}
+      <Box padding={{horizontal: 24, vertical: 12}} border="bottom">
+        <JobSelectionInput items={allJobs} value={selection} onChange={setSelection} />
       </Box>
-      {activeFiltersJsx.length ? (
-        <Box
-          padding={{vertical: 8, horizontal: 24}}
-          border="bottom"
-          flex={{direction: 'row', gap: 8}}
-        >
-          {activeFiltersJsx}
-        </Box>
-      ) : null}
       {loading && !repoCount ? (
         <Box padding={64} flex={{direction: 'row', justifyContent: 'center'}}>
           <SpinnerWithText label="Loading jobs…" />
@@ -179,14 +112,9 @@ export const JobsPageContent = () => {
   );
 };
 
-type RepoBucket = {
-  repoAddress: RepoAddress;
-  jobs: WorkspacePipelineFragment[];
-};
-
 const buildBuckets = (
   locationEntries: Extract<WorkspaceLocationNodeFragment, {__typename: 'WorkspaceLocationEntry'}>[],
-): RepoBucket[] => {
+) => {
   const entries = locationEntries.map((entry) => entry.locationOrLoadError);
   const buckets = [];
 
@@ -198,7 +126,15 @@ const buildBuckets = (
     for (const repo of entry.repositories) {
       const {name, pipelines} = repo;
       const repoAddress = buildRepoAddress(name, entry.name);
-      const jobs = pipelines.filter(({name}) => !isHiddenAssetGroupJob(name));
+      const jobs = pipelines
+        .filter(({name}) => !isHiddenAssetGroupJob(name))
+        .map((job) => ({
+          ...job,
+          repo: {
+            name: repoAddress.name,
+            location: repoAddress.location,
+          },
+        }));
 
       if (jobs.length > 0) {
         buckets.push({

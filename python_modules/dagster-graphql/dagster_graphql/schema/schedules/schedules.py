@@ -5,7 +5,7 @@ from typing import Optional
 import dagster._check as check
 import graphene
 from dagster import DefaultScheduleStatus
-from dagster._core.remote_representation import RemoteSchedule
+from dagster._core.remote_representation.external import RemoteSchedule
 from dagster._core.scheduler.instigation import InstigatorState, InstigatorStatus
 from dagster._time import get_current_timestamp
 
@@ -24,6 +24,7 @@ from dagster_graphql.schema.instigation import (
     GrapheneInstigationStatus,
 )
 from dagster_graphql.schema.metadata import GrapheneMetadataEntry
+from dagster_graphql.schema.owners import GrapheneDefinitionOwner, definition_owner_from_owner_str
 from dagster_graphql.schema.tags import GrapheneDefinitionTag
 from dagster_graphql.schema.util import ResolveInfo, non_null_list
 
@@ -57,6 +58,7 @@ class GrapheneSchedule(graphene.ObjectType):
         lower_limit=graphene.Int(),
     )
     assetSelection = graphene.Field(GrapheneAssetSelection)
+    owners = non_null_list(GrapheneDefinitionOwner)
     tags = non_null_list(GrapheneDefinitionTag)
     metadataEntries = non_null_list(GrapheneMetadataEntry)
 
@@ -134,7 +136,6 @@ class GrapheneSchedule(graphene.ObjectType):
         partition_set = repository.get_partition_set(self._remote_schedule.partition_set_name)
 
         return GraphenePartitionSet(
-            repository_handle=repository.handle,
             remote_partition_set=partition_set,
         )
 
@@ -220,6 +221,11 @@ class GrapheneSchedule(graphene.ObjectType):
         ]
 
         return tick_times
+
+    def resolve_owners(self, _graphene_info: ResolveInfo):
+        return [
+            definition_owner_from_owner_str(owner) for owner in (self._remote_schedule.owners or [])
+        ]
 
     def resolve_tags(self, _graphene_info: ResolveInfo) -> Sequence[GrapheneDefinitionTag]:
         return [

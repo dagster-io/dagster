@@ -13,6 +13,7 @@ from dagster._core.definitions.declarative_automation.automation_condition impor
     AutomationCondition,
 )
 from dagster._core.definitions.definitions_class import Definitions
+from dagster._core.definitions.freshness import InternalFreshnessPolicy
 from dagster._core.definitions.partitions.definition import (
     DailyPartitionsDefinition,
     HourlyPartitionsDefinition,
@@ -257,6 +258,14 @@ class SharedAssetKwargs(Resolvable):
             ],
         ),
     ] = None
+    freshness_policy: Annotated[
+        Optional[InternalFreshnessPolicy],
+        Resolver.default(
+            model_field_type=Optional[str],
+            description="The freshness policy for the asset.",
+            examples=["{{ custom_freshness_template_var() }}"],
+        ),
+    ] = None
 
 
 @record
@@ -279,6 +288,17 @@ class AssetSpecUpdateKwargs(SharedAssetKwargs):
     AssetsDefinition is created. Typically used by components to allow
     overriding a default resolution of each AssetSpec.
     """
+
+    key: Optional[ResolvedAssetKey] = None
+    key_prefix: Annotated[
+        Optional[CoercibleToAssetKeyPrefix],
+        Resolver.default(description="Prefix the existing asset key with the provided value."),
+    ] = None
+
+
+@record
+class AssetSpecKeyUpdateKwargs(Resolvable):
+    """Resolvable object representing only a configurable asset key."""
 
     key: Optional[ResolvedAssetKey] = None
     key_prefix: Annotated[

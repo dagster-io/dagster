@@ -3,6 +3,7 @@ description: Role-based access control (RBAC) enables you to grant specific perm
 sidebar_label: User roles and permissions
 sidebar_position: 8130
 title: User roles and permissions
+tags: [dagster-plus-feature]
 ---
 
 Role-based access control (RBAC) enables you to grant specific permissions to users in your organization, ensuring that Dagster users have access to what they require in Dagster+, and no more.
@@ -28,7 +29,7 @@ Dagster+ uses a hierarchical model for RBAC, meaning that the most permissive ro
 - Launcher (Pro plans only)
 - Viewer
 
-For example, the **Admin** user role includes permissions specific to this role and all permissions in the **Editor**, **Launcher**, and **Viewer** user roles. Refer to the [User permissions reference](#user-permissions-reference) for the full list of user permissions in Dagster+. All user roles are enforced both in Dagster+ and the [GraphQL API](/guides/operate/graphql).
+For example, the **Admin** user role includes permissions specific to this role and all permissions in the **Editor**, **Launcher**, and **Viewer** user roles. Refer to the [User permissions reference](#user-permissions-reference) for the full list of user permissions in Dagster+. All user roles are enforced both in Dagster+ and the [GraphQL API](/api/graphql).
 
 :::tip Teams in Dagster+ Pro
 
@@ -76,11 +77,11 @@ With the exception of the **Organization Admin** role, user and team roles are s
 
 Organization Admins have access to the entire organization, including all [deployments](/deployment/dagster-plus/full-deployments), [code locations](/deployment/code-locations), and [Branch Deployments](/deployment/dagster-plus/ci-cd/branch-deployments).
 
-| Level              | Plan      | Description                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                          |
-| ------------------ | --------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Deployment         | All plans | Defines the level of access for a given deployment. Roles set at this level will be the default role for the user or team for all code locations in the deployment. <br/><br/> <strong>Note</strong>: Granting access to a deployment grants a minimum of <strong>Viewer</strong> access to all code locations. Preventing access for specific code locations isn't currently supported. Additionally, having access to a deployment doesn't grant access to Branch Deployments - those permissions must be granted separately.                      |
+| Level              | Plan      | Description                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                             |
+| ------------------ | --------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Deployment         | All plans | Defines the level of access for a given deployment. Roles set at this level will be the default role for the user or team for all code locations in the deployment. <br/><br/> <strong>Note</strong>: Granting access to a deployment grants a minimum of <strong>Viewer</strong> access to all code locations. Preventing access for specific code locations isn't currently supported. Additionally, having access to a deployment doesn't grant access to Branch Deployments - those permissions must be granted separately.         |
 | Code location      | Pro       | Defines the level of access for a given code location in a deployment. <br/><br/> Dagster+ Pro users can [override the default deployment-level role for individual code locations](/deployment/code-locations). For example, if the <strong>Deployment</strong> role is <strong>Launcher</strong>, you could override this role with a more permissive role, such as <strong>Editor</strong> or <strong>Admin</strong>. <br/><br/> For non-Pro users, users will have the same level of access for all code locations in a deployment. |
-| Branch deployments | All plans | Defines the level of access for all Branch Deployments in the code locations the user or team has access to.                                                                                                                                                                                                                                                                                                                                                                                                                                         |
+| Branch deployments | All plans | Defines the level of access for all Branch Deployments in the code locations the user or team has access to.                                                                                                                                                                                                                                                                                                                                                                                                                            |
 
 ### Applying role overrides
 
@@ -141,7 +142,7 @@ If there are code location-level overrides, a small **N override(s)** link will 
 
 |                                                           | Viewer | Launcher | Editor | Admin | Organization <br/> admin |
 | --------------------------------------------------------- | ------ | -------- | ------ | ----- | ------------------------ |
-| View runs of [jobs](/guides/build/jobs)                  | ✅     | ✅       | ✅     | ✅    | ✅                       |
+| View runs of [jobs](/guides/build/jobs)                   | ✅     | ✅       | ✅     | ✅    | ✅                       |
 | Launch, re-execute, terminate, and delete runs of jobs    | ❌     | ✅       | ✅     | ✅    | ✅                       |
 | Start and stop [schedules](/guides/automate/schedules)    | ❌     | ❌       | ✅     | ✅    | ✅                       |
 | Start and stop [schedules](/guides/automate/sensors)      | ❌     | ❌       | ✅     | ✅    | ✅                       |
@@ -155,20 +156,20 @@ Deployment settings are accessed in the UI by navigating to **user menu (your ic
 
 |                                                                                                         | Viewer | Launcher | Editor | Admin | Organization <br/> admin |
 | ------------------------------------------------------------------------------------------------------- | ------ | -------- | ------ | ----- | ------------------------ |
-| View [deployments](/deployment/dagster-plus/full-deployments)                                    | ✅     | ✅       | ✅     | ✅    | ✅                       |
-| Modify [deployments](/deployment/dagster-plus/full-deployments) settings                         | ❌     | ❌       | ✅     | ✅    | ✅                       |
+| View [deployments](/deployment/dagster-plus/full-deployments)                                           | ✅     | ✅       | ✅     | ✅    | ✅                       |
+| Modify [deployments](/deployment/dagster-plus/full-deployments) settings                                | ❌     | ❌       | ✅     | ✅    | ✅                       |
 | Create, edit, delete [environment variables](/deployment/dagster-plus/management/environment-variables) | ❌     | ❌       | ✅     | ✅    | ✅                       |
 | View [environment variable](/deployment/dagster-plus/management/environment-variables) values           | ❌     | ❌       | ✅     | ✅    | ✅                       |
 | Export [environment variables](/deployment/dagster-plus/management/environment-variables)               | ❌     | ❌       | ✅     | ✅    | ✅                       |
-| Create and delete [deployments](/deployment/dagster-plus/full-deployments)                       | ❌     | ❌       | ❌     | ❌    | ✅                       |
-| Create [Branch Deployments](/deployment/dagster-plus/ci-cd/branch-deployments/index.md)                    | ❌     | ❌       | ✅     | ✅    | ✅                       |
+| Create and delete [deployments](/deployment/dagster-plus/full-deployments)                              | ❌     | ❌       | ❌     | ❌    | ✅                       |
+| Create [Branch Deployments](/deployment/dagster-plus/ci-cd/branch-deployments/index.md)                 | ❌     | ❌       | ✅     | ✅    | ✅                       |
 
 ### Code locations
 
 Code locations are accessed in the UI by navigating to **Deployment > Code locations**.
 
-|                                                                                 | Viewer | Launcher | Editor | Admin | Organization <br/> admin |
-| ------------------------------------------------------------------------------- | ------ | -------- | ------ | ----- | ------------------------ |
+|                                                                    | Viewer | Launcher | Editor | Admin | Organization <br/> admin |
+| ------------------------------------------------------------------ | ------ | -------- | ------ | ----- | ------------------------ |
 | View [code locations](/deployment/code-locations)                  | ✅     | ✅       | ✅     | ✅    | ✅                       |
 | Create and remove [code locations](/deployment/code-locations)     | ❌     | ❌       | ✅     | ✅    | ✅                       |
 | Reload [code locations](/deployment/code-locations) and workspaces | ❌     | ❌       | ✅     | ✅    | ✅                       |
@@ -198,12 +199,12 @@ User tokens are accessed in the UI by navigating to **user menu (your icon) > Or
 
 User management is accessed in the UI by navigating to **user menu (your icon) > Organization Settings > Users**.
 
-|                                                                                   | Viewer | Launcher | Editor | Admin | Organization <br/> admin |
-| --------------------------------------------------------------------------------- | ------ | -------- | ------ | ----- | ------------------------ |
+|                                                                                     | Viewer | Launcher | Editor | Admin | Organization <br/> admin |
+| ----------------------------------------------------------------------------------- | ------ | -------- | ------ | ----- | ------------------------ |
 | [View users](/deployment/dagster-plus/authentication-and-access-control/rbac/users) | ✅     | ✅       | ✅     | ✅    | ✅                       |
-| Add users                                                                         | ❌     | ❌       | ❌     | ✅    | ✅                       |
-| Edit user roles                                                                   | ❌     | ❌       | ❌     | ❌    | ✅                       |
-| Remove users                                                                      | ❌     | ❌       | ❌     | ❌    | ✅                       |
+| Add users                                                                           | ❌     | ❌       | ❌     | ✅    | ✅                       |
+| Edit user roles                                                                     | ❌     | ❌       | ❌     | ❌    | ✅                       |
+| Remove users                                                                        | ❌     | ❌       | ❌     | ❌    | ✅                       |
 
 ### Teams
 
@@ -211,26 +212,26 @@ Team management is accessed in the UI by navigating to **user menu (your icon) >
 
 **Note**: Admin users can modify teams only in deployments where they're an Admin.
 
-|                                                                                   | Viewer | Launcher | Editor | Admin | Organization <br/> admin |
-| --------------------------------------------------------------------------------- | ------ | -------- | ------ | ----- | ------------------------ |
+|                                                                                     | Viewer | Launcher | Editor | Admin | Organization <br/> admin |
+| ----------------------------------------------------------------------------------- | ------ | -------- | ------ | ----- | ------------------------ |
 | [View teams](/deployment/dagster-plus/authentication-and-access-control/rbac/teams) | ✅     | ✅       | ✅     | ✅    | ✅                       |
-| Modify team permissions                                                           | ❌     | ❌       | ❌     | ✅    | ✅                       |
-| Create teams                                                                      | ❌     | ❌       | ❌     | ❌    | ✅                       |
-| Re-name teams                                                                     | ❌     | ❌       | ❌     | ❌    | ✅                       |
-| Add/remove team members                                                           | ❌     | ❌       | ❌     | ❌    | ✅                       |
-| Remove teams                                                                      | ❌     | ❌       | ❌     | ❌    | ✅                       |
+| Modify team permissions                                                             | ❌     | ❌       | ❌     | ✅    | ✅                       |
+| Create teams                                                                        | ❌     | ❌       | ❌     | ❌    | ✅                       |
+| Re-name teams                                                                       | ❌     | ❌       | ❌     | ❌    | ✅                       |
+| Add/remove team members                                                             | ❌     | ❌       | ❌     | ❌    | ✅                       |
+| Remove teams                                                                        | ❌     | ❌       | ❌     | ❌    | ✅                       |
 
 ### Workspace administration
 
-|                                                | Viewer | Launcher | Editor | Admin | Organization <br/> admin |
-| ---------------------------------------------- | ------ | -------- | ------ | ----- | ------------------------ |
-| Manage [alerts](/guides/monitor/alerts)        | ❌     | ❌       | ✅     | ✅    | ✅                       |
-| Edit workspace                                 | ❌     | ❌       | ✅     | ✅    | ✅                       |
-| Administer SAML                                | ❌     | ❌       | ❌     | ❌    | ✅                       |
-| Manage SCIM                                    | ❌     | ❌       | ❌     | ❌    | ✅                       |
-| View usage                                     | ❌     | ❌       | ❌     | ❌    | ✅                       |
-| Manage billing                                 | ❌     | ❌       | ❌     | ❌    | ✅                       |
-| View audit logs                                | ❌     | ❌       | ❌     | ❌    | ✅                       |
+|                                         | Viewer | Launcher | Editor | Admin | Organization <br/> admin |
+| --------------------------------------- | ------ | -------- | ------ | ----- | ------------------------ |
+| Manage [alerts](/guides/observe/alerts) | ❌     | ❌       | ✅     | ✅    | ✅                       |
+| Edit workspace                          | ❌     | ❌       | ✅     | ✅    | ✅                       |
+| Administer SAML                         | ❌     | ❌       | ❌     | ❌    | ✅                       |
+| Manage SCIM                             | ❌     | ❌       | ❌     | ❌    | ✅                       |
+| View usage                              | ❌     | ❌       | ❌     | ❌    | ✅                       |
+| Manage billing                          | ❌     | ❌       | ❌     | ❌    | ✅                       |
+| View audit logs                         | ❌     | ❌       | ❌     | ❌    | ✅                       |
 
 ## Next steps
 

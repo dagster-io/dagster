@@ -14,6 +14,10 @@ type BackfillState = {
 export const BackfillStatusTagForPage = ({backfill}: {backfill: BackfillState}) => {
   const {status, error} = backfill;
   function errorState(status: string) {
+    if (!error) {
+      return <Tag intent="danger">{status}</Tag>;
+    }
+
     const onClick = () =>
       error && showCustomAlert({title: 'Error', body: <PythonErrorInfo error={error} />});
 
@@ -37,6 +41,8 @@ export const BackfillStatusTagForPage = ({backfill}: {backfill: BackfillState}) 
       return errorState('Canceled');
     case BulkActionStatus.FAILED:
       return errorState('Failed');
+    case BulkActionStatus.FAILING:
+      return errorState('Failing');
     case BulkActionStatus.COMPLETED:
       return <Tag intent="success">Completed</Tag>;
     case BulkActionStatus.COMPLETED_SUCCESS:

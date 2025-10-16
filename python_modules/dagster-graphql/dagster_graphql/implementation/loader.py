@@ -7,7 +7,7 @@ from dagster import (
     DagsterInstance,
     _check as check,
 )
-from dagster._core.remote_representation import RemoteRepository
+from dagster._core.remote_representation.external import RemoteRepository
 from dagster._core.scheduler.instigation import InstigatorState, InstigatorType
 
 
@@ -41,6 +41,10 @@ class RepositoryScopedBatchLoader:
         self._repository = remote_repository
         self._data: dict[RepositoryDataType, dict[str, list[Any]]] = {}
         self._limits: dict[RepositoryDataType, int] = {}
+
+    @property
+    def repository(self) -> RemoteRepository:
+        return self._repository
 
     def _get(self, data_type: RepositoryDataType, key: str, limit: int) -> Sequence[Any]:
         check.inst_param(data_type, "data_type", RepositoryDataType)

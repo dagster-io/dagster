@@ -1,5 +1,7 @@
 import importlib.util
 import os
+from collections.abc import Generator
+from typing import Any
 
 import pytest
 
@@ -23,6 +25,7 @@ EXCLUDED_FILES = {
     # setup() expects. So omit files that call setup() since they cannot be loaded without errors.
     f"{snippets_folder}/dagster-plus/deployment/serverless/runtime-environment/data_files_setup.py",
     f"{snippets_folder}/dagster-plus/deployment/serverless/runtime-environment/example_setup.py",
+    f"{snippets_folder}/dagster-plus/deployment/serverless/runtime-environment/example_tarball_setup.py",
     # there are no components defined in the snippets and so it would fail to load
     f"{snippets_folder}/guides/components/existing-project/definitions-after.py",
     # there are no components defined in the snippets and so it would fail to load
@@ -137,6 +140,7 @@ EXCLUDED_FILES = {
     f"{snippets_folder}/tutorial/connecting/connecting_with_envvar.py",
     f"{snippets_folder}/tutorial/scheduling/with_schedule/with_schedule.py",
     f"{snippets_folder}/guides/dagster/dagster_pipes/databricks/resources.py",
+    f"{snippets_folder}/guides/tutorials/spark_connect/databricks_resources.py",
 }
 EXCLUDED_DIRS = {
     # integrations are excluded because they have external dependencies that are easier to manage in
@@ -156,7 +160,7 @@ def get_python_files(directory):
 
 
 @pytest.mark.parametrize("file_path", get_python_files(snippets_folder))
-def test_file_loads(file_path):
+def test_file_loads(file_path: Generator[Any, Any, None]):
     if file_path in EXCLUDED_FILES:
         pytest.skip(f"Skipped {file_path}")
         return

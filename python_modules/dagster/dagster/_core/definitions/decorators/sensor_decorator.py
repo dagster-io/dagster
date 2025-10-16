@@ -5,6 +5,7 @@ from functools import update_wrapper
 from typing import TYPE_CHECKING, Any, Callable, Optional, Union
 
 import dagster._check as check
+from dagster._annotations import beta_param, public
 from dagster._core.definitions.asset_selection import AssetSelection, CoercibleToAssetSelection
 from dagster._core.definitions.asset_sensor_definition import AssetSensorDefinition
 from dagster._core.definitions.events import AssetKey
@@ -33,6 +34,8 @@ if TYPE_CHECKING:
     )
 
 
+@beta_param(param="owners")
+@public
 def sensor(
     job_name: Optional[str] = None,
     *,
@@ -54,6 +57,7 @@ def sensor(
             "UnresolvedAssetJobDefinition",
         ]
     ] = None,
+    owners: Optional[Sequence[str]] = None,
 ) -> Callable[[RawSensorEvaluationFunction], SensorDefinition]:
     """Creates a sensor where the decorated function is used as the sensor's evaluation function.
 
@@ -92,6 +96,7 @@ def sensor(
             It can take :py:class:`~dagster.AssetSelection` objects and anything coercible to it (e.g. `str`, `Sequence[str]`, `AssetKey`, `AssetsDefinition`).
             It can also accept :py:class:`~dagster.JobDefinition` (a function decorated with `@job` is an instance of `JobDefinition`) and `UnresolvedAssetJobDefinition` (the return value of :py:func:`~dagster.define_asset_job`) objects.
             This is a parameter that will replace `job`, `jobs`, and `asset_selection`.
+        owners (Optional[Sequence[str]]): A sequence of strings identifying the owners of the sensor.
     """
     check.opt_str_param(name, "name")
 
@@ -112,6 +117,7 @@ def sensor(
             tags=tags,
             metadata=metadata,
             target=target,
+            owners=owners,
         )
 
         update_wrapper(sensor_def, wrapped=fn)
@@ -121,6 +127,7 @@ def sensor(
     return inner
 
 
+@public
 def asset_sensor(
     asset_key: AssetKey,
     *,
@@ -249,6 +256,7 @@ def asset_sensor(
     return inner
 
 
+@public
 def multi_asset_sensor(
     monitored_assets: Union[Sequence[AssetKey], AssetSelection],
     *,

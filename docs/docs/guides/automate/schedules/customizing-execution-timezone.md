@@ -47,7 +47,10 @@ Schedules constructed from partitioned jobs execute in the timezone defined on t
 
 For example, the following partition uses the **US Pacific (America/Los_Angeles)** timezone:
 
-<CodeExample path="docs_snippets/docs_snippets/concepts/partitions_schedules_sensors/partition_with_timezone.py" title="src/<project_name>/defs/schedules.py"/>
+<CodeExample
+  path="docs_snippets/docs_snippets/concepts/partitions_schedules_sensors/partition_with_timezone.py"
+  title="src/<project_name>/defs/schedules.py"
+/>
 
 ## Execution times and Daylight Savings Time
 
