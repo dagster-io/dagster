@@ -129,7 +129,9 @@ In the next step, you'll modify these files to work with your Dagster+ setup.
 **Step 3.2: Add the agent registry to dagster_cloud.yaml**
 
 :::note
+
 If you used the GitHub app to configure your repository, this step isn't required, and you can skip ahead to Step 3.5.
+
 :::
 
 In the `dagster_cloud.yaml` file, replace `build.registry` with the registry used by the [agent you created in step 1](#step-1-generate-a-dagster-agent-token).
