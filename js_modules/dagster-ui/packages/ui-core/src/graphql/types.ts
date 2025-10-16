@@ -3572,6 +3572,7 @@ export type PartitionRunConfigOrError = PartitionRunConfig | PythonError;
 export type PartitionSet = {
   __typename: 'PartitionSet';
   backfills: Array<PartitionBackfill>;
+  hasBackfillPermission: Scalars['Boolean']['output'];
   id: Scalars['ID']['output'];
   mode: Scalars['String']['output'];
   name: Scalars['String']['output'];
@@ -12147,6 +12148,10 @@ export const buildPartitionSet = (
   return {
     __typename: 'PartitionSet',
     backfills: overrides && overrides.hasOwnProperty('backfills') ? overrides.backfills! : [],
+    hasBackfillPermission:
+      overrides && overrides.hasOwnProperty('hasBackfillPermission')
+        ? overrides.hasBackfillPermission!
+        : true,
     id:
       overrides && overrides.hasOwnProperty('id')
         ? overrides.id!
