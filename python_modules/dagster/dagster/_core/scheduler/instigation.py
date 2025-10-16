@@ -266,14 +266,16 @@ class InstigatorState(
         return self.origin.get_id()
 
     @property
-    def selector_id(self) -> str:
-        return create_snapshot_id(
-            InstigatorSelector(
-                location_name=self.origin.repository_origin.code_location_origin.location_name,
-                repository_name=self.origin.repository_origin.repository_name,
-                name=self.origin.instigator_name,
-            )
+    def selector(self) -> InstigatorSelector:
+        return InstigatorSelector(
+            location_name=self.origin.repository_origin.code_location_origin.location_name,
+            repository_name=self.origin.repository_origin.repository_name,
+            name=self.origin.instigator_name,
         )
+
+    @property
+    def selector_id(self) -> str:
+        return create_snapshot_id(self.selector)
 
     def with_status(self, status: InstigatorStatus) -> "InstigatorState":
         check.inst_param(status, "status", InstigatorStatus)

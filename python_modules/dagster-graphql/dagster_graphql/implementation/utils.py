@@ -22,7 +22,11 @@ import dagster._check as check
 from dagster._core.asset_graph_view.asset_graph_view import AssetGraphView
 from dagster._core.definitions.asset_checks.asset_check_spec import AssetCheckKey
 from dagster._core.definitions.assets.graph.base_asset_graph import EntityKey
-from dagster._core.definitions.assets.graph.remote_asset_graph import RemoteWorkspaceAssetGraph
+from dagster._core.definitions.assets.graph.remote_asset_graph import (
+    RemoteAssetCheckNode,
+    RemoteAssetNode,
+    RemoteWorkspaceAssetGraph,
+)
 from dagster._core.definitions.events import AssetKey
 from dagster._core.definitions.partitions.definition import PartitionsDefinition
 from dagster._core.definitions.selector import (
@@ -37,7 +41,9 @@ from dagster._core.definitions.temporal_context import TemporalContext
 from dagster._core.errors import DagsterError, DagsterInvariantViolationError
 from dagster._core.execution.backfill import PartitionBackfill
 from dagster._core.remote_representation.code_location import is_implicit_asset_job_name
+from dagster._core.remote_representation.external import RemoteJob, RemoteSchedule, RemoteSensor
 from dagster._core.storage.dagster_run import DagsterRun
+from dagster._core.workspace.context import RemoteDefinition
 from dagster._core.workspace.permissions import Permissions
 from dagster._utils.caching_instance_queryer import CachingInstanceQueryer
 from dagster._utils.error import serializable_error_info_from_exc_info
@@ -199,6 +205,41 @@ def assert_permission_for_asset_graph(
 
     if not has_permission_for_asset_graph(graphene_info, asset_graph, entity_keys, permission):
         raise UserFacingGraphQLError(GrapheneUnauthorizedError())
+
+
+def has_permission_for_definition(
+    graphene_info: "ResolveInfo", permission: str, remote_definition: RemoteDefinition
+):
+    if graphene_info.context.has_permission(permission):
+        return True
+
+    location_name = location_name_for_remote_definition(remote_definition)
+    if graphene_info.context.has_permission_for_location(permission, location_name):
+        return True
+
+    if isinstance(remote_definition, RemoteAssetCheckNode):
+        owners = graphene_info.context.get_owners_for_selector(remote_definition.asset_check.key)
+    else:
+        owners = remote_definition.owners
+
+    if not owners:
+        return False
+
+    return graphene_info.context.has_permission_for_owners(permission, owners)
+
+
+def location_name_for_remote_definition(remote_definition: RemoteDefinition) -> str:
+    if isinstance(remote_definition, RemoteAssetNode):
+        return (
+            remote_definition.resolve_to_singular_repo_scoped_node().repository_handle.location_name
+        )
+    elif isinstance(
+        remote_definition,
+        (RemoteJob, RemoteSchedule, RemoteSensor, RemoteAssetCheckNode),
+    ):
+        return remote_definition.handle.location_name
+    else:
+        check.failed(f"Unexpected remote definition type {type(remote_definition)}")
 
 
 def has_permission_for_run(

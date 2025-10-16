@@ -228,6 +228,14 @@ class ScheduleSelector:
             schedule_name=graphql_data["scheduleName"],
         )
 
+    @staticmethod
+    def from_instigator_selector(selector: "InstigatorSelector"):
+        return ScheduleSelector(
+            location_name=selector.location_name,
+            repository_name=selector.repository_name,
+            schedule_name=selector.name,
+        )
+
 
 @record
 class ResourceSelector:
@@ -270,6 +278,14 @@ class SensorSelector:
             location_name=graphql_data["repositoryLocationName"],
             repository_name=graphql_data["repositoryName"],
             sensor_name=graphql_data["sensorName"],
+        )
+
+    @staticmethod
+    def from_instigator_selector(selector: "InstigatorSelector"):
+        return SensorSelector(
+            location_name=selector.location_name,
+            repository_name=selector.repository_name,
+            sensor_name=selector.name,
         )
 
     @property

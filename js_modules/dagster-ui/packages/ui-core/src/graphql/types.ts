@@ -5436,6 +5436,7 @@ export type Sensor = {
   canReset: Scalars['Boolean']['output'];
   defaultStatus: InstigationStatus;
   description: Maybe<Scalars['String']['output']>;
+  hasCursorUpdatePermissions: Scalars['Boolean']['output'];
   id: Scalars['ID']['output'];
   jobOriginId: Scalars['String']['output'];
   metadata: SensorMetadata;
@@ -15267,6 +15268,10 @@ export const buildSensor = (
         : InstigationStatus.RUNNING,
     description:
       overrides && overrides.hasOwnProperty('description') ? overrides.description! : 'sapiente',
+    hasCursorUpdatePermissions:
+      overrides && overrides.hasOwnProperty('hasCursorUpdatePermissions')
+        ? overrides.hasCursorUpdatePermissions!
+        : false,
     id:
       overrides && overrides.hasOwnProperty('id')
         ? overrides.id!
