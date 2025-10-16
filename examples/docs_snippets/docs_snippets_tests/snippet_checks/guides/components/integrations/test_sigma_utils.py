@@ -2,9 +2,7 @@ import uuid
 from functools import cached_property
 
 from dagster_sigma import SigmaBaseUrl, SigmaOrganization
-from dagster_sigma.components.sigma_organization_component import (
-    SigmaOrganizationComponent,
-)
+from dagster_sigma.components.sigma_component import SigmaComponent
 from dagster_sigma.translator import SigmaDataset, SigmaOrganizationData, SigmaWorkbook
 
 
@@ -20,35 +18,42 @@ class MockSigmaOrganization(SigmaOrganization):
         workbook = SigmaWorkbook(
             properties={
                 "workbookId": str(uuid.uuid4()),
-                "name": "Sample Workbook",
+                "name": "Sample_Workbook",
                 "url": f"{self.base_url}/workbook/sample",
                 "path": "My Documents",
                 "createdAt": "2024-01-01T00:00:00Z",
                 "updatedAt": "2024-01-01T00:00:00Z",
+                "latestVersion": 1,
             },
-            datasets_by_inode={},
-            tables_by_inode={},
+            lineage=[],
+            datasets=set(),
+            direct_table_deps=set(),
+            owner_email=None,
+            materialization_schedules=None,
         )
 
         # Create mock dataset
         dataset = SigmaDataset(
             properties={
                 "datasetId": str(uuid.uuid4()),
-                "name": "Orders Dataset",
+                "name": "Orders_Dataset",
                 "url": f"{self.base_url}/dataset/orders",
                 "description": "Sample orders dataset",
                 "createdAt": "2024-01-01T00:00:00Z",
                 "updatedAt": "2024-01-01T00:00:00Z",
-            }
+            },
+            columns=set(),
+            inputs=set(),
         )
 
         return SigmaOrganizationData(
             workbooks=[workbook],
             datasets=[dataset],
+            tables=[],
         )
 
 
-class MockSigmaComponent(SigmaOrganizationComponent):
+class MockSigmaComponent(SigmaComponent):
     @cached_property
     def organization_resource(self) -> MockSigmaOrganization:
         return MockSigmaOrganization(**self.organization.model_dump())
@@ -71,5 +76,5 @@ def test_mock_sigma_organization() -> None:
     assert len(organization_data.datasets) == 1
 
     # Verify specific content
-    assert organization_data.workbooks[0].properties["name"] == "Sample Workbook"
-    assert organization_data.datasets[0].properties["name"] == "Orders Dataset"
+    assert organization_data.workbooks[0].properties["name"] == "Sample_Workbook"
+    assert organization_data.datasets[0].properties["name"] == "Orders_Dataset"

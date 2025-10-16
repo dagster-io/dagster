@@ -34,7 +34,7 @@ SNIPPETS_DIR = (
 def _swap_to_mock_sigma_component(path: Path) -> None:
     path.write_text(
         path.read_text().replace(
-            "dagster_sigma.SigmaOrganizationComponent",
+            "dagster_sigma.SigmaComponent",
             "my_project.defs.sigma_ingest.test_sigma_utils.MockSigmaComponent",
         )
     )
@@ -89,7 +89,7 @@ def test_components_docs_sigma_organization(
 
         # scaffold sigma component
         context.run_command_and_snippet_output(
-            cmd="dg scaffold defs dagster_sigma.SigmaOrganizationComponent sigma_ingest",
+            cmd="dg scaffold defs dagster_sigma.SigmaComponent sigma_ingest",
             snippet_path=SNIPPETS_DIR
             / f"{context.get_next_snip_number()}-scaffold-sigma-component.txt",
         )
@@ -111,7 +111,7 @@ def test_components_docs_sigma_organization(
             Path("my_project") / "defs" / "sigma_ingest" / "defs.yaml",
             contents=textwrap.dedent(
                 """\
-                type: dagster_sigma.SigmaOrganizationComponent
+                type: dagster_sigma.SigmaComponent
 
                 attributes:
                   organization:
@@ -142,7 +142,7 @@ def test_components_docs_sigma_organization(
             Path("my_project") / "defs" / "sigma_ingest" / "defs.yaml",
             contents=textwrap.dedent(
                 """\
-                type: dagster_sigma.SigmaOrganizationComponent
+                type: dagster_sigma.SigmaComponent
 
                 attributes:
                   organization:
@@ -163,7 +163,7 @@ def test_components_docs_sigma_organization(
             Path("my_project") / "defs" / "sigma_ingest" / "defs.yaml",
             contents=textwrap.dedent(
                 """\
-                type: dagster_sigma.SigmaOrganizationComponent
+                type: dagster_sigma.SigmaComponent
 
                 attributes:
                   organization:
@@ -172,7 +172,7 @@ def test_components_docs_sigma_organization(
                     client_secret: "{{ env.SIGMA_CLIENT_SECRET }}"
                   translation:
                     group_name: sigma_data
-                    description: "Sigma {{ data.__class__.__name__ }}: {{ data.workbook.name if data.__class__.__name__ == 'SigmaWorkbookTranslatorData' else data.dataset.name }}"
+                    description: "Sigma asset: {{ data.properties.name }}"
                 """
             ),
             snippet_path=f"{context.get_next_snip_number()}-customized-component.yaml",
@@ -191,7 +191,7 @@ def test_components_docs_sigma_organization(
             Path("my_project") / "defs" / "sigma_ingest" / "defs.yaml",
             contents=textwrap.dedent(
                 """\
-                type: dagster_sigma.SigmaOrganizationComponent
+                type: dagster_sigma.SigmaComponent
 
                 attributes:
                   organization:

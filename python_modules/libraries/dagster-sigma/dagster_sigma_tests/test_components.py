@@ -11,7 +11,7 @@ from dagster._core.definitions.definitions_class import Definitions
 from dagster._core.instance_for_test import instance_for_test
 from dagster._utils.test.definitions import scoped_definitions_load_context
 from dagster.components.testing import create_defs_folder_sandbox
-from dagster_sigma import SigmaBaseUrl, SigmaOrganizationComponent
+from dagster_sigma import SigmaBaseUrl, SigmaComponent
 
 
 @pytest.fixture(autouse=True)
@@ -29,18 +29,18 @@ def _setup(sigma_auth_token: str) -> Iterator:
 @contextmanager
 def setup_sigma_component(
     defs_yaml_contents: dict[str, Any],
-) -> Iterator[tuple[SigmaOrganizationComponent, Definitions]]:
+) -> Iterator[tuple[SigmaComponent, Definitions]]:
     """Sets up a components project with a sigma component based on provided params."""
     with create_defs_folder_sandbox() as sandbox:
         defs_path = sandbox.scaffold_component(
-            component_cls=SigmaOrganizationComponent,
+            component_cls=SigmaComponent,
             defs_yaml_contents=defs_yaml_contents,
         )
         with (
             scoped_definitions_load_context(),
             sandbox.load_component_and_build_defs(defs_path=defs_path) as (component, defs),
         ):
-            assert isinstance(component, SigmaOrganizationComponent)
+            assert isinstance(component, SigmaComponent)
             yield component, defs
 
 
@@ -49,7 +49,7 @@ def test_basic_component_load(sigma_sample_data: Any, sigma_auth_token: str) -> 
     with (
         setup_sigma_component(
             defs_yaml_contents={
-                "type": "dagster_sigma.SigmaOrganizationComponent",
+                "type": "dagster_sigma.SigmaComponent",
                 "attributes": {
                     "organization": {
                         "base_url": SigmaBaseUrl.AWS_US.value,
@@ -143,7 +143,7 @@ def test_translation(
     wrapper = pytest.raises(Exception) if should_error else nullcontext()
     with wrapper:
         body = {
-            "type": "dagster_sigma.SigmaOrganizationComponent",
+            "type": "dagster_sigma.SigmaComponent",
             "attributes": {
                 "organization": {
                     "base_url": SigmaBaseUrl.AWS_US.value,
@@ -173,7 +173,7 @@ def test_translation(
 
 def test_per_content_type_translation(sigma_sample_data: Any, sigma_auth_token: str) -> None:
     body = {
-        "type": "dagster_sigma.SigmaOrganizationComponent",
+        "type": "dagster_sigma.SigmaComponent",
         "attributes": {
             "organization": {
                 "base_url": SigmaBaseUrl.AWS_US.value,
@@ -212,7 +212,7 @@ def test_per_content_type_translation(sigma_sample_data: Any, sigma_auth_token: 
         assert dataset_spec.tags.get("is_dataset") == "true"
 
 
-class CustomSigmaOrganizationComponent(SigmaOrganizationComponent):
+class CustomSigmaComponent(SigmaComponent):
     def get_asset_spec(self, data) -> AssetSpec:
         # Override to add custom metadata and tags
         base_spec = super().get_asset_spec(data)
@@ -223,12 +223,12 @@ class CustomSigmaOrganizationComponent(SigmaOrganizationComponent):
 
 
 def test_subclass_override_get_asset_spec(sigma_sample_data: Any, sigma_auth_token: str) -> None:
-    """Test that subclasses of SigmaOrganizationComponent can override get_asset_spec method."""
+    """Test that subclasses of SigmaComponent can override get_asset_spec method."""
     with create_defs_folder_sandbox() as sandbox:
         defs_path = sandbox.scaffold_component(
-            component_cls=CustomSigmaOrganizationComponent,
+            component_cls=CustomSigmaComponent,
             defs_yaml_contents={
-                "type": "dagster_sigma_tests.test_components.CustomSigmaOrganizationComponent",
+                "type": "dagster_sigma_tests.test_components.CustomSigmaComponent",
                 "attributes": {
                     "organization": {
                         "base_url": SigmaBaseUrl.AWS_US.value,
@@ -264,9 +264,9 @@ def test_component_load_with_defs_state(
 
     with create_defs_folder_sandbox() as sandbox:
         defs_path = sandbox.scaffold_component(
-            component_cls=SigmaOrganizationComponent,
+            component_cls=SigmaComponent,
             defs_yaml_contents={
-                "type": "dagster_sigma.SigmaOrganizationComponent",
+                "type": "dagster_sigma.SigmaComponent",
                 "attributes": {
                     "organization": {
                         "base_url": SigmaBaseUrl.AWS_US.value,
@@ -283,7 +283,7 @@ def test_component_load_with_defs_state(
         ):
             # First load, nothing there
             assert len(defs.resolve_asset_graph().get_all_asset_keys()) == 0
-            assert isinstance(component, SigmaOrganizationComponent)
+            assert isinstance(component, SigmaComponent)
             asyncio.run(component.refresh_state(sandbox.project_root))
 
         with (
