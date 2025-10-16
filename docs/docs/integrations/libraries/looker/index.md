@@ -1,7 +1,7 @@
 ---
 title: Dagster & Looker (Component)
 sidebar_label: Looker
-description: The dagster-looker library provides a LookerInstanceComponent, which can be used to represent Looker assets as assets in Dagster.
+description: The dagster-looker library provides a LookerComponent, which can be used to represent Looker assets as assets in Dagster.
 tags: [dagster-supported, bi]
 source: https://github.com/dagster-io/dagster/tree/master/python_modules/libraries/dagster-looker
 pypi: https://pypi.org/project/dagster-looker
@@ -12,7 +12,11 @@ canonicalUrl: '/integrations/libraries/looker'
 slug: '/integrations/libraries/looker'
 ---
 
-The [dagster-looker](/integrations/libraries/looker) library provides a `LookerInstanceComponent` which can be used to easily represent Looker dashboards and explores as assets in Dagster.
+import Beta from '@site/docs/partials/\_Beta.md';
+
+<Beta />
+
+The [dagster-looker](/integrations/libraries/looker) library provides a `LookerComponent` which can be used to easily represent Looker dashboards and explores as assets in Dagster.
 
 ## 1. Prepare a Dagster project
 

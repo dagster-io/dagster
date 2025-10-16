@@ -8,11 +8,21 @@ your other data assets, and how changes to other data assets might impact your L
 
 .. currentmodule:: dagster_looker
 
-***********
+*********
 Component
-***********
+*********
 
-.. autoclass:: LookerInstanceComponent
+.. autoclass:: LookerComponent
+
+To use the Looker component, see the `Looker component integration guide <https://docs.dagster.io/integrations/libraries/looker>`_.
+
+YAML configuration
+==================
+
+When you scaffold a Looker component definition, the following ``defs.yaml`` configuration file will be created:
+
+.. literalinclude:: ../../../../../../examples/docs_snippets/docs_snippets/guides/components/integrations/looker-component/6-populated-component.yaml
+    :language: yaml
 
 **********
 Looker API

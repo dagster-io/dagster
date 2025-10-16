@@ -1,8 +1,6 @@
 from functools import cached_property
 
-from dagster_looker.api.components.looker_instance_component import (
-    LookerInstanceComponent,
-)
+from dagster_looker.api.components.looker_component import LookerComponent
 from dagster_looker.api.dagster_looker_api_translator import (
     LookerInstanceData,
     LookerStructureType,
@@ -16,12 +14,13 @@ from looker_sdk.sdk.api40.models import (
     LookmlModel,
     LookmlModelExplore,
     LookmlModelNavExplore,
+    User,
 )
 
 
 class MockLookerResource(LookerResource):
     def get_sdk(self):
-        """Returns a mock SDK - not actually used since we override fetch."""
+        """Returns None - we'll override serialization methods to avoid needing SDK."""
         return None
 
 
@@ -47,27 +46,48 @@ class MockLookerInstanceData(LookerInstanceData):
             url="/dashboards/1",
         )
 
+        # Create mock user
+        user = User(
+            id="1",
+            email="user@example.com",
+        )
+
         return cls(
             explores_by_id={"my_model::my_explore": explore},
             dashboards_by_id={"1": dashboard},
+            users_by_id={"1": user},
         )
 
 
-class MockLookerComponent(LookerInstanceComponent):
+class MockLookerComponent(LookerComponent):
     @cached_property
     def looker_resource_cached(self) -> MockLookerResource:
         return MockLookerResource(**self.looker_resource.model_dump())
 
+    # Store mock data as a class variable to share between methods
+    _mock_data = None
+
     def write_state_to_path(self, state_path):
-        """Override to use mock data instead of fetching from API."""
+        """Override to use mock data - we store it directly without serialization."""
         import dagster as dg
 
-        # Create mock instance data
-        mock_data = MockLookerInstanceData.mock_data()
+        # Create and store mock instance data
+        MockLookerComponent._mock_data = MockLookerInstanceData.mock_data()
 
-        # Serialize to state
-        state = mock_data.to_state(None)  # SDK is None for mock
-        state_path.write_text(dg.serialize_value(state))
+        # Write a placeholder - we'll use the in-memory data in build_defs_from_state
+        state_path.write_text(dg.serialize_value({"mock": True}))
+
+    def build_defs_from_state(self, context, state_path):
+        """Override to use the stored mock data instead of deserializing."""
+        import dagster as dg
+
+        if state_path is None or MockLookerComponent._mock_data is None:
+            return dg.Definitions()
+
+        # Use the stored mock data
+        specs = self._load_asset_specs(MockLookerComponent._mock_data)
+
+        return dg.Definitions(assets=specs)
 
 
 def test_mock_looker_resource() -> None:
