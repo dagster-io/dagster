@@ -1,5 +1,36 @@
 # Changelog
 
+## 1.11.15 (core) / 0.27.15 (libraries)
+
+### New
+
+- All sequences are now supported in `AssetKey.with_prefix`. (Thanks, [@aksestok](https://github.com/aksestok)!)
+- [ui] Introduce new navigation, with main navigation items previously in top navigation now in a collapsible left nav.
+- [ui] Improve loading performance of Runs page.
+- [dagster-databricks] Add support for `notebook_task` in `PipesDatabricksClient`. (Thanks, [@SoerenStahlmann](https://github.com/SoerenStahlmann)!)
+
+### Bugfixes
+
+- Fixed an issue where `fetch_row_counts` and `fetch_column_metadata` do not execute in the same working directory as the underlying dbt command.
+- Fixed a bug with `AutomationCondition.execution_failed` that would cause it to be evaluated as `True` for an unpartitioned asset in cases where the latest run failed, but the asset itself materialized successfully before that failure.
+- Unrelated resource keys are now no longer included in the run config schema for subselections of assets.
+- Ignored nodes are properly excluded when generating run config for an implicit asset job
+- Invalid UTF-8 in stderr compute logs are now handled gracefully. (Thanks, [@2bxtech](https://github.com/2bxtech)!)
+- [ui] Fix top nav rendering for Plus users.
+- [dagster-celery] Fix Celery executor ignoring pools for ops. (Thanks, [@kkanter-asml](https://github.com/kkanter-asml)!)
+- [dagster-dbt] Fixed issue that made custom template vars unavailable when specifying them for the `cli_args:` field of the `DbtProjectComponent`.
+
+### Documentation
+
+- Fixed broken social media link in docs. (Thanks, [@MandyMeindersma](https://github.com/MandyMeindersma)!)
+
+## Internal Repository Changes
+
+### Bugfixes
+
+- [ui] Fix home page performance for users with large numbers of automations and jobs.
+- [ui] Fix a sporadic JavaScript error that can crash the page when loading insights charts.
+
 ## 1.11.14 (core) / 0.27.14 (libraries)
 
 ### New
