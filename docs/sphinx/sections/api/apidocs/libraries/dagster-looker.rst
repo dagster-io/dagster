@@ -8,6 +8,12 @@ your other data assets, and how changes to other data assets might impact your L
 
 .. currentmodule:: dagster_looker
 
+***********
+Component
+***********
+
+.. autoclass:: LookerInstanceComponent
+
 **********
 Looker API
 **********
