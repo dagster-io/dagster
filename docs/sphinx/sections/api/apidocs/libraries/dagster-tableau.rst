@@ -9,6 +9,12 @@ your other data assets, and how changes to other data assets might impact your T
 .. currentmodule:: dagster_tableau
 
 ***********
+Component
+***********
+
+.. autoclass:: TableauWorkspaceComponent
+
+***********
 Tableau API
 ***********
 
