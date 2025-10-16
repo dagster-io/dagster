@@ -34,7 +34,7 @@ SNIPPETS_DIR = (
 def _swap_to_mock_looker_component(path: Path) -> None:
     path.write_text(
         path.read_text().replace(
-            "dagster_looker.LookerInstanceComponent",
+            "dagster_looker.LookerComponent",
             "my_project.defs.looker_ingest.test_looker_utils.MockLookerComponent",
         )
     )
@@ -89,7 +89,7 @@ def test_components_docs_looker_instance(
 
         # scaffold looker component
         context.run_command_and_snippet_output(
-            cmd="dg scaffold defs dagster_looker.LookerInstanceComponent looker_ingest",
+            cmd="dg scaffold defs dagster_looker.LookerComponent looker_ingest",
             snippet_path=SNIPPETS_DIR
             / f"{context.get_next_snip_number()}-scaffold-looker-component.txt",
         )
@@ -111,7 +111,7 @@ def test_components_docs_looker_instance(
             Path("my_project") / "defs" / "looker_ingest" / "defs.yaml",
             contents=textwrap.dedent(
                 """\
-                type: dagster_looker.LookerInstanceComponent
+                type: dagster_looker.LookerComponent
 
                 attributes:
                   looker_resource:
@@ -142,7 +142,7 @@ def test_components_docs_looker_instance(
             Path("my_project") / "defs" / "looker_ingest" / "defs.yaml",
             contents=textwrap.dedent(
                 """\
-                type: dagster_looker.LookerInstanceComponent
+                type: dagster_looker.LookerComponent
 
                 attributes:
                   looker_resource:
@@ -163,7 +163,7 @@ def test_components_docs_looker_instance(
             Path("my_project") / "defs" / "looker_ingest" / "defs.yaml",
             contents=textwrap.dedent(
                 """\
-                type: dagster_looker.LookerInstanceComponent
+                type: dagster_looker.LookerComponent
 
                 attributes:
                   looker_resource:
@@ -191,7 +191,7 @@ def test_components_docs_looker_instance(
             Path("my_project") / "defs" / "looker_ingest" / "defs.yaml",
             contents=textwrap.dedent(
                 """\
-                type: dagster_looker.LookerInstanceComponent
+                type: dagster_looker.LookerComponent
 
                 attributes:
                   looker_resource:

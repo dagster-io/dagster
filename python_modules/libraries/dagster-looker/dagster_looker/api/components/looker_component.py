@@ -4,7 +4,7 @@ from pathlib import Path
 from typing import Annotated, Optional
 
 import dagster as dg
-from dagster._annotations import public
+from dagster._annotations import beta, public
 from dagster._core.definitions.assets.definition.asset_spec import AssetSpec
 from dagster.components import ComponentLoadContext, Model, Resolvable, Resolver
 from dagster.components.component.state_backed_component import StateBackedComponent
@@ -58,9 +58,10 @@ class LookerFilterArgs(Model, Resolvable):
     )
 
 
+@beta
 @public
 @dataclass
-class LookerInstanceComponent(StateBackedComponent, Resolvable):
+class LookerComponent(StateBackedComponent, Resolvable):
     """Pulls in the contents of a Looker instance into Dagster assets.
 
     Example:
@@ -69,7 +70,7 @@ class LookerInstanceComponent(StateBackedComponent, Resolvable):
 
             # defs.yaml
 
-            type: dagster_looker.LookerInstanceComponent
+            type: dagster_looker.LookerComponent
             attributes:
               looker_resource:
                 base_url: https://your-company.looker.com
@@ -121,7 +122,7 @@ class LookerInstanceComponent(StateBackedComponent, Resolvable):
 
     @cached_property
     def translator(self) -> DagsterLookerApiTranslator:
-        translator_cls = create_looker_component_translator(LookerInstanceComponent)
+        translator_cls = create_looker_component_translator(LookerComponent)
         return translator_cls(self)
 
     @cached_property
