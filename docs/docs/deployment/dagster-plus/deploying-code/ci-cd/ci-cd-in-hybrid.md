@@ -9,7 +9,7 @@ import UpdateGitHubActionVersion from '@site/docs/partials/_UpdateGitHubActionVe
 
 :::note
 
-This guide only applies to [Dagster+ Hybrid deployments](/deployment/dagster-plus/hybrid). For Serverless guidance, see [CI/CD in Serverless](/deployment/dagster-plus/ci-cd/production-deployments/ci-cd-in-serverless).
+This guide only applies to [Dagster+ Hybrid deployments](/deployment/dagster-plus/hybrid). For Serverless guidance, see [CI/CD in Serverless](/deployment/dagster-plus/deploying-code/ci-cd/ci-cd-in-serverless).
 
 :::
 
@@ -100,6 +100,6 @@ If you are using a non-GitHub CI/CD provider, your system should use the `dagste
 
 :::note
 
-Creating branch deployments using the CLI requires some additional steps. For more information, see "[Using branch deployments with the dagster-cloud CLI](/deployment/dagster-plus/ci-cd/branch-deployments/using-branch-deployments-with-the-cli).
+Creating branch deployments using the CLI requires some additional steps. For more information, see "[Using branch deployments with the dagster-cloud CLI](/deployment/dagster-plus/deploying-code/branch-deployments/using-branch-deployments-with-the-cli).
 
 :::

@@ -9,7 +9,7 @@ When you import a project into Dagster+ from GitHub or Gitlab, a few `.yml` file
 
 ## branch_deployments.yml
 
-This file defines the steps required to use [branch deployments](/deployment/dagster-plus/ci-cd/branch-deployments). It is required for branch deployments.
+This file defines the steps required to use [branch deployments](/deployment/dagster-plus/deploying-code/branch-deployments). It is required for branch deployments.
 
 :::note
 

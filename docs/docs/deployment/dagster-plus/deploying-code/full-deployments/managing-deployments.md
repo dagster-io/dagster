@@ -15,7 +15,7 @@ Each full deployment can have one or multiple [code locations](/deployment/code-
 
 In Dagster+, there are two types of deployments:
 
-- [**Branch deployments**](/deployment/dagster-plus/ci-cd/branch-deployments), which are temporary deployments built for testing purposes. We recommend using branch deployments to test your changes, even if you're able to create additional deployments. Branch deployments are available for all Dagster+ users, regardless of plan.
+- [**Branch deployments**](/deployment/dagster-plus/deploying-code/branch-deployments), which are temporary deployments built for testing purposes. We recommend using branch deployments to test your changes, even if you're able to create additional deployments. Branch deployments are available for all Dagster+ users, regardless of plan.
 - **Full deployments**, which are persistent, fully-featured deployments intended to perform actions on a recurring basis.
 
 This guide focuses on **full deployments**, hereafter referred to as **deployments**.
@@ -78,7 +78,7 @@ To delete a deployment:
 
 :::
 
-Deployment settings can be configured in the Dagster+ interface or using the `dagster-cloud` CLI. Refer to the [deployment settings reference](/deployment/dagster-plus/full-deployments/deployment-settings-reference) for more info about individual settings.
+Deployment settings can be configured in the Dagster+ interface or using the `dagster-cloud` CLI. Refer to the [deployment settings reference](/deployment/dagster-plus/deploying-code/full-deployments/deployment-settings-reference) for more info about individual settings.
 
 <Tabs>
   <TabItem value="Dagster+">

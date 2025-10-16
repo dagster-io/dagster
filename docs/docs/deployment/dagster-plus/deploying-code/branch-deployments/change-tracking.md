@@ -19,7 +19,7 @@ You can also apply filters to show only new and changed assets in the UI. This m
 
 :::note
 
-The default base for branch deployments is `prod`. To configure a different deployment as the base, [create a branch deployment using the dagster-cloud CLI](/deployment/dagster-plus/ci-cd/branch-deployments/using-branch-deployments-with-the-cli) and specify it using the optional `--base-deployment-name` parameter.
+The default base for branch deployments is `prod`. To configure a different deployment as the base, [create a branch deployment using the dagster-cloud CLI](/deployment/dagster-plus/deploying-code/branch-deployments/using-branch-deployments-with-the-cli) and specify it using the optional `--base-deployment-name` parameter.
 
 The default behavior is to compare the branch deployment against the **current** state of the base deployment. Depending on deployment and development cadence, the code deployed in the base deployment can get ahead of the branch causing changes to appear that are from the base getting ahead of the branch. To address this, the CLI option `--snapshot-base-condition` can be set to either `on-create` to snapshot the base only when the branch is first created or `on-update` to refresh the base snapshot anytime the branch is updated.
 

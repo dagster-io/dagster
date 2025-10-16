@@ -10,7 +10,7 @@ If you configure run retries, a new run will be kicked off whenever a run fails 
 
 How to configure run retries depends on whether you're using Dagster+ or Dagster Open Source:
 
-- **Dagster+**: Use the [Dagster+ UI or the dagster-cloud CLI](/deployment/dagster-plus/full-deployments/deployment-settings-reference) to set a default maximum number of retries. Run retries do not need to be explicitly enabled.
+- **Dagster+**: Use the [Dagster+ UI or the dagster-cloud CLI](/deployment/dagster-plus/deploying-code/full-deployments/deployment-settings-reference) to set a default maximum number of retries. Run retries do not need to be explicitly enabled.
 - **Dagster Open Source**: Use your instance's `dagster.yaml` to enable run retries.
 
 For example, the following will set a default maximum number of retries of `3` for all runs:

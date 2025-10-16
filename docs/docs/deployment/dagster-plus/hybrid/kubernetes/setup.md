@@ -91,7 +91,7 @@ An exhaustive list of settings is available on the [Kubernetes agent configurati
 
 ### Configure your agents to serve branch deployments
 
-[Branch deployments](/deployment/dagster-plus/ci-cd/branch-deployments) are lightweight staging environments created for each code change. To configure your Dagster+ agent to manage them:
+[Branch deployments](/deployment/dagster-plus/deploying-code/branch-deployments) are lightweight staging environments created for each code change. To configure your Dagster+ agent to manage them:
 
 ```yaml
 # values.yaml

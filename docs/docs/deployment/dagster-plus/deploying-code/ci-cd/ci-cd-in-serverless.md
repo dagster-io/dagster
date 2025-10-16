@@ -7,7 +7,7 @@ tags: [dagster-plus-feature]
 
 :::note
 
-This guide only applies to [Dagster+ Serverless deployments](/deployment/dagster-plus/serverless). For Hybrid guidance, see [CI/CI in Dagster+ Hybrid](/deployment/dagster-plus/ci-cd/production-deployments/ci-cd-in-hybrid).
+This guide only applies to [Dagster+ Serverless deployments](/deployment/dagster-plus/serverless). For Hybrid guidance, see [CI/CI in Dagster+ Hybrid](/deployment/dagster-plus/deploying-code/ci-cd/ci-cd-in-hybrid).
 
 :::
 
@@ -22,7 +22,7 @@ Using the `Connect to GitHub` or `Connect to GitLab` buttons in Dagster+ to conf
 <Tabs groupId="method">
 <TabItem value="GitHub" label="GitHub">
 
-If you're a GitHub user, you can use our GitHub app with GitHub Actions to set up a repository containing basic code and configuration for you consistent with Dagster+ best practices. Pushing your code changes to the `main` branch will automatically deploy them to your `prod` Serverless deployment. Pull requests will spin up ephemeral [branch deployments](/deployment/dagster-plus/ci-cd/branch-deployments) that you can view in the Dagster+ UI for previewing and testing.
+If you're a GitHub user, you can use our GitHub app with GitHub Actions to set up a repository containing basic code and configuration for you consistent with Dagster+ best practices. Pushing your code changes to the `main` branch will automatically deploy them to your `prod` Serverless deployment. Pull requests will spin up ephemeral [branch deployments](/deployment/dagster-plus/deploying-code/branch-deployments) that you can view in the Dagster+ UI for previewing and testing.
 
 :::note
 
@@ -40,7 +40,7 @@ If you're a GitHub user, you can use our GitHub app with GitHub Actions to set u
 
 <TabItem value="GitLab" label="GitLab">
 
-If you're a GitLab user, you can use our GitLab to set up a repo containing basic code and CI/CD configuration for you consistent with Dagster+ best practices. Pushing your code changes to the `main` branch will automatically deploy them to your `prod` Serverless deployment. Pull requests will spin up ephemeral [branch deployments](/deployment/dagster-plus/ci-cd/branch-deployments) that you can view in the Dagster+ UI for previewing and testing.
+If you're a GitLab user, you can use our GitLab to set up a repo containing basic code and CI/CD configuration for you consistent with Dagster+ best practices. Pushing your code changes to the `main` branch will automatically deploy them to your `prod` Serverless deployment. Pull requests will spin up ephemeral [branch deployments](/deployment/dagster-plus/deploying-code/branch-deployments) that you can view in the Dagster+ UI for previewing and testing.
 
 </TabItem>
 

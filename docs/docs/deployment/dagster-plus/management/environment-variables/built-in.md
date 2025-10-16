@@ -19,7 +19,7 @@ The following variables are available in every deployment of your Dagster+ insta
 
 ### Branch deployment variables
 
-The following environment variables are available only in a [branch deployment](/deployment/dagster-plus/ci-cd/branch-deployments).
+The following environment variables are available only in a [branch deployment](/deployment/dagster-plus/deploying-code/branch-deployments).
 
 For every commit made to a branch, the following environment variables are available:
 
