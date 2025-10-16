@@ -34,7 +34,7 @@ SNIPPETS_DIR = (
 def _swap_to_mock_tableau_component(path: Path) -> None:
     path.write_text(
         path.read_text().replace(
-            "dagster_tableau.TableauWorkspaceComponent",
+            "dagster_tableau.TableauComponent",
             "my_project.defs.tableau_ingest.test_tableau_utils.MockTableauComponent",
         )
     )
@@ -92,7 +92,7 @@ def test_components_docs_tableau_workspace(
 
         # scaffold tableau component
         context.run_command_and_snippet_output(
-            cmd="dg scaffold defs dagster_tableau.TableauWorkspaceComponent tableau_ingest",
+            cmd="dg scaffold defs dagster_tableau.TableauComponent tableau_ingest",
             snippet_path=SNIPPETS_DIR
             / f"{context.get_next_snip_number()}-scaffold-tableau-component.txt",
         )
@@ -114,10 +114,11 @@ def test_components_docs_tableau_workspace(
             Path("my_project") / "defs" / "tableau_ingest" / "defs.yaml",
             contents=textwrap.dedent(
                 """\
-                type: dagster_tableau.TableauWorkspaceComponent
+                type: dagster_tableau.TableauComponent
 
                 attributes:
                   workspace:
+                    type: cloud
                     connected_app_client_id: "{{ env.TABLEAU_CONNECTED_APP_CLIENT_ID }}"
                     connected_app_secret_id: "{{ env.TABLEAU_CONNECTED_APP_SECRET_ID }}"
                     connected_app_secret_value: "{{ env.TABLEAU_CONNECTED_APP_SECRET_VALUE }}"
@@ -148,10 +149,11 @@ def test_components_docs_tableau_workspace(
             Path("my_project") / "defs" / "tableau_ingest" / "defs.yaml",
             contents=textwrap.dedent(
                 """\
-                type: dagster_tableau.TableauWorkspaceComponent
+                type: dagster_tableau.TableauComponent
 
                 attributes:
                   workspace:
+                    type: cloud
                     connected_app_client_id: "{{ env.TABLEAU_CONNECTED_APP_CLIENT_ID }}"
                     connected_app_secret_id: "{{ env.TABLEAU_CONNECTED_APP_SECRET_ID }}"
                     connected_app_secret_value: "{{ env.TABLEAU_CONNECTED_APP_SECRET_VALUE }}"
@@ -179,10 +181,11 @@ def test_components_docs_tableau_workspace(
             Path("my_project") / "defs" / "tableau_ingest" / "defs.yaml",
             contents=textwrap.dedent(
                 """\
-                type: dagster_tableau.TableauWorkspaceComponent
+                type: dagster_tableau.TableauComponent
 
                 attributes:
                   workspace:
+                    type: cloud
                     connected_app_client_id: "{{ env.TABLEAU_CONNECTED_APP_CLIENT_ID }}"
                     connected_app_secret_id: "{{ env.TABLEAU_CONNECTED_APP_SECRET_ID }}"
                     connected_app_secret_value: "{{ env.TABLEAU_CONNECTED_APP_SECRET_VALUE }}"

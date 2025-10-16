@@ -14,10 +14,10 @@ from dagster._core.instance_for_test import instance_for_test
 from dagster._utils.test.definitions import scoped_definitions_load_context
 from dagster.components.testing import create_defs_folder_sandbox
 from dagster.components.testing.test_cases import TestTranslation
-from dagster_tableau.components import TableauWorkspaceComponent
+from dagster_tableau.components import TableauComponent
 
 BASIC_TABLEAU_COMPONENT_BODY = {
-    "type": "dagster_tableau.TableauWorkspaceComponent",
+    "type": "dagster_tableau.TableauComponent",
     "attributes": {
         "workspace": {
             "connected_app_client_id": "test_client_id",
@@ -34,18 +34,18 @@ BASIC_TABLEAU_COMPONENT_BODY = {
 @contextmanager
 def setup_tableau_component(
     defs_yaml_contents: dict[str, Any],
-) -> Iterator[tuple[TableauWorkspaceComponent, Definitions]]:
+) -> Iterator[tuple[TableauComponent, Definitions]]:
     """Sets up a components project with a tableau component based on provided params."""
     with create_defs_folder_sandbox() as sandbox:
         defs_path = sandbox.scaffold_component(
-            component_cls=TableauWorkspaceComponent,
+            component_cls=TableauComponent,
             defs_yaml_contents=defs_yaml_contents,
         )
         with (
             scoped_definitions_load_context(),
             sandbox.load_component_and_build_defs(defs_path=defs_path) as (component, defs),
         ):
-            assert isinstance(component, TableauWorkspaceComponent)
+            assert isinstance(component, TableauComponent)
             yield component, defs
 
 
@@ -66,7 +66,7 @@ def test_component_load_with_defs_state(
         create_defs_folder_sandbox() as sandbox,
     ):
         defs_path = sandbox.scaffold_component(
-            component_cls=TableauWorkspaceComponent,
+            component_cls=TableauComponent,
             defs_yaml_contents=body,
         )
         with (
@@ -75,7 +75,7 @@ def test_component_load_with_defs_state(
         ):
             # First load, nothing there
             assert len(defs.resolve_asset_graph().get_all_asset_keys()) == 0
-            assert isinstance(component, TableauWorkspaceComponent)
+            assert isinstance(component, TableauComponent)
             asyncio.run(component.refresh_state(sandbox.project_root))
 
         with (
@@ -112,7 +112,7 @@ class TestTableauTranslation(TestTranslation):
             create_defs_folder_sandbox() as sandbox,
         ):
             defs_path = sandbox.scaffold_component(
-                component_cls=TableauWorkspaceComponent,
+                component_cls=TableauComponent,
                 defs_yaml_contents=body,
             )
             # First load and populate state
@@ -120,7 +120,7 @@ class TestTableauTranslation(TestTranslation):
                 scoped_definitions_load_context(),
                 sandbox.load_component_and_build_defs(defs_path=defs_path) as (component, defs),
             ):
-                assert isinstance(component, TableauWorkspaceComponent)
+                assert isinstance(component, TableauComponent)
                 asyncio.run(component.refresh_state(sandbox.project_root))
 
             # Second load with populated state

@@ -1,3 +1,1 @@
-from dagster_tableau.components.tableau_workspace_component import (
-    TableauWorkspaceComponent as TableauWorkspaceComponent,
-)
+from dagster_tableau.components.tableau_component import TableauComponent as TableauComponent

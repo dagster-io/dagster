@@ -1,10 +1,10 @@
 from dataclasses import dataclass, field
 from functools import cached_property
 from pathlib import Path
-from typing import Annotated, Optional
+from typing import Annotated, Literal, Optional, Union
 
 import dagster as dg
-from dagster._annotations import public
+from dagster._annotations import beta, public
 from dagster._core.definitions.assets.definition.asset_spec import AssetSpec
 from dagster.components import ComponentLoadContext, Model, Resolvable, Resolver
 from dagster.components.component.state_backed_component import StateBackedComponent
@@ -21,7 +21,11 @@ from dagster_tableau.components.translation import (
     ResolvedMultilayerTranslationFn,
     create_tableau_component_translator,
 )
-from dagster_tableau.resources import BaseTableauWorkspace, TableauCloudWorkspace
+from dagster_tableau.resources import (
+    BaseTableauWorkspace,
+    TableauCloudWorkspace,
+    TableauServerWorkspace,
+)
 from dagster_tableau.translator import (
     DagsterTableauTranslator,
     TableauTranslatorData,
@@ -29,9 +33,13 @@ from dagster_tableau.translator import (
 )
 
 
-class TableauWorkspaceArgs(Model, Resolvable):
-    """Arguments for configuring a Tableau workspace connection."""
+class TableauCloudWorkspaceArgs(Model, Resolvable):
+    """Arguments for configuring a Tableau Cloud workspace connection."""
 
+    type: Literal["cloud"] = Field(
+        default="cloud",
+        description="Type of Tableau workspace. Must be 'cloud' for Tableau Cloud.",
+    )
     connected_app_client_id: str = Field(
         ...,
         description="Tableau connected app client ID for authentication.",
@@ -58,17 +66,78 @@ class TableauWorkspaceArgs(Model, Resolvable):
     )
 
 
+class TableauServerWorkspaceArgs(Model, Resolvable):
+    """Arguments for configuring a Tableau Server workspace connection."""
+
+    type: Literal["server"] = Field(
+        ...,
+        description="Type of Tableau workspace. Must be 'server' for Tableau Server.",
+    )
+    connected_app_client_id: str = Field(
+        ...,
+        description="Tableau connected app client ID for authentication.",
+    )
+    connected_app_secret_id: str = Field(
+        ...,
+        description="Tableau connected app secret ID.",
+    )
+    connected_app_secret_value: str = Field(
+        ...,
+        description="Tableau connected app secret value.",
+    )
+    username: str = Field(
+        ...,
+        description="Tableau username for authentication.",
+    )
+    site_name: str = Field(
+        ...,
+        description="Tableau site name.",
+    )
+    server_name: str = Field(
+        ...,
+        description="Tableau server name (e.g. 'tableau.example.com').",
+    )
+
+
 def _resolve_tableau_workspace(
     context: ResolutionContext, model: BaseModel
-) -> TableauCloudWorkspace:
-    """Resolves a TableauWorkspaceArgs model into a TableauCloudWorkspace resource."""
-    resolved = resolve_fields(model=model, resolved_cls=TableauWorkspaceArgs, context=context)
-    return TableauCloudWorkspace(**resolved)
+) -> BaseTableauWorkspace:
+    """Resolves TableauCloudWorkspaceArgs or TableauServerWorkspaceArgs into the appropriate workspace resource."""
+    # First, check which type we're dealing with
+    workspace_type = (
+        model.get("type", "cloud") if isinstance(model, dict) else getattr(model, "type", "cloud")
+    )
+
+    if workspace_type == "cloud":
+        resolved = resolve_fields(
+            model=model, resolved_cls=TableauCloudWorkspaceArgs, context=context
+        )
+        return TableauCloudWorkspace(
+            connected_app_client_id=resolved["connected_app_client_id"],
+            connected_app_secret_id=resolved["connected_app_secret_id"],
+            connected_app_secret_value=resolved["connected_app_secret_value"],
+            username=resolved["username"],
+            site_name=resolved["site_name"],
+            pod_name=resolved["pod_name"],
+        )
+    else:
+        resolved = resolve_fields(
+            model=model, resolved_cls=TableauServerWorkspaceArgs, context=context
+        )
+        return TableauServerWorkspace(
+            connected_app_client_id=resolved["connected_app_client_id"],
+            connected_app_secret_id=resolved["connected_app_secret_id"],
+            connected_app_secret_value=resolved["connected_app_secret_value"],
+            username=resolved["username"],
+            site_name=resolved["site_name"],
+            server_name=resolved["server_name"],
+        )
 
 
+@beta
 @public
 @dataclass
-class TableauWorkspaceComponent(StateBackedComponent, Resolvable):
+class TableauComponent(StateBackedComponent, Resolvable):
     """Pulls in the contents of a Tableau workspace into Dagster assets.
 
     Example:
@@ -77,7 +146,7 @@ class TableauWorkspaceComponent(StateBackedComponent, Resolvable):
 
             # defs.yaml
 
-            type: dagster_tableau.TableauWorkspaceComponent
+            type: dagster_tableau.TableauComponent
             attributes:
               workspace:
                 connected_app_client_id: "{{ env.TABLEAU_CLIENT_ID }}"
@@ -93,7 +162,30 @@ class TableauWorkspaceComponent(StateBackedComponent, Resolvable):
         Resolver(
             _resolve_tableau_workspace,
             model_field_name="workspace",
-            model_field_type=TableauWorkspaceArgs.model(),
+            model_field_type=Union[
+                TableauCloudWorkspaceArgs.model(), TableauServerWorkspaceArgs.model()
+            ],
+            description="Configuration for connecting to the Tableau workspace. Use 'type: cloud' for Tableau Cloud or 'type: server' for Tableau Server.",
+            examples=[
+                {
+                    "type": "cloud",
+                    "connected_app_client_id": "{{ env.TABLEAU_CLIENT_ID }}",
+                    "connected_app_secret_id": "{{ env.TABLEAU_SECRET_ID }}",
+                    "connected_app_secret_value": "{{ env.TABLEAU_SECRET_VALUE }}",
+                    "username": "{{ env.TABLEAU_USERNAME }}",
+                    "site_name": "my_site",
+                    "pod_name": "10ax",
+                },
+                {
+                    "type": "server",
+                    "connected_app_client_id": "{{ env.TABLEAU_CLIENT_ID }}",
+                    "connected_app_secret_id": "{{ env.TABLEAU_SECRET_ID }}",
+                    "connected_app_secret_value": "{{ env.TABLEAU_SECRET_VALUE }}",
+                    "username": "{{ env.TABLEAU_USERNAME }}",
+                    "site_name": "my_site",
+                    "server_name": "tableau.example.com",
+                },
+            ],
         ),
     ]
     translation: Optional[ResolvedMultilayerTranslationFn] = None
@@ -108,7 +200,7 @@ class TableauWorkspaceComponent(StateBackedComponent, Resolvable):
 
     @cached_property
     def translator(self) -> DagsterTableauTranslator:
-        translator_cls = create_tableau_component_translator(TableauWorkspaceComponent)
+        translator_cls = create_tableau_component_translator(TableauComponent)
         return translator_cls(self)
 
     @cached_property
