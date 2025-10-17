@@ -82,6 +82,23 @@ class FivetranAccountComponent(StateBackedComponent, dg.Model, dg.Resolvable):
     """Loads Fivetran connectors from a given Fivetran instance as Dagster assets.
     Materializing these assets will trigger a sync of the Fivetran connector, enabling
     you to schedule Fivetran syncs using Dagster.
+
+    Example:
+
+        .. code-block:: yaml
+
+            # defs.yaml
+
+            type: dagster_fivetran.FivetranAccountComponent
+            attributes:
+              workspace:
+                account_id: your_account_id
+                api_key: "{{ env.FIVETRAN_API_KEY }}"
+                api_secret: "{{ env.FIVETRAN_API_SECRET }}"
+              connector_selector:
+                by_name:
+                  - my_postgres_connector
+                  - my_snowflake_connector
     """
 
     workspace: Annotated[

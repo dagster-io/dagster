@@ -23,6 +23,7 @@ from dagster._core.definitions.definitions_load_context import (
 )
 from dagster._core.errors import DagsterInvalidInvocationError
 from dagster._core.storage.defs_state.base import DefsStateStorage
+from dagster._symbol_annotations.public import public
 from dagster._utils.env import using_dagster_dev
 from dagster.components.component.component import Component
 from dagster.components.core.context import ComponentLoadContext
@@ -33,7 +34,82 @@ if TYPE_CHECKING:
     from pydantic import BaseModel
 
 
+@public
 class StateBackedComponent(Component):
+    """Base class for components that depend on external state that needs to be fetched and cached.
+
+    State-backed components are designed for integrations where Dagster definitions depend on
+    information from external systems (like APIs or compiled artifacts) rather than just code
+    and configuration files. The component framework manages the lifecycle of fetching, storing,
+    and loading this state.
+
+    Subclasses must implement:
+        - ``write_state_to_path``: Fetches state from external sources and writes it to a local path
+        - ``build_defs_from_state``: Builds Dagster definitions from the cached state
+        - ``defs_state_config``: Property that returns configuration for state management
+
+    Example:
+        .. code-block:: python
+
+            import json
+            from dataclasses import dataclass
+            from pathlib import Path
+            from typing import Optional
+
+            import dagster as dg
+            from dagster.components import DefsStateConfig, DefsStateConfigArgs, ResolvedDefsStateConfig
+
+            @dataclass
+            class MyStateBackedComponent(dg.StateBackedComponent):
+                base_url: str
+                defs_state: ResolvedDefsStateConfig = DefsStateConfigArgs.local_filesystem()
+
+                @property
+                def defs_state_config(self) -> DefsStateConfig:
+                    return DefsStateConfig.from_args(
+                        self.defs_state, default_key=f"MyComponent[{self.base_url}]"
+                    )
+
+                def write_state_to_path(self, state_path: Path) -> None:
+                    # Fetch table metadata from external API
+                    response = requests.get(f"{self.base_url}/api/tables")
+                    tables = response.json()
+                    # Write state to file as JSON
+                    state_path.write_text(json.dumps(tables))
+
+                def build_defs_from_state(
+                    self, context: dg.ComponentLoadContext, state_path: Optional[Path]
+                ) -> dg.Definitions:
+                    if state_path is None:
+                        return dg.Definitions()
+
+                    # Read cached state
+                    tables = json.loads(state_path.read_text())
+
+                    # Create one asset per table found in the state
+                    assets = []
+                    for table in tables:
+                        @dg.asset(key=dg.AssetKey(table["name"]))
+                        def table_asset():
+                            # Fetch and return the actual table data
+                            return fetch_table_data(table["name"])
+
+                        assets.append(table_asset)
+
+                    return dg.Definitions(assets=assets)
+
+        YAML configuration:
+
+        .. code-block:: yaml
+
+            # defs.yaml
+            type: my_package.MyStateBackedComponent
+            attributes:
+              base_url: "{{ env.MY_API_URL }}"
+              defs_state:
+                management_type: LOCAL_FILESYSTEM
+    """
+
     @classmethod
     def load(cls, attributes: Optional["BaseModel"], context: "ComponentLoadContext") -> Self:
         """Loads the component and marks its defs_state_key on the component tree."""

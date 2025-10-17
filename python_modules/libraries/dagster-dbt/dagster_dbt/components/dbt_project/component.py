@@ -113,6 +113,18 @@ class DbtProjectComponent(StateBackedComponent, dg.Resolvable):
 
     Scaffold a DbtProjectComponent definition by running `dg scaffold defs dagster_dbt.DbtProjectComponent --project-path path/to/your/existing/dbt_project`
     in the Dagster project directory.
+
+    Example:
+
+        .. code-block:: yaml
+
+            # defs.yaml
+
+            type: dagster_dbt.DbtProjectComponent
+            attributes:
+              project: "{{ project_root }}/path/to/dbt_project"
+              cli_args:
+                - build
     """
 
     project: Annotated[

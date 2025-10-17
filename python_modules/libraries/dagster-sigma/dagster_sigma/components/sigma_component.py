@@ -155,7 +155,25 @@ class SigmaFilterArgs(Model, Resolvable):
 @public
 @dataclass
 class SigmaComponent(StateBackedComponent, Resolvable):
-    """Pulls in the contents of a Sigma organization into Dagster assets."""
+    """Pulls in the contents of a Sigma organization into Dagster assets.
+
+    Example:
+
+        .. code-block:: yaml
+
+            # defs.yaml
+
+            type: dagster_sigma.SigmaComponent
+            attributes:
+              organization:
+                base_url: https://aws-api.sigmacomputing.com
+                client_id: "{{ env.SIGMA_CLIENT_ID }}"
+                client_secret: "{{ env.SIGMA_CLIENT_SECRET }}"
+              sigma_filter:
+                workbook_folders:
+                  - ["My Documents", "Analytics"]
+                include_unused_datasets: false
+    """
 
     organization: Annotated[
         SigmaOrganization,
