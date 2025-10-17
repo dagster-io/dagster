@@ -11,7 +11,7 @@ Using this approach to branch deployments may be a good fit if:
 
 - You don't use GitHub for version control
 - You use an alternate CI platform
-- You want full control over Branch Deployment configuration
+- You want full control over branch deployment configuration
 
 **If you use GitHub for version control or want Dagster to automate branch deployments**, see "[Setting up branch deployments](/deployment/dagster-plus/deploying-code/branch-deployments/setting-up-branch-deployments)" and choose the GitHub tab.
 
@@ -23,7 +23,7 @@ Branch deployments are only available in Dagster+.
 
 ## Prerequisites
 
-Using Branch Deployments requires setting up two components: the Branch Deployment agent and CI platform. You'll need:
+Using branch deployments requires setting up two components: the branch deployment agent and CI platform. You'll need:
 
 - **Organization Admin** permissions in Dagster+
 - To install the [`dagster-cloud` CLI](/api/clis/dagster-cloud-cli/installing-and-configuring)
@@ -56,7 +56,7 @@ Using the tabs, select your agent type to view instructions.
 <Tabs>
 <TabItem value="Amazon ECS">
 
-1. **Deploy an ECS agent to serve your branch deployments**. Follow the [ECS agent](/deployment/dagster-plus/hybrid/amazon-ecs) setup guide, making sure to set the **Enable Branch Deployments** parameter if using the CloudFormation template. If you are running an existing agent, follow the [upgrade guide](/deployment/dagster-plus/hybrid/amazon-ecs/upgrading-cloudformation) to ensure your template is up-to-date. Then, turn on the **Enable Branch Deployments** parameter.
+1. **Deploy an ECS agent to serve your branch deployments**. Follow the [ECS agent](/deployment/dagster-plus/hybrid/amazon-ecs) setup guide, making sure to set the **Enable branch deployments** parameter if using the CloudFormation template. If you are running an existing agent, follow the [upgrade guide](/deployment/dagster-plus/hybrid/amazon-ecs/upgrading-cloudformation) to ensure your template is up-to-date. Then, turn on the **Enable branch deployments** parameter.
 
 2. **Create a private [Amazon Elastic Registry (ECR) repository](https://console.aws.amazon.com/ecr/repositories).** Refer to the [AWS ECR documentation](https://docs.aws.amazon.com/AmazonECR/latest/userguide/repository-create.html) for instructions.
 
@@ -152,7 +152,7 @@ After the above has occurred:
    )
    ```
 
-   One or more additional parameters can optionally be supplied to the `create-or-update` command to enhance the Branch Deployments UI in Dagster+:
+   One or more additional parameters can optionally be supplied to the `create-or-update` command to enhance the branch deployments UI in Dagster+:
 
    ```shell
    BRANCH_DEPLOYMENT_NAME=$(
@@ -208,7 +208,7 @@ After the above has occurred:
 
 ## Step 4: Access the branch deployment
 
-Now that Branch Deployments are configured, you can check out the preview in Dagster+.
+Now that branch deployments are configured, you can check out the preview in Dagster+.
 
 Click the **deployment switcher** to view your workspace's branch deployments:
 

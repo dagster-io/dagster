@@ -513,6 +513,10 @@ You can also access branch deployments directly in Dagster+ from the **deploymen
   </TabItem>
 </Tabs>
 
+## Changing the base deployment
+
+The default base for branch deployments is `prod`. To configure a different [full deployment](/deployment/dagster-plus/deploying-code/full-deployments) as the base, [create a branch deployment using the dagster-cloud CLI](/deployment/dagster-plus/deploying-code/branch-deployments/using-branch-deployments-with-the-cli) and specify the deployment with the optional `--base-deployment-name` parameter.
+
 ## Best practices
 
 To ensure the best experience when using branch deployments, we recommend:
