@@ -4,7 +4,7 @@ from abc import abstractmethod
 from collections.abc import Mapping, Sequence
 from contextlib import AbstractContextManager
 from functools import cached_property
-from typing import TYPE_CHECKING, Any, Optional, Union, cast
+from typing import TYPE_CHECKING, Any, Callable, Optional, Union, cast
 
 from dagster_shared.libraries import DagsterLibraryRegistry
 from dagster_shared.serdes.objects.models.defs_state_info import DefsStateInfo
@@ -170,15 +170,24 @@ class CodeLocation(AbstractContextManager):
         if not selector.is_subset_selection:
             return self.get_repository(selector.repository_name).get_full_job(selector.job_name)
 
-        subset_result = self._get_subset_remote_job_result(selector)
+        subset_result = self._get_subset_remote_job_result(
+            selector,
+            lambda selector: self.get_repository(selector.repository_name).get_full_job(
+                selector.job_name
+            ),
+        )
         return self._get_remote_job_from_subset_result(selector, subset_result)
 
-    async def gen_subset_job(self, selector: JobSubsetSelector) -> RemoteJob:
-        subset_result = await self._gen_subset_remote_job_result(selector)
+    async def gen_subset_job(
+        self, selector: JobSubsetSelector, get_full_job: Callable[[JobSubsetSelector], RemoteJob]
+    ) -> RemoteJob:
+        subset_result = await self._gen_subset_remote_job_result(selector, get_full_job)
         return self._get_remote_job_from_subset_result(selector, subset_result)
 
     @abstractmethod
-    def _get_subset_remote_job_result(self, selector: JobSubsetSelector) -> RemoteJobSubsetResult:
+    def _get_subset_remote_job_result(
+        self, selector: JobSubsetSelector, get_full_job: Callable[[JobSubsetSelector], RemoteJob]
+    ) -> RemoteJobSubsetResult:
         """Returns a snapshot about an RemoteJob with an op selection, which requires
         access to the underlying JobDefinition. Callsites should likely use
         `get_job` instead.
@@ -186,7 +195,7 @@ class CodeLocation(AbstractContextManager):
 
     @abstractmethod
     async def _gen_subset_remote_job_result(
-        self, selector: JobSubsetSelector
+        self, selector: JobSubsetSelector, get_full_job: Callable[[JobSubsetSelector], RemoteJob]
     ) -> RemoteJobSubsetResult:
         """Returns a snapshot about an RemoteJob with an op selection, which requires
         access to the underlying JobDefinition. Callsites should likely use
@@ -424,11 +433,13 @@ class InProcessCodeLocation(CodeLocation):
         return self._repositories
 
     async def _gen_subset_remote_job_result(
-        self, selector: JobSubsetSelector
+        self, selector: JobSubsetSelector, get_full_job: Callable[[JobSubsetSelector], RemoteJob]
     ) -> RemoteJobSubsetResult:
-        return self._get_subset_remote_job_result(selector)
+        return self._get_subset_remote_job_result(selector, get_full_job)
 
-    def _get_subset_remote_job_result(self, selector: JobSubsetSelector) -> RemoteJobSubsetResult:
+    def _get_subset_remote_job_result(
+        self, selector: JobSubsetSelector, get_full_job: Callable[[JobSubsetSelector], RemoteJob]
+    ) -> RemoteJobSubsetResult:
         check.inst_param(selector, "selector", JobSubsetSelector)
         check.invariant(
             selector.location_name == self.name,
@@ -906,7 +917,9 @@ class GrpcServerCodeLocation(CodeLocation):
 
         return RemoteExecutionPlan(execution_plan_snapshot=execution_plan_snapshot_or_error)
 
-    def _get_subset_remote_job_result(self, selector: JobSubsetSelector) -> RemoteJobSubsetResult:
+    def _get_subset_remote_job_result(
+        self, selector: JobSubsetSelector, get_full_job: Callable[[JobSubsetSelector], RemoteJob]
+    ) -> RemoteJobSubsetResult:
         from dagster._api.snapshot_job import sync_get_external_job_subset_grpc
 
         check.inst_param(selector, "selector", JobSubsetSelector)
@@ -929,7 +942,7 @@ class GrpcServerCodeLocation(CodeLocation):
         # Omit the parent job snapshot for __ASSET_JOB, since it is potentialy very large
         # and unlikely to be useful (unlike subset selections of other jobs)
         if subset.job_data_snap and not is_implicit_asset_job_name(selector.job_name):
-            full_job = self.get_repository(selector.repository_name).get_full_job(selector.job_name)
+            full_job = get_full_job(selector)
             subset = copy(
                 subset,
                 job_data_snap=copy(subset.job_data_snap, parent_job=full_job.job_snapshot),
@@ -938,7 +951,7 @@ class GrpcServerCodeLocation(CodeLocation):
         return subset
 
     async def _gen_subset_remote_job_result(
-        self, selector: JobSubsetSelector
+        self, selector: JobSubsetSelector, get_full_job: Callable[[JobSubsetSelector], RemoteJob]
     ) -> "RemoteJobSubsetResult":
         from dagster._api.snapshot_job import gen_external_job_subset_grpc
 
@@ -960,7 +973,7 @@ class GrpcServerCodeLocation(CodeLocation):
             asset_check_selection=selector.asset_check_selection,
         )
         if subset.job_data_snap:
-            full_job = self.get_repository(selector.repository_name).get_full_job(selector.job_name)
+            full_job = get_full_job(selector)
             subset = copy(
                 subset,
                 job_data_snap=copy(subset.job_data_snap, parent_job=full_job.job_snapshot),
