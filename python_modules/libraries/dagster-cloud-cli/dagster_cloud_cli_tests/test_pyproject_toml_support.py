@@ -1,8 +1,12 @@
+import sys
 from pathlib import Path
 from unittest.mock import patch
 
 import pytest
+from dagster_cloud_cli.commands.serverless import _check_source_directory
 from dagster_cloud_cli.core.pex_builder import deps, source
+from dagster_cloud_cli.ui import ExitWithMessage
+from packaging import version
 
 
 @pytest.fixture
@@ -223,8 +227,6 @@ def test_build_local_package_no_build_files(mock_warn, temp_dir):
 
 def test_check_source_directory_accepts_pyproject_toml(temp_dir):
     """Test that _check_source_directory accepts directories with pyproject.toml."""
-    from dagster_cloud_cli.commands.serverless import _check_source_directory
-
     pyproject_path = Path(temp_dir) / "pyproject.toml"
     pyproject_path.write_text("""
 [project]
@@ -238,8 +240,6 @@ dependencies = ["dagster-cloud"]
 
 def test_check_source_directory_accepts_all_formats(tmp_path):
     """Test that all three formats (setup.py, requirements.txt, pyproject.toml) are accepted."""
-    from dagster_cloud_cli.commands.serverless import _check_source_directory
-
     # Test each format individually
     formats = [
         ("setup.py", "from setuptools import setup; setup()"),
@@ -259,9 +259,6 @@ def test_check_source_directory_accepts_all_formats(tmp_path):
 
 def test_check_source_directory_rejects_no_deps_file(temp_dir):
     """Test that directories without any dependency specification are rejected."""
-    from dagster_cloud_cli.commands.serverless import _check_source_directory
-    from dagster_cloud_cli.ui import ExitWithMessage
-
     # Create some random file but no dependency specification
     random_file = Path(temp_dir) / "main.py"
     random_file.write_text("print('hello world')")
@@ -272,8 +269,6 @@ def test_check_source_directory_rejects_no_deps_file(temp_dir):
 
 def test_get_deps_requirements_with_pyproject_toml(temp_dir):
     """Test that get_deps_requirements correctly processes pyproject.toml projects."""
-    from packaging import version
-
     pyproject_content = """
 [project]
 name = "test-package"
@@ -388,12 +383,15 @@ setup(
     # Should find the dependencies from setup.py
     # Note: The exact format may include extras like 'dagster>=1.0.0' or with markers
     assert any("dagster" in dep for dep in deps_list), f"dagster not found in {deps_list}"
-    assert any("dagster-cloud" in dep or "dagster_cloud" in dep for dep in deps_list), \
+    assert any("dagster-cloud" in dep or "dagster_cloud" in dep for dep in deps_list), (
         f"dagster-cloud not found in {deps_list}"
+    )
     assert any("pytest" in dep for dep in deps_list), f"pytest not found in {deps_list}"
 
     # Verify we got at least 3 dependencies
-    assert len(deps_list) >= 3, f"Expected at least 3 dependencies, got {len(deps_list)}: {deps_list}"
+    assert len(deps_list) >= 3, (
+        f"Expected at least 3 dependencies, got {len(deps_list)}: {deps_list}"
+    )
 
 
 def test_get_setup_py_deps_requires_correct_cwd(temp_dir):
@@ -408,7 +406,9 @@ def test_get_setup_py_deps_requires_correct_cwd(temp_dir):
     package_dir.mkdir()
 
     # Create package __init__.py
-    (package_dir / "__init__.py").write_text("from dagster import Definitions; defs = Definitions()")
+    (package_dir / "__init__.py").write_text(
+        "from dagster import Definitions; defs = Definitions()"
+    )
 
     # Create a requirements.txt that setup.py will read
     requirements_file = code_dir / "requirements.txt"
@@ -441,13 +441,17 @@ setup(
 
     # Should find all dependencies including the one from requirements.txt
     assert any("dagster" in dep for dep in deps_list), f"dagster not found in {deps_list}"
-    assert any("dagster-cloud" in dep or "dagster_cloud" in dep for dep in deps_list), \
+    assert any("dagster-cloud" in dep or "dagster_cloud" in dep for dep in deps_list), (
         f"dagster-cloud not found in {deps_list}"
-    assert any("requests" in dep for dep in deps_list), \
+    )
+    assert any("requests" in dep for dep in deps_list), (
         f"requests from requirements.txt not found in {deps_list}"
+    )
 
     # Verify we got at least 3 dependencies
-    assert len(deps_list) >= 3, f"Expected at least 3 dependencies, got {len(deps_list)}: {deps_list}"
+    assert len(deps_list) >= 3, (
+        f"Expected at least 3 dependencies, got {len(deps_list)}: {deps_list}"
+    )
 
 
 def test_get_deps_requirements_multi_location_scenario(tmp_path):
@@ -457,9 +461,6 @@ def test_get_deps_requirements_multi_location_scenario(tmp_path):
     causing the second location to fail with empty dependencies due to the
     cwd bug in get_setup_py_deps.
     """
-    import sys
-    from packaging import version
-
     # Use the current Python version for the test
     python_version = version.Version(f"{sys.version_info.major}.{sys.version_info.minor}")
 
@@ -468,13 +469,17 @@ def test_get_deps_requirements_multi_location_scenario(tmp_path):
     location1_dir.mkdir()
     location1_pkg = location1_dir / "location1"
     location1_pkg.mkdir()
-    (location1_pkg / "__init__.py").write_text("from dagster import Definitions; defs = Definitions()")
+    (location1_pkg / "__init__.py").write_text(
+        "from dagster import Definitions; defs = Definitions()"
+    )
 
     location2_dir = tmp_path / "location2"
     location2_dir.mkdir()
     location2_pkg = location2_dir / "location2"
     location2_pkg.mkdir()
-    (location2_pkg / "__init__.py").write_text("from dagster import Definitions; defs = Definitions()")
+    (location2_pkg / "__init__.py").write_text(
+        "from dagster import Definitions; defs = Definitions()"
+    )
 
     # Create identical setup.py files for both
     setup_content = """
@@ -491,7 +496,9 @@ setup(
 )
 """
     (location1_dir / "setup.py").write_text(setup_content)
-    (location2_dir / "setup.py").write_text(setup_content.replace("test-location", "test-location2"))
+    (location2_dir / "setup.py").write_text(
+        setup_content.replace("test-location", "test-location2")
+    )
 
     # Get deps for first location
     local_packages1, deps_requirements1 = deps.get_deps_requirements(
@@ -504,13 +511,25 @@ setup(
     )
 
     # Both should have found dependencies
-    deps1_lines = [line.strip() for line in deps_requirements1.requirements_txt.strip().split("\n") if line.strip()]
-    deps2_lines = [line.strip() for line in deps_requirements2.requirements_txt.strip().split("\n") if line.strip()]
+    deps1_lines = [
+        line.strip()
+        for line in deps_requirements1.requirements_txt.strip().split("\n")
+        if line.strip()
+    ]
+    deps2_lines = [
+        line.strip()
+        for line in deps_requirements2.requirements_txt.strip().split("\n")
+        if line.strip()
+    ]
 
     # Both should have found dagster dependencies
     assert len(deps1_lines) >= 2, f"Location 1 should have at least 2 deps, got {deps1_lines}"
     assert len(deps2_lines) >= 2, f"Location 2 should have at least 2 deps, got {deps2_lines}"
 
     # Both should contain dagster
-    assert any("dagster" in dep for dep in deps1_lines), f"Location 1 missing dagster: {deps1_lines}"
-    assert any("dagster" in dep for dep in deps2_lines), f"Location 2 missing dagster: {deps2_lines}"
+    assert any("dagster" in dep for dep in deps1_lines), (
+        f"Location 1 missing dagster: {deps1_lines}"
+    )
+    assert any("dagster" in dep for dep in deps2_lines), (
+        f"Location 2 missing dagster: {deps2_lines}"
+    )
