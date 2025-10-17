@@ -332,3 +332,185 @@ dependencies = ["requests>=2.25.0"]
         expected_deps = ["click>=8.0.0", "requests>=2.25.0", "setuptools>=50.0.0"]
         assert sorted(deps_lines) == sorted(expected_deps)
         assert local_package_paths == []
+
+
+def test_get_setup_py_deps_with_nested_package_structure(temp_dir):
+    """Test that get_setup_py_deps works with nested package structures.
+
+    This test reproduces a bug where setup.py egg_info was run with cwd=temp_dir
+    instead of cwd=code_directory, causing it to fail to find nested packages
+    and dependencies. This particularly affected multi-location builds where the
+    second location would fail with empty dependencies.
+    """
+    # Create a nested package structure like:
+    # temp_dir/
+    #   setup.py
+    #   my_package/
+    #     __init__.py
+    code_dir = Path(temp_dir)
+    package_dir = code_dir / "my_package"
+    package_dir.mkdir()
+
+    # Create package __init__.py
+    init_file = package_dir / "__init__.py"
+    init_file.write_text("""
+from dagster import Definitions, asset
+
+@asset
+def my_asset():
+    return "data"
+
+defs = Definitions(assets=[my_asset])
+""")
+
+    # Create setup.py with dependencies
+    setup_py = code_dir / "setup.py"
+    setup_py.write_text("""
+from setuptools import find_packages, setup
+
+setup(
+    name="my-package",
+    version="0.1.0",
+    packages=find_packages(),
+    install_requires=[
+        "dagster>=1.0.0",
+        "dagster-cloud>=1.0.0",
+    ],
+    extras_require={
+        "dev": ["pytest>=6.0.0"]
+    },
+)
+""")
+
+    # Get deps using get_setup_py_deps
+    deps_list = deps.get_setup_py_deps(str(code_dir), "python3")
+
+    # Should find the dependencies from setup.py
+    # Note: The exact format may include extras like 'dagster>=1.0.0' or with markers
+    assert any("dagster" in dep for dep in deps_list), f"dagster not found in {deps_list}"
+    assert any("dagster-cloud" in dep or "dagster_cloud" in dep for dep in deps_list), \
+        f"dagster-cloud not found in {deps_list}"
+    assert any("pytest" in dep for dep in deps_list), f"pytest not found in {deps_list}"
+
+    # Verify we got at least 3 dependencies
+    assert len(deps_list) >= 3, f"Expected at least 3 dependencies, got {len(deps_list)}: {deps_list}"
+
+
+def test_get_setup_py_deps_requires_correct_cwd(temp_dir):
+    """Test that get_setup_py_deps runs setup.py from the correct working directory.
+
+    This test uses a setup.py that reads a requirements file with a relative path,
+    which will fail if setup.py is run from the wrong directory (i.e., cwd=temp_dir
+    instead of cwd=code_directory).
+    """
+    code_dir = Path(temp_dir)
+    package_dir = code_dir / "my_package"
+    package_dir.mkdir()
+
+    # Create package __init__.py
+    (package_dir / "__init__.py").write_text("from dagster import Definitions; defs = Definitions()")
+
+    # Create a requirements.txt that setup.py will read
+    requirements_file = code_dir / "requirements.txt"
+    requirements_file.write_text("requests>=2.25.0\n")
+
+    # Create setup.py that reads requirements.txt with a relative path
+    # This will FAIL if cwd is wrong because it won't find the file
+    setup_py = code_dir / "setup.py"
+    setup_py.write_text("""
+from setuptools import find_packages, setup
+
+# Read requirements from file using relative path
+# This will only work if we're in the correct directory
+with open('requirements.txt') as f:
+    requirements = [line.strip() for line in f if line.strip()]
+
+setup(
+    name="my-package",
+    version="0.1.0",
+    packages=find_packages(),
+    install_requires=requirements + [
+        "dagster>=1.0.0",
+        "dagster-cloud>=1.0.0",
+    ],
+)
+""")
+
+    # Get deps - this should work with correct cwd, fail with wrong cwd
+    deps_list = deps.get_setup_py_deps(str(code_dir), "python3")
+
+    # Should find all dependencies including the one from requirements.txt
+    assert any("dagster" in dep for dep in deps_list), f"dagster not found in {deps_list}"
+    assert any("dagster-cloud" in dep or "dagster_cloud" in dep for dep in deps_list), \
+        f"dagster-cloud not found in {deps_list}"
+    assert any("requests" in dep for dep in deps_list), \
+        f"requests from requirements.txt not found in {deps_list}"
+
+    # Verify we got at least 3 dependencies
+    assert len(deps_list) >= 3, f"Expected at least 3 dependencies, got {len(deps_list)}: {deps_list}"
+
+
+def test_get_deps_requirements_multi_location_scenario(tmp_path):
+    """Test scenario that mimics multi-location build with nested packages.
+
+    This test simulates building multiple locations sequentially, which was
+    causing the second location to fail with empty dependencies due to the
+    cwd bug in get_setup_py_deps.
+    """
+    import sys
+    from packaging import version
+
+    # Use the current Python version for the test
+    python_version = version.Version(f"{sys.version_info.major}.{sys.version_info.minor}")
+
+    # Create two locations with identical nested package structure
+    location1_dir = tmp_path / "location1"
+    location1_dir.mkdir()
+    location1_pkg = location1_dir / "location1"
+    location1_pkg.mkdir()
+    (location1_pkg / "__init__.py").write_text("from dagster import Definitions; defs = Definitions()")
+
+    location2_dir = tmp_path / "location2"
+    location2_dir.mkdir()
+    location2_pkg = location2_dir / "location2"
+    location2_pkg.mkdir()
+    (location2_pkg / "__init__.py").write_text("from dagster import Definitions; defs = Definitions()")
+
+    # Create identical setup.py files for both
+    setup_content = """
+from setuptools import find_packages, setup
+
+setup(
+    name="test-location",
+    version="0.1.0",
+    packages=find_packages(),
+    install_requires=[
+        "dagster>=1.0.0",
+        "dagster-cloud>=1.0.0",
+    ],
+)
+"""
+    (location1_dir / "setup.py").write_text(setup_content)
+    (location2_dir / "setup.py").write_text(setup_content.replace("test-location", "test-location2"))
+
+    # Get deps for first location
+    local_packages1, deps_requirements1 = deps.get_deps_requirements(
+        str(location1_dir), python_version
+    )
+
+    # Get deps for second location - this should NOT fail with empty dependencies
+    local_packages2, deps_requirements2 = deps.get_deps_requirements(
+        str(location2_dir), python_version
+    )
+
+    # Both should have found dependencies
+    deps1_lines = [line.strip() for line in deps_requirements1.requirements_txt.strip().split("\n") if line.strip()]
+    deps2_lines = [line.strip() for line in deps_requirements2.requirements_txt.strip().split("\n") if line.strip()]
+
+    # Both should have found dagster dependencies
+    assert len(deps1_lines) >= 2, f"Location 1 should have at least 2 deps, got {deps1_lines}"
+    assert len(deps2_lines) >= 2, f"Location 2 should have at least 2 deps, got {deps2_lines}"
+
+    # Both should contain dagster
+    assert any("dagster" in dep for dep in deps1_lines), f"Location 1 missing dagster: {deps1_lines}"
+    assert any("dagster" in dep for dep in deps2_lines), f"Location 2 missing dagster: {deps2_lines}"
