@@ -693,15 +693,16 @@ class EventLogStorage(ABC, MayHaveInstanceWeakref[T_DagsterInstance]):
         pass
 
     @abstractmethod
-    def get_asset_check_cached_value(
-        self, check_key: AssetCheckKey
-    ) -> Optional["AssetCheckPartitionStatusCacheValue"]:
+    def get_asset_check_cached_values(
+        self, check_keys: Sequence[AssetCheckKey]
+    ) -> Sequence[Optional["AssetCheckPartitionStatusCacheValue"]]:
         """Get the cached partition status record - pure storage retrieval."""
         pass
 
     @abstractmethod
-    def update_asset_check_cached_value(
-        self, check_key: AssetCheckKey, cache_value: "AssetCheckPartitionStatusCacheValue"
+    def update_asset_check_cached_values(
+        self,
+        cache_values: Sequence["AssetCheckPartitionStatusCacheValue"],
     ) -> None:
         """Update the cached partition status record - pure storage write."""
         pass

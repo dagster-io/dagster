@@ -7071,7 +7071,7 @@ class TestEventLogStorage:
         assert record.last_execution_status == AssetCheckExecutionRecordStatus.FAILED
         assert record.last_planned_run_id == run_id
 
-    def test_asset_check_cached_value(self, storage: EventLogStorage):
+    def test_asset_check_cached_values(self, storage: EventLogStorage):
         """Test get_asset_check_cached_value and update_asset_check_cached_value methods."""
         from dagster._core.definitions.partitions.definition import StaticPartitionsDefinition
         from dagster._core.storage.asset_check_execution_record import (
@@ -7082,19 +7082,81 @@ class TestEventLogStorage:
         check_key = dg.AssetCheckKey(asset_key=asset_key, name="test_check")
 
         # Test: returns None for non-existent check
-        cached_value = storage.get_asset_check_cached_value(check_key)
-        assert cached_value is None
+        cached_value = storage.get_asset_check_cached_values([check_key])
+        assert cached_value[0] is None
 
         # Test: stores and retrieves correctly
         partitions_def = StaticPartitionsDefinition(["a", "b", "c"])
-        cache_value = AssetCheckPartitionStatusCacheValue.from_partitions_def(partitions_def)
+        cache_value = AssetCheckPartitionStatusCacheValue.from_partitions_def(
+            check_key, partitions_def
+        )
 
-        storage.update_asset_check_cached_value(check_key, cache_value)
+        storage.update_asset_check_cached_values([cache_value])
+        retrieved_values = storage.get_asset_check_cached_values([check_key])
+        assert retrieved_values[0] is not None
+        assert retrieved_values[0].partitions_def_id == cache_value.partitions_def_id
+        assert retrieved_values[0].latest_storage_id == cache_value.latest_storage_id
 
-        retrieved_value = storage.get_asset_check_cached_value(check_key)
+    @pytest.mark.asyncio
+    async def test_gen_asset_check_cached_values(self, storage: EventLogStorage):
+        """Test get_asset_check_cached_value and update_asset_check_cached_value methods."""
+        from dagster._core.definitions.partitions.definition import StaticPartitionsDefinition
+        from dagster._core.storage.asset_check_execution_record import (
+            AssetCheckPartitionStatusCacheValue,
+        )
+
+        asset_key = dg.AssetKey(["test_asset"])
+        check_key = dg.AssetCheckKey(asset_key=asset_key, name="test_check")
+        partitions_def = StaticPartitionsDefinition(["a", "b", "c"])
+
+        # Test: returns None for non-existent check
+        cached_value = await AssetCheckPartitionStatusCacheValue.gen(
+            LoadingContextForTest(storage._instance),  # noqa
+            (check_key, partitions_def),
+        )
+        assert cached_value is not None
+        assert [
+            subset.size == 0
+            for subset in [
+                cached_value.planned_subset,
+                cached_value.succeeded_subset,
+                cached_value.failed_subset,
+            ]
+        ]
+
+        # Plan all partitions
+        partitions = ["a", "b", "c"]
+        run_ids_by_partition = {partition: make_new_run_id() for partition in partitions}
+        for i, partition in enumerate(partitions):
+            planned_event = DagsterEvent.build_asset_check_evaluation_planned_event(
+                job_name="test_job",
+                step_key="test_step",
+                asset_check_key=check_key,
+                partition=partition,
+            )
+
+            log_entry = dg.EventLogEntry(
+                error_info=None,
+                level="INFO",
+                user_message="",
+                run_id=run_ids_by_partition[partition],
+                timestamp=1234567890.0 + i,
+                step_key="test_step",
+                job_name="test_pipeline",
+                dagster_event=planned_event,
+            )
+
+            storage.store_event(log_entry)
+
+        retrieved_value = await AssetCheckPartitionStatusCacheValue.gen(
+            LoadingContextForTest(storage._instance),  # noqa
+            (check_key, partitions_def),
+        )
         assert retrieved_value is not None
-        assert retrieved_value.partitions_def_id == cache_value.partitions_def_id
-        assert retrieved_value.latest_storage_id == cache_value.latest_storage_id
+        assert retrieved_value.planned_subset.size == 3
+        assert retrieved_value.succeeded_subset.size == 0
+        assert retrieved_value.failed_subset.size == 0
+        assert retrieved_value.planned_partition_run_mapping == run_ids_by_partition
 
     def test_asset_check_partition_records_filtering(self, storage: EventLogStorage):
         """Test get_asset_check_partition_records with after_storage_id filtering."""

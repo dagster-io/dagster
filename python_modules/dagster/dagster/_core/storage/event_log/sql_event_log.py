@@ -3476,72 +3476,88 @@ class SqlEventLogStorage(EventLogStorage):
             results[check_key] = AssetCheckExecutionRecord.from_db_row(row, key=check_key)
         return results
 
-    def get_asset_check_cached_value(
-        self, check_key: AssetCheckKey
-    ) -> Optional[AssetCheckPartitionStatusCacheValue]:
+    def get_asset_check_cached_values(
+        self, check_keys: Sequence[AssetCheckKey]
+    ) -> Sequence[Optional[AssetCheckPartitionStatusCacheValue]]:
         """Get the cached partition status record - pure storage retrieval."""
         # Only use if new tables exist
         if not self.has_table("asset_checks"):
-            return None
+            return [None for _ in check_keys]
 
         with self.index_connection() as conn:
-            cache_info = db_fetch_mappings(
+            rows = db_fetch_mappings(
                 conn,
                 db_select([AssetChecksTable.c.cached_check_status_data]).where(
-                    db.and_(
-                        AssetChecksTable.c.asset_key == check_key.asset_key.to_string(),
-                        AssetChecksTable.c.check_name == check_key.name,
+                    db.or_(
+                        *(
+                            db.and_(
+                                AssetChecksTable.c.asset_key == key.asset_key.to_string(),
+                                AssetChecksTable.c.check_name == key.name,
+                            )
+                            for key in check_keys
+                        )
                     )
                 ),
             )
 
-            if not cache_info or not cache_info[0]["cached_check_status_data"]:
-                return None
+            cache_values = []
+            for row in rows:
+                if "cached_check_status_data" not in row:
+                    continue
+                try:
+                    cache_values.append(
+                        deserialize_value(
+                            row["cached_check_status_data"], AssetCheckPartitionStatusCacheValue
+                        )
+                    )
+                except (DeserializationError, ValueError):
+                    continue
 
-            try:
-                return deserialize_value(
-                    cache_info[0]["cached_check_status_data"], AssetCheckPartitionStatusCacheValue
-                )
-            except (DeserializationError, ValueError):
-                return None
+            cache_values_by_check_key = {
+                check_key: cache_value for check_key, cache_value in zip(check_keys, cache_values)
+            }
+            return [cache_values_by_check_key.get(check_key) for check_key in check_keys]
 
-    def update_asset_check_cached_value(
-        self, check_key: AssetCheckKey, cache_value: AssetCheckPartitionStatusCacheValue
+    def update_asset_check_cached_values(
+        self, cache_values: Sequence[AssetCheckPartitionStatusCacheValue]
     ) -> None:
         """Update the cached partition status record - pure storage write."""
         # Only use if new tables exist
         if not self.has_table("asset_checks"):
             return
 
-        serialized_cache = serialize_value(cache_value)
+        serialized_cache_values_by_key = {
+            cache_value.key: serialize_value(cache_value) for cache_value in cache_values
+        }
 
         with self.index_connection() as conn:
             # Try insert first
-            try:
-                conn.execute(
-                    AssetChecksTable.insert().values(
-                        asset_key=check_key.asset_key.to_string(),
-                        check_name=check_key.name,
-                        cached_check_status_data=serialized_cache,
-                        created_timestamp=datetime.now(timezone.utc),
-                        updated_timestamp=datetime.now(timezone.utc),
-                    )
-                )
-            except db_exc.IntegrityError:
-                # Row exists, update it
-                conn.execute(
-                    AssetChecksTable.update()
-                    .where(
-                        db.and_(
-                            AssetChecksTable.c.asset_key == check_key.asset_key.to_string(),
-                            AssetChecksTable.c.check_name == check_key.name,
+            for key, serialized_cache_value in serialized_cache_values_by_key.items():
+                try:
+                    conn.execute(
+                        AssetChecksTable.insert().values(
+                            asset_key=key.asset_key.to_string(),
+                            check_name=key.name,
+                            cached_check_status_data=serialized_cache_value,
+                            created_timestamp=datetime.now(timezone.utc),
+                            updated_timestamp=datetime.now(timezone.utc),
                         )
                     )
-                    .values(
-                        cached_check_status_data=serialized_cache,
-                        updated_timestamp=datetime.now(timezone.utc),
+                except db_exc.IntegrityError:
+                    # Row exists, update it
+                    conn.execute(
+                        AssetChecksTable.update()
+                        .where(
+                            db.and_(
+                                AssetChecksTable.c.asset_key == key.asset_key.to_string(),
+                                AssetChecksTable.c.check_name == key.name,
+                            )
+                        )
+                        .values(
+                            cached_check_status_data=serialized_cache_value,
+                            updated_timestamp=datetime.now(timezone.utc),
+                        )
                     )
-                )
 
     def get_asset_check_partition_records(
         self,

@@ -603,8 +603,8 @@ class AssetGraphView(LoadingContext):
             check.failed(f"Asset check {key} not found or not partitioned.")
 
         # Get partition status from our cache service
-        partition_status = get_asset_check_partition_status(
-            self._queryer.instance, key, check_node.partitions_def
+        partition_status = await get_asset_check_partition_status(
+            self, key, check_node.partitions_def
         )
 
         matching_subset = (

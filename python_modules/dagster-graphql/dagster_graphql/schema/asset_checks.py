@@ -313,7 +313,7 @@ class GrapheneAssetCheck(graphene.ObjectType):
             )
         ]
 
-    def resolve_partitionStatuses(
+    async def resolve_partitionStatuses(
         self, graphene_info: ResolveInfo
     ) -> Optional["GrapheneAssetCheckPartitionStatuses"]:
         """Resolve partition statuses using partition subsets for efficient representation."""
@@ -336,10 +336,8 @@ class GrapheneAssetCheck(graphene.ObjectType):
         )
 
         # Get partition status cache using the cache service (handles storage + reconciliation)
-        partition_status = get_asset_check_partition_status(
-            instance=graphene_info.context.instance,
-            check_key=check_key,
-            partitions_def=current_partition_def,
+        partition_status = await get_asset_check_partition_status(
+            graphene_info.context, check_key, current_partition_def
         )
 
         return GrapheneAssetCheckPartitionStatuses(partition_status)
