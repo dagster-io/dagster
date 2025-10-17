@@ -4,6 +4,10 @@ description: Learn how to configure state management strategies for state-backed
 sidebar_position: 100
 ---
 
+import Beta from '@site/docs/partials/_Beta.md';
+
+<Beta />
+
 State-backed components provide flexible configuration options to control how state is fetched, stored, and updated. This guide explains the available configuration options and how to choose the right strategy for your deployment.
 
 ## The defs_state configuration field
@@ -55,6 +59,12 @@ components:
 ## Configuration options
 
 The `defs_state` field supports three configuration options:
+
+| Option | Type | Default | Description |
+|--------|------|---------|-------------|
+| `key` | `str` | Auto-generated | Override the state key identifier |
+| `type` | `LOCAL_FILESYSTEM` \| `VERSIONED_STATE_STORAGE` \| `LEGACY_CODE_SERVER_SNAPSHOTS` | Component-specific | State management strategy |
+| `refresh_if_dev` | `bool` | `true` | Auto-refresh state in `dagster dev` mode |
 
 ### key
 
@@ -146,6 +156,12 @@ my_project/
 
 The `.gitignore` file ensures state files aren't committed to version control.
 
+:::tip Why not commit state to version control?
+
+State files can be large and change frequently based on external system metadata. Committing them would pollute your Git history and create merge conflicts. Instead, state is refreshed during your build process and included in the deployment artifact.
+
+:::
+
 ### Versioned State Storage
 
 **Best for:**
@@ -200,6 +216,17 @@ The `base_dir` should be a UPath-compatible URI pointing to your cloud storage:
 
 Ensure your Dagster instance has appropriate credentials to access this storage location.
 
+:::info Cloud storage authentication
+
+Your Dagster instance uses standard cloud provider authentication:
+- **S3**: AWS credentials via IAM roles, environment variables, or ~/.aws/credentials
+- **GCS**: Google Cloud credentials via service accounts or Application Default Credentials
+- **Azure**: Azure credentials via managed identities or connection strings
+
+The instance must have read and write permissions to the specified `base_dir` location.
+
+:::
+
 **Benefits of versioned storage:**
 
 This strategy allows you to update state in production without rebuilding Docker images. For example, you could write a Dagster job that:
@@ -217,7 +244,11 @@ This strategy allows you to update state in production without rebuilding Docker
 - Slower code location startup times
 - Can hit API rate limits during development
 
-This is the default for many existing components only for backwards compatibility. New projects should use Local Filesystem or Versioned State Storage.
+:::warning Not recommended
+
+This is the default for many existing components only for backwards compatibility. New projects should use Local Filesystem or Versioned State Storage instead.
+
+:::
 
 ## Local development behavior
 

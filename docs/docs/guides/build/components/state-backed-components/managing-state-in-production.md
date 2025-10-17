@@ -4,6 +4,12 @@ description: Learn how to refresh and manage component state in production deplo
 sidebar_position: 200
 ---
 
+import Beta from '@site/docs/partials/_Beta.md';
+import Tabs from '@theme/Tabs';
+import TabItem from '@theme/TabItem';
+
+<Beta />
+
 Managing state in production depends on which state management strategy you've configured for your state-backed components. This guide explains how to refresh state for both Local Filesystem and Versioned State Storage strategies.
 
 ## Before you begin
@@ -111,7 +117,11 @@ RUN pip install -e .
 CMD ["dagster", "api", "grpc", "-h", "0.0.0.0", "-p", "4000", "-m", "my_project"]
 ```
 
-Note: The `.local_defs_state` directory is automatically excluded from version control (via auto-generated `.gitignore`), but it should be included in your Docker image.
+:::info .local_defs_state and version control
+
+The `.local_defs_state` directory is automatically excluded from version control via an auto-generated `.gitignore` file. However, it **should** be included in your Docker image as part of your deployment artifact.
+
+:::
 
 ### Refreshing specific components
 
@@ -136,11 +146,16 @@ dg utils refresh-defs-state \
 
 If the `dg utils refresh-defs-state` command fails (for example, due to API errors or network issues), the CLI exits with a non-zero status code. This typically causes your CI/CD pipeline to fail, preventing deployment with stale or missing state.
 
-To handle this in your deployment workflow:
-- Ensure credentials are correct and have appropriate permissions
-- Check that external services (Tableau, Fivetran, etc.) are accessible from your CI/CD environment
-- Consider adding retry logic to your deployment scripts for transient failures
-- Monitor external service status pages if failures persist
+:::tip Handling refresh failures
+
+Common causes and solutions:
+- **Invalid credentials**: Verify API keys and secrets are correct and not expired
+- **Network connectivity**: Ensure your CI/CD environment can reach external APIs
+- **Rate limiting**: Space out refreshes or request higher rate limits from providers
+- **Service outages**: Monitor external service status pages
+- **Transient errors**: Add retry logic with exponential backoff to your deployment scripts
+
+:::
 
 ## Refreshing state for Versioned State Storage deployments
 
@@ -262,6 +277,12 @@ With Versioned State Storage:
 
 This means you can safely update state while runs are in progress without affecting their consistency.
 
+:::info Version consistency guarantee
+
+All runs that start while a code location is loaded will use the same state version, even if you upload a new version to storage. Only after reloading the code location will new runs pick up the updated state.
+
+:::
+
 ## Checking state status
 
 After refreshing state, you can verify the update in the Dagster UI:
@@ -289,6 +310,20 @@ Without the `--management-type` flag, this command refreshes:
 - But skips `LEGACY_CODE_SERVER_SNAPSHOTS` components (which auto-refresh on load)
 
 This is useful for development environments where you have a mix of state management strategies.
+
+## Comparison: When to use each strategy
+
+Choose your state management strategy based on your deployment patterns:
+
+| Requirement | Local Filesystem | Versioned State Storage |
+|-------------|------------------|------------------------|
+| Update state without rebuilding images | ❌ No | ✅ Yes |
+| Simple setup | ✅ Yes | ❌ No (requires instance config) |
+| Works with Docker builds | ✅ Yes | ✅ Yes |
+| Version history | ❌ No | ✅ Yes |
+| Dagster+ recommended | ✅ Yes | ✅ Yes |
+| OSS deployments | ✅ Yes | ⚠️ Requires configuration |
+| CI/CD integration | ✅ Simple | ⚠️ Moderate |
 
 ## Best practices
 

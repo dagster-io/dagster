@@ -4,6 +4,10 @@ description: Learn about state-backed components and how they integrate with ext
 sidebar_position: 500
 ---
 
+import Beta from '@site/docs/partials/_Beta.md';
+
+<Beta />
+
 State-backed components are a specialized type of Dagster component designed to handle cases where your Dagster definitions depend on information from external systems accessed through web APIs.
 
 :::note Prerequisites
@@ -39,6 +43,12 @@ When you use a state-backed component, the component handles all the complexity 
 
 State-backed components support three different strategies for managing state, each suited to different deployment patterns:
 
+| Strategy | Storage Location | Version Format | Best For | Recommended |
+|----------|-----------------|----------------|----------|-------------|
+| Local Filesystem | `.local_defs_state/` directory | `"__local__"` | Docker builds, simple deployments | ✅ Yes |
+| Versioned State Storage | Cloud storage (S3, GCS, etc.) | UUID | Dynamic updates, Dagster+ | ✅ Yes |
+| Code Server Snapshots | In-memory | `"__code_server__"` | Legacy compatibility only | ❌ No |
+
 ### Local Filesystem (Recommended)
 
 State is stored in a `.local_defs_state` directory within your project. This approach is ideal for:
@@ -63,6 +73,12 @@ State is automatically refreshed every time your code location loads and stored 
 - The default for many existing components (for backwards compatibility)
 - **Not recommended for new deployments** due to reliability concerns
 - Problematic if external APIs are unavailable, as your entire code location may fail to load
+
+:::warning Not recommended for new deployments
+
+If an external API is unavailable when your code location loads, the entire code location will fail to start. This can make your deployment brittle and dependent on third-party service availability.
+
+:::
 
 For new projects, we recommend using **Local Filesystem** for its simplicity and reliability.
 
@@ -100,6 +116,12 @@ You can view all defs state keys for a code location by navigating to the code l
 - All registered state keys
 - The last time each state was updated
 - The current version identifier for each state
+
+:::info Viewing state in the UI
+
+The Dagster UI displays state metadata only (version IDs and timestamps). The actual state contents are not accessible through the UI for security and size reasons.
+
+:::
 
 ## Next steps
 
