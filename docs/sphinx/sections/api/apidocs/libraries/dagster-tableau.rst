@@ -8,6 +8,22 @@ your other data assets, and how changes to other data assets might impact your T
 
 .. currentmodule:: dagster_tableau
 
+*********
+Component
+*********
+
+.. autoclass:: TableauComponent
+
+To use the Tableau component, see the `Tableau component integration guide <https://docs.dagster.io/integrations/libraries/tableau>`_.
+
+YAML configuration
+==================
+
+When you scaffold a Tableau component definition, the following ``defs.yaml`` configuration file will be created:
+
+.. literalinclude:: ../../../../../../examples/docs_snippets/docs_snippets/guides/components/integrations/tableau-component/6-populated-component.yaml
+    :language: yaml
+
 ***********
 Tableau API
 ***********

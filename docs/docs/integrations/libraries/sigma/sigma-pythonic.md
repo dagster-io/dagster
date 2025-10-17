@@ -1,6 +1,6 @@
 ---
-title: Dagster & Sigma
-sidebar_label: Sigma
+title: Dagster & Sigma (Pythonic)
+sidebar_label: Sigma (Pythonic)
 description: Your Sigma assets, including datasets and workbooks, can be represented in the Dagster asset graph, allowing you to track lineage and dependencies between Sigma assets and upstream data assets you are already modeling in Dagster.
 tags: [dagster-supported, bi]
 source: https://github.com/dagster-io/dagster/tree/master/python_modules/libraries/dagster-sigma
@@ -13,6 +13,12 @@ partnerlink: https://help.sigmacomputing.com/
 import Beta from '@site/docs/partials/\_Beta.md';
 
 <Beta />
+
+:::note
+
+If you are just getting started with the Sigma integration, we recommend using the new [Sigma component](/integrations/libraries/sigma).
+
+:::
 
 <p>{frontMatter.description}</p>
 

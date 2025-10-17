@@ -1,6 +1,6 @@
 ---
-title: Dagster & Tableau
-sidebar_label: Tableau
+title: Dagster & Tableau (Pythonic)
+sidebar_label: Tableau (Pythonic)
 description: Your Tableau assets, such as data sources, sheets, and dashboards, can be represented in the Dagster asset graph, allowing you to track lineage and dependencies between Tableau assets and upstream data assets you are already modeling in Dagster.
 tags: [dagster-supported, bi]
 source: https://github.com/dagster-io/dagster/tree/master/python_modules/libraries/dagster-tableau
@@ -13,6 +13,12 @@ partnerlink: https://www.tableau.com/
 import Beta from '@site/docs/partials/\_Beta.md';
 
 <Beta />
+
+:::note
+
+If you are just getting started with the Tableau integration, we recommend using the new [Tableau component](/integrations/libraries/tableau).
+
+:::
 
 <p>{frontMatter.description}</p>
 
