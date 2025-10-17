@@ -10,6 +10,7 @@ from dagster._annotations import preview, public
 from dagster._core.definitions.result import MaterializeResult
 from dagster._core.execution.context.asset_check_execution_context import AssetCheckExecutionContext
 from dagster._core.execution.context.asset_execution_context import AssetExecutionContext
+from dagster._utils.security import non_secure_md5_hash_str
 from dagster.components.core.context import ComponentLoadContext
 from dagster.components.lib.executable_component.component import ExecutableComponent
 from dagster.components.lib.sql_component.sql_client import SQLClient
@@ -50,9 +51,17 @@ class SqlComponent(ExecutableComponent, ABC):
         """Execute the SQL content using the Snowflake resource."""
         self.connection.connect_and_execute(self.get_sql_content(context, component_load_context))
 
+    @abstractmethod
+    def get_unique_name(self) -> str:
+        """Get a unique name for the SQL component, if the user does not provide a name
+        to the execution config.
+        """
+        ...
+
     @property
     def op_spec(self) -> OpSpec:
-        return self.execution or OpSpec()
+        # generate a unique name from the hash of sql_template
+        return self.execution or OpSpec(name=self.get_unique_name())
 
     def invoke_execute_fn(
         self,
@@ -109,3 +118,11 @@ class TemplatedSqlComponent(SqlComponent):
 
         template = Template(template_str)
         return template.render(**(self.sql_template_vars or {}))
+
+    def get_unique_name(self) -> str:
+        template_str = (
+            self.sql_template.path if isinstance(self.sql_template, SqlFile) else self.sql_template
+        )
+        vars_str = str(sorted((self.sql_template_vars or {}).items()))
+        combined = f"{template_str}:{vars_str}"
+        return non_secure_md5_hash_str(combined.encode("utf-8"))[:8]
