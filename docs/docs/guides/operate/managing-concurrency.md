@@ -1,11 +1,11 @@
 ---
-title: Manage concurrency of Dagster assets, jobs, and Dagster instances to help prevent performance problems and downtime.
+title: Manage concurrency of Dagster assets, jobs, and Dagster instances
 sidebar_label: Managing concurrency
 description: How to limit the number of runs a job, or assets for an instance of Dagster.
 sidebar_position: 50
 ---
 
-You often want to control the number of concurrent runs for a Dagster job, a specific asset, or for a type of asset or job. Limiting concurrency in your data pipelines can help prevent performance problems and downtime.
+This guide covers managing concurrency of Dagster assets, jobs, and Dagster instances to help prevent performance problems and downtime.
 
 :::note
 
@@ -16,7 +16,7 @@ This article assumes familiarity with [assets](/guides/build/assets) and [jobs](
 ## Limit the number of total runs that can be in progress at the same time
 
 - Dagster Core, add the following to your [dagster.yaml](/deployment/oss/dagster-yaml)
-- In Dagster+, add the following to your [deployment settings](/deployment/dagster-plus/deploying-code/full-deployments/deployment-settings-reference)
+- In Dagster+, add the following to your [full deployment settings](/deployment/dagster-plus/deploying-code/full-deployments/full-deployment-settings-reference)
 
 ```yaml
 concurrency:

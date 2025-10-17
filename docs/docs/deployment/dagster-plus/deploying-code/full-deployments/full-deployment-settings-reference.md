@@ -7,7 +7,7 @@ tags: [dagster-plus-feature]
 
 This reference describes the settings that can be configured for full deployments in Dagster+.
 
-Refer to the [Managing deployments in Dagster+ guide](/deployment/dagster-plus/deploying-code/full-deployments/managing-deployments) for information about configuring settings in the Dagster+ interface or using the `dagster-cloud` CLI.
+For more information about configuring full deployment settings in the Dagster+ interface or with the `dagster-cloud` CLI, [Managing full deployments](/deployment/dagster-plus/deploying-code/full-deployments/managing-full-deployments).
 
 ## Settings schema
 
@@ -38,7 +38,7 @@ sso_default_role: EDITOR
 
 ## Settings
 
-For each deployment, you can configure settings for:
+For each full deployment, you can configure settings for:
 
 - [Concurrency](#concurrency-concurrency)
 - [Run monitoring](#run-monitoring-run_monitoring)
@@ -48,7 +48,8 @@ For each deployment, you can configure settings for:
 
 ### Concurrency (concurrency)
 
-The `concurrency` settings allow you to specify concurrency controls for runs and pools in the deployment. Refer to the [Managing concurrency guide](/guides/operate/managing-concurrency.md) for more information about concurrency.
+The `concurrency` settings allow you to specify concurrency controls for runs and pools in the deployment. For more information about concurrency, see [Managing concurrency of Dagster assets, jobs, and Dagster instances](/guides/operate/managing-concurrency).
+
 
 ```yaml
 concurrency:
