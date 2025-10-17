@@ -28,17 +28,17 @@ Before including the dbt project in the Docker image, you'll need to make sure i
 
 This can be done by running the [`dagster-dbt project prepare-and-package`](/api/libraries/dagster-dbt#prepare-and-package) command. In the workflow building and pushing your Docker image, make sure this command runs before building your Docker image to ensure all required dbt files are included. Note that this command runs `dbt deps` and `dbt parse` to create your manifest file.
 
-### Using CI/CD files
+### Using a CI/CD file
 
-If you are using [CI/CD files](/deployment/dagster-plus/deploying-code/ci-cd-file-reference) in a Git repository to build and push your Docker image, you'll need to add a few steps to allow the dbt project to deploy successfully.
+If you are using a [CI/CD file](/deployment/dagster-plus/deploying-code/ci-cd) in a Git repository to build and push your Docker image, you'll need to add a few steps to allow the dbt project to deploy successfully.
 
-Our example updates the CI/CD files of a project from a GitHub repository, but this could be achieved in other platform like GitLab.
+Our example updates the CI/CD file of a project from a GitHub repository, but this could be achieved in other platform like GitLab.
 
 1. In your Dagster project, locate the `.github/workflows` directory.
 
-2. Open the `deploy.yml` file.
+2. Open the `dagster-cloud-deploy.yml`.
 
-3. Locate the step in which which you build and push your docker image.
+3. Locate the step in which which you build and push your Docker image.
 
 4. Before this step, add the following:
 
@@ -58,9 +58,7 @@ Our example updates the CI/CD files of a project from a GitHub repository, but t
 
 5. Save the changes.
 
-6. Open the `branch_deployments.yml` file and repeat steps 3 - 5.
-
-7. Commit the changes to the repository.
+6. Commit the changes to the repository.
 
 Once the new step is pushed to the remote, your workflow will be updated to prepare your dbt project before building and pushing your docker image.
 

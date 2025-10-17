@@ -44,7 +44,7 @@ In this section, we'll demonstrate how to import an existing project to Dagster+
 The file structure of the repository will change the first time a project is deployed using Dagster+. For dbt projects, a few things will happen:
 
 - **A [`dagster_cloud.yaml` file](/deployment/code-locations/dagster-cloud-yaml) will be created.** This file defines the project as a Dagster+ code location.
-- **A few `.yml` files, used for CI/CD, will be created in `.github/workflows`.** [These files](/deployment/dagster-plus/deploying-code/ci-cd-file-reference), named `branch_deployments.yml` and `deploy.yml`, manage the deployments of the repository.
+- **A`.yml` workflow file, used for [CI/CD](/deployment/dagster-plus/deploying-code/ci-cd), will be created in `.github/workflows`.** This file, named `dagster-plus-deploy.yml`, manage the deployments of the repository.
 - Dagster+ will create a new Dagster project in the repository using the [`dagster-dbt scaffold`](/integrations/libraries/dbt/reference#scaffolding-a-dagster-project-from-a-dbt-project) command. This will result in a Dagster project that matches the dbt project. For example, a dbt project named `my_dbt_project` will contain a Dagster project in `my_dbt_project/my_dbt_project` after the process completes.
 
 ### How the repository will change after the project is deployed for the first time
@@ -76,8 +76,7 @@ When the Dagster+ deployment process completes, the repository will now look lik
 my_dbt_project
 ├── .github                                                ## CI/CD files
 │   ├── workflows
-│   │   ├── branch_deployments.yml
-│   │   ├── deploy.yml
+│   │   ├── dagster-plus-deploy.yml
 ├── models
 │   ├── my_model.sql
 ├── my_dbt_project                                         ## New Dagster project
