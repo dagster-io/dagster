@@ -193,6 +193,12 @@ class RefreshExternalTableComponent(SqlComponent):
     ) -> str:
         return f"ALTER TABLE {self.table_name} REFRESH;"
 
+    def get_unique_name(self) -> str:
+        """Generate a unique name based on the table name."""
+        from dagster._utils.security import non_secure_md5_hash_str
+
+        return non_secure_md5_hash_str(self.table_name.encode("utf-8"))[:8]
+
 
 @mock.patch("snowflake.connector.connect", new_callable=create_mock_connector)
 def test_custom_snowflake_sql_component(snowflake_connect):
