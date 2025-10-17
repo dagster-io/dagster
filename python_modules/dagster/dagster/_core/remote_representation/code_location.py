@@ -64,6 +64,8 @@ if TYPE_CHECKING:
     from dagster._core.definitions.schedule_definition import ScheduleExecutionData
     from dagster._core.definitions.sensor_definition import SensorExecutionData
     from dagster._core.remote_representation.external_data import (
+        JobDataSnap,
+        JobRefSnap,
         PartitionConfigSnap,
         PartitionExecutionErrorSnap,
         PartitionSetExecutionParamSnap,
@@ -687,7 +689,6 @@ class GrpcServerCodeLocation(CodeLocation):
         self._watch_server = check.bool_param(watch_server, "watch_server")
 
         self._server_id = None
-        self._repository_snaps = None
 
         self._executable_path = None
         self._container_image = None
@@ -738,25 +739,44 @@ class GrpcServerCodeLocation(CodeLocation):
 
             self._container_context = list_repositories_response.container_context
 
-            self._repository_snaps = sync_get_external_repositories_data_grpc(
+            self._job_snaps = {}
+
+            self.remote_repositories = {}
+
+            for repo_name, (repo_data, job_snaps) in sync_get_external_repositories_data_grpc(
                 self.client,
                 self,
-            )
-
-            self.remote_repositories = {
-                repo_name: RemoteRepository(
+                defer_snapshots=True,
+            ).items():
+                self.remote_repositories[repo_name] = RemoteRepository(
                     repo_data,
                     RepositoryHandle.from_location(
                         repository_name=repo_name,
                         code_location=self,
                     ),
                     auto_materialize_use_sensors=instance.auto_materialize_use_sensors,
+                    ref_to_data_fn=self._job_ref_to_snap,
                 )
-                for repo_name, repo_data in self._repository_snaps.items()
-            }
+                for job_snap in job_snaps.values():
+                    self._job_snaps[job_snap.snapshot_id] = job_snap
+
         except:
             self.cleanup()
             raise
+
+    def _job_ref_to_snap(self, job_ref: "JobRefSnap") -> "JobDataSnap":
+        from dagster._core.remote_representation.external_data import JobDataSnap
+
+        snapshot = self._job_snaps[job_ref.snapshot_id]
+        parent_snapshot = (
+            self._job_snaps[job_ref.parent_snapshot_id] if job_ref.parent_snapshot_id else None
+        )
+        return JobDataSnap(
+            name=job_ref.name,
+            job=snapshot,
+            parent_job=parent_snapshot,
+            active_presets=job_ref.active_presets,
+        )
 
     @property
     def server_id(self) -> str:
