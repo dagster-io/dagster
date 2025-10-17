@@ -18,7 +18,7 @@ Build an abandoned cart notification system that ingests customer data (Postgres
   init: {
     'theme': 'base',
     'themeVariables': {
-      'primaryColor': '#4F43DD',
+      'primaryColor': '#A7A0F8',
       'primaryTextColor': '#FFFFFF',
       'primaryBorderColor': '#231F1B',
       'lineColor': '#DEDDFF',
