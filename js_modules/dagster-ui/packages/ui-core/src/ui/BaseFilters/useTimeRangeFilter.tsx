@@ -1,10 +1,20 @@
-import {Box, Button, Colors, Dialog, DialogFooter, Icon, IconName} from '@dagster-io/ui-components';
+import {
+  Box,
+  Button,
+  Colors,
+  DateRange,
+  Dialog,
+  DialogBody,
+  DialogFooter,
+  Icon,
+  IconName,
+} from '@dagster-io/ui-components';
+import {TZDate} from '@date-fns/tz';
+import {endOfDay} from 'date-fns';
 import dayjs from 'dayjs';
 import isEqual from 'lodash/isEqual';
-// eslint-disable-next-line no-restricted-imports
-import momentTZ from 'moment-timezone';
-import {useContext, useEffect, useMemo, useState} from 'react';
-import styled from 'styled-components';
+import memoize from 'lodash/memoize';
+import {useContext, useMemo, useState} from 'react';
 
 import {FilterObject, FilterTag, FilterTagHighlightedText} from './useFilter';
 import {TimeContext} from '../../app/time/TimeContext';
@@ -12,7 +22,7 @@ import {browserTimezone} from '../../app/time/browserTimezone';
 import {useUpdatingRef} from '../../hooks/useUpdatingRef';
 import {lazy} from '../../util/lazy';
 
-const DateRangePicker = lazy(() => import('./DateRangePickerWrapper'));
+const DayPickerWrapper = lazy(() => import('./DayPickerWrapperForLazyImport'));
 
 import '../../util/dayjsExtensions';
 
@@ -281,73 +291,80 @@ export function ActiveFilterState({
   );
 }
 
-export function CustomTimeRangeFilterDialog({
-  filter,
-  close,
-}: {
+const buildFormatter = memoize(
+  (timeZone: string) =>
+    new Intl.DateTimeFormat('en-US', {
+      month: 'short',
+      day: 'numeric',
+      year: 'numeric',
+      timeZone,
+    }),
+);
+
+interface DialogProps {
   filter: TimeRangeFilter;
   close: () => void;
-}) {
+}
+
+export function CustomTimeRangeFilterDialog({filter, close}: DialogProps) {
   const {
     timezone: [_timezone],
   } = useContext(TimeContext);
   const targetTimezone = _timezone === 'Automatic' ? browserTimezone() : _timezone;
 
-  useEffect(() => {
-    const originalDefaultTimezone = momentTZ.tz.guess();
-    momentTZ.tz.setDefault(targetTimezone);
-    return () => {
-      momentTZ.tz.setDefault(originalDefaultTimezone);
-    };
-  }, [targetTimezone]);
-
-  const [startDate, setStartDate] = useState<moment.Moment | null>(null);
-  const [endDate, setEndDate] = useState<moment.Moment | null>(null);
-  const [focusedInput, setFocusedInput] = useState<'startDate' | 'endDate'>('startDate');
+  const [selected, setSelected] = useState<DateRange>(() => ({from: undefined, to: undefined}));
 
   const [isOpen, setIsOpen] = useState(true);
+  const formatter = buildFormatter(targetTimezone);
+
+  const leftContent = () => {
+    if (selected.from) {
+      if (selected.to) {
+        return (
+          <div>
+            <span style={{color: Colors.textLight()}}>Selected:</span>{' '}
+            {formatter.format(selected.from)} - {formatter.format(selected.to)}
+          </div>
+        );
+      }
+      return (
+        <div>
+          Selected{' '}
+          <span style={{color: Colors.textLight()}}>{formatter.format(selected.from)}</span>
+        </div>
+      );
+    }
+
+    return null;
+  };
 
   return (
-    <Dialog isOpen={isOpen} title="Select a date range" onClosed={close} style={{width: '652px'}}>
-      <Container>
-        <Box flex={{direction: 'row', gap: 8}} padding={16}>
-          <DateRangePicker
-            minimumNights={0}
-            onDatesChange={({startDate, endDate}) => {
-              setStartDate(startDate ? startDate.clone().startOf('day') : null);
-              setEndDate(endDate ? endDate.clone().endOf('day') : null);
-            }}
-            onFocusChange={(focusedInput) => {
-              if (focusedInput) {
-                setFocusedInput(focusedInput);
-              }
-            }}
-            startDate={startDate}
-            endDate={endDate}
-            startDateId="start"
-            endDateId="end"
-            focusedInput={focusedInput}
-            withPortal={false}
-            keepOpenOnDateSelect
-            isOutsideRange={() => false}
+    <Dialog isOpen={isOpen} title="Select a date range" onClosed={close} style={{width: 'auto'}}>
+      <DialogBody>
+        <div style={{height: '344px'}}>
+          <DayPickerWrapper
+            timeZone={targetTimezone}
+            mode="range"
+            navLayout="around"
+            selected={selected}
+            onSelect={setSelected}
+            excludeDisabled
+            required
+            numberOfMonths={2}
           />
-        </Box>
-      </Container>
-      <DialogFooter topBorder>
-        <Button
-          onClick={() => {
-            setIsOpen(false);
-          }}
-        >
-          Cancel
-        </Button>
+        </div>
+      </DialogBody>
+      <DialogFooter topBorder left={leftContent()}>
+        <Button onClick={() => setIsOpen(false)}>Cancel</Button>
         <Button
           intent="primary"
-          disabled={!startDate || !endDate}
+          disabled={!selected.from || !selected.to}
           onClick={() => {
-            // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-            filter.setState([startDate!.valueOf(), endDate!.valueOf()]);
-            setIsOpen(false);
+            if (selected.from && selected.to) {
+              const endDateEndOfDay = endOfDay(new TZDate(selected.to, targetTimezone));
+              filter.setState([selected.from.valueOf(), endDateEndOfDay.valueOf()]);
+              setIsOpen(false);
+            }
           }}
         >
           Apply
@@ -356,44 +373,3 @@ export function CustomTimeRangeFilterDialog({
     </Dialog>
   );
 }
-
-const Container = styled.div`
-  height: 430px;
-
-  /* Hide the default date picker for Chrome, Edge, and Safari */
-  input[type='date']::-webkit-calendar-picker-indicator {
-    display: none;
-  }
-
-  /* Hide the default date picker for Firefox */
-  input[type='date']::-moz-calendar-picker-indicator {
-    display: none;
-  }
-
-  /* Hide the default date picker for Internet Explorer */
-  input[type='date']::-ms-calendar-picker-indicator {
-    display: none;
-  }
-
-  .DayPickerKeyboardShortcuts_show {
-    display: none;
-  }
-
-  .CalendarDay__hovered_span,
-  .CalendarDay__hovered_span:hover,
-  .CalendarDay__selected_span,
-  .CalendarDay__selected_span:hover {
-    background: ${Colors.backgroundBlue()};
-    color: ${Colors.textBlue()};
-    border: 1px solid #e4e7e7;
-  }
-  .CalendarDay__selected,
-  .CalendarDay__selected:active,
-  .CalendarDay__selected:hover {
-    background: ${Colors.backgroundBlueHover()};
-    border: 1px solid #e4e7e7;
-  }
-  .DateInput_input__focused {
-    border-color: ${Colors.borderDefault()};
-  }
-`;
