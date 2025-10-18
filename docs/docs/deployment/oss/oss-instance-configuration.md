@@ -340,6 +340,18 @@ If you expect that your code will take longer than 180 seconds to load, set the 
   endBefore="end_marker_code_servers"
 />
 
+#### Code server environment variables
+
+You can configure additional code server behavior using environment variables:
+
+| Environment Variable                       | Description                                                                                                                                                                                                                                                                                      | Default            |
+| ------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | ------------------ |
+| `DAGSTER_GRPC_PROXY_HEARTBEAT_TTL_SECONDS` | Time-to-live in seconds for gRPC server heartbeats. This controls how long a code server subprocess will wait for heartbeat signals before considering itself orphaned and shutting down. Increase this value if your code server environment becomes too busy to respond to heartbeats in time. | `30`               |
+| `DAGSTER_PROXY_SERVER_HEARTBEAT_TIMEOUT`   | Time in seconds for the proxy server to wait for heartbeat signals from the caller. This is separate from the gRPC server heartbeat TTL and controls the proxy server's own heartbeat monitoring.                                                                                                | `30`               |
+| `DAGSTER_GRPC_MAX_WORKERS`                 | Maximum number of concurrent worker threads for handling gRPC requests on the code server. Increasing this can improve throughput when multiple operations need to be performed simultaneously.                                                                                                  | Based on CPU cores |
+
+These environment variables should be set in the environment where the code server process runs.
+
 ### Data retention
 
 The `retention` key allows you to configure how long Dagster retains certain types of data. Specifically, data that has diminishing value over time, such as schedule/sensor tick data. Cleaning up old ticks can help minimize storage concerns and improve query performance.
