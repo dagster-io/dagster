@@ -12,7 +12,6 @@ from dagster import (
     AutoMaterializePolicy,
     AutomationCondition,
     DagsterInvalidDefinitionError,
-    LegacyFreshnessPolicy,
     PartitionMapping,
 )
 from dagster._annotations import beta, public
@@ -36,7 +35,6 @@ from dagster_dbt.asset_utils import (
     default_auto_materialize_policy_fn,
     default_code_version_fn,
     default_description_fn,
-    default_freshness_policy_fn,
     default_group_from_dbt_resource_props,
     default_metadata_from_dbt_resource_props,
     default_owners_from_dbt_resource_props,
@@ -158,7 +156,6 @@ class DagsterDbtTranslator:
             group_name=self.get_group_name(resource_props),
             code_version=self.get_code_version(resource_props),
             automation_condition=self.get_automation_condition(resource_props),
-            legacy_freshness_policy=self.get_freshness_policy(resource_props),
             owners=self.get_owners(owners_resource_props),
             tags=self.get_tags(resource_props),
             kinds={"dbt", manifest.get("metadata", {}).get("adapter_type", "dbt")},
@@ -492,60 +489,6 @@ class DagsterDbtTranslator:
                         return ["user@owner.com", "team:team@owner.com"]
         """
         return default_owners_from_dbt_resource_props(dbt_resource_props)
-
-    @public
-    @beta(emit_runtime_warning=False)
-    def get_freshness_policy(
-        self, dbt_resource_props: Mapping[str, Any]
-    ) -> Optional[LegacyFreshnessPolicy]:
-        """A function that takes a dictionary representing properties of a dbt resource, and
-        returns the Dagster :py:class:`dagster.FreshnessPolicy` for that resource.
-
-        Note that a dbt resource is unrelated to Dagster's resource concept, and simply represents
-        a model, seed, snapshot or source in a given dbt project. You can learn more about dbt
-        resources and the properties available in this dictionary here:
-        https://docs.getdbt.com/reference/artifacts/manifest-json#resource-details
-
-        This method can be overridden to provide a custom freshness policy for a dbt resource.
-
-        Args:
-            dbt_resource_props (Mapping[str, Any]): A dictionary representing the dbt resource.
-
-        Returns:
-            Optional[FreshnessPolicy]: A Dagster freshness policy.
-
-        Examples:
-            Set a custom freshness policy for all dbt resources:
-
-            .. code-block:: python
-
-                from typing import Any, Mapping
-
-                from dagster_dbt import DagsterDbtTranslator
-
-
-                class CustomDagsterDbtTranslator(DagsterDbtTranslator):
-                    def get_freshness_policy(self, dbt_resource_props: Mapping[str, Any]) -> Optional[FreshnessPolicy]:
-                        return FreshnessPolicy(maximum_lag_minutes=60)
-
-            Set a custom freshness policy for dbt resources with a specific tag:
-
-            .. code-block:: python
-
-                from typing import Any, Mapping
-
-                from dagster_dbt import DagsterDbtTranslator
-
-
-                class CustomDagsterDbtTranslator(DagsterDbtTranslator):
-                    def get_freshness_policy(self, dbt_resource_props: Mapping[str, Any]) -> Optional[FreshnessPolicy]:
-                        freshness_policy = None
-                        if "my_custom_tag" in dbt_resource_props.get("tags", []):
-                            freshness_policy = FreshnessPolicy(maximum_lag_minutes=60)
-
-                        return freshness_policy
-        """
-        return default_freshness_policy_fn(dbt_resource_props)
 
     @public
     @beta(emit_runtime_warning=False)
