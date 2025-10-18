@@ -6,6 +6,8 @@ title: Serverless runtime environment
 tags: [dagster-plus-feature]
 ---
 
+import ServerlessDeployYml from '@site/docs/partials/\_ServerlessDeployYml.md';
+
 By default, Dagster+ Serverless will package your code as PEX files and deploy them on Docker images. Using PEX files significantly reduces the time to deploy since it does not require building a new Docker image and provisioning a new container for every code change. However, you are able to customize the Serverless runtime environment in various ways:
 
 - [Add dependencies](#add-dependencies)
@@ -77,8 +79,10 @@ Python versions 3.9 through 3.13 are all supported for Serverless deployments. Y
 
 <Tabs groupId="method">
 <TabItem value="GitHub" label="GitHub">
-In your `.github/workflows/deploy.yml` file, update the `PYTHON_VERSION` environment variable with your desired Python version:
-<CodeExample path="docs_snippets/docs_snippets/dagster-plus/deployment/serverless/runtime-environment/github_python_version.yaml" language="yaml" title="Updating the Python version in deploy.yml" />
+In your `.github/workflows/dagster-plus-deploy.yml` file, update the `PYTHON_VERSION` environment variable with your desired Python version:
+<CodeExample path="docs_snippets/docs_snippets/dagster-plus/deployment/serverless/runtime-environment/github_python_version.yaml" language="yaml" title="Updating the Python version in dagster-plus-deploy.yml" />
+
+<ServerlessDeployYml />
 
 </TabItem>
 <TabItem value="GitLab" label="GitLab">
@@ -152,13 +156,15 @@ Setting a custom base image isn't supported for GitLab CI/CD workflows out of th
 
   <TabItem value="GitHub" label="GitHub">
 
-In your `.github/workflows/deploy.yml` file, add the `SERVERLESS_BASE_IMAGE_TAG` environment variable and set it to the tag printed out in the previous step:
+In your `.github/workflows/dagster-plus-deploy.yml` file, add the `SERVERLESS_BASE_IMAGE_TAG` environment variable and set it to the tag printed out in the previous step:
 
 <CodeExample
   path="docs_snippets/docs_snippets/dagster-plus/deployment/serverless/runtime-environment/github_base_image.yaml"
   language="yaml"
-  title="Setting a custom base image in deploy.yml"
+  title="Setting a custom base image in dagster-plus-deploy.yml"
 />
+
+<ServerlessDeployYml />
 
   </TabItem>
 
@@ -237,8 +243,10 @@ You have the option to disable PEX-based deploys and deploy using a Docker image
 
 <Tabs groupId="method">
 <TabItem value="GitHub" label="GitHub">
-In your `.github/workflows/deploy.yml` file, update the `ENABLE_FAST_DEPLOYS` environment variable to `false`:
-<CodeExample path="docs_snippets/docs_snippets/dagster-plus/deployment/serverless/runtime-environment/github_disable_pex.yaml" language="yaml" title="Disable PEX deploys in deploy.yml" />
+In your `.github/workflows/dagster-plus-deploy.yml` file, update the `ENABLE_FAST_DEPLOYS` environment variable to `false`:
+<CodeExample path="docs_snippets/docs_snippets/dagster-plus/deployment/serverless/runtime-environment/github_disable_pex.yaml" language="yaml" title="Disable PEX deploys in dagster-plus-deploy.yml" />
+
+<ServerlessDeployYml />
 
 </TabItem>
 <TabItem value="GitLab" label="GitLab">
@@ -280,7 +288,9 @@ In the root of your repo, you can provide two optional shell scripts: `dagster_c
 This method is the most flexible, but requires setting up a pipeline outside of Dagster to build a custom base image.
 
 :::note
+
 Setting a custom base image isn't supported for GitLab CI/CD workflows out of the box, but you can write a custom GitLab CI/CD yaml file that implements the manual steps noted.
+
 :::
 
 1.  Build you base image
@@ -290,12 +300,12 @@ Setting a custom base image isn't supported for GitLab CI/CD workflows out of th
 
 <TabItem value="GitHub" label="GitHub">
 
-In your `.github/workflows/deploy.yml` file, add the `SERVERLESS_BASE_IMAGE_TAG` environment variable and set it to the tag printed out in the previous step:
+In your `.github/workflows/dagster-plus-deploy.yml` file, add the `SERVERLESS_BASE_IMAGE_TAG` environment variable and set it to the tag printed out in the previous step:
 
 <CodeExample
   path="docs_snippets/docs_snippets/dagster-plus/deployment/serverless/runtime-environment/github_no_pex_custom_base_image.yaml"
   language="yaml"
-  title="Setting a custom base image in `deploy.yml`"
+  title="Setting a custom base image in `dagster-plus-deploy.yml`"
 />
 
 </TabItem>
@@ -319,7 +329,7 @@ dagster-cloud serverless deploy --base-image=my_base_image:latest --location-nam
 
 If you use PEX deploys in your workflow (`ENABLE_FAST_DEPLOYS: 'true'`), the following steps can install a package from a private GitHub repository, e.g. `my-org/private-repo`, as a dependency:
 
-1.  In your `deploy.yml` file, add the following to the top of `steps:` section in the `dagster-cloud-default-deploy` job.
+1.  In your `dagster-plus-deploy.yml` file, add the following to the top of `steps:` section in the `dagster-cloud-default-deploy` job.
 
     ```yaml
     - name: Checkout internal repository
@@ -374,4 +384,10 @@ If you use PEX deploys in your workflow (`ENABLE_FAST_DEPLOYS: 'true'`), the fol
 
   </Tabs>
 
-Once the `deploy.yml` is updated and changes pushed to your repo, then any subsequent code deploy should checkout your private repository, build the package and install it as a dependency in your Dagster+ project. Repeat the above steps for your `branch_deployments.yml` if needed.
+Once the `dagster-plus-deploy.yml` is updated and changes pushed to your repo, then any subsequent code deploy should checkout your private repository, build the package and install it as a dependency in your Dagster+ project.
+
+:::note
+
+If you have separate `deploy.yml` and `branch_deployments.yml` files, you will need to repeat the above steps for your `branch_deployments.yml` as needed.
+
+:::

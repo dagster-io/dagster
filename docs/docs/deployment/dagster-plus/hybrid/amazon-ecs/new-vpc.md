@@ -71,7 +71,7 @@ After the stack is installed, you'll be prompted to configure it. In the ECS wiz
 
 - **Dagster+ Organization**: Enter the name of your Dagster+ organization.
 - **Dagster+ Deployment**: Enter the name of the Dagster+ deployment you want to use. Leave this field empty if the agent will only serve Branch deployments.
-- **Enable Branch Deployments**: Whether to have this agent serve your ephemeral [Branch deployments](/deployment/dagster-plus/ci-cd/branch-deployments). Only a single agent should have this setting enabled.
+- **Enable Branch Deployments**: Whether to have this agent serve your ephemeral [Branch deployments](/deployment/dagster-plus/deploying-code/branch-deployments). Only a single agent should have this setting enabled.
 - **Agent Token**: Paste the agent token you generated in [Step 1](#step-1-generate-a-dagster-agent-token).
 - **AgentCPU**: The amount of AWS CPU to allocate to the agent. Defaults to 256 CPU units.
 - **AgentMemory**: The amount of memory to allocate to the agent. Defaults to 1024 MiB.

@@ -12,7 +12,7 @@ Each Dagster+ full deployment (e.g., `prod`) needs to have at least one agent ru
 
 - For redundancy and high availability
 - When you need to run agents in completely separate infrastructure environments or AWS accounts, with separate compute resources, volumes, and networks
-- To dedicate specific agents for [branch deployments](/deployment/dagster-plus/ci-cd/branch-deployments)
+- To dedicate specific agents for [branch deployments](/deployment/dagster-plus/deploying-code/branch-deployments)
 
 ## Considerations
 
