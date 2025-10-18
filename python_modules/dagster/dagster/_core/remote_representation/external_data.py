@@ -897,6 +897,7 @@ class AssetCheckNodeSnap(IHaveNew):
     additional_asset_keys: Sequence[AssetKey]
     automation_condition: Optional[AutomationCondition]
     automation_condition_snapshot: Optional[AutomationConditionSnapshot]
+    partitions_def_snapshot: Optional[PartitionsSnap]
 
     def __new__(
         cls,
@@ -909,6 +910,7 @@ class AssetCheckNodeSnap(IHaveNew):
         additional_asset_keys: Optional[Sequence[AssetKey]] = None,
         automation_condition: Optional[AutomationCondition] = None,
         automation_condition_snapshot: Optional[AutomationConditionSnapshot] = None,
+        partitions_def_snapshot: Optional[PartitionsSnap] = None,
     ):
         return super().__new__(
             cls,
@@ -921,6 +923,7 @@ class AssetCheckNodeSnap(IHaveNew):
             additional_asset_keys=additional_asset_keys or [],
             automation_condition=automation_condition,
             automation_condition_snapshot=automation_condition_snapshot,
+            partitions_def_snapshot=partitions_def_snapshot,
         )
 
     @property
@@ -1210,6 +1213,9 @@ def asset_check_node_snaps_from_repo(repo: RepositoryDefinition) -> Sequence[Ass
                 additional_asset_keys=[dep.asset_key for dep in spec.additional_deps],
                 automation_condition=automation_condition,
                 automation_condition_snapshot=automation_condition_snapshot,
+                partitions_def_snapshot=PartitionsSnap.from_def(spec.partitions_def)
+                if spec.partitions_def
+                else None,
             )
         )
 

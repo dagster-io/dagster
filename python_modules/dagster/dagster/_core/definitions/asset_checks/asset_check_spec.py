@@ -14,6 +14,7 @@ from typing_extensions import TypeAlias
 
 from dagster._annotations import PublicAttr, public
 from dagster._core.definitions.asset_key import AssetCheckKey, AssetKey, CoercibleToAssetKey
+from dagster._core.definitions.partitions.definition import PartitionsDefinition
 
 if TYPE_CHECKING:
     from dagster._core.definitions.assets.definition.asset_dep import AssetDep, CoercibleToAssetDep
@@ -59,6 +60,7 @@ class AssetCheckSpec(IHaveNew, LegacyNamedTupleMixin):
     blocking: PublicAttr[bool]
     metadata: PublicAttr[Mapping[str, Any]]
     automation_condition: PublicAttr[Optional[LazyAutomationCondition]]
+    partitions_def: PublicAttr[Optional[PartitionsDefinition]]
 
     """Defines information about an asset check, except how to execute it.
 
@@ -81,6 +83,7 @@ class AssetCheckSpec(IHaveNew, LegacyNamedTupleMixin):
             that multi-asset is responsible for enforcing that downstream assets within the
             same step do not execute after a blocking asset check fails.
         metadata (Optional[Mapping[str, Any]]):  A dict of static metadata for this asset check.
+        partitions_def (Optional[PartitionsDefinition]): The partitions definition for this asset check.
     """
 
     def __new__(
@@ -93,6 +96,7 @@ class AssetCheckSpec(IHaveNew, LegacyNamedTupleMixin):
         blocking: bool = False,
         metadata: Optional[Mapping[str, Any]] = None,
         automation_condition: Optional["AutomationCondition[AssetCheckKey]"] = None,
+        partitions_def: Optional[PartitionsDefinition] = None,
     ):
         from dagster._core.definitions.assets.definition.asset_dep import (
             coerce_to_deps_and_check_duplicates,
@@ -120,6 +124,7 @@ class AssetCheckSpec(IHaveNew, LegacyNamedTupleMixin):
             blocking=blocking,
             metadata=metadata or {},
             automation_condition=automation_condition,
+            partitions_def=partitions_def,
         )
 
     def get_python_identifier(self) -> str:

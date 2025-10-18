@@ -750,6 +750,7 @@ type AssetNode {
   hasMaterializePermission: Boolean!
   hasReportRunlessAssetEventPermission: Boolean!
   hasAssetChecks: Boolean!
+  assetCheckOrError(checkName: String!): AssetCheckOrError!
   assetChecksOrError(limit: Int, pipeline: PipelineSelector): AssetChecksOrError!
   currentAutoMaterializeEvaluationId: ID
   targetingInstigators: [Instigator!]!
@@ -1037,15 +1038,12 @@ enum StaleCauseCategory {
   DEPENDENCIES
 }
 
-union AssetChecksOrError =
-  | AssetChecks
+union AssetCheckOrError =
+  | AssetCheck
+  | AssetCheckNotFoundError
   | AssetCheckNeedsMigrationError
   | AssetCheckNeedsUserCodeUpgrade
   | AssetCheckNeedsAgentUpgradeError
-
-type AssetChecks {
-  checks: [AssetCheck!]!
-}
 
 type AssetCheck {
   name: String!
@@ -1057,6 +1055,9 @@ type AssetCheck {
   blocking: Boolean!
   additionalAssetKeys: [AssetKey!]!
   automationCondition: AutomationCondition
+  partitionDefinition: PartitionDefinition
+  partitionKeysByDimension(startIdx: Int, endIdx: Int): [DimensionPartitionKeys!]!
+  partitionStatuses: AssetCheckPartitionStatuses
 }
 
 type AssetCheckExecution {
@@ -1085,6 +1086,7 @@ type AssetCheckEvaluation {
   severity: AssetCheckSeverity!
   description: String
   success: Boolean!
+  partition: String
 }
 
 type AssetCheckEvaluationTargetMaterializationData {
@@ -1104,6 +1106,19 @@ enum AssetCheckCanExecuteIndividually {
   NEEDS_USER_CODE_UPGRADE
 }
 
+type AssetCheckPartitionStatuses {
+  missing: [String!]!
+  succeeded: [String!]!
+  failed: [String!]!
+  inProgress: [String!]!
+  skipped: [String!]!
+  executionFailed: [String!]!
+}
+
+type AssetCheckNotFoundError implements Error {
+  message: String!
+}
+
 type AssetCheckNeedsMigrationError implements Error {
   message: String!
 }
@@ -1114,6 +1129,16 @@ type AssetCheckNeedsUserCodeUpgrade implements Error {
 
 type AssetCheckNeedsAgentUpgradeError implements Error {
   message: String!
+}
+
+union AssetChecksOrError =
+  | AssetChecks
+  | AssetCheckNeedsMigrationError
+  | AssetCheckNeedsUserCodeUpgrade
+  | AssetCheckNeedsAgentUpgradeError
+
+type AssetChecks {
+  checks: [AssetCheck!]!
 }
 
 union Instigator = Schedule | Sensor
@@ -3713,6 +3738,7 @@ type Query {
   assetCheckExecutions(
     assetKey: AssetKeyInput!
     checkName: String!
+    partition: String
     limit: Int!
     cursor: String
   ): [AssetCheckExecution!]!

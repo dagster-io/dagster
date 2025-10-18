@@ -1,7 +1,5 @@
-import {Box, Checkbox} from '@dagster-io/ui-components';
-
 import {AssetPartitionStatus, assetPartitionStatusToText} from './AssetPartitionStatus';
-import {testId} from '../testing/testId';
+import {PartitionStatusCheckboxes} from './PartitionStatusCheckboxes';
 
 export const AssetPartitionStatusCheckboxes = ({
   counts,
@@ -17,22 +15,13 @@ export const AssetPartitionStatusCheckboxes = ({
   disabled?: boolean;
 }) => {
   return (
-    <Box flex={{direction: 'row', alignItems: 'center', gap: 12}} style={{overflow: 'hidden'}}>
-      {allowed.map((status) => (
-        <Checkbox
-          key={status}
-          data-testid={testId(`partition-status-${status}-checkbox`)}
-          disabled={disabled}
-          style={{marginBottom: 0, marginLeft: 10, minWidth: 200}}
-          checked={value.includes(status) && !disabled}
-          label={`${assetPartitionStatusToText(status)} (${counts[status]})`}
-          onChange={() =>
-            onChange(
-              value.includes(status) ? value.filter((v) => v !== status) : [...value, status],
-            )
-          }
-        />
-      ))}
-    </Box>
+    <PartitionStatusCheckboxes
+      counts={counts}
+      value={value}
+      onChange={onChange}
+      allowed={allowed}
+      statusToText={assetPartitionStatusToText}
+      disabled={disabled}
+    />
   );
 };

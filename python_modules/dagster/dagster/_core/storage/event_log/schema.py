@@ -183,6 +183,65 @@ AssetCheckExecutionsTable = db.Table(
     db.Column("create_timestamp", db.DateTime, server_default=get_sql_current_timestamp()),
 )
 
+# Summary table for asset checks
+AssetChecksTable = db.Table(
+    "asset_checks",
+    SqlEventLogStorageMetadata,
+    db.Column(
+        "id",
+        db.BigInteger().with_variant(sqlite.INTEGER(), "sqlite"),
+        primary_key=True,
+        autoincrement=True,
+    ),
+    db.Column("asset_key", db.Text, nullable=False),
+    db.Column("check_name", db.Text, nullable=False),
+    db.Column(
+        "cached_check_status_data", db.Text
+    ),  # Serialized AssetCheckPartitionStatusCacheValue
+    db.Column(
+        "last_execution_record_id",
+        db.BigInteger().with_variant(sqlite.INTEGER(), "sqlite"),
+    ),  # Reference to asset_check_executions.id
+    db.Column("last_run_id", db.String(255)),  # Run ID of latest execution
+    db.Column(
+        "last_completed_execution_record_id",
+        db.BigInteger().with_variant(sqlite.INTEGER(), "sqlite"),
+    ),  # Reference to asset_check_executions.id
+    db.Column("created_timestamp", db.DateTime, server_default=get_sql_current_timestamp()),
+    db.Column("updated_timestamp", db.DateTime),
+    db.UniqueConstraint("asset_key", "check_name"),
+)
+
+# Summary table for asset check partitions
+AssetCheckPartitionsTable = db.Table(
+    "asset_check_partitions",
+    SqlEventLogStorageMetadata,
+    db.Column(
+        "id",
+        db.BigInteger().with_variant(sqlite.INTEGER(), "sqlite"),
+        primary_key=True,
+        autoincrement=True,
+    ),
+    db.Column("asset_key", db.Text, nullable=False),
+    db.Column("check_name", db.Text, nullable=False),
+    db.Column("partition_key", db.Text),
+    db.Column("last_execution_status", db.Text),
+    db.Column(
+        "last_execution_id",  # Reference to the asset_check_executions.id
+        db.BigInteger().with_variant(sqlite.INTEGER(), "sqlite"),
+    ),
+    db.Column("last_execution_timestamp", db.DateTime),
+    db.Column("last_planned_run_id", db.String(255)),
+    db.Column(
+        "last_event_id",  # Reference to the event_logs.id
+        db.BigInteger().with_variant(sqlite.INTEGER(), "sqlite"),
+        nullable=False,
+    ),
+    db.Column("created_timestamp", db.DateTime, server_default=get_sql_current_timestamp()),
+    db.Column("updated_timestamp", db.DateTime),
+    db.UniqueConstraint("asset_key", "check_name", "partition_key"),
+)
+
 db.Index(
     "idx_asset_check_executions",
     AssetCheckExecutionsTable.c.asset_key,
@@ -206,6 +265,29 @@ db.Index(
     AssetCheckExecutionsTable.c.partition,
     unique=True,
     mysql_length={"asset_key": 64, "partition": 64, "check_name": 64},
+)
+
+# Indexes for new asset checks tables
+db.Index(
+    "idx_asset_checks",
+    AssetChecksTable.c.asset_key,
+    mysql_length={"asset_key": 64},
+)
+
+db.Index(
+    "idx_asset_check_partitions",
+    AssetCheckPartitionsTable.c.asset_key,
+    AssetCheckPartitionsTable.c.check_name,
+    mysql_length={"asset_key": 64, "check_name": 64},
+)
+
+# Optimized index for cache invalidation queries (find partitions newer than cache)
+db.Index(
+    "idx_asset_check_partitions_cache",
+    AssetCheckPartitionsTable.c.asset_key,
+    AssetCheckPartitionsTable.c.check_name,
+    AssetCheckPartitionsTable.c.last_event_id,
+    mysql_length={"asset_key": 64, "check_name": 64},
 )
 
 db.Index(
