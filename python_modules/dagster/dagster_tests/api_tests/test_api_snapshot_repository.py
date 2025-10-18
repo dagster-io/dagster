@@ -1,14 +1,10 @@
-import asyncio
 import sys
 from contextlib import contextmanager
 
 import dagster as dg
 import pytest
 from dagster import job
-from dagster._api.snapshot_repository import (
-    gen_external_repositories_data_grpc,
-    sync_get_external_repositories_data_grpc,
-)
+from dagster._api.snapshot_repository import sync_get_external_repositories_data_grpc
 from dagster._core.errors import DagsterUserCodeProcessError
 from dagster._core.instance import DagsterInstance
 from dagster._core.remote_origin import (
@@ -33,15 +29,15 @@ from dagster_shared.serdes.utils import hash_str
 from dagster_tests.api_tests.utils import get_bar_repo_code_location
 
 
-def test_streaming_external_repositories_api_grpc(instance):
+def test_external_repositories_api_grpc(instance):
     with get_bar_repo_code_location(instance) as code_location:
         repository_snaps = sync_get_external_repositories_data_grpc(
-            code_location.client, code_location
+            code_location.client, code_location, defer_snapshots=False
         )
 
         assert len(repository_snaps) == 1
 
-        repository_snap = repository_snaps["bar_repo"]
+        repository_snap, job_data_snaps = repository_snaps["bar_repo"]
 
         assert isinstance(repository_snap, RepositorySnap)
         assert repository_snap.name == "bar_repo"
@@ -50,11 +46,27 @@ def test_streaming_external_repositories_api_grpc(instance):
             "integer": dg.IntMetadataValue(123),
         }
 
-        async_repository_snaps = asyncio.run(
-            gen_external_repositories_data_grpc(code_location.client, code_location)
+        assert len(job_data_snaps) == 0
+
+
+def test_external_repositories_api_grpc_defer_snapshots(instance):
+    with get_bar_repo_code_location(instance) as code_location:
+        repository_snaps = sync_get_external_repositories_data_grpc(
+            code_location.client, code_location, defer_snapshots=True
         )
 
-        assert async_repository_snaps == repository_snaps
+        assert len(repository_snaps) == 1
+
+        repository_snap, job_data_snaps = repository_snaps["bar_repo"]
+
+        assert isinstance(repository_snap, RepositorySnap)
+        assert repository_snap.name == "bar_repo"
+        assert repository_snap.metadata == {
+            "string": dg.TextMetadataValue("foo"),
+            "integer": dg.IntMetadataValue(123),
+        }
+
+        assert len(job_data_snaps) == 8
 
 
 def test_streaming_external_repositories_error(instance):
@@ -67,12 +79,6 @@ def test_streaming_external_repositories_error(instance):
             match='Could not find a repository called "does_not_exist"',
         ):
             sync_get_external_repositories_data_grpc(code_location.client, code_location)
-
-        with pytest.raises(
-            DagsterUserCodeProcessError,
-            match='Could not find a repository called "does_not_exist"',
-        ):
-            asyncio.run(gen_external_repositories_data_grpc(code_location.client, code_location))
 
 
 @dg.op

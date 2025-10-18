@@ -3,7 +3,7 @@ import threading
 from abc import abstractmethod
 from collections.abc import Mapping, Sequence
 from contextlib import AbstractContextManager
-from functools import cached_property
+from functools import cached_property, partial
 from typing import TYPE_CHECKING, Any, Optional, Union, cast
 
 from dagster_shared.libraries import DagsterLibraryRegistry
@@ -64,6 +64,8 @@ if TYPE_CHECKING:
     from dagster._core.definitions.schedule_definition import ScheduleExecutionData
     from dagster._core.definitions.sensor_definition import SensorExecutionData
     from dagster._core.remote_representation.external_data import (
+        JobDataSnap,
+        JobRefSnap,
         PartitionConfigSnap,
         PartitionExecutionErrorSnap,
         PartitionSetExecutionParamSnap,
@@ -676,7 +678,7 @@ class GrpcServerCodeLocation(CodeLocation):
         self._watch_server = check.bool_param(watch_server, "watch_server")
 
         self._server_id = None
-        self._repository_snaps = None
+        self._repository_snaps_and_job_data_snaps = None
 
         self._executable_path = None
         self._container_image = None
@@ -727,9 +729,10 @@ class GrpcServerCodeLocation(CodeLocation):
 
             self._container_context = list_repositories_response.container_context
 
-            self._repository_snaps = sync_get_external_repositories_data_grpc(
+            self._repository_snaps_and_job_data_snaps = sync_get_external_repositories_data_grpc(
                 self.client,
                 self,
+                defer_snapshots=True,
             )
 
             self.remote_repositories = {
@@ -740,12 +743,21 @@ class GrpcServerCodeLocation(CodeLocation):
                         code_location=self,
                     ),
                     auto_materialize_use_sensors=instance.auto_materialize_use_sensors,
+                    ref_to_data_fn=partial(self._job_ref_to_snap, repository_name=repo_name),
                 )
-                for repo_name, repo_data in self._repository_snaps.items()
+                for repo_name, (
+                    repo_data,
+                    _,
+                ) in self._repository_snaps_and_job_data_snaps.items()
             }
         except:
             self.cleanup()
             raise
+
+    def _job_ref_to_snap(self, repository_name: str, job_ref: "JobRefSnap") -> "JobDataSnap":
+        return check.not_none(self._repository_snaps_and_job_data_snaps)[repository_name][1][
+            job_ref.name
+        ]
 
     @property
     def server_id(self) -> str:
