@@ -183,7 +183,7 @@ class SigmaOrganization(ConfigurableResource):
             url = f"{url}?{urllib.parse.urlencode(query_params)}"
 
         max_retries = 5
-        base_delay = 1  # seconds
+        base_delay = 4.0
 
         for attempt in range(max_retries):
             try:

@@ -1,0 +1,10 @@
+type: dagster_sigma.SigmaComponent
+
+attributes:
+  organization:
+    base_url: "{{ env.SIGMA_BASE_URL }}"
+    client_id: "{{ env.SIGMA_CLIENT_ID }}"
+    client_secret: "{{ env.SIGMA_CLIENT_SECRET }}"
+  translation:
+    group_name: sigma_data
+    description: "Sigma asset: {{ data.properties.name }}"
