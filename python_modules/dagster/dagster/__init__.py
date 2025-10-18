@@ -362,6 +362,7 @@ from dagster._core.definitions.partitions.mapping import (
     DimensionPartitionMapping as DimensionPartitionMapping,
     IdentityPartitionMapping as IdentityPartitionMapping,
     LastPartitionMapping as LastPartitionMapping,
+    LatestOverlappingTimeWindowPartitionMapping as LatestOverlappingTimeWindowPartitionMapping,
     MultiPartitionMapping as MultiPartitionMapping,
     MultiToSingleDimensionPartitionMapping as MultiToSingleDimensionPartitionMapping,
     PartitionMapping as PartitionMapping,
