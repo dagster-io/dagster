@@ -649,6 +649,12 @@ def helm_chart(namespace, docker_image, celery_backend, should_cleanup=True):
     # Verify that steps can still transmit logs even when python logging is set above DEBUG
     additional_config = {**additional_config, **{"pythonLogs": {"pythonLogLevel": "INFO"}}}
 
+    # Enable includeInstance to mount instance config in user code pods
+    additional_config = {
+        **additional_config,
+        **{"dagster-user-deployments": {"includeInstance": True}},
+    }
+
     helm_config = merge_dicts(_base_helm_config(namespace, docker_image), additional_config)
 
     with _helm_chart_helper(namespace, should_cleanup, helm_config, helm_install_name="helm_chart"):
