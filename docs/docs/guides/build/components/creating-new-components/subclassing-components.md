@@ -1,5 +1,5 @@
 ---
-description: Customize the behavior of components by creating a subclass of the component.
+description: Customize the behavior of a component by subclassing it.
 sidebar_position: 400
 title: Subclassing components to customize behavior
 ---
