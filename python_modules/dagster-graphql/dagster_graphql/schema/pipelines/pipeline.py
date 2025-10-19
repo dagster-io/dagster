@@ -53,6 +53,7 @@ from dagster_graphql.implementation.utils import (
     apply_cursor_limit_reverse,
     capture_error,
     get_query_limit_with_default,
+    has_permission_for_definition,
     has_permission_for_run,
 )
 from dagster_graphql.schema.asset_health import GrapheneAssetHealth
@@ -1197,6 +1198,8 @@ class GraphenePipeline(GrapheneIPipelineSnapshotMixin, graphene.ObjectType):
             graphene.List(graphene.NonNull(GrapheneAssetKeyInput))
         ),
     )
+    hasLaunchExecutionPermission = graphene.NonNull(graphene.Boolean)
+    hasLaunchReexecutionPermission = graphene.NonNull(graphene.Boolean)
 
     class Meta:  # pyright: ignore[reportIncompatibleVariableOverride]
         interfaces = (GrapheneSolidContainer, GrapheneIPipelineSnapshot)
@@ -1282,6 +1285,16 @@ class GraphenePipeline(GrapheneIPipelineSnapshotMixin, graphene.ObjectType):
             remote_job=self._remote_job,
             partition_name=partition_name,
             selected_asset_keys=_asset_key_input_list_to_asset_key_set(selected_asset_keys),
+        )
+
+    def resolve_hasLaunchExecutionPermission(self, graphene_info: ResolveInfo) -> bool:
+        return has_permission_for_definition(
+            graphene_info, Permissions.LAUNCH_PIPELINE_EXECUTION, self._remote_job
+        )
+
+    def resolve_hasLaunchReexecutionPermission(self, graphene_info: ResolveInfo) -> bool:
+        return has_permission_for_definition(
+            graphene_info, Permissions.LAUNCH_PIPELINE_REEXECUTION, self._remote_job
         )
 
 

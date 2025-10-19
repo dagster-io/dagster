@@ -51,6 +51,18 @@ from dagster_graphql_tests.graphql.test_sensors import GET_SENSOR_STATUS_QUERY, 
 
 warnings.filterwarnings("ignore", category=BetaWarning, message=r"Parameter `owners` .*")
 
+GET_JOB_PERMISSIONS_QUERY = """
+query JobPermissionsQuery($selector: PipelineSelector!) {
+    pipelineOrError(params: $selector) {
+        __typename
+        ... on Pipeline {
+            hasLaunchExecutionPermission
+            hasLaunchReexecutionPermission
+        }
+    }
+}
+"""
+
 BaseTestSuite = make_graphql_context_test_suite(
     # no need to test all storages... just pick one that supports launching
     context_variants=[
@@ -129,6 +141,19 @@ class BaseDefinitionOwnerPermissionsTestSuite(ABC):
             else None
         )
         return typename, backfill_id
+
+    def graphql_get_job_permissions(self, context, job_name: str):
+        selector = infer_job_selector(context, job_name)
+        result = execute_dagster_graphql(
+            context,
+            GET_JOB_PERMISSIONS_QUERY,
+            variables={"selector": selector},
+        )
+        assert result.data
+        return (
+            result.data["pipelineOrError"]["hasLaunchExecutionPermission"],
+            result.data["pipelineOrError"]["hasLaunchReexecutionPermission"],
+        )
 
     def graphql_launch_job_backfill(self, context, job_name: str):
         partition_set = self.get_partition_set_by_job_name(context, job_name)
@@ -570,14 +595,22 @@ class BaseDefinitionOwnerPermissionsTestSuite(ABC):
         )
 
     def test_job_run_launch_permissions(self, graphql_context: WorkspaceRequestContext):
+        can_launch, _ = self.graphql_get_job_permissions(graphql_context, "owned_job")
+        assert can_launch
         typename, _ = self.graphql_launch_job_run(graphql_context, "owned_job")
         assert typename == "LaunchRunSuccess"
 
+        can_launch, _ = self.graphql_get_job_permissions(graphql_context, "unowned_job")
+        assert not can_launch
         typename, _ = self.graphql_launch_job_run(graphql_context, "unowned_job")
         assert typename == "UnauthorizedError"
 
     def test_job_reexecution_permissions(self, graphql_context: WorkspaceRequestContext):
+        _, can_reexecute = self.graphql_get_job_permissions(graphql_context, "owned_job")
+        assert can_reexecute
         run_a = self._create_run(graphql_context, "owned_job")
+        _, can_reexecute = self.graphql_get_job_permissions(graphql_context, "unowned_job")
+        assert not can_reexecute
         run_b = self._create_run(graphql_context, "unowned_job")
         assert (
             self.graphql_launch_job_reexecution(graphql_context, "owned_job", run_a.run_id)
