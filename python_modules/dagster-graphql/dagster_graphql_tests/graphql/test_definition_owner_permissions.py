@@ -170,7 +170,10 @@ class BaseDefinitionOwnerPermissionsTestSuite(ABC):
                 "partitionSetName": partition_set.name,
             },
         )
-        return result.data["partitionSetOrError"]["hasBackfillPermission"]
+        partition_set = result.data["partitionSetOrError"]
+        return partition_set["hasLaunchBackfillPermission"], partition_set[
+            "hasCancelBackfillPermission"
+        ]
 
     def graphql_cancel_backfill(self, context, backfill_id: str):
         result = execute_dagster_graphql(
@@ -516,19 +519,31 @@ class BaseDefinitionOwnerPermissionsTestSuite(ABC):
         assert self.graphql_delete_run(graphql_context, run_b.run_id) == "UnauthorizedError"
 
     def test_job_backfill_launch_permissions(self, graphql_context: WorkspaceRequestContext):
-        assert self.graphql_has_job_backfill_permissions(graphql_context, "owned_partitioned_job")
+        can_launch, _ = self.graphql_has_job_backfill_permissions(
+            graphql_context, "owned_partitioned_job"
+        )
+        assert can_launch
         typename, _ = self.graphql_launch_job_backfill(graphql_context, "owned_partitioned_job")
         assert typename == "LaunchBackfillSuccess"
 
-        assert not self.graphql_has_job_backfill_permissions(
+        can_launch, _ = self.graphql_has_job_backfill_permissions(
             graphql_context, "unowned_partitioned_job"
         )
+        assert not can_launch
         typename, _ = self.graphql_launch_job_backfill(graphql_context, "unowned_partitioned_job")
         assert typename == "UnauthorizedError"
 
     def test_job_backfill_cancel_permissions(self, graphql_context: WorkspaceRequestContext):
         backfill_id_a = self._create_job_backfill(graphql_context, "owned_partitioned_job")
         backfill_id_b = self._create_job_backfill(graphql_context, "unowned_partitioned_job")
+        _, can_cancel = self.graphql_has_job_backfill_permissions(
+            graphql_context, "owned_partitioned_job"
+        )
+        assert can_cancel
+        _, can_cancel = self.graphql_has_job_backfill_permissions(
+            graphql_context, "unowned_partitioned_job"
+        )
+        assert not can_cancel
         assert (
             self.graphql_cancel_backfill(graphql_context, backfill_id_a) == "CancelBackfillSuccess"
         )

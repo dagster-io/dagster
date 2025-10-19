@@ -343,7 +343,8 @@ class GraphenePartitionSet(graphene.ObjectType):
     partitionStatusesOrError = graphene.NonNull(GraphenePartitionStatusesOrError)
     partitionRuns = non_null_list(GraphenePartitionRun)
     repositoryOrigin = graphene.NonNull(GrapheneRepositoryOrigin)
-    hasBackfillPermission = graphene.NonNull(graphene.Boolean)
+    hasLaunchBackfillPermission = graphene.NonNull(graphene.Boolean)
+    hasCancelBackfillPermission = graphene.NonNull(graphene.Boolean)
     backfills = graphene.Field(
         non_null_list(GraphenePartitionBackfill),
         cursor=graphene.String(),
@@ -431,10 +432,21 @@ class GraphenePartitionSet(graphene.ObjectType):
         origin = self._remote_partition_set.get_remote_origin().repository_origin
         return GrapheneRepositoryOrigin(origin)
 
-    def resolve_hasBackfillPermission(self, graphene_info: ResolveInfo) -> bool:
+    def resolve_hasLaunchBackfillPermission(self, graphene_info: ResolveInfo) -> bool:
         return has_permission_for_job(
             graphene_info,
             Permissions.LAUNCH_PARTITION_BACKFILL,
+            JobSelector(
+                location_name=self._remote_partition_set.repository_handle.location_name,
+                repository_name=self._remote_partition_set.repository_handle.repository_name,
+                job_name=self._remote_partition_set.job_name,
+            ),
+        )
+
+    def resolve_hasCancelBackfillPermission(self, graphene_info: ResolveInfo) -> bool:
+        return has_permission_for_job(
+            graphene_info,
+            Permissions.CANCEL_PARTITION_BACKFILL,
             JobSelector(
                 location_name=self._remote_partition_set.repository_handle.location_name,
                 repository_name=self._remote_partition_set.repository_handle.repository_name,
