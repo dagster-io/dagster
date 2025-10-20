@@ -54,7 +54,9 @@ class StateBackedComponent(Component):
         else:
             await asyncio.to_thread(self.write_state_to_path, state_path)
 
-    async def _store_code_server_state(self, key: str, state_storage: DefsStateStorage) -> str:
+    async def _store_code_server_state(
+        self, key: str, state_storage: Optional[DefsStateStorage]
+    ) -> str:
         load_context = DefinitionsLoadContext.get()
         check.invariant(
             load_context.load_type == DefinitionsLoadType.INITIALIZATION,
@@ -64,16 +66,18 @@ class StateBackedComponent(Component):
             state_path = Path(temp_dir) / "state"
             await self._write_state_to_path_async(state_path)
             load_context.add_code_server_defs_state_info(key, state_path.read_text())
-            state_storage.set_latest_version(key, CODE_SERVER_STATE_VERSION)
+            if state_storage:
+                state_storage.set_latest_version(key, CODE_SERVER_STATE_VERSION)
             return CODE_SERVER_STATE_VERSION
 
     async def _store_local_filesystem_state(
-        self, key: str, state_storage: DefsStateStorage, project_root: Path
+        self, key: str, state_storage: Optional[DefsStateStorage], project_root: Path
     ) -> str:
         state_path = get_local_state_path(key, project_root)
         shutil.rmtree(state_path, ignore_errors=True)
         await self._write_state_to_path_async(state_path)
-        state_storage.set_latest_version(key, LOCAL_STATE_VERSION)
+        if state_storage:
+            state_storage.set_latest_version(key, LOCAL_STATE_VERSION)
         return LOCAL_STATE_VERSION
 
     async def _store_versioned_state_storage_state(
@@ -94,13 +98,13 @@ class StateBackedComponent(Component):
         """
         key = self.defs_state_config.key
         state_storage = DefsStateStorage.get()
-        if state_storage is None:
-            raise DagsterInvalidInvocationError(
-                f"Attempted to refresh state of {key} without a StateStorage in context. "
-                "This is likely the result of an internal framework error."
-            )
 
         if self.defs_state_config.type == DefsStateManagementType.VERSIONED_STATE_STORAGE:
+            if state_storage is None:
+                raise DagsterInvalidInvocationError(
+                    f"Attempted to refresh state for key {key} with management type {self.defs_state_config.type} "
+                    "without a StateStorage in context. This is likely the result of an internal framework error."
+                )
             return await self._store_versioned_state_storage_state(key, state_storage)
         elif self.defs_state_config.type == DefsStateManagementType.LOCAL_FILESYSTEM:
             return await self._store_local_filesystem_state(key, state_storage, project_root)
@@ -119,11 +123,6 @@ class StateBackedComponent(Component):
         key = self.defs_state_config.key
         defs_load_context = DefinitionsLoadContext.get()
         state_storage = DefsStateStorage.get()
-        if state_storage is None:
-            raise DagsterInvalidInvocationError(
-                "Attempted to build defs without a StateStorage in context. "
-                "This is likely the result of an internal framework error."
-            )
 
         if defs_load_context.load_type == DefinitionsLoadType.INITIALIZATION:
             if (
