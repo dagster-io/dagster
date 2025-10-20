@@ -41,7 +41,7 @@ spec:
         {{- end }}
     spec:
       imagePullSecrets: {{ $.Values.imagePullSecrets | toYaml | nindent 8 }}
-      serviceAccountName: {{ include "dagsterUserDeployments.serviceAccountName" $ }}
+      serviceAccountName: {{ if and $deployment.serviceAccount (hasKey $deployment.serviceAccount "name") }}{{ $deployment.serviceAccount.name }}{{ else }}{{ include "dagsterUserDeployments.serviceAccountName" $ }}{{ end }}
       automountServiceAccountToken: true
       securityContext: {{ $deployment.podSecurityContext | toYaml | nindent 8 }}
       {{- if $deployment.initContainers }}

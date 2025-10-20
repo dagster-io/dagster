@@ -542,6 +542,17 @@
                         }
                     ],
                     "default": null
+                },
+                "serviceAccount": {
+                    "anyOf": [
+                        {
+                            "$ref": "#/$defs/ServiceAccount"
+                        },
+                        {
+                            "type": "null"
+                        }
+                    ],
+                    "default": null
                 }
             },
             "required": [

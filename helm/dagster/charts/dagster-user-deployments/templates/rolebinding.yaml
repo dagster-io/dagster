@@ -4,12 +4,17 @@ apiVersion: rbac.authorization.k8s.io/v1
 metadata:
   name: {{ template "dagster.fullname" . }}-rolebinding
   labels: {{ include "dagster.labels" . | nindent 4 }}
-
 subjects:
 - kind: ServiceAccount
   name: {{ include "dagsterUserDeployments.serviceAccountName" . }}
+{{- range $deployment := .Values.deployments }}
+{{- if and $deployment.serviceAccount (hasKey $deployment.serviceAccount "name") }}
+- kind: ServiceAccount
+  name: {{ $deployment.serviceAccount.name }}
+{{- end }}
+{{- end }}
 roleRef:
   apiGroup: rbac.authorization.k8s.io
   kind: Role
   name: {{ template "dagster.fullname" . }}-role
-{{- end -}}
+{{- end }}
