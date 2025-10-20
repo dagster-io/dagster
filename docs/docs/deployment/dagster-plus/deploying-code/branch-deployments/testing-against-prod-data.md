@@ -5,7 +5,7 @@ title: Testing against production data with branch deployments
 tags: [dagster-plus-feature]
 ---
 
-This guide covers testing Dagster code in your cloud environment without impacting your production data. We'll use Dagster+ branch deployments and a Snowflake database to:
+This guide covers testing Dagster code against cloned production data in your cloud environment without impacting your actual production data. We'll use Dagster+ branch deployments and a Snowflake database to:
 
 - Execute code on a feature branch in Dagster+
 - Read and write to a unique per-branch clone of our production Snowflake data
@@ -34,7 +34,8 @@ This guide is an extension of the [Transitioning data pipelines from development
 To complete the steps in this guide, you'll need:
 
 - A Dagster+ account
-- An existing [branch deployments setup](/deployment/dagste-plus/deploying-code/branch-deployments/setting-up-branch-deployments) that uses GitHub actions or GitLab CI/CD. Your setup should contain a Dagster project set up for branch deployments containing:
+- An empty Dagster project created with the `dagster-create project` CLI. For more information, see [Creating a new Dagster project](/guides/build/projects/creating-a-new-project).
+- An existing [branch deployments setup](/deployment/dagste-plus/deploying-code/branch-deployments/setting-up-branch-deployments) in the project that uses GitHub actions or GitLab CI/CD. Your setup should contain the following files:
   - Either a GitHub actions workflow file (e.g. `.github/workflows/dagster-plus-deploy.yml` (Serverless) or `dagster-cloud-deploy.yml` (Hybrid)) or a GitLab CI/CD file (e.g. `.gitlab-ci.yml`)
   - A Dockerfile that installs your Dagster project
 - User permissions in Dagster+ that allow you to [access branch deployments](/deployment/dagster-plus/authentication-and-access-control/rbac/user-roles-permissions)
@@ -63,7 +64,7 @@ In production, we want to write three tables to Snowflake: `ITEMS`, `COMMENTS`, 
   path="docs_snippets/docs_snippets/guides/dagster/development_to_production/assets.py"
   startAfter="start_assets"
   endBefore="end_assets"
-  title="src/my_project/assets.py"
+  title="src/<project_name>/defs/assets.py"
 />
 
 As you can see, our assets use an [I/O manager](/guides/build/io-managers) named `snowflake_io_manager`. Using I/O managers and other resources allow us to swap out implementations per environment without modifying our business logic.
@@ -80,7 +81,7 @@ Because we want to configure our assets to write to Snowflake using a different 
 
 <CodeExample
   path="docs_snippets/docs_snippets/guides/dagster/development_to_production/branch_deployments/repository_v1.py"
-  title="src/my_project/resources.py"
+  title="src/<project_name>/defs/resources.py"
 />
 
 Refer to the [Dagster+ environment variables documentation](/deployment/dagster-plus/management/environment-variables) for more info about available environment variables.
@@ -99,7 +100,7 @@ Additionally, we don't need asset-specific features for these tasks, like viewin
 
 <CodeExample
   path="docs_snippets/docs_snippets/guides/dagster/development_to_production/branch_deployments/clone_and_drop_db.py"
-  title="src/my_project/ops.py"
+  title="src/<project_name>/defs/ops.py"
 />
 
 We've defined `drop_database_clone` and `clone_production_database` to utilize the <PyObject section="libraries" object="SnowflakeResource" module="dagster_snowflake" />. The Snowflake resource will use the same configuration as the Snowflake I/O manager to generate a connection to Snowflake. However, while our I/O manager writes outputs to Snowflake, the Snowflake resource executes queries against Snowflake.
@@ -110,7 +111,7 @@ We now need to define resources that configure our jobs to the current environme
   path="docs_snippets/docs_snippets/guides/dagster/development_to_production/branch_deployments/repository_v2.py"
   startAfter="start_resources"
   endBefore="end_resources"
-  title="src/my_project/resources.py"
+  title="src/<project_name>/defs/resources.py"
 />
 
 Then, we can add the `clone_prod` and `drop_prod_clone` jobs that now use the appropriate resource to the environment and add them to our definitions:
@@ -119,13 +120,13 @@ Then, we can add the `clone_prod` and `drop_prod_clone` jobs that now use the ap
   path="docs_snippets/docs_snippets/guides/dagster/development_to_production/branch_deployments/repository_v2.py"
   startAfter="start_repository"
   endBefore="end_repository"
-  title="src/my_project/jobs.py"
+  title="src/<project_name>/defs/jobs.py"
 />
 
 ## Step 4: Create our database clone upon opening a branch
 
 <Tabs groupId="CICDProvider">
-<TabItem value="github" value="Using GitHub Actions">
+<TabItem value="github" label="Using GitHub Actions">
 
   The Dagster workflow file located in `.github/workflows` defines a `dagster_cloud_build_push` job with a series of steps that launch a branch deployment.
 
@@ -161,7 +162,7 @@ Then, we can add the `clone_prod` and `drop_prod_clone` jobs that now use the ap
   ![Instance overview](/images/guides/development_to_production/branch_deployments/snowflake.png)
 
   </TabItem>
-  <TabItem label="gitlab" value="Using GitLab CI/CD">
+  <TabItem value="gitlab" label="Using GitLab CI/CD">
 
   The `.gitlab-ci.yaml` script contains a `deploy` job that defines a series of steps that launch a branch deployment. Because we want to queue a run of `clone_prod` within each deployment after it launches, we'll add an additional step at the end of `deploy`. This job is triggered on when a merge request is created or updated. This means that upon future pushes to the branch, we'll trigger a run of `clone_prod`.
 
