@@ -57,7 +57,9 @@ class PipesAzureMLClient(PipesClient, TreatAsResourceParam):
         )
         self.forward_termination = check.bool_param(forward_termination, "forward_termination")
 
-    def _poll_til_success(self, context: Union[OpExecutionContext, AssetExecutionContext], job_name: str) -> None:
+    def _poll_til_success(
+        self, context: Union[OpExecutionContext, AssetExecutionContext], job_name: str
+    ) -> None:
         # poll the Azure ML job until it completes successfully, raising otherwise
 
         last_observed_status = None
@@ -74,9 +76,7 @@ class PipesAzureMLClient(PipesClient, TreatAsResourceParam):
             if status == "Completed":
                 return
             elif status in {"Canceled", "Failed"}:
-                raise DagsterPipesExecutionError(
-                    f"Error running Azure ML job: {status}"
-                )
+                raise DagsterPipesExecutionError(f"Error running Azure ML job: {status}")
 
             time.sleep(self.poll_interval_seconds)
 
@@ -85,7 +85,7 @@ class PipesAzureMLClient(PipesClient, TreatAsResourceParam):
             status = self.client.jobs.get(job_name).status
             if status in {"Completed", "Canceled", "Failed"}:
                 return
-            
+
             time.sleep(self.poll_interval_seconds)
 
     @classmethod
@@ -123,19 +123,18 @@ class PipesAzureMLClient(PipesClient, TreatAsResourceParam):
         ) as pipes_session:
             command.environment_variables = {
                 **command.environment_variables,
-                **pipes_session.get_bootstrap_env_vars()
+                **pipes_session.get_bootstrap_env_vars(),
             }
             job = self.client.create_or_update(command)
 
             try:
-                self._poll_til_success(context, job.name) # pyright: ignore[reportArgumentType]
+                self._poll_til_success(context, job.name)  # pyright: ignore[reportArgumentType]
             except DagsterExecutionInterruptedError:
                 if self.forward_termination:
                     context.log.info("[pipes] execution interrupted, canceling Azure ML job.")
-                    self.client.jobs.begin_cancel(job.name) # pyright: ignore[reportArgumentType]
-                    self._poll_til_terminating(job.name) # pyright: ignore[reportArgumentType]
+                    self.client.jobs.begin_cancel(job.name)  # pyright: ignore[reportArgumentType]
+                    self._poll_til_terminating(job.name)  # pyright: ignore[reportArgumentType]
 
         return PipesClientCompletedInvocation(
-            pipes_session, 
-            metadata={"AzureML Job Name": job.name}
+            pipes_session, metadata={"AzureML Job Name": job.name}
         )

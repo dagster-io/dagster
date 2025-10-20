@@ -18,7 +18,7 @@ def temp_script(script_fn: Callable[[], Any], mock_blob_storage_class: Any) -> I
 
     with NamedTemporaryFile() as file:
         file.write(mock_blob_storage_source.encode())
-        file.write(b'\n\n')
+        file.write(b"\n\n")
         file.write(function_source.encode())
         file.flush()
         yield file.name

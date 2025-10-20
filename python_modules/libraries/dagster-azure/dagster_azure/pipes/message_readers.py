@@ -25,6 +25,7 @@ class PipesAzureBlobStorageMessageReader(PipesBlobStoreMessageReader):
         log_readers (Optional[Sequence[PipesLogReader]]): A set of log readers for logs on AzureBlobStorage.
         include_stdio_in_messages (bool): Whether to send stdout/stderr to Dagster via Pipes messages. Defaults to False.
     """
+
     def __init__(
         self,
         *,
@@ -57,7 +58,9 @@ class PipesAzureBlobStorageMessageReader(PipesBlobStoreMessageReader):
         key_prefix = params.get("key_prefix")
         if key_prefix is not None:
             try:
-                with self.client.get_blob_client(self.bucket, f"{key_prefix}/1.json") as blob_client:
+                with self.client.get_blob_client(
+                    self.bucket, f"{key_prefix}/1.json"
+                ) as blob_client:
                     return blob_client.exists()
             except Exception:
                 return False

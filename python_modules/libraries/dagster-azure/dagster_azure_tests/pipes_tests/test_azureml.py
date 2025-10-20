@@ -28,7 +28,7 @@ class MockAzureMLJob:
     def __init__(self, name: str, command: Command):
         self.name = name
         self.command = command
-        cmd_parts = self.command.component.command.split() # pyright: ignore
+        cmd_parts = self.command.component.command.split()  # pyright: ignore
         cmd_parts[0] = _PYTHON_EXECUTABLE
         env = {**self.command.environment_variables} if self.command.environment_variables else {}
 
@@ -47,6 +47,7 @@ class MockAzureMLJob:
             return "Completed"
         else:
             return "Failed"
+
 
 class MockAzureMLClient:
     """Mock Azure ML Client for testing."""
@@ -79,17 +80,18 @@ class MockAzureMLClient:
 
 def test_azureml_pipes(storage_account_name, container_name, external_script):
     """Test Azure ML pipes client with blob storage."""
-    blob_storage_service_client = MockBlobServiceClient(
-        tempfile.gettempdir(), storage_account_name
-    )
+    blob_storage_service_client = MockBlobServiceClient(tempfile.gettempdir(), storage_account_name)
     blob_storage_service_client.cleanup()  # Clean up any data from previous runs
 
     try:
         context_injector = PipesAzureBlobStorageContextInjector(
-            container=container_name, client=blob_storage_service_client # pyright: ignore
+            container=container_name,
+            client=blob_storage_service_client,  # pyright: ignore
         )
         message_reader = PipesAzureBlobStorageMessageReader(
-            container=container_name, client=blob_storage_service_client, interval=0.001 # pyright: ignore
+            container=container_name,
+            client=blob_storage_service_client,
+            interval=0.001,  # pyright: ignore
         )
         azureml_client = MockAzureMLClient()
 
@@ -135,8 +137,6 @@ def test_azureml_pipes(storage_account_name, container_name, external_script):
                 limit=1,
             )
             assert len(asset_check_executions) == 1
-            assert (
-                asset_check_executions[0].status == AssetCheckExecutionRecordStatus.SUCCEEDED
-            )
+            assert asset_check_executions[0].status == AssetCheckExecutionRecordStatus.SUCCEEDED
     finally:
         blob_storage_service_client.cleanup()

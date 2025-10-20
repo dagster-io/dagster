@@ -1340,7 +1340,6 @@ class PipesGCSMessageWriterChannel(PipesBlobStoreMessageWriterChannel):
         self._gcp_bucket.blob(key).upload_from_string(payload.read())
 
 
-
 # ########################
 # ##### IO - AzureBlobStorage
 # ########################

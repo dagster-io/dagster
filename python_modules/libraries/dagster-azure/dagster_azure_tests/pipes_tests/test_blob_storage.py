@@ -18,15 +18,17 @@ from dagster_azure_tests.pipes_tests.utils import _PYTHON_EXECUTABLE
 
 
 def test_blob_storage_injector_and_messagewriter(
-    storage_account_name,
-    container_name,
-    external_script
+    storage_account_name, container_name, external_script
 ):
     blob_storage_service_client = MockBlobServiceClient(tempfile.gettempdir(), storage_account_name)
-    blob_storage_service_client.cleanup() # Make sure there is no data from older test runs
-    try:    
-        context_injector = PipesAzureBlobStorageContextInjector(container=container_name, client=blob_storage_service_client) # pyright: ignore
-        message_reader = PipesAzureBlobStorageMessageReader(container=container_name, client=blob_storage_service_client, interval=0.001) # pyright: ignore
+    blob_storage_service_client.cleanup()  # Make sure there is no data from older test runs
+    try:
+        context_injector = PipesAzureBlobStorageContextInjector(
+            container=container_name, client=blob_storage_service_client
+        )  # pyright: ignore
+        message_reader = PipesAzureBlobStorageMessageReader(
+            container=container_name, client=blob_storage_service_client, interval=0.001
+        )  # pyright: ignore
 
         @dg.asset(check_specs=[dg.AssetCheckSpec(name="foo_check", asset=dg.AssetKey(["foo"]))])
         def foo(context: dg.AssetExecutionContext, ext: dg.PipesSubprocessClient):
@@ -59,4 +61,3 @@ def test_blob_storage_injector_and_messagewriter(
             assert asset_check_executions[0].status == AssetCheckExecutionRecordStatus.SUCCEEDED
     finally:
         blob_storage_service_client.cleanup()
-        

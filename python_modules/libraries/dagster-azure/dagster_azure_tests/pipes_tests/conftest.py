@@ -22,12 +22,16 @@ def external_script() -> Iterator[str]:
     def script_fn():
         import os  # noqa
         import time
-        import tempfile # noqa
-        from dagster_pipes import PipesAzureBlobStorageContextLoader, PipesAzureBlobStorageMessageWriter, open_dagster_pipes
+        import tempfile
+        from dagster_pipes import (
+            PipesAzureBlobStorageContextLoader,
+            PipesAzureBlobStorageMessageWriter,
+            open_dagster_pipes,
+        )
 
         client = MockBlobServiceClient(
-            temp_dir=tempfile.gettempdir(), 
-            storage_account="fakeazureblobstorageaccount")
+            temp_dir=tempfile.gettempdir(), storage_account="fakeazureblobstorageaccount"
+        )
 
         context_loader = PipesAzureBlobStorageContextLoader(client=client)
         message_writer = PipesAzureBlobStorageMessageWriter(client=client, interval=0.001)
@@ -36,7 +40,9 @@ def external_script() -> Iterator[str]:
             context_loader=context_loader, message_writer=message_writer
         ) as context:
             context.log.info("hello world")
-            time.sleep(0.1)  # sleep to make sure that we encompass multiple intervals for blob storage io
+            time.sleep(
+                0.1
+            )  # sleep to make sure that we encompass multiple intervals for blob storage io
             context.report_asset_materialization(
                 metadata={"bar": {"raw_value": context.get_extra("bar"), "type": "md"}},
                 data_version="alpha",

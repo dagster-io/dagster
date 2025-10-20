@@ -26,6 +26,7 @@ def azureml_training_job(
         ),
     ).get_results()
 
+
 # end_asset_marker
 
 
@@ -41,7 +42,7 @@ import dagster as dg
 def resources() -> dg.Definitions:
     azure_blob_storage = BlobServiceClient(
         account_url="https://<DAGSTER-STORAGE-ACCOUNT>.blob.core.windows.net/",
-        credential=DefaultAzureCredential()
+        credential=DefaultAzureCredential(),
     )
     azure_ml = MLClient(
         credential=DefaultAzureCredential(),
@@ -55,15 +56,14 @@ def resources() -> dg.Definitions:
             "pipes_azureml": PipesAzureMLClient(
                 client=azure_ml,
                 context_injector=PipesAzureBlobStorageContextInjector(
-                    container="dagster", 
-                    client=azure_blob_storage
+                    container="dagster", client=azure_blob_storage
                 ),
                 message_reader=PipesAzureBlobStorageMessageReader(
-                    container="dagster", 
-                    client=azure_blob_storage
-                )
+                    container="dagster", client=azure_blob_storage
+                ),
             ),
         },
     )
+
 
 # end_definitions_marker
