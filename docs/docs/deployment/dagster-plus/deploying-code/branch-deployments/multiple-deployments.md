@@ -1,7 +1,7 @@
 ---
 title: Managing branch deployments across multiple deployments
 description: Frequent use cases and troubleshooting tips for managing branch deployments when your organization has multiple Dagster+ deployments or environments.
-sidebar_position: 7350
+sidebar_position: 7340
 tags: [dagster-plus-feature]
 ---
 
