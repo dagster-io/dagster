@@ -101,6 +101,6 @@ If you are using a non-GitHub CI/CD provider, your system should use the `dagste
 
 :::note
 
-Creating branch deployments using the CLI requires some additional steps. For more information, see [Using branch deployments with the dagster-cloud CLI](/deployment/dagster-plus/deploying-code/branch-deployments/using-branch-deployments-with-the-cli).
+Creating branch deployments using the CLI requires some additional steps. For more information, see [Setting up branch deployments](/deployment/dagster-plus/deploying-code/branch-deployments/setting-up-branch-deployments).
 
 :::

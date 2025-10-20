@@ -9,7 +9,7 @@ import DagsterPlus from '@site/docs/partials/\_DagsterPlus.md';
 
 <DagsterPlus />
 
-This guide covers setting up branch deployments for a [code location](/deployment/code-locations). Once you've set up branch deployments, any time you create or update a pull request (or merge request) in the repository for your code location, it will automatically create or update an associated branch deployment in Dagster+.
+This guide covers setting up branch deployments for a [code location](/deployment/code-locations) using GitHub, GitLab, or an alternative CI platform using the dagster-cloud CLI. Once you've set up branch deployments, any time you create or update a pull request (or merge request) in the repository for your code location, it will automatically create or update an associated branch deployment in Dagster+.
 
 :::info
 
@@ -515,7 +515,7 @@ You can also access branch deployments directly in Dagster+ from the **deploymen
 
 ## Changing the base deployment
 
-The default base for branch deployments is `prod`. To configure a different [full deployment](/deployment/dagster-plus/deploying-code/full-deployments) as the base, [create a branch deployment using the dagster-cloud CLI](/deployment/dagster-plus/deploying-code/branch-deployments/using-branch-deployments-with-the-cli) and specify the deployment with the optional `--base-deployment-name` parameter.
+The default base for branch deployments is `prod`. To configure a different [full deployment](/deployment/dagster-plus/deploying-code/full-deployments) as the base, create a branch deployment using the dagster-cloud CLI (see step 3.1 above) and specify the deployment with the optional `--base-deployment-name` parameter.
 
 ## Best practices
 
