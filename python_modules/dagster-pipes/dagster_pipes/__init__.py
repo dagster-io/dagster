@@ -1393,7 +1393,7 @@ class PipesAzureBlobStorageMessageWriter(PipesBlobStoreMessageWriter):
 
 
 class PipesAzureBlobStorageMessageWriterChannel(PipesBlobStoreMessageWriterChannel):
-    """Message writer channel for writing messages by periodically writing message chunks to an 
+    """Message writer channel for writing messages by periodically writing message chunks to an
         AzureBlobStorage container.
 
     Args:

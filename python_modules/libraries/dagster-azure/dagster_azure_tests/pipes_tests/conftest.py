@@ -1,4 +1,3 @@
-import tempfile
 from collections.abc import Iterator
 
 import pytest
@@ -23,9 +22,8 @@ def external_script() -> Iterator[str]:
     def script_fn():
         import os  # noqa
         import time
-
+        import tempfile # noqa
         from dagster_pipes import PipesAzureBlobStorageContextLoader, PipesAzureBlobStorageMessageWriter, open_dagster_pipes
-        import tempfile
 
         client = MockBlobServiceClient(
             temp_dir=tempfile.gettempdir(), 

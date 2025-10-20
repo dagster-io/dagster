@@ -1,17 +1,14 @@
-from typing import Optional, Sequence, Iterator
-from contextlib import contextmanager
 import random
 import string
+from collections.abc import Iterator, Sequence
+from contextlib import contextmanager
+from typing import Optional
 
-from dagster._core.pipes.client import PipesParams
-from dagster._core.pipes.utils import (
-    PipesBlobStoreMessageReader,
-    PipesLogReader,
-)
 import dagster._check as check
-from dagster_pipes import PipesBlobStoreMessageWriter
-
 from azure.storage.blob import BlobServiceClient
+from dagster._core.pipes.client import PipesParams
+from dagster._core.pipes.utils import PipesBlobStoreMessageReader, PipesLogReader
+from dagster_pipes import PipesBlobStoreMessageWriter
 
 
 class PipesAzureBlobStorageMessageReader(PipesBlobStoreMessageReader):

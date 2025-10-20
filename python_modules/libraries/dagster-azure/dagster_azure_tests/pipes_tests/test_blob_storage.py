@@ -2,18 +2,20 @@ import tempfile
 
 import dagster as dg
 from dagster import AssetCheckKey
-from dagster._core.definitions.metadata import MarkdownMetadataValue
-from dagster_azure.pipes import (
-    PipesAzureBlobStorageContextInjector,
-    PipesAzureBlobStorageMessageReader,
-)
-from dagster_azure_tests.pipes_tests.mock_blob_storage import MockBlobServiceClient
-from dagster_azure_tests.pipes_tests.utils import _PYTHON_EXECUTABLE
-from dagster._core.storage.asset_check_execution_record import AssetCheckExecutionRecordStatus
 from dagster._core.definitions.data_version import (
     DATA_VERSION_IS_USER_PROVIDED_TAG,
     DATA_VERSION_TAG,
 )
+from dagster._core.definitions.metadata import MarkdownMetadataValue
+from dagster._core.storage.asset_check_execution_record import AssetCheckExecutionRecordStatus
+from dagster_azure.pipes import (
+    PipesAzureBlobStorageContextInjector,
+    PipesAzureBlobStorageMessageReader,
+)
+
+from dagster_azure_tests.pipes_tests.mock_blob_storage import MockBlobServiceClient
+from dagster_azure_tests.pipes_tests.utils import _PYTHON_EXECUTABLE
+
 
 def test_blob_storage_injector_and_messagewriter(
     storage_account_name,

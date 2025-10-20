@@ -3,11 +3,9 @@ import shutil
 import textwrap
 from collections.abc import Iterator
 from contextlib import contextmanager
+from pathlib import Path
 from tempfile import NamedTemporaryFile
 from typing import Any, Callable
-from pathlib import Path
-from dagster_azure_tests.pipes_tests.mock_blob_storage import MockBlobServiceClient
-
 
 _PYTHON_EXECUTABLE = shutil.which("python") or "python"
 

@@ -1,13 +1,14 @@
 # start_asset_marker
 
-import dagster as dg
-
+from azure.ai.ml import command
 from dagster_azure.pipes import (
-    PipesAzureMLClient,
     PipesAzureBlobStorageContextInjector,
     PipesAzureBlobStorageMessageReader,
+    PipesAzureMLClient,
 )
-from azure.ai.ml import command
+
+import dagster as dg
+
 
 @dg.asset
 def azureml_training_job(
@@ -29,10 +30,11 @@ def azureml_training_job(
 
 
 # start_definitions_marker
-import dagster as dg
 from azure.ai.ml import MLClient
 from azure.identity import DefaultAzureCredential
 from azure.storage.blob import BlobServiceClient
+
+import dagster as dg
 
 
 @dg.definitions

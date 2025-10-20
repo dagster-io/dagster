@@ -1,11 +1,11 @@
-from dagster_pipes import (
-    PipesContext,
-    open_dagster_pipes,
-    PipesAzureBlobStorageContextLoader,
-    PipesAzureBlobStorageMessageWriter,
-)
 from azure.identity import DefaultAzureCredential
 from azure.storage.blob import BlobServiceClient
+from dagster_pipes import (
+    PipesAzureBlobStorageContextLoader,
+    PipesAzureBlobStorageMessageWriter,
+    PipesContext,
+    open_dagster_pipes,
+)
 
 AZURE_STORAGE_ACCOUNT = "<AZURE-STORAGE-ACCOUNT>"
 

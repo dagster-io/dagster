@@ -1,6 +1,7 @@
 import shutil
-from pathlib import Path
 from io import BytesIO
+from pathlib import Path
+
 
 class MockBlobServiceClient:
     """We use this mock class to test AzureBlobStorage ContextInjector and MessageWriter.
@@ -22,7 +23,7 @@ class MockBlobServiceClient:
         return self.get_container_client(container).get_blob_client(blob)
 
     def cleanup(self):
-        """Deletes all data created by the MockBlobServiceClient"""
+        """Deletes all data created by the MockBlobServiceClient."""
         shutil.rmtree(
             Path(self._temp_dir).joinpath(self._storage_account),
             ignore_errors=True)

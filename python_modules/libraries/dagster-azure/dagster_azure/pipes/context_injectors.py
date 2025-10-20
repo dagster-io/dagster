@@ -1,19 +1,14 @@
-from typing import Optional, Sequence, Iterator
-from contextlib import contextmanager
-
-import os
 import json
+import os
 import random
 import string
+from collections.abc import Iterator
+from contextlib import contextmanager
 
-from dagster._core.pipes.client import PipesContextInjector, PipesParams
-from dagster._core.pipes.utils import PipesEnvContextInjector
-from dagster._core.pipes.client import PipesParams
 import dagster._check as check
-from dagster_pipes import PipesContextData
-
 from azure.storage.blob import BlobServiceClient
-
+from dagster._core.pipes.client import PipesContextInjector, PipesParams
+from dagster_pipes import PipesContextData
 
 _CONTEXT_FILENAME = "context.json"
 
