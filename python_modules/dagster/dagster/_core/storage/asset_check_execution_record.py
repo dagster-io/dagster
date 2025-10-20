@@ -1,10 +1,12 @@
 import enum
 from collections.abc import Iterable
-from typing import NamedTuple, Optional, cast
+from typing import TYPE_CHECKING, NamedTuple, Optional, cast
 
+from dagster_shared.record import record
 from dagster_shared.serdes import deserialize_value
 
 import dagster._check as check
+from dagster._core.asset_graph_view.serializable_entity_subset import SerializableEntitySubset
 from dagster._core.definitions.asset_checks.asset_check_evaluation import AssetCheckEvaluation
 from dagster._core.definitions.asset_key import AssetCheckKey
 from dagster._core.events.log import DagsterEventType, EventLogEntry
@@ -12,6 +14,10 @@ from dagster._core.loader import LoadableBy, LoadingContext
 from dagster._core.storage.dagster_run import DagsterRunStatus, RunRecord
 from dagster._serdes import whitelist_for_serdes
 from dagster._time import utc_datetime_from_naive
+
+if TYPE_CHECKING:
+    from dagster._core.definitions.partitions.definition import PartitionsDefinition
+    from dagster._core.definitions.partitions.subset import PartitionsSubset
 
 
 class AssetCheckInstanceSupport(enum.Enum):
@@ -39,12 +45,115 @@ COMPLETED_ASSET_CHECK_EXECUTION_RECORD_STATUSES = {
 
 
 @whitelist_for_serdes
+@record
+class AssetCheckPartitionStatusCacheValue(LoadableBy[tuple[AssetCheckKey, "PartitionsDefinition"]]):
+    """Serializable cache value stored in database for asset check partition status."""
+
+    key: AssetCheckKey
+    latest_storage_id: int
+    latest_check_execution_record_id: int
+    partitions_def_id: Optional[str]
+    planned_subset: SerializableEntitySubset[AssetCheckKey]
+    succeeded_subset: SerializableEntitySubset[AssetCheckKey]
+    failed_subset: SerializableEntitySubset[AssetCheckKey]
+    # Map of partition key -> run_id for planned partitions (to resolve run status)
+    planned_partition_run_mapping: dict[str, str]
+
+    @classmethod
+    def from_partitions_def(
+        cls, key: AssetCheckKey, partitions_def: "PartitionsDefinition"
+    ) -> "AssetCheckPartitionStatusCacheValue":
+        empty_subset = SerializableEntitySubset(key=key, value=partitions_def.empty_subset())
+        return AssetCheckPartitionStatusCacheValue(
+            key=key,
+            latest_storage_id=0,
+            latest_check_execution_record_id=0,
+            partitions_def_id=partitions_def.get_serializable_unique_identifier(),
+            planned_subset=empty_subset,
+            succeeded_subset=empty_subset,
+            failed_subset=empty_subset,
+            planned_partition_run_mapping={},
+        )
+
+    @classmethod
+    def _blocking_batch_load(
+        cls, keys: Iterable[tuple[AssetCheckKey, "PartitionsDefinition"]], context: LoadingContext
+    ) -> Iterable[Optional["AssetCheckPartitionStatusCacheValue"]]:
+        from dagster._core.storage.asset_check_partition_cache import (
+            get_updated_asset_check_partition_status,
+        )
+
+        # fetch current cache values
+        current_cache_values = context.instance.event_log_storage.get_asset_check_cached_values(
+            [key for key, _ in keys]
+        )
+        current_cache_values_by_key = {
+            key: value for (key, _), value in zip(keys, current_cache_values)
+        }
+
+        updated_cache_values = [
+            get_updated_asset_check_partition_status(
+                context, key, partitions_def, current_cache_value
+            )
+            for (key, partitions_def), current_cache_value in zip(keys, current_cache_values)
+        ]
+
+        # only update cache values that have changed
+        cache_values_to_update = [
+            updated_cache_value
+            for updated_cache_value in updated_cache_values
+            if updated_cache_value != current_cache_values_by_key[updated_cache_value.key]
+        ]
+        context.instance.event_log_storage.update_asset_check_cached_values(cache_values_to_update)
+
+        return updated_cache_values
+
+
+@record
+class AssetCheckPartitionRecord:
+    """Record representing a single asset check partition with execution and run info."""
+
+    partition_key: str
+    last_execution_status: AssetCheckExecutionRecordStatus
+    last_planned_run_id: Optional[str]
+    last_event_id: int
+
+
+@whitelist_for_serdes
 class AssetCheckExecutionResolvedStatus(enum.Enum):
     IN_PROGRESS = "IN_PROGRESS"
     SUCCEEDED = "SUCCEEDED"
     FAILED = "FAILED"  # explicit fail result
     EXECUTION_FAILED = "EXECUTION_FAILED"  # hit some exception
     SKIPPED = "SKIPPED"  # the run finished, didn't fail, but the check didn't execute
+
+
+@record
+class AssetCheckPartitionStatus:
+    """Computed partition status with fine-grained execution states for an asset check."""
+
+    missing: "PartitionsSubset"
+    succeeded: "PartitionsSubset"
+    failed: "PartitionsSubset"
+    in_progress: "PartitionsSubset"
+    skipped: "PartitionsSubset"
+    execution_failed: "PartitionsSubset"
+
+    def get_subset_for_status(
+        self, status: AssetCheckExecutionResolvedStatus
+    ) -> "PartitionsSubset":
+        if status == AssetCheckExecutionResolvedStatus.IN_PROGRESS:
+            return self.in_progress
+        elif status == AssetCheckExecutionResolvedStatus.SKIPPED:
+            return self.skipped
+        elif status == AssetCheckExecutionResolvedStatus.EXECUTION_FAILED:
+            return self.execution_failed
+        elif status == AssetCheckExecutionResolvedStatus.SUCCEEDED:
+            return self.succeeded
+        elif status == AssetCheckExecutionResolvedStatus.FAILED:
+            return self.failed
+        else:
+            check.failed(f"Unexpected check status {status}")
 
 
 class AssetCheckExecutionRecord(

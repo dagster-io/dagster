@@ -60,6 +60,10 @@ if TYPE_CHECKING:
     )
     from dagster._core.snap.execution_plan_snapshot import ExecutionPlanSnapshot
     from dagster._core.snap.job_snapshot import JobSnap
+    from dagster._core.storage.asset_check_execution_record import (
+        AssetCheckPartitionRecord,
+        AssetCheckPartitionStatusCacheValue,
+    )
     from dagster._core.storage.dagster_run import (
         DagsterRun,
         DagsterRunStatsSnapshot,
@@ -745,12 +749,14 @@ class LegacyEventLogStorage(EventLogStorage, ConfigurableClass):
         limit: int,
         cursor: Optional[int] = None,
         status: Optional[AbstractSet[AssetCheckExecutionRecordStatus]] = None,
+        partition: Optional[str] = None,
     ) -> Sequence[AssetCheckExecutionRecord]:
         return self._storage.event_log_storage.get_asset_check_execution_history(
             check_key=check_key,
             limit=limit,
             cursor=cursor,
             status=status,
+            partition=partition,
         )
 
     def get_latest_asset_check_execution_by_key(  # pyright: ignore[reportIncompatibleMethodOverride]
@@ -758,6 +764,26 @@ class LegacyEventLogStorage(EventLogStorage, ConfigurableClass):
         check_keys: Sequence["AssetCheckKey"],
     ) -> Mapping["AssetCheckKey", Optional[AssetCheckExecutionRecord]]:
         return self._storage.event_log_storage.get_latest_asset_check_execution_by_key(check_keys)
+
+    def get_asset_check_cached_values(
+        self, check_keys: Sequence["AssetCheckKey"]
+    ) -> Sequence[Optional["AssetCheckPartitionStatusCacheValue"]]:
+        return self._storage.event_log_storage.get_asset_check_cached_values(check_keys)
+
+    def update_asset_check_cached_values(
+        self, cache_values: Sequence["AssetCheckPartitionStatusCacheValue"]
+    ) -> None:
+        return self._storage.event_log_storage.update_asset_check_cached_values(cache_values)
+
+    def get_asset_check_partition_records(
+        self,
+        check_key: "AssetCheckKey",
+        partition_key: Optional[str] = None,
+        after_event_storage_id: Optional[int] = None,
+    ) -> Sequence["AssetCheckPartitionRecord"]:
+        return self._storage.event_log_storage.get_asset_check_partition_records(
+            check_key, partition_key, after_event_storage_id
+        )
 
 
 class LegacyScheduleStorage(ScheduleStorage, ConfigurableClass):

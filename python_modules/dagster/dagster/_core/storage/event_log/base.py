@@ -34,6 +34,8 @@ from dagster._core.loader import LoadableBy, LoadingContext
 from dagster._core.storage.asset_check_execution_record import (
     AssetCheckExecutionRecord,
     AssetCheckExecutionRecordStatus,
+    AssetCheckPartitionRecord,
+    AssetCheckPartitionStatusCacheValue,
 )
 from dagster._core.storage.dagster_run import DagsterRunStatsSnapshot
 from dagster._core.storage.partition_status_cache import get_and_update_asset_status_cache_value
@@ -678,6 +680,7 @@ class EventLogStorage(ABC, MayHaveInstanceWeakref[T_DagsterInstance]):
         limit: int,
         cursor: Optional[int] = None,
         status: Optional[AbstractSet[AssetCheckExecutionRecordStatus]] = None,
+        partition: Optional[str] = None,
     ) -> Sequence[AssetCheckExecutionRecord]:
         """Get executions for one asset check, sorted by recency."""
         pass
@@ -687,6 +690,31 @@ class EventLogStorage(ABC, MayHaveInstanceWeakref[T_DagsterInstance]):
         self, check_keys: Sequence[AssetCheckKey]
     ) -> Mapping[AssetCheckKey, AssetCheckExecutionRecord]:
         """Get the latest executions for a list of asset checks."""
+        pass
+
+    @abstractmethod
+    def get_asset_check_cached_values(
+        self, check_keys: Sequence[AssetCheckKey]
+    ) -> Sequence[Optional["AssetCheckPartitionStatusCacheValue"]]:
+        """Get the cached partition status record - pure storage retrieval."""
+        pass
+
+    @abstractmethod
+    def update_asset_check_cached_values(
+        self,
+        cache_values: Sequence["AssetCheckPartitionStatusCacheValue"],
+    ) -> None:
+        """Update the cached partition status record - pure storage write."""
+        pass
+
+    @abstractmethod
+    def get_asset_check_partition_records(
+        self,
+        check_key: AssetCheckKey,
+        partition_key: Optional[str] = None,
+        after_event_storage_id: Optional[int] = None,
+    ) -> Sequence[AssetCheckPartitionRecord]:
+        """Get asset check partition records with execution status and planned run info."""
         pass
 
     @abstractmethod
