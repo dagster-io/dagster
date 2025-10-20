@@ -2,12 +2,7 @@ from collections.abc import Mapping, Sequence
 from typing import Any, Optional, Union
 
 import dagster._check as check
-from dagster._annotations import (
-    deprecated_param,
-    hidden_param,
-    only_allow_hidden_params_in_kwargs,
-    public,
-)
+from dagster._annotations import hidden_param, only_allow_hidden_params_in_kwargs, public
 from dagster._core.definitions.assets.definition.asset_dep import AssetDep
 from dagster._core.definitions.assets.definition.asset_spec import AssetSpec
 from dagster._core.definitions.auto_materialize_policy import AutoMaterializePolicy
@@ -37,7 +32,10 @@ from dagster._utils.warnings import disable_dagster_warnings
 EMPTY_ASSET_KEY_SENTINEL = AssetKey([])
 
 
-@deprecated_param(param="legacy_freshness_policy", breaking_version="1.12.0")
+@hidden_param(
+    param="legacy_freshness_policy",
+    breaking_version="1.13.0",
+)
 @hidden_param(
     param="auto_materialize_policy",
     breaking_version="1.10.0",
@@ -103,7 +101,6 @@ class AssetOut:
         owners: Optional[Sequence[str]] = None,
         tags: Optional[Mapping[str, str]] = None,
         kinds: Optional[set[str]] = None,
-        legacy_freshness_policy: Optional[LegacyFreshnessPolicy] = None,
         freshness_policy: Optional[InternalFreshnessPolicy] = None,
         **kwargs,
     ):
@@ -122,6 +119,7 @@ class AssetOut:
         )
 
         auto_materialize_policy = kwargs.get("auto_materialize_policy")
+        legacy_freshness_policy = kwargs.get("legacy_freshness_policy")
         has_any_spec_args = any(
             [
                 key,
