@@ -179,15 +179,17 @@ def test_refresh_state_command_dagster_home_not_set():
             runner, in_workspace=False, use_editable_dagster=True, uv_sync=True
         ) as project_dir,
         activate_venv(project_dir / ".venv"),
-        environ({"DAGSTER_HOME": None}),  # pyright: ignore[reportArgumentType]  # Temporarily unset DAGSTER_HOME
+        environ({"DAGSTER_HOME": None}),  # pyright: ignore[reportArgumentType] # Temporarily unset DAGSTER_HOME
     ):
+        # no components to refresh, so command should succeed
         result = runner.invoke("utils", "refresh-defs-state")
-        assert result.exit_code == 2  # Click.UsageError raises SystemExit(2)
+        assert_runner_result(result)
+
+        # check that the warning is emitted
         assert (
-            "DAGSTER_HOME is not set, which means defs state cannot be stored in a persistent location"
+            "DAGSTER_HOME is not set, which means defs state for VERSIONED_STATE_STORAGE components "
             in result.output
         )
-        assert "please set it to use this command" in result.output
         assert "export DAGSTER_HOME" in result.output
 
 

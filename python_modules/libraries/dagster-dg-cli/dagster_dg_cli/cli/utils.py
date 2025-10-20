@@ -491,14 +491,18 @@ def refresh_defs_state(
 
     # Check if DAGSTER_HOME is set before proceeding
     if not is_dagster_home_set():
-        raise click.UsageError(
-            "DAGSTER_HOME is not set, which means defs state cannot be stored in a persistent location, "
-            "please set it to use this command.\n"
-            "You can resolve this error by exporting the environment variable. "
-            "For example, you can run the following command in your shell or "
-            "include it in your shell configuration file:\n"
-            '\texport DAGSTER_HOME="~/dagster_home"'
-            "\n\n"
+        # emit warning
+        click.echo(
+            click.style(
+                "DAGSTER_HOME is not set, which means defs state for VERSIONED_STATE_STORAGE components "
+                "cannot be stored in a persistent location. \n"
+                "You can resolve this warning by exporting the environment variable. "
+                "For example, you can run the following command in your shell or "
+                "include it in your shell configuration file:\n"
+                '\texport DAGSTER_HOME="~/dagster_home"'
+                "\n\n",
+                fg="yellow",
+            )
         )
 
     cli_config = normalize_cli_config(other_opts, click.get_current_context())
