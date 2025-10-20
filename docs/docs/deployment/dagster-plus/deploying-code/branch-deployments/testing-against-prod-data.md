@@ -1,16 +1,16 @@
 ---
 description: Test your code in Dagster+ using branch deployments without impacting production data.
-sidebar_position: 7350
+sidebar_position: 7340
 title: Testing against production data with branch deployments
 tags: [dagster-plus-feature]
 ---
+
+import DagsterPlus from '@site/docs/partials/\_DagsterPlus.md';
 
 This guide covers testing Dagster code against cloned production data in your cloud environment without impacting your actual production data. We'll use Dagster+ branch deployments and a Snowflake database to:
 
 - Execute code on a feature branch in Dagster+
 - Read and write to a unique per-branch clone of our production Snowflake data
-
-import DagsterPlus from '@site/docs/partials/\_DagsterPlus.md';
 
 <DagsterPlus />
 
