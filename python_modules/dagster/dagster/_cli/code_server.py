@@ -30,10 +30,6 @@ def get_default_grpc_proxy_heartbeat_ttl():
     return int(os.getenv("DAGSTER_GRPC_PROXY_HEARTBEAT_TTL_SECONDS", "30"))
 
 
-DEFAULT_HEARTBEAT_TIMEOUT = get_default_proxy_server_heartbeat_timeout()
-DEFAULT_GRPC_PROXY_HEARTBEAT_TTL = get_default_grpc_proxy_heartbeat_ttl()
-
-
 @click.group(name="code-server")
 def code_server_cli():
     """Commands for working with Dagster code servers."""
@@ -168,14 +164,14 @@ def code_server_cli():
     "--heartbeat-timeout",
     type=click.INT,
     required=False,
-    default=DEFAULT_HEARTBEAT_TIMEOUT,
+    default=get_default_proxy_server_heartbeat_timeout(),
     help="How long to wait for a heartbeat from the caller before timing out. Only comes into play if --heartbeat is set. Defaults to 30 seconds.",
 )
 @click.option(
     "--heartbeat-ttl",
     type=click.INT,
     required=False,
-    default=DEFAULT_GRPC_PROXY_HEARTBEAT_TTL,
+    default=get_default_grpc_proxy_heartbeat_ttl(),
     help="How long spawned API server processes will wait without receiving a heartbeat from clients before shutting down. This is separate from --heartbeat-timeout, which controls how long the proxy server itself waits for heartbeats from its caller. Defaults to 30 seconds.",
     envvar="DAGSTER_GRPC_PROXY_HEARTBEAT_TTL_SECONDS",
 )
