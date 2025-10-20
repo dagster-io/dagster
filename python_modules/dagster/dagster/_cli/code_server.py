@@ -176,7 +176,7 @@ def code_server_cli():
     type=click.INT,
     required=False,
     default=DEFAULT_GRPC_PROXY_HEARTBEAT_TTL,
-    help="Time-to-live in seconds for gRPC server heartbeats. Defaults to 30 seconds.",
+    help="How long spawned API server processes will wait without receiving a heartbeat from clients before shutting down. This is separate from --heartbeat-timeout, which controls how long the proxy server itself waits for heartbeats from its caller. Defaults to 30 seconds.",
     envvar="DAGSTER_GRPC_PROXY_HEARTBEAT_TTL_SECONDS",
 )
 @click.option(
