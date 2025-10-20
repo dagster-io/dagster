@@ -45,7 +45,7 @@ Pipes
 
 .. autoclass:: dagster_azure.pipes.PipesAzureBlobStorageMessageReader
 
-.. autoclass:: dagster_aws.pipes.clients.PipesAzureMLClient
+.. autoclass:: dagster_azure.pipes.clients.PipesAzureMLClient
 
 
 Legacy
