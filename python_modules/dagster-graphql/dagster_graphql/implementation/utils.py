@@ -217,6 +217,9 @@ def has_permission_for_definition(
     if graphene_info.context.has_permission_for_location(permission, location_name):
         return True
 
+    if not graphene_info.context.viewer_has_any_owner_definition_permissions():
+        return False
+
     if isinstance(remote_definition, RemoteAssetCheckNode):
         owners = graphene_info.context.get_owners_for_selector(remote_definition.asset_check.key)
     else:
