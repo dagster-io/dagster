@@ -45,7 +45,7 @@ Once you have set up the repo, pushing your code changes to the `main` branch wi
 
 <TabItem value="Other" label="Other Git providers or local development">
 
-If you don't want to use our automated GitHub/GitLab process, you can use the [`dagster-cloud` command-lnine CLI](/api/clis/dagster-cloud-cli) in another CI environment or locally.
+If you don't want to use our automated GitHub/GitLab process, you can use the [`dagster-cloud` command-line CLI](/api/clis/dagster-cloud-cli) in another CI environment or locally.
 
 First, create a new project by doing one of the following:
 - [Using the `create-dagster project` command](/guides/build/projects/creating-a-new-project)

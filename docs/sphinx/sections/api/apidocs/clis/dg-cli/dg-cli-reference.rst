@@ -113,7 +113,7 @@ dg scaffold github-actions
 ==========================
 
 **Note:** Before scaffolding GitHub Actions with ``dg``, you must `create a project <https://docs.dagster.io/guides/build/projects/creating-a-new-project>`_ with the `create-dagster CLI <https://docs.dagster.io/api/clis/create-dagster>`_ and activate its virtual environment.
-You will also need to place the project under version control, which you can do by running ```git init``` in the project root directory.
+You will also need to place the project under version control, which you can do by running ``git init`` in the project root directory.
 
 You can use the ``dg scaffold github-actions`` command to scaffold a deployment workflow YAML file in a ``.github/workflows`` directory:
 
