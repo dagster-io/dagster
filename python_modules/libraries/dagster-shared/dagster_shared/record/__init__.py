@@ -628,12 +628,12 @@ def __defaults_new__(cls{kw_args_str}):
     """
 
 
-def _banned_iter(*args, **kwargs):
-    raise Exception("Iteration is not allowed on `@record`s.")
+def _banned_iter(self, *args, **kwargs):
+    raise Exception(f"Iteration is not allowed on `@record` {self.__class__.__name__}.")
 
 
-def _banned_idx(*args, **kwargs):
-    raise Exception("Index access is not allowed on `@record`s.")
+def _banned_idx(self, *args, **kwargs):
+    raise Exception(f"Index access is not allowed on `@record` {self.__class__.__name__}.")
 
 
 def _true(_):

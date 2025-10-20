@@ -10,7 +10,7 @@ REF_TEMPLATE = f"{REF_BASE}{{model}}"
 JSON_SCHEMA_EXTRA_REQUIRED_SCOPE_KEY = "dagster_required_scope"
 
 
-class ResolvableFieldInfo(FieldInfo):
+class ResolvableFieldInfo(FieldInfo):  # pyright: ignore[reportGeneralTypeIssues]
     """Wrapper class that stores additional resolution metadata within a pydantic FieldInfo object.
 
     Examples:

@@ -651,6 +651,10 @@ def helm_chart(namespace, docker_image, celery_backend, should_cleanup=True):
 
     helm_config = merge_dicts(_base_helm_config(namespace, docker_image), additional_config)
 
+    # Enable includeInstance to mount instance config in user code pods
+    # Set this AFTER merge to avoid overwriting the deployments list
+    helm_config["dagster-user-deployments"]["includeInstance"] = True
+
     with _helm_chart_helper(namespace, should_cleanup, helm_config, helm_install_name="helm_chart"):
         yield
 

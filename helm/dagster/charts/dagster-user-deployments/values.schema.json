@@ -59,13 +59,18 @@
                 "celeryConfigSecretName": {
                     "title": "Celeryconfigsecretname",
                     "type": "string"
+                },
+                "dagsterInstanceConfigMap": {
+                    "title": "Dagsterinstanceconfigmap",
+                    "type": "string"
                 }
             },
             "required": [
                 "postgresqlSecretName",
                 "dagsterHome",
                 "serviceAccountName",
-                "celeryConfigSecretName"
+                "celeryConfigSecretName",
+                "dagsterInstanceConfigMap"
             ],
             "title": "Global",
             "type": "object"
@@ -594,6 +599,10 @@
             "title": "Celeryconfigsecretname",
             "type": "string"
         },
+        "includeInstance": {
+            "title": "Includeinstance",
+            "type": "boolean"
+        },
         "deployments": {
             "items": {
                 "$ref": "#/$defs/UserDeployment"
@@ -619,6 +628,7 @@
         "dagsterHome",
         "postgresqlSecretName",
         "celeryConfigSecretName",
+        "includeInstance",
         "deployments",
         "imagePullSecrets",
         "serviceAccount",
