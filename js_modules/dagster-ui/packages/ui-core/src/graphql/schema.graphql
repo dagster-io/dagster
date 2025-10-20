@@ -3136,6 +3136,8 @@ type PartitionSet {
   partitionStatusesOrError: PartitionStatusesOrError!
   partitionRuns: [PartitionRun!]!
   repositoryOrigin: RepositoryOrigin!
+  hasLaunchBackfillPermission: Boolean!
+  hasCancelBackfillPermission: Boolean!
   backfills(cursor: String, limit: Int): [PartitionBackfill!]!
 }
 
