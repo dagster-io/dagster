@@ -23,7 +23,7 @@ from dagster._core.definitions.definitions_class import Definitions
 from dagster._core.definitions.metadata.metadata_value import (
     CodeLocationReconstructionMetadataValue,
 )
-from dagster._core.errors import DagsterInvariantViolationError
+from dagster._core.errors import DagsterInvalidInvocationError, DagsterInvariantViolationError
 from dagster._core.storage.defs_state.base import DefsStateStorage
 from dagster.components.utils.defs_state import DefsStateConfig
 from dagster.components.utils.project_paths import (
@@ -195,7 +195,7 @@ class DefinitionsLoadContext:
 
     @contextmanager
     def state_path(
-        self, config: DefsStateConfig, state_storage: DefsStateStorage, project_root: Path
+        self, config: DefsStateConfig, state_storage: Optional[DefsStateStorage], project_root: Path
     ) -> Iterator[Optional[Path]]:
         """Context manager that creates a temporary path to hold local state for a component.
 
@@ -218,6 +218,11 @@ class DefinitionsLoadContext:
             self.add_defs_state_info(key, LOCAL_STATE_VERSION, state_path.stat().st_ctime)
             yield state_path
         elif config.type == DefsStateManagementType.VERSIONED_STATE_STORAGE:
+            if state_storage is None:
+                raise DagsterInvalidInvocationError(
+                    f"Attempted to access state for key {config.key} with management type {config.type} "
+                    "without a StateStorage in context. This is likely the result of an internal framework error."
+                )
             key_info = self._get_defs_key_state_info(key)
             # this implies that no state has been stored since the management type was changed
             if key_info is None or key_info.management_type != config.type:
