@@ -4,7 +4,7 @@ from io import BytesIO
 
 class MockBlobServiceClient:
     """We use this mock class to test AzureBlobStorage ContextInjector and MessageWriter.
-    Because both the dagster orchestrator and the external process need to have the same view of the storage data,
+    Because both the Dagster orchestrator and the external process need to have the same view of the storage data,
     it is backed in a temporary directory on the local machine.
     """
     def __init__(self, temp_dir: str, storage_account: str):

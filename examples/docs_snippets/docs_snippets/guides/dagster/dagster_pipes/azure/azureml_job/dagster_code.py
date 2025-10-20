@@ -36,7 +36,7 @@ from azure.storage.blob import BlobServiceClient
 
 
 @dg.definitions
-def resources():
+def resources() -> dg.Definitions:
     azure_blob_storage = BlobServiceClient(
         account_url="https://<DAGSTER-STORAGE-ACCOUNT>.blob.core.windows.net/",
         credential=DefaultAzureCredential()
