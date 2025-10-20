@@ -136,12 +136,12 @@ class PipesAzureMLClient(PipesClient, TreatAsResourceParam):
             job = self.client.create_or_update(command)
 
             try:
-                self._poll_til_success(context, job.name)  # type: ignore
+                self._poll_til_success(context, job.name) # pyright: ignore[reportArgumentType]
             except DagsterExecutionInterruptedError:
                 if self.forward_termination:
                     context.log.info("[pipes] execution interrupted, canceling Azure ML job.")
-                    self.client.jobs.begin_cancel(job.name) # type: ignore
-                    self._poll_til_terminating(job.name) # type: ignore
+                    self.client.jobs.begin_cancel(job.name) # pyright: ignore[reportArgumentType]
+                    self._poll_til_terminating(job.name) # pyright: ignore[reportArgumentType]
 
         return PipesClientCompletedInvocation(
             pipes_session, 
