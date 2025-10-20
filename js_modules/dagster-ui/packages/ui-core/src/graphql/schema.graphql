@@ -3348,6 +3348,7 @@ type Sensor {
   targets: [Target!]
   defaultStatus: InstigationStatus!
   canReset: Boolean!
+  hasCursorUpdatePermissions: Boolean!
   sensorState: InstigationState!
   minIntervalSeconds: Int!
   description: String
