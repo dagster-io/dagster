@@ -40,15 +40,15 @@ To run the examples, you'll need to:
 
 - In Azure, you'll need:
   - An existing Azure ML workspace
-  - An Azure Blob Data Storage Container to be used by dagster. The recommended way to work with dagster-pipes and AzureML is to use Azure Blob Data Storage to communicate between the Dagster orchestrator and the AzureML job.
+  - An Azure Blob Data Storage Container to be used by Dagster. The recommended way to work with `dagster-pipes` and Azure ML is to use Azure Blob Data Storage to communicate between the Dagster orchestrator and the Azure ML job.
 
-## Step 1: Create an AzureML environment for dagster pipes.
+## Step 1: Create an Azure ML environment for Dagster Pipes
 
-Your AzureML job will require an AzureML environment that contains the `dagtster-pipes` library. Since the AzureML job will be communicating with the dagster orchestrator via Azure Blob Storage, we will also need to install the `azure-identity` and `azure-storage-blob` python libraries.
+Your Azure ML job will require an Azure ML environment that contains the `dagtster-pipes` library. Since the Azure ML job will be communicating with the Dagster orchestrator via Azure Blob Storage, we will also need to install the `azure-identity` and `azure-storage-blob` Python libraries.
 
-In your Azure ML dashboard, choose "Add a Custom Environment", select the environment source you want to use (e.g. `sklearn-1.5:33`), and edit the l;ist of python packages to install.
+In your Azure ML dashboard, choose "Add a Custom Environment", select the environment source you want to use (e.g. `sklearn-1.5:33`), and edit the list of Python packages to install.
 
-For instance, if specifying python dependencies using a `conda.yaml` file, include the following lines:
+For instance, if specifying Python dependencies using a `conda.yaml` file, include the following lines:
 
 ```yaml
 dependencies:
@@ -65,9 +65,9 @@ Call `open_dagster_pipes` in your Azure ML script to create a context that can b
 
 <CodeExample path="docs_snippets/docs_snippets/guides/dagster/dagster_pipes/azure/azureml_job/train.py" title="train.py" />
 
-::: tip
+:::info
 
-Make sure that the identity that is configured for running AzureML jobs, has access to dagster's Azure Blob Storage account.
+Make sure that the identity that is configured for running Azure ML jobs has access to Dagster's Azure Blob Storage account.
 
 :::
 
@@ -87,7 +87,7 @@ In the Dagster asset/op code, use the `PipesAzureMLClient` resource to launch th
 
 <CodeExample path="docs_snippets/docs_snippets/guides/dagster/dagster_pipes/azure/azureml_job/dagster_code.py" startAfter="start_asset_marker" endBefore="end_asset_marker" title="src/<project_name>/defs/assets.py" />
 
-This will launch the Azure ML job and wait for it to complete. If the job fails, the Dagster process will raise an exception. If the Dagster process is interrupted while the job is still running, the job will be cancelled (if `forward_termination=True` is set in the client).
+This will launch the Azure ML job and wait for it to complete. If the job fails, the Dagster process will raise an exception. If the Dagster process is interrupted while the job is still running, the job will be canceled, provided that `forward_termination=True` is set in the client.
 
 ## Step 4: Create Dagster definitions
 
