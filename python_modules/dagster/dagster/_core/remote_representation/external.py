@@ -518,6 +518,8 @@ class RemoteJob(RepresentedJob, LoadableBy[JobSubsetSelector, "BaseWorkspaceRequ
 
     @property
     def owners(self) -> Optional[Sequence[str]]:
+        if self._job_ref_snap is not None:
+            return self._job_ref_snap.owners
         return getattr(self._job_index.job_snapshot, "owners", None)
 
     @property
