@@ -74,5 +74,5 @@ attributes:  # Optional: Attributes details
     key_prefix: <one of: string, array of string>  # Optional: Prefix the existing asset key with the provided value.
   defs_state:  # Optional: Configuration for determining how state is stored and persisted for this component.
     key: <string>  # Optional: The key for the state. This must be unique per deployment.
-    type: <string>  # Required: 
+    management_type: <string>  # Required: 
     refresh_if_dev: <boolean>  # Optional: Whether to automatically refresh defs state when using `dagster dev` or the `dg` cli.

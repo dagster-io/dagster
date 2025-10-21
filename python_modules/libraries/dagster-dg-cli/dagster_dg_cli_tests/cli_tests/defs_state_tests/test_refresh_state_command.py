@@ -283,7 +283,7 @@ def test_refresh_state_command_with_management_type_filter():
                     "type": ".local.SampleStateBackedComponent",
                     "attributes": {
                         "defs_state_key_id": "versioned",
-                        "defs_state": {"type": "VERSIONED_STATE_STORAGE"},
+                        "defs_state": {"management_type": "VERSIONED_STATE_STORAGE"},
                     },
                 },
                 f,
@@ -302,7 +302,7 @@ def test_refresh_state_command_with_management_type_filter():
                     "type": ".local.SampleStateBackedComponent",
                     "attributes": {
                         "defs_state_key_id": "local",
-                        "defs_state": {"type": "LOCAL_FILESYSTEM"},
+                        "defs_state": {"management_type": "LOCAL_FILESYSTEM"},
                     },
                 },
                 f,
@@ -388,7 +388,7 @@ def test_refresh_state_command_excludes_legacy_code_server_snapshots_by_default(
                     "type": ".local.SampleStateBackedComponent",
                     "attributes": {
                         "defs_state_key_id": "versioned",
-                        "defs_state": {"type": "VERSIONED_STATE_STORAGE"},
+                        "defs_state": {"management_type": "VERSIONED_STATE_STORAGE"},
                     },
                 },
                 f,
@@ -407,7 +407,7 @@ def test_refresh_state_command_excludes_legacy_code_server_snapshots_by_default(
                     "type": ".local.SampleStateBackedComponent",
                     "attributes": {
                         "defs_state_key_id": "legacy",
-                        "defs_state": {"type": "LEGACY_CODE_SERVER_SNAPSHOTS"},
+                        "defs_state": {"management_type": "LEGACY_CODE_SERVER_SNAPSHOTS"},
                     },
                 },
                 f,

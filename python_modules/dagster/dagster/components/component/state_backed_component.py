@@ -99,16 +99,22 @@ class StateBackedComponent(Component):
         key = self.defs_state_config.key
         state_storage = DefsStateStorage.get()
 
-        if self.defs_state_config.type == DefsStateManagementType.VERSIONED_STATE_STORAGE:
+        if (
+            self.defs_state_config.management_type
+            == DefsStateManagementType.VERSIONED_STATE_STORAGE
+        ):
             if state_storage is None:
                 raise DagsterInvalidInvocationError(
-                    f"Attempted to refresh state for key {key} with management type {self.defs_state_config.type} "
+                    f"Attempted to refresh state for key {key} with management type {self.defs_state_config.management_type} "
                     "without a StateStorage in context. This is likely the result of an internal framework error."
                 )
             return await self._store_versioned_state_storage_state(key, state_storage)
-        elif self.defs_state_config.type == DefsStateManagementType.LOCAL_FILESYSTEM:
+        elif self.defs_state_config.management_type == DefsStateManagementType.LOCAL_FILESYSTEM:
             return await self._store_local_filesystem_state(key, state_storage, project_root)
-        elif self.defs_state_config.type == DefsStateManagementType.LEGACY_CODE_SERVER_SNAPSHOTS:
+        elif (
+            self.defs_state_config.management_type
+            == DefsStateManagementType.LEGACY_CODE_SERVER_SNAPSHOTS
+        ):
             check.invariant(
                 DefinitionsLoadContext.get().load_type == DefinitionsLoadType.INITIALIZATION,
                 "Attempted to refresh `LEGACY_CODE_SERVER_SNAPSHOTS` state explicitly, but this can only happen during code server startup.",
@@ -116,7 +122,7 @@ class StateBackedComponent(Component):
             return await self._store_code_server_state(key, state_storage)
         else:
             raise DagsterInvalidInvocationError(
-                f"Invalid state storage location: {self.defs_state_config.type}"
+                f"Invalid state storage location: {self.defs_state_config.management_type}"
             )
 
     def build_defs(self, context: ComponentLoadContext) -> Definitions:
@@ -128,7 +134,7 @@ class StateBackedComponent(Component):
             if (
                 # for code server state management, we always refresh the state
                 (
-                    self.defs_state_config.type
+                    self.defs_state_config.management_type
                     == DefsStateManagementType.LEGACY_CODE_SERVER_SNAPSHOTS
                 )
                 or

@@ -55,7 +55,7 @@ def test_component_load_with_defs_state(
 ) -> None:
     """Test component loading with defs state."""
     body = copy.deepcopy(BASIC_LOOKER_COMPONENT_BODY)
-    body["attributes"]["defs_state"] = {"type": defs_state_type}
+    body["attributes"]["defs_state"] = {"management_type": defs_state_type}
 
     with create_defs_folder_sandbox() as sandbox:
         defs_path = sandbox.scaffold_component(
@@ -94,7 +94,7 @@ class TestLookerTranslation(TestTranslation):
     ) -> None:
         body = copy.deepcopy(BASIC_LOOKER_COMPONENT_BODY)
         body["attributes"]["translation"] = attributes
-        body["attributes"]["defs_state"] = {"type": "LOCAL_FILESYSTEM"}
+        body["attributes"]["defs_state"] = {"management_type": "LOCAL_FILESYSTEM"}
 
         with create_defs_folder_sandbox() as sandbox:
             defs_path = sandbox.scaffold_component(
