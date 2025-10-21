@@ -223,7 +223,7 @@ class JobRefSnap:
     active_presets: Sequence["PresetSnap"]
     parent_snapshot_id: Optional[str]
     preview_tags: Optional[Mapping[str, str]] = None
-    owners: Optional[Sequence[str]]
+    owners: Optional[Sequence[str]] = None
 
     @classmethod
     def from_job_def(cls, job_def: JobDefinition) -> Self:
