@@ -91,20 +91,20 @@ Finally, deploy your project to Dagster+ using the `serverless` command:
 
   <Tabs>
     <TabItem value="macos" label="MacOS/Unix">
-    ```shell
-    dagster-cloud serverless deploy-python-executable ./my-project \
-      --location-name example \
-      --package-name quickstart_etl \
-      --python-version 3.12
-    ```
+      ```shell
+      dagster-cloud serverless deploy-python-executable ./my-project \
+        --location-name example \
+        --package-name quickstart_etl \
+        --python-version 3.12
+      ```
     </TabItem>
     <TabItem value="windows" label="Windows">
-    ```shell
-    dagster-cloud serverless deploy ./my-project \
-      --location-name example \
-      --package-name quickstart_etl \
-      --python-version 3.12
-    ```
+      ```shell
+      dagster-cloud serverless deploy ./my-project \
+        --location-name example \
+        --package-name quickstart_etl \
+        --python-version 3.12
+      ```
     </TabItem>
   </Tabs>
 
