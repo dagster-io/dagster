@@ -196,13 +196,22 @@ def derive_model_type(
                     if type(annotation_info.default) in {int, float, str, bool, type(None)}
                     else _Unset
                 )
-                field_infos.append(
-                    Field(
-                        default=default_value,
-                        description=field_resolver.description,
-                        examples=field_resolver.examples,
-                    ),
-                )
+                if default_value is _Unset and annotation_info.field_info:
+                    # if we have a field_info with default_factory, preserve it
+                    if annotation_info.field_info.default_factory is not None:
+                        default_value = Field(
+                            default_factory=annotation_info.field_info.default_factory,
+                            description=annotation_info.field_info.description,
+                            examples=annotation_info.field_info.examples,
+                        )   
+                    else:
+                        field_infos.append(
+                            Field(
+                                default=default_value,
+                                description=field_resolver.description,
+                                examples=field_resolver.examples,
+                            ),
+                        )
             elif field_resolver.description or field_resolver.examples:
                 field_infos.append(
                     Field(
