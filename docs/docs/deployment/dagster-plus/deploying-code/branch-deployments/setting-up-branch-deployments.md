@@ -213,39 +213,40 @@ In this step, you'll update the GitHub workflow file in your repository to set u
   <TabItem value="serverless" label="Dagster+ Serverless">
   In the `.github/workflows/dagster-plus-deploy.yml` file, un-comment the `step` associated with your registry. For example, for an Amazon ECR registry, you'd un-comment the following portion of the workflow file:
 
-  ```yaml
-  # dagster-plus-deploy.yml
-  jobs:
-    dagster-cloud-deploy:
-      steps:
-        - name: Configure AWS credentials
-          uses: aws-actions/configure-aws-credentials@v1
-          with:
-            aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
-            aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-            aws-region: ${{ secrets.AWS_REGION }}
-  ```
+```yaml
+# dagster-plus-deploy.yml
+jobs:
+  dagster-cloud-deploy:
+    steps:
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v1
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ secrets.AWS_REGION }}
+```
 
-  Save and commit the file to your repository.
+Save and commit the file to your repository.
 
   </TabItem>
   <TabItem value="hybrid" label="Dagster+ Hybrid">
   In the `.github/workflows/dagster-cloud-deploy.yml` file, un-comment the `step` associated with your registry. For example, for an Amazon ECR registry, you'd un-comment the following portion of the workflow file:
 
-  ```yaml
-  # dagster-cloud-deploy.yml
-  jobs:
-    dagster-cloud-deploy:
-      steps:
-        - name: Configure AWS credentials
-          uses: aws-actions/configure-aws-credentials@v1
-          with:
-            aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
-            aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-            aws-region: ${{ secrets.AWS_REGION }}
-  ```
+```yaml
+# dagster-cloud-deploy.yml
+jobs:
+  dagster-cloud-deploy:
+    steps:
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v1
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ secrets.AWS_REGION }}
+```
 
-  Save and commit the file to your repository.
+Save and commit the file to your repository.
+
   </TabItem>
 </Tabs>
 

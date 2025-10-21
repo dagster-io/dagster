@@ -156,12 +156,12 @@ Deployment settings are accessed in the UI by navigating to **user menu (your ic
 
 |                                                                                                         | Viewer | Launcher | Editor | Admin | Organization <br/> admin |
 | ------------------------------------------------------------------------------------------------------- | ------ | -------- | ------ | ----- | ------------------------ |
-| View [deployments](/deployment/dagster-plus/deploying-code/full-deployments)                                           | ✅     | ✅       | ✅     | ✅    | ✅                       |
-| Modify [deployments](/deployment/dagster-plus/deploying-code/full-deployments) settings                                | ❌     | ❌       | ✅     | ✅    | ✅                       |
+| View [deployments](/deployment/dagster-plus/deploying-code/full-deployments)                            | ✅     | ✅       | ✅     | ✅    | ✅                       |
+| Modify [deployments](/deployment/dagster-plus/deploying-code/full-deployments) settings                 | ❌     | ❌       | ✅     | ✅    | ✅                       |
 | Create, edit, delete [environment variables](/deployment/dagster-plus/management/environment-variables) | ❌     | ❌       | ✅     | ✅    | ✅                       |
 | View [environment variable](/deployment/dagster-plus/management/environment-variables) values           | ❌     | ❌       | ✅     | ✅    | ✅                       |
 | Export [environment variables](/deployment/dagster-plus/management/environment-variables)               | ❌     | ❌       | ✅     | ✅    | ✅                       |
-| Create and delete [deployments](/deployment/dagster-plus/deploying-code/full-deployments)                              | ❌     | ❌       | ❌     | ❌    | ✅                       |
+| Create and delete [deployments](/deployment/dagster-plus/deploying-code/full-deployments)               | ❌     | ❌       | ❌     | ❌    | ✅                       |
 | Create [Branch Deployments](/deployment/dagster-plus/deploying-code/branch-deployments)                 | ❌     | ❌       | ✅     | ✅    | ✅                       |
 
 ### Code locations

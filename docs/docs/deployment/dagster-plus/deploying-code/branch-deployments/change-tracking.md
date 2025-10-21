@@ -61,17 +61,19 @@ In this example, the `customers` asset has a **Changed in branch** label indicat
 **In the main branch**, we have a `customers` asset with a code version of `v1`:
 
 <CodeExample
-    path="docs_snippets/docs_snippets/dagster_cloud/branch_deployments/change_tracking_code_version.py" startAfter="start_main_deployment"
-    endBefore="end_main_deployment"
-    dedent="4"
+  path="docs_snippets/docs_snippets/dagster_cloud/branch_deployments/change_tracking_code_version.py"
+  startAfter="start_main_deployment"
+  endBefore="end_main_deployment"
+  dedent="4"
 />
 
 **In the pull request**, `customers` is modified to change the code version to `v2`:
 
 <CodeExample
-    path="docs_snippets/docs_snippets/dagster_cloud/branch_deployments/change_tracking_code_version.py" startAfter="start_branch_deployment"
-    endBefore="end_branch_deployment"
-    dedent="4"
+  path="docs_snippets/docs_snippets/dagster_cloud/branch_deployments/change_tracking_code_version.py"
+  startAfter="start_branch_deployment"
+  endBefore="end_branch_deployment"
+  dedent="4"
 />
 
 </TabItem>
@@ -100,17 +102,19 @@ In this example, the `returns` asset has a **Changed in branch** label indicatin
 **In the main branch**, we have a `returns` asset with a single upstream dependency, `orders`:
 
 <CodeExample
-    path="docs_snippets/docs_snippets/dagster_cloud/branch_deployments/change_tracking_dependencies.py" startAfter="start_main_deployment"
-    endBefore="end_main_deployment"
-    dedent="4"
+  path="docs_snippets/docs_snippets/dagster_cloud/branch_deployments/change_tracking_dependencies.py"
+  startAfter="start_main_deployment"
+  endBefore="end_main_deployment"
+  dedent="4"
 />
 
 **In the pull request**, we change the upstream dependencies of the `returns` asset to `orders` and `customers`:
 
 <CodeExample
-    path="docs_snippets/docs_snippets/dagster_cloud/branch_deployments/change_tracking_dependencies.py" startAfter="start_branch_deployment"
-    endBefore="end_branch_deployment"
-    dedent="4"
+  path="docs_snippets/docs_snippets/dagster_cloud/branch_deployments/change_tracking_dependencies.py"
+  startAfter="start_branch_deployment"
+  endBefore="end_branch_deployment"
+  dedent="4"
 />
 
 </TabItem>
@@ -133,17 +137,19 @@ In this example, the `weekly_orders` asset has a **Changed in branch** label ind
 **In the main branch**, we have a `weekly_orders` asset:
 
 <CodeExample
-    path="docs_snippets/docs_snippets/dagster_cloud/branch_deployments/change_tracking_partitions_definition.py" startAfter="start_main_deployment"
-    endBefore="end_main_deployment"
-    dedent="4"
+  path="docs_snippets/docs_snippets/dagster_cloud/branch_deployments/change_tracking_partitions_definition.py"
+  startAfter="start_main_deployment"
+  endBefore="end_main_deployment"
+  dedent="4"
 />
 
 **In the pull request**, we updated the <PyObject section="partitions" object="WeeklyPartitionsDefinition" /> to start one year earlier:
 
 <CodeExample
-    path="docs_snippets/docs_snippets/dagster_cloud/branch_deployments/change_tracking_partitions_definition.py" startAfter="start_branch_deployment"
-    endBefore="end_branch_deployment"
-    dedent="4"
+  path="docs_snippets/docs_snippets/dagster_cloud/branch_deployments/change_tracking_partitions_definition.py"
+  startAfter="start_branch_deployment"
+  endBefore="end_branch_deployment"
+  dedent="4"
 />
 
 </TabItem>
@@ -166,17 +172,19 @@ In this example, the `fruits_in_stock` asset has a **Changed in branch** label i
 **In the main branch**, we have a `fruits_in_stock` asset:
 
 <CodeExample
-    path="docs_snippets/docs_snippets/dagster_cloud/branch_deployments/change_tracking_tags.py" startAfter="start_main_deployment"
-    endBefore="end_main_deployment"
-    dedent="4"
+  path="docs_snippets/docs_snippets/dagster_cloud/branch_deployments/change_tracking_tags.py"
+  startAfter="start_main_deployment"
+  endBefore="end_main_deployment"
+  dedent="4"
 />
 
 **In the pull request**, we added the `type: perishable` tag to `fruits_in_stock`:
 
 <CodeExample
-    path="docs_snippets/docs_snippets/dagster_cloud/branch_deployments/change_tracking_tags.py" startAfter="start_branch_deployment"
-    endBefore="end_branch_deployment"
-    dedent="4"
+  path="docs_snippets/docs_snippets/dagster_cloud/branch_deployments/change_tracking_tags.py"
+  startAfter="start_branch_deployment"
+  endBefore="end_branch_deployment"
+  dedent="4"
 />
 
 </TabItem>
@@ -199,17 +207,19 @@ In this example, the `products` asset has a **Changed in branch** label indicati
 **In the main branch**, we have a `products` asset:
 
 <CodeExample
-    path="docs_snippets/docs_snippets/dagster_cloud/branch_deployments/change_tracking_metadata.py" startAfter="start_main_deployment"
-    endBefore="end_main_deployment"
-    dedent="4"
+  path="docs_snippets/docs_snippets/dagster_cloud/branch_deployments/change_tracking_metadata.py"
+  startAfter="start_main_deployment"
+  endBefore="end_main_deployment"
+  dedent="4"
 />
 
 **In the pull request**, we update the value of the `expected_columns` metadata on `products`:
 
 <CodeExample
-    path="docs_snippets/docs_snippets/dagster_cloud/branch_deployments/change_tracking_metadata.py" startAfter="start_branch_deployment"
-    endBefore="end_branch_deployment"
-    dedent="4"
+  path="docs_snippets/docs_snippets/dagster_cloud/branch_deployments/change_tracking_metadata.py"
+  startAfter="start_branch_deployment"
+  endBefore="end_branch_deployment"
+  dedent="4"
 />
 
 </TabItem>

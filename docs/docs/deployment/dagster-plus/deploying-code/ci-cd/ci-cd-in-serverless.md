@@ -41,6 +41,7 @@ Once you have set up the repo, pushing your code changes to the `main` branch wi
 If you're a GitLab user, you can use our GitLab app to set up a repo containing basic code and CI/CD configuration for you consistent with Dagster+ best practices.
 
 Once you have set up the repo, pushing your code changes to the `main` branch will automatically deploy them to your `prod` Serverless deployment. Merge requests will create ephemeral [branch deployments](/deployment/dagster-plus/deploying-code/branch-deployments) that you can preview and test in the Dagster+ UI.
+
 </TabItem>
 
 <TabItem value="Other" label="Other Git providers or local development">
@@ -48,6 +49,7 @@ Once you have set up the repo, pushing your code changes to the `main` branch wi
 If you don't want to use our automated GitHub/GitLab process, you can use the [`dagster-cloud` command-line CLI](/api/clis/dagster-cloud-cli) in another CI environment or locally.
 
 First, create a new project by doing one of the following:
+
 - [Using the `create-dagster project` command](/guides/build/projects/creating-a-new-project)
 - Cloning the [Serverless quickstart example](https://github.com/dagster-io/dagster/tree/master/examples/quickstart_etl)
 
@@ -87,24 +89,24 @@ You can also configure the `dagster-cloud` tool non-interactively; for more info
 
 Finally, deploy your project to Dagster+ using the `serverless` command:
 
-<Tabs>
-  <TabItem value="macos" label="MacOS/Unix">
+  <Tabs>
+    <TabItem value="macos" label="MacOS/Unix">
     ```shell
     dagster-cloud serverless deploy-python-executable ./my-project \
       --location-name example \
       --package-name quickstart_etl \
       --python-version 3.12
     ```
-  </TabItem>
-  <TabItem value="windows" label="Windows">
+    </TabItem>
+    <TabItem value="windows" label="Windows">
     ```shell
     dagster-cloud serverless deploy ./my-project \
       --location-name example \
       --package-name quickstart_etl \
       --python-version 3.12
     ```
-  </TabItem>
-</Tabs>
+    </TabItem>
+  </Tabs>
 
 </TabItem>
 </Tabs>

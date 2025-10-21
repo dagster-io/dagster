@@ -128,9 +128,9 @@ Then, we can add the `clone_prod` and `drop_prod_clone` jobs that now use the ap
 <Tabs groupId="CICDProvider">
 <TabItem value="github" label="Using GitHub Actions">
 
-  The Dagster workflow file located in `.github/workflows` defines a `dagster_cloud_build_push` job with a series of steps that launch a branch deployment.
+The Dagster workflow file located in `.github/workflows` defines a `dagster_cloud_build_push` job with a series of steps that launch a branch deployment.
 
-  Because we want to queue a run of `clone_prod` within each deployment after it launches, we'll add an additional step at the end `dagster_cloud_build_push`. This job is triggered on the `opened`, `synchronize`, `reopen`, and `closed` pull request events. This means that upon future pushes to the branch, we'll trigger a run of `clone_prod`. The `if` condition below ensures that `clone_prod` will not run if the pull request is closed:
+Because we want to queue a run of `clone_prod` within each deployment after it launches, we'll add an additional step at the end `dagster_cloud_build_push`. This job is triggered on the `opened`, `synchronize`, `reopen`, and `closed` pull request events. This means that upon future pushes to the branch, we'll trigger a run of `clone_prod`. The `if` condition below ensures that `clone_prod` will not run if the pull request is closed:
 
   <Tabs groupId="deploymentType">
     <TabItem value="serverless" label="Serverless">
@@ -149,35 +149,36 @@ Then, we can add the `clone_prod` and `drop_prod_clone` jobs that now use the ap
     />
 
     </TabItem>
+
   </Tabs>
 
-  Opening a pull request for our current branch will automatically kick off a branch deployment. After the deployment launches, we can confirm that the `clone_prod` job has run:
+Opening a pull request for our current branch will automatically kick off a branch deployment. After the deployment launches, we can confirm that the `clone_prod` job has run:
 
-  ![Instance overview](/images/guides/development_to_production/branch_deployments/instance_overview.png)
+![Instance overview](/images/guides/development_to_production/branch_deployments/instance_overview.png)
 
-  Alternatively, the logs for the branch deployment workflow can be found in the **Actions** tab on the GitHub pull request.
+Alternatively, the logs for the branch deployment workflow can be found in the **Actions** tab on the GitHub pull request.
 
-  We can also view our database in Snowflake to confirm that a clone exists for each branch deployment. When we materialize our assets within our branch deployment, we'll now be writing to our clone of `PRODUCTION`. Within Snowflake, we can run queries against this clone to confirm the validity of our data:
+We can also view our database in Snowflake to confirm that a clone exists for each branch deployment. When we materialize our assets within our branch deployment, we'll now be writing to our clone of `PRODUCTION`. Within Snowflake, we can run queries against this clone to confirm the validity of our data:
 
-  ![Instance overview](/images/guides/development_to_production/branch_deployments/snowflake.png)
+![Instance overview](/images/guides/development_to_production/branch_deployments/snowflake.png)
 
   </TabItem>
   <TabItem value="gitlab" label="Using GitLab CI/CD">
 
-  The `.gitlab-ci.yaml` script contains a `deploy` job that defines a series of steps that launch a branch deployment. Because we want to queue a run of `clone_prod` within each deployment after it launches, we'll add an additional step at the end of `deploy`. This job is triggered on when a merge request is created or updated. This means that upon future pushes to the branch, we'll trigger a run of `clone_prod`.
+The `.gitlab-ci.yaml` script contains a `deploy` job that defines a series of steps that launch a branch deployment. Because we want to queue a run of `clone_prod` within each deployment after it launches, we'll add an additional step at the end of `deploy`. This job is triggered on when a merge request is created or updated. This means that upon future pushes to the branch, we'll trigger a run of `clone_prod`.
 
-  <CodeExample
-    path="docs_snippets/docs_snippets/guides/dagster/development_to_production/branch_deployments/clone_prod.gitlab-ci.yml"
-    title=".gitlab-ci.yml"
-  />
+<CodeExample
+  path="docs_snippets/docs_snippets/guides/dagster/development_to_production/branch_deployments/clone_prod.gitlab-ci.yml"
+  title=".gitlab-ci.yml"
+/>
 
-  Opening a merge request for our current branch will automatically kick off a branch deployment. After the deployment launches, we can confirm that the `clone_prod` job has run:
+Opening a merge request for our current branch will automatically kick off a branch deployment. After the deployment launches, we can confirm that the `clone_prod` job has run:
 
-  ![Instance overview](/images/guides/development_to_production/branch_deployments/instance_overview.png)
+![Instance overview](/images/guides/development_to_production/branch_deployments/instance_overview.png)
 
-  We can also view our database in Snowflake to confirm that a clone exists for each branch deployment. When we materialize our assets within our branch deployment, we'll now be writing to our clone of `PRODUCTION`. Within Snowflake, we can run queries against this clone to confirm the validity of our data:
+We can also view our database in Snowflake to confirm that a clone exists for each branch deployment. When we materialize our assets within our branch deployment, we'll now be writing to our clone of `PRODUCTION`. Within Snowflake, we can run queries against this clone to confirm the validity of our data:
 
-  ![Instance overview](/images/guides/development_to_production/branch_deployments/snowflake.png)
+![Instance overview](/images/guides/development_to_production/branch_deployments/snowflake.png)
 
 </TabItem>
 
@@ -193,18 +194,18 @@ Finally, we can add a step to our Dagster+ workflow file that queues a run of ou
 <Tabs groupId="deploymentType">
   <TabItem value="serverless" label="Serverless">
 
-  <CodeExample
+<CodeExample
   path="docs_snippets/docs_snippets/guides/dagster/development_to_production/branch_deployments/drop_db_clone.yaml"
   title=".github/workflows/dagster-plus-deploy.yml"
-  />
+/>
 
   </TabItem>
   <TabItem value="hybrid" label="Hybrid">
 
-  <CodeExample
+<CodeExample
   path="docs_snippets/docs_snippets/guides/dagster/development_to_production/branch_deployments/drop_db_clone.yaml"
   title=".github/workflows/dagster-cloud-deploy.yml"
-  />
+/>
 
   </TabItem>
 </Tabs>

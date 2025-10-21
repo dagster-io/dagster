@@ -50,7 +50,6 @@ For each full deployment, you can configure settings for:
 
 The `concurrency` settings allow you to specify concurrency controls for runs and pools in the deployment. For more information about concurrency, see [Managing concurrency of Dagster assets, jobs, and Dagster instances](/guides/operate/managing-concurrency).
 
-
 ```yaml
 concurrency:
   pools:
