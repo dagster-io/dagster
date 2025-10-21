@@ -27,6 +27,8 @@ deployments:
       # When a tag is not supplied, it will default as the Helm chart version.
       repository: "docker.io/dagster/user-code-example"
       tag: ~
+      # If digest is provided, it takes precedence over tag. Use format: sha256:abc123...
+      # digest: ~
       # Change with caution! If you're using a fixed tag for pipeline run images, changing the
       # image pull policy to anything other than "Always" will use a cached/stale image, which is
       # almost certainly not what you want.

@@ -599,6 +599,51 @@ def test_user_deployment_tag_can_be_numeric(template: HelmTemplate, tag: Union[s
     assert image_tag == str(tag)
 
 
+def test_user_deployment_digest_takes_precedence_over_tag(template: HelmTemplate):
+    """Test that when both digest and tag are provided, digest takes precedence."""
+    deployment = create_simple_user_deployment("foo")
+    deployment.image.tag = "v1.2.3"
+    deployment.image.digest = "sha256:abc123def456789"
+
+    helm_values = DagsterHelmValues.construct(
+        dagsterUserDeployments=UserDeployments.construct(
+            enabled=True,
+            enableSubchart=True,
+            deployments=[deployment],
+        )
+    )
+
+    user_deployments = template.render(helm_values)
+
+    assert len(user_deployments) == 1
+
+    image = user_deployments[0].spec.template.spec.containers[0].image
+    # Should use digest format: repository@digest
+    assert image == "docker.io/dagster/user-code-example@sha256:abc123def456789"
+
+
+def test_user_deployment_digest_only(template: HelmTemplate):
+    """Test that digest works without tag."""
+    deployment = create_simple_user_deployment("foo")
+    deployment.image.digest = "sha256:def456ghi789012"
+
+    helm_values = DagsterHelmValues.construct(
+        dagsterUserDeployments=UserDeployments.construct(
+            enabled=True,
+            enableSubchart=True,
+            deployments=[deployment],
+        )
+    )
+
+    user_deployments = template.render(helm_values)
+
+    assert len(user_deployments) == 1
+
+    image = user_deployments[0].spec.template.spec.containers[0].image
+    # Should use digest format: repository@digest
+    assert image == "docker.io/dagster/user-code-example@sha256:def456ghi789012"
+
+
 def _assert_no_container_context(user_deployment):
     # No container context set by default
     env_names = [env.name for env in user_deployment.spec.template.spec.containers[0].env]
