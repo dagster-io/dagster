@@ -73,6 +73,7 @@ class AssetEntry(
             ("last_planned_materialization_run_id", Optional[str]),
             ("last_failed_to_materialize_record", Optional[EventLogRecord]),
             ("is_writing_failures", bool),
+            ("last_skipped_materialize_record", Optional[EventLogRecord]),
         ],
     )
 ):
@@ -88,6 +89,7 @@ class AssetEntry(
         last_planned_materialization_run_id: Optional[str] = None,
         last_failed_to_materialize_record: Optional[EventLogRecord] = None,
         is_writing_failures: bool = False,
+        last_skipped_materialize_record: Optional[EventLogRecord] = None,
     ):
         from dagster._core.storage.partition_status_cache import AssetStatusCacheValue
 
@@ -121,6 +123,11 @@ class AssetEntry(
                 EventLogRecord,
             ),
             is_writing_failures=check.bool_param(is_writing_failures, "is_writing_failures"),
+            last_skipped_materialize_record=check.opt_inst_param(
+                last_skipped_materialize_record,
+                "last_skipped_materialize_record",
+                EventLogRecord,
+            ),
         )
 
     @property

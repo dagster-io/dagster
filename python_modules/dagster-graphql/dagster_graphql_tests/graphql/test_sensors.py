@@ -263,6 +263,7 @@ query SensorStateQuery($sensorSelector: SensorSelector!) {
     ... on Sensor {
       canReset
       defaultStatus
+      hasCursorUpdatePermissions
       sensorState {
         id
         status

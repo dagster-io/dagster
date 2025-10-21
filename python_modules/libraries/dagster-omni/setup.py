@@ -36,6 +36,7 @@ setup(
     install_requires=[
         f"dagster{pin}",
         "aiohttp",
+        "python-dateutil",
     ],
     zip_safe=False,
 )

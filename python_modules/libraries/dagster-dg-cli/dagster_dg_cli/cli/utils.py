@@ -49,6 +49,7 @@ from dagster_dg_cli.utils.yaml_template_generator import (
 
 if TYPE_CHECKING:
     from dagster._core.instance.instance import DagsterInstance
+    from dagster_shared.serdes.objects.models.defs_state_info import DefsStateManagementType
 
 DEFAULT_SCHEMA_FOLDER_NAME = ".dg"
 
@@ -421,11 +422,14 @@ def _get_display_text(statuses: dict[str, ComponentStateRefreshStatus], spinner_
 
 
 async def _refresh_defs_state_with_live_display(
-    project_path: Path, instance: "DagsterInstance", defs_state_keys: Optional[set[str]] = None
+    project_path: Path,
+    instance: "DagsterInstance",
+    management_types: set["DefsStateManagementType"],
+    defs_state_keys: Optional[set[str]] = None,
 ) -> None:
     defs_state_storage = check.not_none(instance.defs_state_storage)
     refresh_task, statuses = get_updated_defs_state_info_task_and_statuses(
-        project_path, defs_state_storage, defs_state_keys
+        project_path, defs_state_storage, management_types, defs_state_keys
     )
 
     # Thread-safe coordination variables
@@ -467,26 +471,38 @@ async def _refresh_defs_state_with_live_display(
     multiple=True,
     help="Only refresh state for specified defs state key. Can be specified multiple times.",
 )
+@click.option(
+    "--management-type",
+    multiple=True,
+    type=click.Choice(["LOCAL_FILESYSTEM", "VERSIONED_STATE_STORAGE"]),
+    help="Only refresh components with the specified management type. Can be specified multiple times to include multiple types. Defaults to all management types except for LEGACY_CODE_SERVER_SNAPSHOTS.",
+)
 @cli_telemetry_wrapper
 def refresh_defs_state(
     target_path: Path,
     defs_state_key: tuple[str, ...],
+    management_type: tuple[str, ...],
     **other_opts: object,
 ) -> None:
     """Refresh the defs state for the current project."""
     from dagster._cli.utils import get_possibly_temporary_instance_for_cli
     from dagster._core.instance.config import is_dagster_home_set
+    from dagster_shared.serdes.objects.models.defs_state_info import DefsStateManagementType
 
     # Check if DAGSTER_HOME is set before proceeding
     if not is_dagster_home_set():
-        raise click.UsageError(
-            "DAGSTER_HOME is not set, which means defs state cannot be stored in a persistent location, "
-            "please set it to use this command.\n"
-            "You can resolve this error by exporting the environment variable. "
-            "For example, you can run the following command in your shell or "
-            "include it in your shell configuration file:\n"
-            '\texport DAGSTER_HOME="~/dagster_home"'
-            "\n\n"
+        # emit warning
+        click.echo(
+            click.style(
+                "DAGSTER_HOME is not set, which means defs state for VERSIONED_STATE_STORAGE components "
+                "cannot be stored in a persistent location. \n"
+                "You can resolve this warning by exporting the environment variable. "
+                "For example, you can run the following command in your shell or "
+                "include it in your shell configuration file:\n"
+                '\texport DAGSTER_HOME="~/dagster_home"'
+                "\n\n",
+                fg="yellow",
+            )
         )
 
     cli_config = normalize_cli_config(other_opts, click.get_current_context())
@@ -494,6 +510,16 @@ def refresh_defs_state(
 
     with get_possibly_temporary_instance_for_cli("dg utils refresh-defs-state") as instance:
         defs_state_keys = set(defs_state_key) if defs_state_key else None
+        management_types = (
+            {DefsStateManagementType(mt) for mt in management_type}
+            if management_type
+            else {
+                DefsStateManagementType.LOCAL_FILESYSTEM,
+                DefsStateManagementType.VERSIONED_STATE_STORAGE,
+            }
+        )
         asyncio.run(
-            _refresh_defs_state_with_live_display(dg_context.root_path, instance, defs_state_keys)
+            _refresh_defs_state_with_live_display(
+                dg_context.root_path, instance, management_types, defs_state_keys
+            )
         )

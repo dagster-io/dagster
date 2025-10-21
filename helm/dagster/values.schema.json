@@ -1218,13 +1218,18 @@
                 "celeryConfigSecretName": {
                     "title": "Celeryconfigsecretname",
                     "type": "string"
+                },
+                "dagsterInstanceConfigMap": {
+                    "title": "Dagsterinstanceconfigmap",
+                    "type": "string"
                 }
             },
             "required": [
                 "postgresqlSecretName",
                 "dagsterHome",
                 "serviceAccountName",
-                "celeryConfigSecretName"
+                "celeryConfigSecretName",
+                "dagsterInstanceConfigMap"
             ],
             "title": "Global",
             "type": "object"

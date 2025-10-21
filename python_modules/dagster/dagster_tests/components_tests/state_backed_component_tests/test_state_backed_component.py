@@ -1,4 +1,5 @@
 import asyncio
+import contextlib
 import json
 import random
 import shutil
@@ -21,11 +22,11 @@ from dagster.components.utils.defs_state import (
     DefsStateConfigArgs,
     ResolvedDefsStateConfig,
 )
+from dagster.components.utils.project_paths import get_code_server_metadata_key
 from dagster_shared.serdes.objects.models.defs_state_info import (
     CODE_SERVER_STATE_VERSION,
     LOCAL_STATE_VERSION,
     DefsStateManagementType,
-    get_code_server_metadata_key,
 )
 
 
@@ -64,9 +65,11 @@ class MyStateBackedComponent(StateBackedComponent, dg.Model, dg.Resolvable):
             json.dump({"value": f"bar_{random.randint(1000, 9999)}"}, f)
 
     def _get_state_refresh_defs(self, context: dg.ComponentLoadContext) -> dg.Definitions:
+        project_root = context.project_root
+
         @dg.op
         def refresh_state_op():
-            asyncio.run(self.refresh_state())
+            asyncio.run(self.refresh_state(project_root))
 
         @dg.job(name=f"state_refresh_job_{context.component_path.file_path.stem}")
         def state_refresh_job():
@@ -177,8 +180,13 @@ def test_simple_state_backed_component(
             assert load_context.accessed_defs_state_info.get_version(expected_key) is not None
 
 
-def test_code_server_state_backed_component() -> None:
-    with instance_for_test(), create_defs_folder_sandbox() as sandbox:
+@pytest.mark.parametrize(
+    "instance_available",
+    [True, False],
+)
+def test_code_server_state_backed_component(instance_available: bool) -> None:
+    instance_cm = contextlib.nullcontext() if instance_available else instance_for_test()
+    with instance_cm, create_defs_folder_sandbox() as sandbox:
         component_path = sandbox.scaffold_component(
             component_cls=MyStateBackedComponent,
             defs_yaml_contents={
@@ -227,6 +235,61 @@ def test_code_server_state_backed_component() -> None:
                 spec = specs[0]
                 assert spec.metadata["state_value"] == original_metadata_value
                 assert "bar_" in spec.metadata["state_value"]
+
+
+@pytest.mark.parametrize(
+    "instance_available",
+    [True, False],
+)
+def test_local_filesystem_state_backed_component(instance_available: bool) -> None:
+    instance_cm = contextlib.nullcontext() if instance_available else instance_for_test()
+    with instance_cm, create_defs_folder_sandbox() as sandbox:
+        component_path = sandbox.scaffold_component(
+            component_cls=MyStateBackedComponent,
+            defs_yaml_contents={
+                "type": "dagster_tests.components_tests.state_backed_component_tests.test_state_backed_component.MyStateBackedComponent",
+                "attributes": {
+                    "defs_state": {
+                        "type": DefsStateManagementType.LOCAL_FILESYSTEM.value,
+                    }
+                },
+            },
+            defs_path="foo",
+        )
+
+        with (
+            scoped_definitions_load_context(),
+            sandbox.load_component_and_build_defs(defs_path=component_path) as (_, defs),
+        ):
+            specs = defs.get_all_asset_specs()
+            spec = specs[0]
+            # will not automatically load
+            assert spec.metadata["state_value"] == "initial"
+
+            # now execute the job to refresh the state
+            refresh_job = defs.get_job_def("state_refresh_job_foo")
+            refresh_job.execute_in_process()  # note: ephemeral instance
+
+        with (
+            scoped_definitions_load_context(),
+            sandbox.load_component_and_build_defs(defs_path=component_path) as (_, defs),
+        ):
+            specs = defs.get_all_asset_specs()
+            spec = specs[0]
+            new_state_value = spec.metadata["state_value"]
+            # state should be updated to something random
+            assert new_state_value != "initial"
+            assert new_state_value.startswith("bar_")
+
+        with (
+            scoped_definitions_load_context(),
+            sandbox.load_component_and_build_defs(defs_path=component_path) as (_, defs),
+        ):
+            specs = defs.get_all_asset_specs()
+            spec = specs[0]
+
+            # state should be the same as before
+            assert spec.metadata["state_value"] == new_state_value
 
 
 @pytest.mark.parametrize(

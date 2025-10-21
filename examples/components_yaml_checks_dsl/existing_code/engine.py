@@ -279,7 +279,7 @@ def compute_group_metric(df: pd.DataFrame, metric: str) -> Optional[float]:
     elif metric_type == "mode":
         return df[column].mode().iloc[0] if not df[column].mode().empty else None
     elif metric_type == "sum":
-        return df[column].sum()
+        return df[column].sum()  # pyright: ignore[reportReturnType]
     elif metric_type == "min":
         return df[column].min()
     elif metric_type == "max":

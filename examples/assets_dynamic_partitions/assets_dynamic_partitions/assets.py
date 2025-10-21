@@ -54,7 +54,7 @@ def release_zips(context, releases_metadata: DataFrame) -> None:
 
     target_zip_path = _get_release_zip_path(context.partition_key)
     os.mkdir(os.path.dirname(target_zip_path))
-    urllib.request.urlretrieve(zipball_url, target_zip_path)
+    urllib.request.urlretrieve(str(zipball_url), target_zip_path)
 
 
 def _get_release_files_dir(release_tag: str) -> str:

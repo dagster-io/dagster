@@ -1,0 +1,47 @@
+.dayPickerWrapper :global(.rdp-root) {
+  --rdp-accent-color: var(--color-accent-blue-hover);
+  --rdp-accent-background-color: var(--color-background-blue);
+  --rdp-range-start-background-color: var(--color-background-blue-hover);
+  --rdp-accent-background-color: var(--color-background-blue);
+  --rdp-selected-border: 2px solid var(--color-accent-blue);
+  --rdp-today-color: var(--color-accent-blue);
+  --rdp-range_start-color: var(--color-text-primary);
+  --rdp-range_end-color: var(--color-text-primary);
+}
+
+.dayPickerWrapper :global(.rdp-month) {
+  user-select: none;
+}
+
+.dayPickerWrapper :global(.rdp-chevron) {
+  fill: var(--color-text-default);
+  transition: fill 50ms linear;
+}
+
+.dayPickerWrapper :global(.rdp-chevron):hover {
+  fill: var(--color-text-light);
+}
+
+.dayPickerWrapper :global(.rdp-day) {
+  font-size: 14px;
+  user-select: none;
+}
+
+.dayPickerWrapper :global(.rdp-day_button),
+.dayPickerWrapper :global(.rdp-button_previous),
+.dayPickerWrapper :global(.rdp-button_next) {
+  outline: none;
+}
+
+.dayPickerWrapper td:not(:global(.rdp-selected)) :global(.rdp-day_button):hover {
+  background-color: var(--color-background-lighter);
+}
+
+.dayPickerWrapper :global(.rdp-today) {
+  font-weight: 600;
+  color: var(--color-text-blue);
+}
+
+.dayPickerWrapper :global(.rdp-selected) {
+  font-size: 14px;
+}

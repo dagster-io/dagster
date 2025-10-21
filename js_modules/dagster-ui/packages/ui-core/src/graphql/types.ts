@@ -3572,6 +3572,8 @@ export type PartitionRunConfigOrError = PartitionRunConfig | PythonError;
 export type PartitionSet = {
   __typename: 'PartitionSet';
   backfills: Array<PartitionBackfill>;
+  hasCancelBackfillPermission: Scalars['Boolean']['output'];
+  hasLaunchBackfillPermission: Scalars['Boolean']['output'];
   id: Scalars['ID']['output'];
   mode: Scalars['String']['output'];
   name: Scalars['String']['output'];
@@ -5436,6 +5438,7 @@ export type Sensor = {
   canReset: Scalars['Boolean']['output'];
   defaultStatus: InstigationStatus;
   description: Maybe<Scalars['String']['output']>;
+  hasCursorUpdatePermissions: Scalars['Boolean']['output'];
   id: Scalars['ID']['output'];
   jobOriginId: Scalars['String']['output'];
   metadata: SensorMetadata;
@@ -12147,6 +12150,14 @@ export const buildPartitionSet = (
   return {
     __typename: 'PartitionSet',
     backfills: overrides && overrides.hasOwnProperty('backfills') ? overrides.backfills! : [],
+    hasCancelBackfillPermission:
+      overrides && overrides.hasOwnProperty('hasCancelBackfillPermission')
+        ? overrides.hasCancelBackfillPermission!
+        : true,
+    hasLaunchBackfillPermission:
+      overrides && overrides.hasOwnProperty('hasLaunchBackfillPermission')
+        ? overrides.hasLaunchBackfillPermission!
+        : true,
     id:
       overrides && overrides.hasOwnProperty('id')
         ? overrides.id!
@@ -15267,6 +15278,10 @@ export const buildSensor = (
         : InstigationStatus.RUNNING,
     description:
       overrides && overrides.hasOwnProperty('description') ? overrides.description! : 'sapiente',
+    hasCursorUpdatePermissions:
+      overrides && overrides.hasOwnProperty('hasCursorUpdatePermissions')
+        ? overrides.hasCursorUpdatePermissions!
+        : false,
     id:
       overrides && overrides.hasOwnProperty('id')
         ? overrides.id!

@@ -136,6 +136,9 @@ class ComponentTree(IHaveNew):
                 f"Could not find config file (pyproject.toml/dg.toml) in {path_within_project} or any parent of."
             )
 
+        project_root = root_config_path.parent
+
+        # Use shared utility to get defs module configuration
         toml_config = load_toml_as_dict(root_config_path)
 
         if root_config_path and root_config_path.stem == "dg":
@@ -155,7 +158,7 @@ class ComponentTree(IHaveNew):
 
         return cls(
             defs_module=defs_module,
-            project_root=root_config_path.parent,
+            project_root=project_root,
         )
 
     @property
