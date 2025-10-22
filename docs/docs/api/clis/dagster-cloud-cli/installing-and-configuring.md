@@ -10,7 +10,7 @@ In this guide, we'll cover how to install and configure the `dagster-cloud` CLI,
 
 :::note
 
-The `dagster-cloud` CLI requires a recent version of Python 3 and Docker.
+The `dagster-cloud` CLI requires Python 3.9 through 3.13 and a recent version of Docker.
 
 :::
 
