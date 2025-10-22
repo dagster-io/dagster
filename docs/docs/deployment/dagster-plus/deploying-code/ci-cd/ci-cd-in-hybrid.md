@@ -38,7 +38,7 @@ To configure the workflow:
 1. In the repository, set the `DAGSTER_CLOUD_API_TOKEN` GitHub action secret to the Dagster+ agent token. See [Managing agent tokens in Dagster+](/deployment/dagster-plus/management/tokens/agent-tokens). For more information on GitHub Action Secrets, see the [GitHub documentation](https://docs.github.com/en/actions/security-guides/encrypted-secrets#creating-encrypted-secrets-for-a-repository).
 2. In your [`dagster-cloud-deploy.yml`](https://github.com/dagster-io/dagster-cloud-hybrid-quickstart/blob/main/.github/workflows/dagster-cloud-deploy.yml) workflow file, do the following:
 
-- Set the DAGSTER_CLOUD_ORGANIZATION environment variable to your Dagster+ organization name.
+- Set the `DAGSTER_CLOUD_ORGANIZATION` environment variable to your Dagster+ organization name.
 - Uncomment the step that is relevant to your Docker container registry. For example, if using DockerHub, uncomment the DockerHub step. Make sure you have set up the relevant secrets for building and uploading your Docker images.
 
 After you make the above changes and commit the workflow file, the CI process should be triggered to deploy your GitHub repository to Dagster+.
