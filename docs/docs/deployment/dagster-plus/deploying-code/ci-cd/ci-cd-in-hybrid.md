@@ -20,7 +20,7 @@ You can configure CI/CD for your project using GitHub or a non-GitHub CI/CD prov
 
 ## GitHub
 
-To set up continuous integration using GitHub Actions, you can the Dagster+ Hybrid quickstart template, which is a template with everything you need to get started using Hybrid deployment in Dagster+, or you can use your own code.
+To set up continuous integration using GitHub Actions, you can use the Dagster+ Hybrid quickstart template, which is a template with everything you need to get started using Hybrid deployment in Dagster+, or you can use your own code.
 
 - **If using the template:** Clone the [template repository](https://github.com/dagster-io/dagster-cloud-hybrid-quickstart).
 - **If using your own code:** Copy the [GitHub workflow file](https://github.com/dagster-io/dagster-cloud-hybrid-quickstart/blob/main/.github/workflows/dagster-cloud-deploy.yml) from the template repository and add it to your repository.
