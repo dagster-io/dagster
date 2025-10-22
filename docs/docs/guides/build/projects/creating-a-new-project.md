@@ -148,6 +148,7 @@ To see your assets, navigate to [http://localhost:3000](http://localhost:3000).
 - [Add integrations](#add-integrations)
 - [Use environment variables and secrets](#use-environment-variables-and-secrets)
 - [Add and run unit tests](#add-and-run-unit-tests)
+- [Create custom components](#create-custom-components)
 
 ### Add new Python dependencies
 
@@ -178,10 +179,17 @@ For more information on testing, see the following docs:
 * [Testing component definitions](/guides/build/components/building-pipelines-with-components/testing-component-definitions) contains testing best practices for definitions scaffolded existing components.
 * [Testing your component](/guides/build/components/creating-new-components/testing-your-component) has best practices for testing custom components.
 
-## Next steps
+### Create custom components
 
-{/* TODO make this visible once the dev to prod guide is updated: Once your project is ready to move to production, check out our recommendations for [transitioning data pipelines from development to production](/guides/operate/dev-to-prod). */}
+If built-in Dagster components and integrations don't meet your needs, you can [create custom components](/guides/build/components/creating-new-components) to share with your team.
 
-* Add [integrations](/integrations/libraries) to your project
-* Create your own [Dagster Components](/guides/build/components/creating-new-components) to share with your team
-* Deploy your project to [Dagster+](/deployment/dagster-plus) or [your own infrastructure](/deployment/oss)
+## Step 5: Deploy your project to the cloud
+
+<Tabs>
+   <TabItem value="oss" label="OSS deployment">
+   To deploy to OSS, see the OSS deployment documentation.
+   </TabItem>
+   <TabItem value="plus" label="Dagster+ deployment">
+   To deploy to Dagster+, TK
+   </TabItem>
+</Tabs>
