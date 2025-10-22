@@ -2,8 +2,8 @@ from datetime import timedelta
 
 import dagster as dg
 import pytest
+from dagster import apply_freshness_policy
 from dagster._check import CheckError, ParameterCheckError
-from dagster._core.definitions.assets.definition.asset_spec import apply_freshness_policy
 from dagster._core.definitions.decorators.asset_decorator import asset
 from dagster._core.definitions.freshness import (
     INTERNAL_FRESHNESS_POLICY_METADATA_KEY,
