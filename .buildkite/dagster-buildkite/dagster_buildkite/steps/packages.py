@@ -500,6 +500,7 @@ EXAMPLE_PACKAGES_WITH_CUSTOM_CONFIG: list[PackageSpec] = [
         unsupported_python_versions=[
             AvailablePythonVersion.V3_12,  # duckdb
             AvailablePythonVersion.V3_13,  # duckdb
+            AvailablePythonVersion.V3_14,  # duckdb
         ],
     ),
     PackageSpec(
@@ -517,6 +518,7 @@ EXAMPLE_PACKAGES_WITH_CUSTOM_CONFIG: list[PackageSpec] = [
             # dagster-wandb dep
             AvailablePythonVersion.V3_12,
             AvailablePythonVersion.V3_13,
+            AvailablePythonVersion.V3_14,
         ],
     ),
     # The 6 tutorials referenced in cloud onboarding cant test "source" due to dagster-cloud dep
@@ -530,6 +532,7 @@ EXAMPLE_PACKAGES_WITH_CUSTOM_CONFIG: list[PackageSpec] = [
         unsupported_python_versions=[
             AvailablePythonVersion.V3_12,  # duckdb
             AvailablePythonVersion.V3_13,  # duckdb
+            AvailablePythonVersion.V3_14,  # duckdb
         ],
     ),
     PackageSpec(
@@ -537,6 +540,7 @@ EXAMPLE_PACKAGES_WITH_CUSTOM_CONFIG: list[PackageSpec] = [
         unsupported_python_versions=[
             AvailablePythonVersion.V3_12,  # duckdb
             AvailablePythonVersion.V3_13,  # duckdb
+            AvailablePythonVersion.V3_14,  # duckdb
         ],
     ),
     PackageSpec(
@@ -558,6 +562,7 @@ EXAMPLE_PACKAGES_WITH_CUSTOM_CONFIG: list[PackageSpec] = [
             # airflow
             AvailablePythonVersion.V3_12,
             AvailablePythonVersion.V3_13,
+            AvailablePythonVersion.V3_14,
         ],
     ),
     PackageSpec(
@@ -567,6 +572,7 @@ EXAMPLE_PACKAGES_WITH_CUSTOM_CONFIG: list[PackageSpec] = [
             # airflow
             AvailablePythonVersion.V3_12,
             AvailablePythonVersion.V3_13,
+            AvailablePythonVersion.V3_14,
         ],
     ),
 ]
@@ -580,6 +586,7 @@ def _unsupported_dagster_python_versions(
             AvailablePythonVersion.V3_11,
             AvailablePythonVersion.V3_12,
             AvailablePythonVersion.V3_13,
+            AvailablePythonVersion.V3_14,
         ]
 
     if tox_factor and tox_factor.factor in {
@@ -695,6 +702,7 @@ LIBRARY_PACKAGES_WITH_CUSTOM_CONFIG: list[PackageSpec] = [
             # dagster-airflow
             AvailablePythonVersion.V3_12,
             AvailablePythonVersion.V3_13,
+            AvailablePythonVersion.V3_14,
         ],
     ),
     PackageSpec(
@@ -704,9 +712,9 @@ LIBRARY_PACKAGES_WITH_CUSTOM_CONFIG: list[PackageSpec] = [
             for deps_factor in ["dbt17", "dbt18", "dbt19", "dbt110"]
             for command_factor in ["cloud", "core-main", "core-derived-metadata"]
         ],
-        # dbt-core 1.7's protobuf<5 constraint conflicts with the grpc requirement for Python 3.13
+        # dbt-core 1.7's protobuf<5 constraint conflicts with the grpc requirement for Python 3.13+
         unsupported_python_versions=(
-            lambda tox_factor: [AvailablePythonVersion.V3_13]
+            lambda tox_factor: [AvailablePythonVersion.V3_13, AvailablePythonVersion.V3_14]
             if tox_factor and tox_factor.factor.startswith("dbt17")
             else []
         ),
@@ -736,6 +744,7 @@ LIBRARY_PACKAGES_WITH_CUSTOM_CONFIG: list[PackageSpec] = [
             # airflow
             AvailablePythonVersion.V3_12,
             AvailablePythonVersion.V3_13,
+            AvailablePythonVersion.V3_14,
         ],
         env_vars=[
             "AIRLIFT_MWAA_TEST_ENV_NAME",
@@ -946,6 +955,7 @@ LIBRARY_PACKAGES_WITH_CUSTOM_CONFIG: list[PackageSpec] = [
         unsupported_python_versions=[
             AvailablePythonVersion.V3_12,
             AvailablePythonVersion.V3_13,
+            AvailablePythonVersion.V3_14,
         ],
     ),
     PackageSpec(
@@ -954,7 +964,11 @@ LIBRARY_PACKAGES_WITH_CUSTOM_CONFIG: list[PackageSpec] = [
         retries=2,  # Workaround for flaky kernel issues
         unsupported_python_versions=(
             lambda tox_factor: (
-                [AvailablePythonVersion.V3_12, AvailablePythonVersion.V3_13]
+                [
+                    AvailablePythonVersion.V3_12,
+                    AvailablePythonVersion.V3_13,
+                    AvailablePythonVersion.V3_14,
+                ]
                 if (tox_factor and tox_factor.factor == "papermill1")
                 else []
             )
@@ -967,6 +981,7 @@ LIBRARY_PACKAGES_WITH_CUSTOM_CONFIG: list[PackageSpec] = [
             # airflow
             AvailablePythonVersion.V3_12,
             AvailablePythonVersion.V3_13,
+            AvailablePythonVersion.V3_14,
         ],
     ),
     PackageSpec(
@@ -976,6 +991,7 @@ LIBRARY_PACKAGES_WITH_CUSTOM_CONFIG: list[PackageSpec] = [
             # airflow
             AvailablePythonVersion.V3_12,
             AvailablePythonVersion.V3_13,
+            AvailablePythonVersion.V3_14,
         ],
         queue=BuildkiteQueue.DOCKER,
         splits=2,
