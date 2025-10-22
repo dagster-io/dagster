@@ -718,6 +718,9 @@ class GrapheneAssetNode(graphene.ObjectType):
     def resolve_changedReasons(
         self, graphene_info: ResolveInfo
     ) -> Sequence[Any]:  # Sequence[GrapheneAssetChangedReason]
+        if not graphene_info.context.include_asset_changed_reasons():
+            return []
+
         asset_graph_differ = self._get_asset_graph_differ(graphene_info)
         if asset_graph_differ is None:
             # asset_graph_differ is None when not in a branch deployment

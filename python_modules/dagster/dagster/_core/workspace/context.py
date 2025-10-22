@@ -242,6 +242,9 @@ class BaseWorkspaceRequestContext(LoadingContext):
         owners = self.get_owners_for_selector(selector)
         return self.has_permission_for_owners(permission, owners)
 
+    def include_asset_changed_reasons(self) -> bool:
+        return True
+
     def get_owners_for_selector(
         self,
         selector: Union[AssetKey, AssetCheckKey, JobSelector, ScheduleSelector, SensorSelector],
