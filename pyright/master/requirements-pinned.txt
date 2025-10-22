@@ -55,6 +55,7 @@ avro==1.12.1
 avro-gen3==0.7.16
 aws-sam-translator==1.101.0
 aws-xray-sdk==2.14.0
+azure-ai-ml==1.29.0
 azure-core==1.36.0
 azure-identity==1.25.1
 azure-storage-blob==12.27.0
