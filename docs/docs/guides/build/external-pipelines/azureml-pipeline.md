@@ -44,7 +44,9 @@ To run the examples, you'll need to:
 
 ## Step 1: Create an Azure ML environment for Dagster Pipes
 
-Your Azure ML job will require an Azure ML environment that contains the `dagtster-pipes` library. Since the Azure ML job will be communicating with the Dagster orchestrator via Azure Blob Storage, we will also need to install the `azure-identity` and `azure-storage-blob` Python libraries.
+
+Your Azure ML job will require an Azure ML environment that contains the `dagster-pipes` library. Since the Azure ML job will be communicating with the Dagster orchestrator via Azure Blob Storage, we will also need to install the `azure-identity` and `azure-storage-blob` Python libraries.
+
 
 In your Azure ML dashboard, choose "Add a Custom Environment", select the environment source you want to use (e.g. `sklearn-1.5:33`), and edit the list of Python packages to install.
 
