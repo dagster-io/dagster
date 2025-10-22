@@ -168,7 +168,9 @@ def get_asset_keys_by_output_name_for_source(
         raise KeyError(f"Could not find a dbt source with name: {source_name}")
 
     return {
-        dagster_name_fn(value): dagster_dbt_translator.get_asset_spec(manifest, unique_id, None).key
+        dagster_name_fn(value): dagster_dbt_translator.get_asset_spec(
+            manifest, unique_id, dbt_project
+        ).key
         for unique_id, value in matching.items()
     }
 
