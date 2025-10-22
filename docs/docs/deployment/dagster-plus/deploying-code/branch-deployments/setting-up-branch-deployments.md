@@ -9,90 +9,47 @@ import DagsterPlus from '@site/docs/partials/\_DagsterPlus.md';
 
 <DagsterPlus />
 
-In this guide, we'll walk you through setting up Branch Deployments for a code location. Once you're finished, any time a PR is created or updated in your repository, it will automatically create or update an associated branch deployment in Dagster+.
-
-<details>
-  <summary>Prerequisites</summary>
-
-To follow the steps in this guide, you'll need:
-
-- **Organization Admin** permissions in Dagster+
-- The ability to run a new agent in your infrastructure (only if you are using a **Hybrid deployment**)
-
-</details>
+This guide covers setting up branch deployments for a [code location](/deployment/code-locations) using GitHub, GitLab, or an alternative CI platform using the dagster-cloud CLI. Once you've set up branch deployments, any time you create or update a pull request (or merge request) in the repository for your code location, it will automatically create or update an associated branch deployment in Dagster+.
 
 :::info
 
-Output created from a branch deployment - such as a database, table, etc. - won't be automatically removed from storage once a branch is merged or closed. Refer to the [Best practices section](#best-practices) for info on how to handle this.
+Output created from a branch deployment -- such as a database, table, etc. -- won't be automatically removed from storage once a branch is merged or closed. For more information on handling this output, see the [best practices section](#best-practices).
 
 :::
 
-## Step 1: Choose a method
+## Prerequisites
 
-Choose a method for setting up branch deployments:
+To follow the steps in this guide, you'll need:
 
-<Tabs groupId="method">
-  <TabItem value="github" label="GitHub">
+- [**Organization Admin** permissions](/deployment/dagster-plus/authentication-and-access-control/rbac/user-roles-permissions) in Dagster+.
+- **If using a Hybrid deployment:** The ability to run a new agent in your infrastructure.
 
-You can set up GitHub to automatically create branch deployments for new PRs, using GitHub Actions.
+## Step 1: Generate a Dagster+ agent token
 
-Using this approach to branch deployments may be a good fit if:
-
-- You use **GitHub** for version control
-- You want Dagster to fully automate Branch Deployments
-
-</TabItem>
-<TabItem value="gitlab" label="GitLab">
-
-You can set up GitLab to automatically create branch deployments for new PRs, using GitLab's CI/CD workflow.
-
-Using this approach to branch deployments may be a good fit if:
-
-- You use **GitLab** for version control
-- You want Dagster to fully automate Branch Deployments
-
-</TabItem>
-<TabItem value="cli" label="dagster-cloud CLI">
-
-You can manually execute dagster-cloud CLI commands to deploy and manage branch deployments.
-
-Using this approach to branch deployments may be a good fit if:
-
-- You don't use GitHub or GitLab for version control
-- You use an alternative CI platform
-- You want full control over Branch Deployment configuration
-
-This is a more advanced option than the other methods.
-
-  </TabItem>
-</Tabs>
-
-## Step 2: Generate a Dagster+ agent token
-
-In this step, you'll generate a token for the Dagster+ agent. The Dagster+ agent will use this to authenticate to the agent API.
+The first step is to generate a token for the Dagster+ agent. The Dagster+ agent will use this token to authenticate to the agent API.
 
 1. Sign in to your Dagster+ instance.
-2. Click the **user menu (your icon) > Organization Settings**.
-3. In the **Organization Settings** page, click the **Tokens** tab.
+2. Click the **user menu (your profile icon) > Organization Settings**.
+3. On the **Organization Settings** page, click the **Tokens** tab.
 4. Click the **Create agent token** button.
-5. After the token has been created, click **Reveal token**.
+5. After the token has been created, click **Reveal token** and copy the token.
 
-Keep the token somewhere handy - you'll need it to complete the setup.
+Keep the token somewhere handy, as you'll need it to complete the setup.
 
-## Step 3: Create and configure a branch deployment agent
+## Step 2: Create and configure a branch deployment agent (Hybrid only)
 
-:::note
+:::info
 
-If you are using [Serverless deployment](/deployment/dagster-plus/serverless), you can skip this step.
+If you are using [Dagster+ Serverless](/deployment/dagster-plus/serverless), you can skip this step.
 
 :::
 
-While you can use your existing production agent, we recommend creating a dedicated branch deployment agent. This ensures that your production instance isn't negatively impacted by the workload associated with branch deployments.
+While you can use your existing production agent for branch deployment on Dagster+ Hybrid, we recommend creating a dedicated branch deployment agent. This ensures that your production instance isn't negatively impacted by the workload associated with branch deployments.
 
 <Tabs>
   <TabItem value="ecs" label="Amazon ECS">
 
-1. **Deploy an ECS agent to serve your branch deployments**. Follow the [ECS agent](/deployment/dagster-plus/hybrid/amazon-ecs/new-vpc) setup guide, making sure to set the **Enable Branch Deployments** parameter if using the CloudFormation template. If you are running an existing agent, follow the [upgrade guide](/deployment/dagster-plus/hybrid/amazon-ecs/existing-vpc) to ensure your template is up-to-date. Then, turn on the **Enable Branch Deployments** parameter.
+1. **Deploy an ECS agent to serve your branch deployments**. Follow the [ECS agent](/deployment/dagster-plus/hybrid/amazon-ecs/new-vpc) setup guide, making sure to set the **Enable branch deployments** parameter if using the CloudFormation template. If you are running an existing agent, follow the [upgrade guide](/deployment/dagster-plus/hybrid/amazon-ecs/existing-vpc) to ensure your template is up-to-date. Then, turn on the **Enable branch deployments** parameter.
 
 2. **Create a private [Amazon Elastic Registry (ECR) repository](https://console.aws.amazon.com/ecr/repositories).** Refer to the [AWS ECR documentation](https://docs.aws.amazon.com/AmazonECR/latest/userguide/repository-create.html) for instructions.
 
@@ -116,7 +73,7 @@ Keep this around, as you'll need it in a later step.
   </TabItem>
   <TabItem value="docker" label="Docker">
 
-1. Set up a new Docker agent. Refer to the [Docker agent setup guide](/deployment/dagster-plus/hybrid/docker) for instructions.
+1. Set up a new Docker agent. For instructions, see the [Docker agent setup guide](/deployment/dagster-plus/hybrid/docker).
 2. After the agent is set up, modify the `dagster.yaml` file as follows:
 
    - Set the `dagster_cloud_api.branch_deployments` field to `true`
@@ -133,7 +90,7 @@ Keep this around, as you'll need it in a later step.
   </TabItem>
   <TabItem value="k8s" label="Kubernetes" default>
 
-1. Set up a new Kubernetes agent. Refer to the [Kubernetes agent setup guide](/deployment/dagster-plus/hybrid/kubernetes) for instructions.
+1. Set up a new Kubernetes agent. For instructions, see the [Kubernetes agent setup guide](/deployment/dagster-plus/hybrid/kubernetes).
 
 2. After the agent is set up, modify your Helm values file to include the following:
 
@@ -142,31 +99,49 @@ Keep this around, as you'll need it in a later step.
   </TabItem>
 </Tabs>
 
-## Step 4: Set up branch deployments
+## Step 3: Automate branch deployment creation
 
 <Tabs groupId="method">
   <TabItem value="github" label="GitHub">
 
-**Step 4.1: Add GitHub CI/CD script to your project**
-:::note
-If you used the GitHub app to configure your repository, this step isn't required, and you can skip ahead to Step 4.5.
+You can set up GitHub to automatically create branch deployments for new pull requests, using GitHub Actions.
+
+This approach may be a good fit if:
+
+- You use **GitHub** for version control
+- You want Dagster to fully automate branch deployments
+
+**Step 3.1: Add GitHub CI/CD script to your project**
+
+:::info
+
+If you used the GitHub app in Dagster+ Serverless to configure your repository, you can skip ahead to Step 3.5.
+
 :::
 
-Copy the following files to your project, and **replace** all references to `quickstart-etl` with the name of your project:
+Copy the following files to your project, and **replace** all references to `quickstart_etl` with the name of your project:
 
-- [`dagster_cloud.yaml`](https://github.com/dagster-io/dagster-cloud-hybrid-quickstart/blob/main/dagster_cloud.yaml)
-- [`.github/workflows/dagster-cloud-deploy.yml`](https://github.com/dagster-io/dagster-cloud-hybrid-quickstart/blob/main/.github/workflows/dagster-cloud-deploy.yml) (for **Hybrid** deployments)
-- [`.github/workflows/dagster-plus-deploy.yml`](https://github.com/dagster-io/dagster-cloud-serverless-quickstart/blob/main/.github/workflows/dagster-plus-deploy.yml) (for **Serverless** deployments)
+<Tabs groupId="deploymentType">
+  <TabItem value="serverless" label="Dagster+ Serverless">
+    - [`dagster_cloud.yaml`](https://github.com/dagster-io/dagster-cloud-serverless-quickstart/blob/main/dagster_cloud.yaml)
+    - [`.github/workflows/dagster-plus-deploy.yml`](https://github.com/dagster-io/dagster-cloud-serverless-quickstart/blob/main/.github/workflows/dagster-plus-deploy.yml)
 
-In the next step, you'll modify these files to work with your Dagster+ setup.
+  </TabItem>
+  <TabItem value="hybrid" label="Dagster+ Hybrid">
+  - [`dagster_cloud.yaml`](https://github.com/dagster-io/dagster-cloud-hybrid-quickstart/blob/main/dagster_cloud.yaml)
+  - [`.github/workflows/dagster-cloud-deploy.yml`](https://github.com/dagster-io/dagster-cloud-hybrid-quickstart/blob/main/.github/workflows/dagster-cloud-deploy.yml)
 
-**Step 4.2: Add the agent registry to dagster_cloud.yaml**
+  </TabItem>
+</Tabs>
 
-:::note
-If you used the GitHub app to configure your repository, this step isn't required, and you can skip ahead to Step 4.5.
+**Step 3.2: Add the agent registry to dagster_cloud.yaml**
+
+:::info
+
+If you used the GitHub app in Dagster+ Serverless to configure your repository, you can skip ahead to Step 3.5.
 :::
 
-In the `dagster_cloud.yaml` file, replace `build.registry` with the registry used by the [agent you created in Step 2](#step-2-generate-a-dagster-agent-token).
+In the `dagster_cloud.yaml` file, replace `build.registry` with the registry used by the [agent you created in step 1](#step-1-generate-a-dagster-agent-token).
 
 For example:
 
@@ -176,10 +151,12 @@ For example:
   title="dagster_cloud.yaml"
 />
 
-**Step 4.3: Configure GitHub Action secrets**
+**Step 3.3: Configure GitHub Action secrets**
 
-:::note
-If you used the GitHub app to configure your repository, this step isn't required, and you can skip ahead to Step 4.5.
+:::info
+
+If you used the GitHub app in Dagster+ Serverless to configure your repository, you can skip ahead to Step 3.5.
+
 :::
 
 1. In your GitHub repository, click the **Settings** tab.
@@ -189,13 +166,13 @@ If you used the GitHub app to configure your repository, this step isn't require
 5. In the **Value** field, paste the value of the secret.
 6. Click **Add secret**.
 
-Repeat steps 3-6 for each of the secrets required for the registry used by the agent you created in Step 2. See below for more details:
+Repeat steps 3-6 for each of the secrets required for the registry used by the agent you created in step 1. See below for more details:
 
 <Tabs>
 
 <TabItem value="docker" label="Docker">
 
-- `DAGSTER_CLOUD_API_TOKEN` - The Dagster+ agent token you created in step 2
+- `DAGSTER_CLOUD_API_TOKEN` - The Dagster+ agent token you created in step 1
 - `DAGSTER_CLOUD_URL` - Your Dagster+ base URL (`https://my_org.dagster.cloud`)
 - `DOCKERHUB_USERNAME` - Your DockerHub username
 - `DOCKERHUB_TOKEN` - A DockerHub [access token](https://docs.docker.com/docker-hub/access-tokens/#create-an-access-token)
@@ -204,7 +181,7 @@ Repeat steps 3-6 for each of the secrets required for the registry used by the a
 
 <TabItem value="ecr" label="Amazon ECR">
 
-- `DAGSTER_CLOUD_API_TOKEN` - The Dagster+ agent token you created in step 2
+- `DAGSTER_CLOUD_API_TOKEN` - The Dagster+ agent token you created in step 1
 - `DAGSTER_CLOUD_URL` - Your Dagster+ base URL (`https://my_org.dagster.cloud`)
 - `AWS_ACCESS_KEY` - The **Access key ID** of the AWS IAM user you created in step 3
 - `AWS_SECRET_ACCESS_KEY` - The **Secret access key** of the AWS IAM user you created in step 3
@@ -214,7 +191,7 @@ Repeat steps 3-6 for each of the secrets required for the registry used by the a
 
 <TabItem value="gcr" label="Google Container Registry (GCR)">
 
-- `DAGSTER_CLOUD_API_TOKEN` - The Dagster+ agent token you created in step 2
+- `DAGSTER_CLOUD_API_TOKEN` - The Dagster+ agent token you created in step 1
 - `DAGSTER_CLOUD_URL` - Your Dagster+ base URL (`https://my_org.dagster.cloud`)
 - `GCR_JSON_KEY` - Your GCR JSON credentials
 
@@ -222,15 +199,38 @@ Repeat steps 3-6 for each of the secrets required for the registry used by the a
 
 </Tabs>
 
-**Step 4.4: Configure GitHub Action**
+**Step 3.4: Configure GitHub Action**
 
-:::note
-If you used the GitHub app to configure your repository, this step isn't required, and you can skip ahead to Step 4.5.
+:::info
+
+If you used the GitHub app in Dagster+ Serverless to configure your repository, you can skip ahead to Step 3.5.
+
 :::
 
-In this step, you'll update the GitHub workflow files in your repository to set up Docker registry access.
+In this step, you'll update the GitHub workflow file in your repository to set up Docker registry access.
 
-In the `.github/workflows/dagster-cloud-deploy.yml` file, un-comment the `step` associated with your registry. For example, for an Amazon ECR registry, you'd un-comment the following portion of the workflow file:
+<Tabs groupId="deploymentType">
+  <TabItem value="serverless" label="Dagster+ Serverless">
+  In the `.github/workflows/dagster-plus-deploy.yml` file, un-comment the `step` associated with your registry. For example, for an Amazon ECR registry, you'd un-comment the following portion of the workflow file:
+
+```yaml
+# dagster-plus-deploy.yml
+jobs:
+  dagster-cloud-deploy:
+    steps:
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v1
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ secrets.AWS_REGION }}
+```
+
+Save and commit the file to your repository.
+
+  </TabItem>
+  <TabItem value="hybrid" label="Dagster+ Hybrid">
+  In the `.github/workflows/dagster-cloud-deploy.yml` file, un-comment the `step` associated with your registry. For example, for an Amazon ECR registry, you'd un-comment the following portion of the workflow file:
 
 ```yaml
 # dagster-cloud-deploy.yml
@@ -247,7 +247,10 @@ jobs:
 
 Save and commit the file to your repository.
 
-**Step 4.5: Verify GitHub action runs**
+  </TabItem>
+</Tabs>
+
+**Step 3.5: Verify GitHub action runs**
 
 The last step is to verify that the GitHub Action runs successfully.
 
@@ -259,10 +262,19 @@ The last step is to verify that the GitHub Action runs successfully.
   </TabItem>
   <TabItem value="gitlab" label="GitLab">
 
-**Step 4.1: add GitLab CI/CD script to your project**
+**Step 3.1: add GitLab CI/CD script to your project**
+
+You can set up GitLab to automatically create branch deployments for new merge request, using GitLab's CI/CD workflow.
+
+Using this approach to branch deployments may be a good fit if:
+
+- You use **GitLab** for version control
+- You want Dagster to fully automate branch deployments
 
 :::note
-If you used the GitLab app to configure your repository, this step isn't required and you can skip ahead to Step 4.5.
+
+If you used the GitLab app to configure your repository, this step isn't required, you can skip ahead to Step 3.5.
+
 :::
 
 Copy the following files to your project, and **replace** all references to `quickstart-etl` with the name of your project:
@@ -273,13 +285,15 @@ Copy the following files to your project, and **replace** all references to `qui
 
 In the next step, you'll modify these files to work with your Dagster+ setup.
 
-**Step 4.2: add the agent registry to dagster_cloud.yaml**
+**Step 3.2: add the agent registry to dagster_cloud.yaml**
 
 :::note
-If you used the GitLab app to configure your repository, this step isn't required and you can skip ahead to Step 4.5.
+
+If you used the GitLab app to configure your repository, this step isn't required, you can skip ahead to Step 3.5.
+
 :::
 
-In the `dagster_cloud.yaml` file, replace `build.registry` with the registry used by the [agent you created in Step 2](#step-2-generate-a-dagster-agent-token).
+In the `dagster_cloud.yaml` file, replace `build.registry` with the registry used by the [agent you created in step 1](#step-1-generate-a-dagster-agent-token).
 
 For example:
 
@@ -289,10 +303,12 @@ For example:
   title="dagster_cloud.yaml"
 />
 
-**Step 4.3: configure GitLab CI/CD variables**
+**Step 3.3: configure GitLab CI/CD variables**
 
 :::note
-If you used the GitLab app to configure your repository, this step isn't required and you can skip ahead to Step 4.5.
+
+If you used the GitLab app to configure your repository, this step isn't required, you can skip ahead to Step 3.5.
+
 :::
 
 1. In your project, click the **Settings** tab.
@@ -342,10 +358,12 @@ Repeat steps 3-6 for each of the secrets required for your registry type:
 
 </Tabs>
 
-**Step 4.4: configure GitLab CI/CD script**
+**Step 3.4: configure GitLab CI/CD script**
 
 :::note
-If you used the GitLab app to configure your repository, this step isn't required and you can skip ahead to Step 4.5.
+
+If you used the GitLab app to configure your repository, this step isn't required, you can skip ahead to Step 3.5.
+
 :::
 
 In this step, you'll update the GitLab CI/CD config to set up Docker registry access.
@@ -362,7 +380,7 @@ build-image:
 
 Save and commit the files to the project.
 
-**Step 4.5: verify GitLab pipeline runs**
+**Step 3.5: verify GitLab pipeline runs**
 
 The last step is to verify that the GitLab pipeline runs successfully.
 
@@ -373,6 +391,14 @@ The last step is to verify that the GitLab pipeline runs successfully.
 
   </TabItem>
   <TabItem value="cli" label="dagster-cloud CLI">
+
+You can manually execute dagster-cloud CLI commands to deploy and manage branch deployments. This is a more advanced option than the other methods.
+
+This approach may be a good fit if:
+
+- You don't use GitHub or GitLab for version control
+- You use an alternative CI platform
+- You want full control over branch deployment configuration
 
 Whenever the state of your branch is updated, Dagster+ expects the following steps to occur:
 
@@ -388,7 +414,7 @@ The following examples assume the registry URL and image tag are stored in the `
 
 :::
 
-**Step 4.1 Create a branch deployment associated with the branch**
+**Step 3.1 Create a branch deployment associated with the branch**
 
 Execute the following command within your CI/CD process:
 
@@ -396,7 +422,7 @@ Execute the following command within your CI/CD process:
 BRANCH_DEPLOYMENT_NAME=$(
     dagster-cloud branch-deployment create-or-update \
         --organization $ORGANIZATION_NAME \
-        --api-token $DAGSTER_CLOUD_API_TOKEN \ # Agent token from Step 1
+        --api-token $DAGSTER_CLOUD_API_TOKEN \ # Agent token from step 1
         --git-repo-name $REPOSITORY_NAME \ # Git repository name
         --branch-name $BRANCH_NAME \ # Git branch name
         --commit-hash $COMMIT_SHA \ # Latest commit SHA on the branch
@@ -404,7 +430,7 @@ BRANCH_DEPLOYMENT_NAME=$(
 )
 ```
 
-One or more additional parameters can optionally be supplied to the `create-or-update` command to enhance the Branch Deployments UI in Dagster+:
+One or more additional parameters can optionally be supplied to the `create-or-update` command to enhance the branch deployments UI in Dagster+:
 
 ```shell
 BRANCH_DEPLOYMENT_NAME=$(
@@ -442,7 +468,7 @@ BRANCH_DEPLOYMENT_NAME=$(
 )
 ```
 
-**Step 4.2 Deploy your code to the branch deployment**
+**Step 3.2 Deploy your code to the branch deployment**
 
 Execute the following command within your CI/CD process:
 
@@ -468,36 +494,43 @@ Once configured, branch deployments can be accessed:
 <Tabs>
   <TabItem value="From a GitHub pull request">
 
-Every pull request in the repository contains a **View in Cloud** link:
+Every pull request in the repository contains a **View in Cloud** link, which will open a branch deployment - or a preview of the changes - in Dagster+.
 
 ![View in Cloud preview link highlighted in a GitHub pull request](/images/dagster-plus/features/branch-deployments/github-cloud-preview-link.png)
-
-Clicking the link will open a branch deployment - or a preview of the changes - in Dagster+.
 
   </TabItem>
   <TabItem value="In Dagster+">
 
 :::note
 
-To access a Branch Deployment in Dagster+, you need permissions that grant you [access to branch deployments](/deployment/dagster-plus/authentication-and-access-control/rbac/user-roles-permissions#user-permissions-reference) and the code location associated with the branch deployment.
+To access a branch deployment in Dagster+, you need permissions that grant you [access to branch deployments](/deployment/dagster-plus/authentication-and-access-control/rbac/user-roles-permissions#user-permissions-reference) and the code location associated with the branch deployment.
 
 :::
 
 You can also access branch deployments directly in Dagster+ from the **deployment switcher**:
 
-![Highlighted branch deployment in the Dagster+ deployment switcher](/images/dagster-plus/features/branch-deployments/dagster-ui-deployment-switcher.png)
+![Highlighted branch deployment in the Dagster+ deployment switcher](/images/dagster-plus/full-deployments/deployment-switcher.png)
 
   </TabItem>
 </Tabs>
 
+## Changing the base deployment
+
+The base deployment has two main purposes:
+
+- It sets which [full deployment](/deployment/dagster-plus/deploying-code/full-deployments) is used to propagate Dagster+ managed environment variables that are scoped for branch deployments.
+- It is used in the UI to [track changes](/deployment/dagster-plus/deploying-code/branch-deployments/change-tracking) to the branch deployment from its parent full deployment.
+
+The default base for branch deployments is `prod`. To configure a different full deployment as the base, create a branch deployment using the dagster-cloud CLI (see step 3.1 above) and specify the deployment with the optional `--base-deployment-name` parameter.
+
 ## Best practices
 
-To ensure the best experience when using Branch Deployments, we recommend:
+To ensure the best experience when using branch deployments, we recommend:
 
-- **Configuring jobs based on environment**. Dagster automatically sets [environment variables](/deployment/dagster-plus/management/environment-variables/built-in) containing deployment metadata, allowing you to parameterize jobs based on the executing environment. Use these variables in your jobs to configure things like connection credentials, databases, and so on. This practice will allow you to use Branch Deployments without impacting production data.
-- **Creating jobs to automate output cleanup.** As Branch Deployments don't automatically remove the output they create, you may want to create an additional Dagster job to perform the cleanup.
+- **Configuring jobs based on environment**. Dagster automatically sets [environment variables](/deployment/dagster-plus/management/environment-variables/built-in) containing deployment metadata, allowing you to parameterize jobs based on the executing environment. Use these variables in your jobs to configure things like connection credentials, databases, and so on. This practice will allow you to use branch deployments without impacting production data.
+- **Creating jobs to automate output cleanup.** As branch deployments don't automatically remove the output they create, you may want to create an additional Dagster job to perform the cleanup.
 
 ## Next steps
 
-- Learn more about [branch deployments](/deployment/dagster-plus/ci-cd/branch-deployments)
-- Learn how to [track changes on a branch deployment](/deployment/dagster-plus/ci-cd/branch-deployments/change-tracking)
+- Learn more about [branch deployments](/deployment/dagster-plus/deploying-code/branch-deployments)
+- Learn how to [track changes on a branch deployment](/deployment/dagster-plus/deploying-code/branch-deployments/change-tracking)

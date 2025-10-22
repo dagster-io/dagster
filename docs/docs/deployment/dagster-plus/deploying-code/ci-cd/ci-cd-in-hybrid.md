@@ -1,8 +1,7 @@
 ---
-description: Configure CI/CD for Dagster+ Hybrid using GitHub Actions, or non-GitHub providers with the dagster-cloud CLI.
+description: Implement CI/CD for your Dagster+ Hybrid deployment with GitHub or a non-GitHub CI/CD provider.
 title: CI/CD in Dagster+ Hybrid
-sidebar_label: CI/CD in Hybrid
-sidebar_position: 7200
+sidebar_position: 7220
 tags: [dagster-plus-feature]
 ---
 
@@ -10,7 +9,7 @@ import UpdateGitHubActionVersion from '@site/docs/partials/_UpdateGitHubActionVe
 
 :::note
 
-This guide only applies to [Dagster+ Hybrid deployments](/deployment/dagster-plus/hybrid).
+This guide only applies to [Dagster+ Hybrid deployments](/deployment/dagster-plus/hybrid). For Serverless guidance, see [CI/CD in Serverless](/deployment/dagster-plus/deploying-code/ci-cd/ci-cd-in-serverless).
 
 :::
 
@@ -21,10 +20,10 @@ You can configure CI/CD for your project using GitHub or a non-GitHub CI/CD prov
 
 ## GitHub
 
-To set up continuous integration using GitHub Actions, you can the Dagster+ Hybrid Quickstart template, which is a template with everything you need to get started using Hybrid deployment in Dagster+, or you can use your own code.
+To set up continuous integration using GitHub Actions, you can use the Dagster+ Hybrid quickstart template, which is a template with everything you need to get started using Hybrid deployment in Dagster+, or you can use your own code.
 
 - **If using the template:** Clone the [template repository](https://github.com/dagster-io/dagster-cloud-hybrid-quickstart).
-- **If using your own code:** Copy the [GitHub workflow file](https://github.com/dagster-io/dagster-cloud-hybrid-quickstart/tree/main/.github/workflows) from the template repository and add it to your repository.
+- **If using your own code:** Copy the [GitHub workflow file](https://github.com/dagster-io/dagster-cloud-hybrid-quickstart/blob/main/.github/workflows/dagster-cloud-deploy.yml) from the template repository and add it to your repository.
 
 ### Configure the GitHub workflow YAML file
 
@@ -36,9 +35,11 @@ The GitHub workflow deploys your code to Dagster+ using these steps:
 
 To configure the workflow:
 
-1. In the repository, set the `DAGSTER_CLOUD_API_TOKEN` GitHub action secret to the Dagster+ agent token. See "[Managing agent tokens in Dagster+](/deployment/dagster-plus/management/tokens/agent-tokens)". For more information on GitHub Action Secrets, see the [GitHub documentation](https://docs.github.com/en/actions/security-guides/encrypted-secrets#creating-encrypted-secrets-for-a-repository).
-2. In your [`dagster-cloud-deploy.yml`](https://github.com/dagster-io/dagster-cloud-hybrid-quickstart/blob/main/.github/workflows/dagster-cloud-deploy.yml), set the DAGSTER_CLOUD_ORGANIZATION environment variable to your Dagster+ organization name.
-3. In your `dagster-cloud-deploy.yml`, uncomment the step that is relevant to your Docker container registry. For example, if using DockerHub, uncomment the DockerHub step. Make sure you have set up the relevant secrets for building and uploading your Docker images.
+1. In the repository, set the `DAGSTER_CLOUD_API_TOKEN` GitHub action secret to the Dagster+ agent token. See [Managing agent tokens in Dagster+](/deployment/dagster-plus/management/tokens/agent-tokens). For more information on GitHub Action Secrets, see the [GitHub documentation](https://docs.github.com/en/actions/security-guides/encrypted-secrets#creating-encrypted-secrets-for-a-repository).
+2. In your [`dagster-cloud-deploy.yml`](https://github.com/dagster-io/dagster-cloud-hybrid-quickstart/blob/main/.github/workflows/dagster-cloud-deploy.yml) workflow file, do the following:
+
+- Set the `DAGSTER_CLOUD_ORGANIZATION` environment variable to your Dagster+ organization name.
+- Uncomment the step that is relevant to your Docker container registry. For example, if using DockerHub, uncomment the DockerHub step. Make sure you have set up the relevant secrets for building and uploading your Docker images.
 
 After you make the above changes and commit the workflow file, the CI process should be triggered to deploy your GitHub repository to Dagster+.
 
@@ -101,5 +102,6 @@ If you are using a non-GitHub CI/CD provider, your system should use the `dagste
 
 :::note
 
-Creating branch deployments using the CLI requires some additional steps. For more information, see "[Using branch deployments with the dagster-cloud CLI](/deployment/dagster-plus/ci-cd/branch-deployments/using-branch-deployments-with-the-cli).
+Creating branch deployments using the CLI requires some additional steps. For more information, see [Setting up branch deployments](/deployment/dagster-plus/deploying-code/branch-deployments/setting-up-branch-deployments).
+
 :::

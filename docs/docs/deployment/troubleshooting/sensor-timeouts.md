@@ -60,7 +60,7 @@ sensors:
 
 ### Dagster+
 
-The sensor timeout can be changed as a deployment setting: `default_sensor_timeout`. To configure deployment settings, see the [full deployment settings reference](/deployment/dagster-plus/full-deployments/deployment-settings-reference).
+The sensor timeout can be changed as a deployment setting: `default_sensor_timeout`. To configure deployment settings, see the [full deployment settings reference](/deployment/dagster-plus/deploying-code/full-deployments/full-deployment-settings-reference).
 
 Set the `default_sensor_timeout` to the number of seconds that you wish your sensors to time out at. Note that this will affect all sensors in your deployment, including sensors added after this change.
 
