@@ -5,7 +5,7 @@
 ### New
 
 - Proxy server heartbeat TTL is now configurable behind `DAGSTER_GRPC_PROXY_HEARTBEAT_TTL_SECONDS` (default 30 seconds).
-- [ui] Updated the custom time rannge picker.
+- [ui] Updated the custom time range picker.
 
 ### Bugfixes
 
