@@ -4,27 +4,21 @@
 
 ### New
 
-- Proxy server heartbeat TTL is now configurable behind `DAGSTER_GRPC_PROXY_HEARTBEAT_TTL_SECONDS` (default 30 seconds) (Thanks, [@cmpadden](https://github.com/cmpadden)!)
-- [ui] Updated the custome time rannge picker.
+- Proxy server heartbeat TTL is now configurable behind `DAGSTER_GRPC_PROXY_HEARTBEAT_TTL_SECONDS` (default 30 seconds).
+- [ui] Updated the custom time rannge picker.
 
 ### Bugfixes
 
 - Fixed an issue introduced in dagster 1.11.15 where code locations that previously loaded would sometimes fail to load with a `gRPC Error code: RESOURCE_EXHAUSTED` error.
 - Fixed an issue where definining a repository using a dictionary of job definitions with a key that did not match the name of the job would work when running dagster locally but not when using Dagster+.
-- Added a dependency on `python-dateutil` to `dagster-omni`. (Thanks, [@bollwyvl](https://github.com/bollwyvl)!)
-- Fixed top nav rendering twice in Dagster+.
 - [components] Fixed a bug that caused errors when using the `DbtProjectComponent`, `FivetranAccountComponent`, and similar state-based components in k8s deployments due to a missing `StateStorage` object in context.
+- [dagster-omni] Added a dependency on `python-dateutil` to `dagster-omni`. (Thanks, [@bollwyvl](https://github.com/bollwyvl)!)
 
-## Internal Repository Changes
-
-
-### Bugfixes
-
-- [ui] Fix home page performance for users with large numbers of automations and jobs.
 
 ### Dagster Plus
 
-- By default, no changelog entry will be produced for internal PRs. Changelog
+- [ui] Fixed top nav rendering twice in Dagster+.
+
 
 ## 1.11.15 (core) / 0.27.15 (libraries)
 
