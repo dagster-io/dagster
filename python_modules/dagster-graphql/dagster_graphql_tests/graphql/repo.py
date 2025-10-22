@@ -92,7 +92,7 @@ from dagster._core.definitions.definitions_class import Definitions
 from dagster._core.definitions.events import Failure
 from dagster._core.definitions.executor_definition import in_process_executor
 from dagster._core.definitions.external_asset import external_asset_from_spec
-from dagster._core.definitions.freshness import InternalFreshnessPolicy
+from dagster._core.definitions.freshness import FreshnessPolicy
 from dagster._core.definitions.freshness_policy import LegacyFreshnessPolicy
 from dagster._core.definitions.job_definition import JobDefinition
 from dagster._core.definitions.metadata import MetadataValue
@@ -1713,7 +1713,7 @@ def req_config_job():
 
 @asset(
     owners=["user@dagsterlabs.com", "team:team1"],
-    freshness_policy=InternalFreshnessPolicy.time_window(
+    freshness_policy=FreshnessPolicy.time_window(
         fail_window=timedelta(minutes=10), warn_window=timedelta(minutes=5)
     ),
 )
@@ -1728,7 +1728,7 @@ def asset_2():
 
 @asset(
     deps=[AssetKey("asset_2")],
-    freshness_policy=InternalFreshnessPolicy.time_window(
+    freshness_policy=FreshnessPolicy.time_window(
         fail_window=timedelta(minutes=10), warn_window=timedelta(minutes=5)
     ),
 )

@@ -27,7 +27,7 @@ from dagster._core.definitions.declarative_automation.automation_condition impor
     AutomationCondition,
 )
 from dagster._core.definitions.events import AssetKey, CoercibleToAssetKey
-from dagster._core.definitions.freshness import InternalFreshnessPolicy
+from dagster._core.definitions.freshness import FreshnessPolicy
 from dagster._core.definitions.freshness_policy import LegacyFreshnessPolicy
 from dagster._core.definitions.partitions.definition import PartitionsDefinition
 from dagster._core.definitions.partitions.mapping import PartitionMapping
@@ -155,7 +155,7 @@ class AssetSpec(IHasInternalInit, IHaveNew, LegacyNamedTupleMixin):
     skippable: PublicAttr[bool]
     code_version: PublicAttr[Optional[str]]
     legacy_freshness_policy: PublicAttr[Optional[LegacyFreshnessPolicy]]
-    freshness_policy: PublicAttr[Optional[InternalFreshnessPolicy]]
+    freshness_policy: PublicAttr[Optional[FreshnessPolicy]]
     automation_condition: PublicAttr[Optional[AutomationCondition]]
     owners: PublicAttr[Sequence[str]]
     tags: PublicAttr[Mapping[str, str]]
@@ -176,7 +176,7 @@ class AssetSpec(IHasInternalInit, IHaveNew, LegacyNamedTupleMixin):
         tags: Optional[Mapping[str, str]] = None,
         kinds: Optional[set[str]] = None,
         partitions_def: Optional[PartitionsDefinition] = None,
-        freshness_policy: Optional[InternalFreshnessPolicy] = None,
+        freshness_policy: Optional[FreshnessPolicy] = None,
         **kwargs,
     ):
         from dagster._core.definitions.assets.definition.asset_dep import (
@@ -216,7 +216,7 @@ class AssetSpec(IHasInternalInit, IHaveNew, LegacyNamedTupleMixin):
             freshness_policy=check.opt_inst_param(
                 freshness_policy,
                 "freshness_policy",
-                InternalFreshnessPolicy,
+                FreshnessPolicy,
                 additional_message="If you are using a LegacyFreshnessPolicy, pass this in with the `legacy_freshness_policy` parameter instead.",
             ),
             legacy_freshness_policy=check.opt_inst_param(
@@ -326,7 +326,7 @@ class AssetSpec(IHasInternalInit, IHaveNew, LegacyNamedTupleMixin):
         kinds: Optional[set[str]] = ...,
         partitions_def: Optional[PartitionsDefinition] = ...,
         legacy_freshness_policy: Optional[LegacyFreshnessPolicy] = ...,
-        freshness_policy: Optional[InternalFreshnessPolicy] = ...,
+        freshness_policy: Optional[FreshnessPolicy] = ...,
     ) -> "AssetSpec":
         """Returns a new AssetSpec with the specified attributes replaced."""
         current_tags_without_kinds = {
@@ -461,7 +461,7 @@ def map_asset_specs(
 
 @checked
 def apply_freshness_policy(
-    spec: AssetSpec, policy: InternalFreshnessPolicy, overwrite_existing=True
+    spec: AssetSpec, policy: FreshnessPolicy, overwrite_existing=True
 ) -> AssetSpec:
     """Apply a freshness policy to an asset spec.
 
