@@ -68,9 +68,9 @@ Depending on your use case or if you're using Dagster+, you may also need to add
 | File/Directory | Description | OSS | Dagster+ |
 |----------------|-------------|-----|----------|
 | dagster.yaml   | Configures your Dagster instance, including defining storage locations, run launchers, sensors, and schedules. For more information. including a list of use cases and available options, see the [`dagster.yaml`](/deployment/oss/dagster-yaml) reference.<br /><br />For [Dagster+ Hybrid deployments](/deployment/dagster-plus/hybrid), this file can be used to customize the [Hybrid agent](/deployment/dagster-plus/management/customizing-agent-settings). | Optional | Optional |
-| dagster_cloud.yaml | Defines code locations for Dagster+. For more information, see the [`dagster_cloud.yaml` reference](/deployment/code-locations/dagster-cloud-yaml). | Not applicable | Recommended |
+| dagster_cloud.yaml | Defines code locations for Dagster+. For more information, see the [`dagster_cloud.yaml` reference](/deployment/code-locatons/configuring-code-locations/dagster-cloud-yaml). | Not applicable | Recommended |
 | deployment_settings.yaml | Configures settings for full deployments in Dagster+, including run queue priority and concurrency limits. Refer to the Deployment settings reference for more info.<br /><br />**Note:** This file can be named anything, but we recommend choosing an easily understandable name. | Not applicable | Optional |
-| workspace.yaml | Defines multiple code locations for local development or deploying to your infrastructure. For more information and available options, see the [`workspace.yaml` file reference](/deployment/code-locations/workspace-yaml) | Optional | Not applicable |
+| workspace.yaml | Defines multiple code locations for local development or deploying to your infrastructure. For more information and available options, see the [`workspace.yaml` file reference](/deployment/code-locatons/configuring-code-locations/workspace-yaml) | Optional | Not applicable |
 
 
 ## Deployment-specific project structures
@@ -83,7 +83,7 @@ Using the default project skeleton, let's take a look at how some example Dagste
 
 :::note Configuration file location
 
-With the exception of [`dagster_cloud.yaml`](/deployment/code-locations/dagster-cloud-yaml), it's not necessary for configuration files to be located with your project files. These files typically need to be located in `DAGSTER_HOME`. For example, in larger deployments, `DAGSTER_HOME` and Dagster infrastructure configuration can be managed separately from the code locations they support.
+With the exception of [`dagster_cloud.yaml`](/deployment/code-locatons/configuring-code-locations/dagster-cloud-yaml), it's not necessary for configuration files to be located with your project files. These files typically need to be located in `DAGSTER_HOME`. For example, in larger deployments, `DAGSTER_HOME` and Dagster infrastructure configuration can be managed separately from the code locations they support.
 
 :::
 

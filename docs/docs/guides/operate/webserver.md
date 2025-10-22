@@ -20,7 +20,7 @@ This command launches both the Dagster webserver and the [Dagster daemon](/deplo
 
 The command will print out the URL you can access the UI from in the browser, usually on port 3000.
 
-When invoked, the webserver will fetch definitions - such as assets, jobs, schedules, sensors, and resources - from a <PyObject section="definitions" module="dagster" object="Definitions" /> object in a Python module or package or the code locations configured in an open source deployment's [workspace files](/deployment/code-locations/workspace-yaml). For more information, see the [code locations documentation](/deployment/code-locations).
+When invoked, the webserver will fetch definitions - such as assets, jobs, schedules, sensors, and resources - from a <PyObject section="definitions" module="dagster" object="Definitions" /> object in a Python module or package or the code locations configured in an open source deployment's [workspace files](/deployment/code-locatons/configuring-code-locations/workspace-yaml). For more information, see the [code locations documentation](/deployment/code-locations).
 
 Note that several Dagster features, like schedules and sensors, require the Dagster daemon to be running in order to function.
 

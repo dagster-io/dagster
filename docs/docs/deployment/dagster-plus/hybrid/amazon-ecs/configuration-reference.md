@@ -23,7 +23,7 @@ When [adding a code location](/deployment/code-locations) to Dagster+ with an Am
 
 **Note**: If you're using the Dagster+ Github action, the `container_context` key can also be set for each location in your `dagster_cloud.yaml` file.
 
-The following example [`dagster_cloud.yaml`](/deployment/code-locations/dagster-cloud-yaml) file illustrates the available fields:
+The following example [`dagster_cloud.yaml`](/deployment/code-locatons/configuring-code-locations/dagster-cloud-yaml) file illustrates the available fields:
 
 ```yaml
 # dagster_cloud.yaml

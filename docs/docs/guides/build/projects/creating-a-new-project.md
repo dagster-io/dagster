@@ -187,9 +187,14 @@ If built-in Dagster components and integrations don't meet your needs, you can [
 
 <Tabs>
    <TabItem value="oss" label="OSS deployment">
-   To deploy to OSS, see the OSS deployment documentation.
+   To deploy your project to the OSS cloud:
+   - Deploy Dagster to one of the platforms listed in the [OSS deployment docs](deployment/oss/deployment-options/kubernetes)
+   - Add a [`dg.toml` file](/deployment/code-locatons/configuring-code-locations/dg-toml) to your project. This file tells Dagster where to find your code and how to load it.
    </TabItem>
    <TabItem value="plus" label="Dagster+ deployment">
-   To deploy to Dagster+, TK
+   To deploy to Dagster+:
+   - [Get started with Dagster+ Serverless or Hybrid](/deployment/dagster-plus/getting-started), if you haven't already
+   - Add a `dagster_cloud.yaml` file to the root directory of to your project
+   - For one-time deployment from the command line, you can use the `dagster-cloud` CLI command line tool. For continuous deployment from GitHub, GitLab, or another Git provider, follow the steps in the CI/CD docs.
    </TabItem>
 </Tabs>

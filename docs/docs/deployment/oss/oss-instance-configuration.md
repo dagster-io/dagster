@@ -330,7 +330,7 @@ For more information, see the [Telemetry documentation](/about/telemetry).
 
 The `code_servers` key allows you to configure how Dagster loads the code in a [code location](/deployment/code-locations).
 
-When you aren't [running your own gRPC server](/deployment/code-locations/workspace-yaml#grpc-server), the webserver and the Dagster daemon load your code from a gRPC server running in a subprocess. By default, if your code takes more than 180 seconds to load, Dagster assumes that it's hanging and stops waiting for it to load.
+When you aren't [running your own gRPC server](/deployment/code-locatons/configuring-code-locations/workspace-yaml#grpc-server), the webserver and the Dagster daemon load your code from a gRPC server running in a subprocess. By default, if your code takes more than 180 seconds to load, Dagster assumes that it's hanging and stops waiting for it to load.
 
 If you expect that your code will take longer than 180 seconds to load, set the `code_servers.local_startup_timeout` key. The value should be an integer that indicates the maximum timeout, in seconds.
 

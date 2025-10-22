@@ -131,7 +131,7 @@ Overall, the Git repository should contain:
            ...
    ```
 
-2. A [`dagster_cloud.yaml` file](/deployment/code-locations/dagster-cloud-yaml) with the settings for your code location. Here is an example:
+2. A [`dagster_cloud.yaml` file](/deployment/code-locatons/configuring-code-locations/dagster-cloud-yaml) with the settings for your code location. Here is an example:
 
    ```yaml title="dagster_cloud.yaml
    # dagster_cloud.yaml
