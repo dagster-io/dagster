@@ -296,7 +296,7 @@ export const OpJobPartitionsViewContent = React.memo(
             >
               Refresh
             </Button>
-            {partitionSet.hasBackfillPermission ? (
+            {partitionSet.hasLaunchBackfillPermission ? (
               <Button
                 icon={<Icon name="add_circle" />}
                 onClick={() => {
@@ -472,7 +472,7 @@ const PARTITIONS_STATUS_QUERY = gql`
       }
       ...PythonErrorFragment
     }
-    hasBackfillPermission
+    hasLaunchBackfillPermission
   }
 
   fragment OpJobPartitionStatus on PartitionStatus {

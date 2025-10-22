@@ -15,7 +15,7 @@ export type PartitionsStatusQuery = {
         id: string;
         name: string;
         pipelineName: string;
-        hasBackfillPermission: boolean;
+        hasLaunchBackfillPermission: boolean;
         partitionsOrError:
           | {__typename: 'Partitions'; results: Array<{__typename: 'Partition'; name: string}>}
           | {
@@ -68,7 +68,7 @@ export type OpJobPartitionSetFragment = {
   id: string;
   name: string;
   pipelineName: string;
-  hasBackfillPermission: boolean;
+  hasLaunchBackfillPermission: boolean;
   partitionsOrError:
     | {__typename: 'Partitions'; results: Array<{__typename: 'Partition'; name: string}>}
     | {
@@ -112,4 +112,4 @@ export type OpJobPartitionStatusFragment = {
   runDuration: number | null;
 };
 
-export const PartitionsStatusQueryVersion = '3e60aeb057e0bb84148834c3398087479ce492df35cce0bfd3fd363da71d7ba1';
+export const PartitionsStatusQueryVersion = '1dc21ab131710de7e132d2da3aea58eb2ba640344eeae0c744b94a6558b50ed6';
