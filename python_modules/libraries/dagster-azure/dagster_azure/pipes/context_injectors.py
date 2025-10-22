@@ -13,16 +13,18 @@ from dagster_pipes import PipesContextData
 _CONTEXT_FILENAME = "context.json"
 
 
+
 class PipesAzureBlobStorageContextInjector(PipesContextInjector):
     """A context injector that injects context by writing to a temporary AzureBlobStorage location.
 
     Args:
         container (str): The AzureBlobStorage container to write to.
         client (azure.storage.blob.BlobServiceClient): An Azure Blob Storage client.
-        key_prefix (Optional[str]): An optional prefix to use for the S3 key. Defaults to a random
+        key_prefix (Optional[str]): An optional prefix to use for the Azure Blob Storage key. Defaults to a random
             string.
 
     """
+
 
     def __init__(self, *, container: str, client: BlobServiceClient):
         super().__init__()
