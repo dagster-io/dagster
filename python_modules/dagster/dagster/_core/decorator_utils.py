@@ -15,6 +15,7 @@ from typing import (  # noqa: UP035
     cast,
     get_type_hints as typing_get_type_hints,
 )
+from unittest.mock import Mock
 
 from typing_extensions import Concatenate, ParamSpec, TypeAlias, TypeGuard
 
@@ -66,17 +67,34 @@ def get_function_params(fn: Callable[..., Any]) -> Sequence[Parameter]:
 
 
 def get_type_hints(fn: Callable[..., Any]) -> Mapping[str, Any]:
+    """Wrapper around typing.get_type_hints that handles functools.partial,
+    objects with __signature__, callable instances, and Mock objects gracefully.
+    """
+    original_fn = fn
+
+    # process functiontools.partial
     if isinstance(fn, functools.partial):
         target = fn.func
-    elif inspect.isfunction(fn):
+    else:
         target = fn
-    elif hasattr(fn, "__call__"):
-        target = fn.__call__  # pyright: ignore[reportFunctionMemberAccess]
+
+    # handle __signature__ - Highest priority
+    if hasattr(target, "__signature__"):
+        target_for_hints = fn
+    # handle Mock objects
+    elif isinstance(fn, Mock) and hasattr(fn, "__call__"):
+        target_for_hints = fn.__call__  # pyright: ignore[reportFunctionMemberAccess]
+    # handle regular functions
+    elif inspect.isfunction(target):
+        target_for_hints = target
+    # handle other callable objects (like class instances without __signature__)
+    elif hasattr(target, "__call__"):
+        # no __signature__, only __call__ exists, __call__ have to be used
+        target_for_hints = target.__call__
     else:
         check.failed(f"Unhandled Callable object {fn}")
-
     try:
-        return typing_get_type_hints(target, include_extras=True)
+        return typing_get_type_hints(target_for_hints, include_extras=True)
     except NameError as e:
         match = re.search(r"'(\w+)'", str(e))
         assert match
@@ -89,6 +107,12 @@ def get_type_hints(fn: Callable[..., Any]) -> Mapping[str, Any]:
             " annotations`, all annotations in that module are stored as strings. Suggested"
             " solutions include: (1) convert the annotation to a non-string annotation; (2) move"
             " the type referenced by the annotation out of local scope or a `TYPE_CHECKING` block."
+        )
+    except TypeError as e:
+        func_name = getattr(original_fn, '__name__', str(original_fn))
+        raise DagsterInvalidDefinitionError(
+            f"Failed to get type hints for {func_name}. This can happen with certain callable"
+            f" objects that don't support introspection well. Original error: {e}"
         )
 
 
