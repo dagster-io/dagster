@@ -14,11 +14,9 @@
 - [components] Fixed a bug that caused errors when using the `DbtProjectComponent`, `FivetranAccountComponent`, and similar state-based components in k8s deployments due to a missing `StateStorage` object in context.
 - [dagster-omni] Added a dependency on `python-dateutil` to `dagster-omni`. (Thanks, [@bollwyvl](https://github.com/bollwyvl)!)
 
-
 ### Dagster Plus
 
 - [ui] Fixed top nav rendering twice in Dagster+.
-
 
 ## 1.11.15 (core) / 0.27.15 (libraries)
 
