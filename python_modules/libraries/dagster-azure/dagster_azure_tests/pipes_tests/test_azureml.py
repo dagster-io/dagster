@@ -90,8 +90,8 @@ def test_azureml_pipes(storage_account_name, container_name, external_script):
         )
         message_reader = PipesAzureBlobStorageMessageReader(
             container=container_name,
-            client=blob_storage_service_client,
-            interval=0.001,  # pyright: ignore
+            client=blob_storage_service_client,  # pyright: ignore[reportArgumentType]
+            interval=0.001,
         )
         azureml_client = MockAzureMLClient()
 

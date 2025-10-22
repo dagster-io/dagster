@@ -13,7 +13,6 @@ from dagster_pipes import PipesContextData
 _CONTEXT_FILENAME = "context.json"
 
 
-
 class PipesAzureBlobStorageContextInjector(PipesContextInjector):
     """A context injector that injects context by writing to a temporary AzureBlobStorage location.
 
@@ -24,7 +23,6 @@ class PipesAzureBlobStorageContextInjector(PipesContextInjector):
             string.
 
     """
-
 
     def __init__(self, *, container: str, client: BlobServiceClient):
         super().__init__()

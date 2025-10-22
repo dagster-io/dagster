@@ -24,11 +24,14 @@ def test_blob_storage_injector_and_messagewriter(
     blob_storage_service_client.cleanup()  # Make sure there is no data from older test runs
     try:
         context_injector = PipesAzureBlobStorageContextInjector(
-            container=container_name, client=blob_storage_service_client
-        )  # pyright: ignore
+            container=container_name,
+            client=blob_storage_service_client,  # pyright: ignore[reportArgumentType]
+        )
         message_reader = PipesAzureBlobStorageMessageReader(
-            container=container_name, client=blob_storage_service_client, interval=0.001
-        )  # pyright: ignore
+            container=container_name,
+            client=blob_storage_service_client,  # pyright: ignore[reportArgumentType]
+            interval=0.001,
+        )
 
         @dg.asset(check_specs=[dg.AssetCheckSpec(name="foo_check", asset=dg.AssetKey(["foo"]))])
         def foo(context: dg.AssetExecutionContext, ext: dg.PipesSubprocessClient):

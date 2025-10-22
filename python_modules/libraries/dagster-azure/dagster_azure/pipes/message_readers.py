@@ -75,7 +75,6 @@ class PipesAzureBlobStorageMessageReader(PipesBlobStoreMessageReader):
         except Exception:
             return None
 
-
     def no_messages_debug_text(self) -> str:
         return (
             f"Attempted to read messages from Azure Blob Storage container "
