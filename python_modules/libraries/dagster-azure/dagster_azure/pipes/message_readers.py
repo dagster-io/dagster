@@ -75,9 +75,12 @@ class PipesAzureBlobStorageMessageReader(PipesBlobStoreMessageReader):
         except Exception:
             return None
 
+
     def no_messages_debug_text(self) -> str:
         return (
             f"Attempted to read messages from Azure Blob Storage container "
-            f"{self.bucket}. Expected PipesAzureBlobMessageWriter to be "
+            f"{self.bucket}. Expected PipesAzureBlobStorageMessageWriter to be "
             "explicitly passed to open_dagster_pipes in the external process."
+        )
+
         )
