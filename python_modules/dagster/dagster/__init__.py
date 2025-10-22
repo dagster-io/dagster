@@ -153,6 +153,7 @@ from dagster._core.definitions.asset_sensor_definition import (
 from dagster._core.definitions.assets.definition.asset_dep import AssetDep as AssetDep
 from dagster._core.definitions.assets.definition.asset_spec import (
     AssetSpec as AssetSpec,
+    apply_freshness_policy as apply_freshness_policy,
     map_asset_specs as map_asset_specs,
 )
 from dagster._core.definitions.assets.definition.assets_definition import (
