@@ -82,5 +82,3 @@ class PipesAzureBlobStorageMessageReader(PipesBlobStoreMessageReader):
             f"{self.bucket}. Expected PipesAzureBlobStorageMessageWriter to be "
             "explicitly passed to open_dagster_pipes in the external process."
         )
-
-        )
