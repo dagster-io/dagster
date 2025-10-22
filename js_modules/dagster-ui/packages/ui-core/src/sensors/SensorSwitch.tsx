@@ -237,8 +237,8 @@ export const SensorSwitch = (props: Props) => {
   }
 
   const lacksPermission =
-    (running && !sensor.sensorState.hasStartPermission) ||
-    (!running && !sensor.sensorState.hasStopPermission);
+    (running && !sensor.sensorState?.hasStopPermission) ||
+    (!running && !sensor.sensorState?.hasStartPermission);
   const disabled = toggleOffInFlight || toggleOnInFlight || lacksPermission;
 
   const switchElement = (
