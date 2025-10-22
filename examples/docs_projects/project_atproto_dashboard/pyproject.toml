@@ -3,7 +3,7 @@ name = "project_atproto_dashboard"
 version = "0.0.1"
 description = "Project Bluesky BI"
 readme = "README.md"
-requires-python = ">=3.9,<3.14"
+requires-python = ">=3.9,<3.15"
 dependencies = [
     "atproto",
     "dagster",

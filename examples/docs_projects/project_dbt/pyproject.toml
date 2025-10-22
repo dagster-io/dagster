@@ -1,6 +1,6 @@
 [project]
 name = "project_dbt"
-requires-python = ">=3.9,<3.14"
+requires-python = ">=3.9,<3.15"
 version = "0.1.0"
 dependencies = [
     "dagster",
@@ -32,5 +32,4 @@ root_module = "project_dbt"
 registry_modules = [
     "project_dbt.components.*",
 ]
-
 

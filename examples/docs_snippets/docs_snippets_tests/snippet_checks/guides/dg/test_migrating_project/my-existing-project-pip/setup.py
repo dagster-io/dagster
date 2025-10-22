@@ -4,7 +4,7 @@ setup(
     name="my_existing_project",
     version="0.1.0",
     description="Add your description here",
-    python_requires=">=3.9,<3.14",
+    python_requires=">=3.9,<3.15",
     packages=find_packages(),
     install_requires=[
         "dagster",

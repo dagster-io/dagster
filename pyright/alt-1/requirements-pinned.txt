@@ -27,9 +27,9 @@ backoff==2.2.1
 beautifulsoup4==4.14.2
 bleach==6.2.0
 boto3==1.40.49
-boto3-stubs-lite==1.40.55
+boto3-stubs-lite==1.40.56
 botocore==1.40.49
-botocore-stubs==1.40.55
+botocore-stubs==1.40.56
 buildkite-test-collector==1.1.1
 cachetools==6.2.1
 caio==0.9.24
@@ -114,10 +114,10 @@ graphene==3.4.3
 graphql-core==3.2.6
 graphql-relay==3.2.0
 grpc-google-iam-v1==0.14.3
-grpcio==1.75.1
-grpcio-health-checking==1.75.1
-grpcio-status==1.75.1
-grpcio-tools==1.75.1
+grpcio==1.76.0
+grpcio-health-checking==1.76.0
+grpcio-status==1.76.0
+grpcio-tools==1.76.0
 h11==0.16.0
 httpcore==1.0.9
 httplib2==0.31.0
@@ -173,7 +173,7 @@ msgpack==1.1.2
 multidict==6.7.0
 mypy==1.18.2
 mypy-boto3-ecs==1.40.43
-mypy-boto3-emr==1.40.0
+mypy-boto3-emr==1.40.56
 mypy-boto3-emr-containers==1.40.29
 mypy-boto3-emr-serverless==1.40.0
 mypy-boto3-glue==1.40.50
@@ -277,7 +277,7 @@ snowplow-tracker==1.1.0
 sortedcontainers==2.4.0
 soupsieve==2.8
 sqlalchemy==1.4.54
-sqlglot==27.27.0
+sqlglot==27.28.1
 sqlglotrs==0.7.3
 sqlparse==0.5.3
 stack-data==0.6.3
