@@ -256,6 +256,9 @@ from dagster._core.definitions.executor_definition import (
     multiple_process_executor_requirements as multiple_process_executor_requirements,
     multiprocess_executor as multiprocess_executor,
 )
+from dagster._core.definitions.freshness import (
+    InternalFreshnessPolicy as FreshnessPolicy,  # noqa: F401
+)
 from dagster._core.definitions.freshness_policy import (
     LegacyFreshnessPolicy as LegacyFreshnessPolicy,
 )
@@ -757,7 +760,6 @@ _DEPRECATED_RENAMED: Final[Mapping[str, tuple[Callable, str]]] = {
 _DEPRECATED_WITH_ERROR: Final[Mapping[str, str]] = {
     ##### EXAMPLE
     # "Foo": "Use Bar instead.",
-    "FreshnessPolicy": "FreshnessPolicy was renamed to LegacyFreshnessPolicy in 1.11.0. For more information, please refer to the section 'Migrating to 1.11.0' in the migration guide (MIGRATION.md)."
 }
 
 
