@@ -69,4 +69,4 @@ export type SingleSensorQuery = {
     | {__typename: 'UnauthorizedError'};
 };
 
-export const SingleSensorQueryVersion = 'dbda5ba47d4ba10f8c527c9a7cd45fba0811276441a17a8ac6f173ed588f025b';
+export const SingleSensorQueryVersion = '50c997295f433dee6c217e7bb90775fc20c420d69ba5d0ad0c627ec86caa639a';

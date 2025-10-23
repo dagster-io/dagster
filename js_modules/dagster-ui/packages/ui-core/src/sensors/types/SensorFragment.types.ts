@@ -11,6 +11,7 @@ export type SensorFragment = {
   sensorType: Types.SensorType;
   defaultStatus: Types.InstigationStatus;
   canReset: boolean;
+  hasCursorUpdatePermissions: boolean;
   nextTick: {__typename: 'DryRunInstigationTick'; timestamp: number | null} | null;
   sensorState: {
     __typename: 'InstigationState';
