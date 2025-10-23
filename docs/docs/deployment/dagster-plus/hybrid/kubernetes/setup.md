@@ -160,7 +160,7 @@ Use Helm to configure the agent with the secret:
 
 ```yaml file=values.yaml
 # values.yaml
-imagePullSecrets: 
+imagePullSecrets:
   - name: regcred
 ```
 
