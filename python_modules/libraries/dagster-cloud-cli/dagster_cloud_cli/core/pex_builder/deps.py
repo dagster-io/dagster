@@ -350,7 +350,7 @@ def get_setup_py_deps(code_directory: str, python_interpreter: str) -> list[str]
             [python_interpreter, setup_py_path, "egg_info", f"--egg-base={temp_dir}"],
             capture_output=True,
             check=False,
-            cwd=temp_dir,
+            cwd=code_directory,
         )
         if proc.returncode:
             raise ValueError(
