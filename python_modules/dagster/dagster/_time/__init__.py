@@ -180,7 +180,7 @@ def dst_safe_strftime(dt: datetime, tz: str, fmt: str, cron_schedule: str) -> st
     return dt.strftime(fmt)
 
 
-lru_cache_size = int(os.getenv("DAGSTER_DST_SAFE_STRPTIME_LRU_CACHE_SIZE", "0"))
+lru_cache_size = int(os.getenv("DAGSTER_DST_SAFE_STRPTIME_LRU_CACHE_SIZE", "8192"))
 
 
 def dst_safe_strptime(date_string: str, tz: str, fmt: str) -> datetime:
