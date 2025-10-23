@@ -18,6 +18,12 @@ import Beta from '@site/docs/partials/\_Beta.md';
 
 The [dagster-looker](/integrations/libraries/looker) library provides a `LookerComponent` which can be used to easily represent Looker dashboards and explores as assets in Dagster.
 
+:::info
+
+`LookerComponent` is a [state-backed component](/guides/build/components/state-backed-components), which fetches and caches Looker instance metadata. For information on managing component state, see [Configuring state-backed components](/guides/build/components/state-backed-components/configuring-state-backed-components).
+
+:::
+
 ## 1. Prepare a Dagster project
 
 To begin, you'll need a Dagster project. You can use an [existing components-ready project](/guides/build/projects/moving-to-components/migrating-project) or create a new one:

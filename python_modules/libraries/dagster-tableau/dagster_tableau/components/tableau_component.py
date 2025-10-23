@@ -149,6 +149,7 @@ class TableauComponent(StateBackedComponent, Resolvable):
             type: dagster_tableau.TableauComponent
             attributes:
               workspace:
+                type: cloud
                 connected_app_client_id: "{{ env.TABLEAU_CLIENT_ID }}"
                 connected_app_secret_id: "{{ env.TABLEAU_SECRET_ID }}"
                 connected_app_secret_value: "{{ env.TABLEAU_SECRET_VALUE }}"

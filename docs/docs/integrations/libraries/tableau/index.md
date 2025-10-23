@@ -18,6 +18,12 @@ import Beta from '@site/docs/partials/\_Beta.md';
 
 The [dagster-tableau](/integrations/libraries/tableau) library provides a `TableauComponent` which can be used to easily represent Tableau workbooks, sheets, dashboards, and data sources as assets in Dagster.
 
+:::info
+
+`TableauComponent` is a [state-backed component](/guides/build/components/state-backed-components), which fetches and caches Tableau workspace metadata. For information on managing component state, see [Configuring state-backed components](/guides/build/components/state-backed-components/configuring-state-backed-components).
+
+:::
+
 ## 1. Prepare a Dagster project
 
 To begin, you'll need a Dagster project. You can use an [existing components-ready project](/guides/build/projects/moving-to-components/migrating-project) or create a new one:
