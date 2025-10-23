@@ -32,6 +32,7 @@
 - [ui] Fix top nav rendering for Plus users.
 - [dagster-celery] Fix Celery executor ignoring pools for ops. (Thanks, [@kkanter-asml](https://github.com/kkanter-asml)!)
 - [dagster-dbt] Fixed issue that made custom template vars unavailable when specifying them for the `cli_args:` field of the `DbtProjectComponent`.
+- [dagster-cloud-cli] Fixed an issue where deploying multiple serverless code locations or code locations with a custom project directory would sometimes fail with an "The dagster package dependency was expected but not found." error.
 
 ### Documentation
 
