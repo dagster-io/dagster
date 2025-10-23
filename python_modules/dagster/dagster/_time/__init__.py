@@ -1,5 +1,7 @@
+import os
 import time
 from datetime import datetime, timedelta, timezone, tzinfo
+from functools import lru_cache
 from typing import Union, cast
 
 import dagster._check as check
@@ -178,7 +180,22 @@ def dst_safe_strftime(dt: datetime, tz: str, fmt: str, cron_schedule: str) -> st
     return dt.strftime(fmt)
 
 
+lru_cache_size = int(os.getenv("DAGSTER_DST_SAFE_STRPTIME_LRU_CACHE_SIZE", "0"))
+
+
 def dst_safe_strptime(date_string: str, tz: str, fmt: str) -> datetime:
+    if not lru_cache_size:
+        return _dst_safe_strptime_impl(date_string, tz, fmt)
+    else:
+        return _cached_dst_safe_strptime(date_string, tz, fmt)
+
+
+@lru_cache(maxsize=lru_cache_size)
+def _cached_dst_safe_strptime(date_string: str, tz: str, fmt: str) -> datetime:
+    return _dst_safe_strptime_impl(date_string, tz, fmt)
+
+
+def _dst_safe_strptime_impl(date_string: str, tz: str, fmt: str) -> datetime:
     """A method for parsing a datetime created with the dst_safe_strftime() method."""
     try:
         # first, try to parse the datetime in the normal format
