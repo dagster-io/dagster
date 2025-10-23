@@ -163,7 +163,7 @@ class SettingsMethods:
 
     @property
     def freshness_enabled(self) -> bool:
-        return self.get_settings("freshness").get("enabled", False)
+        return self.get_settings("freshness").get("enabled", True)
 
     @property
     def auto_materialize_minimum_interval_seconds(self) -> int:
