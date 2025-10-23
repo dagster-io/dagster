@@ -582,6 +582,7 @@ from dagster._core.storage.dagster_run import (
     RunRecord as RunRecord,
     RunsFilter as RunsFilter,
 )
+from dagster._core.storage.defs_state import UPathDefsStateStorage as UPathDefsStateStorage
 from dagster._core.storage.file_manager import (
     FileHandle as FileHandle,
     LocalFileHandle as LocalFileHandle,
@@ -656,6 +657,9 @@ from dagster.components.component.component import (
     ComponentTypeSpec as ComponentTypeSpec,
 )
 from dagster.components.component.component_loader import component_instance as component_instance
+from dagster.components.component.state_backed_component import (
+    StateBackedComponent as StateBackedComponent,
+)
 from dagster.components.component.template_vars import template_var as template_var
 from dagster.components.component_scaffolding import scaffold_component as scaffold_component
 from dagster.components.components import (

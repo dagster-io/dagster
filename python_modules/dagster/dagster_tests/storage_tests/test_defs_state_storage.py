@@ -2,7 +2,7 @@ import tempfile
 
 import pytest
 from dagster._core.instance_for_test import instance_for_test
-from dagster._core.storage.defs_state.blob_storage_state_storage import BlobStorageStateStorage
+from dagster._core.storage.defs_state.blob_storage_state_storage import UPathDefsStateStorage
 from dagster_shared import check
 from upath import UPath
 
@@ -32,12 +32,12 @@ class TestExplicitUPathDefsStateStorage(TestDefsStateStorage):
                 overrides={
                     "defs_state_storage": {
                         "module": "dagster._core.storage.defs_state.blob_storage_state_storage",
-                        "class": "BlobStorageStateStorage",
+                        "class": "UPathDefsStateStorage",
                         "config": {"base_path": temp_dir},
                     }
                 }
             ) as instance:
-                state_storage = check.inst(instance.defs_state_storage, BlobStorageStateStorage)
+                state_storage = check.inst(instance.defs_state_storage, UPathDefsStateStorage)
 
                 assert state_storage.base_path == UPath(temp_dir)
                 yield state_storage
