@@ -37,10 +37,8 @@ class OmniComponent(StateBackedComponent, dg.Model, dg.Resolvable):
             type: dagster_omni.OmniComponent
             attributes:
               workspace:
+                base_url: https://your-company.omniapp.co
                 api_key: "{{ env.OMNI_API_KEY }}"
-                api_host: "{{ env.OMNI_API_HOST }}"
-              defs_state:
-                management_type: VERSIONED_STATE_STORAGE
     """
 
     workspace: OmniWorkspace = Field(
