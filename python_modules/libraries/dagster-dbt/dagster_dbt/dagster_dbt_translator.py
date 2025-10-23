@@ -94,6 +94,34 @@ class DagsterDbtTranslator:
 
         return self._settings
 
+    def get_resource_props(self, manifest: Mapping[str, Any], unique_id: str) -> Mapping[str, Any]:
+        """Given a parsed manifest and a dbt unique_id, returns the dictionary of properties
+        for the corresponding dbt resource (e.g. model, seed, snapshot, source) as defined
+        in your dbt project. This can be used as a convenience method when overriding the
+        `get_asset_spec` method.
+
+        Args:
+            manifest (Mapping[str, Any]): The parsed manifest of the dbt project.
+            unique_id (str): The unique_id of the dbt resource.
+
+        Returns:
+            Mapping[str, Any]: The dictionary of properties for the corresponding dbt resource.
+
+        Examples:
+            .. code-block:: python
+
+                class CustomDagsterDbtTranslator(DagsterDbtTranslator):
+
+                    def get_asset_spec(self, manifest: Mapping[str, Any], unique_id: str, project: Optional[DbtProject]) -> dg.AssetSpec:
+                        base_spec = super().get_asset_spec(manifest, unique_id, project)
+                        resource_props = self.get_resource_props(manifest, unique_id)
+                        if resource_props["meta"].get("use_custom_group"):
+                            return base_spec.replace_attributes(group_name="custom_group")
+                        else:
+                            return base_spec
+        """
+        return get_node(manifest, unique_id)
+
     def get_asset_spec(
         self,
         manifest: Mapping[str, Any],
@@ -113,7 +141,7 @@ class DagsterDbtTranslator:
             return self._resolved_specs[memo_id]
 
         group_props = {group["name"]: group for group in manifest.get("groups", {}).values()}
-        resource_props = get_node(manifest, unique_id)
+        resource_props = self.get_resource_props(manifest, unique_id)
 
         # calculate the dependencies for the asset
         upstream_ids = get_upstream_unique_ids(manifest, resource_props)
@@ -121,7 +149,7 @@ class DagsterDbtTranslator:
             AssetDep(
                 asset=self.get_asset_spec(manifest, upstream_id, project).key,
                 partition_mapping=self.get_partition_mapping(
-                    resource_props, get_node(manifest, upstream_id)
+                    resource_props, self.get_resource_props(manifest, upstream_id)
                 ),
             )
             for upstream_id in upstream_ids
