@@ -34,7 +34,7 @@ To work with Dagster+, your Dagster code:
 **Note**:
 
 - Different code locations can use different versions of Dagster
-- Dagster+ doesn't require a [`workspace.yaml` file](/deployment/code-locatons/configuring-code-locations/workspace-yaml). You can still create a `workspace.yaml` file to load your code in an open source Dagster webserver instance, but doing so won't affect how your code is loaded in Dagster+.
+- Dagster+ doesn't require a [`workspace.yaml` file](/guides/build/projects/deployment-configuration/workspace-yaml). You can still create a `workspace.yaml` file to load your code in an open source Dagster webserver instance, but doing so won't affect how your code is loaded in Dagster+.
 
 ## Hybrid deployment requirements
 

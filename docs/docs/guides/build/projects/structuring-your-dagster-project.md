@@ -1,5 +1,5 @@
 ---
-description: Structuring a Dagster project by technology or concept, merging definitions, and configuring multiple code locations.
+description: Learn how to structure a Dagster project by technology or concept.
 sidebar_position: 300
 title: Structuring your Dagster project
 ---

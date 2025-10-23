@@ -2,7 +2,7 @@
 description: Separate code locations allow you to deploy different Dagster projects that still roll up into a single Dagster+ deployment with one global lineage graph.
 sidebar_position: 300
 tags: [dagster-plus-feature]
-title: Dagster+ code locations
+title: Adding Dagster project to a deployment
 ---
 
 import DagsterPlus from '@site/docs/partials/\_DagsterPlus.md';
@@ -131,7 +131,7 @@ Overall, the Git repository should contain:
            ...
    ```
 
-2. A [`dagster_cloud.yaml` file](/deployment/code-locatons/configuring-code-locations/dagster-cloud-yaml) with the settings for your code location. Here is an example:
+2. A [`dagster_cloud.yaml` file](/guides/build/projects/deployment-configuration/dagster-cloud-yaml) with the settings for your code location. Here is an example:
 
    ```yaml title="dagster_cloud.yaml
    # dagster_cloud.yaml

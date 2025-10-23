@@ -20,7 +20,7 @@ This command launches both the Dagster webserver and the [Dagster daemon](/deplo
 
 The command will print out the URL you can access the UI from in the browser, usually on port 3000.
 
-When invoked, the webserver will fetch definitions - such as assets, jobs, schedules, sensors, and resources - from a <PyObject section="definitions" module="dagster" object="Definitions" /> object in a Python module or package or the code locations configured in an open source deployment's [workspace files](/deployment/code-locatons/configuring-code-locations/workspace-yaml). For more information, see the [code locations documentation](/deployment/code-locations).
+When invoked, the webserver will fetch definitions - such as assets, jobs, schedules, sensors, and resources - from a <PyObject section="definitions" module="dagster" object="Definitions" /> object in a Python module or package or the code locations configured in an open source deployment's [workspace files](/guides/build/projects/deployment-configuration/workspace-yaml). For more information, see the [code locations documentation](/guides/build/projects).
 
 Note that several Dagster features, like schedules and sensors, require the Dagster daemon to be running in order to function.
 
@@ -39,7 +39,7 @@ To access the overview page, click **Overview** in the top navigation bar.
 <Tabs>
 <TabItem value="Asset catalog (OSS)">
 
-The **Asset catalog** page lists all [assets](/guides/build/assets) in your Dagster deployment, which can be filtered by asset key, compute kind, asset group, [code location](/deployment/code-locations), and [tags](/guides/build/assets/metadata-and-tags#tags).
+The **Asset catalog** page lists all [assets](/guides/build/assets) in your Dagster deployment, which can be filtered by asset key, compute kind, asset group, [code location](/guides/build/projects), and [tags](/guides/build/assets/metadata-and-tags#tags).
 
 Clicking an asset opens the **Asset details** page for that asset. You can also navigate to the **Global asset lineage** page, reload definitions, and materialize assets.
 
@@ -56,7 +56,7 @@ This feature is only available in Dagster+ Pro.
 
 :::
 
-The Dagster+ Pro **Asset catalog** page includes all the information and functionality of the original page, broken out by saved selections, asset group, kind, [owners](/guides/build/assets/metadata-and-tags#owners), [tags](/guides/build/assets/metadata-and-tags#tags), and [code location](/deployment/code-locations).
+The Dagster+ Pro **Asset catalog** page includes all the information and functionality of the original page, broken out by saved selections, asset group, kind, [owners](/guides/build/assets/metadata-and-tags#owners), [tags](/guides/build/assets/metadata-and-tags#tags), and [code location](/guides/build/projects).
 
 On this page, you can:
 

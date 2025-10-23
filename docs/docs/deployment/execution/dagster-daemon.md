@@ -55,7 +55,7 @@ The following daemons are currently available:
 | Sensor daemon         | Creates runs from active [sensors](/guides/automate/sensors) that are turned on                    | Always enabled.                                                                                                                                                                                   |
 | Run monitoring daemon | Handles [run worker](/deployment/oss/oss-deployment-architecture#job-execution-flow) failures      | Using the `run_monitoring` field in your instance. For more information, see "[Run monitoring](/deployment/execution/run-monitoring)".                                                            |
 
-If the daemon is configured to use a [workspace file](/deployment/code-locatons/configuring-code-locations/workspace-yaml) to load [code location(s)](/deployment/code-locations), note that they will periodically reload the file. This means that the `dagster-daemon` process doesn't need to be restarted when workspace files are changed.
+If the daemon is configured to use a [workspace file](/guides/build/projects/deployment-configuration/workspace-yaml) to load [code location(s)](/guides/build/projects), note that they will periodically reload the file. This means that the `dagster-daemon` process doesn't need to be restarted when workspace files are changed.
 
 ## Checking daemon status in the Dagster UI
 

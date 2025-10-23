@@ -1,10 +1,10 @@
 ---
-title: "Creating a new Dagster project"
+title: Creating and deploying Dagster projects
 description: dg allows you to create a special type of Python package, called a project, that defines a Dagster code location.
 sidebar_position: 100
 ---
 
-The easiest way to start building a Dagster project is by using the [`create-dagster` CLI](/api/clis/create-dagster). This CLI tool allows you to create a special type of Python package, called a _project_, that defines a [Dagster code location](/deployment/code-locations/managing-code-locations-with-definitions).
+The easiest way to start building a Dagster project is by using the [`create-dagster` CLI](/api/clis/create-dagster). This CLI tool allows you to create a special type of Python package, called a _project_, that defines a [Dagster code location](/guides/build/projects#code-location.
 
 import ProjectCreationPrereqs from '@site/docs/partials/\_ProjectCreationPrereqs.md';
 
@@ -183,13 +183,15 @@ For more information on testing, see the following docs:
 
 If built-in Dagster components and integrations don't meet your needs, you can [create custom components](/guides/build/components/creating-new-components) to share with your team.
 
-## Step 5: Deploy your project to the cloud
+## Step 5: Deploy your project to the cloud (Optional)
+
+If you have a cloud deployment of Dagster, you can deploy your project by adding a configuration file at the root, and optionally configuring CI/CD for continuous deployment.
 
 <Tabs>
    <TabItem value="oss" label="OSS deployment">
    To deploy your project to the OSS cloud:
-   - Deploy Dagster to one of the platforms listed in the [OSS deployment docs](deployment/oss/deployment-options/kubernetes)
-   - Add a [`dg.toml` file](/deployment/code-locatons/configuring-code-locations/dg-toml) to your project. This file tells Dagster where to find your code and how to load it.
+   - Deploy Dagster to one of the platforms listed in the [OSS deployment docs](/deployment/oss/deployment-options)
+   - Add a [`dg.toml` file](/guides/build/projects/deployment-configuration/dg-toml) to your project. This file tells Dagster where to find your code and how to load it.
    </TabItem>
    <TabItem value="plus" label="Dagster+ deployment">
    To deploy to Dagster+:
@@ -197,4 +199,33 @@ If built-in Dagster components and integrations don't meet your needs, you can [
    - Add a `dagster_cloud.yaml` file to the root directory of to your project
    - For one-time deployment from the command line, you can use the `dagster-cloud` CLI command line tool. For continuous deployment from GitHub, GitLab, or another Git provider, follow the steps in the CI/CD docs.
    </TabItem>
+</Tabs>
+
+
+## Deploying code locations
+
+<Tabs>
+<TabItem value="local" label="Local development">
+
+When run locally, Dagster can load a project directly as a code location without additional configuration:
+
+```shell
+dg dev
+```
+
+This command loads the definitions in the project as a code location in the current Python environment.
+
+Fore more information about local development, including how to configure your local instance, see [Running Dagster locally](/deployment/oss/deployment-options/running-dagster-locally).
+
+</TabItem>
+<TabItem value="dagster-plus" label="Dagster+ deployment">
+
+See the [Dagster+ code locations documentation](/guides/build/projects).
+
+</TabItem>
+<TabItem value="oss" label="Open source deployment">
+
+The `workspace.yaml` file is used to load code locations for open source (OSS) deployments. This file specifies how to load a collection of code locations and is typically used in advanced use cases. For more information, see "[workspace.yaml reference](/guides/build/projects/deployment-configuration/workspace-yaml)".
+
+</TabItem>
 </Tabs>

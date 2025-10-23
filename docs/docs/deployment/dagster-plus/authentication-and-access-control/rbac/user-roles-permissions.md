@@ -75,12 +75,12 @@ If you no longer need a custom role, you can delete it. If the role is currently
 
 With the exception of the **Organization Admin** role, user and team roles are set on a per-deployment basis.
 
-Organization Admins have access to the entire organization, including all [deployments](/deployment/dagster-plus/deploying-code/full-deployments), [code locations](/deployment/code-locations), and [Branch Deployments](/deployment/dagster-plus/deploying-code/branch-deployments).
+Organization Admins have access to the entire organization, including all [deployments](/deployment/dagster-plus/deploying-code/full-deployments), [code locations](/guides/build/projects), and [Branch Deployments](/deployment/dagster-plus/deploying-code/branch-deployments).
 
 | Level              | Plan      | Description                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                             |
 | ------------------ | --------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | Deployment         | All plans | Defines the level of access for a given deployment. Roles set at this level will be the default role for the user or team for all code locations in the deployment. <br/><br/> <strong>Note</strong>: Granting access to a deployment grants a minimum of <strong>Viewer</strong> access to all code locations. Preventing access for specific code locations isn't currently supported. Additionally, having access to a deployment doesn't grant access to Branch Deployments - those permissions must be granted separately.         |
-| Code location      | Pro       | Defines the level of access for a given code location in a deployment. <br/><br/> Dagster+ Pro users can [override the default deployment-level role for individual code locations](/deployment/code-locations). For example, if the <strong>Deployment</strong> role is <strong>Launcher</strong>, you could override this role with a more permissive role, such as <strong>Editor</strong> or <strong>Admin</strong>. <br/><br/> For non-Pro users, users will have the same level of access for all code locations in a deployment. |
+| Code location      | Pro       | Defines the level of access for a given code location in a deployment. <br/><br/> Dagster+ Pro users can [override the default deployment-level role for individual code locations](/guides/build/projects). For example, if the <strong>Deployment</strong> role is <strong>Launcher</strong>, you could override this role with a more permissive role, such as <strong>Editor</strong> or <strong>Admin</strong>. <br/><br/> For non-Pro users, users will have the same level of access for all code locations in a deployment. |
 | Branch deployments | All plans | Defines the level of access for all Branch Deployments in the code locations the user or team has access to.                                                                                                                                                                                                                                                                                                                                                                                                                            |
 
 ### Applying role overrides
@@ -170,9 +170,9 @@ Code locations are accessed in the UI by navigating to **Deployment > Code locat
 
 |                                                                    | Viewer | Launcher | Editor | Admin | Organization <br/> admin |
 | ------------------------------------------------------------------ | ------ | -------- | ------ | ----- | ------------------------ |
-| View [code locations](/deployment/code-locations)                  | ✅     | ✅       | ✅     | ✅    | ✅                       |
-| Create and remove [code locations](/deployment/code-locations)     | ❌     | ❌       | ✅     | ✅    | ✅                       |
-| Reload [code locations](/deployment/code-locations) and workspaces | ❌     | ❌       | ✅     | ✅    | ✅                       |
+| View [code locations](/guides/build/projects)                  | ✅     | ✅       | ✅     | ✅    | ✅                       |
+| Create and remove [code locations](/guides/build/projects)     | ❌     | ❌       | ✅     | ✅    | ✅                       |
+| Reload [code locations](/guides/build/projects) and workspaces | ❌     | ❌       | ✅     | ✅    | ✅                       |
 
 ### Agent tokens
 

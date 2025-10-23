@@ -45,9 +45,9 @@ Additionally, the [`imagePullSecrets`](https://artifacthub.io/packages/helm/dags
 
 ## Per-location configuration
 
-When [adding a code location](/deployment/code-locations) to Dagster+ with a Kubernetes agent, you can use the `container_context` key on the location configuration to add additional Kubernetes-specific configuration. If you're using the Dagster+ Github action, the `container_context` key can also be set for each location in your `dagster_cloud.yaml` file, using the same format.
+When [adding a code location](/guides/build/projects) to Dagster+ with a Kubernetes agent, you can use the `container_context` key on the location configuration to add additional Kubernetes-specific configuration. If you're using the Dagster+ Github action, the `container_context` key can also be set for each location in your `dagster_cloud.yaml` file, using the same format.
 
-The following example [`dagster_cloud.yaml`](/deployment/code-locatons/configuring-code-locations/dagster-cloud-yaml) file illustrates the available fields:
+The following example [`dagster_cloud.yaml`](/guides/build/projects/deployment-configuration/dagster-cloud-yaml) file illustrates the available fields:
 
 ```yaml
 # dagster_cloud.yaml

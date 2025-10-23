@@ -82,7 +82,7 @@ kubectl --namespace dagster-cloud logs -l deployment=agent
 There are three places to customize how Dagster interacts with Kubernetes:
 
 - **Per Deployment** by configuring the Dagster+ agent using [Helm values](https://artifacthub.io/packages/helm/dagster-cloud/dagster-cloud-agent?modal=values)
-- **Per Project** by configuring the `dagster_cloud.yaml` file for your [code location](/deployment/code-locations)
+- **Per Project** by configuring the `dagster_cloud.yaml` file for your [code location](/guides/build/projects)
 - **Per Asset or Job** by adding tags to the [asset](/guides/build/assets/defining-assets), [job](/guides/build/jobs/asset-jobs), or [customizing the Kubernetes pipes invocation](/guides/build/external-pipelines/kubernetes-pipeline)
 
 Changes apply in a hierarchy, for example, a customization for an asset will override a default set globally in the agent configuration. Attributes that are not customized will use the global defaults.
@@ -251,7 +251,7 @@ helm --namespace dagster-cloud upgrade agent \
 
 <TabItem value="code-location-secrets" label="Single code location">
 
-Modify the [`dagster_cloud.yaml` file](/deployment/code-locatons/configuring-code-locations/dagster-cloud-yaml) in your project's Git repository:
+Modify the [`dagster_cloud.yaml` file](/guides/build/projects/deployment-configuration/dagster-cloud-yaml) in your project's Git repository:
 
 ```yaml file=dagster_cloud.yaml
 # dagster_cloud.yaml
@@ -277,7 +277,7 @@ If you need to request secrets from a secret manager like AWS Secrets Manager or
 
 ### Use a different service account for a specific code location
 
-Modify the [`dagster_cloud.yaml` file](/deployment/code-locatons/configuring-code-locations/dagster-cloud-yaml) in your project's Git repository:
+Modify the [`dagster_cloud.yaml` file](/guides/build/projects/deployment-configuration/dagster-cloud-yaml) in your project's Git repository:
 
 ```yaml file=dagster_cloud.yaml
 # dagster_cloud.yaml
@@ -406,7 +406,7 @@ First determine if you want to change the requested resource for everything in a
 
 <TabItem value="code-location-resource" label="Resources for everything in a code location">
 
-Modify the [`dagster_cloud.yaml` file](/deployment/code-locatons/configuring-code-locations/dagster-cloud-yaml) in your project's Git repository:
+Modify the [`dagster_cloud.yaml` file](/guides/build/projects/deployment-configuration/dagster-cloud-yaml) in your project's Git repository:
 
 ```yaml file=dagster_cloud.yaml
 # dagster_cloud.yaml

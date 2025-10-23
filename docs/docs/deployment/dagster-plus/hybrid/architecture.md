@@ -57,7 +57,7 @@ Additionally, the agent:
 
 ## Code server
 
-In Dagster+ Hybrid, each [code location](/deployment/code-locations/dagster-plus-code-locations) is served by a long-standing user code server running in your environment. When you inform Dagster+ about a new code location, we enqueue instructions for your agent to launch a new code server. Dagster+ communicates with the code server (through the agent) to:
+In Dagster+ Hybrid, each [code location](/guides/build/projects/adding-project-to-deployment) is served by a long-standing user code server running in your environment. When you inform Dagster+ about a new code location, we enqueue instructions for your agent to launch a new code server. Dagster+ communicates with the code server (through the agent) to:
 
 - Load definitions and metadata (UI browsing, asset graphs)
 - Evaluate sensors/schedules (or call into them)

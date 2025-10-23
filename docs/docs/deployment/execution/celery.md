@@ -101,7 +101,7 @@ Lastly, you'll need to make sure that the Dagster code you want the workers to e
 1. Present in the workers' environment, and
 2. The code is in sync with the code present on the node running the webserver
 
-The easiest way to do this is typically to package the code into a Python module and to configure your project's [`workspace.yaml`](/deployment/code-locatons/configuring-code-locations/workspace-yaml) to have the webserver load from that module.
+The easiest way to do this is typically to package the code into a Python module and to configure your project's [`workspace.yaml`](/guides/build/projects/deployment-configuration/workspace-yaml) to have the webserver load from that module.
 
 In Part 1, we accomplished this by starting the webserver with the `-f` parameter:
 

@@ -65,7 +65,7 @@ In the **Roles** section, you can assign a [user role](/deployment/dagster-plus/
 1. Next to a deployment, click **Edit user role**.
 2. Select the user role for the deployment. This [user role](/deployment/dagster-plus/authentication-and-access-control/rbac/user-roles-permissions) will be used as the default for all code locations in the deployment.
 3. Click **Save**.
-4. **Pro only**: To set permissions for individual [code locations](/deployment/code-locations) in a deployment:
+4. **Pro only**: To set permissions for individual [code locations](/guides/build/projects) in a deployment:
    1. Click the toggle to the left of the deployment to open a list of code locations.
    2. Next to a code location, click **Edit user role**.
    3. Select the user role for the code location.

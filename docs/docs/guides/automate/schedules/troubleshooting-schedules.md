@@ -75,7 +75,7 @@ If there isn't a clear error on this page or if the daemon should be sending hea
 
 Next, check the logs from the daemon process. The steps to do this will depend on your deployment - for example, if you're using Kubernetes, you'll need to get the logs from the pod that's running the daemon. You should be able to search those logs for the name of the schedule (or `SchedulerDaemon` to see all logs associated with the scheduler) to gain an understanding of what's going wrong.
 
-If the daemon output contains error indicating the schedule couldn't be found, verify that the daemon is using the same `workspace.yaml` file as the webserver. The daemon does not need to restart in order to pick up changes to the `workspace.yaml` file. Refer to the [Workspace files documentation](/deployment/code-locatons/configuring-code-locations/workspace-yaml) for more information.
+If the daemon output contains error indicating the schedule couldn't be found, verify that the daemon is using the same `workspace.yaml` file as the webserver. The daemon does not need to restart in order to pick up changes to the `workspace.yaml` file. Refer to the [Workspace files documentation](/guides/build/projects/deployment-configuration/workspace-yaml) for more information.
 
 If the logs don't indicate the cause of the issue, move on to the next step.
 
