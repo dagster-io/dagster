@@ -44,7 +44,7 @@ setup(
         "test": ["syrupy>=4.0.0"],
         "ai": [
             "anthropic; python_version>='3.10'",
-            "claude-code-sdk>=0.0.19; python_version>='3.10'",
+            "claude-agent-sdk>=0.1.10; python_version>='3.10'",
             "mcp; python_version>='3.10'",
         ],
     },

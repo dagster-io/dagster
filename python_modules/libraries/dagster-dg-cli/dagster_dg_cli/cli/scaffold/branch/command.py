@@ -22,7 +22,7 @@ from dagster_dg_cli.cli.scaffold.branch.claude.diagnostics import (
     create_claude_diagnostics_service,
 )
 
-# Lazy import of ClaudeSDKClient to avoid docs build failures when claude_code_sdk is not available
+# Lazy import of ClaudeSDKClient to avoid docs build failures when claude_agent_sdk is not available
 from dagster_dg_cli.cli.scaffold.branch.constants import VALID_MODELS, ModelType
 from dagster_dg_cli.cli.scaffold.branch.git import (
     check_git_repository,
@@ -220,8 +220,8 @@ def execute_scaffold_branch_command(
         # Check if Claude Code SDK and api key are available before proceeding with AI operations
         if not is_claude_sdk_available():
             raise click.ClickException(
-                "claude_code_sdk is required for AI scaffolding functionality. "
-                "Install with: pip install claude-code-sdk>=0.0.19"
+                "claude_agent_sdk is required for AI scaffolding functionality. "
+                "Install with: pip install claude-agent-sdk>=0.1.10"
             )
 
         # Import AI modules only when needed and available

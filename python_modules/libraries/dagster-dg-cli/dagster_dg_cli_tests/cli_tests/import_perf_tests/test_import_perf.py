@@ -47,7 +47,7 @@ def test_import_perf():
         "tomlkit",
         "watchdog",
         "dotenv",
-        "claude_code_sdk",
+        "claude_agent_sdk",
     ]
     expensive_imports = [
         f"`{lib}`"

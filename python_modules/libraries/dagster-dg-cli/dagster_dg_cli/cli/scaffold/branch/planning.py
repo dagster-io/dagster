@@ -244,7 +244,7 @@ Provide the complete updated plan in the same markdown format as before."""
         """
         ensure_claude_sdk_python_version()
 
-        from claude_code_sdk.types import ResultMessage
+        from claude_agent_sdk.types import ResultMessage
 
         self.diagnostics.debug(
             category="plan_extraction_start",
