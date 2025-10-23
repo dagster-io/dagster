@@ -136,6 +136,8 @@ const ExampleAutomationData: AssetAutomationFragment = {
         selectorId: 'sensor_selector_id',
         status: InstigationStatus.STOPPED,
         typeSpecificData: {__typename: 'SensorData', lastCursor: null},
+        hasStartPermission: true,
+        hasStopPermission: true,
       },
     },
   ],

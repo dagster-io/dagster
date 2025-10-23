@@ -1,9 +1,10 @@
 import os
 from abc import ABC, abstractmethod
-from collections.abc import Iterable, Mapping, Sequence
-from typing import TYPE_CHECKING, AbstractSet, NamedTuple, Optional, Union  # noqa: UP035
+from collections.abc import Iterable, Mapping, Sequence, Set
+from typing import TYPE_CHECKING, Annotated, NamedTuple, Optional, Union
 
-import dagster._check as check
+from dagster_shared.record import ImportFrom, record
+
 from dagster._annotations import public
 from dagster._core.assets import AssetDetails
 from dagster._core.definitions.asset_checks.asset_check_spec import AssetCheckKey
@@ -40,7 +41,6 @@ from dagster._core.storage.partition_status_cache import get_and_update_asset_st
 from dagster._core.storage.sql import AlembicVersion
 from dagster._core.storage.tags import MULTIDIMENSIONAL_PARTITION_PREFIX
 from dagster._core.types.pagination import PaginatedResults
-from dagster._record import record
 from dagster._utils import PrintFn
 from dagster._utils.concurrency import ConcurrencyClaimStatus, ConcurrencyKeyInfo
 from dagster._utils.tags import get_boolean_tag_value
@@ -57,78 +57,25 @@ class EventLogConnection(NamedTuple):
     has_more: bool
 
 
-class AssetEntry(
-    NamedTuple(
-        "_AssetEntry",
-        [
-            ("asset_key", AssetKey),
-            ("last_materialization_record", Optional[EventLogRecord]),
-            ("last_run_id", Optional[str]),
-            ("asset_details", Optional[AssetDetails]),
-            ("cached_status", Optional["AssetStatusCacheValue"]),
-            # Below are optional fields which can be used for more performant
-            # queries if the underlying storage supports it
-            ("last_observation_record", Optional[EventLogRecord]),
-            ("last_planned_materialization_storage_id", Optional[int]),
-            ("last_planned_materialization_run_id", Optional[str]),
-            ("last_failed_to_materialize_record", Optional[EventLogRecord]),
-            ("is_writing_failures", bool),
-            ("last_skipped_materialize_record", Optional[EventLogRecord]),
-        ],
-    )
-):
-    def __new__(
-        cls,
-        asset_key: AssetKey,
-        last_materialization_record: Optional[EventLogRecord] = None,
-        last_run_id: Optional[str] = None,
-        asset_details: Optional[AssetDetails] = None,
-        cached_status: Optional["AssetStatusCacheValue"] = None,
-        last_observation_record: Optional[EventLogRecord] = None,
-        last_planned_materialization_storage_id: Optional[int] = None,
-        last_planned_materialization_run_id: Optional[str] = None,
-        last_failed_to_materialize_record: Optional[EventLogRecord] = None,
-        is_writing_failures: bool = False,
-        last_skipped_materialize_record: Optional[EventLogRecord] = None,
-    ):
-        from dagster._core.storage.partition_status_cache import AssetStatusCacheValue
-
-        return super().__new__(
-            cls,
-            asset_key=check.inst_param(asset_key, "asset_key", AssetKey),
-            last_materialization_record=check.opt_inst_param(
-                last_materialization_record,
-                "last_materialization_record",
-                EventLogRecord,
-            ),
-            last_run_id=check.opt_str_param(last_run_id, "last_run_id"),
-            asset_details=check.opt_inst_param(asset_details, "asset_details", AssetDetails),
-            cached_status=check.opt_inst_param(
-                cached_status, "cached_status", AssetStatusCacheValue
-            ),
-            last_observation_record=check.opt_inst_param(
-                last_observation_record, "last_observation_record", EventLogRecord
-            ),
-            last_planned_materialization_storage_id=check.opt_int_param(
-                last_planned_materialization_storage_id,
-                "last_planned_materialization_storage_id",
-            ),
-            last_planned_materialization_run_id=check.opt_str_param(
-                last_planned_materialization_run_id,
-                "last_planned_materialization_run_id",
-            ),
-            last_failed_to_materialize_record=check.opt_inst_param(
-                last_failed_to_materialize_record,
-                "last_failed_to_materialize_record",
-                EventLogRecord,
-            ),
-            is_writing_failures=check.bool_param(is_writing_failures, "is_writing_failures"),
-            last_skipped_materialize_record=check.opt_inst_param(
-                last_skipped_materialize_record,
-                "last_skipped_materialize_record",
-                EventLogRecord,
-            ),
-        )
+@record
+class AssetEntry:
+    asset_key: AssetKey
+    last_materialization_record: Optional[EventLogRecord] = None
+    last_run_id: Optional[str] = None
+    asset_details: Optional[AssetDetails] = None
+    cached_status: Optional[
+        Annotated[
+            "AssetStatusCacheValue", ImportFrom("dagster._core.storage.partition_status_cache")
+        ]
+    ] = None
+    # Below are optional fields which can be used for more performant
+    # queries if the underlying storage supports it
+    last_observation_record: Optional[EventLogRecord] = None
+    last_planned_materialization_storage_id: Optional[int] = None
+    last_planned_materialization_run_id: Optional[str] = None
+    last_failed_to_materialize_record: Optional[EventLogRecord] = None
+    is_writing_failures: bool = False
+    last_skipped_materialize_record: Optional[EventLogRecord] = None
 
     @property
     def last_materialization(self) -> Optional["EventLogEntry"]:
@@ -180,14 +127,17 @@ class AssetEntry(
 
 
 @public
+@record
 class AssetRecord(
-    NamedTuple("_NamedTuple", [("storage_id", int), ("asset_entry", AssetEntry)]),
     LoadableBy[AssetKey],
 ):
     """Internal representation of an asset record, as stored in a :py:class:`~dagster._core.storage.event_log.EventLogStorage`.
 
     Users should not invoke this class directly.
     """
+
+    storage_id: int
+    asset_entry: AssetEntry
 
     @classmethod
     def _blocking_batch_load(
@@ -200,18 +150,15 @@ class AssetRecord(
         return [records_by_key.get(key) for key in keys]
 
 
+@record
 class AssetCheckSummaryRecord(
-    NamedTuple(
-        "_AssetCheckSummaryRecord",
-        [
-            ("asset_check_key", AssetCheckKey),
-            ("last_check_execution_record", Optional[AssetCheckExecutionRecord]),
-            ("last_run_id", Optional[str]),
-            ("last_completed_check_execution_record", Optional[AssetCheckExecutionRecord]),
-        ],
-    ),
     LoadableBy[AssetCheckKey],
 ):
+    asset_check_key: AssetCheckKey
+    last_check_execution_record: Optional[AssetCheckExecutionRecord]
+    last_run_id: Optional[str]
+    last_completed_check_execution_record: Optional[AssetCheckExecutionRecord]
+
     @classmethod
     def _blocking_batch_load(
         cls, keys: Iterable[AssetCheckKey], context: LoadingContext
@@ -230,7 +177,8 @@ class AssetCheckSummaryRecord(
         )
 
 
-class PlannedMaterializationInfo(NamedTuple):
+@record
+class PlannedMaterializationInfo:
     """Internal representation of an planned materialization event, containing storage_id / run_id.
 
     Users should not invoke this class directly.
@@ -684,7 +632,7 @@ class EventLogStorage(ABC, MayHaveInstanceWeakref[T_DagsterInstance]):
         check_key: AssetCheckKey,
         limit: int,
         cursor: Optional[int] = None,
-        status: Optional[AbstractSet[AssetCheckExecutionRecordStatus]] = None,
+        status: Optional[Set[AssetCheckExecutionRecordStatus]] = None,
     ) -> Sequence[AssetCheckExecutionRecord]:
         """Get executions for one asset check, sorted by recency."""
         pass

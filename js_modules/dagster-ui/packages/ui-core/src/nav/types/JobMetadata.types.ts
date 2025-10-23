@@ -28,6 +28,8 @@ export type JobMetadataQuery = {
             id: string;
             selectorId: string;
             status: Types.InstigationStatus;
+            hasStartPermission: boolean;
+            hasStopPermission: boolean;
           };
         }>;
         sensors: Array<{
@@ -41,6 +43,8 @@ export type JobMetadataQuery = {
             id: string;
             selectorId: string;
             status: Types.InstigationStatus;
+            hasStartPermission: boolean;
+            hasStopPermission: boolean;
             typeSpecificData:
               | {__typename: 'ScheduleData'}
               | {__typename: 'SensorData'; lastCursor: string | null}
@@ -102,6 +106,8 @@ export type JobMetadataFragment = {
       id: string;
       selectorId: string;
       status: Types.InstigationStatus;
+      hasStartPermission: boolean;
+      hasStopPermission: boolean;
     };
   }>;
   sensors: Array<{
@@ -115,6 +121,8 @@ export type JobMetadataFragment = {
       id: string;
       selectorId: string;
       status: Types.InstigationStatus;
+      hasStartPermission: boolean;
+      hasStopPermission: boolean;
       typeSpecificData:
         | {__typename: 'ScheduleData'}
         | {__typename: 'SensorData'; lastCursor: string | null}
@@ -138,4 +146,4 @@ export type RunMetadataFragment = {
   }>;
 };
 
-export const JobMetadataQueryVersion = '489183f897f5a30e8c9883a6b96fcaa6141734c79613e5979baa3e5a15050efd';
+export const JobMetadataQueryVersion = '42558b05c2bcdea56a428ab77c2f477601fec1628e24b82841e0eb4199e28067';

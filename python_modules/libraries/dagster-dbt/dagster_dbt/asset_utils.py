@@ -18,7 +18,6 @@ from dagster import (
     DagsterInvalidDefinitionError,
     DagsterInvariantViolationError,
     DefaultScheduleStatus,
-    LegacyFreshnessPolicy,
     OpExecutionContext,
     RunConfig,
     ScheduleDefinition,
@@ -168,7 +167,9 @@ def get_asset_keys_by_output_name_for_source(
         raise KeyError(f"Could not find a dbt source with name: {source_name}")
 
     return {
-        dagster_name_fn(value): dagster_dbt_translator.get_asset_spec(manifest, unique_id, None).key
+        dagster_name_fn(value): dagster_dbt_translator.get_asset_spec(
+            manifest, unique_id, dbt_project
+        ).key
         for unique_id, value in matching.items()
     }
 
@@ -602,25 +603,6 @@ def default_owners_from_dbt_resource_props(
         return None
 
     return [owner] if isinstance(owner, str) else owner
-
-
-def default_freshness_policy_fn(
-    dbt_resource_props: Mapping[str, Any],
-) -> Optional[LegacyFreshnessPolicy]:
-    dagster_metadata = dbt_resource_props.get("meta", {}).get("dagster", {})
-    freshness_policy_config = dagster_metadata.get("freshness_policy", {})
-
-    freshness_policy = (
-        LegacyFreshnessPolicy(
-            maximum_lag_minutes=float(freshness_policy_config["maximum_lag_minutes"]),
-            cron_schedule=freshness_policy_config.get("cron_schedule"),
-            cron_schedule_timezone=freshness_policy_config.get("cron_schedule_timezone"),
-        )
-        if freshness_policy_config
-        else None
-    )
-
-    return freshness_policy
 
 
 def default_auto_materialize_policy_fn(

@@ -91,7 +91,7 @@ An exhaustive list of settings is available on the [Kubernetes agent configurati
 
 ### Configure your agents to serve branch deployments
 
-[Branch deployments](/deployment/dagster-plus/ci-cd/branch-deployments) are lightweight staging environments created for each code change. To configure your Dagster+ agent to manage them:
+[Branch deployments](/deployment/dagster-plus/deploying-code/branch-deployments) are lightweight staging environments created for each code change. To configure your Dagster+ agent to manage them:
 
 ```yaml
 # values.yaml
@@ -148,18 +148,20 @@ For cloud-based Kubernetes deployments such as AWS EKS, AKS, or GCP, you don't n
 First create the secret. This step will vary based on the registry you use, but for DockerHub:
 
 ```
-kubectl create secret docker-registry regCred \
+kubectl create secret docker-registry regcred \
   --docker-server=DOCKER_REGISTRY_SERVER \
   --docker-username=DOCKER_USER \
   --docker-password=DOCKER_PASSWORD \
-  --docker-email=DOCKER_EMAIL
+  --docker-email=DOCKER_EMAIL \
+  --namespace dagster-cloud
 ```
 
 Use Helm to configure the agent with the secret:
 
 ```yaml file=values.yaml
 # values.yaml
-imagePullSecrets: [regCred]
+imagePullSecrets:
+  - name: regcred
 ```
 
 ```shell
