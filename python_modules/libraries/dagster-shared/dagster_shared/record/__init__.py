@@ -641,12 +641,17 @@ def _true(_):
 
 
 def _from_reduce(cls, kwargs):
-    return cls(**kwargs)
+    # loading from pickle bypasses checked / custom __new__ and
+    # just reconstructs the base namedtuple
+    return getattr(cls, _NAMED_TUPLE_BASE_NEW_FIELD)(
+        cls,
+        **kwargs,
+    )
 
 
 def _reduce(self):
     # pickle support
-    return _from_reduce, (self.__class__, as_dict_for_new(self))
+    return _from_reduce, (self.__class__, as_dict(self))
 
 
 def _repr(self) -> str:
