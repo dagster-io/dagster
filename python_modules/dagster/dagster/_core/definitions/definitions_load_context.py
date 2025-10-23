@@ -208,7 +208,7 @@ class DefinitionsLoadContext:
         key = config.key
         key_info = self._get_defs_key_state_info(key)
 
-        if config.type == DefsStateManagementType.LOCAL_FILESYSTEM:
+        if config.management_type == DefsStateManagementType.LOCAL_FILESYSTEM:
             # it is possible for local state to exist without the defs_state_storage being aware
             # of it if the state was added during docker build
             state_path = get_local_state_path(key, project_root)
@@ -217,15 +217,15 @@ class DefinitionsLoadContext:
                 return
             self.add_defs_state_info(key, LOCAL_STATE_VERSION, state_path.stat().st_ctime)
             yield state_path
-        elif config.type == DefsStateManagementType.VERSIONED_STATE_STORAGE:
+        elif config.management_type == DefsStateManagementType.VERSIONED_STATE_STORAGE:
             if state_storage is None:
                 raise DagsterInvalidInvocationError(
-                    f"Attempted to access state for key {config.key} with management type {config.type} "
+                    f"Attempted to access state for key {config.key} with management type {config.management_type} "
                     "without a StateStorage in context. This is likely the result of an internal framework error."
                 )
             key_info = self._get_defs_key_state_info(key)
             # this implies that no state has been stored since the management type was changed
-            if key_info is None or key_info.management_type != config.type:
+            if key_info is None or key_info.management_type != config.management_type:
                 yield None
                 return
             # grab state for storage
@@ -233,7 +233,7 @@ class DefinitionsLoadContext:
                 state_path = Path(temp_dir) / "state"
                 state_storage.download_state_to_path(key, key_info.version, state_path)
                 yield state_path
-        elif config.type == DefsStateManagementType.LEGACY_CODE_SERVER_SNAPSHOTS:
+        elif config.management_type == DefsStateManagementType.LEGACY_CODE_SERVER_SNAPSHOTS:
             # state is stored in the reconstruction metadata
             with tempfile.TemporaryDirectory() as temp_dir:
                 state_path = Path(temp_dir) / "state"
@@ -241,7 +241,9 @@ class DefinitionsLoadContext:
                 state_path.write_text(state)
                 yield state_path
         else:
-            raise DagsterInvariantViolationError(f"Invalid management type: {config.type}")
+            raise DagsterInvariantViolationError(
+                f"Invalid management type: {config.management_type}"
+            )
 
 
 TState = TypeVar("TState", bound=PackableValue)

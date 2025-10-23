@@ -360,7 +360,7 @@ def test_component_load_with_defs_state(
                         "workspace_id": workspace_id,
                     },
                     "use_workspace_scan": False,
-                    "defs_state": {"type": defs_state_type},
+                    "defs_state": {"management_type": defs_state_type},
                 },
             },
         )

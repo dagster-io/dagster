@@ -273,7 +273,7 @@ def test_component_load_with_defs_state(
                         "client_id": uuid.uuid4().hex,
                         "client_secret": uuid.uuid4().hex,
                     },
-                    "defs_state": {"type": defs_state_type},
+                    "defs_state": {"management_type": defs_state_type},
                 },
             },
         )
