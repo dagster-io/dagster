@@ -33,8 +33,8 @@ setup(
     include_package_data=True,
     python_requires=">=3.9,<3.14",
     install_requires=[
-        f"dagster{pin}",
-        f"dagster-duckdb{pin}",
+        "dagster==1.11.16",
+        "dagster-duckdb==0.27.16",
         "pandas",
     ],
     zip_safe=False,
