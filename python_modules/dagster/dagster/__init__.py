@@ -346,6 +346,9 @@ from dagster._core.definitions.output import (
     Out as Out,
     OutputMapping as OutputMapping,
 )
+from dagster._core.definitions.partitions.context import (
+    partition_loading_context as partition_loading_context,
+)
 from dagster._core.definitions.partitions.definition import (
     DailyPartitionsDefinition as DailyPartitionsDefinition,
     DynamicPartitionsDefinition as DynamicPartitionsDefinition,
