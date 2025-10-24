@@ -479,7 +479,7 @@ class EcsRunLauncher(RunLauncher[T_DagsterInstance], ConfigurableClass):
     def _run_task(self, **run_task_kwargs):
         return run_ecs_task(self.ecs, run_task_kwargs)
 
-    def launch_run(self, context: LaunchRunContext) -> None:
+    def _launch_run(self, context: LaunchRunContext) -> Mapping[str, Any]:
         """Launch a run in an ECS task."""
         run = context.dagster_run
         container_context = EcsContainerContext.create_for_run(run, self)
@@ -563,6 +563,11 @@ class EcsRunLauncher(RunLauncher[T_DagsterInstance], ConfigurableClass):
         cluster_arn = task["clusterArn"]
         self._set_run_tags(run.run_id, cluster=cluster_arn, task_arn=arn)
         self.report_launch_events(run, arn, cluster_arn)
+
+        return task
+
+    def launch_run(self, context: LaunchRunContext) -> None:
+        self._launch_run(context)
 
     def report_launch_events(
         self, run: DagsterRun, arn: Optional[str] = None, cluster: Optional[str] = None
