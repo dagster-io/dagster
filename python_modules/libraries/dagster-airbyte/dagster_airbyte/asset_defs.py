@@ -20,7 +20,7 @@ from dagster import (
     SourceAsset,
     _check as check,
 )
-from dagster._annotations import beta, hidden_param, only_allow_hidden_params_in_kwargs
+from dagster._annotations import beta, hidden_param, only_allow_hidden_params_in_kwargs, superseded
 from dagster._core.definitions import AssetsDefinition, multi_asset
 from dagster._core.definitions.assets.definition.cacheable_assets_definition import (
     AssetsDefinitionCacheableData,
@@ -911,6 +911,12 @@ class AirbyteYAMLCacheableAssetsDefinition(AirbyteCoreCacheableAssetsDefinition)
         return output_connections
 
 
+@superseded(
+    additional_warn_text=(
+        "Using `load_assets_from_airbyte_instance` with legacy resources is no longer best practice. "
+        "Use `build_airbyte_assets_definitions` with `AirbyteWorkspace` instead."
+    )
+)
 def load_assets_from_airbyte_instance(
     airbyte: Union[AirbyteResource, ResourceDefinition],
     workspace_id: Optional[str] = None,
