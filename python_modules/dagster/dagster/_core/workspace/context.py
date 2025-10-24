@@ -41,6 +41,7 @@ from dagster._core.remote_origin import (
     CodeLocationOrigin,
     GrpcServerCodeLocationOrigin,
     ManagedGrpcPythonEnvCodeLocationOrigin,
+    RemoteJobOrigin,
 )
 from dagster._core.remote_representation.code_location import (
     CodeLocation,
@@ -71,6 +72,7 @@ from dagster._core.remote_representation.grpc_server_state_subscriber import (
 )
 from dagster._core.remote_representation.handle import InstigatorHandle, RepositoryHandle
 from dagster._core.snap.dagster_types import DagsterTypeSnap
+from dagster._core.snap.execution_plan_snapshot import ExecutionPlanSnapshot
 from dagster._core.snap.mode import ResourceDefSnap
 from dagster._core.snap.node import GraphDefSnap, OpDefSnap
 from dagster._core.workspace.load_target import WorkspaceLoadTarget
@@ -414,15 +416,19 @@ class BaseWorkspaceRequestContext(LoadingContext):
             instance=self.instance,
         )
 
-    async def gen_execution_plan(
+    async def gen_execution_plan_snapshot_without_job_snapshot_id(
         self,
-        remote_job: RemoteJob,
+        job_origin: RemoteJobOrigin,
+        job_subset_selector: JobSubsetSelector,
         run_config: Mapping[str, object],
         step_keys_to_execute: Optional[Sequence[str]],
         known_state: Optional[KnownExecutionState],
-    ) -> RemoteExecutionPlan:
-        return await self.get_code_location(remote_job.handle.location_name).gen_execution_plan(
-            remote_job=remote_job,
+    ) -> ExecutionPlanSnapshot:
+        return await self.get_code_location(
+            job_origin.location_name
+        ).gen_execution_plan_snapshot_without_job_snapshot_id(
+            job_origin=job_origin,
+            job_subset_selector=job_subset_selector,
             run_config=run_config,
             step_keys_to_execute=step_keys_to_execute,
             known_state=known_state,
