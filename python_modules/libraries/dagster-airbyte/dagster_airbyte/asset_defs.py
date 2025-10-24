@@ -20,7 +20,7 @@ from dagster import (
     SourceAsset,
     _check as check,
 )
-from dagster._annotations import beta, deprecated_param, hidden_param, only_allow_hidden_params_in_kwargs, superseded
+from dagster._annotations import beta, hidden_param, only_allow_hidden_params_in_kwargs, superseded
 from dagster._core.definitions import AssetsDefinition, multi_asset
 from dagster._core.definitions.assets.definition.cacheable_assets_definition import (
     AssetsDefinitionCacheableData,

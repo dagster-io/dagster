@@ -12,13 +12,15 @@ The `dagster-airbyte` integration has been significantly improved with new resou
 ## Overview of Changes
 
 The legacy Airbyte integration used:
+
 - `AirbyteResource` / `airbyte_resource` for OSS Airbyte
 - `AirbyteCloudResource` / `airbyte_cloud_resource` for Airbyte Cloud
 - `load_assets_from_airbyte_instance` for loading assets
 
 The new integration uses:
+
 - `AirbyteWorkspace` for OSS Airbyte
-- `AirbyteCloudWorkspace` for Airbyte Cloud  
+- `AirbyteCloudWorkspace` for Airbyte Cloud
 - `build_airbyte_assets_definitions` for loading assets
 
 ## Key Benefits of the New Resources
@@ -39,7 +41,7 @@ import dagster as dg
 # Old way (deprecated)
 airbyte_resource = AirbyteResource(
     host="localhost",
-    port="8000", 
+    port="8000",
     username="airbyte",
     password=dg.EnvVar("AIRBYTE_PASSWORD"),
 )
@@ -62,7 +64,7 @@ import dagster as dg
 # New way (recommended)
 airbyte_workspace = AirbyteWorkspace(
     rest_api_base_url="http://localhost:8000/api/public/v1",
-    configuration_api_base_url="http://localhost:8000/api/v1", 
+    configuration_api_base_url="http://localhost:8000/api/v1",
     workspace_id=dg.EnvVar("AIRBYTE_WORKSPACE_ID"),
     username="airbyte",
     password=dg.EnvVar("AIRBYTE_PASSWORD"),
@@ -140,6 +142,7 @@ defs = dg.Definitions(
 You'll need to update your environment variables:
 
 **For OSS Airbyte:**
+
 ```bash
 # Legacy
 AIRBYTE_HOST=localhost
@@ -156,8 +159,9 @@ AIRBYTE_PASSWORD=your_password
 ```
 
 **For Airbyte Cloud:**
+
 ```bash
-# Legacy  
+# Legacy
 AIRBYTE_CLIENT_ID=your_client_id
 AIRBYTE_CLIENT_SECRET=your_client_secret
 
@@ -178,11 +182,13 @@ AIRBYTE_CLIENT_SECRET=your_client_secret
 ## Getting Your Workspace ID
 
 ### For OSS Airbyte
+
 1. Access your Airbyte instance at `http://your-host:port`
 2. Go to Settings → General
 3. Copy the Workspace ID
 
 ### For Airbyte Cloud
+
 1. Log into [Airbyte Cloud](https://cloud.airbyte.com)
 2. Go to your workspace settings
 3. Copy the Workspace ID
@@ -201,11 +207,13 @@ AIRBYTE_CLIENT_SECRET=your_client_secret
 ## Troubleshooting
 
 ### Connection Issues
+
 - **OSS Airbyte**: Ensure you're using the correct API endpoints (`/api/public/v1` for REST, `/api/v1` for Configuration)
 - **Authentication**: Verify credentials and workspace ID are correct
 - **Network**: Check that Airbyte instance is accessible from Dagster
 
 ### Asset Loading Issues
+
 - **Workspace ID**: Ensure the workspace ID matches your Airbyte workspace
 - **Permissions**: Verify your credentials have access to the workspace
 - **Connections**: Check that connections exist in the specified workspace
@@ -213,6 +221,7 @@ AIRBYTE_CLIENT_SECRET=your_client_secret
 ## Getting Help
 
 If you encounter issues during migration:
+
 1. Check the [Airbyte Component documentation](/integrations/libraries/airbyte/airbyte-component) for the latest patterns
 2. Review the [API documentation](/api/libraries/dagster-airbyte) for detailed parameter information
 3. Look at the example code in the docs snippets directory
