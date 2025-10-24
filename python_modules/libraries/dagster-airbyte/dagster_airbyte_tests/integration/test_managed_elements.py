@@ -50,8 +50,18 @@ def docker_compose_airbyte_instance_fixture(
 ):
     """Spins up an Airbyte instance using docker-compose, and tears it down after the test."""
     with docker_compose_cm(docker_compose_file, env_file=docker_compose_env_file) as hostnames:
-        webapp_host = hostnames["airbyte-webapp"]
-        webapp_port = "8000" if webapp_host == "localhost" else "80"
+        # In Airbyte 0.41.0+, the API is served by the server service, not webapp
+        # Fall back to server if webapp is not available
+        if "airbyte-webapp" in hostnames:
+            webapp_host = hostnames["airbyte-webapp"]
+            webapp_port = "8000" if webapp_host == "localhost" else "80"
+        elif "airbyte-server" in hostnames:
+            webapp_host = hostnames["airbyte-server"]
+            webapp_port = "8001"
+        else:
+            raise Exception(
+                f"Neither airbyte-webapp nor airbyte-server found in hostnames: {hostnames}"
+            )
 
         # Poll Airbyte API until it's ready
         # Healthcheck endpoint is ready before API is ready, so we poll the API
