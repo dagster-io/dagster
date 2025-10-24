@@ -1,3 +1,6 @@
+import {useMemo} from 'react';
+import * as yaml from 'yaml';
+
 import {
   CONFIG_EDITOR_GENERATOR_PARTITION_SETS_FRAGMENT,
   CONFIG_EDITOR_GENERATOR_PIPELINE_FRAGMENT,
@@ -30,6 +33,23 @@ interface Props {
   onSaveConfig?: (config: LaunchpadConfig) => void;
 }
 
+const filterDefaultYamlForSubselection = (defaultYaml: string, opNames: Set<string>): string => {
+  const parsedYaml = yaml.parse(defaultYaml);
+
+  const opsConfig = parsedYaml['ops'];
+  if (opsConfig) {
+    const filteredOpKeys = Object.keys(opsConfig).filter((entry) => {
+      return opNames.has(entry);
+    });
+    const filteredOpsConfig = Object.fromEntries(
+      filteredOpKeys.map((key) => [key, opsConfig[key]]),
+    );
+    parsedYaml['ops'] = filteredOpsConfig;
+  }
+
+  return yaml.stringify(parsedYaml);
+};
+
 export const LaunchpadAllowedRoot = (props: Props) => {
   useTrackPageView();
 
@@ -59,6 +79,24 @@ export const LaunchpadAllowedRoot = (props: Props) => {
 
   const pipelineOrError = result?.data?.pipelineOrError;
   const partitionSetsOrError = result?.data?.partitionSetsOrError;
+
+  const runConfigSchemaOrError = result.data?.runConfigSchemaOrError;
+  const filteredRootDefaultYaml = useMemo(() => {
+    if (!runConfigSchemaOrError || runConfigSchemaOrError.__typename !== 'RunConfigSchema') {
+      return undefined;
+    }
+
+    const rootDefaultYaml = runConfigSchemaOrError.rootDefaultYaml;
+    const opNameList = sessionPresets?.assetSelection
+      ? sessionPresets.assetSelection.map((entry) => entry.opNames ?? []).flat()
+      : [];
+
+    // to correctly handle graph assets, where the op name is 'graph_asset.inner_asset', split by "."
+    // and just consider the top level for filtering purposes..
+    const opNames = new Set(opNameList.map((entry) => entry.split('.')[0] ?? ''));
+
+    return filterDefaultYamlForSubselection(rootDefaultYaml, opNames);
+  }, [runConfigSchemaOrError, sessionPresets]);
 
   if (!pipelineOrError || !partitionSetsOrError) {
     return <LaunchpadSessionLoading />;
@@ -118,11 +156,7 @@ export const LaunchpadAllowedRoot = (props: Props) => {
         partitionSets={partitionSetsOrError}
         repoAddress={repoAddress}
         sessionPresets={sessionPresets || {}}
-        rootDefaultYaml={
-          result.data?.runConfigSchemaOrError.__typename === 'RunConfigSchema'
-            ? result.data.runConfigSchemaOrError.rootDefaultYaml
-            : undefined
-        }
+        rootDefaultYaml={filteredRootDefaultYaml}
         onSaveConfig={onSaveConfig}
         runConfigSchema={
           result.data?.runConfigSchemaOrError.__typename === 'RunConfigSchema'
