@@ -55,7 +55,7 @@ def test_pull_env_command_auth_err(dg_plus_cli_config):
         )
         result = runner.invoke("plus", "pull", "env")
         assert result.exit_code != 0, result.output + " " + str(result.exception)
-        assert "Unauthorized: Not authorized" in str(result.output)
+        assert "Error: Not authorized" in str(result.output)
 
 
 @responses.activate

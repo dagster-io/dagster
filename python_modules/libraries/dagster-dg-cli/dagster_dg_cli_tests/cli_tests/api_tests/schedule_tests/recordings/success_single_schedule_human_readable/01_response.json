@@ -1,0 +1,182 @@
+{
+  "workspaceOrError": {
+    "__typename": "Workspace",
+    "locationEntries": [
+      {
+        "__typename": "WorkspaceLocationEntry",
+        "locationOrLoadError": {
+          "__typename": "RepositoryLocation",
+          "repositories": [
+            {
+              "name": "__repository__",
+              "schedules": []
+            }
+          ]
+        },
+        "name": "basics"
+      },
+      {
+        "__typename": "WorkspaceLocationEntry",
+        "locationOrLoadError": {
+          "__typename": "RepositoryLocation",
+          "repositories": [
+            {
+              "name": "__repository__",
+              "schedules": [
+                {
+                  "cronSchedule": "*/30 * * * *",
+                  "description": null,
+                  "executionTimezone": "UTC",
+                  "id": "4b2db2e505d44f36b864512ba5157c55305f809d::74f7601f217dda2e62924f9fb5c27413de723b07",
+                  "metadataEntries": [],
+                  "name": "run_assets_30min",
+                  "pipelineName": "run_etl_pipeline",
+                  "tags": []
+                }
+              ]
+            }
+          ]
+        },
+        "name": "batch_enrichment"
+      },
+      {
+        "__typename": "WorkspaceLocationEntry",
+        "locationOrLoadError": {
+          "__typename": "RepositoryLocation",
+          "repositories": [
+            {
+              "name": "__repository__",
+              "schedules": [
+                {
+                  "cronSchedule": "*/10 * * * *",
+                  "description": null,
+                  "executionTimezone": "UTC",
+                  "id": "cf74d391c0fd51fb2545599e5a6d114bbc90f834::6be28c91d17aef5783f944d0e7d4adbf243f9c16",
+                  "metadataEntries": [],
+                  "name": "check_avg_orders_freshness_schdule",
+                  "pipelineName": "check_avg_orders_freshness_job",
+                  "tags": []
+                },
+                {
+                  "cronSchedule": "0 8 * * *",
+                  "description": null,
+                  "executionTimezone": "UTC",
+                  "id": "c8ceff917b2e7830c20109586ae0f7015a6c8a3a::e13fe84582b27b2302659030e00c11e4de1cd4aa",
+                  "metadataEntries": [
+                    {
+                      "description": null,
+                      "label": "dagster/code_references"
+                    },
+                    {
+                      "description": null,
+                      "label": "dagster/component_origin",
+                      "text": "ScheduledJobComponent"
+                    }
+                  ],
+                  "name": "dbt_components_job_schedule",
+                  "pipelineName": "dbt_components_job",
+                  "tags": []
+                },
+                {
+                  "cronSchedule": "0 0 * * *",
+                  "description": null,
+                  "executionTimezone": "UTC",
+                  "id": "999ba8f82a8e463cbc00b2b8615abf69962e6f82::9cad87f1a27573f73c3b62d4c93ce52dbdc6e6f7",
+                  "metadataEntries": [
+                    {
+                      "description": null,
+                      "label": "dagster/code_references"
+                    },
+                    {
+                      "description": null,
+                      "label": "dagster/component_origin",
+                      "text": "ScheduledPartitionedJobComponent"
+                    }
+                  ],
+                  "name": "refresh_analytics_model_job_schedule",
+                  "pipelineName": "refresh_analytics_model_job",
+                  "tags": []
+                }
+              ]
+            }
+          ]
+        },
+        "name": "data-eng-pipeline"
+      },
+      {
+        "__typename": "WorkspaceLocationEntry",
+        "locationOrLoadError": {
+          "__typename": "RepositoryLocation",
+          "repositories": [
+            {
+              "name": "__repository__",
+              "schedules": []
+            }
+          ]
+        },
+        "name": "hooli_airlift"
+      },
+      {
+        "__typename": "WorkspaceLocationEntry",
+        "locationOrLoadError": {
+          "__typename": "RepositoryLocation",
+          "repositories": [
+            {
+              "name": "__repository__",
+              "schedules": []
+            }
+          ]
+        },
+        "name": "hooli_bi"
+      },
+      {
+        "__typename": "WorkspaceLocationEntry",
+        "locationOrLoadError": {
+          "__typename": "RepositoryLocation",
+          "repositories": [
+            {
+              "name": "__repository__",
+              "schedules": [
+                {
+                  "cronSchedule": "0 0 * * *",
+                  "description": null,
+                  "executionTimezone": "UTC",
+                  "id": "f41a604fe49b87ba5391b1af281f770a0fa023fb::f5ec577e4c510ae0b1d501173066e7a0c7a58c04",
+                  "metadataEntries": [],
+                  "name": "daily_sling_job_schedule",
+                  "pipelineName": "daily_sling_job",
+                  "tags": []
+                }
+              ]
+            }
+          ]
+        },
+        "name": "hooli_data_ingest"
+      },
+      {
+        "__typename": "WorkspaceLocationEntry",
+        "locationOrLoadError": {
+          "__typename": "RepositoryLocation",
+          "repositories": [
+            {
+              "name": "__repository__",
+              "schedules": [
+                {
+                  "cronSchedule": "59 * * * *",
+                  "description": null,
+                  "executionTimezone": "UTC",
+                  "id": "8a9edc1bb0f0f2a11b3726ab7ad2372e998848fa::69c7679312d8eeb527657585f0e2f7be135a60e0",
+                  "metadataEntries": [],
+                  "name": "snowflake_insights_import_schedule",
+                  "pipelineName": "snowflake_insights_import",
+                  "tags": []
+                }
+              ]
+            }
+          ]
+        },
+        "name": "snowflake_insights"
+      }
+    ]
+  }
+}

@@ -7,6 +7,7 @@ if TYPE_CHECKING:
     from dagster_dg_cli.api_layer.schemas.agent import DgApiAgent, DgApiAgentList
     from dagster_dg_cli.api_layer.schemas.asset import DgApiAsset, DgApiAssetList
     from dagster_dg_cli.api_layer.schemas.deployment import Deployment, DeploymentList
+    from dagster_dg_cli.api_layer.schemas.schedule import DgApiSchedule, DgApiScheduleList
     from dagster_dg_cli.api_layer.schemas.secret import DgApiSecret, DgApiSecretList
 
 
@@ -119,7 +120,7 @@ def _format_asset_status_lines(status) -> list[str]:
             lines.append(f"Warning Checks: {metadata.num_warning_checks}")
         if metadata.last_materialized_timestamp:
             lines.append(
-                f"Last Materialized: {_format_timestamp(metadata.last_materialized_timestamp, 'milliseconds')}"
+                f"Last Materialized: {_format_timestamp(metadata.last_materialized_timestamp)}"
             )
 
     # Latest materialization
@@ -360,3 +361,61 @@ def _format_secret_scopes(secret: "DgApiSecret") -> str:
         scopes.append("Local Deployment")
 
     return ", ".join(scopes) if scopes else "None"
+
+
+def format_schedules(schedules: "DgApiScheduleList", as_json: bool) -> str:
+    """Format schedule list for output."""
+    if as_json:
+        return schedules.model_dump_json(indent=2)
+
+    lines = []
+    for schedule in schedules.items:
+        lines.extend(
+            [
+                f"Name: {schedule.name}",
+                f"Job Name: {schedule.pipeline_name}",  # Show as "Job Name" per INTERNAL_GRAPHQL_USAGE.md guidance
+                f"Cron Schedule: {schedule.cron_schedule}",
+                "",  # Empty line between schedules
+            ]
+        )
+
+    return "\n".join(lines).rstrip()  # Remove trailing empty line
+
+
+def format_schedule(schedule: "DgApiSchedule", as_json: bool) -> str:
+    """Format single schedule for output."""
+    if as_json:
+        return schedule.model_dump_json(indent=2)
+
+    lines = [
+        f"Name: {schedule.name}",
+        f"Job Name: {schedule.pipeline_name}",  # Show as "Job Name" per INTERNAL_GRAPHQL_USAGE.md guidance
+        f"Cron Schedule: {schedule.cron_schedule}",
+        f"Description: {schedule.description or 'None'}",
+        f"Execution Timezone: {schedule.execution_timezone}",
+    ]
+
+    # Add tags if present
+    if schedule.tags:
+        lines.append("")
+        lines.append("Tags:")
+        for tag in schedule.tags:
+            lines.append(f"  {tag['key']}: {tag['value']}")
+
+    # Add metadata if present
+    if schedule.metadata_entries:
+        lines.append("")
+        lines.append("Metadata:")
+        for entry in schedule.metadata_entries:
+            value = entry.get("description", "")
+            for key in ["text", "url", "path", "jsonString", "mdStr"]:
+                if entry.get(key):
+                    value = entry[key]
+                    break
+            for key in ["floatValue", "intValue", "boolValue"]:
+                if entry.get(key) is not None:
+                    value = str(entry[key])
+                    break
+            lines.append(f"  {entry['label']}: {value}")
+
+    return "\n".join(lines)

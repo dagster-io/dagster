@@ -277,18 +277,20 @@
   '''
 # ---
 # name: TestDynamicCommandExecution.test_command_execution[asset_error_asset_not_found_json]
-  '''
-  {"error": "Asset not found: nonexistent-asset"}
-  Error: Failed to get asset: Asset not found: nonexistent-asset
-  
-  '''
+  dict({
+    'code': 'ASSET_NOT_FOUND',
+    'error': 'Asset not found: nonexistent-asset',
+    'statusCode': 404,
+    'type': 'not_found_error',
+  })
 # ---
 # name: TestDynamicCommandExecution.test_command_execution[asset_error_asset_not_found_status_view_json]
-  '''
-  {"error": "Asset not found: nonexistent-asset"}
-  Error: Failed to get asset: Asset not found: nonexistent-asset
-  
-  '''
+  dict({
+    'code': 'ASSET_NOT_FOUND',
+    'error': 'Asset not found: nonexistent-asset',
+    'statusCode': 404,
+    'type': 'not_found_error',
+  })
 # ---
 # name: TestDynamicCommandExecution.test_command_execution[asset_error_invalid_view_json]
   '''
@@ -300,11 +302,12 @@
   '''
 # ---
 # name: TestDynamicCommandExecution.test_command_execution[asset_error_malformed_asset_key_json]
-  '''
-  {"error": "Asset not found: ''"}
-  Error: Failed to get asset: Asset not found: ''
-  
-  '''
+  dict({
+    'code': 'ASSET_NOT_FOUND',
+    'error': "Asset not found: ''",
+    'statusCode': 404,
+    'type': 'not_found_error',
+  })
 # ---
 # name: TestDynamicCommandExecution.test_command_execution[asset_success_assets_status_view_human_readable_text]
   '''
@@ -1117,6 +1120,60 @@
   Type: PRODUCTION
   
   '''
+# ---
+# name: TestDynamicCommandExecution.test_command_execution[error_code_error_asset_not_found_json]
+  dict({
+    'code': 'ASSET_NOT_FOUND',
+    'error': 'Asset not found: nonexistent-asset-key',
+    'statusCode': 404,
+    'type': 'not_found_error',
+  })
+# ---
+# name: TestDynamicCommandExecution.test_command_execution[error_code_error_asset_not_found_text_text]
+  '''
+  Error querying Dagster Plus API: Asset not found: nonexistent-asset-key
+  
+  '''
+# ---
+# name: TestDynamicCommandExecution.test_command_execution[error_code_error_invalid_asset_key_empty_json]
+  dict({
+    'code': 'ASSET_NOT_FOUND',
+    'error': "Asset not found: ''",
+    'statusCode': 404,
+    'type': 'not_found_error',
+  })
+# ---
+# name: TestDynamicCommandExecution.test_command_execution[error_code_error_invalid_asset_key_malformed_json]
+  dict({
+    'code': 'ASSET_NOT_FOUND',
+    'error': "Asset not found: 'invalid::asset::key'",
+    'statusCode': 404,
+    'type': 'not_found_error',
+  })
+# ---
+# name: TestDynamicCommandExecution.test_command_execution[error_code_error_schedule_not_found_json]
+  dict({
+    'code': 'SCHEDULE_NOT_FOUND',
+    'error': 'Schedule not found: nonexistent-schedule',
+    'statusCode': 404,
+    'type': 'not_found_error',
+  })
+# ---
+# name: TestDynamicCommandExecution.test_command_execution[error_code_error_scheduler_not_defined_json]
+  dict({
+    'code': 'SCHEDULER_NOT_DEFINED',
+    'error': 'Scheduler is not defined for this deployment',
+    'statusCode': 500,
+    'type': 'server_error',
+  })
+# ---
+# name: TestDynamicCommandExecution.test_command_execution[error_code_error_unauthorized_deployment_list_json]
+  dict({
+    'code': 'UNAUTHORIZED',
+    'error': 'Unauthorized',
+    'statusCode': 401,
+    'type': 'authentication_error',
+  })
 # ---
 # name: TestDynamicCommandExecution.test_command_execution[log_error_cursor_no_recording_json_json]
   '''
@@ -2223,6 +2280,183 @@
   Pipeline: __ASSET_JOB
   
   '''
+# ---
+# name: TestDynamicCommandExecution.test_command_execution[schedule_error_empty_schedule_name_json]
+  dict({
+    'code': 'SCHEDULE_NOT_FOUND',
+    'error': "Schedule not found: ''",
+    'statusCode': 404,
+    'type': 'not_found_error',
+  })
+# ---
+# name: TestDynamicCommandExecution.test_command_execution[schedule_error_schedule_not_found_json]
+  dict({
+    'code': 'SCHEDULE_NOT_FOUND',
+    'error': 'Schedule not found: nonexistent-schedule',
+    'statusCode': 404,
+    'type': 'not_found_error',
+  })
+# ---
+# name: TestDynamicCommandExecution.test_command_execution[schedule_success_multiple_schedules_json]
+  dict({
+    'items': list([
+      dict({
+        'cron_schedule': '*/30 * * * *',
+        'description': None,
+        'execution_timezone': 'UTC',
+        'id': '4b2db2e505d44f36b864512ba5157c55305f809d::74f7601f217dda2e62924f9fb5c27413de723b07',
+        'metadata_entries': list([
+        ]),
+        'name': 'run_assets_30min',
+        'pipeline_name': 'run_etl_pipeline',
+        'tags': list([
+        ]),
+      }),
+      dict({
+        'cron_schedule': '*/10 * * * *',
+        'description': None,
+        'execution_timezone': 'UTC',
+        'id': 'cf74d391c0fd51fb2545599e5a6d114bbc90f834::6be28c91d17aef5783f944d0e7d4adbf243f9c16',
+        'metadata_entries': list([
+        ]),
+        'name': 'check_avg_orders_freshness_schdule',
+        'pipeline_name': 'check_avg_orders_freshness_job',
+        'tags': list([
+        ]),
+      }),
+      dict({
+        'cron_schedule': '0 8 * * *',
+        'description': None,
+        'execution_timezone': 'UTC',
+        'id': 'c8ceff917b2e7830c20109586ae0f7015a6c8a3a::e13fe84582b27b2302659030e00c11e4de1cd4aa',
+        'metadata_entries': list([
+          dict({
+            'description': None,
+            'label': 'dagster/code_references',
+          }),
+          dict({
+            'description': None,
+            'label': 'dagster/component_origin',
+            'text': 'ScheduledJobComponent',
+          }),
+        ]),
+        'name': 'dbt_components_job_schedule',
+        'pipeline_name': 'dbt_components_job',
+        'tags': list([
+        ]),
+      }),
+      dict({
+        'cron_schedule': '0 0 * * *',
+        'description': None,
+        'execution_timezone': 'UTC',
+        'id': '999ba8f82a8e463cbc00b2b8615abf69962e6f82::9cad87f1a27573f73c3b62d4c93ce52dbdc6e6f7',
+        'metadata_entries': list([
+          dict({
+            'description': None,
+            'label': 'dagster/code_references',
+          }),
+          dict({
+            'description': None,
+            'label': 'dagster/component_origin',
+            'text': 'ScheduledPartitionedJobComponent',
+          }),
+        ]),
+        'name': 'refresh_analytics_model_job_schedule',
+        'pipeline_name': 'refresh_analytics_model_job',
+        'tags': list([
+        ]),
+      }),
+      dict({
+        'cron_schedule': '0 0 * * *',
+        'description': None,
+        'execution_timezone': 'UTC',
+        'id': 'f41a604fe49b87ba5391b1af281f770a0fa023fb::f5ec577e4c510ae0b1d501173066e7a0c7a58c04',
+        'metadata_entries': list([
+        ]),
+        'name': 'daily_sling_job_schedule',
+        'pipeline_name': 'daily_sling_job',
+        'tags': list([
+        ]),
+      }),
+      dict({
+        'cron_schedule': '59 * * * *',
+        'description': None,
+        'execution_timezone': 'UTC',
+        'id': '8a9edc1bb0f0f2a11b3726ab7ad2372e998848fa::69c7679312d8eeb527657585f0e2f7be135a60e0',
+        'metadata_entries': list([
+        ]),
+        'name': 'snowflake_insights_import_schedule',
+        'pipeline_name': 'snowflake_insights_import',
+        'tags': list([
+        ]),
+      }),
+    ]),
+  })
+# ---
+# name: TestDynamicCommandExecution.test_command_execution[schedule_success_schedules_human_readable_text]
+  '''
+  Name: run_assets_30min
+  Job Name: run_etl_pipeline
+  Cron Schedule: */30 * * * *
+  
+  Name: check_avg_orders_freshness_schdule
+  Job Name: check_avg_orders_freshness_job
+  Cron Schedule: */10 * * * *
+  
+  Name: dbt_components_job_schedule
+  Job Name: dbt_components_job
+  Cron Schedule: 0 8 * * *
+  
+  Name: refresh_analytics_model_job_schedule
+  Job Name: refresh_analytics_model_job
+  Cron Schedule: 0 0 * * *
+  
+  Name: daily_sling_job_schedule
+  Job Name: daily_sling_job
+  Cron Schedule: 0 0 * * *
+  
+  Name: snowflake_insights_import_schedule
+  Job Name: snowflake_insights_import
+  Cron Schedule: 59 * * * *
+  
+  '''
+# ---
+# name: TestDynamicCommandExecution.test_command_execution[schedule_success_single_schedule_human_readable_text]
+  '''
+  Name: dbt_components_job_schedule
+  Job Name: dbt_components_job
+  Cron Schedule: 0 8 * * *
+  Description: None
+  Execution Timezone: UTC
+  
+  Metadata:
+    dagster/code_references: None
+    dagster/component_origin: ScheduledJobComponent
+  
+  '''
+# ---
+# name: TestDynamicCommandExecution.test_command_execution[schedule_success_single_schedule_json]
+  dict({
+    'cron_schedule': '0 8 * * *',
+    'description': None,
+    'execution_timezone': 'UTC',
+    'id': 'c8ceff917b2e7830c20109586ae0f7015a6c8a3a::e13fe84582b27b2302659030e00c11e4de1cd4aa',
+    'metadata_entries': list([
+      dict({
+        'description': None,
+        'label': 'dagster/code_references',
+      }),
+      dict({
+        'description': None,
+        'label': 'dagster/component_origin',
+        'text': 'ScheduledJobComponent',
+      }),
+    ]),
+    'name': 'dbt_components_job_schedule',
+    'pipeline_name': 'dbt_components_job',
+    'tags': list([
+    ]),
+  })
 # ---
 # name: TestDynamicCommandExecution.test_command_execution[secret_success_multiple_secrets_json]
   dict({

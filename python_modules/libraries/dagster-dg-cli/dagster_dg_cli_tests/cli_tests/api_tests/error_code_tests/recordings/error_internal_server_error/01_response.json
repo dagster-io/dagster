@@ -1,0 +1,10 @@
+{
+  "errors": [
+    {
+      "message": "An internal server error occurred",
+      "extensions": {
+        "errorType": "PYTHON_ERROR"
+      }
+    }
+  ]
+}

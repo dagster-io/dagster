@@ -1,0 +1,10 @@
+{
+  "errors": [
+    {
+      "message": "Unauthorized",
+      "extensions": {
+        "code": "UNAUTHENTICATED"
+      }
+    }
+  ]
+}
