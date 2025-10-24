@@ -193,7 +193,7 @@ Specs are standalone objects that describe the identity and metadata of Dagster 
     Definitions ==> CodeLocation
 ```
 
-A [code location](/deployment/code-locations) is a collection of Dagster entity [definitions](#definitions) deployed in a specific environment. A code location determines the Python environment (including the version of Dagster being used as well as any other Python dependencies). A Dagster project can have multiple code locations, helping isolate dependencies.
+A [code location](/guides/build/projects) is a collection of Dagster entity [definitions](#definitions) deployed in a specific environment. A code location determines the Python environment (including the version of Dagster being used as well as any other Python dependencies). A Dagster project can have multiple code locations, helping isolate dependencies.
 
 | Concept                     | Relationship                                                             |
 | --------------------------- | ------------------------------------------------------------------------ |

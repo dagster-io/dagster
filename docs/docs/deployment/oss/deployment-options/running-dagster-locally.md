@@ -17,7 +17,7 @@ In this guide, we'll walk you through how to run Dagster on your local machine u
 
 Before starting local development, you need to tell Dagster how to find the Python code containing your assets and jobs.
 
-For a refresher on how to set up a Dagster project, follow our [Recommended Dagster Project Structure](/guides/build/projects/structuring-your-dagster-project) guide.
+For a refresher on how to set up a Dagster project, follow our [Recommended Dagster Project Structure](/guides/build/projects/project-structure/organizing-dagster-projects) guide.
 
 <CodeExample
   path="docs_snippets/docs_snippets/guides/tbd/definitions.py"

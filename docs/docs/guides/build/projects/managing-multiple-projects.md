@@ -1,12 +1,12 @@
 ---
 title: 'Managing multiple projects with workspaces'
 sidebar_position: 400
-description: Manage multiple isolated Dagster projects using dg, each with unique environments, by creating a workspace directory with create-dagster project.
+description: Manage multiple isolated Dagster projects by creating a workspace directory with the create-dagster command.
 ---
 
 :::note
 
-If you're just getting started, we recommend [creating a single project](/guides/build/projects/creating-a-new-project) instead of a workspace with multiple projects.
+If you're just getting started, we recommend [creating a single project](/guides/build/projects/creating-dagster-projects) instead of a workspace with multiple projects.
 
 :::
 

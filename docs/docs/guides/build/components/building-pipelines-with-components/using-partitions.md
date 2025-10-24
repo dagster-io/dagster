@@ -8,7 +8,7 @@ description: Learn how to add and manage partitions when building pipelines with
 
 :::note Prerequisites
 
-Before adding partitions to a component, you must either [create a components-ready Dagster project](/guides/build/projects/creating-a-new-project) or [migrate an existing project to `dg`](/guides/build/projects/moving-to-components/migrating-project).
+Before adding partitions to a component, you must either [create a components-ready Dagster project](/guides/build/projects/creating-dagster-projects) or [migrate an existing project to `dg`](/guides/build/projects/moving-to-components/migrating-project).
 
 :::
 

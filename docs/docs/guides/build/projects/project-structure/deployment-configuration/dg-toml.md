@@ -20,7 +20,7 @@ directory_type = "workspace"
 path = "my-project"
 ```
 
-Each entry in a dg file is considered a code location. A code location should contain a single <PyObject section="definitions" module="dagster" object="Definitions" /> object. This is created automatically when projects are scaffolded with [`create-dagster` CLI](/guides/build/projects/creating-a-new-project).
+Each entry in a dg file is considered a code location. A code location should contain a single <PyObject section="definitions" module="dagster" object="Definitions" /> object. This is created automatically when projects are scaffolded with [`create-dagster` CLI](/guides/build/projects/creating-dagster-projects).
 
 ## Location of the dg.toml
 
