@@ -2,6 +2,7 @@ import datetime
 from unittest.mock import patch
 
 import pytest
+from dagster._core.test_utils import freeze_time
 from dagster._utils.schedules import (
     _get_smallest_cron_interval_with_sampling,
     get_smallest_cron_interval,
@@ -693,20 +694,136 @@ def test_sampling_dst_transitions():
     """Test DST transition edge cases with sampling method.
 
     The deterministic method cannot detect DST transitions, so this test validates
-    that the sampling-based method correctly identifies 23-hour intervals during
-    spring forward DST transitions.
+    that the sampling-based method correctly handles both spring forward (23-hour intervals)
+    and fall back (negative intervals that should be skipped) DST transitions.
+
+    We freeze time to ensure the sampling period will cross DST transitions.
     """
-    # Daily at 2am in America/New_York - should catch the 23-hour interval during spring forward
-    interval = _get_smallest_cron_interval_with_sampling("0 2 * * *", "America/New_York")
-    assert interval == datetime.timedelta(hours=23)
+    # Test spring forward (clocks jump ahead 1 hour, creating 23-hour intervals)
+    # Freeze time to February 2024, so that sampling from a year ago (Feb 2023)
+    # will cross the March 2024 spring forward DST transition
+    freeze_datetime_spring = datetime.datetime(2024, 2, 15, 12, 0, 0)
+    with freeze_time(freeze_datetime_spring):
+        # Daily at 2am in America/New_York - should catch the 23-hour interval during spring forward
+        # The spring forward happens on March 10, 2024 at 2:00 AM -> 3:00 AM
+        interval = _get_smallest_cron_interval_with_sampling("0 2 * * *", "America/New_York")
+        assert interval == datetime.timedelta(hours=23)
 
-    # Hourly schedule should not be affected by DST for minimum interval
-    interval = _get_smallest_cron_interval_with_sampling("0 * * * *", "America/New_York")
-    assert interval == datetime.timedelta(hours=1)
+        # Hourly schedule should not be affected by DST for minimum interval
+        interval = _get_smallest_cron_interval_with_sampling("0 * * * *", "America/New_York")
+        assert interval == datetime.timedelta(hours=1)
 
-    # Different timezone with DST (Europe/Berlin)
-    interval = _get_smallest_cron_interval_with_sampling("0 2 * * *", "Europe/Berlin")
-    assert interval == datetime.timedelta(hours=23)
+    # Test fall back (clocks go back 1 hour, creating negative intervals that should be skipped)
+    # Freeze time to September 2024, so that sampling from a year ago (Sep 2023)
+    # will cross the November 2024 fall back DST transition
+    freeze_datetime_fall = datetime.datetime(2024, 9, 15, 12, 0, 0)
+    with freeze_time(freeze_datetime_fall):
+        # Daily at 2am in America/New_York during fall back
+        # The fall back happens on November 3, 2024 at 2:00 AM -> 1:00 AM
+        # Should still return 23 hours as minimum (not negative intervals)
+        interval = _get_smallest_cron_interval_with_sampling("0 2 * * *", "America/New_York")
+        assert interval == datetime.timedelta(hours=23)
+
+    # Test Europe/Berlin DST transitions
+    with freeze_time(freeze_datetime_spring):
+        # Different timezone with DST (Europe/Berlin)
+        # Spring forward happens on March 31, 2024 at 2:00 AM -> 3:00 AM
+        interval = _get_smallest_cron_interval_with_sampling("0 2 * * *", "Europe/Berlin")
+        assert interval == datetime.timedelta(hours=23)
+
+    with freeze_time(freeze_datetime_fall):
+        # Fall back happens on October 27, 2024 at 3:00 AM -> 2:00 AM
+        interval = _get_smallest_cron_interval_with_sampling("0 2 * * *", "Europe/Berlin")
+        assert interval == datetime.timedelta(hours=23)
+
+
+def test_sampling_negative_interval_handling():
+    """Test that negative intervals during DST fall-back are properly skipped.
+
+    During a fall-back DST transition, the cron iterator may produce timestamps
+    that appear to go backward in wall-clock time. This test ensures that these
+    negative intervals are skipped and don't affect the minimum interval calculation.
+    """
+    # Use a time just before the fall DST transition to maximize chances of hitting
+    # the negative interval code path. We use hourly schedule which emits both
+    # PRE_TRANSITION and POST_TRANSITION times during the ambiguous hour.
+    freeze_datetime = datetime.datetime(2024, 11, 2, 12, 0, 0)
+    with freeze_time(freeze_datetime):
+        # Hourly schedule in America/New_York during fall back (Nov 3, 2024 at 2:00 AM -> 1:00 AM)
+        # The hourly schedule will emit times during the ambiguous hour twice (fold=0 and fold=1)
+        # which can create situations where wall-clock times appear to go backward
+        interval = _get_smallest_cron_interval_with_sampling("0 * * * *", "America/New_York")
+        # Should still return 1 hour as minimum, not negative intervals
+        assert interval == datetime.timedelta(hours=1)
+
+    # Test with a different pattern that might expose negative intervals
+    freeze_datetime = datetime.datetime(2024, 11, 2, 12, 0, 0)
+    with freeze_time(freeze_datetime):
+        # Every 30 minutes during the fall back transition
+        interval = _get_smallest_cron_interval_with_sampling("0,30 * * * *", "America/New_York")
+        # Should return 30 minutes, not negative intervals
+        assert interval == datetime.timedelta(minutes=30)
+
+
+def test_sampling_zero_interval_with_mock():
+    """Test the error handling for genuine zero intervals (should not happen in practice).
+
+    This test uses mocking to force a scenario where a zero interval occurs without
+    being a DST transition, which should raise an exception.
+    """
+    from unittest.mock import patch
+
+    with patch("dagster._utils.schedules.schedule_execution_time_iterator") as mock_iter:
+        # Create a mock iterator that returns two ticks with the same timestamp
+        # but WITHOUT different fold values (not a DST transition)
+        base_time = datetime.datetime(2024, 6, 1, 12, 0, 0, tzinfo=datetime.timezone.utc)
+        same_time = datetime.datetime(2024, 6, 1, 12, 0, 0, tzinfo=datetime.timezone.utc)
+
+        mock_iter.return_value = iter([base_time, same_time])
+
+        # This should raise an exception for genuine zero interval
+        with pytest.raises(Exception, match="Encountered a genuine zero interval"):
+            _get_smallest_cron_interval_with_sampling("0 * * * *", "UTC")
+
+
+def test_sampling_stop_iteration_with_mock():
+    """Test the StopIteration exception handling (should not happen with cron iterators).
+
+    This test uses mocking to force a StopIteration exception from the iterator,
+    which should be caught and handled gracefully.
+    """
+    from unittest.mock import patch
+
+    with patch("dagster._utils.schedules.schedule_execution_time_iterator") as mock_iter:
+        # Create a mock iterator that immediately raises StopIteration
+        base_time = datetime.datetime(2024, 6, 1, 12, 0, 0, tzinfo=datetime.timezone.utc)
+        mock_iter.return_value = iter([base_time])  # Only one tick, then stops
+
+        # This should handle the StopIteration and raise ValueError
+        with pytest.raises(ValueError, match="Could not determine minimum interval"):
+            _get_smallest_cron_interval_with_sampling("0 * * * *", "UTC")
+
+
+def test_sampling_no_valid_interval_with_mock():
+    """Test the ValueError when no valid interval can be determined.
+
+    This test uses mocking to create a scenario where min_interval remains None,
+    which should raise a ValueError.
+    """
+    from unittest.mock import patch
+
+    with patch("dagster._utils.schedules.schedule_execution_time_iterator") as mock_iter:
+        # Create a mock iterator that returns only negative or zero intervals
+        base_time = datetime.datetime(2024, 6, 1, 12, 0, 0, tzinfo=datetime.timezone.utc)
+        # All subsequent times go backward
+        time1 = datetime.datetime(2024, 6, 1, 11, 0, 0, tzinfo=datetime.timezone.utc)
+        time2 = datetime.datetime(2024, 6, 1, 10, 0, 0, tzinfo=datetime.timezone.utc)
+
+        mock_iter.return_value = iter([base_time, time1, time2])
+
+        # This should raise ValueError because no valid positive interval was found
+        with pytest.raises(ValueError, match="Could not determine minimum interval"):
+            _get_smallest_cron_interval_with_sampling("0 * * * *", "UTC")
 
 
 def test_sampling_specific_day_patterns():
