@@ -3051,3 +3051,21 @@ def test_partial_dependency_on_upstream_multi_asset():
 
     job_def = create_test_asset_job([baz, foo_bar], selection=[baz])
     assert job_def.execute_in_process(resources=resources).success
+
+
+def test_job_definition_with_resolution_error():
+    @dg.asset
+    def foo():
+        return 1
+
+    defs = dg.Definitions(
+        assets=[foo],
+        jobs=[
+            dg.define_asset_job("invalid_job", selection=AssetSelection.assets(["does_not_exist"]))
+        ],
+    )
+
+    with pytest.raises(
+        dg.DagsterInvalidDefinitionError, match="Failed to resolve asset job invalid_job"
+    ):
+        defs.get_repository_def().get_all_jobs()
