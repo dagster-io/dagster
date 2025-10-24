@@ -96,6 +96,18 @@
                     "default": null,
                     "title": "Tag"
                 },
+                "digest": {
+                    "anyOf": [
+                        {
+                            "type": "string"
+                        },
+                        {
+                            "type": "null"
+                        }
+                    ],
+                    "default": null,
+                    "title": "Digest"
+                },
                 "pullPolicy": {
                     "$ref": "#/$defs/PullPolicy"
                 }
