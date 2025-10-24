@@ -1,4 +1,3 @@
-import {DEFAULT_TIME_FORMAT} from '../../app/time/TimestampFormat';
 import {
   Box,
   CaptionMono,
@@ -9,12 +8,14 @@ import {
   MiddleTruncate,
   Tooltip,
 } from '@dagster-io/ui-components';
-import styled from 'styled-components';
-import {NewEvaluationNodeFragment} from './types/GetEvaluationsQuery.types';
-import {timestampToString} from '../../app/time/timestampToString';
-import {TimeContext} from '../../app/time/TimeContext';
 import {useContext} from 'react';
+import styled from 'styled-components';
+
 import {EvaluationHistoryStackItem} from './types';
+import {NewEvaluationNodeFragment} from './types/GetEvaluationsQuery.types';
+import {TimeContext} from '../../app/time/TimeContext';
+import {DEFAULT_TIME_FORMAT} from '../../app/time/TimestampFormat';
+import {timestampToString} from '../../app/time/timestampToString';
 
 interface Props {
   segments: string[];
@@ -35,17 +36,17 @@ export const EvaluationSinceLabel = ({
   const locale = navigator.language;
   const {expandedLabel, sinceMetadata, entityKey} = evaluation;
 
-  if (!sinceMetadata || expandedLabel.length !== 3 || expandedLabel[1] !== 'SINCE') {
-    throw new Error(
-      'sinceMetadata must be set and expandedLabel must be of the form [condition, SINCE, condition]',
-    );
+  if (
+    !sinceMetadata ||
+    !sinceMetadata.triggerTimestamp ||
+    !sinceMetadata.resetTimestamp ||
+    expandedLabel.length !== 3 ||
+    expandedLabel[1] !== 'SINCE'
+  ) {
+    return <EvaluationConditionalLabel segments={expandedLabel} />;
   }
 
-  if (!sinceMetadata.triggerTimestamp || !sinceMetadata.resetTimestamp) {
-    throw new Error('sinceMetadata must have both triggerTimestamp and resetTimestamp set');
-  }
-
-  const [triggerCondition, operator, resetCondition] = expandedLabel;
+  const [triggerCondition, _operator, resetCondition] = expandedLabel;
   const triggerLabel = triggerCondition?.slice(1, -1) || ''; // remove parentheses
   const resetLabel = resetCondition?.slice(1, -1) || ''; // remove parentheses
   const triggerTime = timestampToString({
@@ -102,7 +103,6 @@ export const EvaluationSinceMetadata = ({
   checkName,
   detailLabel,
   evaluationId,
-  timestamp,
   pushHistory,
 }: {
   assetKey: {path: string[]};
