@@ -1005,6 +1005,28 @@ def test_public_ip_assignment(ecs, ec2, instance, workspace, run, assign_public_
     assert bool(attributes.get("PublicIp")) == assign_public_ip
 
 
+def test_check_run_worker_health_adds_eni_tag(ecs, instance, workspace, run):
+    initial_tasks = ecs.list_tasks()["taskArns"]
+
+    instance.launch_run(run.run_id, workspace)
+
+    tasks = ecs.list_tasks()["taskArns"]
+    task_arn = next(iter(set(tasks).difference(initial_tasks)))
+    task = ecs.describe_tasks(tasks=[task_arn])["tasks"][0]
+
+    assert not any(k.startswith("ecs/eni_id") for k in instance.get_run_by_id(run.run_id).tags)
+
+    health = instance.run_launcher.check_run_worker_health(run)
+    assert health.status == WorkerStatus.RUNNING
+
+    attachment = task.get("attachments")[0]
+    details = dict((detail.get("name"), detail.get("value")) for detail in attachment["details"])
+    eni_id = details["networkInterfaceId"]
+
+    run_tags = instance.get_run_by_id(run.run_id).tags
+    assert run_tags.get("ecs/eni_id") == eni_id
+
+
 def test_launcher_run_resources(
     ecs,
     instance_with_resources,

@@ -870,6 +870,26 @@ class EcsRunLauncher(RunLauncher[T_DagsterInstance], ConfigurableClass):
 
         t = tasks[0]
 
+        if not t.get("eni_id"):
+            attachments = t.get("attachments", [])
+            eni_info = []
+            for attachment in attachments:
+                if attachment.get("type") == "ElasticNetworkInterface":
+                    details = {d["name"]: d["value"] for d in attachment.get("details", [])}
+
+                    if "networkInterfaceId" in details:
+                        eni_info.append(details["networkInterfaceId"])
+            if len(eni_info) > 0:
+                eni_ids = (
+                    {f"ecs/eni_id_{i}": eni_id for i, eni_id in enumerate(eni_info)}
+                    if len(eni_info) > 1
+                    else {"ecs/eni_id": eni_info[0]}
+                )
+                self._instance.add_run_tags(run.run_id, eni_ids)
+                logging.info(f"Added ENI ID tags for run {run.run_id}: {eni_ids}")
+            else:
+                logging.warning(f"No ENI IDs found for run {run.run_id}")
+
         if t.get("lastStatus") in RUNNING_STATUSES:
             return CheckRunHealthResult(WorkerStatus.RUNNING, run_worker_id=run_worker_id)
         elif t.get("lastStatus") in STOPPED_STATUSES:
