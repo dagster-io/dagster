@@ -6,3 +6,7 @@ slug: '/guides/build/projects/project-structure'
 sidebar_position: 200
 ---
 
+import DocCardList from '@theme/DocCardList';
+
+<DocCardList />
+

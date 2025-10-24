@@ -1,12 +1,12 @@
 ---
-description: Learn how to structure a Dagster project by technology or concept.
+description: Learn how to organize a Dagster project by technology or concept.
 sidebar_position: 300
 title: Organizing your Dagster project
 ---
 
 :::info
 
-To learn how to create a new Dagster project, see [Creating a new Dagster project](/guides/build/projects/creating-dagster-projects).
+To learn how to create a new Dagster project with a default structure, see [Creating Dagster projects](/guides/build/projects/creating-dagster-projects).
 
 :::
 
@@ -14,7 +14,7 @@ There are many ways to structure your Dagster project, and it can be difficult t
 
 ## Your initial project structure
 
-When you first scaffold your project using the `create-dagster` CLI, it looks like the following:
+When you first create a project using the `create-dagster` CLI, it looks like the following:
 
 ```sh
 $ create-dagster project my-project
@@ -54,19 +54,18 @@ $ create-dagster project my-project
   </TabItem>
 </Tabs>
 
-This is a great structure as you are first getting started, however, as you begin to introduce more assets, jobs, resources, sensors, and utility code, you may find that your Python files are growing too large to manage.
+This is a reasonable structure when you are first getting started. However, as you begin to introduce more assets, jobs, resources, sensors, and utility code, you may find that your Python files are growing too large to manage.
 
-## Restructure your project
+## Reorganizing your project
 
-There are several paradigms in which you can structure your project. Choosing one of these structures is often personal preference, and influenced by how you and your team members operate. This guide will outline three possible project structures:
+Deciding how to organize your project is often influenced by how you and your team members operate. This guide will outline two possible project structures:
 
-1. [Option 1: Structured by technology](#option-1-structured-by-technology)
-2. [Option 2: Structured by concept](#option-2-structured-by-concept)
+1. [Option 1: Organized by technology](#technology)
+2. [Option 2: Organized by concept](#concept)
 
+### Option 1: Organized by technology \{#technology}
 
-### Option 1: Structured by technology
-
-Data engineers often have a strong understanding of the underlying technologies that are used in their data pipelines. Because of that, it's often beneficial to organize your project by technology. This enables engineers to easily navigate the code base and locate files pertaining to the specific technology.
+Data engineers often have a strong understanding of the underlying technologies that are used in their data pipelines. Because of that, it's often helpful to organize your project by technology. This enables engineers to easily navigate the codebase and locate files pertaining to the specific technology.
 
 Within the technology modules, submodules can be created to further organize your code.
 
@@ -121,9 +120,9 @@ Within the technology modules, submodules can be created to further organize you
 </Tabs>
 
 
-### Option 2: Structured by concept
+### Option 2: Organized by concept \{#concept}
 
-You can also organize your project by data processing concept, for example, data transformation, ingestion, or processing. This provides additional context to engineers who may not be as familiar with the underlying technologies:
+You can also organize your project by data processing concept -- for example, data transformation, ingestion, or processing. This provides additional context to engineers who may not be as familiar with the underlying technologies.
 
 <Tabs groupId="package-manager">
 <TabItem value="uv" label="uv">
@@ -193,7 +192,7 @@ To learn more about creating a workspace with multiple projects, see [Managing m
 
 As your data platform evolves, you can integrate other data tools, such as dbt, Sling, or Jupyter notebooks.
 
-We recommended storing these projects outside your Dagster project. See the `dbt_project` example below:
+We recommended storing these projects outside your Dagster project, as demonstrated in the `dbt_project` example below.
 
 ```
 .
