@@ -358,7 +358,6 @@ def submit_backfill_runs(
             job_name=partition_set.job_name,
             op_selection=None,
             asset_selection=backfill_job.asset_selection,
-            run_config=backfill_job.run_config,
         )
         remote_job = code_location.get_job(pipeline_selector)
     else:
