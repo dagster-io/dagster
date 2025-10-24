@@ -1,5 +1,7 @@
 import hashlib
 import os
+import re
+import traceback
 
 import dagster as dg
 import pytest
@@ -29,6 +31,7 @@ from dagster._core.test_utils import (
 )
 from dagster._utils import safe_tempfile_path
 from dagster._utils.warnings import disable_dagster_warnings
+from dagster_shared.error import SerializableErrorInfo
 
 
 @pytest.fixture(autouse=True)
@@ -2243,8 +2246,17 @@ def test_build_subset_job_errors(job_selection, use_multi, expected_error):
 
     if expected_error:
         expected_class, expected_message = expected_error
-        with pytest.raises(expected_class, match=expected_message):
+        with pytest.raises(dg.DagsterInvalidDefinitionError) as exc_info:
             dg.Definitions(assets=assets, jobs=[asset_job]).resolve_all_job_defs()
+
+        tb_exc = traceback.TracebackException.from_exception(exc_info.value)
+        error_info = SerializableErrorInfo.from_traceback(tb_exc)
+
+        # assert exception context has the expected message and class
+        assert error_info.cause.cls_name == expected_class.__name__
+        if expected_message:
+            assert re.compile(expected_message).search(error_info.cause.message) is not None
+
     else:
         dg.Definitions(assets=assets, jobs=[asset_job])
 
@@ -3051,3 +3063,21 @@ def test_partial_dependency_on_upstream_multi_asset():
 
     job_def = create_test_asset_job([baz, foo_bar], selection=[baz])
     assert job_def.execute_in_process(resources=resources).success
+
+
+def test_job_definition_with_resolution_error():
+    @dg.asset
+    def foo():
+        return 1
+
+    defs = dg.Definitions(
+        assets=[foo],
+        jobs=[
+            dg.define_asset_job("invalid_job", selection=AssetSelection.assets(["does_not_exist"]))
+        ],
+    )
+
+    with pytest.raises(
+        dg.DagsterInvalidDefinitionError, match="Failed to resolve asset job invalid_job"
+    ):
+        defs.get_repository_def().get_all_jobs()
