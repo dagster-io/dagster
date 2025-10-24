@@ -850,6 +850,7 @@ export type AutomationConditionEvaluationNode = {
   numCandidates: Maybe<Scalars['Int']['output']>;
   numTrue: Scalars['Int']['output'];
   operatorType: Scalars['String']['output'];
+  sinceMetadata: Maybe<SinceConditionMetadata>;
   startTimestamp: Maybe<Scalars['Float']['output']>;
   uniqueId: Scalars['String']['output'];
   userLabel: Maybe<Scalars['String']['output']>;
@@ -5545,6 +5546,14 @@ export type ShutdownRepositoryLocationSuccess = {
   repositoryLocationName: Scalars['String']['output'];
 };
 
+export type SinceConditionMetadata = {
+  __typename: 'SinceConditionMetadata';
+  resetEvaluationId: Maybe<Scalars['Int']['output']>;
+  resetTimestamp: Maybe<Scalars['Float']['output']>;
+  triggerEvaluationId: Maybe<Scalars['Int']['output']>;
+  triggerTimestamp: Maybe<Scalars['Float']['output']>;
+};
+
 export type Solid = {
   __typename: 'Solid';
   definition: CompositeSolidDefinition | SolidDefinition;
@@ -7801,6 +7810,12 @@ export const buildAutomationConditionEvaluationNode = (
     numTrue: overrides && overrides.hasOwnProperty('numTrue') ? overrides.numTrue! : 5212,
     operatorType:
       overrides && overrides.hasOwnProperty('operatorType') ? overrides.operatorType! : 'modi',
+    sinceMetadata:
+      overrides && overrides.hasOwnProperty('sinceMetadata')
+        ? overrides.sinceMetadata!
+        : relationshipsToOmit.has('SinceConditionMetadata')
+          ? ({} as SinceConditionMetadata)
+          : buildSinceConditionMetadata({}, relationshipsToOmit),
     startTimestamp:
       overrides && overrides.hasOwnProperty('startTimestamp') ? overrides.startTimestamp! : 5.42,
     uniqueId: overrides && overrides.hasOwnProperty('uniqueId') ? overrides.uniqueId! : 'sit',
@@ -15466,6 +15481,31 @@ export const buildShutdownRepositoryLocationSuccess = (
       overrides && overrides.hasOwnProperty('repositoryLocationName')
         ? overrides.repositoryLocationName!
         : 'assumenda',
+  };
+};
+
+export const buildSinceConditionMetadata = (
+  overrides?: Partial<SinceConditionMetadata>,
+  _relationshipsToOmit: Set<string> = new Set(),
+): {__typename: 'SinceConditionMetadata'} & SinceConditionMetadata => {
+  const relationshipsToOmit: Set<string> = new Set(_relationshipsToOmit);
+  relationshipsToOmit.add('SinceConditionMetadata');
+  return {
+    __typename: 'SinceConditionMetadata',
+    resetEvaluationId:
+      overrides && overrides.hasOwnProperty('resetEvaluationId')
+        ? overrides.resetEvaluationId!
+        : 8424,
+    resetTimestamp:
+      overrides && overrides.hasOwnProperty('resetTimestamp') ? overrides.resetTimestamp! : 5.31,
+    triggerEvaluationId:
+      overrides && overrides.hasOwnProperty('triggerEvaluationId')
+        ? overrides.triggerEvaluationId!
+        : 2168,
+    triggerTimestamp:
+      overrides && overrides.hasOwnProperty('triggerTimestamp')
+        ? overrides.triggerTimestamp!
+        : 6.12,
   };
 };
 
