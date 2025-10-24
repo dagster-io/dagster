@@ -625,7 +625,7 @@ def test_user_deployment_digest_takes_precedence_over_tag(template: HelmTemplate
 def test_user_deployment_digest_only(template: HelmTemplate):
     """Test that digest works without tag."""
     deployment = create_simple_user_deployment("foo")
-    deployment.image.digest = "sha256:def456ghi789012"
+    deployment.image.digest = "sha256:abc123def456789"
 
     helm_values = DagsterHelmValues.construct(
         dagsterUserDeployments=UserDeployments.construct(
