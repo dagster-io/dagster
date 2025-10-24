@@ -8,7 +8,7 @@ from dagster_cloud_cli.config_utils import dagster_cloud_options
 app = Typer(help="Customize your Atlan integration.")
 
 
-@app.command(name="set-atlan-settings")
+@app.command(name="set-settings")
 @dagster_cloud_options(allow_empty=True, requires_url=True)
 def set_atlan_settings_command(
     api_token: str,
