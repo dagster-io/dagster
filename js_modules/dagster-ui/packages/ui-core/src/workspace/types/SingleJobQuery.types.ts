@@ -37,6 +37,8 @@ export type SingleJobQuery = {
             id: string;
             selectorId: string;
             status: Types.InstigationStatus;
+            hasStartPermission: boolean;
+            hasStopPermission: boolean;
           };
         }>;
         sensors: Array<{
@@ -49,6 +51,8 @@ export type SingleJobQuery = {
             id: string;
             selectorId: string;
             status: Types.InstigationStatus;
+            hasStartPermission: boolean;
+            hasStopPermission: boolean;
             typeSpecificData:
               | {__typename: 'ScheduleData'}
               | {__typename: 'SensorData'; lastCursor: string | null}
@@ -60,4 +64,4 @@ export type SingleJobQuery = {
     | {__typename: 'PythonError'};
 };
 
-export const SingleJobQueryVersion = '5ff8f070e59507f5369f1a19abb9a72cfa12439ab04a08dc340866885f6e4702';
+export const SingleJobQueryVersion = '25d7a06c2c616338bb6d6e49f8df1803d82ebd77c94e2229bce8633e1dbd912f';

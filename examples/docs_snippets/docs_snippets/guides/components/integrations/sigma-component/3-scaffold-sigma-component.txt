@@ -1,0 +1,3 @@
+dg scaffold defs dagster_sigma.SigmaComponent sigma_ingest
+
+Creating defs at /.../my-project/src/my_project/defs/sigma_ingest.

@@ -114,7 +114,7 @@ def test_component_load_with_defs_state(
             component_cls=FivetranAccountComponent,
             defs_yaml_contents=deep_merge_dicts(
                 BASIC_FIVETRAN_COMPONENT_BODY,
-                {"attributes": {"defs_state": {"type": defs_state_type}}},
+                {"attributes": {"defs_state": {"management_type": defs_state_type}}},
             ),
         )
         with (

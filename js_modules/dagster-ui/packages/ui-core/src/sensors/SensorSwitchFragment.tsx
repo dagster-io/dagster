@@ -13,6 +13,8 @@ export const SENSOR_SWITCH_FRAGMENT = gql`
           lastCursor
         }
       }
+      hasStartPermission
+      hasStopPermission
     }
     sensorType
   }

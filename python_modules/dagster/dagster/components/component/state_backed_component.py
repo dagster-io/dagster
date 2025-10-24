@@ -23,6 +23,7 @@ from dagster._core.definitions.definitions_load_context import (
 )
 from dagster._core.errors import DagsterInvalidInvocationError
 from dagster._core.storage.defs_state.base import DefsStateStorage
+from dagster._symbol_annotations.public import public
 from dagster._utils.env import using_dagster_dev
 from dagster.components.component.component import Component
 from dagster.components.core.context import ComponentLoadContext
@@ -33,7 +34,82 @@ if TYPE_CHECKING:
     from pydantic import BaseModel
 
 
+@public
 class StateBackedComponent(Component):
+    """Base class for components that depend on external state that needs to be fetched and cached.
+
+    State-backed components are designed for integrations where Dagster definitions depend on
+    information from external systems (like APIs or compiled artifacts) rather than just code
+    and configuration files. The component framework manages the lifecycle of fetching, storing,
+    and loading this state.
+
+    Subclasses must implement:
+        - ``write_state_to_path``: Fetches state from external sources and writes it to a local path
+        - ``build_defs_from_state``: Builds Dagster definitions from the cached state
+        - ``defs_state_config``: Property that returns configuration for state management
+
+    Example:
+        .. code-block:: python
+
+            import json
+            from dataclasses import dataclass
+            from pathlib import Path
+            from typing import Optional
+
+            import dagster as dg
+            from dagster.components import DefsStateConfig, DefsStateConfigArgs, ResolvedDefsStateConfig
+
+            @dataclass
+            class MyStateBackedComponent(dg.StateBackedComponent):
+                base_url: str
+                defs_state: ResolvedDefsStateConfig = DefsStateConfigArgs.local_filesystem()
+
+                @property
+                def defs_state_config(self) -> DefsStateConfig:
+                    return DefsStateConfig.from_args(
+                        self.defs_state, default_key=f"MyComponent[{self.base_url}]"
+                    )
+
+                def write_state_to_path(self, state_path: Path) -> None:
+                    # Fetch table metadata from external API
+                    response = requests.get(f"{self.base_url}/api/tables")
+                    tables = response.json()
+                    # Write state to file as JSON
+                    state_path.write_text(json.dumps(tables))
+
+                def build_defs_from_state(
+                    self, context: dg.ComponentLoadContext, state_path: Optional[Path]
+                ) -> dg.Definitions:
+                    if state_path is None:
+                        return dg.Definitions()
+
+                    # Read cached state
+                    tables = json.loads(state_path.read_text())
+
+                    # Create one asset per table found in the state
+                    assets = []
+                    for table in tables:
+                        @dg.asset(key=dg.AssetKey(table["name"]))
+                        def table_asset():
+                            # Fetch and return the actual table data
+                            return fetch_table_data(table["name"])
+
+                        assets.append(table_asset)
+
+                    return dg.Definitions(assets=assets)
+
+        YAML configuration:
+
+        .. code-block:: yaml
+
+            # defs.yaml
+            type: my_package.MyStateBackedComponent
+            attributes:
+              base_url: "{{ env.MY_API_URL }}"
+              defs_state:
+                management_type: LOCAL_FILESYSTEM
+    """
+
     @classmethod
     def load(cls, attributes: Optional["BaseModel"], context: "ComponentLoadContext") -> Self:
         """Loads the component and marks its defs_state_key on the component tree."""
@@ -99,16 +175,22 @@ class StateBackedComponent(Component):
         key = self.defs_state_config.key
         state_storage = DefsStateStorage.get()
 
-        if self.defs_state_config.type == DefsStateManagementType.VERSIONED_STATE_STORAGE:
+        if (
+            self.defs_state_config.management_type
+            == DefsStateManagementType.VERSIONED_STATE_STORAGE
+        ):
             if state_storage is None:
                 raise DagsterInvalidInvocationError(
-                    f"Attempted to refresh state for key {key} with management type {self.defs_state_config.type} "
+                    f"Attempted to refresh state for key {key} with management type {self.defs_state_config.management_type} "
                     "without a StateStorage in context. This is likely the result of an internal framework error."
                 )
             return await self._store_versioned_state_storage_state(key, state_storage)
-        elif self.defs_state_config.type == DefsStateManagementType.LOCAL_FILESYSTEM:
+        elif self.defs_state_config.management_type == DefsStateManagementType.LOCAL_FILESYSTEM:
             return await self._store_local_filesystem_state(key, state_storage, project_root)
-        elif self.defs_state_config.type == DefsStateManagementType.LEGACY_CODE_SERVER_SNAPSHOTS:
+        elif (
+            self.defs_state_config.management_type
+            == DefsStateManagementType.LEGACY_CODE_SERVER_SNAPSHOTS
+        ):
             check.invariant(
                 DefinitionsLoadContext.get().load_type == DefinitionsLoadType.INITIALIZATION,
                 "Attempted to refresh `LEGACY_CODE_SERVER_SNAPSHOTS` state explicitly, but this can only happen during code server startup.",
@@ -116,7 +198,7 @@ class StateBackedComponent(Component):
             return await self._store_code_server_state(key, state_storage)
         else:
             raise DagsterInvalidInvocationError(
-                f"Invalid state storage location: {self.defs_state_config.type}"
+                f"Invalid state storage location: {self.defs_state_config.management_type}"
             )
 
     def build_defs(self, context: ComponentLoadContext) -> Definitions:
@@ -128,7 +210,7 @@ class StateBackedComponent(Component):
             if (
                 # for code server state management, we always refresh the state
                 (
-                    self.defs_state_config.type
+                    self.defs_state_config.management_type
                     == DefsStateManagementType.LEGACY_CODE_SERVER_SNAPSHOTS
                 )
                 or

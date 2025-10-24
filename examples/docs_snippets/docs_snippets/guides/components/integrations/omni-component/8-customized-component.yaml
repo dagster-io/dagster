@@ -1,0 +1,10 @@
+type: dagster_omni.OmniComponent
+
+attributes:
+  workspace:
+    base_url: https://your-company.omniapp.co
+    api_key: "{{ env.OMNI_API_KEY }}"
+  translation:
+    group_name: analytics
+    tags:
+      domain: bi

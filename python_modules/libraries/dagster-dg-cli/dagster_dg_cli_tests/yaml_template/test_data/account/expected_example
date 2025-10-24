@@ -39,5 +39,5 @@ attributes:
       - "example_string"
   defs_state:
     key: "example_string"
-    type: "example_string"
+    management_type: "example_string"
     refresh_if_dev: true

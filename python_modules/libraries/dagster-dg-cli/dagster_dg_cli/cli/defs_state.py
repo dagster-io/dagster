@@ -60,7 +60,7 @@ def _get_components_to_refresh(
     selected_components = [
         component
         for component in state_backed_components
-        if component.defs_state_config.type in management_types
+        if component.defs_state_config.management_type in management_types
     ]
 
     # Filter by defs state keys if specified
@@ -157,7 +157,7 @@ def get_updated_defs_state_info_task_and_statuses(
     statuses = {
         key: ComponentStateRefreshStatus(
             status="refreshing",
-            management_type=component.defs_state_config.type,
+            management_type=component.defs_state_config.management_type,
             start_time=time.time(),
         )
         for key, component in deduplicated_components.items()

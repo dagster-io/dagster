@@ -3,7 +3,6 @@ from collections.abc import Iterable, Sequence
 from typing import Any, Optional, Union, cast
 
 from dagster import _check as check
-from dagster._annotations import beta
 from dagster._core.definitions.asset_checks.asset_check_factories.utils import (
     DEADLINE_CRON_PARAM_KEY,
     DEFAULT_FRESHNESS_SEVERITY,
@@ -36,6 +35,7 @@ from dagster._core.definitions.metadata import (
     TimestampMetadataValue,
 )
 from dagster._core.execution.context.compute import AssetCheckExecutionContext
+from dagster._symbol_annotations.lifecycle import superseded
 from dagster._time import get_current_timestamp, get_timezone
 from dagster._utils.schedules import (
     get_latest_completed_cron_tick,
@@ -44,7 +44,7 @@ from dagster._utils.schedules import (
 )
 
 
-@beta
+@superseded(additional_warn_text="Attach `FreshnessPolicy` objects to your assets instead.")
 def build_last_update_freshness_checks(
     *,
     assets: Sequence[Union[CoercibleToAssetKey, AssetsDefinition, SourceAsset]],

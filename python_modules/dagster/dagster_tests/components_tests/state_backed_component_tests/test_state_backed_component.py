@@ -108,7 +108,10 @@ def test_simple_state_backed_component(
             defs_yaml_contents={
                 "type": "dagster_tests.components_tests.state_backed_component_tests.test_state_backed_component.MyStateBackedComponent",
                 "attributes": {
-                    "defs_state": {"type": storage_location.value, **({"key": key} if key else {})}
+                    "defs_state": {
+                        "management_type": storage_location.value,
+                        **({"key": key} if key else {}),
+                    }
                 },
             },
             defs_path="foo",
@@ -193,7 +196,7 @@ def test_code_server_state_backed_component(instance_available: bool) -> None:
                 "type": "dagster_tests.components_tests.state_backed_component_tests.test_state_backed_component.MyStateBackedComponent",
                 "attributes": {
                     "defs_state": {
-                        "type": DefsStateManagementType.LEGACY_CODE_SERVER_SNAPSHOTS.value
+                        "management_type": DefsStateManagementType.LEGACY_CODE_SERVER_SNAPSHOTS.value
                     }
                 },
             },
@@ -250,7 +253,7 @@ def test_local_filesystem_state_backed_component(instance_available: bool) -> No
                 "type": "dagster_tests.components_tests.state_backed_component_tests.test_state_backed_component.MyStateBackedComponent",
                 "attributes": {
                     "defs_state": {
-                        "type": DefsStateManagementType.LOCAL_FILESYSTEM.value,
+                        "management_type": DefsStateManagementType.LOCAL_FILESYSTEM.value,
                     }
                 },
             },
@@ -311,7 +314,7 @@ def test_dev_mode_state_backed_component(storage_location: DefsStateManagementTy
             component_cls=MyStateBackedComponent,
             defs_yaml_contents={
                 "type": "dagster_tests.components_tests.state_backed_component_tests.test_state_backed_component.MyStateBackedComponent",
-                "attributes": {"defs_state": {"type": storage_location.value}},
+                "attributes": {"defs_state": {"management_type": storage_location.value}},
             },
             defs_path="foo",
         )
@@ -427,7 +430,7 @@ def test_state_backed_component_migration_from_versioned_to_local_storage() -> N
                 "type": "dagster_tests.components_tests.state_backed_component_tests.test_state_backed_component.MyStateBackedComponent",
                 "attributes": {
                     "defs_state": {
-                        "type": DefsStateManagementType.VERSIONED_STATE_STORAGE.value,
+                        "management_type": DefsStateManagementType.VERSIONED_STATE_STORAGE.value,
                     }
                 },
             },
@@ -466,7 +469,7 @@ def test_state_backed_component_migration_from_versioned_to_local_storage() -> N
                 "type": "dagster_tests.components_tests.state_backed_component_tests.test_state_backed_component.MyStateBackedComponent",
                 "attributes": {
                     "defs_state": {
-                        "type": DefsStateManagementType.LOCAL_FILESYSTEM.value,
+                        "management_type": DefsStateManagementType.LOCAL_FILESYSTEM.value,
                     }
                 },
             },

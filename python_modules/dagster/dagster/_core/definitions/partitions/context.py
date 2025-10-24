@@ -11,6 +11,7 @@ from typing_extensions import Concatenate, ParamSpec
 import dagster._check as check
 from dagster._core.definitions.temporal_context import TemporalContext
 from dagster._record import record
+from dagster._symbol_annotations.public import public
 from dagster._time import get_current_datetime
 
 if TYPE_CHECKING:
@@ -83,6 +84,7 @@ def require_full_partition_loading_context(func: Callable[P, T_Return]) -> Calla
     return wrapper
 
 
+@public
 @contextmanager
 def partition_loading_context(
     effective_dt: Optional[datetime.datetime] = None,
@@ -90,13 +92,29 @@ def partition_loading_context(
     *,
     new_ctx: Optional[PartitionLoadingContext] = None,
 ) -> Iterator[PartitionLoadingContext]:
-    """Context manager for setting the current partition loading context. The information is used
-    throughout a variety of PartitionsDefinition, PartitionMapping, and PartitionSubset methods.
+    """Context manager for setting the current PartitionLoadingContext, which controls how PartitionsDefinitions,
+    PartitionMappings, and PartitionSubsets are loaded. This contextmanager is additive, meaning if effective_dt
+    or dynamic_partitions_store are not provided, the value from the previous PartitionLoadingContext is used if
+    it exists.
 
     Args:
-        effective_dt: The effective time for the partition loading.
-        dynamic_partitions_store: The DynamicPartitionsStore backing the partition loading.
-        ctx: The current partition loading context.
+        effective_dt (Optional[datetime.datetime]): The effective time for the partition loading.
+        dynamic_partitions_store (Optional[DynamicPartitionsStore]): The DynamicPartitionsStore backing the partition loading.
+        new_ctx (Optional[PartitionLoadingContext]): A new PartitionLoadingContext which will override the current one.
+
+    Examples:
+        .. code-block:: python
+
+            import dagster as dg
+            import datetime
+
+            partitions_def = dg.DailyPartitionsDefinition(start_date="2021-01-01")
+
+            with dg.partition_loading_context(effective_dt=datetime.datetime(2021, 1, 2)):
+                assert partitions_def.get_last_partition_key() == "2021-01-01"
+
+            with dg.partition_loading_context(effective_dt=datetime.datetime(2021, 1, 3)):
+                assert partitions_def.get_last_partition_key() == "2021-01-02"
     """
     prev_ctx = _current_ctx.get() or PartitionLoadingContext(
         temporal_context=TemporalContext(effective_dt=get_current_datetime(), last_event_id=None),
