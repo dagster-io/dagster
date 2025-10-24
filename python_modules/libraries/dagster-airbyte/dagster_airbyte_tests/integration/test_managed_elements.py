@@ -64,7 +64,7 @@ def docker_compose_airbyte_instance_fixture(
             poll_result = None
             try:
                 poll_result = requests.post(
-                    f"http://{webapp_host}:{webapp_port}/api/public/v1/workspaces/list",
+                    f"http://{webapp_host}:{webapp_port}/api/v1/workspaces/list",
                     headers={"Content-Type": "application/json"},
                 )
                 if poll_result.status_code == 200:
