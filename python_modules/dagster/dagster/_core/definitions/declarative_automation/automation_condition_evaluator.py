@@ -34,6 +34,7 @@ class AutomationConditionEvaluator:
         asset_graph: BaseAssetGraph,
         cursor: AssetDaemonCursor,
         emit_backfills: bool,
+        evaluation_id: int,
         default_condition: Optional[AutomationCondition] = None,
         evaluation_time: Optional[datetime.datetime] = None,
         logger: logging.Logger = logging.getLogger("dagster.automation"),
@@ -68,6 +69,7 @@ class AutomationConditionEvaluator:
         self.legacy_data_time_resolver = CachingDataTimeResolver(self.instance_queryer)
 
         self.request_subsets_by_key: dict[EntityKey, EntitySubset] = {}
+        self.evaluation_id = evaluation_id
 
     @property
     def instance_queryer(self) -> "CachingInstanceQueryer":
