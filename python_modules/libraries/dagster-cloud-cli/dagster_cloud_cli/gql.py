@@ -845,3 +845,37 @@ def delete_branch_deployment(client: DagsterCloudGraphQLClient, deployment: str)
         raise Exception(f"Unable to delete deployment: {result}")
 
     return result["data"]["deleteDeployment"]["deploymentId"]
+
+
+SET_ATLAN_INTEGRATION_SETTINGS_MUTATION = """
+    mutation CliSetAtlanIntegrationSettings($atlanIntegrationSettings: AtlanIntegrationSettingsInput!) {
+        setAtlanIntegrationSettings(atlanIntegrationSettings: $atlanIntegrationSettings) {
+            __typename
+            ... on AtlanIntegrationSettings {
+                token
+                domain
+            }
+            ...on UnauthorizedError {
+                message
+            }
+            ... on PythonError {
+                message
+                stack
+            }
+        }
+    }
+"""
+
+
+def set_atlan_integration_settings(
+    client: DagsterCloudGraphQLClient,
+    token: str,
+    domain: str,
+) -> None:
+    result = client.execute(
+        SET_ATLAN_INTEGRATION_SETTINGS_MUTATION,
+        variable_values={"atlanIntegrationSettings": {"token": token, "domain": domain}},
+    )
+
+    if result["data"]["setAtlanIntegrationSettings"]["__typename"] != "AtlanIntegrationSettings":
+        raise Exception(f"Unable to set Atlan integration settings: {result}")
