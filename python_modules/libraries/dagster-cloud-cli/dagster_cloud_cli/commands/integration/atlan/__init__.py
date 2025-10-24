@@ -11,9 +11,6 @@ app = Typer(help="Customize your Atlan integration.")
 @app.command(name="set-settings")
 @dagster_cloud_options(allow_empty=True, requires_url=True)
 def set_atlan_settings_command(
-    api_token: str,
-    organization: str,
-    url: str,
     atlan_token: Annotated[
         str,
         Argument(
@@ -26,6 +23,9 @@ def set_atlan_settings_command(
             help="The domain of your Atlan tenant. Eg. https://your-organization.atlan.com.",
         ),
     ],
+    api_token: str,
+    organization: str,
+    url: str,
 ):
     """Upload your Atlan settings to enable the Dagster<>Atlan integration in Dagster Cloud."""
     if not url and not organization:
