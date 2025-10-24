@@ -4,7 +4,7 @@ from collections.abc import Iterable, Iterator, Mapping, Sequence, Set
 from datetime import datetime
 from functools import cached_property
 from threading import RLock
-from typing import TYPE_CHECKING, AbstractSet, Any, Callable, Optional, Union  # noqa: UP035
+from typing import TYPE_CHECKING, AbstractSet, Any, Callable, Optional, Union, cast  # noqa: UP035
 
 from dagster_shared.error import DagsterError
 from dagster_shared.utils.hash import make_hashable
@@ -41,6 +41,7 @@ from dagster._core.instance import DagsterInstance
 from dagster._core.loader import LoadableBy
 from dagster._core.origin import JobPythonOrigin, RepositoryPythonOrigin
 from dagster._core.remote_origin import (
+    RegisteredCodeLocationOrigin,
     RemoteInstigatorOrigin,
     RemoteJobOrigin,
     RemotePartitionSetOrigin,
@@ -712,31 +713,59 @@ class RemoteExecutionPlan(LoadableBy[RemoteExecutionPlanSelector, "BaseWorkspace
         cls, keys: Iterable[RemoteExecutionPlanSelector], context: "BaseWorkspaceRequestContext"
     ) -> Iterable[Optional["RemoteExecutionPlan"]]:
         job_selectors = list({selector.job_selector for selector in keys})
-        remote_jobs = await RemoteJob.gen_many(context, job_selectors)
-        remote_jobs_by_selector_hash = {
-            hash(selector): job for selector, job in zip(job_selectors, remote_jobs)
+
+        # the code location origin might not match, but the grpc server call only
+        # uses the job name and repository name anyway
+        job_origins_by_job_selector_hash = {
+            hash(job_selector): RemoteJobOrigin(
+                repository_origin=RemoteRepositoryOrigin(
+                    repository_name=job_selector.repository_name,
+                    code_location_origin=RegisteredCodeLocationOrigin(
+                        location_name=job_selector.location_name
+                    ),
+                ),
+                job_name=job_selector.job_name,
+            )
+            for job_selector in job_selectors
         }
 
         unique_keys = {key for key in keys}
 
-        tasks = [
-            context.gen_execution_plan(
-                check.not_none(remote_jobs_by_selector_hash[hash(key.job_selector)]),
+        tasks = [RemoteJob.gen_many(context, job_selectors)] + [
+            context.gen_execution_plan_snapshot_without_job_snapshot_id(
+                check.not_none(job_origins_by_job_selector_hash[hash(key.job_selector)]),
+                key.job_selector,
                 run_config=key.run_config or {},
                 step_keys_to_execute=None,
                 known_state=None,
             )
             for key in unique_keys
-            if remote_jobs_by_selector_hash[hash(key.job_selector)] is not None
         ]
 
-        if tasks:
-            results = await asyncio.gather(*tasks)
-        else:
-            results = []
-        results_by_key = {unique_key: result for unique_key, result in zip(unique_keys, results)}
+        results = await asyncio.gather(*tasks)
 
-        return [results_by_key.get(key) for key in keys]
+        remote_jobs: Iterable[Optional[RemoteJob]] = cast(
+            "Iterable[Optional[RemoteJob]]", results[0]
+        )
+        execution_plan_results: list[ExecutionPlanSnapshot] = cast(
+            "list[ExecutionPlanSnapshot]", results[1:]
+        )
+
+        remote_jobs_by_selector_hash = {
+            hash(selector): job for selector, job in zip(job_selectors, remote_jobs)
+        }
+
+        execution_plans_by_key = {}
+
+        for unique_key, result in zip(unique_keys, execution_plan_results):
+            job_selector_hash = hash(unique_key.job_selector)
+            remote_job = remote_jobs_by_selector_hash.get(job_selector_hash)
+            if remote_job:
+                execution_plans_by_key[unique_key] = RemoteExecutionPlan(
+                    result._replace(job_snapshot_id=remote_job.identifying_job_snapshot_id)
+                )
+
+        return [execution_plans_by_key.get(key) for key in keys]
 
     @classmethod
     def _blocking_batch_load(
