@@ -867,6 +867,23 @@ SET_ATLAN_INTEGRATION_SETTINGS_MUTATION = """
 """
 
 
+DELETE_ATLAN_INTEGRATION_SETTINGS_MUTATION = """
+    mutation CliDeleteAtlanIntegrationSettings() {
+        deleteAtlanIntegrationSettings() {
+            __typename
+            ...on DeleteAtlanIntegrationSuccess
+            ...on UnauthorizedError {
+                message
+            }
+            ... on PythonError {
+                message
+                stack
+            }
+        }
+    }
+"""
+
+
 def set_atlan_integration_settings(
     client: DagsterCloudGraphQLClient,
     token: str,
@@ -882,3 +899,17 @@ def set_atlan_integration_settings(
         != "SetAtlanIntegrationSettingsSuccess"
     ):
         raise Exception(f"Unable to set Atlan integration settings: {result}")
+
+
+def delete_atlan_integration_settings(
+    client: DagsterCloudGraphQLClient,
+) -> None:
+    result = client.execute(
+        DELETE_ATLAN_INTEGRATION_SETTINGS_MUTATION,
+    )
+
+    if (
+        result["data"]["deleteAtlanIntegrationSettings"]["__typename"]
+        != "DeleteAtlanIntegrationSuccess"
+    ):
+        raise Exception(f"Unable to delete Atlan integration settings: {result}")
