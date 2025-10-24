@@ -15,7 +15,7 @@ from toposort import CircularDependencyError
 from typing_extensions import Self
 
 import dagster._check as check
-from dagster._annotations import deprecated_param, public
+from dagster._annotations import beta_param, deprecated_param, public
 from dagster._core.definitions.config import ConfigMapping
 from dagster._core.definitions.definition_config_schema import IDefinitionConfigSchema
 from dagster._core.definitions.dependency import (
@@ -599,6 +599,7 @@ class GraphDefinition(NodeDefinition):
         return list(self._node_dict.keys())
 
     @public
+    @beta_param(param="owners")
     def to_job(
         self,
         name: Optional[str] = None,
@@ -619,6 +620,7 @@ class GraphDefinition(NodeDefinition):
         input_values: Optional[Mapping[str, object]] = None,
         run_tags: Optional[Mapping[str, object]] = None,
         _asset_selection_data: Optional[AssetSelectionData] = None,
+        owners: Optional[Sequence[str]] = None,
     ) -> "JobDefinition":
         """Make this graph in to an executable Job by providing remaining components required for execution.
 
@@ -675,6 +677,7 @@ class GraphDefinition(NodeDefinition):
                 will produce. Generally should not be set manually.
             input_values (Optional[Mapping[str, Any]]):
                 A dictionary that maps python objects to the top-level inputs of a job.
+            owners (Optional[Sequence[str]]): A sequence of strings identifying the owners of the job.
 
         Returns:
             JobDefinition
@@ -701,6 +704,7 @@ class GraphDefinition(NodeDefinition):
             input_values=input_values,
             _subset_selection_data=_asset_selection_data,
             _was_explicitly_provided_resources=None,  # None means this is determined by whether resource_defs contains any explicitly provided resources
+            owners=owners,
         ).get_subset(op_selection=op_selection)
 
     def coerce_to_job(self) -> "JobDefinition":

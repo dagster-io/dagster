@@ -4,6 +4,7 @@ sidebar_position: 5000
 title: Microsoft Azure
 canonicalUrl: '/deployment/dagster-plus/hybrid/azure'
 slug: '/deployment/dagster-plus/hybrid/azure'
+tags: [dagster-plus-feature]
 ---
 
 # Deploying Dagster+ hybrid on Azure

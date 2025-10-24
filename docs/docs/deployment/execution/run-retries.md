@@ -10,7 +10,7 @@ If you configure run retries, a new run will be kicked off whenever a run fails 
 
 How to configure run retries depends on whether you're using Dagster+ or Dagster Open Source:
 
-- **Dagster+**: Use the [Dagster+ UI or the dagster-cloud CLI](/deployment/dagster-plus/full-deployments/deployment-settings-reference) to set a default maximum number of retries. Run retries do not need to be explicitly enabled.
+- **Dagster+**: Use the [Dagster+ UI or the dagster-cloud CLI](/deployment/dagster-plus/deploying-code/full-deployments/full-deployment-settings-reference) to set a default maximum number of retries. Run retries do not need to be explicitly enabled.
 - **Dagster Open Source**: Use your instance's `dagster.yaml` to enable run retries.
 
 For example, the following will set a default maximum number of retries of `3` for all runs:
@@ -23,13 +23,13 @@ run_retries:
 
 In both Dagster+ and Dagster Open Source, you can also configure retries using tags either on Job definitions or in the Dagster UI [Launchpad](/guides/operate/webserver).
 
-<CodeExample path="docs_snippets/docs_snippets/deploying/job_retries.py" />
+<CodeExample path="docs_snippets/docs_snippets/deploying/job_retries.py" title="src/my_project/assets.py" />
 
 :::note
 
 For asset jobs, you can use [op retries](/guides/build/ops/op-retries) by setting the `op_retry_policy` attribute of `define_asset_job()` to a <PyObject section="ops" module="dagster" object="RetryPolicy"  />.
 
-<CodeExample path="docs_snippets/docs_snippets/deploying/asset_job_retries.py" />
+<CodeExample path="docs_snippets/docs_snippets/deploying/asset_job_retries.py" title="src/my_project/assets.py" />
 
 :::warning
 
@@ -67,10 +67,10 @@ run_retries:
 You can also apply the `dagster/retry_on_asset_or_op_failure` tag on specific jobs using tags to override the default value for runs of that job:
 
 ```python
-from dagster import job
+import dagster as dg
 
 
-@job(tags={"dagster/max_retries": 3, "dagster/retry_on_asset_or_op_failure": False})
+@dg.job(tags={"dagster/max_retries": 3, "dagster/retry_on_asset_or_op_failure": False})
 def sample_job():
     pass
 ```

@@ -84,6 +84,37 @@ def test_component_asset_spec(
 
 
 @pytest.mark.parametrize(
+    "custom_asset_specs, expected_asset_spec_keys",
+    [
+        (None, {AssetKey(["data_processing_notebook"])}),
+        (
+            {
+                "data_processing_notebook": [
+                    {"key": "data_processing_notebook_asset1"},
+                    {"key": "data_processing_notebook_asset2"},
+                ],
+                "stage_documents": [
+                    {
+                        "key": "stage_documents",
+                        "deps": [
+                            "data_processing_notebook_asset1",
+                            "data_processing_notebook_asset2",
+                        ],
+                    },
+                ],
+            },
+            {
+                AssetKey(["data_processing_notebook_asset1"]),
+                AssetKey(["data_processing_notebook_asset2"]),
+            },
+        ),
+    ],
+    ids=[
+        "no_custom_asset_specs",
+        "custom_asset_specs",
+    ],
+)
+@pytest.mark.parametrize(
     "custom_op_name",
     [
         None,
@@ -115,6 +146,8 @@ def test_load_component(
         ResolvedDatabricksServerlessConfig,
     ],
     custom_op_name: Optional[str],
+    custom_asset_specs: Optional[dict[str, list[dict[str, Any]]]],
+    expected_asset_spec_keys: set[AssetKey],
     databricks_config_path: str,
 ):
     with create_defs_folder_sandbox() as sandbox:
@@ -141,6 +174,7 @@ def test_load_component(
                         "host": TEST_DATABRICKS_WORKSPACE_HOST,
                         "token": TEST_DATABRICKS_WORKSPACE_TOKEN,
                     },
+                    "assets_by_task_key": custom_asset_specs,
                 },
             },
         )
@@ -152,7 +186,7 @@ def test_load_component(
             assert component.compute_config == expected_resolved_compute_config
 
             assets = list(defs.assets or [])
-            assert len(assets) == 1
+            assert len(assets) == 6
             databricks_assets = assets[0]
             assert isinstance(databricks_assets, AssetsDefinition)
 
@@ -170,14 +204,16 @@ def test_load_component(
             assert isinstance(databricks_assets.backfill_policy, BackfillPolicy)
             assert databricks_assets.backfill_policy.policy_type == BackfillPolicyType.SINGLE_RUN
 
-            assert defs.resolve_asset_graph().get_all_asset_keys() == {
-                AssetKey(["check_data_quality"]),
-                AssetKey(["data_processing_notebook"]),
-                AssetKey(["existing_job_with_references"]),
-                AssetKey(["hello_world_spark_task"]),
-                AssetKey(["spark_processing_jar"]),
-                AssetKey(["stage_documents"]),
-            }
+            assert defs.resolve_asset_graph().get_all_asset_keys() == (
+                {
+                    AssetKey(["check_data_quality"]),
+                    AssetKey(["existing_job_with_references"]),
+                    AssetKey(["hello_world_spark_task"]),
+                    AssetKey(["spark_processing_jar"]),
+                    AssetKey(["stage_documents"]),
+                }
+                | expected_asset_spec_keys
+            )
 
 
 def test_invalid_compute_config(databricks_config_path: str):

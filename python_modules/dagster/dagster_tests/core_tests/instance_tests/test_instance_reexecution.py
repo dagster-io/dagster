@@ -284,6 +284,7 @@ def test_create_reexecuted_run_from_failure(
         code_location=code_location,
         remote_job=remote_job,
         strategy=ReexecutionStrategy.FROM_FAILURE,
+        request_context=workspace,
     )
 
     assert run.tags[RESUME_RETRY_TAG] == "true"
@@ -298,7 +299,7 @@ def test_create_reexecuted_run_from_failure(
 
 
 def test_create_reexecuted_run_from_failure_all_steps_succeeded(
-    instance: dg.DagsterInstance, code_location, remote_job, success_run
+    instance: dg.DagsterInstance, workspace, code_location, remote_job, success_run
 ):
     failed_after_finish_run = success_run._replace(status=DagsterRunStatus.FAILURE)
 
@@ -307,6 +308,7 @@ def test_create_reexecuted_run_from_failure_all_steps_succeeded(
     ):
         instance.create_reexecuted_run(
             parent_run=failed_after_finish_run,
+            request_context=workspace,
             code_location=code_location,
             remote_job=remote_job,
             strategy=ReexecutionStrategy.FROM_FAILURE,
@@ -315,12 +317,14 @@ def test_create_reexecuted_run_from_failure_all_steps_succeeded(
 
 def test_create_reexecuted_run_from_failure_tags(
     instance: dg.DagsterInstance,
+    workspace,
     code_location,
     remote_job,
     failed_run,
 ):
     run = instance.create_reexecuted_run(
         parent_run=failed_run,
+        request_context=workspace,
         code_location=code_location,
         remote_job=remote_job,
         strategy=ReexecutionStrategy.FROM_FAILURE,
@@ -331,6 +335,7 @@ def test_create_reexecuted_run_from_failure_tags(
 
     run = instance.create_reexecuted_run(
         parent_run=failed_run,
+        request_context=workspace,
         code_location=code_location,
         remote_job=remote_job,
         strategy=ReexecutionStrategy.FROM_FAILURE,
@@ -342,6 +347,7 @@ def test_create_reexecuted_run_from_failure_tags(
 
     run = instance.create_reexecuted_run(
         parent_run=failed_run,
+        request_context=workspace,
         code_location=code_location,
         remote_job=remote_job,
         strategy=ReexecutionStrategy.FROM_FAILURE,
@@ -359,6 +365,7 @@ def test_create_reexecuted_run_all_steps(
 ):
     run = instance.create_reexecuted_run(
         parent_run=failed_run,
+        request_context=workspace,
         code_location=code_location,
         remote_job=remote_job,
         strategy=ReexecutionStrategy.ALL_STEPS,
@@ -415,6 +422,7 @@ def test_create_reexecuted_run_from_multi_asset_failure(
     }
     run = instance.create_reexecuted_run(
         parent_run=failed_run,
+        request_context=workspace,
         code_location=code_location,
         remote_job=remote_job,
         strategy=ReexecutionStrategy.FROM_ASSET_FAILURE,
@@ -450,6 +458,7 @@ def test_create_reexecuted_run_from_multi_asset_check_failure(
     }
     run = instance.create_reexecuted_run(
         parent_run=failed_run,
+        request_context=workspace,
         code_location=code_location,
         remote_job=remote_job,
         strategy=ReexecutionStrategy.FROM_ASSET_FAILURE,
@@ -491,6 +500,7 @@ def test_create_reexecuted_run_from_multi_asset_failure_after_all_assets_materia
     ):
         instance.create_reexecuted_run(
             parent_run=failed_run,
+            request_context=workspace,
             code_location=code_location,
             remote_job=remote_job,
             strategy=ReexecutionStrategy.FROM_ASSET_FAILURE,
@@ -517,6 +527,7 @@ def test_create_reexecuted_run_from_multi_asset_check_failure_blocking_check(
     }
     run = instance.create_reexecuted_run(
         parent_run=failed_run,
+        request_context=workspace,
         code_location=code_location,
         remote_job=remote_job,
         strategy=ReexecutionStrategy.FROM_ASSET_FAILURE,
@@ -558,6 +569,7 @@ def test_create_reexecuted_run_from_multi_asset_check_failure_unsubsettable(
     }
     run = instance.create_reexecuted_run(
         parent_run=failed_run,
+        request_context=workspace,
         code_location=code_location,
         remote_job=remote_job,
         strategy=ReexecutionStrategy.FROM_ASSET_FAILURE,

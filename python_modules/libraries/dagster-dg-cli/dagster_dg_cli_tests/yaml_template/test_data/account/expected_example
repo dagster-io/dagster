@@ -33,6 +33,11 @@ attributes:
       end_date: "example_string"
       timezone: "example_string"
       minute_offset: 1
+    freshness_policy: "example_string"
     key: "example_string"
     key_prefix:
       - "example_string"
+  defs_state:
+    key: "example_string"
+    management_type: "example_string"
+    refresh_if_dev: true

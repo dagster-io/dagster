@@ -55,8 +55,7 @@ class GrapheneAssetSelection(graphene.ObjectType):
 
     def _get_assets(self, graphene_info: ResolveInfo):
         return [
-            get_asset(graphene_info, asset_key)
-            for asset_key in self._get_resolved_and_sorted_keys(graphene_info)
+            get_asset(asset_key) for asset_key in self._get_resolved_and_sorted_keys(graphene_info)
         ]
 
     def resolve_assets(self, graphene_info: ResolveInfo):

@@ -322,3 +322,41 @@ def test_execute_component(dlt_pipeline: Pipeline):
         assets=[asset_def], resources={"dlt_pipeline_resource": DagsterDltResource()}
     )
     assert result.success
+
+
+def test_subclass_override_get_asset_spec(dlt_pipeline: Pipeline):
+    """Test that subclasses of DltLoadCollectionComponent can override get_asset_spec method."""
+
+    class CustomDltLoadCollectionComponent(DltLoadCollectionComponent):
+        def get_asset_spec(self, data) -> AssetSpec:
+            # Override to add custom metadata and tags
+            base_spec = super().get_asset_spec(data)
+            return base_spec.replace_attributes(
+                metadata={**base_spec.metadata, "custom_override": "test_value"},
+                tags={**base_spec.tags, "custom_tag": "override_test"},
+            )
+
+    context = ComponentTree.for_test().load_context
+    defs = CustomDltLoadCollectionComponent(
+        loads=[
+            DltLoadSpecModel(
+                pipeline=dlt_pipeline,
+                source=dlt_source(),
+            )
+        ]
+    ).build_defs(context)
+
+    # Verify that the custom get_asset_spec method is being used
+    assets_def = defs.resolve_assets_def(AssetKey(["example", "repos"]))
+    asset_spec = assets_def.get_asset_spec(AssetKey(["example", "repos"]))
+
+    # Check that our custom metadata and tags are present
+    assert asset_spec.metadata["custom_override"] == "test_value"
+    assert asset_spec.tags["custom_tag"] == "override_test"
+
+    # Verify that the asset keys are still correct
+    assert defs.resolve_asset_graph().get_all_asset_keys() == {
+        AssetKey(["example", "repos"]),
+        AssetKey(["example", "repo_issues"]),
+        AssetKey(["pipeline_repos"]),
+    }

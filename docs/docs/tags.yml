@@ -42,15 +42,11 @@ other:
   label: 'other'
   permalink: '/integrations/other'
   description: 'Other integrations'
-reference-architecture:
-  label: 'reference-architecture'
-  permalink: '/examples/reference-architecture'
-  description: 'Reference architecture.'
 code-example:
   label: 'code-example'
   permalink: '/examples/code-example'
   description: 'Code example.'
-mini-project:
-  label: 'mini-project'
-  permalink: '/examples/mini-project'
-  description: 'Mini project.'
+dagster-plus-feature:
+  label: 'dagster-plus-feature'
+  permalink: '/features/dagster-plus-feature'
+  description: 'Dagster+ features.'

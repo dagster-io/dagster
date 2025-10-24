@@ -223,6 +223,7 @@ class JobRefSnap:
     active_presets: Sequence["PresetSnap"]
     parent_snapshot_id: Optional[str]
     preview_tags: Optional[Mapping[str, str]] = None
+    owners: Optional[Sequence[str]] = None
 
     @classmethod
     def from_job_def(cls, job_def: JobDefinition) -> Self:
@@ -234,6 +235,7 @@ class JobRefSnap:
             parent_snapshot_id=None,
             active_presets=active_presets_from_job_def(job_def),
             preview_tags=get_preview_tags(job_def),
+            owners=job_def.owners,
         )
 
     def get_preview_tags(self) -> Mapping[str, str]:
@@ -260,6 +262,7 @@ class ScheduleSnap(IHaveNew):
     asset_selection: Optional[AssetSelection]
     tags: Mapping[str, str]
     metadata: Mapping[str, MetadataValue]
+    owners: Optional[Sequence[str]]
 
     def __new__(
         cls,
@@ -276,6 +279,7 @@ class ScheduleSnap(IHaveNew):
         asset_selection: Optional[AssetSelection] = None,
         tags: Optional[Mapping[str, str]] = None,
         metadata: Optional[Mapping[str, MetadataValue]] = None,
+        owners: Optional[Sequence[str]] = None,
     ):
         if asset_selection is not None:
             check.invariant(
@@ -303,6 +307,7 @@ class ScheduleSnap(IHaveNew):
             asset_selection=asset_selection,
             tags=tags or {},
             metadata=metadata or {},
+            owners=owners,
         )
 
     @classmethod
@@ -335,6 +340,7 @@ class ScheduleSnap(IHaveNew):
             asset_selection=serializable_asset_selection,
             tags=schedule_def.tags,
             metadata=schedule_def.metadata,
+            owners=schedule_def.owners,
         )
 
 
@@ -390,6 +396,7 @@ class SensorSnap(IHaveNew):
     asset_selection: Optional[AssetSelection]
     tags: Mapping[str, str]
     run_tags: Mapping[str, str]
+    owners: Optional[Sequence[str]]
 
     def __new__(
         cls,
@@ -406,6 +413,7 @@ class SensorSnap(IHaveNew):
         asset_selection: Optional[AssetSelection] = None,
         tags: Optional[Mapping[str, str]] = None,
         run_tags: Optional[Mapping[str, str]] = None,
+        owners: Optional[Sequence[str]] = None,
     ):
         if job_name and not target_dict:
             # handle the legacy case where the ExternalSensorData was constructed from an earlier
@@ -446,6 +454,7 @@ class SensorSnap(IHaveNew):
             asset_selection=asset_selection,
             tags=tags or {},
             run_tags=run_tags or {},
+            owners=owners,
         )
 
     @classmethod
@@ -511,6 +520,7 @@ class SensorSnap(IHaveNew):
                 if isinstance(sensor_def, AutomationConditionSensorDefinition)
                 else None
             ),
+            owners=sensor_def.owners,
         )
 
 

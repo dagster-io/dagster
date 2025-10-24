@@ -6,6 +6,7 @@ from celery.exceptions import TaskRevokedError
 from dagster._core.errors import DagsterSubprocessError
 from dagster._core.events import DagsterEvent, EngineEventData
 from dagster._core.execution.context.system import PlanOrchestrationContext
+from dagster._core.execution.plan.instance_concurrency_context import InstanceConcurrencyContext
 from dagster._core.execution.plan.plan import ExecutionPlan
 from dagster._core.storage.tags import PRIORITY_TAG
 from dagster._utils.error import serializable_error_info_from_exc_info
@@ -53,114 +54,118 @@ def core_celery_execution_loop(job_context, execution_plan, step_execution_fn):
     step_results = {}  # Dict[ExecutionStep, celery.AsyncResult]
     step_errors = {}
 
-    with execution_plan.start(
-        retry_mode=job_context.executor.retries,
-        sort_key_fn=priority_for_step,
-    ) as active_execution:
-        stopping = False
+    with InstanceConcurrencyContext(
+        job_context.instance, job_context.dagster_run
+    ) as instance_concurrency_context:
+        with execution_plan.start(
+            retry_mode=job_context.executor.retries,
+            sort_key_fn=priority_for_step,
+            instance_concurrency_context=instance_concurrency_context,
+        ) as active_execution:
+            stopping = False
 
-        while (not active_execution.is_complete and not stopping) or step_results:
-            if active_execution.check_for_interrupts():
-                yield DagsterEvent.engine_event(
-                    job_context,
-                    "Celery executor: received termination signal - revoking active tasks from"
-                    " workers",
-                    EngineEventData.interrupted(list(step_results.keys())),
-                )
-                stopping = True
-                active_execution.mark_interrupted()
-                for result in step_results.values():
-                    result.revoke()
-            results_to_pop = []
-            for step_key, result in sorted(
-                step_results.items(), key=lambda x: priority_for_key(x[0])
-            ):
-                if result.ready():
+            while (not active_execution.is_complete and not stopping) or step_results:
+                if active_execution.check_for_interrupts():
+                    yield DagsterEvent.engine_event(
+                        job_context,
+                        "Celery executor: received termination signal - revoking active tasks from"
+                        " workers",
+                        EngineEventData.interrupted(list(step_results.keys())),
+                    )
+                    stopping = True
+                    active_execution.mark_interrupted()
+                    for result in step_results.values():
+                        result.revoke()
+                results_to_pop = []
+                for step_key, result in sorted(
+                    step_results.items(), key=lambda x: priority_for_key(x[0])
+                ):
+                    if result.ready():
+                        try:
+                            step_events = result.get()
+                        except TaskRevokedError:
+                            step_events = []
+                            step = active_execution.get_step_by_key(step_key)
+                            yield DagsterEvent.engine_event(
+                                job_context.for_step(step),
+                                f'celery task for running step "{step_key}" was revoked.',
+                                EngineEventData(marker_end=DELEGATE_MARKER),
+                            )
+                        except Exception:
+                            # We will want to do more to handle the exception here.. maybe subclass Task
+                            # Certainly yield an engine or job event
+                            step_events = []
+                            step_errors[step_key] = serializable_error_info_from_exc_info(
+                                sys.exc_info()
+                            )
+                        for step_event in step_events:
+                            event = deserialize_value(step_event, DagsterEvent)
+                            yield event
+                            active_execution.handle_event(event)
+
+                        results_to_pop.append(step_key)
+
+                for step_key in results_to_pop:
+                    if step_key in step_results:
+                        del step_results[step_key]
+                        active_execution.verify_complete(job_context, step_key)
+
+                # process skips from failures or uncovered inputs
+                for event in active_execution.plan_events_iterator(job_context):
+                    yield event
+
+                # don't add any new steps if we are stopping
+                if stopping or step_errors:
+                    continue
+
+                # This is a slight refinement. If we have n workers idle and schedule m > n steps for
+                # execution, the first n steps will be picked up by the idle workers in the order in
+                # which they are scheduled (and the following m-n steps will be executed in priority
+                # order, provided that it takes longer to execute a step than to schedule it). The test
+                # case has m >> n to exhibit this behavior in the absence of this sort step.
+                for step in active_execution.get_steps_to_execute():
                     try:
-                        step_events = result.get()
-                    except TaskRevokedError:
-                        step_events = []
-                        step = active_execution.get_step_by_key(step_key)
+                        queue = step.tags.get(DAGSTER_CELERY_QUEUE_TAG, task_default_queue)
                         yield DagsterEvent.engine_event(
                             job_context.for_step(step),
-                            f'celery task for running step "{step_key}" was revoked.',
-                            EngineEventData(marker_end=DELEGATE_MARKER),
+                            f'Submitting celery task for step "{step.key}" to queue "{queue}".',
+                            EngineEventData(marker_start=DELEGATE_MARKER),
                         )
+
+                        # Get the Celery priority for this step
+                        priority = _get_step_priority(job_context, step)
+
+                        # Submit the Celery tasks
+                        step_results[step.key] = step_execution_fn(
+                            app,
+                            job_context,
+                            step,
+                            queue,
+                            priority,
+                            active_execution.get_known_state(),
+                        )
+
                     except Exception:
-                        # We will want to do more to handle the exception here.. maybe subclass Task
-                        # Certainly yield an engine or job event
-                        step_events = []
-                        step_errors[step_key] = serializable_error_info_from_exc_info(
-                            sys.exc_info()
+                        yield DagsterEvent.engine_event(
+                            job_context,
+                            "Encountered error during celery task submission.",
+                            event_specific_data=EngineEventData.engine_error(
+                                serializable_error_info_from_exc_info(sys.exc_info()),
+                            ),
                         )
-                    for step_event in step_events:
-                        event = deserialize_value(step_event, DagsterEvent)
-                        yield event
-                        active_execution.handle_event(event)
+                        raise
 
-                    results_to_pop.append(step_key)
+                time.sleep(TICK_SECONDS)
 
-            for step_key in results_to_pop:
-                if step_key in step_results:
-                    del step_results[step_key]
-                    active_execution.verify_complete(job_context, step_key)
-
-            # process skips from failures or uncovered inputs
-            for event in active_execution.plan_events_iterator(job_context):
-                yield event
-
-            # don't add any new steps if we are stopping
-            if stopping or step_errors:
-                continue
-
-            # This is a slight refinement. If we have n workers idle and schedule m > n steps for
-            # execution, the first n steps will be picked up by the idle workers in the order in
-            # which they are scheduled (and the following m-n steps will be executed in priority
-            # order, provided that it takes longer to execute a step than to schedule it). The test
-            # case has m >> n to exhibit this behavior in the absence of this sort step.
-            for step in active_execution.get_steps_to_execute():
-                try:
-                    queue = step.tags.get(DAGSTER_CELERY_QUEUE_TAG, task_default_queue)
-                    yield DagsterEvent.engine_event(
-                        job_context.for_step(step),
-                        f'Submitting celery task for step "{step.key}" to queue "{queue}".',
-                        EngineEventData(marker_start=DELEGATE_MARKER),
-                    )
-
-                    # Get the Celery priority for this step
-                    priority = _get_step_priority(job_context, step)
-
-                    # Submit the Celery tasks
-                    step_results[step.key] = step_execution_fn(
-                        app,
-                        job_context,
-                        step,
-                        queue,
-                        priority,
-                        active_execution.get_known_state(),
-                    )
-
-                except Exception:
-                    yield DagsterEvent.engine_event(
-                        job_context,
-                        "Encountered error during celery task submission.",
-                        event_specific_data=EngineEventData.engine_error(
-                            serializable_error_info_from_exc_info(sys.exc_info()),
-                        ),
-                    )
-                    raise
-
-            time.sleep(TICK_SECONDS)
-
-        if step_errors:
-            raise DagsterSubprocessError(
-                "During celery execution errors occurred in workers:\n{error_list}".format(
-                    error_list="\n".join(
-                        [f"[{key}]: {err.to_string()}" for key, err in step_errors.items()]
-                    )
-                ),
-                subprocess_error_infos=list(step_errors.values()),
-            )
+            if step_errors:
+                raise DagsterSubprocessError(
+                    "During celery execution errors occurred in workers:\n{error_list}".format(
+                        error_list="\n".join(
+                            [f"[{key}]: {err.to_string()}" for key, err in step_errors.items()]
+                        )
+                    ),
+                    subprocess_error_infos=list(step_errors.values()),
+                )
 
 
 def _get_step_priority(context, step):

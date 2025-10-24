@@ -39,7 +39,7 @@ To access the overview page, click **Overview** in the top navigation bar.
 <Tabs>
 <TabItem value="Asset catalog (OSS)">
 
-The **Asset catalog** page lists all [assets](/guides/build/assets) in your Dagster deployment, which can be filtered by asset key, compute kind, asset group, [code location](/deployment/code-locations), and [tags](/guides/build/assets/metadata-and-tags/index.md#tags).
+The **Asset catalog** page lists all [assets](/guides/build/assets) in your Dagster deployment, which can be filtered by asset key, compute kind, asset group, [code location](/deployment/code-locations), and [tags](/guides/build/assets/metadata-and-tags#tags).
 
 Clicking an asset opens the **Asset details** page for that asset. You can also navigate to the **Global asset lineage** page, reload definitions, and materialize assets.
 
@@ -56,7 +56,7 @@ This feature is only available in Dagster+ Pro.
 
 :::
 
-The Dagster+ Pro **Asset catalog** page includes all the information and functionality of the original page, broken out by saved selections, asset group, kind, [owners](/guides/build/assets/metadata-and-tags/index.md#owners), [tags](/guides/build/assets/metadata-and-tags/index.md#tags), and [code location](/deployment/code-locations).
+The Dagster+ Pro **Asset catalog** page includes all the information and functionality of the original page, broken out by saved selections, asset group, kind, [owners](/guides/build/assets/metadata-and-tags#owners), [tags](/guides/build/assets/metadata-and-tags#tags), and [code location](/deployment/code-locations).
 
 On this page, you can:
 
@@ -114,7 +114,7 @@ The **Asset details** page contains details about a single asset. Use the tabs o
 - **Checks** - The [Asset checks](/guides/test/asset-checks) defined for the asset
 - **Lineage** - The asset's lineage in the **Global asset lineage** page
 - **Automation** - The [Declarative Automation conditions](/guides/automate/declarative-automation) associated with the asset
-- **Insights** - **Dagster+ only.** Historical information about the asset, such as failures and credit usage. Refer to the [Dagster+ Insights](/guides/monitor/insights) documentation for more information.
+- **Insights** - **Dagster+ only.** Historical information about the asset, such as failures and credit usage. Refer to the [Dagster+ Insights](/guides/observe/insights) documentation for more information.
 
 To access the asset details page, click an asset in the **Asset catalog**.
 
@@ -415,7 +415,7 @@ To access this tab, on the **Deployment overview** page, click the **Environment
 </TabItem>
 <TabItem value="Alerts tab">
 
-The **Alerts** tab contains information about the alert policies configured for a Dagster+ deployment. For more information, see the [Dagster+ alerts documentation](/guides/monitor/alerts).
+The **Alerts** tab contains information about the alert policies configured for a Dagster+ deployment. For more information, see the [Dagster+ alerts documentation](/guides/observe/alerts).
 
 To access this tab, on the **Deployment overview** page, click the **Alerts** tab.
 

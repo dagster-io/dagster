@@ -4,10 +4,18 @@ global:
   dagsterHome: ""
   serviceAccountName: ""
   celeryConfigSecretName: ""
+  dagsterInstanceConfigMap: ""
 
 dagsterHome: "/opt/dagster/dagster_home"
 postgresqlSecretName: "dagster-postgresql-secret"
 celeryConfigSecretName: "dagster-celery-config-secret"
+
+# Include the Dagster instance configuration from the main chart's configmap in user code pods.
+# Set to true when user deployments are in the same namespace as the main Dagster chart.
+# This is necessary when using features that require access to the instance at code import/startup time,
+# such as StateBackedComponents.
+# Set to false when user deployments are in a different namespace to avoid mount issues.
+includeInstance: false
 
 ####################################################################################################
 # User Code Deployments: Configuration for user code containers to be loaded via GRPC server. For
@@ -27,6 +35,8 @@ deployments:
       # When a tag is not supplied, it will default as the Helm chart version.
       repository: "docker.io/dagster/user-code-example"
       tag: ~
+      # If digest is provided, it takes precedence over tag. Use format: sha256:abc123...
+      # digest: ~
       # Change with caution! If you're using a fixed tag for pipeline run images, changing the
       # image pull policy to anything other than "Always" will use a cached/stale image, which is
       # almost certainly not what you want.

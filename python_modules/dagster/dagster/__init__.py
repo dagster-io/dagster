@@ -346,6 +346,9 @@ from dagster._core.definitions.output import (
     Out as Out,
     OutputMapping as OutputMapping,
 )
+from dagster._core.definitions.partitions.context import (
+    partition_loading_context as partition_loading_context,
+)
 from dagster._core.definitions.partitions.definition import (
     DailyPartitionsDefinition as DailyPartitionsDefinition,
     DynamicPartitionsDefinition as DynamicPartitionsDefinition,
@@ -379,6 +382,7 @@ from dagster._core.definitions.partitions.partitioned_config import (
     dynamic_partitioned_config as dynamic_partitioned_config,
     hourly_partitioned_config as hourly_partitioned_config,
     monthly_partitioned_config as monthly_partitioned_config,
+    partitioned_config as partitioned_config,
     static_partitioned_config as static_partitioned_config,
     weekly_partitioned_config as weekly_partitioned_config,
 )
@@ -581,6 +585,7 @@ from dagster._core.storage.dagster_run import (
     RunRecord as RunRecord,
     RunsFilter as RunsFilter,
 )
+from dagster._core.storage.defs_state import UPathDefsStateStorage as UPathDefsStateStorage
 from dagster._core.storage.file_manager import (
     FileHandle as FileHandle,
     LocalFileHandle as LocalFileHandle,
@@ -655,6 +660,9 @@ from dagster.components.component.component import (
     ComponentTypeSpec as ComponentTypeSpec,
 )
 from dagster.components.component.component_loader import component_instance as component_instance
+from dagster.components.component.state_backed_component import (
+    StateBackedComponent as StateBackedComponent,
+)
 from dagster.components.component.template_vars import template_var as template_var
 from dagster.components.component_scaffolding import scaffold_component as scaffold_component
 from dagster.components.components import (

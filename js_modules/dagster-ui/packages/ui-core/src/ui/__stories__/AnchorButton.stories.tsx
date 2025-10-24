@@ -1,5 +1,4 @@
 import {ExternalAnchorButton, Group, Icon} from '@dagster-io/ui-components';
-import {Meta} from '@storybook/react';
 
 import {AnchorButton} from '../AnchorButton';
 
@@ -7,7 +6,7 @@ import {AnchorButton} from '../AnchorButton';
 export default {
   title: 'AnchorButton',
   component: AnchorButton,
-} as Meta;
+};
 
 export const Default = () => {
   return (

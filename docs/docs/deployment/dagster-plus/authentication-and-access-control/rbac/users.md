@@ -3,6 +3,7 @@ description: Dagster+ allows you to grant specific permissions to your organizat
 sidebar_label: Managing users
 sidebar_position: 8110
 title: Managing users
+tags: [dagster-plus-feature]
 ---
 
 Dagster+ allows you to grant specific permissions to your organization's users, ensuring that Dagster users have access only to what they require.
@@ -24,7 +25,7 @@ In this guide, you'll learn how to manage users and their permissions using the 
 - **If using Google for Single sign-on (SSO)**, users must be added in Dagster+ before they can log in.
 - **If using an Identity Provider (IdP) like Okta for SSO**, users must be assigned to the Dagster app in the IdP to be able to log in to Dagster+. Refer to the [SSO setup guides](/deployment/dagster-plus/authentication-and-access-control/sso) for setup instructions for each of our supported IdP solutions.
 
-By default, users will be granted Viewer permissions on each deployment. The default role can be adjusted by modifying the [`sso_default_role` deployment setting](/deployment/dagster-plus/full-deployments/deployment-settings-reference).
+By default, users will be granted Viewer permissions on each deployment. The default role can be adjusted by modifying the [`sso_default_role` deployment setting](/deployment/dagster-plus/deploying-code/full-deployments/full-deployment-settings-reference).
 
 ## Adding users to Dagster+
 

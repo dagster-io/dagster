@@ -16,7 +16,10 @@ from dagster._core.remote_representation.handle import RepositoryHandle
 from dagster._core.workspace.context import WorkspaceProcessContext
 from dagster._core.workspace.workspace import CodeLocationEntry, CodeLocationLoadStatus
 from dagster.components.core.load_defs import PLUGIN_COMPONENT_TYPES_JSON_METADATA_KEY
-from dagster_shared.serdes.objects.models.defs_state_info import DefsStateInfo
+from dagster_shared.serdes.objects.models.defs_state_info import (
+    DefsStateInfo,
+    DefsStateManagementType,
+)
 
 from dagster_graphql.implementation.fetch_solids import get_solid, get_solids
 from dagster_graphql.implementation.loader import RepositoryScopedBatchLoader
@@ -354,10 +357,13 @@ class GrapheneRepository(graphene.ObjectType):
         ]
 
     def resolve_pipelines(self, graphene_info: ResolveInfo):
+        repo = self.get_repository(graphene_info)
+        batch_loader = self.get_batch_loader(graphene_info)
+
         return [
-            GraphenePipeline(pipeline)
+            GraphenePipeline(pipeline, batch_loader)
             for pipeline in sorted(
-                self.get_repository(graphene_info).get_all_jobs(),
+                repo.get_all_jobs(),
                 key=lambda pipeline: pipeline.name,
             )
         ]
@@ -378,10 +384,8 @@ class GrapheneRepository(graphene.ObjectType):
         return get_solids(self.get_repository(graphene_info))
 
     def resolve_partitionSets(self, graphene_info: ResolveInfo):
-        return (
-            GraphenePartitionSet(self._handle, partition_set)
-            for partition_set in self.get_repository(graphene_info).get_partition_sets()
-        )
+        partition_sets = graphene_info.context.get_partition_sets(self._handle.to_selector())
+        return (GraphenePartitionSet(partition_set) for partition_set in partition_sets)
 
     def resolve_displayMetadata(self, graphene_info: ResolveInfo):
         metadata = self._handle.display_metadata
@@ -554,9 +558,13 @@ class GrapheneWorkspaceLocationEntryOrError(graphene.Union):
         name = "WorkspaceLocationEntryOrError"
 
 
+GrapheneDefsStateManagementType = graphene.Enum.from_enum(DefsStateManagementType)
+
+
 class GrapheneDefsKeyStateInfo(graphene.ObjectType):
     version = graphene.NonNull(graphene.String)
     createTimestamp = graphene.NonNull(graphene.Float)
+    managementType = graphene.NonNull(GrapheneDefsStateManagementType)
 
     class Meta:
         name = "DefsKeyStateInfo"
@@ -581,7 +589,11 @@ class GrapheneDefsStateInfo(graphene.ObjectType):
             keyStateInfo=[
                 GrapheneDefsKeyStateInfoEntry(
                     key,
-                    GrapheneDefsKeyStateInfo(info.version, info.create_timestamp) if info else None,
+                    GrapheneDefsKeyStateInfo(
+                        info.version, info.create_timestamp, info.management_type
+                    )
+                    if info
+                    else None,
                 )
                 for key, info in defs_state_info.info_mapping.items()
             ]
@@ -601,4 +613,5 @@ types = [
     GrapheneDefsStateInfo,
     GrapheneDefsKeyStateInfo,
     GrapheneDefsKeyStateInfoEntry,
+    GrapheneDefsStateManagementType,
 ]

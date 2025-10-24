@@ -1,5 +1,6 @@
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from functools import cached_property
+from pathlib import Path
 from typing import Annotated, Any, Optional, Union
 
 import dagster as dg
@@ -8,29 +9,37 @@ from dagster._core.definitions.assets.definition.asset_spec import AssetSpec
 from dagster._core.definitions.assets.definition.assets_definition import AssetsDefinition
 from dagster._core.definitions.decorators.asset_decorator import multi_asset
 from dagster._core.execution.context.asset_execution_context import AssetExecutionContext
-from dagster.components import Component, ComponentLoadContext, Model, Resolvable, Resolver
+from dagster.components import ComponentLoadContext, Model, Resolvable, Resolver
+from dagster.components.component.state_backed_component import StateBackedComponent
 from dagster.components.resolved.base import resolve_fields
 from dagster.components.resolved.context import ResolutionContext
 from dagster.components.resolved.core_models import AssetSpecKeyUpdateKwargs, AssetSpecUpdateKwargs
 from dagster.components.utils import TranslatorResolvingInfo
-from dagster.components.utils.translation import TranslationFn, TranslationFnResolver
+from dagster.components.utils.defs_state import (
+    DefsStateConfig,
+    DefsStateConfigArgs,
+    ResolvedDefsStateConfig,
+)
+from dagster.components.utils.translation import (
+    ComponentTranslator,
+    TranslationFn,
+    TranslationFnResolver,
+    create_component_translator_cls,
+)
 from dagster_shared import check
 from dagster_shared.record import record
+from dagster_shared.serdes.serdes import deserialize_value
 from pydantic import BaseModel
 from typing_extensions import TypeAlias
 
-from dagster_powerbi.resource import (
-    PowerBIServicePrincipal,
-    PowerBIToken,
-    PowerBIWorkspace,
-    load_powerbi_asset_specs,
-)
+from dagster_powerbi.resource import PowerBIServicePrincipal, PowerBIToken, PowerBIWorkspace
 from dagster_powerbi.translator import (
     DagsterPowerBITranslator,
     PowerBIContentType,
     PowerBIMetadataSet,
     PowerBITagSet,
     PowerBITranslatorData,
+    PowerBIWorkspaceData,
 )
 
 
@@ -142,15 +151,6 @@ ResolvedMultilayerTranslationFn: TypeAlias = Annotated[
 ]
 
 
-class ProxyDagsterPowerBITranslator(DagsterPowerBITranslator):
-    def __init__(self, fn: TranslationFn):
-        self._fn = fn
-
-    def get_asset_spec(self, data: PowerBITranslatorData) -> AssetSpec:
-        base_asset_spec = super().get_asset_spec(data)
-        return self._fn(base_asset_spec, data)
-
-
 @dataclass
 class PowerBIWorkspaceModel(Resolvable):
     credentials: Annotated[
@@ -171,8 +171,25 @@ def _resolve_powerbi_workspace(context: ResolutionContext, model: BaseModel) -> 
 
 @public
 @dataclass
-class PowerBIWorkspaceComponent(Component, Resolvable):
-    """Pulls in the contents of a PowerBI workspace into Dagster assets."""
+class PowerBIWorkspaceComponent(StateBackedComponent, Resolvable):
+    """Pulls in the contents of a PowerBI workspace into Dagster assets.
+
+    Example:
+
+        .. code-block:: yaml
+
+            # defs.yaml
+
+            type: dagster_powerbi.PowerBIWorkspaceComponent
+            attributes:
+              workspace:
+                credentials:
+                  client_id: "{{ env.POWERBI_CLIENT_ID }}"
+                  client_secret: "{{ env.POWERBI_CLIENT_SECRET }}"
+                  tenant_id: "{{ env.POWERBI_TENANT_ID }}"
+                workspace_id: your-workspace-id
+              enable_semantic_model_refresh: true
+    """
 
     workspace: Annotated[
         Any,
@@ -186,12 +203,25 @@ class PowerBIWorkspaceComponent(Component, Resolvable):
     # Takes a list of semantic model names to enable refresh for, or True to enable for all semantic models
     enable_semantic_model_refresh: Union[bool, list[str]] = False
     translation: Optional[ResolvedMultilayerTranslationFn] = None
+    defs_state: ResolvedDefsStateConfig = field(
+        default_factory=DefsStateConfigArgs.legacy_code_server_snapshots
+    )
+
+    @property
+    def defs_state_config(self) -> DefsStateConfig:
+        default_key = f"{self.__class__.__name__}[{self.workspace.workspace_id}]"
+        return DefsStateConfig.from_args(self.defs_state, default_key=default_key)
 
     @cached_property
     def translator(self) -> DagsterPowerBITranslator:
-        if self.translation:
-            return ProxyDagsterPowerBITranslator(self.translation)
+        return PowerBIComponentTranslator(self)
+
+    @cached_property
+    def _base_translator(self) -> DagsterPowerBITranslator:
         return DagsterPowerBITranslator()
+
+    def get_asset_spec(self, data: PowerBITranslatorData) -> AssetSpec:
+        return self._base_translator.get_asset_spec(data)
 
     @cached_property
     def workspace_resource(self) -> PowerBIWorkspace:
@@ -222,12 +252,33 @@ class PowerBIWorkspaceComponent(Component, Resolvable):
 
         return asset_fn
 
-    def build_defs(self, context: ComponentLoadContext) -> dg.Definitions:
-        specs = load_powerbi_asset_specs(
-            workspace=self.workspace_resource,
-            dagster_powerbi_translator=self.translator,
-            use_workspace_scan=self.use_workspace_scan,
+    def _load_asset_specs(self, state: PowerBIWorkspaceData) -> list[AssetSpec]:
+        all_external_data = [
+            *state.dashboards_by_id.values(),
+            *state.reports_by_id.values(),
+            *state.semantic_models_by_id.values(),
+        ]
+        return [
+            self.translator.get_asset_spec(
+                PowerBITranslatorData(content_data=content, workspace_data=state)
+            )
+            for content in all_external_data
+        ]
+
+    async def write_state_to_path(self, state_path: Path) -> None:
+        state = self.workspace_resource.fetch_powerbi_workspace_data(
+            use_workspace_scan=self.use_workspace_scan
         )
+        state_path.write_text(dg.serialize_value(state))
+
+    def build_defs_from_state(
+        self, context: ComponentLoadContext, state_path: Optional[Path]
+    ) -> dg.Definitions:
+        if state_path is None:
+            return dg.Definitions()
+
+        state = deserialize_value(state_path.read_text(), PowerBIWorkspaceData)
+        specs = self._load_asset_specs(state)
 
         specs_with_refreshable_semantic_models = [
             self.build_semantic_model_refresh_asset_definition(spec)
@@ -236,3 +287,18 @@ class PowerBIWorkspaceComponent(Component, Resolvable):
             for spec in specs
         ]
         return dg.Definitions(assets=specs_with_refreshable_semantic_models)
+
+
+class PowerBIComponentTranslator(
+    create_component_translator_cls(PowerBIWorkspaceComponent, DagsterPowerBITranslator),
+    ComponentTranslator[PowerBIWorkspaceComponent],
+):
+    def __init__(self, component: PowerBIWorkspaceComponent):
+        self._component = component
+
+    def get_asset_spec(self, data: PowerBITranslatorData) -> AssetSpec:
+        base_asset_spec = super().get_asset_spec(data)
+        if self.component.translation is None:
+            return base_asset_spec
+        else:
+            return self.component.translation(base_asset_spec, data)

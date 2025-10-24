@@ -1,5 +1,3 @@
-import {Meta} from '@storybook/react';
-
 import {Box} from '../Box';
 import {Colors} from '../Color';
 import {Delayed} from '../Delayed';
@@ -9,7 +7,7 @@ import {Heading} from '../Text';
 export default {
   title: 'Delayed',
   component: Delayed,
-} as Meta;
+};
 
 export const Default = () => {
   return (

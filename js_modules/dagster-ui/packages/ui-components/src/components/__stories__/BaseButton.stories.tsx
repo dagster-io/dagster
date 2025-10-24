@@ -1,5 +1,3 @@
-import {Meta} from '@storybook/react';
-
 import {CoreColors} from '../../palettes/CoreColors';
 import {BaseButton} from '../BaseButton';
 import {Box} from '../Box';
@@ -11,7 +9,7 @@ import {Icon} from '../Icon';
 export default {
   title: 'BaseButton',
   component: BaseButton,
-} as Meta;
+};
 
 export const Default = () => {
   return (

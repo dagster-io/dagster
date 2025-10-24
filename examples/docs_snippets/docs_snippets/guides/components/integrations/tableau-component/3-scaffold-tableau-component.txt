@@ -1,0 +1,3 @@
+dg scaffold defs dagster_tableau.TableauComponent tableau_ingest
+
+Creating defs at /.../my-project/src/my_project/defs/tableau_ingest.

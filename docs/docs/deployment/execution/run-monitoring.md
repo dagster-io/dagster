@@ -17,7 +17,7 @@ Dagster can detect hanging runs and restart crashed [run workers](/deployment/os
 
 :::note
 
-In Dagster+, run monitoring is always enabled and can be configured in [deployment settings](/deployment/dagster-plus/full-deployments/deployment-settings-reference)
+In Dagster+, run monitoring is always enabled and can be configured in [deployment settings](/deployment/dagster-plus/deploying-code/full-deployments/full-deployment-settings-reference)
 
 :::
 
@@ -31,7 +31,7 @@ When Dagster terminates a run, the run moves into CANCELING status and sends a t
 
 ## General run timeouts
 
-After a run is marked as STARTED, it may hang indefinitely for various reasons (user API errors, network issues, etc.). You can configure a maximum runtime for every run in a deployment by setting the `run_monitoring.max_runtime_seconds` field in your dagster.yaml or [Dagster+ deployment settings](/deployment/dagster-plus/full-deployments/deployment-settings-reference) to the maximum runtime in seconds. If a run exceeds this timeout and run monitoring is enabled, it will be marked as failed. The `dagster/max_runtime` tag can also be used to set a timeout in seconds on a per-run basis.
+After a run is marked as STARTED, it may hang indefinitely for various reasons (user API errors, network issues, etc.). You can configure a maximum runtime for every run in a deployment by setting the `run_monitoring.max_runtime_seconds` field in your dagster.yaml or [Dagster+ deployment settings](/deployment/dagster-plus/deploying-code/full-deployments/full-deployment-settings-reference) to the maximum runtime in seconds. If a run exceeds this timeout and run monitoring is enabled, it will be marked as failed. The `dagster/max_runtime` tag can also be used to set a timeout in seconds on a per-run basis.
 
 For example, to configure a maximum of 2 hours for every run in your deployment:
 
@@ -41,7 +41,7 @@ run_monitoring:
   max_runtime_seconds: 7200
 ```
 
-or in Dagster+, add the following to your [deployment settings](/deployment/dagster-plus/full-deployments/deployment-settings-reference):
+or in Dagster+, add the following to your [deployment settings](/deployment/dagster-plus/deploying-code/full-deployments/full-deployment-settings-reference):
 
 ```yaml
 run_monitoring:
@@ -54,6 +54,7 @@ The below code example shows how to set a run timeout of 10 seconds on a per-job
   path="docs_snippets/docs_snippets/deploying/monitoring_daemon/run_timeouts.py"
   startAfter="start_timeout"
   endBefore="end_timeout"
+  title="src/my_project/assets.py"
 />
 
 ## Detecting run worker crashes

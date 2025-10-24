@@ -4,8 +4,8 @@ __pycache__/
 *$py.class
 
 # Claude context file
-CLAUDE.local.md
-.claude/settings.local.json
+**/CLAUDE.local.md
+**/.claude/settings.local.json
 # C extensions
 *.so
 
@@ -193,3 +193,5 @@ exponent.txt
 # personal claude files
 .claude/**/*.local.md
 .claude/.local
+
+.workstack

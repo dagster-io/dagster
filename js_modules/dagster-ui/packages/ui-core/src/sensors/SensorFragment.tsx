@@ -13,6 +13,7 @@ export const SENSOR_FRAGMENT = gql`
     }
     defaultStatus
     canReset
+    hasCursorUpdatePermissions
     sensorState {
       id
       ...InstigationStateFragment
@@ -25,6 +26,14 @@ export const SENSOR_FRAGMENT = gql`
     metadata {
       assetKeys {
         path
+      }
+    }
+    owners {
+      ... on UserDefinitionOwner {
+        email
+      }
+      ... on TeamDefinitionOwner {
+        team
       }
     }
   }

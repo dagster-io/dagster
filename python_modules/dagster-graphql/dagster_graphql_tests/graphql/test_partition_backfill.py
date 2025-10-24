@@ -180,6 +180,8 @@ GET_PARTITION_BACKFILLS_QUERY = """
       ...on PartitionSet {
         name
         pipelineName
+        hasLaunchBackfillPermission
+        hasCancelBackfillPermission
         backfills {
           id
           isAssetBackfill

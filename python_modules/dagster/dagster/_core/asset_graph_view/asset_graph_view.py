@@ -612,6 +612,54 @@ class AssetGraphView(LoadingContext):
         )
         return EntitySubset(self, key=key, value=_ValidatedEntitySubsetValue(value))
 
+    async def _compute_execution_failed_unpartitioned(self, key: AssetKey) -> bool:
+        from dagster._core.event_api import AssetRecordsFilter
+        from dagster._core.storage.dagster_run import DagsterRunStatus, RunRecord
+        from dagster._core.storage.event_log.base import AssetRecord
+        from dagster._utils.storage import get_materialization_chunk_size
+
+        planned_materialization_info = (
+            self.instance.event_log_storage.get_latest_planned_materialization_info(key)
+        )
+        if not planned_materialization_info:
+            # has never been planned
+            return False
+
+        planned_storage_id = planned_materialization_info.storage_id
+        planned_run_id = planned_materialization_info.run_id
+        run = await RunRecord.gen(self, planned_run_id)
+
+        # note that if the run did fail, it's still possible that the materialization was successful,
+        # hence the extra code below this conditional
+        if not run or run.dagster_run.status != DagsterRunStatus.FAILURE:
+            # latest run did not fail
+            return False
+
+        # performance optimization: we will generally have this record cached, and in most cases
+        # the most recent materialization will map to the most recent planned run
+        asset_record = await AssetRecord.gen(self, key)
+        asset_entry = asset_record.asset_entry if asset_record else None
+        latest_materialization = asset_entry.last_materialization_record if asset_entry else None
+        if latest_materialization and latest_materialization.run_id == planned_run_id:
+            return False
+
+        # look for any materializations for the latest planned run for cases where
+        # the run failed but the materialization was successful
+        has_more = True
+        cursor = None
+        while has_more:
+            result = self.instance.fetch_materializations(
+                AssetRecordsFilter(asset_key=key, after_storage_id=planned_storage_id),
+                limit=get_materialization_chunk_size(),
+                cursor=cursor,
+            )
+            has_more, cursor = result.has_more, result.cursor
+            if any(record.run_id == planned_run_id for record in result.records):
+                return False
+
+        # could not find any materializations for the latest planned run
+        return True
+
     async def _compute_execution_failed_asset_subset(self, key: AssetKey) -> EntitySubset[AssetKey]:
         from dagster._core.storage.partition_status_cache import AssetStatusCacheValue
 
@@ -623,8 +671,9 @@ class AssetGraphView(LoadingContext):
                 if cache_value
                 else self.get_empty_subset(key=key)
             )
-        value = self._queryer.get_failed_asset_subset(asset_key=key).value
-        return EntitySubset(self, key=key, value=_ValidatedEntitySubsetValue(value))
+        else:
+            value = await self._compute_execution_failed_unpartitioned(key)
+            return EntitySubset(self, key=key, value=_ValidatedEntitySubsetValue(value))
 
     async def _compute_missing_asset_subset(
         self, key: AssetKey, from_subset: EntitySubset

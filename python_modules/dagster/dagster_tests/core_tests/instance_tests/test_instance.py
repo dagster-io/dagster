@@ -374,7 +374,9 @@ def test_create_run_without_asset_execution_type_on_snapshot():
         ) as f:
             ep_snapshot = deserialize_value(f.read())
 
-        asset_graph = mock_workspace_from_repos([noop_asset_defs.get_repository_def()]).asset_graph
+        workspace = mock_workspace_from_repos([noop_asset_defs.get_repository_def()])
+
+        asset_graph = workspace.asset_graph
 
         run = create_run_for_test(
             instance=instance,
@@ -382,6 +384,19 @@ def test_create_run_without_asset_execution_type_on_snapshot():
             execution_plan_snapshot=ep_snapshot,
             job_snapshot=noop_asset_job.get_job_snapshot(),
             tags={ASSET_PARTITION_RANGE_START_TAG: "bar", ASSET_PARTITION_RANGE_END_TAG: "foo"},
+            remote_job_origin=(
+                next(
+                    iter(
+                        check.not_none(
+                            next(iter(workspace.code_location_entries.values())).code_location
+                        )
+                        .get_repositories()
+                        .values()
+                    )
+                )
+                .get_full_job(noop_asset_job.name)
+                .get_remote_origin()
+            ),
             asset_graph=asset_graph,
         )
 
@@ -614,6 +629,7 @@ def test_get_required_daemon_types():
             SchedulerDaemon.daemon_type(),
             QueuedRunCoordinatorDaemon.daemon_type(),
             AssetDaemon.daemon_type(),
+            FreshnessDaemon.daemon_type(),
         ]
 
     with dg.instance_for_test(
@@ -623,7 +639,6 @@ def test_get_required_daemon_types():
                 "class": "TestRunLauncher",
             },
             "run_monitoring": {"enabled": True},
-            "freshness": {"enabled": True},
         }
     ) as instance:
         assert instance.get_required_daemon_types() == [
@@ -647,6 +662,7 @@ def test_get_required_daemon_types():
             BackfillDaemon.daemon_type(),
             SchedulerDaemon.daemon_type(),
             QueuedRunCoordinatorDaemon.daemon_type(),
+            FreshnessDaemon.daemon_type(),
         ]
 
 

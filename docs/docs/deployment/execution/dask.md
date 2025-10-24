@@ -28,6 +28,7 @@ Then, create a job with the dask executor:
   path="docs_snippets/docs_snippets/deploying/dask_hello_world.py"
   startAfter="start_local_job_marker"
   endBefore="end_local_job_marker"
+  title="src/my_project/assets.py"
 />
 
 Now you can run this job with a config block such as the following:

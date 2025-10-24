@@ -43,11 +43,11 @@ def capture_stderr_from_components_cli_invocations():
 
 def test_list_project_success():
     with ProxyRunner.test() as runner, isolated_example_workspace(runner):
-        result = runner.invoke_create_dagster("project", "foo")
+        result = runner.invoke_create_dagster("project", "foo", "--no-uv-sync")
         assert_runner_result(result)
-        result = runner.invoke_create_dagster("project", "projects/bar")
+        result = runner.invoke_create_dagster("project", "projects/bar", "--no-uv-sync")
         assert_runner_result(result)
-        result = runner.invoke_create_dagster("project", "more_projects/baz")
+        result = runner.invoke_create_dagster("project", "more_projects/baz", "--no-uv-sync")
         assert_runner_result(result)
         result = runner.invoke("list", "project")
         assert_runner_result(result)
@@ -139,7 +139,7 @@ def test_list_components_json_success():
 
 def test_list_components_filtered():
     with (
-        ProxyRunner.test(use_fixed_test_components=True, mix_stderr=False) as runner,
+        ProxyRunner.test(use_fixed_test_components=True) as runner,
         isolated_components_venv(runner),
     ):
         result = runner.invoke("list", "components", "--json", "--package", "fake")
@@ -240,7 +240,7 @@ _EXPECTED_PLUGIN_JSON = textwrap.dedent("""
 
 def test_list_registry_modules_success():
     with (
-        ProxyRunner.test(use_fixed_test_components=True, mix_stderr=False) as runner,
+        ProxyRunner.test(use_fixed_test_components=True) as runner,
         isolated_components_venv(runner),
     ):
         with fixed_panel_width(width=120):

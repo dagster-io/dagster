@@ -1,5 +1,7 @@
 import importlib.util
 import os
+from collections.abc import Generator
+from typing import Any
 
 import pytest
 
@@ -72,6 +74,8 @@ EXCLUDED_FILES = {
     f"{snippets_folder}/dagster-university/lesson_3.py",
     f"{snippets_folder}/deploying/airflow/mounted.py",
     f"{snippets_folder}/guides/dagster/code_references/with_dbt_code_references.py",
+    f"{snippets_folder}/guides/dagster/dagster_pipes/azure/azureml_job/train.py",
+    f"{snippets_folder}/guides/dagster/dagster_pipes/azure/azureml_job/dagster_code.py",
     f"{snippets_folder}/guides/dagster/dagster_pipes/dagster_pipes_details_and_customization/custom_bootstrap_loader.py",
     f"{snippets_folder}/guides/dagster/dagster_pipes/dagster_pipes_details_and_customization/custom_context_injector.py",
     f"{snippets_folder}/guides/dagster/dagster_pipes/dagster_pipes_details_and_customization/custom_context_loader.py",
@@ -158,7 +162,7 @@ def get_python_files(directory):
 
 
 @pytest.mark.parametrize("file_path", get_python_files(snippets_folder))
-def test_file_loads(file_path):
+def test_file_loads(file_path: Generator[Any, Any, None]):
     if file_path in EXCLUDED_FILES:
         pytest.skip(f"Skipped {file_path}")
         return

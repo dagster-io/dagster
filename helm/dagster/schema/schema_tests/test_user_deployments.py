@@ -599,6 +599,51 @@ def test_user_deployment_tag_can_be_numeric(template: HelmTemplate, tag: Union[s
     assert image_tag == str(tag)
 
 
+def test_user_deployment_digest_takes_precedence_over_tag(template: HelmTemplate):
+    """Test that when both digest and tag are provided, digest takes precedence."""
+    deployment = create_simple_user_deployment("foo")
+    deployment.image.tag = "v1.2.3"
+    deployment.image.digest = "sha256:abc123def456789"
+
+    helm_values = DagsterHelmValues.construct(
+        dagsterUserDeployments=UserDeployments.construct(
+            enabled=True,
+            enableSubchart=True,
+            deployments=[deployment],
+        )
+    )
+
+    user_deployments = template.render(helm_values)
+
+    assert len(user_deployments) == 1
+
+    image = user_deployments[0].spec.template.spec.containers[0].image
+    # Should use digest format: repository@digest
+    assert image == "repo/foo@sha256:abc123def456789"
+
+
+def test_user_deployment_digest_only(template: HelmTemplate):
+    """Test that digest works without tag."""
+    deployment = create_simple_user_deployment("foo")
+    deployment.image.digest = "sha256:abc123def456789"
+
+    helm_values = DagsterHelmValues.construct(
+        dagsterUserDeployments=UserDeployments.construct(
+            enabled=True,
+            enableSubchart=True,
+            deployments=[deployment],
+        )
+    )
+
+    user_deployments = template.render(helm_values)
+
+    assert len(user_deployments) == 1
+
+    image = user_deployments[0].spec.template.spec.containers[0].image
+    # Should use digest format: repository@digest
+    assert image == "repo/foo@sha256:abc123def456789"
+
+
 def _assert_no_container_context(user_deployment):
     # No container context set by default
     env_names = [env.name for env in user_deployment.spec.template.spec.containers[0].env]
@@ -691,7 +736,7 @@ def test_user_deployment_volumes(template: HelmTemplate, include_config_in_launc
             "name": "test-volume",
             "mountPath": "/opt/dagster/test_mount_path/volume_mounted_file.yaml",
             "subPath": "volume_mounted_file.yaml",
-        }
+        },
     ]
 
     deployment = UserDeployment.construct(
@@ -1430,3 +1475,50 @@ def test_deployment_strategy(
     dagster_user_deployment = template.render(helm_values)
     assert len(dagster_user_deployment) == 1
     assert dagster_user_deployment[0].to_dict()["spec"]["strategy"] == expected
+
+
+@pytest.mark.parametrize("include_instance", [False, True])
+def test_include_instance(subchart_template: HelmTemplate, include_instance: bool):
+    deployment_values = DagsterUserDeploymentsHelmValues.construct(
+        includeInstance=include_instance,
+        deployments=[create_simple_user_deployment("foo")],
+        global_=Global.construct(
+            dagsterInstanceConfigMap="release-name-dagster-instance",
+        ),
+    )
+
+    deployment_templates = subchart_template.render(deployment_values)
+
+    assert len(deployment_templates) == 1
+
+    deployment_template = deployment_templates[0]
+    pod_spec = deployment_template.spec.template.spec
+    container = pod_spec.containers[0]
+
+    # Check volume mounts in pod spec
+    volume_mount_names = [vm.name for vm in container.volume_mounts or []]
+    if include_instance:
+        assert "dagster-instance" in volume_mount_names
+        # Find the dagster-instance volume mount
+        instance_volume_mount = next(
+            vm for vm in container.volume_mounts if vm.name == "dagster-instance"
+        )
+        assert instance_volume_mount.mount_path == "/opt/dagster/dagster_home/dagster.yaml"
+        assert instance_volume_mount.sub_path == "dagster.yaml"
+    else:
+        assert "dagster-instance" not in volume_mount_names
+
+    # Check volumes in pod spec
+    volume_names = [v.name for v in pod_spec.volumes or []]
+    if include_instance:
+        assert "dagster-instance" in volume_names
+        # Find the dagster-instance volume
+        instance_volume = next(v for v in pod_spec.volumes if v.name == "dagster-instance")
+        assert instance_volume.config_map.name == "release-name-dagster-instance"
+        # When using subchart_template, optional should not be set (no cross-namespace scenario)
+        assert (
+            not hasattr(instance_volume.config_map, "optional")
+            or instance_volume.config_map.optional is None
+        )
+    else:
+        assert "dagster-instance" not in volume_names

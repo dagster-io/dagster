@@ -84,13 +84,14 @@ export class AntlrJobSelectionVisitor<T extends Job>
 
   visitCodeLocationExpr(ctx: CodeLocationExprContext) {
     const value: string = getValue(ctx.value());
+    const regex: RegExp = new RegExp(`^${escapeRegExp(value).replaceAll('\\*', '.*')}$`);
     const selection = new Set<T>();
     for (const job of this.all_jobs) {
       const repository = job.repo;
       const location = repository.name
         ? buildRepoPathForHuman(repository.name, repository.location)
         : '';
-      if (location === value) {
+      if (regex.test(location)) {
         selection.add(job);
       }
     }

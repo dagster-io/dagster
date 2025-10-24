@@ -3,6 +3,7 @@ description: Dagster+ Serverless run isolation offers isolated runs for producti
 sidebar_label: Run isolation
 sidebar_position: 2000
 title: Serverless run isolation
+tags: [dagster-plus-feature]
 ---
 
 Dagster+ Serverless offers two settings for run isolation: isolated and non-isolated. Isolated runs are the default and are intended for production, while non-isolated runs are intended for faster iteration during development.
@@ -13,7 +14,7 @@ Dagster+ Serverless offers two settings for run isolation: isolated and non-isol
 To follow the steps in this guide, you'll need:
 
 - An active Dagster+ Serverless deployment
-- An understanding of [Dagster+ deployment settings](/deployment/dagster-plus/full-deployments/deployment-settings-reference)
+- An understanding of [Dagster+ deployment settings](/deployment/dagster-plus/deploying-code/full-deployments/full-deployment-settings-reference)
 
 </details>
 
@@ -41,7 +42,7 @@ Non-isolated runs provide a faster start time by using a standing, shared contai
 
 They have fewer compute resources: 0.25 vCPUs and 1GB of RAM. These resources are shared with other processes running within a code location like sensors. As a result, it's recommended to use isolated runs for compute intensive jobs and asset materializations.
 
-To be able to use non-isolated runs, the `non_isolated_runs` setting must first be enabled in [Full deployment settings](/deployment/dagster-plus/full-deployments/deployment-settings-reference#non-isolated-runs):
+To be able to use non-isolated runs, the `non_isolated_runs` setting must first be enabled in [Full deployment settings](/deployment/dagster-plus/deploying-code/full-deployments/full-deployment-settings-reference#non-isolated-runs):
 
 ```yaml
 non_isolated_runs:
@@ -60,7 +61,7 @@ define_asset_job(tags={"dagster/isolation": "disabled"}, ...)
 
 To avoid crashes and memory exhaustion, only one non-isolated run will execute at once by default. While a non-isolated run is in progress, the Launchpad will only allow isolated runs to be launched.
 
-This limit can be configured in [deployment settings](/deployment/dagster-plus/full-deployments/deployment-settings-reference#non-isolated-runs).
+This limit can be configured in [deployment settings](/deployment/dagster-plus/deploying-code/full-deployments/full-deployment-settings-reference#non-isolated-runs).
 
 ```yaml
 non_isolated_runs:

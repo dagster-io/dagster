@@ -3,6 +3,7 @@ description: Role-based access control (RBAC) enables you to grant specific perm
 sidebar_label: User roles and permissions
 sidebar_position: 8130
 title: User roles and permissions
+tags: [dagster-plus-feature]
 ---
 
 Role-based access control (RBAC) enables you to grant specific permissions to users in your organization, ensuring that Dagster users have access to what they require in Dagster+, and no more.
@@ -74,7 +75,7 @@ If you no longer need a custom role, you can delete it. If the role is currently
 
 With the exception of the **Organization Admin** role, user and team roles are set on a per-deployment basis.
 
-Organization Admins have access to the entire organization, including all [deployments](/deployment/dagster-plus/full-deployments), [code locations](/deployment/code-locations), and [Branch Deployments](/deployment/dagster-plus/ci-cd/branch-deployments).
+Organization Admins have access to the entire organization, including all [deployments](/deployment/dagster-plus/deploying-code/full-deployments), [code locations](/deployment/code-locations), and [Branch Deployments](/deployment/dagster-plus/deploying-code/branch-deployments).
 
 | Level              | Plan      | Description                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                             |
 | ------------------ | --------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
@@ -155,13 +156,13 @@ Deployment settings are accessed in the UI by navigating to **user menu (your ic
 
 |                                                                                                         | Viewer | Launcher | Editor | Admin | Organization <br/> admin |
 | ------------------------------------------------------------------------------------------------------- | ------ | -------- | ------ | ----- | ------------------------ |
-| View [deployments](/deployment/dagster-plus/full-deployments)                                           | ✅     | ✅       | ✅     | ✅    | ✅                       |
-| Modify [deployments](/deployment/dagster-plus/full-deployments) settings                                | ❌     | ❌       | ✅     | ✅    | ✅                       |
+| View [deployments](/deployment/dagster-plus/deploying-code/full-deployments)                            | ✅     | ✅       | ✅     | ✅    | ✅                       |
+| Modify [deployments](/deployment/dagster-plus/deploying-code/full-deployments) settings                 | ❌     | ❌       | ✅     | ✅    | ✅                       |
 | Create, edit, delete [environment variables](/deployment/dagster-plus/management/environment-variables) | ❌     | ❌       | ✅     | ✅    | ✅                       |
 | View [environment variable](/deployment/dagster-plus/management/environment-variables) values           | ❌     | ❌       | ✅     | ✅    | ✅                       |
 | Export [environment variables](/deployment/dagster-plus/management/environment-variables)               | ❌     | ❌       | ✅     | ✅    | ✅                       |
-| Create and delete [deployments](/deployment/dagster-plus/full-deployments)                              | ❌     | ❌       | ❌     | ❌    | ✅                       |
-| Create [Branch Deployments](/deployment/dagster-plus/ci-cd/branch-deployments/index.md)                 | ❌     | ❌       | ✅     | ✅    | ✅                       |
+| Create and delete [deployments](/deployment/dagster-plus/deploying-code/full-deployments)               | ❌     | ❌       | ❌     | ❌    | ✅                       |
+| Create [Branch Deployments](/deployment/dagster-plus/deploying-code/branch-deployments)                 | ❌     | ❌       | ✅     | ✅    | ✅                       |
 
 ### Code locations
 
@@ -224,7 +225,7 @@ Team management is accessed in the UI by navigating to **user menu (your icon) >
 
 |                                         | Viewer | Launcher | Editor | Admin | Organization <br/> admin |
 | --------------------------------------- | ------ | -------- | ------ | ----- | ------------------------ |
-| Manage [alerts](/guides/monitor/alerts) | ❌     | ❌       | ✅     | ✅    | ✅                       |
+| Manage [alerts](/guides/observe/alerts) | ❌     | ❌       | ✅     | ✅    | ✅                       |
 | Edit workspace                          | ❌     | ❌       | ✅     | ✅    | ✅                       |
 | Administer SAML                         | ❌     | ❌       | ❌     | ❌    | ✅                       |
 | Manage SCIM                             | ❌     | ❌       | ❌     | ❌    | ✅                       |

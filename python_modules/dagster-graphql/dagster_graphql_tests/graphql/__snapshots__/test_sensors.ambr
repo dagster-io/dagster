@@ -12,6 +12,8 @@
     'minIntervalSeconds': 30,
     'name': 'always_no_config_sensor_with_tags_and_metadata',
     'nextTick': None,
+    'owners': list([
+    ]),
     'sensorState': dict({
       'runs': list([
       ]),
@@ -301,6 +303,26 @@
     dict({
       'description': None,
       'minIntervalSeconds': 30,
+      'name': 'owned_sensor',
+      'sensorState': dict({
+        'runs': list([
+        ]),
+        'runsCount': 0,
+        'status': 'STOPPED',
+        'ticks': list([
+        ]),
+      }),
+      'targets': list([
+        dict({
+          'mode': 'default',
+          'pipelineName': 'owned_job',
+          'solidSelection': None,
+        }),
+      ]),
+    }),
+    dict({
+      'description': None,
+      'minIntervalSeconds': 30,
       'name': 'run_key_sensor',
       'sensorState': dict({
         'runs': list([
@@ -411,6 +433,26 @@
         ]),
       }),
       'targets': list([
+      ]),
+    }),
+    dict({
+      'description': None,
+      'minIntervalSeconds': 30,
+      'name': 'unowned_sensor',
+      'sensorState': dict({
+        'runs': list([
+        ]),
+        'runsCount': 0,
+        'status': 'STOPPED',
+        'ticks': list([
+        ]),
+      }),
+      'targets': list([
+        dict({
+          'mode': 'default',
+          'pipelineName': 'unowned_job',
+          'solidSelection': None,
+        }),
       ]),
     }),
     dict({

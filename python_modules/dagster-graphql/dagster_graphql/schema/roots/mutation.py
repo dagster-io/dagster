@@ -5,6 +5,7 @@ import dagster._check as check
 import graphene
 from dagster._core.definitions.events import AssetKey, AssetPartitionWipeRange
 from dagster._core.definitions.partitions.partition_key_range import PartitionKeyRange
+from dagster._core.definitions.selector import JobSelector
 from dagster._core.errors import DagsterInvariantViolationError
 from dagster._core.nux import get_has_seen_nux, set_nux_seen
 from dagster._core.workspace.permissions import Permissions
@@ -39,6 +40,7 @@ from dagster_graphql.implementation.utils import (
     ExecutionParams,
     UserFacingGraphQLError,
     assert_permission_for_asset_graph,
+    assert_permission_for_job,
     assert_permission_for_location,
     capture_error,
     check_permission,
@@ -102,7 +104,7 @@ from dagster_graphql.schema.sensors import (
 from dagster_graphql.schema.util import ResolveInfo, non_null_list
 
 
-def create_execution_params(graphene_info, graphql_execution_params):
+async def create_execution_params(graphene_info, graphql_execution_params):
     preset_name = graphql_execution_params.get("preset")
     selector = pipeline_selector_from_graphql(graphql_execution_params["selector"])
     if preset_name:
@@ -123,7 +125,7 @@ def create_execution_params(graphene_info, graphql_execution_params):
                 )
             )
 
-        external_pipeline = get_full_remote_job_or_raise(
+        external_pipeline = await get_full_remote_job_or_raise(
             graphene_info,
             selector,
         )
@@ -288,14 +290,22 @@ class GrapheneTerminateRunsResultOrError(graphene.Union):
         name = "TerminateRunsResultOrError"
 
 
-def create_execution_params_and_launch_pipeline_exec(graphene_info, execution_params_dict):
-    execution_params = create_execution_params(graphene_info, execution_params_dict)
-    assert_permission_for_location(
+async def create_execution_params_and_launch_pipeline_exec(graphene_info, execution_params_dict):
+    execution_params = await create_execution_params(graphene_info, execution_params_dict)
+
+    assert_permission_for_job(
         graphene_info,
         Permissions.LAUNCH_PIPELINE_EXECUTION,
-        execution_params.selector.location_name,
+        JobSelector(
+            location_name=execution_params.selector.location_name,
+            repository_name=execution_params.selector.repository_name,
+            job_name=execution_params.selector.job_name,
+        ),
+        list(execution_params.selector.entity_selection)
+        if execution_params.selector.entity_selection
+        else None,
     )
-    return launch_pipeline_execution(
+    return await launch_pipeline_execution(
         graphene_info,
         execution_params,
     )
@@ -314,10 +324,12 @@ class GrapheneLaunchRunMutation(graphene.Mutation):
 
     @capture_error
     @require_permission_check(Permissions.LAUNCH_PIPELINE_EXECUTION)
-    def mutate(
+    async def mutate(
         self, graphene_info: ResolveInfo, executionParams: GrapheneExecutionParams
     ) -> Union[GrapheneLaunchRunSuccess, GrapheneError, GraphenePythonError]:
-        return create_execution_params_and_launch_pipeline_exec(graphene_info, executionParams)
+        return await create_execution_params_and_launch_pipeline_exec(
+            graphene_info, executionParams
+        )
 
 
 class GrapheneLaunchMultipleRunsMutation(graphene.Mutation):
@@ -332,7 +344,7 @@ class GrapheneLaunchMultipleRunsMutation(graphene.Mutation):
         name = "LaunchMultipleRunsMutation"
 
     @capture_error
-    def mutate(
+    async def mutate(
         self, graphene_info: ResolveInfo, executionParamsList: list[GrapheneExecutionParams]
     ) -> Union[
         GrapheneLaunchMultipleRunsResult,
@@ -342,8 +354,10 @@ class GrapheneLaunchMultipleRunsMutation(graphene.Mutation):
         launch_multiple_runs_result = []
 
         for execution_params in executionParamsList:
-            result = GrapheneLaunchRunMutation.mutate(
-                None, graphene_info, executionParams=execution_params
+            result = await GrapheneLaunchRunMutation.mutate(
+                None,  # type: ignore
+                graphene_info,
+                executionParams=execution_params,
             )
             launch_multiple_runs_result.append(result)
 
@@ -482,14 +496,21 @@ class GrapheneDeleteDynamicPartitionsMutation(graphene.Mutation):
         )
 
 
-def create_execution_params_and_launch_pipeline_reexec(graphene_info, execution_params_dict):
-    execution_params = create_execution_params(graphene_info, execution_params_dict)
-    assert_permission_for_location(
+async def create_execution_params_and_launch_pipeline_reexec(graphene_info, execution_params_dict):
+    execution_params = await create_execution_params(graphene_info, execution_params_dict)
+    assert_permission_for_job(
         graphene_info,
         Permissions.LAUNCH_PIPELINE_REEXECUTION,
-        execution_params.selector.location_name,
+        JobSelector(
+            location_name=execution_params.selector.location_name,
+            repository_name=execution_params.selector.repository_name,
+            job_name=execution_params.selector.job_name,
+        ),
+        list(execution_params.selector.entity_selection)
+        if execution_params.selector.entity_selection
+        else None,
     )
-    return launch_pipeline_reexecution(graphene_info, execution_params=execution_params)
+    return await launch_pipeline_reexecution(graphene_info, execution_params=execution_params)
 
 
 class GrapheneLaunchRunReexecutionMutation(graphene.Mutation):
@@ -506,7 +527,7 @@ class GrapheneLaunchRunReexecutionMutation(graphene.Mutation):
 
     @capture_error
     @require_permission_check(Permissions.LAUNCH_PIPELINE_REEXECUTION)
-    def mutate(
+    async def mutate(
         self,
         graphene_info: ResolveInfo,
         executionParams: Optional[GrapheneExecutionParams] = None,
@@ -518,7 +539,7 @@ class GrapheneLaunchRunReexecutionMutation(graphene.Mutation):
             )
 
         if executionParams:
-            return create_execution_params_and_launch_pipeline_reexec(
+            return await create_execution_params_and_launch_pipeline_reexec(
                 graphene_info,
                 execution_params_dict=executionParams,
             )
@@ -531,7 +552,7 @@ class GrapheneLaunchRunReexecutionMutation(graphene.Mutation):
             if reexecutionParams.get("useParentRunTags") is not None:
                 use_parent_run_tags = reexecutionParams["useParentRunTags"]
 
-            return launch_reexecution_from_parent_run(
+            return await launch_reexecution_from_parent_run(
                 graphene_info,
                 parent_run_id=reexecutionParams["parentRunId"],
                 strategy=reexecutionParams["strategy"],

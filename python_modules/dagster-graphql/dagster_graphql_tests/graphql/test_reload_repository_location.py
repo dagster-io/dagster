@@ -297,7 +297,7 @@ class TestReloadRepositoriesOutOfProcess(OutOfProcessTestSuite):
                 # note it where the function is *used* that needs to mocked, not
                 # where it is defined.
                 # see https://docs.python.org/3/library/unittest.mock.html#where-to-patch
-                "dagster._api.snapshot_repository.sync_get_streaming_external_repositories_data_grpc"
+                "dagster._api.snapshot_repository.sync_get_external_repositories_data_grpc"
             ) as remote_repository_mock:
 
                 @repository
@@ -306,7 +306,12 @@ class TestReloadRepositoriesOutOfProcess(OutOfProcessTestSuite):
 
                 new_repo_data = RepositorySnap.from_def(new_repo)
 
-                remote_repository_mock.return_value = {"new_repo": new_repo_data}
+                remote_repository_mock.return_value = {
+                    "new_repo": (
+                        new_repo_data,
+                        {},
+                    )
+                }
 
                 cli_command_mock.return_value = ListRepositoriesResponse(
                     repository_symbols=[],

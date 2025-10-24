@@ -15,7 +15,6 @@ from dagster import (
     Definitions,
     DependencyDefinition,
     Jitter,
-    LegacyFreshnessPolicy,
     NodeInvocation,
     OpDefinition,
     PartitionMapping,
@@ -267,7 +266,7 @@ def test_snapshot_id(
     assert len(set(results)) == 1
 
     # this should only update if the dbt project or asset producing code changes
-    assert results[0] == "48b79ea46a9a3ef9f80407d94f75c80431c5159c"
+    assert results[0] == "29a3a4ac386555a3e738867b8b25765ffb17a145"
 
 
 @pytest.mark.parametrize("name", [None, "custom"])
@@ -347,16 +346,10 @@ def test_backfill_policy(
     backfill_policy: BackfillPolicy,
     expected_backfill_policy: BackfillPolicy,
 ) -> None:
-    class CustomDagsterDbtTranslator(DagsterDbtTranslator):
-        def get_freshness_policy(self, _: Mapping[str, Any]) -> Optional[LegacyFreshnessPolicy]:  # pyright: ignore[reportIncompatibleMethodOverride]
-            # Disable freshness policies when using static partitions
-            return None
-
     @dbt_assets(
         manifest=test_jaffle_shop_manifest,
         partitions_def=partitions_def,
         backfill_policy=backfill_policy,
-        dagster_dbt_translator=CustomDagsterDbtTranslator(),
     )
     def my_dbt_assets(): ...
 
@@ -757,31 +750,6 @@ def test_all_assets_have_a_distinct_code_version(test_jaffle_shop_manifest: dict
     assert len(code_versions) == len(set(code_versions))
 
 
-def test_with_freshness_policy_replacements(test_jaffle_shop_manifest: dict[str, Any]) -> None:
-    expected_freshness_policy = LegacyFreshnessPolicy(maximum_lag_minutes=60)
-
-    class CustomDagsterDbtTranslator(DagsterDbtTranslator):
-        def get_freshness_policy(self, _: Mapping[str, Any]) -> Optional[LegacyFreshnessPolicy]:  # pyright: ignore[reportIncompatibleMethodOverride]
-            return expected_freshness_policy
-
-    expected_specs_by_key = {
-        spec.key: spec
-        for spec in build_dbt_asset_specs(
-            manifest=test_jaffle_shop_manifest,
-            dagster_dbt_translator=CustomDagsterDbtTranslator(),
-        )
-    }
-
-    @dbt_assets(
-        manifest=test_jaffle_shop_manifest, dagster_dbt_translator=CustomDagsterDbtTranslator()
-    )
-    def my_dbt_assets(): ...
-
-    for asset_key, freshness_policy in my_dbt_assets.legacy_freshness_policies_by_key.items():
-        assert freshness_policy == expected_freshness_policy
-        assert expected_specs_by_key[asset_key].legacy_freshness_policy == expected_freshness_policy
-
-
 def test_with_auto_materialize_policy_replacements(
     test_jaffle_shop_manifest: dict[str, Any],
 ) -> None:
@@ -891,25 +859,6 @@ def test_dbt_meta_auto_materialize_policy(test_meta_config_manifest: dict[str, A
             expected_specs_by_key[asset_key].auto_materialize_policy
             == expected_auto_materialize_policy
         )
-
-
-def test_dbt_meta_freshness_policy(test_meta_config_manifest: dict[str, Any]) -> None:
-    expected_freshness_policy = LegacyFreshnessPolicy(
-        maximum_lag_minutes=60.0, cron_schedule="* * * * *"
-    )
-    expected_specs_by_key = {
-        spec.key: spec for spec in build_dbt_asset_specs(manifest=test_meta_config_manifest)
-    }
-
-    @dbt_assets(manifest=test_meta_config_manifest)
-    def my_dbt_assets(): ...
-
-    freshness_policies = my_dbt_assets.legacy_freshness_policies_by_key.items()
-    assert freshness_policies
-
-    for asset_key, freshness_policy in freshness_policies:
-        assert freshness_policy == expected_freshness_policy
-        assert expected_specs_by_key[asset_key].legacy_freshness_policy == expected_freshness_policy
 
 
 def test_dbt_meta_asset_key(test_meta_config_manifest: dict[str, Any]) -> None:

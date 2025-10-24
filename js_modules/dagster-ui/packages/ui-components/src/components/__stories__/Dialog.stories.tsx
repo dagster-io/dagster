@@ -1,4 +1,3 @@
-import {Meta} from '@storybook/react';
 import {useState} from 'react';
 
 import {Button} from '../Button';
@@ -9,7 +8,7 @@ import {Group} from '../Group';
 export default {
   title: 'Dialog',
   component: Dialog,
-} as Meta;
+};
 
 export const Simple = () => {
   const [open, setOpen] = useState(false);

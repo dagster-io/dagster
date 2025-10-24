@@ -4,9 +4,10 @@ from collections.abc import Iterable, Iterator, Mapping, Sequence, Set
 from datetime import datetime
 from functools import cached_property
 from threading import RLock
-from typing import TYPE_CHECKING, AbstractSet, Callable, Optional, Union  # noqa: UP035
+from typing import TYPE_CHECKING, AbstractSet, Any, Callable, Optional, Union  # noqa: UP035
 
 from dagster_shared.error import DagsterError
+from dagster_shared.utils.hash import make_hashable
 
 import dagster._check as check
 from dagster._config.snap import ConfigFieldSnap, ConfigSchemaSnapshot
@@ -77,6 +78,7 @@ from dagster._core.snap import ExecutionPlanSnapshot
 from dagster._core.snap.job_snapshot import JobSnap
 from dagster._core.storage.tags import EXTERNAL_JOB_SOURCE_TAG_KEY
 from dagster._core.utils import toposort
+from dagster._record import record
 from dagster._serdes import create_snapshot_id
 from dagster._utils.cached_method import cached_method
 from dagster._utils.schedules import schedule_execution_time_iterator
@@ -283,6 +285,9 @@ class RemoteRepository:
     def get_all_jobs(self) -> Sequence["RemoteJob"]:
         return [self.get_full_job(pn) for pn in self._job_map]
 
+    def get_job_map_entry(self, job_name: str) -> Union[JobDataSnap, JobRefSnap]:
+        return self._job_map[job_name]
+
     @property
     def handle(self) -> RepositoryHandle:
         return self._handle
@@ -323,6 +328,9 @@ class RemoteRepository:
             else self._asset_jobs.get(job_name, [])
         )
 
+    def get_asset_keys_in_job(self, job_name: str) -> Sequence[AssetKey]:
+        return [asset_snap.asset_key for asset_snap in self.get_asset_node_snaps(job_name)]
+
     @cached_property
     def _asset_snaps_by_key(self) -> Mapping[AssetKey, AssetNodeSnap]:
         mapping = {}
@@ -352,57 +360,6 @@ class RemoteRepository:
         )
 
         return RemoteRepositoryAssetGraph.build(self)
-
-    def get_partition_names_for_asset_job(
-        self,
-        job_name: str,
-        selected_asset_keys: Optional[AbstractSet[AssetKey]],
-        instance: DagsterInstance,
-    ) -> Sequence[str]:
-        partitions_def = self._get_partitions_def_for_job(
-            job_name=job_name, selected_asset_keys=selected_asset_keys
-        )
-        if not partitions_def:
-            return []
-        return partitions_def.get_partition_keys(dynamic_partitions_store=instance)
-
-    def get_partition_tags_for_implicit_asset_job(
-        self,
-        job_name: str,
-        selected_asset_keys: Optional[AbstractSet[AssetKey]],
-        instance: DagsterInstance,
-        partition_name: str,
-    ) -> Mapping[str, str]:
-        return check.not_none(
-            self._get_partitions_def_for_job(
-                job_name=job_name, selected_asset_keys=selected_asset_keys
-            )
-        ).get_tags_for_partition_key(partition_name)
-
-    def _get_partitions_def_for_job(
-        self,
-        job_name: str,
-        selected_asset_keys: Optional[AbstractSet[AssetKey]],
-    ) -> Optional[PartitionsDefinition]:
-        asset_nodes = self.get_asset_node_snaps(job_name)
-        unique_partitions_defs: set[PartitionsDefinition] = set()
-        for asset_node in asset_nodes:
-            if selected_asset_keys is not None and asset_node.asset_key not in selected_asset_keys:
-                continue
-
-            if asset_node.partitions is not None:
-                unique_partitions_defs.add(asset_node.partitions.get_partitions_definition())
-
-        if len(unique_partitions_defs) == 0:
-            # Assets are all unpartitioned
-            return None
-        if len(unique_partitions_defs) == 1:
-            return next(iter(unique_partitions_defs))
-        else:
-            check.failed(
-                "There is no PartitionsDefinition shared by all the provided assets."
-                f" {len(unique_partitions_defs)} unique PartitionsDefinitions."
-            )
 
     @cached_property
     def _sensor_mappings(
@@ -562,6 +519,12 @@ class RemoteJob(RepresentedJob, LoadableBy[JobSubsetSelector, "BaseWorkspaceRequ
         return self._job_index.job_snapshot.description
 
     @property
+    def owners(self) -> Optional[Sequence[str]]:
+        if self._job_ref_snap is not None:
+            return self._job_ref_snap.owners
+        return getattr(self._job_index.job_snapshot, "owners", None)
+
+    @property
     def node_names_in_topological_order(self):
         return self._job_index.job_snapshot.node_names_in_topological_order
 
@@ -708,7 +671,17 @@ class RemoteJob(RepresentedJob, LoadableBy[JobSubsetSelector, "BaseWorkspaceRequ
         )
 
 
-class RemoteExecutionPlan(LoadableBy[JobSubsetSelector, "BaseWorkspaceRequestContext"]):
+@record
+class RemoteExecutionPlanSelector:
+    job_selector: JobSubsetSelector
+    run_config: Optional[Mapping[str, Any]]
+
+    @cached_method
+    def __hash__(self) -> int:
+        return hash(make_hashable(self))
+
+
+class RemoteExecutionPlan(LoadableBy[RemoteExecutionPlanSelector, "BaseWorkspaceRequestContext"]):
     """RemoteExecutionPlan is a object that represents an execution plan that
     was compiled in another process or persisted in an instance.
     """
@@ -734,21 +707,25 @@ class RemoteExecutionPlan(LoadableBy[JobSubsetSelector, "BaseWorkspaceRequestCon
 
     @classmethod
     async def _batch_load(
-        cls, keys: Iterable[JobSubsetSelector], context: "BaseWorkspaceRequestContext"
+        cls, keys: Iterable[RemoteExecutionPlanSelector], context: "BaseWorkspaceRequestContext"
     ) -> Iterable[Optional["RemoteExecutionPlan"]]:
-        remote_jobs = await RemoteJob.gen_many(context, keys)
-        remote_jobs_by_key = {key: job for key, job in zip(keys, remote_jobs)}
+        job_selectors = list({selector.job_selector for selector in keys})
+        remote_jobs = await RemoteJob.gen_many(context, job_selectors)
+        remote_jobs_by_selector_hash = {
+            hash(selector): job for selector, job in zip(job_selectors, remote_jobs)
+        }
+
         unique_keys = {key for key in keys}
 
         tasks = [
             context.gen_execution_plan(
-                check.not_none(remote_jobs_by_key[key]),
+                check.not_none(remote_jobs_by_selector_hash[hash(key.job_selector)]),
                 run_config=key.run_config or {},
                 step_keys_to_execute=None,
                 known_state=None,
             )
             for key in unique_keys
-            if remote_jobs_by_key[key] is not None
+            if remote_jobs_by_selector_hash[hash(key.job_selector)] is not None
         ]
 
         if tasks:
@@ -761,7 +738,7 @@ class RemoteExecutionPlan(LoadableBy[JobSubsetSelector, "BaseWorkspaceRequestCon
 
     @classmethod
     def _blocking_batch_load(
-        cls, keys: Iterable[JobSubsetSelector], context: "BaseWorkspaceRequestContext"
+        cls, keys: Iterable[RemoteExecutionPlanSelector], context: "BaseWorkspaceRequestContext"
     ) -> Iterable[Optional["RemoteExecutionPlan"]]:
         raise NotImplementedError
 
@@ -954,6 +931,10 @@ class RemoteSchedule:
     @property
     def metadata(self) -> Mapping[str, MetadataValue]:
         return self._schedule_snap.metadata
+
+    @property
+    def owners(self) -> Optional[Sequence[str]]:
+        return getattr(self._schedule_snap, "owners", None)
 
     def get_remote_origin(self) -> RemoteInstigatorOrigin:
         return self.handle.get_remote_origin()
@@ -1187,6 +1168,10 @@ class RemoteSensor:
     @property
     def tags(self) -> Mapping[str, str]:
         return self._sensor_snap.tags
+
+    @property
+    def owners(self) -> Optional[Sequence[str]]:
+        return getattr(self._sensor_snap, "owners", None)
 
     @property
     def default_status(self) -> DefaultSensorStatus:

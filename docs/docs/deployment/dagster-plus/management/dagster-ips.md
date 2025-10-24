@@ -3,6 +3,7 @@ description: The Dagster+ agent interacts with a specific set of IP addresses th
 sidebar_label: IP addresses
 sidebar_position: 6000
 title: Dagster+ IP addresses
+tags: [dagster-plus-feature]
 ---
 
 The Dagster+ web interface, CLI, and GraphQL API use [AWS Cloudfront's content delivery network](https://docs.aws.amazon.com/AmazonCloudFront/latest/DeveloperGuide/LocationsOfEdgeServers.html).
@@ -30,5 +31,15 @@ Additional IP addresses may be added over time. This list was last updated on **
 
 In addition to these IP addresses, the following URLs also need to be allowed egress access from your agent:
 
-- `cloud-prod-object-snapshots.s3.amazonaws.com`
-- `<organization-name>.agent.dagster.cloud`
+<Tabs>
+    <TabItem value="us-region" label="US region">
+        - `cloud-prod-object-snapshots.s3.amazonaws.com`
+        - `cloud-prod-compute-logs.s3.amazonaws.com` - Only required if compute logs are being sent to Dagster+'s control plane. Not needed if you've configured compute logs to be sent to your own blob storage. See [Managing compute logs and error messages](/deployment/dagster-plus/management/managing-compute-logs-and-error-messages) for more details.
+        - `<organization-name>.agent.dagster.cloud`
+    </TabItem>
+    <TabItem value="eu-region" label="EU region">
+        - `cloud-prod-eu-object-snapshots.s3.amazonaws.com`
+        - `cloud-prod-eu-compute-logs.s3.amazonaws.com` - Only required if compute logs are being sent to Dagster+'s control plane. Not needed if you've configured compute logs to be sent to your own blob storage. See [Managing compute logs and error messages](/deployment/dagster-plus/management/managing-compute-logs-and-error-messages) for more details.
+        - `<organization-name>.agent.eu.dagster.cloud`
+    </TabItem>
+</Tabs>

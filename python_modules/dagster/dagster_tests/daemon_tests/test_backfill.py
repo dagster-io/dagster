@@ -63,7 +63,7 @@ from dagster._core.test_utils import (
     wait_for_futures,
 )
 from dagster._core.types.loadable_target_origin import LoadableTargetOrigin
-from dagster._core.workspace.context import WorkspaceProcessContext
+from dagster._core.workspace.context import BaseWorkspaceRequestContext, WorkspaceProcessContext
 from dagster._core.workspace.load_target import ModuleTarget
 from dagster._daemon import get_default_daemon_logger
 from dagster._daemon.auto_run_reexecution.auto_run_reexecution import (
@@ -1357,6 +1357,70 @@ def test_unloadable_backfill_retry(
             )
         )
         assert instance.get_runs_count() == 1
+
+
+def test_unloadable_failing_backfill_still_cancels_runs(
+    instance, workspace_context, unloadable_location_workspace_context
+):
+    """If a backfill is marked failing or canceling, but the backfill data is no longer loadable,
+    we still want to cancel the runs and mark the backfill as completed. However, we won't be able to
+    update the asset backfill data.
+    """
+    asset_selection = [dg.AssetKey("asset_a"), dg.AssetKey("asset_b"), dg.AssetKey("asset_c")]
+
+    partition_keys = partitions_a.get_partition_keys()
+    instance.add_backfill(
+        PartitionBackfill.from_asset_partitions(
+            asset_graph=workspace_context.create_request_context().asset_graph,
+            backfill_id="retry_backfill",
+            tags={"custom_tag_key": "custom_tag_value"},
+            backfill_timestamp=get_current_timestamp(),
+            asset_selection=asset_selection,
+            partition_names=partition_keys,
+            dynamic_partitions_store=instance,
+            all_partitions=False,
+            title=None,
+            description=None,
+            run_config=None,
+        )
+    )
+    assert instance.get_runs_count() == 0
+
+    create_run_for_test(
+        instance, tags={BACKFILL_ID_TAG: "retry_backfill"}, status=DagsterRunStatus.STARTED
+    )
+    runs = instance.get_runs()
+    assert len(runs) == 1
+    assert runs[0].status == DagsterRunStatus.STARTED
+
+    backfill = instance.get_backfill("retry_backfill")
+    updated_backfill = backfill.with_status(BulkActionStatus.FAILING)
+    instance.update_backfill(updated_backfill)
+
+    # backfill data will be unloadble, but will still cancel the run this iteration
+    list(
+        execute_backfill_iteration(
+            unloadable_location_workspace_context, get_default_daemon_logger("BackfillDaemon")
+        )
+    )
+    backfill = instance.get_backfill("retry_backfill")
+    assert backfill.status == BulkActionStatus.FAILING
+    # the `cancel_run` method is not implemented for the SyncInMemoryRunLauncher which is what it used
+    # in this test. So manually report the run as canceled
+    instance.report_run_canceled(runs[0])
+
+    # on the next iteration, the run has been canceled and the backfill will terminate
+    list(
+        execute_backfill_iteration(
+            unloadable_location_workspace_context, get_default_daemon_logger("BackfillDaemon")
+        )
+    )
+    assert instance.get_runs_count() == 1
+    backfill = instance.get_backfill("retry_backfill")
+    assert backfill.status == BulkActionStatus.FAILED
+    runs = instance.get_runs()
+    assert len(runs) == 1
+    assert runs[0].status == DagsterRunStatus.CANCELED
 
 
 def test_backfill_from_partitioned_job(
@@ -2731,9 +2795,13 @@ def test_raise_error_on_asset_backfill_partitions_defs_changes(
 
     assert len(errors) == 1
     error_msg = check.not_none(errors[0]).message
-    assert ("partitions definition has changed") in error_msg or (
-        "partitions definition for asset AssetKey(['time_partitions_def_changes']) has changed"
-    ) in error_msg
+    if backcompat_serialization:
+        assert ("partitions definition has changed") in error_msg or (
+            "partitions definition for asset AssetKey(['time_partitions_def_changes']) has changed"
+        ) in error_msg
+    else:
+        # doesn't have deser issues but does detect that the partition was removed
+        assert ("The following partitions were removed: ['2023-01-01']") in error_msg
 
 
 @pytest.mark.parametrize("backcompat_serialization", [True, False])
@@ -2892,9 +2960,10 @@ def test_partitions_def_changed_backfill_retry_envvar_set(
 
         assert len(errors) == 1
         error_msg = check.not_none(errors[0]).message
-        assert ("partitions definition has changed") in error_msg or (
-            "partitions definition for asset AssetKey(['time_partitions_def_changes']) has changed"
+        assert (
+            "Targeted partitions for asset AssetKey(['time_partitions_def_changes']) have been removed since this backfill was stored. The following partitions were removed: ['2023-01-01']"
         ) in error_msg
+    assert ("The following partitions were removed: ['2023-01-01']") in error_msg
 
 
 def test_asset_backfill_logging(caplog, instance, workspace_context):
@@ -3919,6 +3988,7 @@ def test_asset_backfill_retries_make_downstreams_runnable(
 def test_run_retry_not_part_of_completed_backfill(
     instance: DagsterInstance,
     workspace_context: WorkspaceProcessContext,
+    workspace_request_context: BaseWorkspaceRequestContext,
     code_location: CodeLocation,
     remote_repo: RemoteRepository,
 ):
@@ -3927,7 +3997,7 @@ def test_run_retry_not_part_of_completed_backfill(
     asset_selection = [dg.AssetKey("foo"), dg.AssetKey("a1"), dg.AssetKey("bar")]
     instance.add_backfill(
         PartitionBackfill.from_asset_partitions(
-            asset_graph=workspace_context.create_request_context().asset_graph,
+            asset_graph=workspace_request_context.asset_graph,
             backfill_id=backfill_id,
             tags={"custom_tag_key": "custom_tag_value"},
             backfill_timestamp=get_current_timestamp(),
@@ -3978,6 +4048,7 @@ def test_run_retry_not_part_of_completed_backfill(
     remote_job = code_location.get_job(selector)
     retried_run = instance.create_reexecuted_run(
         parent_run=run_to_retry,
+        request_context=workspace_request_context,
         code_location=code_location,
         remote_job=remote_job,
         strategy=ReexecutionStrategy.ALL_STEPS,

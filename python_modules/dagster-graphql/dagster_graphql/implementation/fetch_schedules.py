@@ -16,7 +16,7 @@ from dagster_graphql.implementation.loader import RepositoryScopedBatchLoader
 from dagster_graphql.implementation.utils import (
     UserFacingGraphQLError,
     assert_permission,
-    assert_permission_for_location,
+    assert_permission_for_schedule,
 )
 from dagster_graphql.schema.util import ResolveInfo
 
@@ -68,10 +68,8 @@ def stop_schedule(
     schedule = schedules.get(schedule_origin_id)
 
     if schedule:
-        assert_permission_for_location(
-            graphene_info,
-            Permissions.STOP_RUNNING_SCHEDULE,
-            schedule.selector.location_name,
+        assert_permission_for_schedule(
+            graphene_info, Permissions.STOP_RUNNING_SCHEDULE, schedule.schedule_selector
         )
     else:
         assert_permission(

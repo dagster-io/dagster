@@ -2,13 +2,14 @@
 description: Configure where Dagster+ compute logs are stored and manage masking of error messages in the Dagster+ UI.
 sidebar_position: 7000
 title: Managing compute logs and error messages
+tags: [dagster-plus-feature]
 ---
 
 import ThemedImage from '@theme/ThemedImage';
 
 In this guide, we'll cover how to adjust where Dagster+ compute logs are stored and manage masking of error messages in the Dagster+ UI.
 
-By default, Dagster+ ingests [structured event logs and compute logs](/guides/monitor/logging/index.md#log-types) from runs and surfaces error messages from [code locations](/deployment/code-locations) in the UI.
+By default, Dagster+ ingests [structured event logs and compute logs](/guides/log-debug/logging#log-types) from runs and surfaces error messages from [code locations](/deployment/code-locations) in the UI.
 
 Depending on your organization's needs, you may want to retain these logs in your own infrastructure or mask error message contents.
 
@@ -23,6 +24,7 @@ If using the Kubernetes agent, you can instead forward logs to your own S3 bucke
 You can configure the `S3ComputeLogManager` in your [`dagster.yaml` file](/deployment/dagster-plus/management/customizing-agent-settings):
 
 ```yaml
+# dagster.yaml
 compute_logs:
   module: dagster_aws.s3.compute_log_manager
   class: S3ComputeLogManager
@@ -35,6 +37,7 @@ compute_logs:
 If you are using Helm to deploy the Kubernetes agent, you can provide the following configuration in your `values.yaml` file:
 
 ```yaml
+# values.yaml
 computeLogs:
   enabled: true
   custom:
@@ -53,6 +56,7 @@ If your organization has its own logging solution which ingests `stdout` and `st
 You can configure the `NoOpComputeLogManager` in your [`dagster.yaml` file](/deployment/dagster-plus/management/customizing-agent-settings):
 
 ```yaml
+# dagster.yaml
 compute_logs:
   module: dagster.core.storage.noop_compute_log_manager
   class: NoOpComputeLogManager

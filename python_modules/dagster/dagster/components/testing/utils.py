@@ -318,6 +318,15 @@ def create_defs_folder_sandbox(
         project_root = Path(project_root_str)
         defs_folder_path = project_root / "src" / project_name / "defs"
         defs_folder_path.mkdir(parents=True, exist_ok=True)
+
+        dg_toml_path = project_root / "dg.toml"
+        dg_toml_path.write_text(
+            textwrap.dedent(f"""
+                [project]
+                root_module = "{project_name}"
+            """)
+        )
+
         yield DefsFolderSandbox(
             project_root=project_root,
             defs_folder_path=defs_folder_path,

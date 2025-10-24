@@ -2,6 +2,7 @@
 description: Deploy a Dagster+ agent on an Azure Kubernetes Service (AKS) cluster.
 sidebar_position: 5100
 title: Deploy a Dagster+ agent on an Azure Kubernetes Service cluster
+tags: [dagster-plus-feature]
 ---
 
 This guide will walk you through deploying a Dagster+ agent on an Azure Kubernetes Service (AKS) cluster.

@@ -38,6 +38,11 @@ export const CustomTooltipProvider = () => {
       }
 
       const {tooltip, tooltipStyle} = tooltipParentEl.dataset;
+      if (!tooltip) {
+        setState(null);
+        return;
+      }
+
       const {left, top} = tooltipParentEl.getBoundingClientRect();
       const style = {left, top};
 
@@ -49,8 +54,9 @@ export const CustomTooltipProvider = () => {
           top: top + (overrides.top || 0),
         });
       }
+
       setState({
-        title: tooltip!,
+        title: tooltip,
         style,
       });
     });

@@ -4,8 +4,10 @@ import datetime
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
+    from dagster_dg_cli.api_layer.schemas.agent import DgApiAgent, DgApiAgentList
     from dagster_dg_cli.api_layer.schemas.asset import DgApiAsset, DgApiAssetList
-    from dagster_dg_cli.api_layer.schemas.deployment import DeploymentList
+    from dagster_dg_cli.api_layer.schemas.deployment import Deployment, DeploymentList
+    from dagster_dg_cli.api_layer.schemas.secret import DgApiSecret, DgApiSecretList
 
 
 def format_deployments(deployments: "DeploymentList", as_json: bool) -> str:
@@ -27,6 +29,20 @@ def format_deployments(deployments: "DeploymentList", as_json: bool) -> str:
     return "\n".join(lines).rstrip()  # Remove trailing empty line
 
 
+def format_deployment(deployment: "Deployment", as_json: bool) -> str:
+    """Format single deployment for output."""
+    if as_json:
+        return deployment.model_dump_json(indent=2)
+
+    lines = [
+        f"Name: {deployment.name}",
+        f"ID: {deployment.id}",
+        f"Type: {deployment.type.value}",
+    ]
+
+    return "\n".join(lines)
+
+
 def format_assets(assets: "DgApiAssetList", as_json: bool) -> str:
     """Format asset list for output."""
     if as_json:
@@ -40,6 +56,7 @@ def format_assets(assets: "DgApiAssetList", as_json: bool) -> str:
             f"Description: {asset.description or 'None'}",
             f"Group: {asset.group_name}",
             f"Kinds: {', '.join(asset.kinds) if asset.kinds else 'None'}",
+            f"Deps: {', '.join(asset.dependency_keys) if asset.dependency_keys else 'None'}",
         ]
 
         # Add status information if present
@@ -52,10 +69,20 @@ def format_assets(assets: "DgApiAssetList", as_json: bool) -> str:
     return "\n".join(lines).rstrip()  # Remove trailing empty line
 
 
-def _format_timestamp(timestamp: float) -> str:
-    """Format timestamp for human-readable display."""
+def _format_timestamp(timestamp: float, unit: str = "seconds") -> str:
+    """Format timestamp for human-readable display.
+
+    Args:
+        timestamp: The timestamp value
+        unit: Either "milliseconds" or "seconds" to indicate the timestamp unit
+    """
     try:
-        dt = datetime.datetime.fromtimestamp(timestamp / 1000)  # Assume milliseconds
+        if unit == "milliseconds":
+            dt = datetime.datetime.fromtimestamp(timestamp / 1000)
+        elif unit == "seconds":
+            dt = datetime.datetime.fromtimestamp(timestamp)
+        else:
+            raise ValueError(f"Unsupported unit: {unit}")
         return dt.strftime("%Y-%m-%d %H:%M:%S")
     except (ValueError, OSError):
         return f"Invalid timestamp: {timestamp}"
@@ -92,14 +119,16 @@ def _format_asset_status_lines(status) -> list[str]:
             lines.append(f"Warning Checks: {metadata.num_warning_checks}")
         if metadata.last_materialized_timestamp:
             lines.append(
-                f"Last Materialized: {_format_timestamp(metadata.last_materialized_timestamp)}"
+                f"Last Materialized: {_format_timestamp(metadata.last_materialized_timestamp, 'milliseconds')}"
             )
 
     # Latest materialization
     if status.latest_materialization:
         mat = status.latest_materialization
         if mat.timestamp:
-            lines.append(f"Latest Materialization: {_format_timestamp(mat.timestamp)}")
+            lines.append(
+                f"Latest Materialization: {_format_timestamp(mat.timestamp, 'milliseconds')}"
+            )
         if mat.run_id:
             lines.append(f"Latest Run ID: {mat.run_id}")
         if mat.partition:
@@ -140,6 +169,7 @@ def format_asset(asset: "DgApiAsset", as_json: bool) -> str:
         f"Description: {asset.description or 'None'}",
         f"Group: {asset.group_name}",
         f"Kinds: {', '.join(asset.kinds) if asset.kinds else 'None'}",
+        f"Deps: {', '.join(asset.dependency_keys) if asset.dependency_keys else 'None'}",
     ]
 
     # Add status information if present
@@ -166,3 +196,167 @@ def format_asset(asset: "DgApiAsset", as_json: bool) -> str:
             lines.append(f"  {entry['label']}: {value}")
 
     return "\n".join(lines)
+
+
+def format_agents(agents: "DgApiAgentList", as_json: bool) -> str:
+    """Format agent list for output."""
+    if as_json:
+        return agents.model_dump_json(indent=2)
+
+    lines = []
+    for agent in agents.items:
+        # Use agent_label if available, otherwise format as "Agent {first_8_chars_of_id}"
+        display_label = agent.agent_label or f"Agent {agent.id[:8]}"
+        lines.extend(
+            [
+                f"Label: {display_label}",
+                f"ID: {agent.id}",
+                f"Status: {agent.status.value}",
+                f"Last Heartbeat: {_format_timestamp(agent.last_heartbeat_time, 'seconds') if agent.last_heartbeat_time else 'Never'}",
+                "",  # Empty line between agents
+            ]
+        )
+
+    return "\n".join(lines).rstrip()  # Remove trailing empty line
+
+
+def format_agent(agent: "DgApiAgent", as_json: bool) -> str:
+    """Format single agent for output."""
+    if as_json:
+        return agent.model_dump_json(indent=2)
+
+    # Use agent_label if available, otherwise format as "Agent {first_8_chars_of_id}"
+    display_label = agent.agent_label or f"Agent {agent.id[:8]}"
+    lines = [
+        f"Label: {display_label}",
+        f"ID: {agent.id}",
+        f"Status: {agent.status.value}",
+        f"Last Heartbeat: {_format_timestamp(agent.last_heartbeat_time, 'seconds') if agent.last_heartbeat_time else 'Never'}",
+    ]
+
+    if agent.metadata:
+        lines.append("")
+        lines.append("Metadata:")
+        for meta in agent.metadata:
+            lines.append(f"  {meta.key}: {meta.value}")
+
+    return "\n".join(lines)
+
+
+def format_secrets(secrets: "DgApiSecretList", as_json: bool) -> str:
+    """Format secret list for output.
+
+    Note: Secret values are never shown in list format for security.
+    """
+    if as_json:
+        return secrets.model_dump_json(indent=2)
+
+    if not secrets.items:
+        return "No secrets found."
+
+    lines = []
+    for secret in secrets.items:
+        lines.extend(
+            [
+                f"Name: {secret.name}",
+                f"Locations: {', '.join(secret.location_names) if secret.location_names else 'All code locations'}",
+                f"Scopes: {_format_secret_scopes(secret)}",
+                f"Can Edit: {'Yes' if secret.can_edit_secret else 'No'}",
+                f"Can View Value: {'Yes' if secret.can_view_secret_value else 'No'}",
+            ]
+        )
+
+        if secret.updated_by:
+            lines.append(f"Updated By: {secret.updated_by.email}")
+
+        if secret.update_timestamp:
+            lines.append(f"Updated: {secret.update_timestamp.strftime('%Y-%m-%d %H:%M:%S')}")
+
+        lines.append("")  # Empty line between secrets
+
+    return "\n".join(lines).rstrip()  # Remove trailing empty line
+
+
+def format_secret(secret: "DgApiSecret", as_json: bool, show_value: bool = False) -> str:
+    """Format single secret for output.
+
+    Args:
+        secret: Secret to format
+        as_json: Whether to output JSON format
+        show_value: Whether to include the secret value (security sensitive)
+    """
+    import json
+
+    if as_json:
+        if not show_value and secret.value is not None:
+            # Create a copy with hidden value for JSON output
+            secret_dict = secret.model_dump()
+            secret_dict["value"] = "<hidden>"
+            return json.dumps(secret_dict, indent=2, default=str)
+        return secret.model_dump_json(indent=2)
+
+    lines = [
+        f"Name: {secret.name}",
+        f"Locations: {', '.join(secret.location_names) if secret.location_names else 'All code locations'}",
+        f"Scopes: {_format_secret_scopes(secret)}",
+        "Permissions:",
+        f"  Can Edit: {'Yes' if secret.can_edit_secret else 'No'}",
+        f"  Can View Value: {'Yes' if secret.can_view_secret_value else 'No'}",
+    ]
+
+    # Show value only if explicitly requested and available
+    if show_value:
+        if secret.value is not None:
+            lines.extend(
+                [
+                    "",
+                    "Value:",
+                    f"  {secret.value}",
+                ]
+            )
+        else:
+            lines.extend(
+                [
+                    "",
+                    "Value: <not available - you may not have permission to view this value>",
+                ]
+            )
+    else:
+        lines.extend(
+            [
+                "",
+                "Value: <hidden - use --show-value to display>",
+            ]
+        )
+
+    if secret.updated_by:
+        lines.extend(
+            [
+                "",
+                f"Updated By: {secret.updated_by.email}",
+            ]
+        )
+
+    if secret.update_timestamp:
+        lines.append(f"Updated: {secret.update_timestamp.strftime('%Y-%m-%d %H:%M:%S')}")
+
+    return "\n".join(lines)
+
+
+def _format_secret_scopes(secret: "DgApiSecret") -> str:
+    """Format secret scopes into human-readable string."""
+    scopes = []
+
+    if secret.full_deployment_scope:
+        scopes.append("Full Deployment")
+
+    if secret.all_branch_deployments_scope:
+        scopes.append("All Branch Deployments")
+
+    if secret.specific_branch_deployment_scope:
+        scopes.append(f"Branch: {secret.specific_branch_deployment_scope}")
+
+    if secret.local_deployment_scope:
+        scopes.append("Local Deployment")
+
+    return ", ".join(scopes) if scopes else "None"

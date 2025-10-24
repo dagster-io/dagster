@@ -24,6 +24,9 @@ Building Components
 .. autoclass:: Component
     :members:
 
+.. autoclass:: StateBackedComponent
+    :members:
+
 
 .. autoclass:: Resolvable
     :members:

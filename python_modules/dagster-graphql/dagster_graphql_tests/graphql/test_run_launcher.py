@@ -96,14 +96,16 @@ class TestBasicLaunch(BaseTestSuite):
     def test_run_launcher_unauthorized(self, graphql_context: WorkspaceRequestContext):
         selector = infer_job_selector(graphql_context, "no_config_job")
 
-        with patch.object(graphql_context, "has_permission_for_location", return_value=False):
-            with patch.object(graphql_context, "was_permission_checked", return_value=True):
-                result = execute_dagster_graphql(
-                    context=graphql_context,
-                    query=LAUNCH_PIPELINE_EXECUTION_MUTATION,
-                    variables={"executionParams": {"selector": selector, "mode": "default"}},
-                )
-                assert result.data["launchPipelineExecution"]["__typename"] == "UnauthorizedError"
+        with (
+            patch.object(graphql_context, "has_permission_for_selector", return_value=False),
+            patch.object(graphql_context, "was_permission_checked", return_value=True),
+        ):
+            result = execute_dagster_graphql(
+                context=graphql_context,
+                query=LAUNCH_PIPELINE_EXECUTION_MUTATION,
+                variables={"executionParams": {"selector": selector, "mode": "default"}},
+            )
+            assert result.data["launchPipelineExecution"]["__typename"] == "UnauthorizedError"
 
 
 class TestMultipleLaunch(BaseTestSuite):
@@ -170,7 +172,7 @@ class TestMultipleLaunch(BaseTestSuite):
         ]
 
         # mock no permissions
-        with patch.object(graphql_context, "has_permission_for_location", return_value=False):
+        with patch.object(graphql_context, "has_permission_for_selector", return_value=False):
             result = execute_dagster_graphql(
                 context=graphql_context,
                 query=LAUNCH_MULTIPLE_RUNS_MUTATION,

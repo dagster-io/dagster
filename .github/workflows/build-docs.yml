@@ -8,7 +8,6 @@ on:
       - docs/**
       - examples/docs_snippets/**
       - examples/docs_projects/**
-      - examples/getting_started_etl_tutorial/**
       - examples/airlift-migration-tutorial/**
       - .github/workflows/build-docs.yml
       - '!docs/README.md'
@@ -23,7 +22,6 @@ on:
       - docs/**
       - examples/docs_snippets/**
       - examples/docs_projects/**
-      - examples/getting_started_etl_tutorial/**
       - examples/airlift-migration-tutorial/**
       - .github/workflows/build-docs.yml
       - '!docs/README.md'

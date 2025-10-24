@@ -196,7 +196,7 @@ const AssetGraphExplorerWithData = ({
   const [direction, setDirection] = useLayoutDirectionState();
   const [facets, setFacets] = useSavedAssetNodeFacets();
 
-  const {flagAssetNodeFacets} = useFeatureFlags();
+  const {flagAssetNodeFacets, flagAssetGraphGroupsPerCodeLocation} = useFeatureFlags();
 
   const [expandedGroups, setExpandedGroups] = useQueryAndLocalStoragePersistedState<string[]>({
     localStorageKey: `asset-graph-open-graph-nodes-${viewType}-${explorerPath.pipelineName}`,
@@ -219,8 +219,12 @@ const AssetGraphExplorerWithData = ({
     assetGraphData,
     expandedGroups,
     useMemo(
-      () => ({direction, facets: flagAssetNodeFacets ? Array.from(facets) : false}),
-      [direction, facets, flagAssetNodeFacets],
+      () => ({
+        direction,
+        flagAssetGraphGroupsPerCodeLocation,
+        facets: flagAssetNodeFacets ? Array.from(facets) : false,
+      }),
+      [direction, facets, flagAssetGraphGroupsPerCodeLocation, flagAssetNodeFacets],
     ),
     dataLoading,
   );
@@ -455,11 +459,17 @@ const AssetGraphExplorerWithData = ({
   );
 
   const onFilterToGroup = (group: AssetGroup | GroupLayout) => {
-    const codeLocationFilter = buildRepoPathForHuman(
-      group.repositoryName,
-      group.repositoryLocationName,
-    );
-    onChangeAssetSelection(`group:"${group.groupName}" and code_location:"${codeLocationFilter}"`);
+    const filters: string[] = [`group:"${group.groupName}"`];
+
+    if (group.repositoryName && group.repositoryLocationName) {
+      const codeLocationFilter = buildRepoPathForHuman(
+        group.repositoryName,
+        group.repositoryLocationName,
+      );
+      filters.push(`code_location:"${codeLocationFilter}"`);
+    }
+
+    onChangeAssetSelection(filters.join(' and '));
   };
 
   const svgViewport = layout ? (
@@ -801,9 +811,11 @@ const AssetGraphExplorerWithData = ({
                     <LaunchAssetExecutionButton
                       preferredJobName={explorerPath.pipelineName}
                       scope={
-                        selectedDefinitions.length
-                          ? {selected: selectedDefinitions}
-                          : {all: allDefinitionsForMaterialize}
+                        nextLayoutLoading
+                          ? {all: []}
+                          : selectedDefinitions.length
+                            ? {selected: selectedDefinitions}
+                            : {all: allDefinitionsForMaterialize}
                       }
                       additionalDropdownOptions={extraDropdownOptions}
                     />
@@ -899,8 +911,10 @@ const AssetGraphExplorerWithData = ({
 
 export interface AssetGroup {
   groupName: string;
-  repositoryName: string;
-  repositoryLocationName: string;
+
+  // remove when groups-outside-code-location feature flag is shipped
+  repositoryName?: string;
+  repositoryLocationName?: string;
 }
 
 const SVGContainer = styled.svg`

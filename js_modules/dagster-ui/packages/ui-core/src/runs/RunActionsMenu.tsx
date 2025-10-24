@@ -462,7 +462,8 @@ export const RunBulkActionsMenu = React.memo((props: RunBulkActionsMenuProps) =>
 const OPEN_LAUNCHPAD_UNKNOWN =
   'Launchpad is unavailable because the pipeline is not present in the current repository.';
 
-// Avoid fetching envYaml and parentPipelineSnapshotId on load in Runs page, they're slow.
+// Avoid fetching envYaml, parentPipelineSnapshotId, and executionPlan on load in Runs page,
+// since they can be slow.
 export const PIPELINE_ENVIRONMENT_QUERY = gql`
   query PipelineEnvironmentQuery($runId: ID!) {
     pipelineRunOrError(runId: $runId) {
@@ -479,6 +480,11 @@ export const PIPELINE_ENVIRONMENT_QUERY = gql`
           repositoryLocationName
         }
         hasRunMetricsEnabled
+        executionPlan {
+          assetKeys {
+            path
+          }
+        }
       }
     }
   }

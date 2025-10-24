@@ -45,7 +45,7 @@ This can be combined with `AutomationCondition.eager()` to ensure that your asse
 
 By default, `AutomationCondition.eager()` materializes a target whenever any upstream event occurs, regardless of the source of that event.
 
-It can be useful to ignore runs of certain types when determining if an upstream asset should be considered "updated". This can be done using `AutomationCondition.executed_with_tags()` to filter updates for runs with tags matching particular keys:
+It can be useful to ignore runs of certain types when determining if an upstream asset should be considered "updated". This can be done using `AutomationCondition.any_new_update_has_run_tags()` to filter updates for runs with tags matching particular keys:
 
 <CodeExample
   path="docs_snippets/docs_snippets/concepts/declarative_automation/eager/executed_with_tags_condition.py"
@@ -78,3 +78,22 @@ If you want to only consider upstream assets to be "updated" if the data version
   path="docs_snippets/docs_snippets/concepts/declarative_automation/eager/data_version_changed_condition.py"
   title="src/<project_name>/defs/assets.py"
 />
+
+## Combining scheduled and dependency-driven execution
+
+For more complex automation patterns, you can combine scheduled execution with dependency-driven updates. This pattern ensures regular execution on a schedule while also allowing for more frequent updates when dependencies change, with additional safety checks:
+
+<CodeExample
+  path="docs_snippets/docs_snippets/concepts/declarative_automation/eager/combined.py"
+  title="src/<project_name>/defs/assets.py"
+/>
+
+The `custom_condition` in this example will execute the target asset in two scenarios:
+
+1. **Scheduled execution**: Runs on the specified cron schedule (every 5 minutes in this example)
+2. **Dependency-driven execution**: Runs when upstream dependencies are updated, but only if:
+   - The asset was successfully updated since the last scheduled run
+   - No upstream dependencies are missing
+   - No upstream dependencies are currently in progress
+
+This approach is particularly useful for assets that need guaranteed regular execution ,but should also respond quickly to upstream changes, while avoiding execution during problematic states.

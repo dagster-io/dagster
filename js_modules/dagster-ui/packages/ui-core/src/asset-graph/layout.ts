@@ -57,6 +57,7 @@ export type LayoutAssetGraphConfig = dagre.GraphLabel & {
 
 export type LayoutAssetGraphOptions = {
   direction: AssetLayoutDirection;
+  flagAssetGraphGroupsPerCodeLocation: boolean;
   overrides?: Partial<LayoutAssetGraphConfig>;
   facets?: AssetNodeFacet[] | false;
 };

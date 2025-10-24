@@ -1,6 +1,3 @@
-import {useMemo} from 'react';
-import * as yaml from 'yaml';
-
 import {
   CONFIG_EDITOR_GENERATOR_PARTITION_SETS_FRAGMENT,
   CONFIG_EDITOR_GENERATOR_PIPELINE_FRAGMENT,
@@ -15,6 +12,8 @@ import {LaunchpadRootQuery, LaunchpadRootQueryVariables} from './types/Launchpad
 import {IExecutionSession} from '../app/ExecutionSessionStorage';
 import {PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorFragment';
 import {useTrackPageView} from '../app/analytics';
+import {asAssetKeyInput} from '../assets/asInput';
+import {CONFIG_EDITOR_RUN_CONFIG_SCHEMA_FRAGMENT} from '../configeditor/ConfigEditorUtils';
 import {explorerPathFromString, useStripSnapshotFromPath} from '../pipelines/PipelinePathUtils';
 import {useJobTitle} from '../pipelines/useJobTitle';
 import {lazy} from '../util/lazy';
@@ -30,23 +29,6 @@ interface Props {
   sessionPresets?: Partial<IExecutionSession>;
   onSaveConfig?: (config: LaunchpadConfig) => void;
 }
-
-const filterDefaultYamlForSubselection = (defaultYaml: string, opNames: Set<string>): string => {
-  const parsedYaml = yaml.parse(defaultYaml);
-
-  const opsConfig = parsedYaml['ops'];
-  if (opsConfig) {
-    const filteredOpKeys = Object.keys(opsConfig).filter((entry: any) => {
-      return opNames.has(entry);
-    });
-    const filteredOpsConfig = Object.fromEntries(
-      filteredOpKeys.map((key) => [key, opsConfig[key]]),
-    );
-    parsedYaml['ops'] = filteredOpsConfig;
-  }
-
-  return yaml.stringify(parsedYaml);
-};
 
 export const LaunchpadAllowedRoot = (props: Props) => {
   useTrackPageView();
@@ -66,26 +48,17 @@ export const LaunchpadAllowedRoot = (props: Props) => {
   const result = useQuery<LaunchpadRootQuery, LaunchpadRootQueryVariables>(
     PIPELINE_EXECUTION_ROOT_QUERY,
     {
-      variables: {repositoryName, repositoryLocationName, pipelineName},
+      variables: {
+        repositoryName,
+        repositoryLocationName,
+        pipelineName,
+        assetSelection: sessionPresets?.assetSelection?.map(asAssetKeyInput) || null,
+      },
     },
   );
 
   const pipelineOrError = result?.data?.pipelineOrError;
   const partitionSetsOrError = result?.data?.partitionSetsOrError;
-
-  const runConfigSchemaOrError = result.data?.runConfigSchemaOrError;
-  const filteredRootDefaultYaml = useMemo(() => {
-    if (!runConfigSchemaOrError || runConfigSchemaOrError.__typename !== 'RunConfigSchema') {
-      return undefined;
-    }
-
-    const rootDefaultYaml = runConfigSchemaOrError.rootDefaultYaml;
-    const opNameList = sessionPresets?.assetSelection
-      ? sessionPresets.assetSelection.map((entry) => entry.opNames ?? []).flat()
-      : [];
-    const opNames = new Set(opNameList);
-    return filterDefaultYamlForSubselection(rootDefaultYaml, opNames);
-  }, [runConfigSchemaOrError, sessionPresets]);
 
   if (!pipelineOrError || !partitionSetsOrError) {
     return <LaunchpadSessionLoading />;
@@ -115,11 +88,10 @@ export const LaunchpadAllowedRoot = (props: Props) => {
     );
   }
 
-  if (pipelineOrError.__typename === 'InvalidSubsetError') {
-    throw new Error(`Should never happen because we do not request a subset`);
-  }
-
-  if (pipelineOrError.__typename === 'PythonError') {
+  if (
+    pipelineOrError.__typename === 'PythonError' ||
+    pipelineOrError.__typename === 'InvalidSubsetError'
+  ) {
     return (
       <LaunchpadSessionError
         icon="error"
@@ -146,8 +118,17 @@ export const LaunchpadAllowedRoot = (props: Props) => {
         partitionSets={partitionSetsOrError}
         repoAddress={repoAddress}
         sessionPresets={sessionPresets || {}}
-        rootDefaultYaml={filteredRootDefaultYaml}
+        rootDefaultYaml={
+          result.data?.runConfigSchemaOrError.__typename === 'RunConfigSchema'
+            ? result.data.runConfigSchemaOrError.rootDefaultYaml
+            : undefined
+        }
         onSaveConfig={onSaveConfig}
+        runConfigSchema={
+          result.data?.runConfigSchemaOrError.__typename === 'RunConfigSchema'
+            ? result.data.runConfigSchemaOrError
+            : undefined
+        }
       />
     );
   } else {
@@ -163,6 +144,11 @@ export const LaunchpadAllowedRoot = (props: Props) => {
             ? result.data.runConfigSchemaOrError.rootDefaultYaml
             : undefined
         }
+        runConfigSchema={
+          result.data?.runConfigSchemaOrError.__typename === 'RunConfigSchema'
+            ? result.data.runConfigSchemaOrError
+            : undefined
+        }
       />
     );
   }
@@ -173,15 +159,20 @@ export const PIPELINE_EXECUTION_ROOT_QUERY = gql`
     $pipelineName: String!
     $repositoryName: String!
     $repositoryLocationName: String!
+    $assetSelection: [AssetKeyInput!]
   ) {
     pipelineOrError(
       params: {
         pipelineName: $pipelineName
         repositoryName: $repositoryName
         repositoryLocationName: $repositoryLocationName
+        assetSelection: $assetSelection
       }
     ) {
       ... on PipelineNotFoundError {
+        message
+      }
+      ... on InvalidSubsetError {
         message
       }
       ... on Pipeline {
@@ -208,12 +199,14 @@ export const PIPELINE_EXECUTION_ROOT_QUERY = gql`
         pipelineName: $pipelineName
         repositoryName: $repositoryName
         repositoryLocationName: $repositoryLocationName
+        assetSelection: $assetSelection
       }
     ) {
       __typename
       ... on RunConfigSchema {
         rootDefaultYaml
       }
+      ...LaunchpadSessionRunConfigSchemaFragment
     }
   }
 
@@ -233,7 +226,21 @@ export const PIPELINE_EXECUTION_ROOT_QUERY = gql`
     }
   }
 
+  fragment LaunchpadSessionRunConfigSchemaFragment on RunConfigSchemaOrError {
+    ... on RunConfigSchema {
+      ...ConfigEditorRunConfigSchemaFragment
+    }
+    ... on ModeNotFoundError {
+      ...LaunchpadSessionModeNotFound
+    }
+  }
+
+  fragment LaunchpadSessionModeNotFound on ModeNotFoundError {
+    message
+  }
+
   ${PYTHON_ERROR_FRAGMENT}
   ${CONFIG_EDITOR_GENERATOR_PARTITION_SETS_FRAGMENT}
   ${CONFIG_EDITOR_GENERATOR_PIPELINE_FRAGMENT}
+  ${CONFIG_EDITOR_RUN_CONFIG_SCHEMA_FRAGMENT}
 `;

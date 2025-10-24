@@ -4,7 +4,7 @@ from functools import update_wrapper
 from typing import TYPE_CHECKING, Callable, Optional, Union, cast
 
 import dagster._check as check
-from dagster._annotations import public
+from dagster._annotations import beta_param, public
 from dagster._core.definitions.metadata import RawMetadataMapping
 from dagster._core.definitions.resource_annotation import get_resource_args
 from dagster._core.definitions.run_request import RunRequest, SkipReason
@@ -37,6 +37,7 @@ if TYPE_CHECKING:
     )
 
 
+@beta_param(param="owners")
 @public
 def schedule(
     cron_schedule: Union[str, Sequence[str]],
@@ -61,6 +62,7 @@ def schedule(
             "UnresolvedAssetJobDefinition",
         ]
     ] = None,
+    owners: Optional[Sequence[str]] = None,
 ) -> Callable[[RawScheduleEvaluationFunction], ScheduleDefinition]:
     """Creates a schedule following the provided cron schedule and requests runs for the provided job.
 
@@ -109,6 +111,7 @@ def schedule(
             It can take :py:class:`~dagster.AssetSelection` objects and anything coercible to it (e.g. `str`, `Sequence[str]`, `AssetKey`, `AssetsDefinition`).
             It can also accept :py:class:`~dagster.JobDefinition` (a function decorated with `@job` is an instance of `JobDefinition`) and `UnresolvedAssetJobDefinition` (the return value of :py:func:`~dagster.define_asset_job`) objects.
             This parameter will replace `job` and `job_name`.
+        owners (Optional[Sequence[str]]): A sequence of strings identifying the owners of the schedule.
     """
 
     def inner(fn: RawScheduleEvaluationFunction) -> ScheduleDefinition:
@@ -129,7 +132,9 @@ def schedule(
             )
         elif tags:
             validated_tags = normalize_tags(
-                tags, allow_private_system_tags=False, warning_stacklevel=3
+                tags,
+                allow_private_system_tags=False,
+                warning_stacklevel=3,
             )
 
         context_param_name = get_context_param_name(fn)
@@ -168,7 +173,11 @@ def schedule(
                         validated_tags
                         or (
                             tags_fn
-                            and normalize_tags(tags_fn(context), allow_private_system_tags=False)
+                            and normalize_tags(
+                                tags_fn(context),
+                                allow_private_system_tags=False,
+                                warning_stacklevel=5,
+                            )  # reset once owners is out of beta_param
                         )
                         or None
                     )
@@ -208,6 +217,7 @@ def schedule(
             metadata=metadata,
             should_execute=None,  # already encompassed in evaluation_fn
             target=target,
+            owners=owners,
         )
 
         update_wrapper(schedule_def, wrapped=fn)

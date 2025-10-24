@@ -146,9 +146,9 @@ def test_load_check_specs_exclude(
     all_checks = load_dbt_cloud_check_specs(workspace=workspace, exclude="raw_customers+")
     all_checks_keys = [check.key for check in all_checks]
 
-    # 16 dbt tests
-    assert len(all_checks) == 16
-    assert len(all_checks_keys) == 16
+    # 15 dbt tests
+    assert len(all_checks) == 15
+    assert len(all_checks_keys) == 15
 
     # Sanity check outputs
     first_check_key = next(key for key in sorted(all_checks_keys))

@@ -89,33 +89,41 @@ class TestDefsStateStorage:
             storage.upload_state_from_path("A", "v2.0", file_path)
             assert storage.get_latest_version("A") == "v2.0"
 
-    def test_state_store_integration(self, storage: DefsStateStorage) -> None:
+    @pytest.mark.parametrize(
+        "key",
+        [
+            "integration_test",
+            # ensure we can handle special characters
+            "integration_test[xyz://foo.bar.baz@&*//xy]",
+        ],
+    )
+    def test_state_store_integration(self, storage: DefsStateStorage, key: str) -> None:
         """Test integration of all three methods together."""
         with tempfile.TemporaryDirectory() as temp_dir:
-            assert storage.get_latest_version("integration_test") is None
+            assert storage.get_latest_version(key) is None
 
             state_file = Path(temp_dir) / "integration_state.json"
             original_state = '{"step": 1, "data": "initial"}'
             state_file.write_text(original_state)
 
-            storage.upload_state_from_path("integration_test", "v1.0", state_file)
+            storage.upload_state_from_path(key, "v1.0", state_file)
 
-            assert storage.get_latest_version("integration_test") == "v1.0"
+            assert storage.get_latest_version(key) == "v1.0"
 
             loaded_file = Path(temp_dir) / "loaded_state.json"
-            storage.download_state_to_path("integration_test", "v1.0", loaded_file)
+            storage.download_state_to_path(key, "v1.0", loaded_file)
             assert loaded_file.read_text() == original_state
 
             updated_state = '{"step": 2, "data": "updated"}'
             state_file.write_text(updated_state)
-            storage.upload_state_from_path("integration_test", "v1.1", state_file)
+            storage.upload_state_from_path(key, "v1.1", state_file)
 
-            assert storage.get_latest_version("integration_test") == "v1.1"
+            assert storage.get_latest_version(key) == "v1.1"
 
             old_version_file = Path(temp_dir) / "old_version.json"
-            storage.download_state_to_path("integration_test", "v1.0", old_version_file)
+            storage.download_state_to_path(key, "v1.0", old_version_file)
             assert old_version_file.read_text() == original_state
 
             new_version_file = Path(temp_dir) / "new_version.json"
-            storage.download_state_to_path("integration_test", "v1.1", new_version_file)
+            storage.download_state_to_path(key, "v1.1", new_version_file)
             assert new_version_file.read_text() == updated_state

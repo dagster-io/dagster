@@ -3,11 +3,11 @@
   "redirects": [
     {
       "source": "/dagster-cloud/insights",
-      "destination": "/guides/monitor/insights"
+      "destination": "/guides/observe/insights"
     },
     {
       "source": "/dagster-cloud/insights/:path*",
-      "destination": "/guides/monitor/insights/:path*"
+      "destination": "/guides/observe/insights/:path*"
     },
     {
       "source": "/dagster-cloud/:path*",
@@ -72,7 +72,11 @@
     },
     {
       "source": "/_apidocs/cli",
-      "destination": "/api/dagster/cli"
+      "destination": "/api/clis/cli"
+    },
+    {
+      "source": "/api/dagster/cli",
+      "destination": "/api/clis/cli"
     },
     {
       "source": "/_apidocs/schedules-sensors",
@@ -582,7 +586,7 @@
     },
     {
       "source": "/dagster-plus/managing-deployments/setting-up-alerts",
-      "destination": "/guides/monitor/alerts"
+      "destination": "/guides/observe/alerts"
     },
     {
       "source": "/dagster-plus/managing-deployments/dagster-cloud-cli",
@@ -958,15 +962,15 @@
     },
     {
       "source": "/concepts/logging",
-      "destination": "/guides/monitor/logging"
+      "destination": "/guides/log-debug/logging"
     },
     {
       "source": "/concepts/logging/loggers",
-      "destination": "/guides/monitor/logging"
+      "destination": "/guides/log-debug/logging"
     },
     {
       "source": "/concepts/logging/python-logging",
-      "destination": "/guides/monitor/logging/python-logging"
+      "destination": "/guides/log-debug/logging/python-logging"
     },
     {
       "source": "/concepts/testing",
@@ -1315,31 +1319,31 @@
     },
     {
       "source": "/dagster-plus/managing-deployments/alerts",
-      "destination": "/guides/monitor/alerts"
+      "destination": "/guides/observe/alerts"
     },
     {
       "source": "/dagster-plus/managing-deployments/alerts/managing-alerts-in-ui",
-      "destination": "/guides/monitor/alerts/creating-alerts"
+      "destination": "/guides/observe/alerts/creating-alerts"
     },
     {
       "source": "/dagster-plus/managing-deployments/alerts/managing-alerts-cli",
-      "destination": "/guides/monitor/alerts/creating-alerts"
+      "destination": "/guides/observe/alerts/creating-alerts"
     },
     {
       "source": "/dagster-plus/managing-deployments/alerts/email",
-      "destination": "/guides/monitor/alerts/configuring-an-alert-notification-service"
+      "destination": "/guides/observe/alerts/configuring-an-alert-notification-service"
     },
     {
       "source": "/dagster-plus/managing-deployments/alerts/microsoft-teams",
-      "destination": "/guides/monitor/alerts/configuring-an-alert-notification-service"
+      "destination": "/guides/observe/alerts/configuring-an-alert-notification-service"
     },
     {
       "source": "/dagster-plus/managing-deployments/alerts/slack",
-      "destination": "/guides/monitor/alerts/configuring-an-alert-notification-service"
+      "destination": "/guides/observe/alerts/configuring-an-alert-notification-service"
     },
     {
       "source": "/dagster-plus/managing-deployments/alerts/pagerduty",
-      "destination": "/guides/monitor/alerts/configuring-an-alert-notification-service"
+      "destination": "/guides/observe/alerts/configuring-an-alert-notification-service"
     },
     {
       "source": "/dagster-plus/managing-deployments/environment-variables-and-secrets",
@@ -1363,23 +1367,23 @@
     },
     {
       "source": "/dagster-plus/managing-deployments/branch-deployments",
-      "destination": "/deployment/dagster-plus/ci-cd/branch-deployments"
+      "destination": "/deployment/dagster-plus/deploying-code/branch-deployments"
     },
     {
       "source": "/dagster-plus/managing-deployments/branch-deployments/using-branch-deployments-with-github",
-      "destination": "/deployment/dagster-plus/ci-cd/branch-deployments/setting-up-branch-deployments"
+      "destination": "/deployment/dagster-plus/deploying-code/branch-deployments/setting-up-branch-deployments"
     },
     {
       "source": "/dagster-plus/managing-deployments/branch-deployments/using-branch-deployments-with-gitlab",
-      "destination": "/deployment/dagster-plus/ci-cd/branch-deployments/setting-up-branch-deployments"
+      "destination": "/deployment/dagster-plus/deploying-code/branch-deployments/setting-up-branch-deployments"
     },
     {
       "source": "/dagster-plus/managing-deployments/branch-deployments/using-branch-deployments",
-      "destination": "/deployment/dagster-plus/ci-cd/branch-deployments/using-branch-deployments-with-the-cli"
+      "destination": "/deployment/dagster-plus/deploying-code/branch-deployments/setting-up-branch-deployments"
     },
     {
       "source": "/dagster-plus/managing-deployments/branch-deployments/change-tracking",
-      "destination": "/deployment/dagster-plus/ci-cd/branch-deployments/change-tracking"
+      "destination": "/deployment/dagster-plus/deploying-code/branch-deployments/change-tracking"
     },
     {
       "source": "/dagster-plus/managing-deployments/controlling-logs",
@@ -1395,35 +1399,35 @@
     },
     {
       "source": "/dagster-plus/insights",
-      "destination": "/guides/monitor/insights"
+      "destination": "/guides/observe/insights"
     },
     {
       "source": "/dagster-plus/insights/asset-metadata",
-      "destination": "/guides/monitor/insights"
+      "destination": "/guides/observe/insights"
     },
     {
       "source": "/dagster-plus/insights/integrating-external-metrics",
-      "destination": "/guides/monitor/insights"
+      "destination": "/guides/observe/insights"
     },
     {
       "source": "/dagster-plus/insights/integrating-bigquery",
-      "destination": "/guides/monitor/insights"
+      "destination": "/guides/observe/insights"
     },
     {
       "source": "/dagster-plus/insights/integrating-bigquery-and-dbt",
-      "destination": "/guides/monitor/insights"
+      "destination": "/guides/observe/insights"
     },
     {
       "source": "/dagster-plus/insights/integrating-snowflake",
-      "destination": "/guides/monitor/insights"
+      "destination": "/guides/observe/insights"
     },
     {
       "source": "/dagster-plus/insights/integrating-snowflake-and-dbt",
-      "destination": "/guides/monitor/insights"
+      "destination": "/guides/observe/insights"
     },
     {
       "source": "/dagster-plus/insights/exporting-insights-metrics",
-      "destination": "/guides/monitor/insights"
+      "destination": "/guides/observe/insights"
     },
     {
       "source": "/dagster-plus/managing-deployments/dagster-plus-cli",
@@ -1435,7 +1439,7 @@
     },
     {
       "source": "/dagster-plus/references/ci-cd-file-reference",
-      "destination": "/deployment/dagster-plus/ci-cd/ci-cd-file-reference"
+      "destination": "/deployment/dagster-plus/deploying-code/ci-cd"
     },
     {
       "source": "/dagster-plus/managing-deployments/dagster-cloud-yaml",
@@ -1548,7 +1552,7 @@
     },
     {
       "source": "/guides/dagster/branch_deployments",
-      "destination": "/deployment/dagster-plus/ci-cd/branch-deployments/testing"
+      "destination": "/deployment/dagster-plus/deploying-code/branch-deployments/testing-against-prod-data"
     },
     {
       "source": "/guides/integrations/approaches-to-writing-integrations",
@@ -1697,23 +1701,23 @@
     },
     {
       "source": "/integrations/dbt/using-dbt-with-dagster",
-      "destination": "/integrations/libraries/dbt/creating-a-dbt-project-in-dagster"
+      "destination": "/integrations/libraries/dbt"
     },
     {
       "source": "/integrations/dbt/using-dbt-with-dagster/set-up-dbt-project",
-      "destination": "/integrations/libraries/dbt/creating-a-dbt-project-in-dagster/set-up-dbt-project"
+      "destination": "/integrations/libraries/dbt"
     },
     {
       "source": "/integrations/dbt/using-dbt-with-dagster/load-dbt-models",
-      "destination": "/integrations/libraries/dbt/creating-a-dbt-project-in-dagster/load-dbt-models"
+      "destination": "/integrations/libraries/dbt"
     },
     {
       "source": "/integrations/dbt/using-dbt-with-dagster/upstream-assets",
-      "destination": "/integrations/libraries/dbt/creating-a-dbt-project-in-dagster/upstream-assets"
+      "destination": "/integrations/libraries/dbt"
     },
     {
       "source": "/integrations/dbt/using-dbt-with-dagster/downstream-assets",
-      "destination": "/integrations/libraries/dbt/creating-a-dbt-project-in-dagster/downstream-assets"
+      "destination": "/integrations/libraries/dbt"
     },
     {
       "source": "/integrations/dbt/using-dbt-with-dagster-plus",
@@ -1738,11 +1742,11 @@
     },
     {
       "source": "/integrations/libraries/dbt/using-dbt-with-dagster",
-      "destination": "/integrations/libraries/dbt/creating-a-dbt-project-in-dagster"
+      "destination": "/integrations/libraries/dbt"
     },
     {
       "source": "/integrations/libraries/dbt/using-dbt-with-dagster/:path*",
-      "destination": "/integrations/libraries/dbt/creating-a-dbt-project-in-dagster/:path*"
+      "destination": "/integrations/libraries/dbt"
     },
     {
       "source": "/integrations/libraries/dbt/transform-dbt",
@@ -2928,11 +2932,11 @@
     },
     {
       "source": "/dagster-cloud/insights",
-      "destination": "/guides/monitor/insights"
+      "destination": "/guides/observe/insights"
     },
     {
       "source": "/dagster-cloud/managing-deployments/branch-deployments",
-      "destination": "/deployment/dagster-plus/ci-cd/branch-deployments"
+      "destination": "/deployment/dagster-plus/deploying-code/branch-deployments"
     },
     {
       "source": "/dagster-cloud/account/managing-users/managing-teams",
@@ -2940,11 +2944,11 @@
     },
     {
       "source": "/dagster-cloud/managing-deployments/alerts/microsoft-teams",
-      "destination": "/guides/monitor/alerts/configuring-an-alert-notification-service"
+      "destination": "/guides/observe/alerts/configuring-an-alert-notification-service"
     },
     {
       "source": "/dagster-cloud/managing-deployments/alerts/pagerduty",
-      "destination": "/guides/monitor/alerts/configuring-an-alert-notification-service"
+      "destination": "/guides/observe/alerts/configuring-an-alert-notification-service"
     },
     {
       "source": "/dagster-cloud/account/managing-users/managing-user-roles-permissions",
@@ -2952,7 +2956,7 @@
     },
     {
       "source": "/dagster-cloud/managing-deployments/alerts/email",
-      "destination": "/guides/monitor/alerts/configuring-an-alert-notification-service"
+      "destination": "/guides/observe/alerts/configuring-an-alert-notification-service"
     },
     {
       "source": "/dagster-cloud/account/authentication/utilizing-scim-provisioning",
@@ -2968,35 +2972,59 @@
     },
     {
       "source": "/dagster-cloud/managing-deployments/branch-deployments/using-branch-deployments-with-github",
-      "destination": "/deployment/dagster-plus/ci-cd/branch-deployments/setting-up-branch-deployments"
+      "destination": "/deployment/dagster-plus/deploying-code/branch-deployments/setting-up-branch-deployments"
+    },
+    {
+      "source": "/deployment/dagster-plus/ci-cd/branch-deployments",
+      "destination": "/deployment/dagster-plus/deploying-code/branch-deployments"
+    },
+    {
+      "source": "/deployment/dagster-plus/ci-cd/branch-deployments/change-tracking",
+      "destination": "/deployment/dagster-plus/deploying-code/branch-deployments/change-tracking"
+    },
+    {
+      "source": "/deployment/dagster-plus/ci-cd/branch-deployments/multiple-deployments",
+      "destination": "/deployment/dagster-plus/deploying-code/branch-deployments/multiple-deployments"
+    },
+    {
+      "source": "/deployment/dagster-plus/ci-cd/branch-deployments/testing",
+      "destination": "/deployment/dagster-plus/deploying-code/branch-deployments/testing-against-prod-data"
+    },
+    {
+      "source": "/deployment/dagster-plus/ci-cd/branch-deployments/setting-up-branch-deployments",
+      "destination": "/deployment/dagster-plus/deploying-code/branch-deployments/setting-up-branch-deployments"
+    },
+    {
+      "source": "/deployment/dagster-plus/ci-cd/branch-deployments/using-branch-deployments-with-the-cli",
+      "destination": "/deployment/dagster-plus/deploying-code/branch-deployments/setting-up-branch-deployments"
     },
     {
       "source": "/dagster-cloud/managing-deployments/alerts/slack",
-      "destination": "/guides/monitor/alerts/configuring-an-alert-notification-service"
+      "destination": "/guides/observe/alerts/configuring-an-alert-notification-service"
     },
     {
       "source": "/dagster-cloud/managing-deployments/branch-deployments/using-branch-deployments-with-gitlab",
-      "destination": "/deployment/dagster-plus/ci-cd/branch-deployments/setting-up-branch-deployments"
+      "destination": "/deployment/dagster-plus/deploying-code/branch-deployments/setting-up-branch-deployments"
     },
     {
       "source": "/dagster-cloud/managing-deployments/setting-up-alerts",
-      "destination": "/guides/monitor/alerts/configuring-an-alert-notification-service"
+      "destination": "/guides/observe/alerts/configuring-an-alert-notification-service"
     },
     {
       "source": "/dagster-cloud/managing-deployments/alerts/managing-alerts-cli",
-      "destination": "/guides/monitor/alerts/creating-alerts"
+      "destination": "/guides/observe/alerts/creating-alerts"
     },
     {
       "source": "/dagster-cloud/managing-deployments/alerts",
-      "destination": "/guides/monitor/alerts"
+      "destination": "/guides/observe/alerts"
     },
     {
       "source": "/dagster-cloud/managing-deployments/alerts/managing-alerts-in-ui",
-      "destination": "/guides/monitor/alerts/creating-alerts"
+      "destination": "/guides/observe/alerts/creating-alerts"
     },
     {
       "source": "/dagster-cloud/managing-deployments/managing-deployments",
-      "destination": "/deployment/dagster-plus/full-deployments"
+      "destination": "/deployment/dagster-plus/deploying-code/full-deployments"
     },
     {
       "source": "/dagster-cloud/managing-deployments/environment-variables-and-secrets",
@@ -3216,19 +3244,19 @@
     },
     {
       "source": "/dagster-plus/features/insights",
-      "destination": "/guides/monitor/insights"
+      "destination": "/guides/observe/insights"
     },
     {
       "source": "/dagster-plus/features/insights/:path*",
-      "destination": "/guides/monitor/insights/:path*"
+      "destination": "/guides/observe/insights/:path*"
     },
     {
       "source": "/dagster-plus/features/alerts",
-      "destination": "/guides/monitor/alerts"
+      "destination": "/guides/observe/alerts"
     },
     {
       "source": "/dagster-plus/features/alerts/:path*",
-      "destination": "/guides/monitor/alerts/:path*"
+      "destination": "/guides/observe/alerts/:path*"
     },
     {
       "source": "/dagster-plus/features/authentication-and-access-control",
@@ -3240,19 +3268,35 @@
     },
     {
       "source": "/dagster-plus/features/asset-catalog",
-      "destination": "/guides/build/assets/asset-catalog"
+      "destination": "/guides/observe/asset-catalog"
     },
     {
-      "source": "/dagster-plus/features/asset-catalog/:path*",
-      "destination": "/guides/build/assets/asset-catalog/:path*"
+      "source": "/dagster-plus/features/asset-catalog/views",
+      "destination": "/guides/observe/asset-catalog/dashboards"
     },
     {
       "source": "/dagster-plus/features/ci-cd",
-      "destination": "/deployment/dagster-plus/ci-cd"
+      "destination": "/deployment/dagster-plus/deploying-code/ci-cd"
+    },
+    {
+      "source": "/deployment/dagster-plus/ci-cd",
+      "destination": "/deployment/dagster-plus/deploying-code/ci-cd"
+    },
+    {
+      "source": "/deployment/dagster-plus/ci-cd/ci-cd-in-serverless",
+      "destination": "/deployment/dagster-plus/deploying-code/ci-cd/ci-cd-in-serverless"
+    },
+    {
+      "source": "/deployment/dagster-plus/ci-cd/ci-cd-in-hybrid",
+      "destination": "/deployment/dagster-plus/deploying-code/ci-cd/ci-cd-in-hybrid"
+    },
+    {
+      "source": "/deployment/dagster-plus/ci-cd/ci-cd-file-reference",
+      "destination": "/deployment/dagster-plus/deploying-code/ci-cd"
     },
     {
       "source": "/dagster-plus/features/ci-cd/:path*",
-      "destination": "/deployment/dagster-plus/ci-cd/:path*"
+      "destination": "/deployment/dagster-plus/deploying-code/ci-cd/:path*"
     },
     {
       "source": "/dagster-plus/deployment/deployment-types",
@@ -3280,11 +3324,27 @@
     },
     {
       "source": "/dagster-plus/deployment/management/deployments",
-      "destination": "/deployment/dagster-plus/full-deployments"
+      "destination": "/deployment/dagster-plus/deploying-code/full-deployments"
     },
     {
-      "source": "/dagster-plus/deployment/management/deployments/:path*",
-      "destination": "/deployment/dagster-plus/full-deployments/:path*"
+      "source": "/dagster-plus/deployment/full-deployments",
+      "destination": "/deployment/dagster-plus/deploying-code/full-deployments"
+    },
+    {
+      "source": "/dagster-plus/deployment/management/deployments/managing-deployments",
+      "destination": "/deployment/dagster-plus/deploying-code/full-deployments/managing-full-deployments"
+    },
+    {
+      "source": "/dagster-plus/deployment/full-deployments/managing-deployments",
+      "destination": "/deployment/dagster-plus/deploying-code/full-deployments/managing-full-deployments"
+    },
+    {
+      "source": "/dagster-plus/deployment/management/deployments/deployment-settings-reference",
+      "destination": "/deployment/dagster-plus/deploying-code/full-deployments/full-deployment-settings-reference"
+    },
+    {
+      "source": "/dagster-plus/deployment/full-deployments/deployment-settings-reference",
+      "destination": "/deployment/dagster-plus/deploying-code/full-deployments/full-deployment-settings-reference"
     },
     {
       "source": "/dagster-plus/deployment/management",
@@ -3324,11 +3384,11 @@
     },
     {
       "source": "/deployment/dagster-plus/ci-cd/configuring-ci-cd",
-      "destination": "/deployment/dagster-plus/ci-cd/ci-cd-in-hybrid"
+      "destination": "/deployment/dagster-plus/deploying-code/ci-cd/ci-cd-in-hybrid"
     },
     {
       "source": "/deployment/dagster-plus/serverless/ci-cd-in-serverless",
-      "destination": "/deployment/dagster-plus/ci-cd/ci-cd-in-serverless"
+      "destination": "/deployment/dagster-plus/deploying-code/ci-cd/ci-cd-in-serverless"
     },
     {
       "source": "/guides/labs/dg/dagster-dg-cli",
@@ -3428,59 +3488,139 @@
     },
     {
       "source": "/guides/labs/freshness",
-      "destination": "/guides/labs/observability-update/freshness"
+      "destination": "/guides/observe/asset-freshness-policies"
     },
     {
       "source": "/etl-pipeline-tutorial",
-      "destination": "/examples/etl-pipeline"
+      "destination": "/examples/full-pipelines/etl-pipeline"
     },
     {
       "source": "/etl-pipeline-tutorial/extract-data",
-      "destination": "/examples/etl-pipeline/extract-data"
+      "destination": "/examples/full-pipelines/etl-pipeline/extract-data"
     },
     {
       "source": "/etl-pipeline-tutorial/transform-data",
-      "destination": "/examples/etl-pipeline/transform-data"
+      "destination": "/examples/full-pipelines/etl-pipeline/transform-data"
     },
     {
       "source": "/etl-pipeline-tutorial/add-a-resource",
-      "destination": "/examples/etl-pipeline/add-a-resource"
+      "destination": "/examples/full-pipelines/etl-pipeline/add-a-resource"
     },
     {
       "source": "/etl-pipeline-tutorial/data-quality",
-      "destination": "/examples/etl-pipeline/data-quality"
+      "destination": "/examples/full-pipelines/etl-pipeline/data-quality"
     },
     {
       "source": "/etl-pipeline-tutorial/partition-asset",
-      "destination": "/examples/etl-pipeline/partition-asset"
+      "destination": "/examples/full-pipelines/etl-pipeline/partition-asset"
     },
     {
       "source": "/etl-pipeline-tutorial/automate-your-pipeline",
-      "destination": "/examples/etl-pipeline/automate-your-pipeline"
+      "destination": "/examples/full-pipelines/etl-pipeline/automate-your-pipeline"
     },
     {
       "source": "/etl-pipeline-tutorial/visualize-data",
-      "destination": "/examples/etl-pipeline/visualize-data"
+      "destination": "/examples/full-pipelines/etl-pipeline/visualize-data"
     },
     {
       "source": "/etl-pipeline-tutorial/create-a-sensor",
-      "destination": "/examples/etl-pipeline/create-a-sensor"
+      "destination": "/examples/full-pipelines/etl-pipeline/create-a-sensor"
     },
     {
       "source": "/etl-pipeline-tutorial/create-a-sensor-asset",
-      "destination": "/examples/etl-pipeline/create-a-sensor"
+      "destination": "/examples/full-pipelines/etl-pipeline/create-a-sensor"
     },
     {
       "source": "/etl-pipeline-tutorial/create-and-materialize-a-downstream-asset",
-      "destination": "/examples/etl-pipeline"
+      "destination": "/examples/full-pipelines/etl-pipeline"
     },
     {
       "source": "/etl-pipeline-tutorial/create-and-materialize-partitioned-asset",
-      "destination": "/examples/etl-pipeline/partition-asset"
+      "destination": "/examples/full-pipelines/etl-pipeline/partition-asset"
     },
     {
       "source": "/etl-pipeline-tutorial/ensure-data-quality-with-asset-checks",
-      "destination": "/examples/etl-pipeline/data-quality"
+      "destination": "/examples/full-pipelines/etl-pipeline/data-quality"
+    },
+    {
+      "source": "/examples/bluesky",
+      "destination": "/examples/full-pipelines/bluesky"
+    },
+    {
+      "source": "/examples/bluesky/:path*",
+      "destination": "/examples/full-pipelines/bluesky/:path*"
+    },
+    {
+      "source": "/examples/dbt",
+      "destination": "/examples/full-pipelines/dbt"
+    },
+    {
+      "source": "/examples/dbt/:path*",
+      "destination": "/examples/full-pipelines/dbt/:path*"
+    },
+    {
+      "source": "/examples/etl-pipeline",
+      "destination": "/examples/full-pipelines/etl-pipeline"
+    },
+    {
+      "source": "/examples/etl-pipeline/:path*",
+      "destination": "/examples/full-pipelines/etl-pipeline/:path*"
+    },
+    {
+      "source": "/examples/llm-fine-tuning",
+      "destination": "/examples/full-pipelines/llm-fine-tuning"
+    },
+    {
+      "source": "/examples/llm-fine-tuning/:path*",
+      "destination": "/examples/full-pipelines/llm-fine-tuning/:path*"
+    },
+    {
+      "source": "/examples/modal",
+      "destination": "/examples/full-pipelines/modal"
+    },
+    {
+      "source": "/examples/modal/:path*",
+      "destination": "/examples/full-pipelines/modal/:path*"
+    },
+    {
+      "source": "/examples/prompt-engineering",
+      "destination": "/examples/full-pipelines/prompt-engineering"
+    },
+    {
+      "source": "/examples/prompt-engineering/:path*",
+      "destination": "/examples/full-pipelines/prompt-engineering/:path*"
+    },
+    {
+      "source": "/examples/rag",
+      "destination": "/examples/full-pipelines/rag"
+    },
+    {
+      "source": "/examples/rag/:path*",
+      "destination": "/examples/full-pipelines/rag/:path*"
+    },
+    {
+      "source": "/examples/resource-caching",
+      "destination": "/examples/mini-examples/resource-caching"
+    },
+    {
+      "source": "/examples/shared-module",
+      "destination": "/examples/mini-examples/shared-module"
+    },
+    {
+      "source": "/examples/bi",
+      "destination": "/examples/reference-architectures/bi"
+    },
+    {
+      "source": "/examples/etl-reverse-etl",
+      "destination": "/examples/reference-architectures/etl-reverse-etl"
+    },
+    {
+      "source": "/examples/real-time",
+      "destination": "/examples/reference-architectures/real-time"
+    },
+    {
+      "source": "/examples/retrieval-augmented-generation",
+      "destination": "/examples/reference-architectures/rag"
     },
     {
       "source": "/guides/build/components/building-pipelines-with-components/adding-attributes-to-assets",
@@ -3560,6 +3700,78 @@
     },
     {
       "source": "/integrations/libraries/dbt/quickstart",
+      "destination": "/integrations/libraries/dbt"
+    },
+    {
+      "source": "/guides/labs/observability-update",
+      "destination": "/guides/observe"
+    },
+    {
+      "source": "/guides/labs/observability-update/asset-health",
+      "destination": "/guides/observe/asset-health-status"
+    },
+    {
+      "source": "/guides/labs/observability-update/insights",
+      "destination": "/guides/observe/insights"
+    },
+    {
+      "source": "/guides/labs/observability-update/asset-catalog",
+      "destination": "/guides/observe/asset-catalog"
+    },
+    {
+      "source": "/guides/labs/observability-update/freshness",
+      "destination": "/guides/observe/asset-freshness-policies"
+    },
+    {
+      "source": "/guides/labs/observability-update/alerts",
+      "destination": "/guides/observe/alerts"
+    },
+    {
+      "source": "/guides/monitor/insights",
+      "destination": "/guides/observe/insights"
+    },
+    {
+      "source": "/guides/monitor/insights/:path*",
+      "destination": "/guides/observe/insights/:path*"
+    },
+    {
+      "source": "/guides/monitor/alerts",
+      "destination": "/guides/observe/alerts"
+    },
+    {
+      "source": "/guides/monitor/alerts/:path*",
+      "destination": "/guides/observe/alerts/:path*"
+    },
+    {
+      "source": "/guides/build/assets/asset-catalog",
+      "destination": "/guides/observe/asset-catalog"
+    },
+    {
+      "source": "/guides/build/assets/asset-catalog/catalog-views",
+      "destination": "/guides/observe/asset-catalog/catalog-views"
+    },
+    {
+      "source": "/guides/monitor/debugging",
+      "destination": "/guides/log-debug/debugging"
+    },
+    {
+      "source": "/guides/monitor/debugging/debugging-pdb",
+      "destination": "/guides/log-debug/debugging/debugging-pdb"
+    },
+    {
+      "source": "/guides/monitor/logging",
+      "destination": "/guides/log-debug/logging"
+    },
+    {
+      "source": "/guides/monitor/logging/:path*",
+      "destination": "/guides/log-debug/logging/:path*"
+    },
+    {
+      "source": "/integrations/libraries/dbt/creating-a-dbt-project-in-dagster/index",
+      "destination": "/integrations/libraries/dbt"
+    },
+    {
+      "source": "/integrations/libraries/dbt/creating-a-dbt-project-in-dagster/:path*",
       "destination": "/integrations/libraries/dbt"
     }
   ],

@@ -877,6 +877,19 @@ def test_start_not_aligned():
     )
 
 
+def test_time_window_partition_default_month_offset():
+    """Test that we can define a time window partition on a monthly schedule with the default minute, hour and day offsets."""
+    my_date = datetime.strptime("2021-05-01", DATE_FORMAT)
+    partitions_def = TimeWindowPartitionsDefinition(
+        schedule_type=ScheduleType.MONTHLY,
+        start=my_date,
+        fmt="%Y-%m-%d",
+    )
+    assert partitions_def.day_offset == 1
+    assert partitions_def.hour_offset == 0
+    assert partitions_def.minute_offset == 0
+
+
 @pytest.mark.parametrize(
     "case_str",
     [

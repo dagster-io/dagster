@@ -1,13 +1,13 @@
-from dagster import OpExecutionContext, job, op
+import dagster as dg
 
 
 # fmt: off
-@op
-def my_op(context: OpExecutionContext):
+@dg.op
+def my_op(context: dg.OpExecutionContext):
     context.log.info("running")
 
 # start_k8s_config
-@job(
+@dg.job(
     tags={
         "dagster-k8s/config": {
             "container_config": {

@@ -84,12 +84,12 @@ def iterate_metadata_entries(metadata: Mapping[str, MetadataValue]) -> Iterator[
         if isinstance(value, PathMetadataValue):
             yield GraphenePathMetadataEntry(
                 label=key,
-                path=value.path,
+                path=value.value,
             )
         elif isinstance(value, NotebookMetadataValue):
             yield GrapheneNotebookMetadataEntry(
                 label=key,
-                path=value.path,
+                path=value.value,
             )
         elif isinstance(value, JsonMetadataValue):
             yield GrapheneJsonMetadataEntry(
@@ -99,17 +99,17 @@ def iterate_metadata_entries(metadata: Mapping[str, MetadataValue]) -> Iterator[
         elif isinstance(value, TextMetadataValue):
             yield GrapheneTextMetadataEntry(
                 label=key,
-                text=value.text,
+                text=value.value,
             )
         elif isinstance(value, UrlMetadataValue):
             yield GrapheneUrlMetadataEntry(
                 label=key,
-                url=value.url,
+                url=value.value,
             )
         elif isinstance(value, MarkdownMetadataValue):
             yield GrapheneMarkdownMetadataEntry(
                 label=key,
-                md_str=value.md_str,
+                md_str=value.value,
             )
         elif isinstance(value, PythonArtifactMetadataValue):
             yield GraphenePythonArtifactMetadataEntry(

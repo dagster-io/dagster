@@ -1263,6 +1263,17 @@ class TestEventLogStorage:
         assert record.event_log_entry.dagster_event
         assert record.event_log_entry.dagster_event.asset_key == asset_key
 
+        # asset key filter on run success returns empty list
+        assert (
+            storage.get_event_records(
+                dg.EventRecordsFilter(
+                    event_type=DagsterEventType.RUN_SUCCESS,
+                    asset_key=dg.AssetKey(["hello"]),
+                ),
+            )
+            == []
+        )
+
         # new API
         result = storage.fetch_materializations(asset_key, limit=100)
         assert isinstance(result, dg.EventRecordsResult)
@@ -1660,7 +1671,7 @@ class TestEventLogStorage:
         with environ(
             {
                 "DAGSTER_EVENT_BATCH_SIZE": "25",
-                "DAGSTER_BATCH_PLANNED_EVENTS": "1" if batch_planned_events else "",
+                "DAGSTER_EMIT_PLANNED_EVENTS_INDIVIDUALLY": "1" if not batch_planned_events else "",
             }
         ):
             result = materialize([my_asset], instance=instance)
@@ -3325,7 +3336,7 @@ class TestEventLogStorage:
             )
             # get the storage id of the materialization we just stored
             return storage.get_event_records(
-                dg.EventRecordsFilter(DagsterEventType.ASSET_MATERIALIZATION),
+                dg.EventRecordsFilter(DagsterEventType.ASSET_MATERIALIZATION, asset_key=asset_key),
                 limit=1,
                 ascending=False,
             )[0].storage_id
@@ -3406,7 +3417,7 @@ class TestEventLogStorage:
             )
             # get the storage id of the materialization we just stored
             return storage.get_event_records(
-                dg.EventRecordsFilter(dagster_event_type),
+                dg.EventRecordsFilter(dagster_event_type, asset_key=asset_key),
                 limit=1,
                 ascending=False,
             )[0].storage_id
@@ -3561,7 +3572,7 @@ class TestEventLogStorage:
             )
             # get the storage id of the materialization we just stored
             return storage.get_event_records(
-                dg.EventRecordsFilter(dagster_event_type),
+                dg.EventRecordsFilter(dagster_event_type, asset_key=asset_key),
                 limit=1,
                 ascending=False,
             )[0].storage_id

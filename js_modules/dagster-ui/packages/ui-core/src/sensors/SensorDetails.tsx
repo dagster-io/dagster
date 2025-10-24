@@ -18,15 +18,16 @@ import {EditCursorDialog} from './EditCursorDialog';
 import {SensorMonitoredAssets} from './SensorMonitoredAssets';
 import {SensorResetButton} from './SensorResetButton';
 import {SensorSwitch} from './SensorSwitch';
-import {usePermissionsForLocation} from '../app/Permissions';
-import {EvaluateTickButtonSensor} from '../ticks/EvaluateTickButtonSensor';
-import {SensorFragment} from './types/SensorFragment.types';
+import {DEFAULT_DISABLED_REASON} from '../app/Permissions';
 import {QueryRefreshCountdown, QueryRefreshState} from '../app/QueryRefresh';
 import {AutomationTargetList} from '../automation/AutomationTargetList';
 import {AutomationAssetSelectionFragment} from '../automation/types/AutomationAssetSelectionFragment.types';
 import {InstigationStatus, SensorType} from '../graphql/types';
 import {RepositoryLink} from '../nav/RepositoryLink';
+import {DefinitionOwners} from '../owners/DefinitionOwners';
 import {TimestampDisplay} from '../schedules/TimestampDisplay';
+import {EvaluateTickButtonSensor} from '../ticks/EvaluateTickButtonSensor';
+import {SensorFragment} from './types/SensorFragment.types';
 import {TickStatusTag} from '../ticks/TickStatusTag';
 import {RepoAddress} from '../workspace/types';
 
@@ -94,13 +95,6 @@ export const SensorDetails = ({
     metadata,
   } = sensor;
 
-  const {
-    permissions,
-    disabledReasons,
-    loading: loadingPermissions,
-  } = usePermissionsForLocation(repoAddress.location);
-  const {canUpdateSensorCursor} = permissions;
-
   const [isCursorEditing, setCursorEditing] = useState(false);
   const sensorSelector = {
     sensorName: sensor.name,
@@ -153,6 +147,14 @@ export const SensorDetails = ({
               <td>{sensor.description}</td>
             </tr>
           ) : null}
+          {sensor.owners.length > 0 && (
+            <tr>
+              <td>Owners</td>
+              <td>
+                <DefinitionOwners owners={sensor.owners} />
+              </td>
+            </tr>
+          )}
           <tr>
             <td>Latest tick</td>
             <td>
@@ -235,12 +237,12 @@ export const SensorDetails = ({
                     {cursor ? humanizeSensorCursor(cursor) : 'None'}
                   </span>
                   <Tooltip
-                    canShow={!canUpdateSensorCursor}
-                    content={disabledReasons.canUpdateSensorCursor}
+                    canShow={!sensor.hasCursorUpdatePermissions}
+                    content={DEFAULT_DISABLED_REASON}
                   >
                     <Button
                       icon={<Icon name="edit" />}
-                      disabled={!canUpdateSensorCursor || loadingPermissions}
+                      disabled={!sensor.hasCursorUpdatePermissions}
                       onClick={() => setCursorEditing(true)}
                     >
                       {cursor !== humanizeSensorCursor(cursor) ? 'View Raw / Edit' : 'Edit'}

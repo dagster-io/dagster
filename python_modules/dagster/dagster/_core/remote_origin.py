@@ -12,6 +12,7 @@ from dagster._core.instance.config import DEFAULT_LOCAL_CODE_SERVER_STARTUP_TIME
 from dagster._core.origin import DEFAULT_DAGSTER_ENTRY_POINT
 from dagster._core.types.loadable_target_origin import LoadableTargetOrigin
 from dagster._serdes import create_snapshot_id, whitelist_for_serdes
+from dagster._utils.cached_method import cached_method
 
 if TYPE_CHECKING:
     from dagster._core.definitions.selector import (
@@ -394,6 +395,7 @@ class RemoteRepositoryOrigin(LegacyNamedTupleMixin):
     def get_selector_id(self) -> str:
         return create_snapshot_id(self.get_selector())
 
+    @cached_method
     def get_selector(self) -> "RepositorySelector":
         from dagster._core.definitions.selector import RepositorySelector
 

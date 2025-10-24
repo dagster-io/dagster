@@ -125,7 +125,7 @@ To use the queues, `dagster-celery/queue` can be set on op tags.
 By default, all ops will be sent to the default Celery queue named `dagster`.
 
 ```python
-@op(
+@dg.op(
   tags = {
     'dagster-celery/queue': 'snowflake_queue',
   }
@@ -139,7 +139,7 @@ def my_op(context):
 Users can set `dagster-celery/run_priority` on job tags to configure the baseline priority of all ops from that job. To set priority at the op level, users can set `dagster-celery/priority` on the op tags. When priorities are set on both a job and an op, the sum of both priorities will be used.
 
 ```python
-@op(
+@dg.op(
   tags = {
     'dagster-celery/priority': 2,
   }
@@ -147,7 +147,7 @@ Users can set `dagster-celery/run_priority` on job tags to configure the baselin
 def my_op(context):
   context.log.info('running')
 
-@job(
+@dg.job(
   tags = {
     'dagster-celery/run_priority': 3,
   }
@@ -161,6 +161,7 @@ def my_job():
 In a real deployment, users will likely want to set up an external message broker like Redis rather than RabbitMQ, which can be done by configuring `rabbitmq` and `redis` sections of `values.yaml`.
 
 ```yaml
+# values.yaml
 rabbitmq:
   enabled: false
 

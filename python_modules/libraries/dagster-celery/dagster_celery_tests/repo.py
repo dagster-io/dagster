@@ -1,6 +1,6 @@
 import time
 
-from dagster import Int, Output, RetryRequested, job
+from dagster import Int, OpExecutionContext, Output, RetryRequested, job
 from dagster._core.definitions.decorators import op
 from dagster._core.definitions.output import Out
 from dagster._core.test_utils import nesting_graph
@@ -295,8 +295,8 @@ def interrupt_job():
 
 
 @op(tags={"dagster-celery/queue": "fooqueue"})
-def fooqueue(context):
-    assert context.solid.tags["dagster-celery/queue"] == "fooqueue"
+def fooqueue(context: OpExecutionContext):
+    assert context.op.tags["dagster-celery/queue"] == "fooqueue"
     context.log.info("Executing on queue fooqueue")
     return True
 

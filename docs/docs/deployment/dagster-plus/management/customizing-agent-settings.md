@@ -2,6 +2,7 @@
 description: Customize Dagster+ agent settings in dagster.yaml
 sidebar_position: 1000
 title: Customizing agent settings
+tags: [dagster-plus-feature]
 ---
 
 The Dagster+ Agent is a special variant of the Dagster instance used in Dagster Open Source and is configured through the same `dagster.yaml` file. You can customize your agent with these settings.
@@ -16,7 +17,7 @@ For [Kubernetes agents](/deployment/dagster-plus/hybrid/kubernetes) deployed wit
 
 User code servers support a configurable time-to-live (TTL). The agent will spin down any user code servers that haven't served requests recently and will spin them back up the next time they're needed. Configuring TTL can save compute cost because user code servers will spend less time sitting idle.
 
-TTL is disabled by default for full deployments, and can be configured separately for full and [branch deployments](/deployment/dagster-plus/ci-cd/branch-deployments/setting-up-branch-deployments). TTL defaults to 24 hours for both full and branch deployments.
+TTL is disabled by default for full deployments, and can be configured separately for full and [branch deployments](/deployment/dagster-plus/deploying-code/branch-deployments/setting-up-branch-deployments). TTL defaults to 24 hours for both full and branch deployments.
 
 To configure TTL:
 
