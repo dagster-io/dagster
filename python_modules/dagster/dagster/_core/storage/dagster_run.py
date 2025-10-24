@@ -119,6 +119,8 @@ NOT_FINISHED_STATUSES = [
 # creating the run and launching or enqueueing it.
 CANCELABLE_RUN_STATUSES = [DagsterRunStatus.STARTED, DagsterRunStatus.QUEUED]
 
+DAGSTER_EXECUTION_METADATA_TAG_PREFIX = "DAGSTER_EXECUTION_"
+
 
 @whitelist_for_serdes(storage_name="PipelineRunStatsSnapshot")
 @record
@@ -419,6 +421,13 @@ class DagsterRun(
         }.items():
             if value := os.getenv(env_var):
                 tags[f"dagster/{tag}"] = value
+
+        # find any `DAGSTER_EXECUTION_METADATA_*` environment variables and add them as tags
+        for key, value in os.environ.items():
+            if key.startswith(DAGSTER_EXECUTION_METADATA_TAG_PREFIX):
+                tag_key = key[len(DAGSTER_EXECUTION_METADATA_TAG_PREFIX) :]
+                tag_key = tag_key.lower().replace("_", "-")
+                tags[f"dagster/{tag_key}"] = value
 
         return tags
 
