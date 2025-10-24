@@ -1,5 +1,5 @@
 ---
-title: Creating and deploying Dagster projects
+title: Creating Dagster projects
 description: dg allows you to create a special type of Python package, called a project, that defines a Dagster code location.
 sidebar_position: 100
 ---
@@ -124,7 +124,7 @@ Your new Dagster project should have the following structure:
 
 :::info
 
-The `create-dagster project` command creates a directory with a standard Python package structure with some additions. For more information on the files and directories in a Dagster project, see the [Dagster project file reference](/guides/build/projects/dagster-project-file-reference).
+The `create-dagster project` command creates a directory with a standard Python package structure with some additions. For more information on the files and directories in a Dagster project, see the [Dagster project file reference](/guides/build/projects/project-structure/dagster-project-file-reference).
 
 :::
 
@@ -191,7 +191,7 @@ If you have a cloud deployment of Dagster, you can deploy your project by adding
    <TabItem value="oss" label="OSS deployment">
    To deploy your project to the OSS cloud:
    - Deploy Dagster to one of the platforms listed in the [OSS deployment docs](/deployment/oss/deployment-options)
-   - Add a [`dg.toml` file](/guides/build/projects/deployment-configuration/dg-toml) to your project. This file tells Dagster where to find your code and how to load it.
+   - Add a [`dg.toml` file](/guides/build/projects/project-structure/deployment-configuration/dg-toml) to your project. This file tells Dagster where to find your code and how to load it.
    </TabItem>
    <TabItem value="plus" label="Dagster+ deployment">
    To deploy to Dagster+:
@@ -225,7 +225,7 @@ See the [Dagster+ code locations documentation](/guides/build/projects).
 </TabItem>
 <TabItem value="oss" label="Open source deployment">
 
-The `workspace.yaml` file is used to load code locations for open source (OSS) deployments. This file specifies how to load a collection of code locations and is typically used in advanced use cases. For more information, see "[workspace.yaml reference](/guides/build/projects/deployment-configuration/workspace-yaml)".
+The `workspace.yaml` file is used to load code locations for open source (OSS) deployments. This file specifies how to load a collection of code locations and is typically used in advanced use cases. For more information, see "[workspace.yaml reference](/guides/build/projects/project-structure/deployment-configuration/workspace-yaml)".
 
 </TabItem>
 </Tabs>

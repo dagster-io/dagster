@@ -1,8 +1,8 @@
 ---
 title: Project deployment configuration files
 description: TK
-canonicalUrl: '/deployment/code-locations/configuring-code-locations'
-slug: '/deployment/code-locations/configuring-code-locations'
+canonicalUrl: '/guides/build/projects/project-structure/deployment-configuration'
+slug: '/guides/build/projects/project-structure/deployment-configuration'
 sidebar_position: 200
 ---
 

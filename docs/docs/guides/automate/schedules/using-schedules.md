@@ -6,7 +6,7 @@ description: Using schedules in Dagster dg projects for entities such as assets 
 
 :::note Prerequisites
 
-Before following this guide, you will need to [create a project](/guides/build/projects/creating-a-new-project) with the [`create-dagster` CLI](/api/clis/create-dagster).
+Before following this guide, you will need to [create a project](/guides/build/projects/creating-dagster-projects) with the [`create-dagster` CLI](/api/clis/create-dagster).
 
 :::
 

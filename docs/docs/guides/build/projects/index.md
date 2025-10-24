@@ -29,7 +29,7 @@ my-project/
 └── uv.lock
 ```
 
-While Dagster is flexible about how you organize your code, it provides an opinionated starting point with the [`create-dagster` CLI](/api/clis/create-dagster). For more information on creating Dagster projects from the CLI, see [Creating a new Dagster project](/guides/build/projects/creating-a-new-project).
+While Dagster is flexible about how you organize your code, it provides an opinionated starting point with the [`create-dagster` CLI](/api/clis/create-dagster). For more information on creating Dagster projects from the CLI, see [Creating a new Dagster project](/guides/build/projects/creating-dagster-projects).
 
 ## Code location
 
@@ -66,4 +66,4 @@ A workspace allows you to manage and orchestrate multiple Dagster projects toget
 - You want to deploy multiple projects in a coordinated way.
 
 
-As with projects, Dagster provides an opinionated starting point for workspaces with the [`create-dagster` CLI](/api/clis/create-dagster). For more information on creating Dagster workspaces from the CLI, see [Managing multiple projects with workspaces](/guides/build/projects/multiple-projects).
+As with projects, Dagster provides an opinionated starting point for workspaces with the [`create-dagster` CLI](/api/clis/create-dagster). For more information on creating Dagster workspaces from the CLI, see [Managing multiple projects with workspaces](/guides/build/projects/managing-multiple-projects).

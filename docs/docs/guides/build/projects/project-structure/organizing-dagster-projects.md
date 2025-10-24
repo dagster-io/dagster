@@ -1,12 +1,12 @@
 ---
 description: Learn how to structure a Dagster project by technology or concept.
 sidebar_position: 300
-title: Structuring your Dagster project
+title: Organizing your Dagster project
 ---
 
 :::info
 
-To learn how to create a new Dagster project, see [Creating a new Dagster project](/guides/build/projects/creating-a-new-project).
+To learn how to create a new Dagster project, see [Creating a new Dagster project](/guides/build/projects/creating-dagster-projects).
 
 :::
 
@@ -187,7 +187,7 @@ This guide has outlined how to structure a single project that defines a single 
 
 A helpful pattern uses multiple projects to separate conflicting dependencies, where each definition has its own package requirements and deployment specs.
 
-To learn more about creating a workspace with multiple projects, see [Managing multiple projects with workspaces](/guides/build/projects/multiple-projects).
+To learn more about creating a workspace with multiple projects, see [Managing multiple projects with workspaces](/guides/build/projects/managing-multiple-projects).
 
 ## External projects
 
