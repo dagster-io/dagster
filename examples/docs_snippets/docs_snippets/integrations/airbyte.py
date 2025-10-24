@@ -8,7 +8,7 @@ airbyte_workspace = AirbyteWorkspace(
     configuration_api_base_url="http://localhost:8000/api/v1",
     workspace_id=dg.EnvVar("AIRBYTE_WORKSPACE_ID"),
     # If using basic auth, include username and password:
-    username="airbyte", 
+    username="airbyte",
     password=dg.EnvVar("AIRBYTE_PASSWORD"),
 )
 
