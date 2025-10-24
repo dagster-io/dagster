@@ -11,6 +11,7 @@ from dagster_dg_cli.api_layer.schemas.asset import (
     DgApiAssetMaterialization,
     DgApiAssetStatus,
 )
+from dagster_dg_cli.cli.api.shared import DgApiError
 from dagster_dg_cli.utils.plus.gql_client import IGraphQLClient
 
 logger = logging.getLogger(__name__)
@@ -216,7 +217,11 @@ def get_dg_plus_api_asset_via_graphql(
     asset_nodes = result.get("assetNodes", [])
 
     if not asset_nodes:
-        raise Exception(f"Asset not found: {'/'.join(asset_key_parts)}")
+        raise DgApiError(
+            message=f"Asset not found: {'/'.join(asset_key_parts)}",
+            code="ASSET_NOT_FOUND",
+            status_code=404,
+        )
 
     node = asset_nodes[0]
     asset_key = "/".join(asset_key_parts)
@@ -485,6 +490,12 @@ def list_dg_plus_api_assets_with_status_via_graphql(
 
     result = client.execute(ASSET_RECORDS_WITH_STATUS_QUERY, variables=variables)
 
+    # Check for GraphQL errors at top level
+    if "errors" in result:
+        from dagster_dg_cli.cli.api.shared import get_or_create_dg_api_error
+
+        raise get_or_create_dg_api_error(result["errors"][0])
+
     asset_records_or_error = result.get("assetRecordsOrError", {})
     if asset_records_or_error.get("__typename") == "PythonError":
         raise Exception(f"GraphQL error: {asset_records_or_error.get('message', 'Unknown error')}")
@@ -586,6 +597,12 @@ def get_dg_plus_api_asset_with_status_via_graphql(
 
     result = client.execute(ASSETS_WITH_STATUS_QUERY, variables=variables)
 
+    # Check for GraphQL errors at top level
+    if "errors" in result:
+        from dagster_dg_cli.cli.api.shared import get_or_create_dg_api_error
+
+        raise get_or_create_dg_api_error(result["errors"][0])
+
     # Handle assetsOrError response structure
     assets_or_error = result.get("assetsOrError", {})
     if assets_or_error.get("__typename") == "PythonError":
@@ -593,10 +610,21 @@ def get_dg_plus_api_asset_with_status_via_graphql(
 
     asset_nodes = assets_or_error.get("nodes", [])
 
+    if not asset_nodes:
+        raise DgApiError(
+            message=f"Asset not found: {'/'.join(asset_key_parts)}",
+            code="ASSET_NOT_FOUND",
+            status_code=404,
+        )
+
     # If an asset does not exist, it will return a node but the definition will be null
     node = asset_nodes[0]
     if node.get("definition") is None:
-        raise Exception(f"Asset not found: {'/'.join(asset_key_parts)}")
+        raise DgApiError(
+            message=f"Asset not found: {'/'.join(asset_key_parts)}",
+            code="ASSET_NOT_FOUND",
+            status_code=404,
+        )
 
     asset_key = "/".join(asset_key_parts)
     # Build metadata entries from definition

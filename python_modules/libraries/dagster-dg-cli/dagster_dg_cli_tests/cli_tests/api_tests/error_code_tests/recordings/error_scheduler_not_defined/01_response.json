@@ -1,0 +1,6 @@
+{
+  "workspaceOrError": {
+    "__typename": "PythonError",
+    "message": "Scheduler is not defined for this deployment"
+  }
+}

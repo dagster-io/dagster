@@ -1,0 +1,99 @@
+# serializer version: 1
+# name: TestErrorIntegration.test_complete_error_flow_json_output[json_error_flow_error_asset_not_found]
+  dict({
+    'command': 'dg api asset get nonexistent-asset-key --json',
+    'description': 'Asset does not exist in the deployment',
+    'exit_code': 1,
+    'expected_code': 'ASSET_NOT_FOUND',
+    'expected_status': 404,
+    'output': '''
+      {"error": "Asset not found: nonexistent-asset-key", "code": "ASSET_NOT_FOUND", "statusCode": 404, "type": "not_found_error"}
+  
+    ''',
+    'scenario': 'error_asset_not_found',
+  })
+# ---
+# name: TestErrorIntegration.test_complete_error_flow_json_output[json_error_flow_error_invalid_asset_key_empty]
+  dict({
+    'command': "dg api asset get '' --json",
+    'description': 'Empty asset key results in asset not found',
+    'exit_code': 1,
+    'expected_code': 'ASSET_NOT_FOUND',
+    'expected_status': 404,
+    'output': '''
+      {"error": "Asset not found: ''", "code": "ASSET_NOT_FOUND", "statusCode": 404, "type": "not_found_error"}
+  
+    ''',
+    'scenario': 'error_invalid_asset_key_empty',
+  })
+# ---
+# name: TestErrorIntegration.test_complete_error_flow_json_output[json_error_flow_error_invalid_asset_key_malformed]
+  dict({
+    'command': "dg api asset get 'invalid::asset::key' --json",
+    'description': 'Malformed asset key results in asset not found',
+    'exit_code': 1,
+    'expected_code': 'ASSET_NOT_FOUND',
+    'expected_status': 404,
+    'output': '''
+      {"error": "Asset not found: 'invalid::asset::key'", "code": "ASSET_NOT_FOUND", "statusCode": 404, "type": "not_found_error"}
+  
+    ''',
+    'scenario': 'error_invalid_asset_key_malformed',
+  })
+# ---
+# name: TestErrorIntegration.test_complete_error_flow_json_output[json_error_flow_error_schedule_not_found]
+  dict({
+    'command': 'dg api schedule get nonexistent-schedule --json',
+    'description': 'Schedule does not exist in the repository',
+    'exit_code': 1,
+    'expected_code': 'SCHEDULE_NOT_FOUND',
+    'expected_status': 404,
+    'output': '''
+      {"error": "Schedule not found: nonexistent-schedule", "code": "SCHEDULE_NOT_FOUND", "statusCode": 404, "type": "not_found_error"}
+  
+    ''',
+    'scenario': 'error_schedule_not_found',
+  })
+# ---
+# name: TestErrorIntegration.test_complete_error_flow_json_output[json_error_flow_error_scheduler_not_defined]
+  dict({
+    'command': 'dg api schedule list --json',
+    'description': 'Scheduler is not properly configured',
+    'exit_code': 5,
+    'expected_code': 'SCHEDULER_NOT_DEFINED',
+    'expected_status': 500,
+    'output': '''
+      {"error": "Scheduler is not defined for this deployment", "code": "SCHEDULER_NOT_DEFINED", "statusCode": 500, "type": "server_error"}
+  
+    ''',
+    'scenario': 'error_scheduler_not_defined',
+  })
+# ---
+# name: TestErrorIntegration.test_complete_error_flow_json_output[json_error_flow_error_unauthorized_deployment_list]
+  dict({
+    'command': 'dg api deployment list --json',
+    'description': 'Deployment list access without valid authentication',
+    'exit_code': 1,
+    'expected_code': 'UNAUTHORIZED',
+    'expected_status': 401,
+    'output': '''
+      {"error": "Unauthorized", "code": "UNAUTHORIZED", "statusCode": 401, "type": "authentication_error"}
+  
+    ''',
+    'scenario': 'error_unauthorized_deployment_list',
+  })
+# ---
+# name: TestErrorIntegration.test_complete_error_flow_text_output[text_error_flow_error_asset_not_found_text]
+  dict({
+    'command': 'dg api asset get nonexistent-asset-key',
+    'description': 'Asset not found error in text format',
+    'exit_code': 1,
+    'expected_code': 'ASSET_NOT_FOUND',
+    'expected_status': 404,
+    'output': '''
+      Error querying Dagster Plus API: Asset not found: nonexistent-asset-key
+  
+    ''',
+    'scenario': 'error_asset_not_found_text',
+  })
+# ---

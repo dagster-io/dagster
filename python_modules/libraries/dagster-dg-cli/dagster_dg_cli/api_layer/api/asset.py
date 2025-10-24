@@ -9,6 +9,7 @@ from dagster_dg_cli.api_layer.graphql_adapter.asset import (
     list_dg_plus_api_assets_via_graphql,
     list_dg_plus_api_assets_with_status_via_graphql,
 )
+from dagster_dg_cli.cli.api.shared import DgApiError
 from dagster_dg_cli.utils.plus.gql_client import IGraphQLClient
 
 if TYPE_CHECKING:
@@ -45,8 +46,27 @@ class DgApiAssetApi:
 
     def get_asset(self, asset_key: str, view: Optional[str] = None) -> "DgApiAsset":
         """Get single asset by slash-separated key (e.g., 'foo/bar') with optional view."""
+        # Validate asset key is not empty
+        if not asset_key or not asset_key.strip():
+            raise DgApiError(
+                message=f"Asset key cannot be empty: '{asset_key}'",
+                code="INVALID_SUBSET_ERROR",
+                status_code=400,
+            )
+
         # Parse "foo/bar" to ["foo", "bar"]
         asset_key_parts = asset_key.split("/")
+
+        # Filter out empty parts (from leading/trailing slashes or double slashes)
+        asset_key_parts = [part for part in asset_key_parts if part]
+
+        # Check if we have any valid parts left after filtering
+        if not asset_key_parts:
+            raise DgApiError(
+                message=f"Asset key contains no valid parts: '{asset_key}'",
+                code="INVALID_SUBSET_ERROR",
+                status_code=400,
+            )
 
         # Validate view parameter
         if view and view not in ["status"]:

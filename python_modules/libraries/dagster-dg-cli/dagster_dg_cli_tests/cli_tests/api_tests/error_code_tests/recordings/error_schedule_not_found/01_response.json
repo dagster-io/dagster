@@ -1,0 +1,20 @@
+{
+  "workspaceOrError": {
+    "__typename": "Workspace",
+    "locationEntries": [
+      {
+        "__typename": "WorkspaceLocationEntry",
+        "locationOrLoadError": {
+          "__typename": "RepositoryLocation",
+          "repositories": [
+            {
+              "name": "__repository__",
+              "schedules": []
+            }
+          ]
+        },
+        "name": "test_location"
+      }
+    ]
+  }
+}

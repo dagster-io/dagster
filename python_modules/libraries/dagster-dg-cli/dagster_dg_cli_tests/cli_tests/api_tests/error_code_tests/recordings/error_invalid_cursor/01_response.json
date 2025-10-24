@@ -1,0 +1,11 @@
+{
+  "errors": [
+    {
+      "message": "Invalid cursor format: unable to deserialize cursor",
+      "extensions": {
+        "errorType": "PYTHON_ERROR",
+        "errorClass": "dagster.InvalidSubsetError"
+      }
+    }
+  ]
+}

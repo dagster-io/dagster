@@ -85,6 +85,13 @@ def list_deployments_via_graphql(
     """
     result = client.execute(LIST_DEPLOYMENTS_QUERY)
 
+    # Check for GraphQL errors
+    if "errors" in result:
+        from dagster_dg_cli.cli.api.shared import get_or_create_dg_api_error
+
+        # Raise the first error
+        raise get_or_create_dg_api_error(result["errors"][0])
+
     deployment_list = process_deployments_response(result)
 
     # Apply limit if specified
