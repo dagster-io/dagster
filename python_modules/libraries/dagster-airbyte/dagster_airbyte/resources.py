@@ -420,12 +420,6 @@ class AirbyteCloudResource(BaseAirbyteResource):
         )
 
 
-@superseded(
-    additional_warn_text=(
-        "Using `AirbyteResource` with `build_airbyte_assets` is no longer best practice. "
-        "Use `AirbyteWorkspace` with `build_airbyte_assets_definitions` instead."
-    )
-)
 class AirbyteResource(BaseAirbyteResource):
     """This resource allows users to programatically interface with the Airbyte REST API to launch
     syncs and monitor their progress.
@@ -492,7 +486,7 @@ class AirbyteResource(BaseAirbyteResource):
         return (
             ("https://" if self.use_https else "http://")
             + (f"{self.host}:{self.port}" if self.port else self.host)
-            + "/api/public/v1"
+            + "/api/v1"
         )
 
     @property
@@ -804,12 +798,6 @@ class AirbyteResource(BaseAirbyteResource):
         return AirbyteOutput(job_details=job_details, connection_details=connection_details)
 
 
-@superseded(
-    additional_warn_text=(
-        "Using `airbyte_resource` with `build_airbyte_assets` is no longer best practice. "
-        "Use `AirbyteWorkspace` with `build_airbyte_assets_definitions` instead."
-    )
-)
 @dagster_maintained_resource
 @resource(config_schema=AirbyteResource.to_config_schema())
 def airbyte_resource(context) -> AirbyteResource:
