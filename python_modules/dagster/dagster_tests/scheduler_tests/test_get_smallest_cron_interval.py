@@ -509,6 +509,155 @@ def test_comparison_with_sampling_leap_year():
     assert deterministic.days >= 365
 
 
+# ==============================================================================
+# Test 12: _get_smallest_gap helper function tests
+# ==============================================================================
+
+
+def test_get_smallest_gap_two_values():
+    """Test _get_smallest_gap with exactly two values."""
+    from dagster._utils.schedules import _get_smallest_gap
+
+    # Simple case: [5, 10] -> gap is 5
+    assert _get_smallest_gap([5, 10]) == 5
+
+    # Reverse order (should still work due to sorting): [10, 5] -> gap is 5
+    assert _get_smallest_gap([10, 5]) == 5
+
+    # Large gap: [0, 50] -> gap is 50
+    assert _get_smallest_gap([0, 50]) == 50
+
+
+def test_get_smallest_gap_multiple_values():
+    """Test _get_smallest_gap with multiple values."""
+    from dagster._utils.schedules import _get_smallest_gap
+
+    # Three values: [0, 15, 30] -> gaps are 15, 15 -> min is 15
+    assert _get_smallest_gap([0, 15, 30]) == 15
+
+    # Irregular gaps: [0, 5, 15] -> gaps are 5, 10 -> min is 5
+    assert _get_smallest_gap([0, 5, 15]) == 5
+
+    # Gaps at the end: [0, 10, 20, 25] -> gaps are 10, 10, 5 -> min is 5
+    assert _get_smallest_gap([0, 10, 20, 25]) == 5
+
+    # Unsorted input: [30, 0, 15] -> sorted to [0, 15, 30] -> gaps are 15, 15 -> min is 15
+    assert _get_smallest_gap([30, 0, 15]) == 15
+
+
+def test_get_smallest_gap_with_wrap_around():
+    """Test _get_smallest_gap with wrap-around at specified boundary."""
+    from dagster._utils.schedules import _get_smallest_gap
+
+    # Wrap-around for minutes: [50, 5, 20] with wrap_at=60
+    # Sorted: [5, 20, 50]
+    # Gaps: 20-5=15, 50-20=30, wrap: (60-50)+5=15
+    # Min: 15
+    assert _get_smallest_gap([50, 5, 20], wrap_at=60) == 15
+
+    # Wrap-around for minutes: [55, 5] with wrap_at=60
+    # Gaps: 5-55 wrap = (60-55)+5=10
+    assert _get_smallest_gap([55, 5], wrap_at=60) == 10
+
+    # Wrap-around for minutes: [0, 59] with wrap_at=60
+    # Sorted: [0, 59]
+    # Gaps: 59-0=59, wrap: (60-59)+0=1
+    # Min: 1
+    assert _get_smallest_gap([0, 59], wrap_at=60) == 1
+
+    # Wrap-around for hours: [22, 2] with wrap_at=24
+    # Sorted: [2, 22]
+    # Gaps: 22-2=20, wrap: (24-22)+2=4
+    # Min: 4
+    assert _get_smallest_gap([22, 2], wrap_at=24) == 4
+
+    # Wrap-around for hours: [20, 4, 12] with wrap_at=24
+    # Sorted: [4, 12, 20]
+    # Gaps: 12-4=8, 20-12=8, wrap: (24-20)+4=8
+    # Min: 8
+    assert _get_smallest_gap([20, 4, 12], wrap_at=24) == 8
+
+    # Wrap-around for days of week: [6, 1] with wrap_at=7 (Saturday to Monday)
+    # Sorted: [1, 6]
+    # Gaps: 6-1=5, wrap: (7-6)+1=2
+    # Min: 2
+    assert _get_smallest_gap([6, 1], wrap_at=7) == 2
+
+    # Wrap-around for days of week: [0, 5] with wrap_at=7 (Sunday and Friday)
+    # Sorted: [0, 5]
+    # Gaps: 5-0=5, wrap: (7-5)+0=2
+    # Min: 2
+    assert _get_smallest_gap([0, 5], wrap_at=7) == 2
+
+    # Wrap-around for days of week: [4, 0] with wrap_at=7 (Thursday and Sunday)
+    # Sorted: [0, 4]
+    # Gaps: 4-0=4, wrap: (7-4)+0=3
+    # Min: 3
+    assert _get_smallest_gap([4, 0], wrap_at=7) == 3
+
+
+def test_get_smallest_gap_edge_cases():
+    """Test _get_smallest_gap with edge cases."""
+    from dagster._utils.schedules import _get_smallest_gap
+
+    # Single value: returns None (no gaps possible)
+    assert _get_smallest_gap([5]) is None
+
+    # Empty list: returns None
+    assert _get_smallest_gap([]) is None
+
+    # Consecutive integers: [0, 1, 2, 3] -> all gaps are 1
+    assert _get_smallest_gap([0, 1, 2, 3]) == 1
+
+    # All same value (after sorting duplicate scenario): [5, 5] -> gap is 0
+    assert _get_smallest_gap([5, 5]) == 0
+
+
+def test_get_smallest_gap_wrap_around_equal_to_non_wrap():
+    """Test cases where wrap-around gap equals non-wrap gap."""
+    from dagster._utils.schedules import _get_smallest_gap
+
+    # [0, 30] with wrap_at=60
+    # Gaps: 30-0=30, wrap: (60-30)+0=30
+    # Min: 30
+    assert _get_smallest_gap([0, 30], wrap_at=60) == 30
+
+    # [0, 12] with wrap_at=24
+    # Gaps: 12-0=12, wrap: (24-12)+0=12
+    # Min: 12
+    assert _get_smallest_gap([0, 12], wrap_at=24) == 12
+
+
+def test_get_smallest_gap_real_world_cron_scenarios():
+    """Test _get_smallest_gap with real-world cron schedule scenarios."""
+    from dagster._utils.schedules import _get_smallest_gap
+
+    # Every 15 minutes: 0, 15, 30, 45
+    assert _get_smallest_gap([0, 15, 30, 45], wrap_at=60) == 15
+
+    # Every 5 minutes: 0, 5, 10, 15, 20, ...
+    assert _get_smallest_gap([0, 5, 10, 15, 20, 25, 30, 35, 40, 45, 50, 55], wrap_at=60) == 5
+
+    # Business hours (9 AM to 5 PM): 9, 10, 11, 12, 13, 14, 15, 16, 17
+    assert _get_smallest_gap([9, 10, 11, 12, 13, 14, 15, 16, 17]) == 1
+
+    # Twice daily: midnight and noon [0, 12]
+    assert _get_smallest_gap([0, 12], wrap_at=24) == 12
+
+    # Weekdays: Mon(1), Tue(2), Wed(3), Thu(4), Fri(5)
+    # Gaps: all 1, but wrap from Fri to Mon is (7-5)+1 = 3
+    assert _get_smallest_gap([1, 2, 3, 4, 5], wrap_at=7) == 1
+
+    # Mon, Wed, Fri: 1, 3, 5
+    # Gaps: 3-1=2, 5-3=2, wrap: (7-5)+1=3
+    assert _get_smallest_gap([1, 3, 5], wrap_at=7) == 2
+
+    # Weekend: Sat(6), Sun(0)
+    # Sorted: [0, 6]
+    # Gaps: 6-0=6, wrap: (7-6)+0=1
+    assert _get_smallest_gap([0, 6], wrap_at=7) == 1
+
+
 def test_comparison_with_sampling_complex_patterns():
     """Test complex patterns match between methods."""
     complex_patterns = [

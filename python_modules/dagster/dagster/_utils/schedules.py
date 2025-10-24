@@ -862,16 +862,34 @@ def get_next_cron_tick(
     return next(cron_iter)
 
 
+def _get_smallest_gap(values: list[int], wrap_at: Optional[int] = None) -> Optional[int]:
+    """Get the smallest gap between consecutive values in a sorted list.
+
+    Args:
+        values: List of integer values
+        wrap_at: If provided, also considers wrap-around gap (e.g., 60 for minutes)
+    """
+    if len(values) < 2:
+        return None
+    sorted_values = sorted(values)
+
+    # Calculate gaps between consecutive values
+    gaps = [sorted_values[i + 1] - sorted_values[i] for i in range(len(sorted_values) - 1)]
+
+    # If wrap_at is provided, also consider the wrap-around gap
+    if wrap_at is not None:
+        wrap_gap = (wrap_at - sorted_values[-1]) + sorted_values[0]
+        gaps.append(wrap_gap)
+
+    return min(gaps)
+
+
 def get_smallest_cron_interval(
     cron_string: str,
     execution_timezone: Optional[str] = None,
 ) -> datetime.timedelta:
     """Find the smallest interval between cron ticks for a given cron schedule using deterministic
     analysis of the cron pattern.
-
-    This function parses the cron string and algebraically determines the minimum interval without
-    sampling. This is more efficient and deterministic than get_smallest_cron_interval() for most
-    common patterns.
 
     For complex patterns that cannot be analyzed deterministically (e.g., patterns with both
     day-of-month AND day-of-week constraints, or irregular intervals), this falls back to the
@@ -892,7 +910,6 @@ def get_smallest_cron_interval(
     )
 
     # Parse the cron string into its components: [minutes, hours, day_of_month, month, day_of_week]
-    # Each component is a list of int or '*'
     cron_parts, nth_weekday_of_month, *_ = CroniterShim.expand(cron_string)
 
     # If nth_weekday_of_month is used (e.g., "first Monday of the month"), fall back to sampling
@@ -900,28 +917,6 @@ def get_smallest_cron_interval(
         return _get_smallest_cron_interval_with_sampling(cron_string, execution_timezone)
 
     minutes, hours, days_of_month, months, days_of_week = cron_parts
-
-    # Helper function to get smallest gap in a sorted list of integers
-    def get_smallest_gap(values: list[int], wrap_at: Optional[int] = None) -> Optional[int]:
-        """Get the smallest gap between consecutive values in a sorted list.
-
-        Args:
-            values: List of integer values
-            wrap_at: If provided, also considers wrap-around gap (e.g., 60 for minutes)
-        """
-        if len(values) < 2:
-            return None
-        sorted_values = sorted(values)
-
-        # Calculate gaps between consecutive values
-        gaps = [sorted_values[i + 1] - sorted_values[i] for i in range(len(sorted_values) - 1)]
-
-        # If wrap_at is provided, also consider the wrap-around gap
-        if wrap_at is not None:
-            wrap_gap = (wrap_at - sorted_values[-1]) + sorted_values[0]
-            gaps.append(wrap_gap)
-
-        return min(gaps)
 
     # Determine if each field is constrained or wildcarded
     minutes_is_wildcard = len(minutes) == 1 and minutes[0] == "*"
@@ -948,7 +943,7 @@ def get_smallest_cron_interval(
     # Case 2: Multiple minute values specified (e.g., "0,15,30,45")
     # The smallest interval is the minimum gap between minute values
     if len(minute_values) > 1:
-        min_minute_gap = get_smallest_gap(minute_values, wrap_at=60)
+        min_minute_gap = _get_smallest_gap(minute_values, wrap_at=60)
         if min_minute_gap is not None:
             # If hours/days/months/weekdays are all wildcarded, this is the answer
             if (
@@ -975,7 +970,7 @@ def get_smallest_cron_interval(
 
         # Multiple hour values specified
         if len(hour_values) > 1:
-            min_hour_gap = get_smallest_gap(hour_values, wrap_at=24)
+            min_hour_gap = _get_smallest_gap(hour_values, wrap_at=24)
             if min_hour_gap is not None:
                 # If days/months/weekdays are all wildcarded, the interval is based on hours
                 if days_of_month_is_wildcard and months_is_wildcard and days_of_week_is_wildcard:
@@ -995,7 +990,7 @@ def get_smallest_cron_interval(
 
             # Multiple days of week (e.g., Mon, Wed, Fri)
             if days_of_month_is_wildcard and months_is_wildcard and len(day_of_week_values) > 1:
-                min_dow_gap = get_smallest_gap(day_of_week_values, wrap_at=7)
+                min_dow_gap = _get_smallest_gap(day_of_week_values, wrap_at=7)
                 if min_dow_gap is not None:
                     return datetime.timedelta(days=min_dow_gap)
 
