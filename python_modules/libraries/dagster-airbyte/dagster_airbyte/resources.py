@@ -492,7 +492,7 @@ class AirbyteResource(BaseAirbyteResource):
         return (
             ("https://" if self.use_https else "http://")
             + (f"{self.host}:{self.port}" if self.port else self.host)
-            + "/api/public/v1"
+            + "/api/v1"
         )
 
     @property
