@@ -193,17 +193,6 @@ AIRBYTE_CLIENT_SECRET=your_client_secret
 2. Go to your workspace settings
 3. Copy the Workspace ID
 
-## Migration Checklist
-
-- [ ] Update imports to use new workspace classes
-- [ ] Get workspace ID from Airbyte instance/cloud
-- [ ] Update configuration to use new parameters
-- [ ] Update environment variables
-- [ ] Replace asset loading function
-- [ ] Add workspace to Definitions resources
-- [ ] Test connection and asset loading
-- [ ] Update any custom translators or configurations
-
 ## Troubleshooting
 
 ### Connection Issues

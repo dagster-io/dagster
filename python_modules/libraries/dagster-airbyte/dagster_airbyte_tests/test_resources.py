@@ -56,7 +56,7 @@ def test_trigger_connection_fail(
     with pytest.raises(
         Failure,
         match=re.escape(
-            "Max retries (3) exceeded with url: http://some_host:8000/api/public/v1/connections/get."
+            "Max retries (3) exceeded with url: http://some_host:8000/api/v1/connections/get."
         ),
     ):
         ab_resource.sync_and_poll("some_connection")
