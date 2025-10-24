@@ -619,7 +619,7 @@ def test_user_deployment_digest_takes_precedence_over_tag(template: HelmTemplate
 
     image = user_deployments[0].spec.template.spec.containers[0].image
     # Should use digest format: repository@digest
-    assert image == "docker.io/dagster/user-code-example@sha256:abc123def456789"
+    assert image == "repo/foo@sha256:abc123def456789"
 
 
 def test_user_deployment_digest_only(template: HelmTemplate):
@@ -641,7 +641,7 @@ def test_user_deployment_digest_only(template: HelmTemplate):
 
     image = user_deployments[0].spec.template.spec.containers[0].image
     # Should use digest format: repository@digest
-    assert image == "docker.io/dagster/user-code-example@sha256:def456ghi789012"
+    assert image == "repo/foo@sha256:abc123def456789"
 
 
 def _assert_no_container_context(user_deployment):
