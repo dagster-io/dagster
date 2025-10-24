@@ -191,22 +191,23 @@ def derive_model_type(
                     if type(annotation_info.default) in {int, float, str, bool, type(None)}
                     else _Unset
                 )
-                if default_value is _Unset and annotation_info.field_info:
+                #We want the derived Pydantic model to materialize a value even if the user omits the field
+                if (annotation_info.field_info is not None
+                    and annotation_info.field_info.default_factory is not None):
                     # if we have a field_info with default_factory, preserve it
-                    if annotation_info.field_info.default_factory is not None:
-                        default_value = Field(
-                            default_factory=annotation_info.field_info.default_factory,
-                            description=annotation_info.field_info.description,
-                            examples=annotation_info.field_info.examples,
-                        )   
-                    else:
-                        field_infos.append(
-                            Field(
-                                default=default_value,
-                                description=field_resolver.description,
-                                examples=field_resolver.examples,
-                            ),
-                        )
+                    field_infos.append(
+                        Field(
+                            default_factory=annotation_info.field_info.default_factory)
+                    )
+                            
+                else:
+                    field_infos.append(
+                        Field(
+                            default=default_value,
+                            description=field_resolver.description,
+                            examples=field_resolver.examples,
+                        ),
+                    )
             elif field_resolver.description or field_resolver.examples:
                 field_infos.append(
                     Field(
@@ -377,6 +378,10 @@ def resolve_fields(
     field_resolvers = {
         (field_name): _get_resolver(annotation_info.type, field_name)
         for field_name, annotation_info in _get_annotations(resolved_cls).items()
+    }
+
+    fields_with_factory = {
+        alias_name_by_field_name
     }
 
     out = {
