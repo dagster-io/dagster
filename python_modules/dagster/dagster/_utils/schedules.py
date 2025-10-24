@@ -866,13 +866,166 @@ def get_smallest_cron_interval(
     cron_string: str,
     execution_timezone: Optional[str] = None,
 ) -> datetime.timedelta:
-    """Find the smallest interval between cron ticks for a given cron schedule.
+    """Find the smallest interval between cron ticks for a given cron schedule using deterministic
+    analysis of the cron pattern.
 
-    Uses a sampling-based approach to find the minimum interval by generating
+    This function parses the cron string and algebraically determines the minimum interval without
+    sampling. This is more efficient and deterministic than get_smallest_cron_interval() for most
+    common patterns.
+
+    For complex patterns that cannot be analyzed deterministically (e.g., patterns with both
+    day-of-month AND day-of-week constraints, or irregular intervals), this falls back to the
+    sampling-based approach.
+
+    Args:
+        cron_string: A cron string
+        execution_timezone: Timezone to use for cron evaluation (only used for fallback)
+
+    Returns:
+        The smallest timedelta between any two consecutive cron ticks
+
+    Raises:
+        CheckError: If the cron string is invalid or not recognized by Dagster
+    """
+    check.invariant(
+        is_valid_cron_string(cron_string), desc=f"{cron_string} must be a valid cron string"
+    )
+
+    # Parse the cron string into its components: [minutes, hours, day_of_month, month, day_of_week]
+    # Each component is a list of int or '*'
+    cron_parts, nth_weekday_of_month, *_ = CroniterShim.expand(cron_string)
+
+    # If nth_weekday_of_month is used (e.g., "first Monday of the month"), fall back to sampling
+    if nth_weekday_of_month:
+        return _get_smallest_cron_interval_with_sampling(cron_string, execution_timezone)
+
+    minutes, hours, days_of_month, months, days_of_week = cron_parts
+
+    # Helper function to get smallest gap in a sorted list of integers
+    def get_smallest_gap(values: list[int], wrap_at: Optional[int] = None) -> Optional[int]:
+        """Get the smallest gap between consecutive values in a sorted list.
+
+        Args:
+            values: List of integer values
+            wrap_at: If provided, also considers wrap-around gap (e.g., 60 for minutes)
+        """
+        if len(values) < 2:
+            return None
+        sorted_values = sorted(values)
+
+        # Calculate gaps between consecutive values
+        gaps = [sorted_values[i + 1] - sorted_values[i] for i in range(len(sorted_values) - 1)]
+
+        # If wrap_at is provided, also consider the wrap-around gap
+        if wrap_at is not None:
+            wrap_gap = (wrap_at - sorted_values[-1]) + sorted_values[0]
+            gaps.append(wrap_gap)
+
+        return min(gaps)
+
+    # Determine if each field is constrained or wildcarded
+    minutes_is_wildcard = len(minutes) == 1 and minutes[0] == "*"
+    hours_is_wildcard = len(hours) == 1 and hours[0] == "*"
+    days_of_month_is_wildcard = len(days_of_month) == 1 and days_of_month[0] == "*"
+    months_is_wildcard = len(months) == 1 and months[0] == "*"
+    days_of_week_is_wildcard = len(days_of_week) == 1 and days_of_week[0] == "*"
+
+    # If both day_of_month and day_of_week are constrained, they use OR logic which is complex
+    # Fall back to sampling for these cases
+    if not days_of_month_is_wildcard and not days_of_week_is_wildcard:
+        return _get_smallest_cron_interval_with_sampling(cron_string, execution_timezone)
+
+    # Extract numeric values (filter out '*')
+    minute_values = [m for m in minutes if m != "*"]
+    hour_values = [h for h in hours if h != "*"]
+    day_of_week_values = [d for d in days_of_week if d != "*"]
+
+    # Case 1: Minutes are wildcarded (* in minutes position)
+    # This means the job runs every minute during the matching hours
+    if minutes_is_wildcard:
+        return datetime.timedelta(minutes=1)
+
+    # Case 2: Multiple minute values specified (e.g., "0,15,30,45")
+    # The smallest interval is the minimum gap between minute values
+    if len(minute_values) > 1:
+        min_minute_gap = get_smallest_gap(minute_values, wrap_at=60)
+        if min_minute_gap is not None:
+            # If hours/days/months/weekdays are all wildcarded, this is the answer
+            if (
+                hours_is_wildcard
+                and days_of_month_is_wildcard
+                and months_is_wildcard
+                and days_of_week_is_wildcard
+            ):
+                return datetime.timedelta(minutes=min_minute_gap)
+            # Otherwise, we need to consider if the time constraints might make consecutive ticks
+            # happen at different hours/days. This is complex, so fall back to sampling.
+            return _get_smallest_cron_interval_with_sampling(cron_string, execution_timezone)
+
+    # Case 3: Single minute value specified (e.g., "0" or "15")
+    # Now we need to look at the hour constraints
+    if len(minute_values) == 1:
+        # If hours are wildcarded, runs every hour at that minute
+        if hours_is_wildcard:
+            # Check day/month/week constraints
+            if days_of_month_is_wildcard and months_is_wildcard and days_of_week_is_wildcard:
+                return datetime.timedelta(hours=1)
+            # If days/months/weeks are constrained, fall back to sampling
+            return _get_smallest_cron_interval_with_sampling(cron_string, execution_timezone)
+
+        # Multiple hour values specified
+        if len(hour_values) > 1:
+            min_hour_gap = get_smallest_gap(hour_values, wrap_at=24)
+            if min_hour_gap is not None:
+                # If days/months/weekdays are all wildcarded, the interval is based on hours
+                if days_of_month_is_wildcard and months_is_wildcard and days_of_week_is_wildcard:
+                    return datetime.timedelta(hours=min_hour_gap)
+                # Otherwise, constraints might make it more complex
+                return _get_smallest_cron_interval_with_sampling(cron_string, execution_timezone)
+
+        # Single hour value specified (e.g., "0 0 * * *" - daily at midnight)
+        if len(hour_values) == 1:
+            # Daily pattern: specific minute and hour, all days
+            if days_of_month_is_wildcard and months_is_wildcard and days_of_week_is_wildcard:
+                return datetime.timedelta(days=1)
+
+            # Weekly pattern: specific minute, hour, and day of week
+            if days_of_month_is_wildcard and months_is_wildcard and len(day_of_week_values) == 1:
+                return datetime.timedelta(days=7)
+
+            # Multiple days of week (e.g., Mon, Wed, Fri)
+            if days_of_month_is_wildcard and months_is_wildcard and len(day_of_week_values) > 1:
+                min_dow_gap = get_smallest_gap(day_of_week_values, wrap_at=7)
+                if min_dow_gap is not None:
+                    return datetime.timedelta(days=min_dow_gap)
+
+            # Monthly pattern: specific day of month
+            if not days_of_month_is_wildcard and months_is_wildcard and days_of_week_is_wildcard:
+                # For monthly patterns, the interval varies (28-31 days depending on the month)
+                # Fall back to sampling for accuracy
+                return _get_smallest_cron_interval_with_sampling(cron_string, execution_timezone)
+
+            # Complex pattern with month constraints
+            if not months_is_wildcard:
+                return _get_smallest_cron_interval_with_sampling(cron_string, execution_timezone)
+
+    # If we haven't returned yet, fall back to sampling-based approach
+    return _get_smallest_cron_interval_with_sampling(cron_string, execution_timezone)
+
+
+def _get_smallest_cron_interval_with_sampling(
+    cron_string: str,
+    execution_timezone: Optional[str] = None,
+) -> datetime.timedelta:
+    """Find the smallest interval between cron ticks for a given cron schedule,
+    using a sampling-based approach to find the minimum interval by generating
     consecutive cron ticks and measuring the gaps between them. Sampling stops
     early if either of these limits is reached:
       - A maximum of 1000 generated ticks
-      - A time horizon of 20 years past the sampling start
+      - A time horizon of 20 years past the sampling start.
+
+    This is a fallback for complex patterns that cannot be analyzed deterministically,
+    and shouldn't be used for common patterns.
 
     Args:
         cron_string: A cron string
@@ -936,6 +1089,12 @@ def get_smallest_cron_interval(
                     continue
                 # We've encountered a genuine zero interval (which shouldn't happen)
                 raise Exception("Encountered a genuine zero interval")
+
+            if interval < datetime.timedelta(seconds=0):
+                # This happens when the sampling encounters a daylight savings transition where the clocks roll back
+                # Just skip this interval and continue sampling
+                prev_tick = current_tick
+                continue
 
             # Update minimum interval
             if min_interval is None or interval < min_interval:
