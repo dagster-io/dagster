@@ -65,6 +65,12 @@ def docker_compose_airbyte_instance_fixture(
 
         # Poll Airbyte API until it's ready
         # Healthcheck endpoint is ready before API is ready, so we poll the API
+        # Try internal API (/api/v1) first, then public API (/api/public/v1) for newer versions
+        api_endpoints = [
+            f"http://{webapp_host}:{webapp_port}/api/v1/workspaces/list",
+            f"http://{webapp_host}:{webapp_port}/api/public/v1/workspaces/list",
+        ]
+
         start_time = datetime.now()
         while True:
             now = datetime.now()
@@ -72,15 +78,21 @@ def docker_compose_airbyte_instance_fixture(
                 raise Exception("Airbyte instance failed to start in time")
 
             poll_result = None
-            try:
-                poll_result = requests.post(
-                    f"http://{webapp_host}:{webapp_port}/api/public/v1/workspaces/list",
-                    headers={"Content-Type": "application/json"},
-                )
-                if poll_result.status_code == 200:
-                    break
-            except requests.exceptions.ConnectionError as e:
-                print(e)
+            for endpoint in api_endpoints:
+                try:
+                    poll_result = requests.post(
+                        endpoint,
+                        headers={"Content-Type": "application/json"},
+                    )
+                    if poll_result.status_code == 200:
+                        print(f"\nAirbyte API ready at {endpoint}")
+                        break
+                except requests.exceptions.ConnectionError as e:
+                    print(f"Connection error for {endpoint}: {e}")
+                    continue
+
+            if poll_result and poll_result.status_code == 200:
+                break
 
             time.sleep(RETRY_DELAY_SEC)
             print(
