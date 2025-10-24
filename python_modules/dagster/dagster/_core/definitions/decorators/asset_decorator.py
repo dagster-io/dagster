@@ -43,7 +43,7 @@ from dagster._core.definitions.events import (
     CoercibleToAssetKey,
     CoercibleToAssetKeyPrefix,
 )
-from dagster._core.definitions.freshness import InternalFreshnessPolicy
+from dagster._core.definitions.freshness import FreshnessPolicy
 from dagster._core.definitions.freshness_policy import LegacyFreshnessPolicy
 from dagster._core.definitions.hook_definition import HookDefinition
 from dagster._core.definitions.input import GraphIn
@@ -173,7 +173,7 @@ def asset(
     group_name: Optional[str] = None,
     output_required: bool = True,
     automation_condition: Optional[AutomationCondition] = None,
-    freshness_policy: Optional[InternalFreshnessPolicy] = None,
+    freshness_policy: Optional[FreshnessPolicy] = None,
     backfill_policy: Optional[BackfillPolicy] = None,
     retry_policy: Optional[RetryPolicy] = None,
     code_version: Optional[str] = None,
@@ -411,7 +411,7 @@ class AssetDecoratorArgs(NamedTuple):
     group_name: Optional[str]
     output_required: bool
     legacy_freshness_policy: Optional[LegacyFreshnessPolicy]
-    freshness_policy: Optional[InternalFreshnessPolicy]
+    freshness_policy: Optional[FreshnessPolicy]
     automation_condition: Optional[AutomationCondition]
     backfill_policy: Optional[BackfillPolicy]
     retry_policy: Optional[RetryPolicy]

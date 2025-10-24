@@ -7,7 +7,7 @@ from typing import Callable
 import dagster as dg
 import pytest
 from dagster import AssetKey, DagsterEventType, DagsterInstance
-from dagster._core.definitions.freshness import FreshnessState, InternalFreshnessPolicy
+from dagster._core.definitions.freshness import FreshnessPolicy, FreshnessState
 from dagster._core.events import StepMaterializationData
 from dagster._core.storage.dagster_run import make_new_run_id
 from dagster._core.test_utils import create_test_daemon_workspace_context, freeze_time
@@ -134,7 +134,7 @@ class FreshnessDaemonTests(ABC):
 
         def create_defs() -> dg.Definitions:
             @dg.asset(
-                freshness_policy=InternalFreshnessPolicy.time_window(
+                freshness_policy=FreshnessPolicy.time_window(
                     fail_window=datetime.timedelta(hours=24),
                     warn_window=datetime.timedelta(hours=12),
                 )
@@ -206,7 +206,7 @@ class FreshnessDaemonTests(ABC):
 
         def create_defs() -> dg.Definitions:
             @dg.asset(
-                freshness_policy=InternalFreshnessPolicy.time_window(
+                freshness_policy=FreshnessPolicy.time_window(
                     fail_window=datetime.timedelta(minutes=60),
                     warn_window=datetime.timedelta(minutes=30),
                 )
@@ -215,7 +215,7 @@ class FreshnessDaemonTests(ABC):
                 return 1
 
             @dg.asset(
-                freshness_policy=InternalFreshnessPolicy.time_window(
+                freshness_policy=FreshnessPolicy.time_window(
                     fail_window=datetime.timedelta(minutes=120),
                     warn_window=datetime.timedelta(minutes=60),
                 )
@@ -224,7 +224,7 @@ class FreshnessDaemonTests(ABC):
                 return 2
 
             @dg.asset(
-                freshness_policy=InternalFreshnessPolicy.time_window(
+                freshness_policy=FreshnessPolicy.time_window(
                     fail_window=datetime.timedelta(minutes=30),
                     warn_window=datetime.timedelta(minutes=15),
                 )
@@ -312,7 +312,7 @@ class FreshnessDaemonTests(ABC):
 
         def create_defs() -> dg.Definitions:
             @dg.asset(
-                freshness_policy=InternalFreshnessPolicy.time_window(
+                freshness_policy=FreshnessPolicy.time_window(
                     fail_window=datetime.timedelta(minutes=60),
                     warn_window=datetime.timedelta(minutes=30),
                 )
