@@ -494,7 +494,7 @@ def test_subset_freshness_checks(instance: DagsterInstance):
     )
     job_def = defs.resolve_job_def("the_job")
     result = job_def.execute_in_process(instance=instance)
-    assert result.success
+    assert result.success_with_warnings
     # Only one asset check should have occurred, and it should be for `my_asset`.
     assert len(result.get_asset_check_evaluations()) == 1
     assert result.get_asset_check_evaluations()[0].asset_key == my_asset.key
