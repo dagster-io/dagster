@@ -97,7 +97,7 @@ Here's an example of the output for reference, formatted for readability:
 
 ### Changing the logger configuration in the Dagster UI
 
-You can also change the logger configuration in the Dagster UI. This is useful if you want to change the logger configuration without changing the code, to use the custom logger on a manual asset materialization launch, or change the verbosity of the logs. Add the following lines to your `config.yaml`:
+You can also change the logger configuration in the Dagster UI. This is useful if you want to change the logger configuration without changing the code, to use the custom logger on a manual asset materialization launch, or change the verbosity of the logs. Add the following lines to your job's run config:
 
 ```yaml
 loggers:
