@@ -30,6 +30,7 @@ from dagster._core.remote_origin import (
     CodeLocationOrigin,
     GrpcServerCodeLocationOrigin,
     InProcessCodeLocationOrigin,
+    RemoteJobOrigin,
 )
 from dagster._core.remote_representation.external import (
     RemoteExecutionPlan,
@@ -45,7 +46,10 @@ from dagster._core.remote_representation.external_data import (
 )
 from dagster._core.remote_representation.grpc_server_registry import GrpcServerRegistry
 from dagster._core.remote_representation.handle import JobHandle, RepositoryHandle
-from dagster._core.snap.execution_plan_snapshot import snapshot_from_execution_plan
+from dagster._core.snap.execution_plan_snapshot import (
+    ExecutionPlanSnapshot,
+    snapshot_from_execution_plan,
+)
 from dagster._grpc.impl import (
     get_external_schedule_execution,
     get_external_sensor_execution,
@@ -111,7 +115,6 @@ class CodeLocation(AbstractContextManager):
     def name(self) -> str:
         return self.origin.location_name
 
-    @abstractmethod
     def get_execution_plan(
         self,
         remote_job: RemoteJob,
@@ -119,9 +122,38 @@ class CodeLocation(AbstractContextManager):
         step_keys_to_execute: Optional[Sequence[str]],
         known_state: Optional[KnownExecutionState],
         instance: Optional[DagsterInstance] = None,
-    ) -> RemoteExecutionPlan: ...
+    ):
+        execution_plan_snapshot_without_job_snapshot_id = (
+            self.get_execution_plan_snapshot_without_job_snapshot_id(
+                remote_job.get_remote_origin(),
+                remote_job.get_subset_selector(
+                    remote_job.asset_selection,
+                    remote_job.asset_check_selection,
+                ),
+                run_config,
+                step_keys_to_execute,
+                known_state,
+                instance,
+            )
+        )
+
+        return RemoteExecutionPlan(
+            execution_plan_snapshot=execution_plan_snapshot_without_job_snapshot_id._replace(
+                job_snapshot_id=remote_job.identifying_job_snapshot_id,
+            )
+        )
 
     @abstractmethod
+    def get_execution_plan_snapshot_without_job_snapshot_id(
+        self,
+        job_origin: RemoteJobOrigin,
+        job_subset_selector: JobSubsetSelector,
+        run_config: Mapping[str, object],
+        step_keys_to_execute: Optional[Sequence[str]],
+        known_state: Optional[KnownExecutionState],
+        instance: Optional[DagsterInstance] = None,
+    ) -> ExecutionPlanSnapshot: ...
+
     async def gen_execution_plan(
         self,
         remote_job: RemoteJob,
@@ -129,7 +161,36 @@ class CodeLocation(AbstractContextManager):
         step_keys_to_execute: Optional[Sequence[str]],
         known_state: Optional[KnownExecutionState],
         instance: Optional[DagsterInstance] = None,
-    ) -> RemoteExecutionPlan: ...
+    ) -> RemoteExecutionPlan:
+        execution_plan_snapshot_without_job_snapshot_id = (
+            await self.gen_execution_plan_snapshot_without_job_snapshot_id(
+                remote_job.get_remote_origin(),
+                remote_job.get_subset_selector(
+                    remote_job.asset_selection,
+                    remote_job.asset_check_selection,
+                ),
+                run_config,
+                step_keys_to_execute,
+                known_state,
+                instance,
+            )
+        )
+        return RemoteExecutionPlan(
+            execution_plan_snapshot=execution_plan_snapshot_without_job_snapshot_id._replace(
+                job_snapshot_id=remote_job.identifying_job_snapshot_id,
+            )
+        )
+
+    @abstractmethod
+    async def gen_execution_plan_snapshot_without_job_snapshot_id(
+        self,
+        job_origin: RemoteJobOrigin,
+        job_subset_selector: JobSubsetSelector,
+        run_config: Mapping[str, object],
+        step_keys_to_execute: Optional[Sequence[str]],
+        known_state: Optional[KnownExecutionState],
+        instance: Optional[DagsterInstance] = None,
+    ) -> ExecutionPlanSnapshot: ...
 
     def _get_remote_job_from_subset_result(
         self,
@@ -461,31 +522,34 @@ class InProcessCodeLocation(CodeLocation):
             include_parent_snapshot=True,
         )
 
-    async def gen_execution_plan(
+    async def gen_execution_plan_snapshot_without_job_snapshot_id(
         self,
-        remote_job: RemoteJob,
+        job_origin: RemoteJobOrigin,
+        job_subset_selector: JobSubsetSelector,
         run_config: Mapping[str, object],
         step_keys_to_execute: Optional[Sequence[str]],
         known_state: Optional[KnownExecutionState],
         instance: Optional[DagsterInstance] = None,
-    ) -> RemoteExecutionPlan:
-        return self.get_execution_plan(
-            remote_job,
+    ) -> ExecutionPlanSnapshot:
+        return self.get_execution_plan_snapshot_without_job_snapshot_id(
+            job_origin,
+            job_subset_selector,
             run_config,
             step_keys_to_execute,
             known_state,
             instance,
         )
 
-    def get_execution_plan(
+    def get_execution_plan_snapshot_without_job_snapshot_id(
         self,
-        remote_job: RemoteJob,
+        job_origin: RemoteJobOrigin,
+        job_subset_selector: JobSubsetSelector,
         run_config: Mapping[str, object],
         step_keys_to_execute: Optional[Sequence[str]],
         known_state: Optional[KnownExecutionState],
         instance: Optional[DagsterInstance] = None,
-    ) -> RemoteExecutionPlan:
-        check.inst_param(remote_job, "remote_job", RemoteJob)
+    ) -> ExecutionPlanSnapshot:
+        check.inst_param(job_origin, "job_origin", RemoteJobOrigin)
         check.mapping_param(run_config, "run_config")
         step_keys_to_execute = check.opt_nullable_sequence_param(
             step_keys_to_execute, "step_keys_to_execute", of_type=str
@@ -495,22 +559,20 @@ class InProcessCodeLocation(CodeLocation):
 
         execution_plan = create_execution_plan(
             job=self.get_reconstructable_job(
-                remote_job.repository_handle.repository_name, remote_job.name
+                job_origin.repository_origin.repository_name, job_origin.job_name
             ).get_subset(
-                op_selection=remote_job.resolved_op_selection,
-                asset_selection=remote_job.asset_selection,
-                asset_check_selection=remote_job.asset_check_selection,
+                op_selection=job_subset_selector.op_selection,
+                asset_selection=job_subset_selector.asset_selection,
+                asset_check_selection=job_subset_selector.asset_check_selection,
             ),
             run_config=run_config,
             step_keys_to_execute=step_keys_to_execute,
             known_state=known_state,
             instance_ref=instance.get_ref() if instance and instance.is_persistent else None,
         )
-        return RemoteExecutionPlan(
-            execution_plan_snapshot=snapshot_from_execution_plan(
-                execution_plan,
-                remote_job.identifying_job_snapshot_id,
-            )
+        return snapshot_from_execution_plan(
+            execution_plan,
+            pipeline_snapshot_id="",  # will be replaced in callsite
         )
 
     def get_partition_config(
@@ -854,88 +916,90 @@ class GrpcServerCodeLocation(CodeLocation):
     def get_repositories(self) -> Mapping[str, RemoteRepository]:
         return self.remote_repositories
 
-    def get_execution_plan(
+    def get_execution_plan_snapshot_without_job_snapshot_id(
         self,
-        remote_job: RemoteJob,
-        run_config: Mapping[str, Any],
+        job_origin: RemoteJobOrigin,
+        job_subset_selector: JobSubsetSelector,
+        run_config: Mapping[str, object],
         step_keys_to_execute: Optional[Sequence[str]],
         known_state: Optional[KnownExecutionState],
         instance: Optional[DagsterInstance] = None,
-    ) -> RemoteExecutionPlan:
+    ) -> ExecutionPlanSnapshot:
         from dagster._api.snapshot_execution_plan import sync_get_external_execution_plan_grpc
 
-        check.inst_param(remote_job, "remote_job", RemoteJob)
+        check.inst_param(job_origin, "job_origin", RemoteJobOrigin)
         run_config = check.mapping_param(run_config, "run_config")
         check.opt_nullable_sequence_param(step_keys_to_execute, "step_keys_to_execute", of_type=str)
         check.opt_inst_param(known_state, "known_state", KnownExecutionState)
         check.opt_inst_param(instance, "instance", DagsterInstance)
 
         asset_selection = (
-            frozenset(check.opt_set_param(remote_job.asset_selection, "asset_selection"))
-            if remote_job.asset_selection is not None
+            frozenset(check.opt_set_param(job_subset_selector.asset_selection, "asset_selection"))
+            if job_subset_selector.asset_selection is not None
             else None
         )
         asset_check_selection = (
             frozenset(
-                check.opt_set_param(remote_job.asset_check_selection, "asset_check_selection")
+                check.opt_set_param(
+                    job_subset_selector.asset_check_selection, "asset_check_selection"
+                )
             )
-            if remote_job.asset_check_selection is not None
+            if job_subset_selector.asset_check_selection is not None
             else None
         )
 
-        execution_plan_snapshot_or_error = sync_get_external_execution_plan_grpc(
+        return sync_get_external_execution_plan_grpc(
             api_client=self.client,
-            job_origin=remote_job.get_remote_origin(),
+            job_origin=job_origin,
             run_config=run_config,
-            job_snapshot_id=remote_job.identifying_job_snapshot_id,
+            job_snapshot_id="",  # will be replaced in callsite
             asset_selection=asset_selection,
             asset_check_selection=asset_check_selection,
-            op_selection=remote_job.op_selection,
+            op_selection=job_subset_selector.op_selection,
             step_keys_to_execute=step_keys_to_execute,
             known_state=known_state,
             instance=instance,
         )
 
-        return RemoteExecutionPlan(execution_plan_snapshot=execution_plan_snapshot_or_error)
-
     @checked
-    async def gen_execution_plan(
+    async def gen_execution_plan_snapshot_without_job_snapshot_id(
         self,
-        remote_job: RemoteJob,
-        run_config: Mapping[str, Any],
+        job_origin: RemoteJobOrigin,
+        job_subset_selector: JobSubsetSelector,
+        run_config: Mapping[str, object],
         step_keys_to_execute: Optional[Sequence[str]],
         known_state: Optional[KnownExecutionState],
         instance: Optional[DagsterInstance] = None,
-    ) -> RemoteExecutionPlan:
+    ) -> ExecutionPlanSnapshot:
         from dagster._api.snapshot_execution_plan import gen_external_execution_plan_grpc
 
         asset_selection = (
-            frozenset(check.opt_set_param(remote_job.asset_selection, "asset_selection"))
-            if remote_job.asset_selection is not None
+            frozenset(check.opt_set_param(job_subset_selector.asset_selection, "asset_selection"))
+            if job_subset_selector.asset_selection is not None
             else None
         )
         asset_check_selection = (
             frozenset(
-                check.opt_set_param(remote_job.asset_check_selection, "asset_check_selection")
+                check.opt_set_param(
+                    job_subset_selector.asset_check_selection, "asset_check_selection"
+                )
             )
-            if remote_job.asset_check_selection is not None
+            if job_subset_selector.asset_check_selection is not None
             else None
         )
 
-        execution_plan_snapshot_or_error = await gen_external_execution_plan_grpc(
+        return await gen_external_execution_plan_grpc(
             api_client=self.client,
-            job_origin=remote_job.get_remote_origin(),
+            job_origin=job_origin,
             run_config=run_config,
-            job_snapshot_id=remote_job.identifying_job_snapshot_id,
+            job_snapshot_id="",  # will be replaced in callsite
             asset_selection=asset_selection,
             asset_check_selection=asset_check_selection,
-            op_selection=remote_job.op_selection,
+            op_selection=job_subset_selector.op_selection,
             step_keys_to_execute=step_keys_to_execute,
             known_state=known_state,
             instance=instance,
         )
-
-        return RemoteExecutionPlan(execution_plan_snapshot=execution_plan_snapshot_or_error)
 
     def _get_subset_remote_job_result(
         self, selector: JobSubsetSelector, get_full_job: Callable[[JobSubsetSelector], RemoteJob]
