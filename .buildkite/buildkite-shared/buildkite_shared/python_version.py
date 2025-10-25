@@ -11,11 +11,12 @@ class AvailablePythonVersion(Enum):
     V3_11 = "3.11"
     V3_12 = "3.12"
     V3_13 = "3.13"
+    V3_14 = "3.14"
 
     @classmethod
     def get_all(cls) -> list["AvailablePythonVersion"]:
         # omitting 3.10 and 3.11 for now to stay below buildkit limits
-        return [cls["V3_9"], cls["V3_12"], cls["V3_13"]]
+        return [cls["V3_9"], cls["V3_12"], cls["V3_13"], cls["V3_14"]]
 
     @classmethod
     def get_default(cls) -> "AvailablePythonVersion":
