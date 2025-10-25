@@ -214,7 +214,7 @@ dagsterCloud:
 
 #### In Amazon ECS
 
-Modify your ECS Cloud Formation template to add the following configuration to the `config.yaml` passed to the agent:
+Modify your ECS Cloud Formation template to add the following configuration to the `dagster.yaml` file passed to the agent (the ECS agent configuration reference can be found [here](/deployment/dagster-plus/hybrid/amazon-ecs/configuration-reference.md)):
 
 ```yaml
 # config.yaml
