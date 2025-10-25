@@ -268,7 +268,14 @@ class DagsterInstance(
         Returns:
             DagsterInstance: The current DagsterInstance.
         """
+        from dagster._core.instance.context import get_dagster_instance_context
         from dagster._core.instance.factory import create_instance_from_dagster_home
+
+        current_context = get_dagster_instance_context()
+        if current_context:
+            created_instance = current_context.create_instance()
+            if created_instance:
+                return created_instance
 
         return create_instance_from_dagster_home()
 

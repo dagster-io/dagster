@@ -36,6 +36,7 @@ from dagster._core.errors import (
     user_code_error_boundary,
 )
 from dagster._core.instance import DagsterInstance
+from dagster._core.instance.context import DagsterInstanceContext, set_dagster_instance_context
 from dagster._core.instance.ref import InstanceRef
 from dagster._core.storage.dagster_run import DagsterRun
 from dagster._serdes import whitelist_for_serdes
@@ -141,7 +142,7 @@ def get_or_create_schedule_context(
 
 
 @public
-class ScheduleEvaluationContext:
+class ScheduleEvaluationContext(DagsterInstanceContext):
     """The context object available as the first argument to various functions defined on a :py:class:`dagster.ScheduleDefinition`.
 
     A ``ScheduleEvaluationContext`` object is passed as the first argument to ``run_config_fn``, ``tags_fn``,
@@ -221,6 +222,7 @@ class ScheduleEvaluationContext:
 
     def __enter__(self) -> "ScheduleEvaluationContext":
         self._cm_scope_entered = True
+        self._exit_stack.enter_context(set_dagster_instance_context(self))
         return self
 
     def __exit__(self, *exc) -> None:
@@ -292,20 +294,28 @@ class ScheduleEvaluationContext:
             repository_def=self._repository_def,
         )
 
+    def create_instance(self) -> Optional["DagsterInstance"]:
+        if not self._instance_ref:
+            # self._instance_ref should only ever be None when this ScheduleEvaluationContext was
+            # constructed under test. In that case, return that instance.
+            if self._instance:
+                return self._instance
+            else:
+                return None
+        return DagsterInstance.from_ref(self._instance_ref)
+
     @public
     @property
     def instance(self) -> "DagsterInstance":
         """DagsterInstance: The current :py:class:`~dagster.DagsterInstance`."""
-        # self._instance_ref should only ever be None when this ScheduleEvaluationContext was
-        # constructed under test.
-        if not self._instance_ref:
-            raise DagsterInvariantViolationError(
-                "Attempted to initialize dagster instance, but no instance reference was provided."
-            )
         if not self._instance:
-            self._instance = self._exit_stack.enter_context(
-                DagsterInstance.from_ref(self._instance_ref)
-            )
+            created_instance = self.create_instance()
+            if created_instance:
+                self._instance = self._exit_stack.enter_context(created_instance)
+            else:
+                raise DagsterInvariantViolationError(
+                    "Attempted to initialize dagster instance, but no instance reference was provided."
+                )
         return cast("DagsterInstance", self._instance)
 
     @property

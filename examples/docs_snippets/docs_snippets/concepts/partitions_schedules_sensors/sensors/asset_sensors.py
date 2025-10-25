@@ -44,17 +44,16 @@ def test_my_asset_sensor():
         return 1
 
     instance = DagsterInstance.ephemeral()
-    ctx = build_sensor_context(instance)
+    with build_sensor_context(instance) as ctx:
+        result = list(my_asset_sensor(ctx))
+        assert len(result) == 1
+        assert isinstance(result[0], SkipReason)
 
-    result = list(my_asset_sensor(ctx))
-    assert len(result) == 1
-    assert isinstance(result[0], SkipReason)
+        materialize([my_table], instance=instance)
 
-    materialize([my_table], instance=instance)
-
-    result = list(my_asset_sensor(ctx))
-    assert len(result) == 1
-    assert isinstance(result[0], RunRequest)
+        result = list(my_asset_sensor(ctx))
+        assert len(result) == 1
+        assert isinstance(result[0], RunRequest)
 
 
 # end_asset_sensor_test_marker
