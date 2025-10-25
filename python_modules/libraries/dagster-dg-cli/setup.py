@@ -39,6 +39,7 @@ setup(
         f"dagster{pin}",
         f"dagster-cloud-cli{pin}",
         "typer",
+        "textual",
     ],
     extras_require={
         "test": ["syrupy>=4.0.0"],
@@ -51,6 +52,7 @@ setup(
     entry_points={
         "console_scripts": [
             "dg = dagster_dg_cli.cli:main",
+            "dg-web = dagster_dg_cli.cli_textual:main",
         ]
     },
     zip_safe=False,
