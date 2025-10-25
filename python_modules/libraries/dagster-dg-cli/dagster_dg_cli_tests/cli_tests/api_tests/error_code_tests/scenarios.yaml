@@ -1,0 +1,200 @@
+# Comprehensive Error Code Testing Scenarios
+# Single source of truth for all error types across API domains
+#
+# Each scenario specifies:
+# - command: The CLI command to execute
+# - expected_code: Expected error code from DgApiError mapping
+# - expected_status: Expected HTTP status code
+# - description: Human-readable description of the error scenario
+
+# =============================================================================
+# 400 CLIENT ERRORS - Bad Request / Validation Errors
+# =============================================================================
+
+error_invalid_asset_key_empty:
+  command: "dg api asset get '' --json"
+  expected_code: "INVALID_SUBSET"
+  expected_status: 400
+  description: "Empty asset key should trigger validation error"
+
+error_invalid_asset_key_malformed:
+  command: "dg api asset get 'invalid::asset::key' --json"
+  expected_code: "INVALID_SUBSET"
+  expected_status: 400
+  description: "Malformed asset key with invalid characters"
+
+error_invalid_limit_too_high:
+  command: "dg api asset list --limit 2000 --json"
+  expected_code: "INVALID_SUBSET"
+  expected_status: 400
+  description: "Limit exceeds maximum allowed value"
+
+error_invalid_limit_zero:
+  command: "dg api asset list --limit 0 --json"
+  expected_code: "INVALID_SUBSET"
+  expected_status: 400
+  description: "Limit of zero is invalid"
+
+error_invalid_cursor:
+  command: "dg api asset list --cursor 'invalid-cursor-format' --json"
+  expected_code: "INVALID_SUBSET"
+  expected_status: 400
+  description: "Malformed cursor for pagination"
+
+error_partition_subset_deserialization:
+  command: "dg api asset get 'asset-with-invalid-partition' --json"
+  expected_code: "INVALID_PARTITION_SUBSET"
+  expected_status: 400
+  description: "Invalid partition subset specification"
+
+# =============================================================================
+# 401 AUTHENTICATION ERRORS - Unauthorized
+# =============================================================================
+
+error_unauthorized_asset_list:
+  command: "dg api asset list --json"
+  expected_code: "UNAUTHORIZED"
+  expected_status: 401
+  description: "Asset list access without valid authentication"
+
+error_unauthorized_asset_get:
+  command: "dg api asset get some-asset --json"
+  expected_code: "UNAUTHORIZED"
+  expected_status: 401
+  description: "Asset get access without valid authentication"
+
+error_unauthorized_deployment_list:
+  command: "dg api deployment list --json"
+  expected_code: "UNAUTHORIZED"
+  expected_status: 401
+  description: "Deployment list access without valid authentication"
+
+# =============================================================================
+# 403 AUTHORIZATION ERRORS - Forbidden (future extensibility)
+# =============================================================================
+# Note: These scenarios are prepared for when role-based access is implemented
+
+error_forbidden_asset_access:
+  command: "dg api asset get restricted/confidential-asset --json"
+  expected_code: "FORBIDDEN"
+  expected_status: 403
+  description: "Access to restricted asset without proper permissions"
+
+error_forbidden_deployment_access:
+  command: "dg api deployment list --organization restricted-org --json"
+  expected_code: "FORBIDDEN"
+  expected_status: 403
+  description: "Access to restricted deployment without proper permissions"
+
+# =============================================================================
+# 404 NOT FOUND ERRORS - Resource Not Found
+# =============================================================================
+
+error_asset_not_found:
+  command: "dg api asset get nonexistent-asset-key --json"
+  expected_code: "ASSET_NOT_FOUND"
+  expected_status: 404
+  description: "Asset does not exist in the deployment"
+
+error_pipeline_not_found:
+  command: "dg api pipeline get nonexistent-pipeline --json"
+  expected_code: "PIPELINE_NOT_FOUND"
+  expected_status: 404
+  description: "Pipeline does not exist in the deployment"
+
+error_run_not_found:
+  command: "dg api run get nonexistent-run-id --json"
+  expected_code: "RUN_NOT_FOUND"
+  expected_status: 404
+  description: "Run ID does not exist"
+
+error_schedule_not_found:
+  command: "dg api schedule get nonexistent-schedule --json"
+  expected_code: "SCHEDULE_NOT_FOUND"
+  expected_status: 404
+  description: "Schedule does not exist in the repository"
+
+error_repository_not_found:
+  command: "dg api repository get nonexistent-repo --json"
+  expected_code: "REPOSITORY_NOT_FOUND"
+  expected_status: 404
+  description: "Repository does not exist in the deployment"
+
+error_config_type_not_found:
+  command: "dg api config-type get NonexistentConfigType --json"
+  expected_code: "CONFIG_TYPE_NOT_FOUND"
+  expected_status: 404
+  description: "Configuration type does not exist"
+
+# =============================================================================
+# 422 MIGRATION/UPGRADE ERRORS - Unprocessable Entity
+# =============================================================================
+
+error_migration_required:
+  command: "dg api asset get legacy-asset-needs-migration --json"
+  expected_code: "MIGRATION_REQUIRED"
+  expected_status: 422
+  description: "Asset requires data migration to be accessible"
+
+error_user_code_upgrade_required:
+  command: "dg api asset get asset-needs-user-code-upgrade --json"
+  expected_code: "USER_CODE_UPGRADE_REQUIRED"
+  expected_status: 422
+  description: "Asset requires user code upgrade to be accessible"
+
+error_agent_upgrade_required:
+  command: "dg api asset get asset-needs-agent-upgrade --json"
+  expected_code: "AGENT_UPGRADE_REQUIRED"
+  expected_status: 422
+  description: "Asset requires Dagster agent upgrade"
+
+# =============================================================================
+# 500 SERVER ERRORS - Internal Server Error
+# =============================================================================
+
+error_python_error:
+  command: "dg api asset get asset-causing-python-error --json"
+  expected_code: "PYTHON_ERROR"
+  expected_status: 500
+  description: "Python exception occurred during asset processing"
+
+error_scheduler_not_defined:
+  command: "dg api schedule list --json"
+  expected_code: "SCHEDULER_NOT_DEFINED"
+  expected_status: 500
+  description: "Scheduler is not properly configured"
+
+error_internal_server_error:
+  command: "dg api asset get asset-causing-internal-error --json"
+  expected_code: "INTERNAL_ERROR"
+  expected_status: 500
+  description: "Generic internal server error"
+
+# =============================================================================
+# TEXT OUTPUT FORMAT TESTING
+# =============================================================================
+# Same scenarios as above but without --json flag to test text error output
+
+error_asset_not_found_text:
+  command: "dg api asset get nonexistent-asset-key"
+  expected_code: "ASSET_NOT_FOUND"
+  expected_status: 404
+  description: "Asset not found error in text format"
+
+error_unauthorized_text:
+  command: "dg api asset list"
+  expected_code: "UNAUTHORIZED"
+  expected_status: 401
+  description: "Authentication error in text format"
+
+error_invalid_limit_text:
+  command: "dg api asset list --limit 2000"
+  expected_code: "INVALID_SUBSET"
+  expected_status: 400
+  description: "Validation error in text format"
+
+error_python_error_text:
+  command: "dg api asset get asset-causing-python-error"
+  expected_code: "PYTHON_ERROR"
+  expected_status: 500
+  description: "Server error in text format"

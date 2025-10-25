@@ -3337,3 +3337,537 @@
   
   '''
 # ---
+# name: TestDynamicCommandExecution.test_command_execution[schedule_error_empty_schedule_name_json]
+  dict({
+    'code': 'INTERNAL_ERROR',
+    'error': "Schedule not found: ''",
+    'statusCode': 500,
+    'type': 'server_error',
+  })
+# ---
+# name: TestDynamicCommandExecution.test_command_execution[schedule_error_schedule_not_found_json]
+  dict({
+    'code': 'INTERNAL_ERROR',
+    'error': 'Schedule not found: nonexistent-schedule',
+    'statusCode': 500,
+    'type': 'server_error',
+  })
+# ---
+# name: TestDynamicCommandExecution.test_command_execution[schedule_success_multiple_schedules_json]
+  dict({
+    'items': list([
+      dict({
+        'cron_schedule': '0 0 * * *',
+        'description': None,
+        'execution_timezone': 'UTC',
+        'id': '7a1ff4e6d334c36613cf2668b32c9bc4740b4751::19b110ce646fe80a563955a7d064ece4e5772ff0',
+        'metadata_entries': list([
+        ]),
+        'name': 'check_linear_issues_schedule',
+        'pipeline_name': 'check_linear_issues',
+        'tags': list([
+        ]),
+      }),
+      dict({
+        'cron_schedule': '0 0 * * *',
+        'description': None,
+        'execution_timezone': 'UTC',
+        'id': '24dca488bba47309385a8ebbf23d6c897388079d::381c62a7cf10fba230a975fc3aea0007d8bde9d6',
+        'metadata_entries': list([
+        ]),
+        'name': 'check_ssl_expiration_schedule',
+        'pipeline_name': 'check_ssl_expiration',
+        'tags': list([
+        ]),
+      }),
+      dict({
+        'cron_schedule': '0 3 * * *',
+        'description': None,
+        'execution_timezone': 'UTC',
+        'id': 'a204edd99883ef3fee1c0cd54c6192bf2b19269a::2b72065e9cbcd43a372a831bd4817b8da771214b',
+        'metadata_entries': list([
+        ]),
+        'name': 'aws_replication_schedule',
+        'pipeline_name': 'aws_replication_job',
+        'tags': list([
+        ]),
+      }),
+      dict({
+        'cron_schedule': '0 3 * * *',
+        'description': None,
+        'execution_timezone': 'UTC',
+        'id': 'b39f43b63a5d1c1308ce7aaa038da3df9d1fa902::aa094302d889abc0cfe8411f1048d39f3e9ad220',
+        'metadata_entries': list([
+        ]),
+        'name': 'database_clone_cleanup_job_schedule',
+        'pipeline_name': 'database_clone_cleanup_job',
+        'tags': list([
+        ]),
+      }),
+      dict({
+        'cron_schedule': '0 3 * * *',
+        'description': None,
+        'execution_timezone': 'UTC',
+        'id': '023097b9da352672eb18f8857fa81248dd686c6d::3e3240e79cdf4769eede4cac4ae9e952eda41bc0',
+        'metadata_entries': list([
+        ]),
+        'name': 'dbt_analytics_core_schedule',
+        'pipeline_name': 'dbt_analytics_core_job',
+        'tags': list([
+        ]),
+      }),
+      dict({
+        'cron_schedule': '0 7 * * *',
+        'description': None,
+        'execution_timezone': 'UTC',
+        'id': 'e88b09f1b1cac4bc7dd3370b73afd347c59548ce::72d9862a71d8703a11871a472c2b500d1adaaa62',
+        'metadata_entries': list([
+        ]),
+        'name': 'dbt_analytics_snapshot_job_schedule',
+        'pipeline_name': 'dbt_analytics_snapshot_job',
+        'tags': list([
+        ]),
+      }),
+      dict({
+        'cron_schedule': '0 0 * * *',
+        'description': None,
+        'execution_timezone': 'UTC',
+        'id': '2eec9bb0d1df64072ee3ebf6975372d695e7d2f6::25d2344f52ffd6484d6088361f6ca9ecb7849dc8',
+        'metadata_entries': list([
+        ]),
+        'name': 'fivetran_connection_setup_tests_schedule',
+        'pipeline_name': 'fivetran_connection_setup_tests',
+        'tags': list([
+        ]),
+      }),
+      dict({
+        'cron_schedule': '0 0 * * *',
+        'description': None,
+        'execution_timezone': 'UTC',
+        'id': '7bc30bd776c47813e4b98dc4c9d8f0e34fa30679::a381eb6a96f7ed463bcc69b501a04c9e8724b175',
+        'metadata_entries': list([
+        ]),
+        'name': 'gong_calls_transcript_job_schedule',
+        'pipeline_name': 'gong_calls_transcript_job',
+        'tags': list([
+        ]),
+      }),
+      dict({
+        'cron_schedule': '0 2 * * *',
+        'description': 'Daily schedule that processes the last 4 days of Google Search Console data',
+        'execution_timezone': 'UTC',
+        'id': '89a73b044bc53cc90f8fa988cf5536d5c3f5668b::8217cf1250bedd3eebf25c3c2f372566f3932126',
+        'metadata_entries': list([
+        ]),
+        'name': 'google_search_console_daily_schedule',
+        'pipeline_name': '__anonymous_asset_job_google_search_console_daily_schedule',
+        'tags': list([
+        ]),
+      }),
+      dict({
+        'cron_schedule': '0 3 * * *',
+        'description': None,
+        'execution_timezone': 'UTC',
+        'id': '8b27f90dbfe40bea2df6258eea2c473fdf14ce65::0205c824b71f6ff8fa187361befd6deca72c6fd3',
+        'metadata_entries': list([
+        ]),
+        'name': 'hightouch_syncs_schedule',
+        'pipeline_name': '__anonymous_asset_job_hightouch_syncs_schedule',
+        'tags': list([
+          dict({
+            'key': 'team',
+            'value': 'devrel',
+          }),
+        ]),
+      }),
+      dict({
+        'cron_schedule': '0 * * * *',
+        'description': None,
+        'execution_timezone': 'UTC',
+        'id': '7c695e2d3bd06de9bb8a87d17bb8f9fcbd0537f7::e9bbccfeabd17761009bca101d6eb5faae3ab9e5',
+        'metadata_entries': list([
+        ]),
+        'name': 'hourly_hightouch_syncs_schedule',
+        'pipeline_name': 'hourly_hightouch_syncs_job',
+        'tags': list([
+        ]),
+      }),
+      dict({
+        'cron_schedule': '0 1 * * *',
+        'description': 'Schedule that processes Sequel events data once daily at 1 AM EST',
+        'execution_timezone': 'UTC',
+        'id': '32716fe3fcaee9f96f80dab09162a35bf6db55f7::286d498370076140e605c70b8dd26f62140b6461',
+        'metadata_entries': list([
+        ]),
+        'name': 'sequel_events_schedule',
+        'pipeline_name': '__anonymous_asset_job_sequel_events_schedule',
+        'tags': list([
+        ]),
+      }),
+      dict({
+        'cron_schedule': '15 1 * * *',
+        'description': 'Schedule that processes Sequel registrants data once daily at 1:15 AM EST',
+        'execution_timezone': 'UTC',
+        'id': '8cf783a4f30d0eee13ad6d1aff783f3a98cb642d::88f3ef19f5e86fe76699e11e1ec45db2262134c1',
+        'metadata_entries': list([
+        ]),
+        'name': 'sequel_registrants_schedule',
+        'pipeline_name': '__anonymous_asset_job_sequel_registrants_schedule',
+        'tags': list([
+        ]),
+      }),
+      dict({
+        'cron_schedule': '30 1 * * *',
+        'description': 'Daily processing of Sequel event user activity logs at 1:30 AM EST',
+        'execution_timezone': 'UTC',
+        'id': 'c17696894dbe4559d5a493b5205f1e0b131019c9::238a6eb980181273843e5cd629c6b0006e808dd9',
+        'metadata_entries': list([
+        ]),
+        'name': 'sequel_user_activity_logs_schedule',
+        'pipeline_name': '__anonymous_asset_job_sequel_user_activity_logs_schedule',
+        'tags': list([
+        ]),
+      }),
+      dict({
+        'cron_schedule': '0 3 * * *',
+        'description': None,
+        'execution_timezone': 'UTC',
+        'id': 'b80992548a60f960c3b5edcd3ee05afa319b4507::d49bf91e4a6bc2534bc70cd53e80332e1aed77c6',
+        'metadata_entries': list([
+        ]),
+        'name': 'sling_egress_job_schedule',
+        'pipeline_name': 'sling_egress_job',
+        'tags': list([
+        ]),
+      }),
+      dict({
+        'cron_schedule': '0 1 * * *',
+        'description': None,
+        'execution_timezone': 'UTC',
+        'id': '90aab752d0482041196a3c8dc4adf10d3865baa4::23eb4db9d37a464de9403a50249e2781e13e7e64',
+        'metadata_entries': list([
+        ]),
+        'name': 'statsig_upload_schedule',
+        'pipeline_name': 'statsig_upload_job',
+        'tags': list([
+        ]),
+      }),
+      dict({
+        'cron_schedule': '0 0 * * *',
+        'description': None,
+        'execution_timezone': 'UTC',
+        'id': 'a1d227c3eea93d614f4b1f01b00b01232752583c::bdadc269f1087529f0d4f1c3d88692dd5dff5b0a',
+        'metadata_entries': list([
+        ]),
+        'name': 'stripe_data_sync_observe_job_schedule',
+        'pipeline_name': 'stripe_data_sync_observe_job',
+        'tags': list([
+        ]),
+      }),
+      dict({
+        'cron_schedule': '@daily',
+        'description': None,
+        'execution_timezone': 'UTC',
+        'id': '9117375126742ae12158a8740faf5d3df2f9fd1f::aba6b3993379f4a23c2813179050474cc8a10ccb',
+        'metadata_entries': list([
+        ]),
+        'name': 'support_bot_schedule',
+        'pipeline_name': 'support_bot_job',
+        'tags': list([
+        ]),
+      }),
+      dict({
+        'cron_schedule': '0 3 * * *',
+        'description': None,
+        'execution_timezone': 'UTC',
+        'id': '16bd4ed3fdf2ed4c1b2516094b94e1a47124330d::f94c28b35ff090169a603c0ef27fc6122b6382ad',
+        'metadata_entries': list([
+        ]),
+        'name': 'product_operations_clone_cleanup_job_schedule',
+        'pipeline_name': 'product_operations_clone_cleanup_job',
+        'tags': list([
+        ]),
+      }),
+      dict({
+        'cron_schedule': '0 0 * * *',
+        'description': None,
+        'execution_timezone': 'UTC',
+        'id': '1512b6ea06f79a49fc196b81592b7865bfa1cd13::4a45a9a1ab5d9c036aa7366582bacf6f26d67864',
+        'metadata_entries': list([
+        ]),
+        'name': 'sync_insights_to_pg_schedule',
+        'pipeline_name': 'sync_insights_to_pg_job',
+        'tags': list([
+        ]),
+      }),
+      dict({
+        'cron_schedule': '0 8 * * 1-5',
+        'description': None,
+        'execution_timezone': 'US/Pacific',
+        'id': '56b81eb0b636a2d99b910815b1ca13666311e8de::e30aff83f4bad40b9a600828f4b7f044ef3fc453',
+        'metadata_entries': list([
+        ]),
+        'name': 'billing_issues_rollup_schedule',
+        'pipeline_name': 'billing_issues_rollup',
+        'tags': list([
+        ]),
+      }),
+      dict({
+        'cron_schedule': '0 0 * * *',
+        'description': None,
+        'execution_timezone': 'UTC',
+        'id': '0c8047eb8097dd3786442e0b55a6c55782b3ef24::125ecdd4b7d75b7afd0a027d4060ff2563d5cf8c',
+        'metadata_entries': list([
+        ]),
+        'name': 'daily_check_user_pipeline_status_job',
+        'pipeline_name': 'check_user_pipeline_status_job',
+        'tags': list([
+        ]),
+      }),
+      dict({
+        'cron_schedule': '30 * * * *',
+        'description': None,
+        'execution_timezone': 'UTC',
+        'id': '33d43d1e40096781894ad677034dd6ab434d737f::33e4f97daac8ab0ca10be544ac0c57522bbe7e00',
+        'metadata_entries': list([
+        ]),
+        'name': 'detect_self_serve_customers',
+        'pipeline_name': 'detect_self_serve_customers',
+        'tags': list([
+        ]),
+      }),
+      dict({
+        'cron_schedule': '0 7 * * *',
+        'description': None,
+        'execution_timezone': 'UTC',
+        'id': '7a101df50e98f61f8fe35bcae8f88a3c29d1807e::02511114a0d3918cb1fe6c77d57864e3d3be5a3a',
+        'metadata_entries': list([
+        ]),
+        'name': 'self_serve_customer_attribution_check_all_partitions_job_schedule',
+        'pipeline_name': 'self_serve_customer_attribution_check_all_partitions_job',
+        'tags': list([
+        ]),
+      }),
+      dict({
+        'cron_schedule': '59 * * * *',
+        'description': None,
+        'execution_timezone': 'UTC',
+        'id': '0766e565572648c59472a4d2426655371f628a9f::65aad9b6c8fbddf8dc092e0f2e21bfd682f02d81',
+        'metadata_entries': list([
+        ]),
+        'name': 'snowflake_insights_import_schedule',
+        'pipeline_name': 'snowflake_insights_import',
+        'tags': list([
+        ]),
+      }),
+      dict({
+        'cron_schedule': '0 4 * * *',
+        'description': None,
+        'execution_timezone': 'UTC',
+        'id': '7480bf436140cb9452293058647b5a0107a32ecb::df691704a58e36d10658aca06674e2d2714fc280',
+        'metadata_entries': list([
+        ]),
+        'name': 'sync_enterprise_contract_metadata_to_pg_schedule',
+        'pipeline_name': 'sync_enterprise_contract_metadata_to_pg_job',
+        'tags': list([
+        ]),
+      }),
+      dict({
+        'cron_schedule': '0 8 * * *',
+        'description': None,
+        'execution_timezone': 'UTC',
+        'id': 'f010499ad97db681455121ee87f8310a3d61e7fb::0dc13a1576dfa974ecf66ec0df49ae7c366c971b',
+        'metadata_entries': list([
+        ]),
+        'name': 'telemetry_events_to_snowflake_schedule',
+        'pipeline_name': 'telemetry_events_to_snowflake',
+        'tags': list([
+        ]),
+      }),
+      dict({
+        'cron_schedule': '0 */3 * * *',
+        'description': None,
+        'execution_timezone': 'UTC',
+        'id': 'fd843abef5f0c30f0eb014f4d85c9e4f06a7c233::034edb748ec2915d90234111ac003fe1495db474',
+        'metadata_entries': list([
+        ]),
+        'name': 'usage_attribution_schedule',
+        'pipeline_name': 'self_serve_attribution_job',
+        'tags': list([
+        ]),
+      }),
+      dict({
+        'cron_schedule': '*/10 * * * *',
+        'description': None,
+        'execution_timezone': 'UTC',
+        'id': '070acb7bb19e457c407432bd8c4009c250eb1ad8::56c7ec2fa124bf4d70c9cd507d96cdba72286746',
+        'metadata_entries': list([
+        ]),
+        'name': 'dogfood_cypress_job_schedule',
+        'pipeline_name': 'dogfood_cypress_job',
+        'tags': list([
+        ]),
+      }),
+      dict({
+        'cron_schedule': '*/10 * * * *',
+        'description': None,
+        'execution_timezone': 'UTC',
+        'id': 'de73598d4ba48d6845bbbc3102cb8605b59ec96b::ab19554e7200c8f6d3e34585dec547a6a025b5fc',
+        'metadata_entries': list([
+        ]),
+        'name': 'production_cypress_job_schedule',
+        'pipeline_name': 'production_cypress_job',
+        'tags': list([
+        ]),
+      }),
+    ]),
+  })
+# ---
+# name: TestDynamicCommandExecution.test_command_execution[schedule_success_schedules_human_readable_text]
+  '''
+  Name: check_linear_issues_schedule
+  Job Name: check_linear_issues
+  Cron Schedule: 0 0 * * *
+  
+  Name: check_ssl_expiration_schedule
+  Job Name: check_ssl_expiration
+  Cron Schedule: 0 0 * * *
+  
+  Name: aws_replication_schedule
+  Job Name: aws_replication_job
+  Cron Schedule: 0 3 * * *
+  
+  Name: database_clone_cleanup_job_schedule
+  Job Name: database_clone_cleanup_job
+  Cron Schedule: 0 3 * * *
+  
+  Name: dbt_analytics_core_schedule
+  Job Name: dbt_analytics_core_job
+  Cron Schedule: 0 3 * * *
+  
+  Name: dbt_analytics_snapshot_job_schedule
+  Job Name: dbt_analytics_snapshot_job
+  Cron Schedule: 0 7 * * *
+  
+  Name: fivetran_connection_setup_tests_schedule
+  Job Name: fivetran_connection_setup_tests
+  Cron Schedule: 0 0 * * *
+  
+  Name: gong_calls_transcript_job_schedule
+  Job Name: gong_calls_transcript_job
+  Cron Schedule: 0 0 * * *
+  
+  Name: google_search_console_daily_schedule
+  Job Name: __anonymous_asset_job_google_search_console_daily_schedule
+  Cron Schedule: 0 2 * * *
+  
+  Name: hightouch_syncs_schedule
+  Job Name: __anonymous_asset_job_hightouch_syncs_schedule
+  Cron Schedule: 0 3 * * *
+  
+  Name: hourly_hightouch_syncs_schedule
+  Job Name: hourly_hightouch_syncs_job
+  Cron Schedule: 0 * * * *
+  
+  Name: sequel_events_schedule
+  Job Name: __anonymous_asset_job_sequel_events_schedule
+  Cron Schedule: 0 1 * * *
+  
+  Name: sequel_registrants_schedule
+  Job Name: __anonymous_asset_job_sequel_registrants_schedule
+  Cron Schedule: 15 1 * * *
+  
+  Name: sequel_user_activity_logs_schedule
+  Job Name: __anonymous_asset_job_sequel_user_activity_logs_schedule
+  Cron Schedule: 30 1 * * *
+  
+  Name: sling_egress_job_schedule
+  Job Name: sling_egress_job
+  Cron Schedule: 0 3 * * *
+  
+  Name: statsig_upload_schedule
+  Job Name: statsig_upload_job
+  Cron Schedule: 0 1 * * *
+  
+  Name: stripe_data_sync_observe_job_schedule
+  Job Name: stripe_data_sync_observe_job
+  Cron Schedule: 0 0 * * *
+  
+  Name: support_bot_schedule
+  Job Name: support_bot_job
+  Cron Schedule: @daily
+  
+  Name: product_operations_clone_cleanup_job_schedule
+  Job Name: product_operations_clone_cleanup_job
+  Cron Schedule: 0 3 * * *
+  
+  Name: sync_insights_to_pg_schedule
+  Job Name: sync_insights_to_pg_job
+  Cron Schedule: 0 0 * * *
+  
+  Name: billing_issues_rollup_schedule
+  Job Name: billing_issues_rollup
+  Cron Schedule: 0 8 * * 1-5
+  
+  Name: daily_check_user_pipeline_status_job
+  Job Name: check_user_pipeline_status_job
+  Cron Schedule: 0 0 * * *
+  
+  Name: detect_self_serve_customers
+  Job Name: detect_self_serve_customers
+  Cron Schedule: 30 * * * *
+  
+  Name: self_serve_customer_attribution_check_all_partitions_job_schedule
+  Job Name: self_serve_customer_attribution_check_all_partitions_job
+  Cron Schedule: 0 7 * * *
+  
+  Name: snowflake_insights_import_schedule
+  Job Name: snowflake_insights_import
+  Cron Schedule: 59 * * * *
+  
+  Name: sync_enterprise_contract_metadata_to_pg_schedule
+  Job Name: sync_enterprise_contract_metadata_to_pg_job
+  Cron Schedule: 0 4 * * *
+  
+  Name: telemetry_events_to_snowflake_schedule
+  Job Name: telemetry_events_to_snowflake
+  Cron Schedule: 0 8 * * *
+  
+  Name: usage_attribution_schedule
+  Job Name: self_serve_attribution_job
+  Cron Schedule: 0 */3 * * *
+  
+  Name: dogfood_cypress_job_schedule
+  Job Name: dogfood_cypress_job
+  Cron Schedule: */10 * * * *
+  
+  Name: production_cypress_job_schedule
+  Job Name: production_cypress_job
+  Cron Schedule: */10 * * * *
+  
+  '''
+# ---
+# name: TestDynamicCommandExecution.test_command_execution[schedule_success_single_schedule_human_readable_text]
+  '''
+  Name: check_linear_issues_schedule
+  Job Name: check_linear_issues
+  Cron Schedule: 0 0 * * *
+  Description: None
+  Execution Timezone: UTC
+  
+  '''
+# ---
+# name: TestDynamicCommandExecution.test_command_execution[schedule_success_single_schedule_json]
+  dict({
+    'cron_schedule': '0 0 * * *',
+    'description': None,
+    'execution_timezone': 'UTC',
+    'id': '7a1ff4e6d334c36613cf2668b32c9bc4740b4751::19b110ce646fe80a563955a7d064ece4e5772ff0',
+    'metadata_entries': list([
+    ]),
+    'name': 'check_linear_issues_schedule',
+    'pipeline_name': 'check_linear_issues',
+    'tags': list([
+    ]),
+  })
+# ---

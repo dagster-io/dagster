@@ -5,7 +5,7 @@ from typing import Any, Optional
 
 import pytest
 from click.testing import CliRunner
-from dagster_dg_cli.cli.api.client import DgApiTestContext
+from dagster_dg_cli.cli.api.shared import DgApiTestContext
 from dagster_dg_cli.utils.plus.gql_client import DagsterPlusGraphQLClient
 
 from dagster_dg_cli_tests.cli_tests.api_tests.shared.yaml_loader import (
