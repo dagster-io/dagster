@@ -4,8 +4,8 @@ from datetime import datetime
 from time import perf_counter
 from typing import Any, Final, Optional, Protocol
 
-from claude_code_sdk import query
-from claude_code_sdk.types import (
+from claude_agent_sdk import query
+from claude_agent_sdk.types import (
     AssistantMessage,
     ClaudeCodeOptions,
     Message,
@@ -184,5 +184,5 @@ class ClaudeSDKClient:
             "total_tokens": self.total_tokens,
             "conversation_length": len(self.conversation_history),
             "timestamp": datetime.now().isoformat(),
-            "sdk_version": "claude-code-sdk",
+            "sdk_version": "claude-agent-sdk",
         }
