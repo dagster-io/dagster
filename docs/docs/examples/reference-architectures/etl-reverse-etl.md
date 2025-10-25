@@ -18,7 +18,7 @@ Build a platform that ingests data from multiple sources (Salesforce and Segment
   init: {
     'theme': 'base',
     'themeVariables': {
-      'primaryColor': '#4F43DD',
+      'primaryColor': '#A7A0F8',
       'primaryTextColor': '#FFFFFF',
       'primaryBorderColor': '#231F1B',
       'lineColor': '#DEDDFF',
