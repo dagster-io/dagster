@@ -4,6 +4,7 @@ from pathlib import Path
 from typing import Optional
 
 from dagster_shared.record import record, replace
+from dagster_shared.serdes.objects import DefsStateInfo
 from typing_extensions import TypeVar
 
 from dagster._core.definitions.definitions_class import Definitions
@@ -51,6 +52,7 @@ class ComponentTreeStateTracker:
         self._component_defs_dependents_dict: dict[ComponentPath, set[ComponentPath]] = defaultdict(
             set
         )
+        self._defs_state_info: Optional[DefsStateInfo] = None
         self._component_defs_state_key_dict: dict[str, ComponentPath] = {}
         self._cache: dict[ComponentPath, _CacheData] = defaultdict(_CacheData)
 
@@ -71,6 +73,18 @@ class ComponentTreeStateTracker:
         """Invalidates the cache for a given component path and all of its dependents."""
         path = ComponentPath.from_resolvable(self._defs_module_path, path)
         self._invalidate_path_inner(path, set())
+
+    def set_defs_state_info(self, new_info: Optional[DefsStateInfo]) -> None:
+        """Sets a new defs_state_info, and invalidates the cache for any components that
+        have an updated state version.
+        """
+        current_info = self._defs_state_info
+        if current_info is not None and new_info is not None:
+            visited = set()
+            for defs_key, path in self._component_defs_state_key_dict.items():
+                if new_info.get_version(defs_key) != current_info.get_version(defs_key):
+                    self._invalidate_path(path, visited)
+        self._defs_state_info = new_info
 
     def get_cache_data(self, path: ResolvableToComponentPath) -> _CacheData:
         resolved_path = ComponentPath.from_resolvable(self._defs_module_path, path)
