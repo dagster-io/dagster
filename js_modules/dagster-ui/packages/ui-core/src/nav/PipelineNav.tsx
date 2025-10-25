@@ -1,10 +1,12 @@
 import {Box, PageHeader, Subtitle1, Tag} from '@dagster-io/ui-components';
+import {useMemo} from 'react';
 import {Link, useRouteMatch} from 'react-router-dom';
 import {buildJobTabs} from 'shared/pipelines/buildJobTabs.oss';
 
 import {JobMetadata} from './JobMetadata';
 import {RepositoryLink} from './RepositoryLink';
 import {usePermissionsForLocation} from '../app/Permissions';
+import {useJobPermissions} from '../app/useJobPermissions';
 import {JobTabs} from '../pipelines/JobTabs';
 import {explorerPathFromString} from '../pipelines/PipelinePathUtils';
 import {useRepository} from '../workspace/WorkspaceContext/util';
@@ -43,7 +45,18 @@ export const PipelineNav = (props: Props) => {
     (partitionSet) => partitionSet.pipelineName === pipelineName,
   );
 
-  const tabs = buildJobTabs({hasLaunchpad, hasPartitionSet});
+  const pipelineSelector = useMemo(
+    () => ({
+      pipelineName,
+      repositoryName: repoAddress.name,
+      repositoryLocationName: repoAddress.location,
+    }),
+    [pipelineName, repoAddress.name, repoAddress.location],
+  );
+
+  const {hasLaunchExecutionPermission} = useJobPermissions(pipelineSelector, repoAddress.location);
+
+  const tabs = buildJobTabs({hasLaunchpad, hasPartitionSet, hasLaunchExecutionPermission});
 
   return (
     <>

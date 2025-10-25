@@ -53,8 +53,8 @@ import {
   PipelineRunTag,
   SessionBase,
 } from '../app/ExecutionSessionStorage';
-import {usePermissionsForLocation} from '../app/Permissions';
 import {ShortcutHandler} from '../app/ShortcutHandler';
+import {useJobPermissions} from '../app/useJobPermissions';
 import {displayNameForAssetKey, tokenForAssetKey} from '../asset-graph/Utils';
 import {asAssetCheckHandleInput, asAssetKeyInput} from '../assets/asInput';
 import {
@@ -200,12 +200,6 @@ const LaunchpadSession = (props: LaunchpadSessionProps) => {
   const client = useApolloClient();
   const [state, dispatch] = React.useReducer(reducer, initialState);
 
-  const {
-    permissions: {canLaunchPipelineExecution},
-    loading,
-  } = usePermissionsForLocation(repoAddress.location);
-  useBlockTraceUntilTrue('Permissions', !loading);
-
   const mounted = React.useRef<boolean>(false);
   const editor = React.useRef<ConfigEditorHandle | null>(null);
   const previewCounter = React.useRef(0);
@@ -228,6 +222,12 @@ const LaunchpadSession = (props: LaunchpadSessionProps) => {
     pipeline.name,
     repoAddress,
   ]);
+
+  const {hasLaunchExecutionPermission, loading} = useJobPermissions(
+    pipelineSelector,
+    repoAddress.location,
+  );
+  useBlockTraceUntilTrue('Permissions', !loading);
 
   React.useEffect(() => {
     mounted.current = true;
@@ -728,7 +728,7 @@ const LaunchpadSession = (props: LaunchpadSessionProps) => {
         <LaunchRootExecutionButton
           title={launchButtonTitle}
           warning={launchButtonWarning}
-          hasLaunchPermission={canLaunchPipelineExecution}
+          hasLaunchPermission={hasLaunchExecutionPermission}
           pipelineName={pipeline.name}
           getVariables={buildExecutionVariables}
           disabled={preview?.isPipelineConfigValid?.__typename !== 'PipelineConfigValidationValid'}

@@ -23,18 +23,29 @@ jest.mock('../PipelineOverviewRoot', () => ({
   PipelineOverviewRoot: () => <div />,
 }));
 
+// Mock useJobPermissions to control job-specific permissions in tests
+const mockUseJobPermissions = jest.fn();
+jest.mock('../../app/useJobPermissions', () => ({
+  useJobPermissions: (...args: any[]) => mockUseJobPermissions(...args),
+}));
+
 describe('PipelineNav', () => {
   const repoAddress = buildRepoAddress('bar', 'baz');
 
-  it('enables launchpad tab if not permissioned', async () => {
-    const locationOverrides = {
-      baz: {
-        canLaunchPipelineExecution: {enabled: true, disabledReason: ''},
-      },
-    };
+  beforeEach(() => {
+    mockUseJobPermissions.mockClear();
+  });
+
+  it('enables launchpad tab if permissioned', async () => {
+    // Mock job-specific permissions to return true
+    mockUseJobPermissions.mockReturnValue({
+      hasLaunchExecutionPermission: true,
+      hasLaunchReexecutionPermission: true,
+      loading: false,
+    });
 
     render(
-      <TestPermissionsProvider locationOverrides={locationOverrides}>
+      <TestPermissionsProvider>
         <MemoryRouter initialEntries={['/locations/bar@baz/jobs/foo/overview']}>
           <PipelineNav repoAddress={repoAddress} />
         </MemoryRouter>
@@ -46,14 +57,15 @@ describe('PipelineNav', () => {
   });
 
   it('disables launchpad tab if not permissioned', async () => {
-    const locationOverrides = {
-      baz: {
-        canLaunchPipelineExecution: {enabled: false, disabledReason: 'nope'},
-      },
-    };
+    // Mock job-specific permissions to return false
+    mockUseJobPermissions.mockReturnValue({
+      hasLaunchExecutionPermission: false,
+      hasLaunchReexecutionPermission: false,
+      loading: false,
+    });
 
     render(
-      <TestPermissionsProvider locationOverrides={locationOverrides}>
+      <TestPermissionsProvider>
         <MemoryRouter initialEntries={['/locations/bar@baz/jobs/foo/overview']}>
           <PipelineNav repoAddress={repoAddress} />
         </MemoryRouter>
