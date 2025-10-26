@@ -49,6 +49,10 @@ class MariaDBResource(ConfigurableResource):
     def _is_dagster_maintained(cls):
         return True
 
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
+        self._engine: Optional[Engine] = None
+
     def _get_connection_string(self) -> str:
         """Build the MariaDB connection string."""
         driver = "pymysql"
@@ -75,18 +79,18 @@ class MariaDBResource(ConfigurableResource):
         return connection_string
 
     def get_engine(self) -> Engine:
-        """Get a SQLAlchemy engine for MariaDB."""
-        connection_string = self._get_connection_string()
-        
-        # default engine parameters optimized for MariaDB
-        engine_kwargs = {
-            "pool_pre_ping": True,
-            "pool_recycle": 3600,
-            "echo": False,
-            **self.additional_parameters,
-        }
-        
-        return create_engine(connection_string, **engine_kwargs)
+        """Get a SQLAlchemy engine for MariaDB (cached to avoid recreating engines)."""
+        if self._engine is None:
+            connection_string = self._get_connection_string()
+            # default engine parameters optimized for MariaDB
+            engine_kwargs = {
+                "pool_pre_ping": True,
+                "pool_recycle": 3600,
+                "echo": False,
+                **self.additional_parameters,
+            }
+            self._engine = create_engine(connection_string, **engine_kwargs)
+        return self._engine
 
     @contextmanager
     def get_connection(self) -> Generator[Any, None, None]:

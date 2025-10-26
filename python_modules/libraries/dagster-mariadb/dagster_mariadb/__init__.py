@@ -8,6 +8,6 @@ DagsterLibraryRegistry.register("dagster-mariadb", __version__)
 
 __all__ = [
     "MariaDBResource",
-    "MariaDBPandasIOManager", 
+    "MariaDBPandasIOManager",
     "mariadb_pandas_io_manager",
 ]
