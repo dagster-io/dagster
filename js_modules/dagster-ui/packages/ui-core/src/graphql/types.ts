@@ -548,6 +548,7 @@ export type AssetNode = {
   hasAssetChecks: Scalars['Boolean']['output'];
   hasMaterializePermission: Scalars['Boolean']['output'];
   hasReportRunlessAssetEventPermission: Scalars['Boolean']['output'];
+  hasWipePermission: Scalars['Boolean']['output'];
   id: Scalars['ID']['output'];
   internalFreshnessPolicy: Maybe<InternalFreshnessPolicy>;
   isAutoCreatedStub: Scalars['Boolean']['output'];
@@ -7295,6 +7296,10 @@ export const buildAssetNode = (
       overrides && overrides.hasOwnProperty('hasReportRunlessAssetEventPermission')
         ? overrides.hasReportRunlessAssetEventPermission!
         : false,
+    hasWipePermission:
+      overrides && overrides.hasOwnProperty('hasWipePermission')
+        ? overrides.hasWipePermission!
+        : true,
     id:
       overrides && overrides.hasOwnProperty('id')
         ? overrides.id!
