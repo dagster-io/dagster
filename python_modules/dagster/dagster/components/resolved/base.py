@@ -110,14 +110,17 @@ class Resolvable:
 
     @classmethod
     def model(cls) -> type[BaseModel]:
+        print("------------ENTERED CLASS RESOLVABLE DEF MODEL ----------------------")
         return derive_model_type(cls)
 
     @classmethod
     def resolve_from_model(cls, context: "ResolutionContext", model: BaseModel):
+        print("------------ENTERED CLASS RESOLVABLE RESOLVE FROM MODEL!!!!!! ----------------------")
         return cls(**resolve_fields(model, cls, context))
 
     @classmethod
     def resolve_from_yaml(
+        
         cls,
         yaml: str,
         *,
@@ -133,6 +136,8 @@ class Resolvable:
             )
         else:  # yaml parsed as None
             model = model_cls()
+        
+        print("------------ENTERED CLASS RESOLVABLE RESOLVE FROM YAML ----------------------")
 
         context = ResolutionContext.default(
             parsed_and_src_tree.source_position_tree if parsed_and_src_tree else None
@@ -147,6 +152,7 @@ class Resolvable:
     def resolve_from_dict(cls, dictionary: dict[str, Any]):
         # Convert dictionary to YAML string
         # default_flow_style=False makes it use block style instead of inline
+        print("------------ENTERED CLASS RESOLVABLE RESOLVE FROM DICT ----------------------")
         yaml_string = yaml.dump(
             dictionary,
             default_flow_style=False,
@@ -165,6 +171,8 @@ def derive_model_type(
     target_type: type[Resolvable],
 ) -> type[BaseModel]:
     if target_type not in _DERIVED_MODEL_REGISTRY:
+        #PRINT STATEMENT ADDED FOR CLARITY DELETE LATER
+        print("_-_-__-___-______-INSIDE DERIVE_MODEL_TYPE-____--______---____")
         model_name = f"{target_type.__name__}Model"
 
         model_fields: dict[
@@ -186,6 +194,24 @@ def derive_model_type(
                 # use a marker value that will cause the kwarg
                 # to get omitted when we resolve fields in order
                 # to trigger the default on the target type
+                """
+                Person{
+                    value: dit factory_default = dict
+                    job: str
+                    ID: int
+                    ShoppingList: dict 'apples': 2 
+                }
+                   
+                """
+
+                """
+                    name: str
+                    job: str
+                    ID: int
+                    ShopppingList: 
+                
+                
+                """
                 default_value = (
                     annotation_info.default
                     if type(annotation_info.default) in {int, float, str, bool, type(None)}
@@ -197,7 +223,7 @@ def derive_model_type(
                     # if we have a field_info with default_factory, preserve it
                     field_infos.append(
                         Field(
-                            default_factory=annotation_info.field_info.default_factory)
+                            default_factory = annotation_info.field_info.default_factory)
                     )
                             
                 else:
@@ -224,6 +250,9 @@ def derive_model_type(
                 field_type,
                 FieldInfo.merge_field_infos(*field_infos),
             )
+
+            #ADDED LINE 258 FOR CLARITY 
+            print(field_infos)
 
         try:
             _DERIVED_MODEL_REGISTRY[target_type] = create_model(
@@ -367,6 +396,7 @@ def resolve_fields(
     context: "ResolutionContext",
 ) -> Mapping[str, Any]:
     """Returns a mapping of field names to resolved values for those fields."""
+
     alias_name_by_field_name = {
         field_name: (
             annotation_info.field_info.alias
@@ -381,8 +411,32 @@ def resolve_fields(
     }
 
     fields_with_factory = {
-        alias_name_by_field_name
+        fname 
+        for fname, info in _get_annotations(resolved_cls).items()
+        if info.field_info is not None and info.field_info.default_factory is not None
     }
+
+    dumped = model.model_dump(exclude_unset=True)
+
+    out = {}
+    for field_name, resolver in field_resolvers.items():
+        model_field_name = resolver.model_field_name or field_name
+        
+        #include if explicity set Or it had a default_factory
+        should_include = (model_field_name in dumped) or (field_name in fields_with_factory)
+        if not should_include:
+            continue
+        
+        value = getattr(model,model_field_name)
+        if value == _Unset:
+            continue
+
+        out[field_name] = resolver.execute(context= context, model= model, field_name = field_name)
+
+    """
+    for field_name, resolver in field_resolvers.items():
+        model_field_name = resolver.model_field_name or field_name
+
 
     out = {
         field_name: resolver.execute(context=context, model=model, field_name=field_name)
@@ -391,6 +445,7 @@ def resolve_fields(
         if (resolver.model_field_name or field_name) in model.model_dump(exclude_unset=True)
         and getattr(model, resolver.model_field_name or field_name) != _Unset
     }
+    """
     return {alias_name_by_field_name[k]: v for k, v in out.items()}
 
 
