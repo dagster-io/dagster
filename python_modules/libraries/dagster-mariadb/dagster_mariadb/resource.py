@@ -107,3 +107,4 @@ class MariaDBResource(ConfigurableResource):
             yield connection
         finally:
             connection.close()
+

@@ -167,3 +167,4 @@ def mariadb_pandas_io_manager(init_context):
         schema=init_context.resource_config.get("schema"),
         mode=init_context.resource_config.get("mode", "replace"),
     )
+

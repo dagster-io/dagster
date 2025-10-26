@@ -11,3 +11,4 @@ __all__ = [
     "MariaDBPandasIOManager",
     "mariadb_pandas_io_manager",
 ]
+
