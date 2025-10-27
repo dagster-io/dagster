@@ -1,6 +1,7 @@
 {
   "PermissionsQuery": "505a351d43369bd83e7d4ff2d974368d2a754a85661dfb077a26d1a11ff2f714",
   "LogTelemetryMutation": "b7bec91d7a5e9e8fb3ad41bb5b7fa1eb1e067c530a8f4cd52a76fde6475462c3",
+  "JobPermissionsQuery": "bc1633194c82d8531b5bb9b2b482ce70123949e106dd38463a3a0575f61788cd",
   "AssetAutomationQuery": "a7b9f9d72e79dd3cc60f094649f0e2f810feaa1563b886f7499be3087dc7cb65",
   "AssetGraphLiveQuery": "870d33b271f68fd3fcd1eb64016904deae5b531e7d82f7b22b8b63e6815a6200",
   "AssetsFreshnessInfoQuery": "1049ac5edde1a0f5c16dd8342020c30db8603477f6d7760712c5784a71bdbc01",
