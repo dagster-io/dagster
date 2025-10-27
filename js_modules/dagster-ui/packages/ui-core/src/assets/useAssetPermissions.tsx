@@ -8,22 +8,9 @@ import {
   AssetPermissionsQueryVariables,
 } from './types/useAssetPermissions.types';
 
-interface AssetPermissionsResult {
-  hasMaterializePermission: boolean;
-  hasWipePermission: boolean;
-  hasReportRunlessAssetEventPermission: boolean;
-  loading: boolean;
-}
-
-/**
- * Hook for fetching asset-specific permissions. If the asset key does not resolve
- * to an asset, falls back to location-level permissions.
- */
-export const useAssetPermissions = (
-  assetKey: AssetKeyInput,
-  locationName: string,
-): AssetPermissionsResult => {
-  const {permissions: locationPermissions} = usePermissionsForLocation(locationName);
+export const useAssetPermissions = (assetKey: AssetKeyInput, locationName: string) => {
+  const {permissions: locationPermissions, loading: locationLoading} =
+    usePermissionsForLocation(locationName);
 
   const {data, loading} = useQuery<AssetPermissionsQuery, AssetPermissionsQueryVariables>(
     ASSET_PERMISSIONS_QUERY,
@@ -32,7 +19,13 @@ export const useAssetPermissions = (
     },
   );
 
-  return useMemo<AssetPermissionsResult>(() => {
+  const {canLaunchPipelineExecution, canWipeAssets, canReportRunlessAssetEvents} =
+    locationPermissions;
+  const fallbackPermissions = useMemo(() => {
+    return {canLaunchPipelineExecution, canWipeAssets, canReportRunlessAssetEvents};
+  }, [canLaunchPipelineExecution, canWipeAssets, canReportRunlessAssetEvents]);
+
+  return useMemo(() => {
     if (data?.assetNodeOrError.__typename === 'AssetNode') {
       return {
         hasMaterializePermission: data.assetNodeOrError.hasMaterializePermission,
@@ -44,12 +37,12 @@ export const useAssetPermissions = (
     }
 
     return {
-      hasMaterializePermission: locationPermissions.canLaunchPipelineExecution,
-      hasWipePermission: locationPermissions.canWipeAssets,
-      hasReportRunlessAssetEventPermission: locationPermissions.canReportRunlessAssetEvents,
-      loading,
+      hasMaterializePermission: fallbackPermissions.canLaunchPipelineExecution,
+      hasWipePermission: fallbackPermissions.canWipeAssets,
+      hasReportRunlessAssetEventPermission: fallbackPermissions.canReportRunlessAssetEvents,
+      loading: loading || locationLoading,
     };
-  }, [data, loading, locationPermissions]);
+  }, [data, loading, locationLoading, fallbackPermissions]);
 };
 
 export const ASSET_PERMISSIONS_QUERY = gql`
