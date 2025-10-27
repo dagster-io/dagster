@@ -3,9 +3,9 @@ from datetime import timedelta
 from dagster._core.definitions.decorators.asset_decorator import asset
 from dagster._core.definitions.definitions_class import Definitions
 from dagster._core.definitions.freshness import (
+    FreshnessPolicy,
     FreshnessState,
     FreshnessStateChange,
-    InternalFreshnessPolicy,
 )
 from dagster._core.definitions.repository_definition.repository_definition import (
     RepositoryDefinition,
@@ -49,7 +49,7 @@ query GetFreshnessStatusInfo($assetKey: AssetKeyInput!) {
 
 
 @asset(
-    freshness_policy=InternalFreshnessPolicy.time_window(
+    freshness_policy=FreshnessPolicy.time_window(
         fail_window=timedelta(minutes=10), warn_window=timedelta(minutes=5)
     )
 )
@@ -57,7 +57,7 @@ def asset_with_freshness_with_warn_window():
     pass
 
 
-@asset(freshness_policy=InternalFreshnessPolicy.time_window(fail_window=timedelta(minutes=10)))
+@asset(freshness_policy=FreshnessPolicy.time_window(fail_window=timedelta(minutes=10)))
 def asset_with_freshness():
     pass
 

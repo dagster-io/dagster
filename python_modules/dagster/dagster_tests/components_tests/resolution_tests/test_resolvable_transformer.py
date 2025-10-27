@@ -4,7 +4,7 @@ from dataclasses import dataclass
 from typing import Optional
 
 import dagster as dg
-from dagster._core.definitions.freshness import InternalFreshnessPolicy, TimeWindowFreshnessPolicy
+from dagster._core.definitions.freshness import FreshnessPolicy, TimeWindowFreshnessPolicy
 from dagster.components.resolved.context import ResolutionContext
 from dagster.components.resolved.core_models import AssetSpecKwargs, resolve_asset_spec
 
@@ -45,7 +45,7 @@ def test_asset_spec():
     kitchen_sink_spec = resolve_asset_spec(
         model=kitchen_sink_model,
         context=ResolutionContext.default().with_scope(
-            sample_freshness_policy=InternalFreshnessPolicy.time_window(
+            sample_freshness_policy=FreshnessPolicy.time_window(
                 fail_window=datetime.timedelta(minutes=10),
                 warn_window=datetime.timedelta(minutes=5),
             )
