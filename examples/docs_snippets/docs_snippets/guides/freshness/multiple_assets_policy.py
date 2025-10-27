@@ -1,7 +1,6 @@
 from datetime import timedelta
 
-from dagster import Definitions, asset
-from dagster.preview.freshness import FreshnessPolicy, apply_freshness_policy
+from dagster import Definitions, FreshnessPolicy, apply_freshness_policy, asset
 
 
 @asset
