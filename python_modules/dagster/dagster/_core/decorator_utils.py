@@ -86,7 +86,7 @@ def get_type_hints(fn: Callable[..., Any]) -> Mapping[str, Any]:
             if param.annotation != inspect.Parameter.empty:
                 hints[param_name] = param.annotation
         if sig.return_annotation != inspect.Signature.empty:
-            hints['return'] = sig.return_annotation
+            hints["return"] = sig.return_annotation
         return hints
     # handle Mock objects
     elif isinstance(fn, Mock) and hasattr(fn, "__call__"):
@@ -116,7 +116,7 @@ def get_type_hints(fn: Callable[..., Any]) -> Mapping[str, Any]:
             " the type referenced by the annotation out of local scope or a `TYPE_CHECKING` block."
         )
     except TypeError as e:
-        func_name = getattr(original_fn, '__name__', str(original_fn))
+        func_name = getattr(original_fn, "__name__", str(original_fn))
         raise DagsterInvalidDefinitionError(
             f"Failed to get type hints for {func_name}. This can happen with certain callable"
             f" objects that don't support introspection well. Original error: {e}"
