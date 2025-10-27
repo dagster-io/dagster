@@ -68,7 +68,7 @@ export const useLazyJobPermissions = (pipelineSelector: PipelineSelector, locati
     return {
       hasLaunchExecutionPermission: fallbackPermissions.canLaunchPipelineExecution,
       hasLaunchReexecutionPermission: fallbackPermissions.canLaunchPipelineReexecution,
-      loading: locationLoading,
+      loading: loading || locationLoading,
     };
   }, [data, loading, locationLoading, fallbackPermissions]);
 
