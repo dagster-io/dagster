@@ -28,6 +28,15 @@ The `workspace.yaml` file is used to load code locations for open source (OSS) d
 ## Dagster+ deployment
 
 To deploy to Dagster+:
-- [Get started with Dagster+ Serverless or Hybrid](/deployment/dagster-plus/getting-started), if you haven't already
-- Add a `dagster_cloud.yaml` file to the root directory of to your project
-- For one-time deployment from the command line, you can use the `dagster-cloud` CLI command line tool. For continuous deployment from GitHub, GitLab, or another Git provider, follow the steps in the CI/CD docs.
+
+[Get started with Dagster+ Serverless or Hybrid](/deployment/dagster-plus/getting-started), if you haven't already.
+
+<Tabs>
+    <TabItem value="serverless" label="Serverless">
+        Run `dg scaffold github-action`, which will create `.github/workflows/dagster-plus-deploy.yml`. No additional configuration file is required.
+    </TabItem>
+    <TabItem value="hybrid" label="Hybrid">
+        Run `dg scaffold build-artifacts`, which will create a `build.yaml` deployment configuration file and a Dockerfile. You will need to update the `build.yaml` file with your Docker registry.
+    </TabItem>
+</Tabs>
+
