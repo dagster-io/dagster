@@ -79,11 +79,18 @@ def get_type_hints(fn: Callable[..., Any]) -> Mapping[str, Any]:
         target = fn
 
     # handle __signature__ - Highest priority
-    if hasattr(target, "__signature__"):
-        target_for_hints = fn
+    if hasattr(fn, "__signature__"):
+        sig = fn.__signature__
+        hints = {}
+        for param_name, param in sig.parameters.items():
+            if param.annotation != inspect.Parameter.empty:
+                hints[param_name] = param.annotation
+        if sig.return_annotation != inspect.Signature.empty:
+            hints['return'] = sig.return_annotation
+        return hints
     # handle Mock objects
     elif isinstance(fn, Mock) and hasattr(fn, "__call__"):
-        target_for_hints = fn.__call__  # pyright: ignore[reportFunctionMemberAccess]
+        target_for_hints = fn.__call__
     # handle regular functions
     elif inspect.isfunction(target):
         target_for_hints = target
@@ -92,7 +99,7 @@ def get_type_hints(fn: Callable[..., Any]) -> Mapping[str, Any]:
         # no __signature__, only __call__ exists, __call__ have to be used
         target_for_hints = target.__call__
     else:
-        check.failed(f"Unhandled Callable object {fn}")
+        check.failed(f"Unhandled Callable object {original_fn}")
     try:
         return typing_get_type_hints(target_for_hints, include_extras=True)
     except NameError as e:

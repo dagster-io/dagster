@@ -172,7 +172,24 @@ def _resolve_powerbi_workspace(context: ResolutionContext, model: BaseModel) -> 
 @public
 @dataclass
 class PowerBIWorkspaceComponent(StateBackedComponent, Resolvable):
-    """Pulls in the contents of a PowerBI workspace into Dagster assets."""
+    """Pulls in the contents of a PowerBI workspace into Dagster assets.
+
+    Example:
+
+        .. code-block:: yaml
+
+            # defs.yaml
+
+            type: dagster_powerbi.PowerBIWorkspaceComponent
+            attributes:
+              workspace:
+                credentials:
+                  client_id: "{{ env.POWERBI_CLIENT_ID }}"
+                  client_secret: "{{ env.POWERBI_CLIENT_SECRET }}"
+                  tenant_id: "{{ env.POWERBI_TENANT_ID }}"
+                workspace_id: your-workspace-id
+              enable_semantic_model_refresh: true
+    """
 
     workspace: Annotated[
         Any,

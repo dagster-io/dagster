@@ -97,5 +97,5 @@ Finally, update your Dagster asset to pass in the model information that's used 
 
 ## What's next?
 
-- Schedule your pipeline to run periodically with [Automating Pipelines](/guides/automate/index.md)
+- Schedule your pipeline to run periodically with [Automating Pipelines](/guides/automate)
 - Explore adding asset checks to validate your script with [Understanding Asset Checks](/guides/test/asset-checks)

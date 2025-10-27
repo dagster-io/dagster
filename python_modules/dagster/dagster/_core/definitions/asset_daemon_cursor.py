@@ -69,7 +69,8 @@ class AssetDaemonCursor:
     """State that's stored between daemon evaluations.
 
     Args:
-        evaluation_id (int): The ID of the evaluation that produced this cursor.
+        evaluation_id (int): (DEPRECATED) The ID of the evaluation that produced this cursor.
+            This is no longer used as the source of truth for the evaluation id.
         previous_evaluation_state (Sequence[AutomationConditionEvaluationState]): (DEPRECATED) The
             evaluation info recorded for each asset on the previous tick.
         previous_cursors (Sequence[AutomationConditionCursor]): The cursor objects for each asset

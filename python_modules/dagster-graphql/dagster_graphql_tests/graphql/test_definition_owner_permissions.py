@@ -6,7 +6,7 @@ from contextlib import contextmanager
 from typing import Optional, Union, cast
 from unittest import mock
 
-from dagster import AssetCheckKey, AssetKey, BetaWarning
+from dagster import AssetCheckKey, AssetKey, BetaWarning, materialize
 from dagster._core.definitions.assets.graph.remote_asset_graph import RemoteAssetNode
 from dagster._core.definitions.assets.job.asset_job import IMPLICIT_ASSET_JOB_NAME
 from dagster._core.definitions.selector import JobSelector, ScheduleSelector, SensorSelector
@@ -37,6 +37,8 @@ from dagster_graphql_tests.graphql.graphql_context_test_suite import (
     GraphQLContextVariant,
     make_graphql_context_test_suite,
 )
+from dagster_graphql_tests.graphql.repo import owned_asset, unowned_asset
+from dagster_graphql_tests.graphql.test_assets import WIPE_ASSETS
 from dagster_graphql_tests.graphql.test_partition_backfill import (
     CANCEL_BACKFILL_MUTATION,
     GET_PARTITION_BACKFILLS_QUERY,
@@ -50,6 +52,29 @@ from dagster_graphql_tests.graphql.test_scheduler import (
 from dagster_graphql_tests.graphql.test_sensors import GET_SENSOR_STATUS_QUERY, START_SENSORS_QUERY
 
 warnings.filterwarnings("ignore", category=BetaWarning, message=r"Parameter `owners` .*")
+
+GET_JOB_PERMISSIONS_QUERY = """
+query JobPermissionsQuery($selector: PipelineSelector!) {
+    pipelineOrError(params: $selector) {
+        __typename
+        ... on Pipeline {
+            hasLaunchExecutionPermission
+            hasLaunchReexecutionPermission
+        }
+    }
+}
+"""
+
+GET_ASSET_PERMISSIONS_QUERY = """
+query AssetPermissionsQuery($assetKey: AssetKeyInput!) {
+    assetNodeOrError(assetKey: $assetKey) {
+        __typename
+        ... on AssetNode {
+            hasWipePermission
+        }
+    }
+}
+"""
 
 BaseTestSuite = make_graphql_context_test_suite(
     # no need to test all storages... just pick one that supports launching
@@ -129,6 +154,19 @@ class BaseDefinitionOwnerPermissionsTestSuite(ABC):
             else None
         )
         return typename, backfill_id
+
+    def graphql_get_job_permissions(self, context, job_name: str):
+        selector = infer_job_selector(context, job_name)
+        result = execute_dagster_graphql(
+            context,
+            GET_JOB_PERMISSIONS_QUERY,
+            variables={"selector": selector},
+        )
+        assert result.data
+        return (
+            result.data["pipelineOrError"]["hasLaunchExecutionPermission"],
+            result.data["pipelineOrError"]["hasLaunchReexecutionPermission"],
+        )
 
     def graphql_launch_job_backfill(self, context, job_name: str):
         partition_set = self.get_partition_set_by_job_name(context, job_name)
@@ -403,6 +441,26 @@ class BaseDefinitionOwnerPermissionsTestSuite(ABC):
         assert result.data
         return result.data["deletePipelineRun"]["__typename"]
 
+    def graphql_get_asset_wipe_permission(self, context, asset_key: AssetKey):
+        result = execute_dagster_graphql(
+            context,
+            GET_ASSET_PERMISSIONS_QUERY,
+            variables={"assetKey": asset_key.to_graphql_input()},
+        )
+        assert result.data
+        if result.data["assetNodeOrError"]["__typename"] == "AssetNode":
+            return result.data["assetNodeOrError"]["hasWipePermission"]
+        return None
+
+    def graphql_wipe_asset(self, context, asset_key: AssetKey):
+        result = execute_dagster_graphql(
+            context,
+            WIPE_ASSETS,
+            variables={"assetPartitionRanges": [{"assetKey": asset_key.to_graphql_input()}]},
+        )
+        assert result.data
+        return result.data["wipeAssets"]["__typename"]
+
     def _create_run(self, context, job_name):
         remote_job = context.get_full_job(
             JobSelector.from_graphql_input(infer_job_selector(context, job_name))
@@ -570,14 +628,22 @@ class BaseDefinitionOwnerPermissionsTestSuite(ABC):
         )
 
     def test_job_run_launch_permissions(self, graphql_context: WorkspaceRequestContext):
+        can_launch, _ = self.graphql_get_job_permissions(graphql_context, "owned_job")
+        assert can_launch
         typename, _ = self.graphql_launch_job_run(graphql_context, "owned_job")
         assert typename == "LaunchRunSuccess"
 
+        can_launch, _ = self.graphql_get_job_permissions(graphql_context, "unowned_job")
+        assert not can_launch
         typename, _ = self.graphql_launch_job_run(graphql_context, "unowned_job")
         assert typename == "UnauthorizedError"
 
     def test_job_reexecution_permissions(self, graphql_context: WorkspaceRequestContext):
+        _, can_reexecute = self.graphql_get_job_permissions(graphql_context, "owned_job")
+        assert can_reexecute
         run_a = self._create_run(graphql_context, "owned_job")
+        _, can_reexecute = self.graphql_get_job_permissions(graphql_context, "unowned_job")
+        assert not can_reexecute
         run_b = self._create_run(graphql_context, "unowned_job")
         assert (
             self.graphql_launch_job_reexecution(graphql_context, "owned_job", run_a.run_id)
@@ -755,6 +821,32 @@ class BaseDefinitionOwnerPermissionsTestSuite(ABC):
                     AssetCheckKey(AssetKey(["unowned_asset"]), "unowned_asset_check")
                 ],
             )
+            == "UnauthorizedError"
+        )
+
+    def test_asset_wipe_permissions(self, graphql_context: WorkspaceRequestContext):
+        instance = graphql_context.instance
+        materialize([owned_asset], instance=instance)
+        materialize([unowned_asset], instance=instance)
+
+        assert (
+            len(instance.fetch_materializations(AssetKey(["owned_asset"]), limit=10).records) == 1
+        )
+        assert (
+            len(instance.fetch_materializations(AssetKey(["unowned_asset"]), limit=10).records) == 1
+        )
+
+        assert self.graphql_get_asset_wipe_permission(graphql_context, AssetKey(["owned_asset"]))
+        assert not self.graphql_get_asset_wipe_permission(
+            graphql_context, AssetKey(["unowned_asset"])
+        )
+
+        assert (
+            self.graphql_wipe_asset(graphql_context, AssetKey(["owned_asset"]))
+            == "AssetWipeSuccess"
+        )
+        assert (
+            self.graphql_wipe_asset(graphql_context, AssetKey(["unowned_asset"]))
             == "UnauthorizedError"
         )
 

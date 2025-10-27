@@ -1,10 +1,13 @@
 import re
 import sys
+import traceback
+from contextlib import contextmanager
 from unittest import mock
 
 import dagster as dg
 import pytest
 from dagster import AssetSelection
+from dagster_shared.error import SerializableErrorInfo
 
 
 @pytest.fixture(
@@ -28,9 +31,8 @@ def test_typo_asset_selection_one_similar(group_name, asset_key_prefix) -> None:
         "my_job", selection=AssetSelection.assets(asset_key_prefix + ["asst1"])
     )
 
-    with pytest.raises(
-        dg.DagsterInvalidSubsetError,
-        match=(rf"did you mean one of the following\?\n\t{re.escape(asset1.key.to_string())}"),
+    with _raises_inner_job_subset_error(
+        rf"did you mean one of the following\?\n\t{re.escape(asset1.key.to_string())}",
     ):
         defs = dg.Definitions(assets=[asset1], jobs=[my_job])
         defs.resolve_job_def("my_job")
@@ -42,12 +44,22 @@ def test_typo_asset_selection_no_similar() -> None:
 
     my_job = dg.define_asset_job("my_job", selection=AssetSelection.assets("not_close_to_asset1"))
 
-    with pytest.raises(
-        dg.DagsterInvalidSubsetError,
-        match=(r"no AssetsDefinition objects supply these keys."),
-    ):
+    with _raises_inner_job_subset_error(r"no AssetsDefinition objects supply these keys."):
         defs = dg.Definitions(assets=[asset1], jobs=[my_job])
         defs.resolve_job_def("my_job")
+
+
+@contextmanager
+def _raises_inner_job_subset_error(match):
+    with pytest.raises(
+        dg.DagsterInvalidDefinitionError,
+    ) as exc_info:
+        yield
+
+    tb_exc = traceback.TracebackException.from_exception(exc_info.value)
+    error_info = SerializableErrorInfo.from_traceback(tb_exc)
+
+    assert re.compile(match).search(str(error_info)) is not None
 
 
 def test_typo_asset_selection_many_similar() -> None:
@@ -62,8 +74,7 @@ def test_typo_asset_selection_many_similar() -> None:
 
     my_job = dg.define_asset_job("my_job", selection=AssetSelection.assets("asst1"))
 
-    with pytest.raises(
-        dg.DagsterInvalidSubsetError,
+    with _raises_inner_job_subset_error(
         match=(
             rf"did you mean one of the following\?\n\t{re.escape(asset1.key.to_string())},"
             rf" {re.escape(assets1.key.to_string())},"
@@ -82,8 +93,7 @@ def test_typo_asset_selection_wrong_prefix() -> None:
         "my_job", selection=AssetSelection.assets(["my", "prfix", "asset1"])
     )
 
-    with pytest.raises(
-        dg.DagsterInvalidSubsetError,
+    with _raises_inner_job_subset_error(
         match=(rf"did you mean one of the following\?\n\t{re.escape(asset1.key.to_string())}"),
     ):
         defs = dg.Definitions(assets=[asset1], jobs=[my_job])
@@ -100,8 +110,7 @@ def test_typo_asset_selection_wrong_prefix_and_wrong_key() -> None:
         "my_job", selection=AssetSelection.assets(["my", "prfix", "asset4"])
     )
 
-    with pytest.raises(
-        dg.DagsterInvalidSubsetError,
+    with _raises_inner_job_subset_error(
         match=(r"no AssetsDefinition objects supply these keys."),
     ):
         defs = dg.Definitions(assets=[asset1], jobs=[my_job])
@@ -117,8 +126,7 @@ def test_one_off_component_prefix() -> None:
         "my_job", selection=AssetSelection.assets(["my", "prefix", "nested", "asset1"])
     )
 
-    with pytest.raises(
-        dg.DagsterInvalidSubsetError,
+    with _raises_inner_job_subset_error(
         match=(rf"did you mean one of the following\?\n\t{re.escape(asset1.key.to_string())}"),
     ):
         defs = dg.Definitions(assets=[asset1], jobs=[my_job])
@@ -126,8 +134,7 @@ def test_one_off_component_prefix() -> None:
 
     my_job = dg.define_asset_job("my_job", selection=AssetSelection.assets(["my", "asset1"]))
 
-    with pytest.raises(
-        dg.DagsterInvalidSubsetError,
+    with _raises_inner_job_subset_error(
         match=(rf"did you mean one of the following\?\n\t{re.escape(asset1.key.to_string())}"),
     ):
         defs = dg.Definitions(assets=[asset1], jobs=[my_job])
@@ -141,8 +148,7 @@ def test_select_without_prefix() -> None:
     # Many more components in the prefix
     my_job = dg.define_asset_job("my_job", selection=AssetSelection.assets(["asset1"]))
 
-    with pytest.raises(
-        dg.DagsterInvalidSubsetError,
+    with _raises_inner_job_subset_error(
         match=(rf"did you mean one of the following\?\n\t{re.escape(asset1.key.to_string())}"),
     ):
         defs = dg.Definitions(assets=[asset1], jobs=[my_job])

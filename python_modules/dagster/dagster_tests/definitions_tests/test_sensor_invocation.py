@@ -5,6 +5,7 @@ from unittest import mock
 
 import dagster as dg
 import pytest
+import inspect
 from dagster import AssetSelection, DagsterInstance, DagsterRunStatus, RunRequest, asset_sensor
 from dagster._core.definitions.metadata import MetadataValue
 from dagster._core.storage.tags import PARTITION_NAME_TAG
@@ -1891,3 +1892,46 @@ def test_run_status_sensor_eval_tick_testing() -> None:
 
     # assert the expected response amongst sensors
     assert requested_jobs == {"job_1", "job_2"}
+
+# test for issue #32574
+# https://github.com/dagster-io/dagster/issues/32574
+def test_sensor_invocation_resources_callable_with_custom_signature() -> None:
+    """Test that callable objects with __signature__ attribute are handled correctly."""
+    class MyResource(dg.ConfigurableResource):
+        a_str: str
+    
+    # Define the signature you want to use
+    def custom_signature(my_resource: MyResource) -> dg.RunRequest:
+        pass
+    
+    class FooWithSignature:
+        def __init__(self):
+            # Set custom signature on the instance
+            self.__signature__ = inspect.signature(custom_signature)
+        
+        def __call__(self, **kwargs):
+            # __call__ has generic signature, but __signature__ overrides it
+            return dg.RunRequest(
+                run_key=None, 
+                run_config={"foo": kwargs['my_resource'].a_str}, 
+                tags={}
+            )
+    
+    weird_sensor = dg.SensorDefinition(
+        name="weird_with_sig",
+        evaluation_fn=FooWithSignature(),
+    )
+    
+    # Should recognize my_resource as a resource parameter from __signature__
+    with pytest.raises(
+        dg.DagsterInvalidDefinitionError,
+        match=("Resource with key 'my_resource' required by sensor 'weird_with_sig' was not provided."),
+    ):
+        weird_sensor()
+    
+    # Should work when resource is provided
+    assert cast(
+        "dg.RunRequest",
+        weird_sensor(dg.build_sensor_context(resources={"my_resource": MyResource(a_str="bar")})),
+    ).run_config == {"foo": "bar"}
+

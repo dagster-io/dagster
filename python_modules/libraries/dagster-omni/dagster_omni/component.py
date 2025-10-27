@@ -26,6 +26,21 @@ from dagster_omni.workspace import OmniWorkspace
 
 @preview
 class OmniComponent(StateBackedComponent, dg.Model, dg.Resolvable):
+    """Pulls in the contents of an Omni workspace into Dagster assets.
+
+    Example:
+
+        .. code-block:: yaml
+
+            # defs.yaml
+
+            type: dagster_omni.OmniComponent
+            attributes:
+              workspace:
+                base_url: https://your-company.omniapp.co
+                api_key: "{{ env.OMNI_API_KEY }}"
+    """
+
     workspace: OmniWorkspace = Field(
         description="Defines configuration for interacting with an Omni instance.",
     )

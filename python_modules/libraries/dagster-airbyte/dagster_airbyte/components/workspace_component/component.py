@@ -7,6 +7,7 @@ from typing import Annotated, Callable, Optional, Union
 import dagster as dg
 import pydantic
 from dagster._annotations import superseded
+from dagster._symbol_annotations.public import public
 from dagster._utils.names import clean_name
 from dagster.components.component.state_backed_component import StateBackedComponent
 from dagster.components.resolved.base import resolve_fields
@@ -172,11 +173,31 @@ def resolve_airbyte_workspace_type(context: dg.ResolutionContext, model):
         check.failed(f"Unknown Airbyte workspace type: {type(model)}")
 
 
+@public
 @dg.scaffold_with(AirbyteWorkspaceComponentScaffolder)
 class AirbyteWorkspaceComponent(StateBackedComponent, dg.Model, dg.Resolvable):
     """Loads Airbyte connections from a given Airbyte workspace as Dagster assets.
     Materializing these assets will trigger a sync of the Airbyte connection, enabling
     you to schedule Airbyte syncs using Dagster.
+
+    Example:
+
+        .. code-block:: yaml
+
+            # defs.yaml
+
+            type: dagster_airbyte.AirbyteWorkspaceComponent
+            attributes:
+              workspace:
+                rest_api_base_url: http://localhost:8000/api/public/v1
+                configuration_api_base_url: http://localhost:8000/api/v1
+                workspace_id: your-workspace-id
+                client_id: "{{ env.AIRBYTE_CLIENT_ID }}"
+                client_secret: "{{ env.AIRBYTE_CLIENT_SECRET }}"
+              connection_selector:
+                by_name:
+                  - my_postgres_to_snowflake_connection
+                  - my_mysql_to_bigquery_connection
     """
 
     workspace: Annotated[

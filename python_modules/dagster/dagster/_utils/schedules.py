@@ -937,6 +937,12 @@ def get_smallest_cron_interval(
                 # We've encountered a genuine zero interval (which shouldn't happen)
                 raise Exception("Encountered a genuine zero interval")
 
+            if interval < datetime.timedelta(seconds=0):
+                # This happens when the sampling encounters a daylight savings transition where the clocks roll back
+                # Just skip this interval and continue sampling
+                prev_tick = current_tick
+                continue
+
             # Update minimum interval
             if min_interval is None or interval < min_interval:
                 min_interval = interval

@@ -1,4 +1,5 @@
 import re
+import traceback
 from collections.abc import Sequence
 from datetime import datetime
 from pathlib import Path
@@ -26,6 +27,7 @@ from dagster._core.definitions.partitions.context import PartitionLoadingContext
 from dagster._core.types.pagination import PaginatedResults
 from dagster._utils.test.definitions import scoped_definitions_load_context
 from dagster.components.core.component_tree import ComponentTree
+from dagster_shared.error import SerializableErrorInfo
 
 
 def get_all_assets_from_defs(defs: Definitions):
@@ -1084,10 +1086,12 @@ def test_definitions_failure_on_asset_job_resolve():
         jobs=[invalid_job],
     )
 
-    with pytest.raises(
-        dg.DagsterInvalidSubsetError, match="no AssetsDefinition objects supply these keys"
-    ):
+    with pytest.raises(dg.DagsterInvalidDefinitionError) as exc_info:
         Definitions.validate_loadable(defs)
+
+    tb_exc = traceback.TracebackException.from_exception(exc_info.value)
+    error_info = SerializableErrorInfo.from_traceback(tb_exc)
+    assert "no AssetsDefinition objects supply these keys" in str(error_info)
 
 
 def test_definitions_dedupe_reference_equality():

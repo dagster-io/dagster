@@ -17,7 +17,7 @@ if TYPE_CHECKING:
     from upath import UPath
 
 
-class BlobStorageStateStorage(DefsStateStorage, ConfigurableClass):
+class UPathDefsStateStorage(DefsStateStorage, ConfigurableClass):
     """Implements StateStorage using a UPath as the backing store."""
 
     def __init__(self, base_path: "UPath", inst_data: Optional[ConfigurableClassData] = None):

@@ -4,9 +4,10 @@ from collections.abc import Iterable, Iterator, Mapping, Sequence, Set
 from datetime import datetime
 from functools import cached_property
 from threading import RLock
-from typing import TYPE_CHECKING, AbstractSet, Callable, Optional, Union  # noqa: UP035
+from typing import TYPE_CHECKING, AbstractSet, Any, Callable, Optional, Union  # noqa: UP035
 
 from dagster_shared.error import DagsterError
+from dagster_shared.utils.hash import make_hashable
 
 import dagster._check as check
 from dagster._config.snap import ConfigFieldSnap, ConfigSchemaSnapshot
@@ -77,6 +78,7 @@ from dagster._core.snap import ExecutionPlanSnapshot
 from dagster._core.snap.job_snapshot import JobSnap
 from dagster._core.storage.tags import EXTERNAL_JOB_SOURCE_TAG_KEY
 from dagster._core.utils import toposort
+from dagster._record import record
 from dagster._serdes import create_snapshot_id
 from dagster._utils.cached_method import cached_method
 from dagster._utils.schedules import schedule_execution_time_iterator
@@ -518,6 +520,8 @@ class RemoteJob(RepresentedJob, LoadableBy[JobSubsetSelector, "BaseWorkspaceRequ
 
     @property
     def owners(self) -> Optional[Sequence[str]]:
+        if self._job_ref_snap is not None:
+            return self._job_ref_snap.owners
         return getattr(self._job_index.job_snapshot, "owners", None)
 
     @property
@@ -667,7 +671,17 @@ class RemoteJob(RepresentedJob, LoadableBy[JobSubsetSelector, "BaseWorkspaceRequ
         )
 
 
-class RemoteExecutionPlan(LoadableBy[JobSubsetSelector, "BaseWorkspaceRequestContext"]):
+@record
+class RemoteExecutionPlanSelector:
+    job_selector: JobSubsetSelector
+    run_config: Optional[Mapping[str, Any]]
+
+    @cached_method
+    def __hash__(self) -> int:
+        return hash(make_hashable(self))
+
+
+class RemoteExecutionPlan(LoadableBy[RemoteExecutionPlanSelector, "BaseWorkspaceRequestContext"]):
     """RemoteExecutionPlan is a object that represents an execution plan that
     was compiled in another process or persisted in an instance.
     """
@@ -693,21 +707,25 @@ class RemoteExecutionPlan(LoadableBy[JobSubsetSelector, "BaseWorkspaceRequestCon
 
     @classmethod
     async def _batch_load(
-        cls, keys: Iterable[JobSubsetSelector], context: "BaseWorkspaceRequestContext"
+        cls, keys: Iterable[RemoteExecutionPlanSelector], context: "BaseWorkspaceRequestContext"
     ) -> Iterable[Optional["RemoteExecutionPlan"]]:
-        remote_jobs = await RemoteJob.gen_many(context, keys)
-        remote_jobs_by_key = {key: job for key, job in zip(keys, remote_jobs)}
+        job_selectors = list({selector.job_selector for selector in keys})
+        remote_jobs = await RemoteJob.gen_many(context, job_selectors)
+        remote_jobs_by_selector_hash = {
+            hash(selector): job for selector, job in zip(job_selectors, remote_jobs)
+        }
+
         unique_keys = {key for key in keys}
 
         tasks = [
             context.gen_execution_plan(
-                check.not_none(remote_jobs_by_key[key]),
+                check.not_none(remote_jobs_by_selector_hash[hash(key.job_selector)]),
                 run_config=key.run_config or {},
                 step_keys_to_execute=None,
                 known_state=None,
             )
             for key in unique_keys
-            if remote_jobs_by_key[key] is not None
+            if remote_jobs_by_selector_hash[hash(key.job_selector)] is not None
         ]
 
         if tasks:
@@ -720,7 +738,7 @@ class RemoteExecutionPlan(LoadableBy[JobSubsetSelector, "BaseWorkspaceRequestCon
 
     @classmethod
     def _blocking_batch_load(
-        cls, keys: Iterable[JobSubsetSelector], context: "BaseWorkspaceRequestContext"
+        cls, keys: Iterable[RemoteExecutionPlanSelector], context: "BaseWorkspaceRequestContext"
     ) -> Iterable[Optional["RemoteExecutionPlan"]]:
         raise NotImplementedError
 

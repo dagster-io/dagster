@@ -113,6 +113,18 @@ class DbtProjectComponent(StateBackedComponent, dg.Resolvable):
 
     Scaffold a DbtProjectComponent definition by running `dg scaffold defs dagster_dbt.DbtProjectComponent --project-path path/to/your/existing/dbt_project`
     in the Dagster project directory.
+
+    Example:
+
+        .. code-block:: yaml
+
+            # defs.yaml
+
+            type: dagster_dbt.DbtProjectComponent
+            attributes:
+              project: "{{ project_root }}/path/to/dbt_project"
+              cli_args:
+                - build
     """
 
     project: Annotated[
@@ -213,7 +225,7 @@ class DbtProjectComponent(StateBackedComponent, dg.Resolvable):
     def defs_state_config(self) -> DefsStateConfig:
         return DefsStateConfig(
             key=f"{self.__class__.__name__}[{self.project.name}]",
-            type=DefsStateManagementType.LOCAL_FILESYSTEM,
+            management_type=DefsStateManagementType.LOCAL_FILESYSTEM,
             refresh_if_dev=self.prepare_if_dev,
         )
 
@@ -224,6 +236,34 @@ class DbtProjectComponent(StateBackedComponent, dg.Resolvable):
     @cached_property
     def _base_translator(self) -> "DagsterDbtTranslator":
         return DagsterDbtTranslator(self.translation_settings)
+
+    def get_resource_props(self, manifest: Mapping[str, Any], unique_id: str) -> Mapping[str, Any]:
+        """Given a parsed manifest and a dbt unique_id, returns the dictionary of properties
+        for the corresponding dbt resource (e.g. model, seed, snapshot, source) as defined
+        in your dbt project. This can be used as a convenience method when overriding the
+        `get_asset_spec` method.
+
+        Args:
+            manifest (Mapping[str, Any]): The parsed manifest of the dbt project.
+            unique_id (str): The unique_id of the dbt resource.
+
+        Returns:
+            Mapping[str, Any]: The dictionary of properties for the corresponding dbt resource.
+
+        Examples:
+            .. code-block:: python
+
+                class CustomDbtProjectComponent(DbtProjectComponent):
+
+                    def get_asset_spec(self, manifest: Mapping[str, Any], unique_id: str, project: Optional[DbtProject]) -> dg.AssetSpec:
+                        base_spec = super().get_asset_spec(manifest, unique_id, project)
+                        resource_props = self.get_resource_props(manifest, unique_id)
+                        if resource_props["meta"].get("use_custom_group"):
+                            return base_spec.replace_attributes(group_name="custom_group")
+                        else:
+                            return base_spec
+        """
+        return get_node(manifest, unique_id)
 
     def get_asset_spec(
         self, manifest: Mapping[str, Any], unique_id: str, project: Optional[DbtProject]

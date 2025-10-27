@@ -1,0 +1,8 @@
+tree my_project/defs
+
+my_project/defs
+├── __init__.py
+└── omni_ingest
+    └── defs.yaml
+
+2 directories, 2 files
