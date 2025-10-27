@@ -2,8 +2,8 @@ from datetime import timedelta
 
 import dagster as dg
 import pytest
+from dagster import apply_freshness_policy
 from dagster._check import CheckError, ParameterCheckError
-from dagster._core.definitions.assets.definition.asset_spec import apply_freshness_policy
 from dagster._core.definitions.decorators.asset_decorator import asset
 from dagster._core.definitions.freshness import (
     INTERNAL_FRESHNESS_POLICY_METADATA_KEY,
@@ -25,8 +25,8 @@ class TestInternalFreshnessPolicy:
         policy = InternalFreshnessPolicy.from_asset_spec_metadata(metadata)
         assert policy is None
 
-    def test_internal_freshness_policy_import_from_preview_module(self) -> None:
-        from dagster.preview.freshness import FreshnessPolicy
+    def test_freshness_policy_top_level_import(self) -> None:
+        from dagster import FreshnessPolicy
 
         time_policy = FreshnessPolicy.time_window(
             fail_window=timedelta(minutes=10), warn_window=timedelta(minutes=5)

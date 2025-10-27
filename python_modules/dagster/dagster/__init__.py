@@ -153,6 +153,7 @@ from dagster._core.definitions.asset_sensor_definition import (
 from dagster._core.definitions.assets.definition.asset_dep import AssetDep as AssetDep
 from dagster._core.definitions.assets.definition.asset_spec import (
     AssetSpec as AssetSpec,
+    apply_freshness_policy as apply_freshness_policy,
     map_asset_specs as map_asset_specs,
 )
 from dagster._core.definitions.assets.definition.assets_definition import (
@@ -255,6 +256,9 @@ from dagster._core.definitions.executor_definition import (
     multi_or_in_process_executor as multi_or_in_process_executor,
     multiple_process_executor_requirements as multiple_process_executor_requirements,
     multiprocess_executor as multiprocess_executor,
+)
+from dagster._core.definitions.freshness import (
+    InternalFreshnessPolicy as FreshnessPolicy,  # noqa: F401
 )
 from dagster._core.definitions.freshness_policy import (
     LegacyFreshnessPolicy as LegacyFreshnessPolicy,
@@ -757,7 +761,6 @@ _DEPRECATED_RENAMED: Final[Mapping[str, tuple[Callable, str]]] = {
 _DEPRECATED_WITH_ERROR: Final[Mapping[str, str]] = {
     ##### EXAMPLE
     # "Foo": "Use Bar instead.",
-    "FreshnessPolicy": "FreshnessPolicy was renamed to LegacyFreshnessPolicy in 1.11.0. For more information, please refer to the section 'Migrating to 1.11.0' in the migration guide (MIGRATION.md)."
 }
 
 
