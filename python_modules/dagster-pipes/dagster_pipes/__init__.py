@@ -292,6 +292,12 @@ def _resolve_optionally_passed_asset_key(
     return asset_key
 
 
+def _assert_defined_asset_identifier_property(value: Optional[_T], key: str) -> _T:
+    return _assert_not_none(
+        value, f"`{key}` is undefined. Current step must contain exactly one asset_key"
+    )
+
+
 def _assert_defined_partition_property(value: Optional[_T], key: str) -> _T:
     return _assert_not_none(
         value, f"`{key}` is undefined. Current step does not target any partitions."
@@ -1693,6 +1699,21 @@ class PipesContext:
         asset_keys = _assert_defined_asset_property(self._data["asset_keys"], "asset_key")
         _assert_single_asset(self._data, "asset_key")
         return asset_keys[0]
+
+    @property
+    def asset_identifier(self) -> Sequence[str]:
+        """The sequence of strings making up the AssetKey for the asset being loaded as an input.
+        If the asset is partitioned, the identifier contains the partition key as the final element in the
+        sequence. For example, for the asset key ``AssetKey(["foo", "bar", "baz"])``, materialized with
+        partition key "2023-06-01", ``get_asset_identifier`` will return ``["foo", "bar", "baz", "2023-06-01"]``.
+        """
+        if self.is_asset_step:
+            if self.is_partition_step:
+                return [*self.asset_key.split("/"), self.partition_key]
+            else:
+                return self.asset_key.split("/")
+        else:
+            raise DagsterPipesError("Can't get asset identifier for not exactly one asset key")
 
     @property
     def asset_keys(self) -> Sequence[str]:
