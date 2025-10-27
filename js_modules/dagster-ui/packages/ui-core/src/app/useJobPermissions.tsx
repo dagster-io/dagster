@@ -2,25 +2,13 @@ import {useCallback, useMemo} from 'react';
 
 import {gql, useLazyQuery, useQuery} from '../apollo-client';
 import {usePermissionsForLocation} from './Permissions';
+import {PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorFragment';
 import {PipelineSelector} from '../graphql/types';
 import {JobPermissionsQuery, JobPermissionsQueryVariables} from './types/useJobPermissions.types';
 
-interface JobPermissionsResult {
-  hasLaunchExecutionPermission: boolean;
-  hasLaunchReexecutionPermission: boolean;
-  loading: boolean;
-}
-
-/**
- * Hook for fetching job-specific permissions. If the pipeline selector does not resolve
- * to a pipeline, falls back to location-level permissions.
- */
-export const useJobPermissions = (
-  pipelineSelector: PipelineSelector,
-  locationName: string,
-): JobPermissionsResult => {
-  const {permissions: locationPermissions} = usePermissionsForLocation(locationName);
-
+export const useJobPermissions = (pipelineSelector: PipelineSelector, locationName: string) => {
+  const {permissions: locationPermissions, loading: locationLoading} =
+    usePermissionsForLocation(locationName);
   const {data, loading} = useQuery<JobPermissionsQuery, JobPermissionsQueryVariables>(
     JOB_PERMISSIONS_QUERY,
     {
@@ -28,7 +16,12 @@ export const useJobPermissions = (
     },
   );
 
-  return useMemo<JobPermissionsResult>(() => {
+  const {canLaunchPipelineExecution, canLaunchPipelineReexecution} = locationPermissions;
+  const fallbackPermissions = useMemo(() => {
+    return {canLaunchPipelineExecution, canLaunchPipelineReexecution};
+  }, [canLaunchPipelineExecution, canLaunchPipelineReexecution]);
+
+  return useMemo(() => {
     if (data?.pipelineOrError.__typename === 'Pipeline') {
       return {
         hasLaunchExecutionPermission: data.pipelineOrError.hasLaunchExecutionPermission,
@@ -38,22 +31,16 @@ export const useJobPermissions = (
     }
 
     return {
-      hasLaunchExecutionPermission: locationPermissions.canLaunchPipelineExecution,
-      hasLaunchReexecutionPermission: locationPermissions.canLaunchPipelineReexecution,
-      loading,
+      hasLaunchExecutionPermission: fallbackPermissions.canLaunchPipelineExecution,
+      hasLaunchReexecutionPermission: fallbackPermissions.canLaunchPipelineReexecution,
+      loading: locationLoading,
     };
-  }, [data, loading, locationPermissions]);
+  }, [data, loading, locationLoading, fallbackPermissions]);
 };
 
-/**
- * Hook for lazily fetching job-specific permissions. If the pipeline selector does not resolve
- * to a pipeline, falls back to location-level permissions.
- */
-export const useLazyJobPermissions = (
-  pipelineSelector: PipelineSelector,
-  locationName: string,
-): [() => void, JobPermissionsResult] => {
-  const {permissions: locationPermissions} = usePermissionsForLocation(locationName);
+export const useLazyJobPermissions = (pipelineSelector: PipelineSelector, locationName: string) => {
+  const {permissions: locationPermissions, loading: locationLoading} =
+    usePermissionsForLocation(locationName);
 
   const [fetchPermissions, {data, loading}] = useLazyQuery<
     JobPermissionsQuery,
@@ -64,7 +51,12 @@ export const useLazyJobPermissions = (
     fetchPermissions({variables: {selector: pipelineSelector}});
   }, [fetchPermissions, pipelineSelector]);
 
-  const result = useMemo<JobPermissionsResult>(() => {
+  const {canLaunchPipelineExecution, canLaunchPipelineReexecution} = locationPermissions;
+  const fallbackPermissions = useMemo(() => {
+    return {canLaunchPipelineExecution, canLaunchPipelineReexecution};
+  }, [canLaunchPipelineExecution, canLaunchPipelineReexecution]);
+
+  const result = useMemo(() => {
     if (data?.pipelineOrError.__typename === 'Pipeline') {
       return {
         hasLaunchExecutionPermission: data.pipelineOrError.hasLaunchExecutionPermission,
@@ -74,11 +66,11 @@ export const useLazyJobPermissions = (
     }
 
     return {
-      hasLaunchExecutionPermission: locationPermissions.canLaunchPipelineExecution,
-      hasLaunchReexecutionPermission: locationPermissions.canLaunchPipelineReexecution,
-      loading,
+      hasLaunchExecutionPermission: fallbackPermissions.canLaunchPipelineExecution,
+      hasLaunchReexecutionPermission: fallbackPermissions.canLaunchPipelineReexecution,
+      loading: locationLoading,
     };
-  }, [data, loading, locationPermissions]);
+  }, [data, loading, locationLoading, fallbackPermissions]);
 
   return [fetch, result];
 };
@@ -86,6 +78,13 @@ export const useLazyJobPermissions = (
 export const JOB_PERMISSIONS_QUERY = gql`
   query JobPermissionsQuery($selector: PipelineSelector!) {
     pipelineOrError(params: $selector) {
+      ...PythonErrorFragment
+      ... on PipelineNotFoundError {
+        message
+      }
+      ... on InvalidSubsetError {
+        message
+      }
       ... on Pipeline {
         id
         hasLaunchExecutionPermission
@@ -93,4 +92,5 @@ export const JOB_PERMISSIONS_QUERY = gql`
       }
     }
   }
+  ${PYTHON_ERROR_FRAGMENT}
 `;

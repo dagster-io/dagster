@@ -9,15 +9,24 @@ export type JobPermissionsQueryVariables = Types.Exact<{
 export type JobPermissionsQuery = {
   __typename: 'Query';
   pipelineOrError:
-    | {__typename: 'InvalidSubsetError'}
+    | {__typename: 'InvalidSubsetError'; message: string}
     | {
         __typename: 'Pipeline';
         id: string;
         hasLaunchExecutionPermission: boolean;
         hasLaunchReexecutionPermission: boolean;
       }
-    | {__typename: 'PipelineNotFoundError'}
-    | {__typename: 'PythonError'};
+    | {__typename: 'PipelineNotFoundError'; message: string}
+    | {
+        __typename: 'PythonError';
+        message: string;
+        stack: Array<string>;
+        errorChain: Array<{
+          __typename: 'ErrorChainLink';
+          isExplicitLink: boolean;
+          error: {__typename: 'PythonError'; message: string; stack: Array<string>};
+        }>;
+      };
 };
 
-export const JobPermissionsQueryVersion = 'a9afe6f762bb3b4222b01eae07c25df6722e6485806ecc81260d8f679bb5e600';
+export const JobPermissionsQueryVersion = 'bc1633194c82d8531b5bb9b2b482ce70123949e106dd38463a3a0575f61788cd';
