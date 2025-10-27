@@ -13,19 +13,14 @@ In this guide, we'll walk you through how to run Dagster on your local machine u
 
 :::
 
-## Locating your code
+## Prerequisites
 
-Before starting local development, you need to tell Dagster how to find the Python code containing your assets and jobs.
+Before starting local development, you need to create a Dagster project that the Dagster instance can locate and run. For more information, see [Creating Dagster projects](/guides/build/projects/creating-dagster-projects).
 
-For a refresher on how to set up a Dagster project, follow our [Recommended Dagster Project Structure](/guides/build/projects/project-structure/organizing-dagster-projects) guide.
-
-<CodeExample
-  path="docs_snippets/docs_snippets/guides/tbd/definitions.py"
-  language="python"
-  title="src/my_project/assets.py"
-/>
+Once you have created a Dagster project, you can change to the project root directory and run `dg dev` to start the Dagster UI and Dagster daemon:
 
 ```shell
+cd my-project
 dg dev
 ```
 
@@ -60,7 +55,7 @@ For example, to have your local instance limit the number of concurrent runs, yo
   title="~/.dagster_home/dagster.yaml"
 />
 
-For the full list of options that can be set in the `dagster.yaml` file, refer to the [Dagster instance documentation](/deployment/oss/oss-instance-configuration).
+For the full list of options that can be set in the `dagster.yaml` file, see the [instance configuration guide](/deployment/oss/oss-instance-configuration).
 
 ## Detecting when you're running in `dg dev`
 
@@ -77,6 +72,10 @@ if os.getenv("DAGSTER_IS_DEV_CLI"):
 
 ## Moving to production
 
-`dg dev` is primarily useful for running Dagster for local development and testing. It isn't suitable for the demands of most production deployments. Most importantly, `dg dev` does not include authentication or web security. Additionally, in a production deployment, you might want to run multiple webserver replicas, have zero downtime continuous deployment of your code, or set up your Dagster daemon to automatically restart if it crashes.
+`dg dev` is primarily useful for running Dagster locally for development and testing. It isn't suitable for the demands of most production deployments. We recommend switching to a production deployment if you need the following:
+* Authentication or web security features (`dg dev` does not include these)
+* The ability to run multiple webserver replicas
+* The ability to configure zero downtime continuous deployment of your code
+* The ability to set up your Dagster daemon to automatically restart if it crashes
 
-For information about deploying Dagster in production, see the [Dagster Open Source deployment options documentation](/deployment/oss/deployment-options).
+For mores information about deploying Dagster in production, see the [Dagster Open Source deployment options documentation](/deployment/oss/deployment-options) or the [Dagster+ deployment documentation](/deployment/dagster-plus).
