@@ -6,6 +6,12 @@ import {PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorFragment';
 import {PipelineSelector} from '../graphql/types';
 import {JobPermissionsQuery, JobPermissionsQueryVariables} from './types/useJobPermissions.types';
 
+interface JobPermissionsResult {
+  hasLaunchExecutionPermission: boolean;
+  hasLaunchReexecutionPermission: boolean;
+  loading: boolean;
+}
+
 export const useJobPermissions = (pipelineSelector: PipelineSelector, locationName: string) => {
   const {permissions: locationPermissions, loading: locationLoading} =
     usePermissionsForLocation(locationName);
@@ -38,7 +44,10 @@ export const useJobPermissions = (pipelineSelector: PipelineSelector, locationNa
   }, [data, loading, locationLoading, fallbackPermissions]);
 };
 
-export const useLazyJobPermissions = (pipelineSelector: PipelineSelector, locationName: string) => {
+export const useLazyJobPermissions = (
+  pipelineSelector: PipelineSelector,
+  locationName: string,
+): [() => void, JobPermissionsResult] => {
   const {permissions: locationPermissions, loading: locationLoading} =
     usePermissionsForLocation(locationName);
 
