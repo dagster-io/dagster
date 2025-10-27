@@ -5,6 +5,7 @@ import {FeatureFlag} from 'shared/app/FeatureFlags.oss';
  */
 export const DEFAULT_FEATURE_FLAG_VALUES: Partial<Record<FeatureFlag, boolean>> = {
   [FeatureFlag.flagAssetNodeFacets]: true,
+  [FeatureFlag.flagNavigationUpdate]: true,
 
   // Flags for tests
   [FeatureFlag.__TestFlagDefaultTrue]: true,
