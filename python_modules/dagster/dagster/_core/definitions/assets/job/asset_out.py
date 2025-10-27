@@ -101,7 +101,6 @@ class AssetOut:
         owners: Optional[Sequence[str]] = None,
         tags: Optional[Mapping[str, str]] = None,
         kinds: Optional[set[str]] = None,
-        legacy_freshness_policy: Optional[LegacyFreshnessPolicy] = None,
         freshness_policy: Optional[FreshnessPolicy] = None,
         **kwargs,
     ):
