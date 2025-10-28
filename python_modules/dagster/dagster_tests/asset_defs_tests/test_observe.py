@@ -100,20 +100,28 @@ def test_multi_observe_partitions():
     result = observe([foo])
     observations = result.asset_observations_for_node("foo")
     assert len(observations) == 4
+
     observations_by_asset_partition = {
         (observation.asset_key, observation.partition): observation for observation in observations
     }
-    assert observations_by_asset_partition.keys() == {(first_foo.key, "apple"), (first_foo.key, "orange"),(second_foo.key, "peaches"), (second_foo.key, "bananas")}
+
+    assert observations_by_asset_partition.keys() == {
+        (first_foo.key, "apple"),
+        (first_foo.key, "orange"),
+        (second_foo.key, "peaches"),
+        (second_foo.key, "bananas")
+    }
+
     assert observations_by_asset_partition[(first_foo.key, "apple")].tags == {
         "dagster/data_version": "one"
     }
     assert observations_by_asset_partition[(first_foo.key, "orange")].tags == {
         "dagster/data_version": "two"
     }
-    assert observations_by_asset_partition[(first_foo.key, "peaches")].tags == {
+    assert observations_by_asset_partition[(second_foo.key, "peaches")].tags == {
         "dagster/data_version": "three"
     }
-    assert observations_by_asset_partition[(first_foo.key, "bananas")].tags == {
+    assert observations_by_asset_partition[(second_foo.key, "bananas")].tags == {
         "dagster/data_version": "four"
     }
 

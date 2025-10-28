@@ -171,10 +171,11 @@ class UnresolvedAssetJobDefinition(IHaveNew):
         asset_graph: "AssetGraph",
         default_executor_def: Optional[ExecutorDefinition] = None,
         resource_defs: Optional[Mapping[str, ResourceDefinition]] = None,
+        allow_different_partitions_defs: bool = False,
     ) -> "JobDefinition":
         """Resolve this UnresolvedAssetJobDefinition into a JobDefinition."""
         try:
-            job_asset_graph = get_asset_graph_for_job(asset_graph, self.selection)
+            job_asset_graph = get_asset_graph_for_job(asset_graph, self.selection, allow_different_partitions_defs)
         except DagsterInvalidDefinitionError as e:
             raise DagsterInvalidDefinitionError(
                 f'Error resolving selection for asset job "{self.name}": {e}'
@@ -224,7 +225,7 @@ class UnresolvedAssetJobDefinition(IHaveNew):
             hooks=self.hooks,
             op_retry_policy=self.op_retry_policy,
             resource_defs=resource_defs,
-            allow_different_partitions_defs=False,
+            allow_different_partitions_defs=allow_different_partitions_defs,
         )
 
     def with_metadata(
