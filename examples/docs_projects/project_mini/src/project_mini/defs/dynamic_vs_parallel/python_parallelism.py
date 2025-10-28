@@ -25,14 +25,14 @@ def compute_piece(piece_to_compute: str):
 
 
 @dg.op
-def merge_and_analyze(context: dg.OpExecutionContext, computed_pieces: list[str]):
+def merge_and_analyze_multiprocessing(context: dg.OpExecutionContext, computed_pieces: list[str]):
     context.log.info(f"Finished processing, result is ... {computed_pieces}")
     return
 
 
 @dg.job
 def python_parallelism():
-    merge_and_analyze(load_and_process_pieces())
+    merge_and_analyze_multiprocessing(load_and_process_pieces())
 
 
 defs = dg.Definitions(jobs=[python_parallelism])

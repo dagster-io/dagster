@@ -20,7 +20,7 @@ def compute_piece(piece_to_compute: str):
 
 
 @dg.op
-def merge_and_analyze(context: dg.OpExecutionContext, computed_pieces: list[str]):
+def merge_and_analyze_dynamic(context: dg.OpExecutionContext, computed_pieces: list[str]):
     context.log.info(f"Finished processing, result is ... {computed_pieces}")
     return
 
@@ -29,7 +29,4 @@ def merge_and_analyze(context: dg.OpExecutionContext, computed_pieces: list[str]
 def dynamic_graph():
     pieces = load_pieces()
     results = pieces.map(compute_piece)
-    merge_and_analyze(results.collect())
-
-
-defs = dg.Definitions(jobs=[dynamic_graph])
+    merge_and_analyze_dynamic(results.collect())
