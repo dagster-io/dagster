@@ -1866,7 +1866,7 @@ __metadata:
     styled-components: "npm:^5.3.3"
     typescript: "npm:5.9.2"
     uuid: "npm:^9.0.0"
-    validator: "npm:^13.15.15"
+    validator: "npm:^13.15.20"
     web-vitals: "npm:^2.1.3"
     webpack: "npm:^5.94.0"
     webpack-bundle-analyzer: "npm:^4.7.0"
@@ -20142,10 +20142,10 @@ __metadata:
   languageName: node
   linkType: hard
 
-"validator@npm:^13.15.15":
-  version: 13.15.15
-  resolution: "validator@npm:13.15.15"
-  checksum: 10/a43d9271c879468b1ad6dd5d2597b71719a185d2c7ceb3d68f3c9c8c17c25af0d90a53edfa7efaa6ac0d4425ba0345684b9c7d8111bde0d06d915a634a287018
+"validator@npm:^13.15.20":
+  version: 13.15.20
+  resolution: "validator@npm:13.15.20"
+  checksum: 10/498f9b201dda7b09207bbc13606e6f90595987eab9e3a60fc5b8d8d96141c9351192aea56d392c78640e2462770eedccf545cf13b2ef43e87d73a755ba485c5d
   languageName: node
   linkType: hard
 
