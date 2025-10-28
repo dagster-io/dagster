@@ -20,6 +20,7 @@ from dagster_test.dg_utils.utils import (
 
 from dagster_dg_cli.cli.plus.constants import DgPlusAgentPlatform
 from dagster_dg_cli.cli.scaffold.github_actions import REGISTRY_INFOS
+from dagster_dg_cli.cli.scaffold.gitlab_ci import REGISTRY_INFOS as GITLAB_REGISTRY_INFOS
 from dagster_dg_cli.utils.plus import gql
 from dagster_dg_cli_tests.cli_tests.plus_tests.utils import (
     PYTHON_VERSION,
@@ -615,3 +616,223 @@ def test_scaffold_github_actions_git_root_above_project(
             validate_github_actions_workflow(
                 Path.cwd().parent / ".github" / "workflows" / "dagster-plus-deploy.yml"
             )
+
+
+def validate_gitlab_ci_config(config_path: Path, *, expected_version: str = "main"):
+    """Validates the GitLab CI configuration.
+
+    For inline workflows, we just verify that TEMPLATE_ placeholders are replaced.
+    Version is not tracked in inline workflows since the workflow code is embedded directly.
+    """
+    content = config_path.read_text()
+    assert "TEMPLATE_" not in content, (
+        "TEMPLATE_ placeholders should be replaced in the configuration"
+    )
+
+
+@responses.activate
+@pytest.mark.parametrize(
+    "version_override",
+    [
+        None,  # Use default version
+        "1.11.0",  # Override version
+    ],
+)
+def test_scaffold_gitlab_ci_command_success_serverless(
+    dg_plus_cli_config,
+    setup_populated_git_workspace: ProxyRunner,
+    version_override: Optional[str],
+):
+    from dagster_dg_cli import version
+
+    current_version = version.__version__
+    try:
+        if version_override:
+            version.__version__ = version_override
+
+        mock_gql_response(
+            query=gql.DEPLOYMENT_INFO_QUERY,
+            json_data={"data": {"currentDeployment": {"agentType": "SERVERLESS"}}},
+        )
+        runner = setup_populated_git_workspace
+        result = runner.invoke("scaffold", "gitlab-ci")
+        assert result.exit_code == 0, result.output + " " + str(result.exception)
+
+        assert Path(".gitlab-ci.yml").exists()
+        assert "hooli" in Path(".gitlab-ci.yml").read_text()
+        assert not Path("dagster_cloud.yaml").exists()
+
+        expected_version = f"v{version_override}" if version_override else "main"
+        validate_gitlab_ci_config(
+            Path(".gitlab-ci.yml"),
+            expected_version=expected_version,
+        )
+    finally:
+        version.__version__ = current_version
+
+
+@responses.activate
+def test_scaffold_gitlab_ci_command_success_project_serverless(
+    dg_plus_cli_config,
+):
+    mock_gql_response(
+        query=gql.DEPLOYMENT_INFO_QUERY,
+        json_data={"data": {"currentDeployment": {"agentType": "SERVERLESS"}}},
+    )
+    with (
+        ProxyRunner.test(use_fixed_test_components=True) as runner,
+        isolated_example_project_foo_bar(runner),
+    ):
+        subprocess.run(["git", "init"], check=False)
+        result = runner.invoke("scaffold", "gitlab-ci")
+        assert result.exit_code == 0, result.output + " " + str(result.exception)
+
+        assert Path(".gitlab-ci.yml").exists()
+        assert "hooli" in Path(".gitlab-ci.yml").read_text()
+        assert not Path("dagster_cloud.yaml").exists()
+
+        validate_gitlab_ci_config(Path(".gitlab-ci.yml"))
+
+
+@responses.activate
+def test_scaffold_gitlab_ci_command_no_plus_config_serverless(
+    setup_populated_git_workspace,
+    monkeypatch,
+):
+    mock_gql_response(
+        query=gql.DEPLOYMENT_INFO_QUERY,
+        json_data={"data": {"currentDeployment": {"agentType": "SERVERLESS"}}},
+    )
+    with tempfile.TemporaryDirectory() as cloud_config_dir:
+        monkeypatch.setenv("DG_CLI_CONFIG", str(Path(cloud_config_dir) / "dg.toml"))
+        monkeypatch.setenv("DAGSTER_CLOUD_CLI_CONFIG", str(Path(cloud_config_dir) / "config"))
+
+        runner = setup_populated_git_workspace
+        result = runner.invoke("scaffold", "gitlab-ci", input="my-org\nprod\nserverless\n")
+        assert result.exit_code == 0, result.output + " " + str(result.exception)
+
+        assert "Dagster Plus organization name: " in result.output
+        assert Path(".gitlab-ci.yml").exists()
+        assert "my-org" in Path(".gitlab-ci.yml").read_text()
+        assert not Path("dagster_cloud.yaml").exists()
+
+        validate_gitlab_ci_config(Path(".gitlab-ci.yml"))
+
+
+@responses.activate
+def test_scaffold_gitlab_ci_command_no_git_root_serverless(
+    dg_plus_cli_config,
+):
+    mock_gql_response(
+        query=gql.DEPLOYMENT_INFO_QUERY,
+        json_data={"data": {"currentDeployment": {"agentType": "SERVERLESS"}}},
+    )
+    with (
+        ProxyRunner.test(use_fixed_test_components=True) as runner,
+        tempfile.TemporaryDirectory() as temp_dir,
+        pushd(temp_dir),
+    ):
+        runner.invoke_create_dagster("workspace", "dagster-workspace")
+        with pushd("dagster-workspace"):
+            runner.invoke_create_dagster("project", "--uv-sync", "foo")
+            runner.invoke_create_dagster("project", "--uv-sync", "bar")
+            runner.invoke_create_dagster("project", "--uv-sync", "baz")
+
+            result = runner.invoke("scaffold", "build-artifacts")
+            assert result.exit_code == 0, result.output + " " + str(result.exception)
+
+            result = runner.invoke("scaffold", "gitlab-ci")
+            assert result.exit_code == 1, result.output + " " + str(result.exception)
+            assert "No git repository found" in result.output
+
+            result = runner.invoke("scaffold", "gitlab-ci", "--git-root", str(Path.cwd()))
+            assert result.exit_code == 0, result.output + " " + str(result.exception)
+
+            assert Path(".gitlab-ci.yml").exists()
+            assert "hooli" in Path(".gitlab-ci.yml").read_text()
+            assert not Path("dagster_cloud.yaml").exists()
+
+            validate_gitlab_ci_config(Path(".gitlab-ci.yml"))
+
+
+FAKE_GITLAB_REGISTRY_URLS = [
+    "10000.dkr.ecr.us-east-1.amazonaws.com/hooli",
+    "docker.io/hooli",
+    "registry.gitlab.com/hooli",
+    "azurecr.io/hooli",
+    "gcr.io/hooli",
+]
+
+
+@responses.activate
+@pytest.mark.parametrize(
+    "registry_url, registry_info",
+    zip(FAKE_GITLAB_REGISTRY_URLS, GITLAB_REGISTRY_INFOS),
+    ids=[info.name for info in GITLAB_REGISTRY_INFOS],
+)
+def test_scaffold_gitlab_ci_command_success_hybrid(
+    dg_plus_cli_config,
+    setup_populated_git_workspace: ProxyRunner,
+    registry_url,
+    registry_info,
+):
+    """Test that the command works with a top level workspace, with various Docker registry URLs."""
+    mock_hybrid_response()
+
+    runner = setup_populated_git_workspace
+    result = runner.invoke("scaffold", "build-artifacts")
+    assert result.exit_code == 0, result.output + " " + str(result.exception)
+    Path("build.yaml").write_text(yaml.dump({"registry": registry_url}))
+
+    result = runner.invoke("scaffold", "gitlab-ci")
+    assert result.exit_code == 0, result.output + " " + str(result.exception)
+
+    assert Path(".gitlab-ci.yml").exists()
+    assert "hooli" in Path(".gitlab-ci.yml").read_text()
+    assert "build-foo" in Path(".gitlab-ci.yml").read_text()
+    assert "build-bar" in Path(".gitlab-ci.yml").read_text()
+    assert "build-baz" in Path(".gitlab-ci.yml").read_text()
+    assert not Path("dagster_cloud.yaml").exists()
+
+    if registry_info.secrets_hints:
+        for hint in registry_info.secrets_hints:
+            assert hint in result.output
+
+    validate_gitlab_ci_config(Path(".gitlab-ci.yml"))
+
+
+@responses.activate
+def test_scaffold_gitlab_ci_command_success_project_hybrid(
+    dg_plus_cli_config,
+):
+    """Test that the command works with a top level project, no workspace."""
+    mock_hybrid_response()
+    with (
+        ProxyRunner.test(use_fixed_test_components=True) as runner,
+        isolated_example_project_foo_bar(runner),
+    ):
+        subprocess.run(["git", "init"], check=False)
+
+        result = runner.invoke("scaffold", "gitlab-ci")
+        assert result.exit_code == 1, result.output + " " + str(result.exception)
+        assert "No registry URL found" in result.output
+        Path("build.yaml").write_text(yaml.dump({"registry": FAKE_ECR_URL, "build": "."}))
+
+        result = runner.invoke("scaffold", "gitlab-ci")
+        assert result.exit_code == 1, result.output + " " + str(result.exception)
+        assert "Dockerfile not found" in result.output
+
+        result = runner.invoke(
+            "scaffold", "build-artifacts", "--python-version", PYTHON_VERSION, input="\n"
+        )
+        assert result.exit_code == 0, result.output + " " + str(result.exception)
+
+        result = runner.invoke("scaffold", "gitlab-ci")
+        assert result.exit_code == 0, result.output + " " + str(result.exception)
+
+        assert Path(".gitlab-ci.yml").exists()
+        assert "hooli" in Path(".gitlab-ci.yml").read_text()
+        assert not Path("dagster_cloud.yaml").exists()
+
+        validate_gitlab_ci_config(Path(".gitlab-ci.yml"))
+        assert f"python:{PYTHON_VERSION}-slim-bookworm" in Path("Dockerfile").read_text()

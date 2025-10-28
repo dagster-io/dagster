@@ -1,0 +1,2 @@
+    # GitLab Container Registry login
+    - echo "$CI_REGISTRY_PASSWORD" | docker login -u $CI_REGISTRY_USER --password-stdin $CI_REGISTRY

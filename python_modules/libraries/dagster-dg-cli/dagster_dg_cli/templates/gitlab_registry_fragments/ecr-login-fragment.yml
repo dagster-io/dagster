@@ -1,0 +1,3 @@
+    # AWS ECR login
+    - apt-get update && apt-get install -y awscli
+    - aws ecr get-login-password --region $AWS_REGION | docker login --username AWS --password-stdin TEMPLATE_IMAGE_REGISTRY

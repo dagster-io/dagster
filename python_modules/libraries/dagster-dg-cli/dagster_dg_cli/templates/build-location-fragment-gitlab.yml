@@ -1,0 +1,23 @@
+# Build and push Docker image for "TEMPLATE_LOCATION_NAME"
+build-TEMPLATE_LOCATION_NAME:
+  stage: build
+  image: docker:latest
+  services:
+    - docker:dind
+  variables:
+    DOCKER_HOST: tcp://docker:2375
+    DOCKER_TLS_CERTDIR: ""
+  before_script:
+    # TEMPLATE_REGISTRY_LOGIN_FRAGMENT
+    - echo "Building Docker image for TEMPLATE_LOCATION_NAME"
+  script:
+    - cd $DAGSTER_PROJECT_DIR/TEMPLATE_LOCATION_PATH
+    - docker build -t TEMPLATE_IMAGE_REGISTRY:$IMAGE_TAG-TEMPLATE_LOCATION_NAME .
+    - docker push TEMPLATE_IMAGE_REGISTRY:$IMAGE_TAG-TEMPLATE_LOCATION_NAME
+    # Record the image tag for this location
+    - pip install dagster-cloud-cli
+    - dg plus deploy set-build-output --path=$DAGSTER_PROJECT_DIR --location-name=TEMPLATE_LOCATION_NAME --image-tag=$IMAGE_TAG-TEMPLATE_LOCATION_NAME
+  rules:
+    - if: $CI_MERGE_REQUEST_EVENT_TYPE == "close"
+      when: never
+    - when: on_success

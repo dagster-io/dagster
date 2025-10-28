@@ -8,6 +8,7 @@ from dagster_dg_cli.cli.scaffold.build_artifacts import scaffold_build_artifacts
 from dagster_dg_cli.cli.scaffold.component import scaffold_component_command
 from dagster_dg_cli.cli.scaffold.defs import scaffold_defs_group
 from dagster_dg_cli.cli.scaffold.github_actions import scaffold_github_actions_command
+from dagster_dg_cli.cli.scaffold.gitlab_ci import scaffold_gitlab_ci_command
 
 
 @click.group(name="scaffold", cls=DgClickGroup)
@@ -21,6 +22,7 @@ scaffold_group.add_command(scaffold_build_artifacts_command)
 scaffold_group.add_command(scaffold_component_command)
 scaffold_group.add_command(scaffold_defs_group)
 scaffold_group.add_command(scaffold_github_actions_command)
+scaffold_group.add_command(scaffold_gitlab_ci_command)
 
 __all__ = [
     "scaffold_branch_command",
@@ -28,5 +30,6 @@ __all__ = [
     "scaffold_component_command",
     "scaffold_defs_group",
     "scaffold_github_actions_command",
+    "scaffold_gitlab_ci_command",
     "scaffold_group",
 ]
