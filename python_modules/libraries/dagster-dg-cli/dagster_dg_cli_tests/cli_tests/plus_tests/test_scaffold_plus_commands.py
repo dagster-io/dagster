@@ -19,8 +19,7 @@ from dagster_test.dg_utils.utils import (
 )
 
 from dagster_dg_cli.cli.plus.constants import DgPlusAgentPlatform
-from dagster_dg_cli.cli.scaffold.github_actions import REGISTRY_INFOS
-from dagster_dg_cli.cli.scaffold.gitlab_ci import REGISTRY_INFOS as GITLAB_REGISTRY_INFOS
+from dagster_dg_cli.cli.scaffold.registry_config import CONTAINER_REGISTRIES
 from dagster_dg_cli.utils.plus import gql
 from dagster_dg_cli_tests.cli_tests.plus_tests.utils import (
     PYTHON_VERSION,
@@ -414,12 +413,15 @@ FAKE_REGISTRY_URLS = [
     "gcr.io/hooli",
 ]
 
+# Filter to registries that support GitHub Actions
+GITHUB_REGISTRIES = [r for r in CONTAINER_REGISTRIES if r.github_fragment is not None]
+
 
 @responses.activate
 @pytest.mark.parametrize(
     "registry_url, registry_info",
-    zip(FAKE_REGISTRY_URLS, REGISTRY_INFOS),
-    ids=[info.name for info in REGISTRY_INFOS],
+    zip(FAKE_REGISTRY_URLS, GITHUB_REGISTRIES),
+    ids=[info.name for info in GITHUB_REGISTRIES],
 )
 def test_scaffold_github_actions_command_success_hybrid(
     dg_plus_cli_config,
@@ -456,8 +458,8 @@ def test_scaffold_github_actions_command_success_hybrid(
 
     assert "https://github.com/hooli/example-repo/settings/secrets/actions" in result.output
 
-    if registry_info.secrets_hints:
-        for hint in registry_info.secrets_hints:
+    if registry_info.github_secrets:
+        for hint in registry_info.github_secrets:
             assert hint in result.output
 
     validate_github_actions_workflow(Path(".github/workflows/dagster-plus-deploy.yml"))
@@ -763,12 +765,15 @@ FAKE_GITLAB_REGISTRY_URLS = [
     "gcr.io/hooli",
 ]
 
+# Filter to registries that support GitLab CI
+GITLAB_REGISTRIES = [r for r in CONTAINER_REGISTRIES if r.gitlab_fragment is not None]
+
 
 @responses.activate
 @pytest.mark.parametrize(
     "registry_url, registry_info",
-    zip(FAKE_GITLAB_REGISTRY_URLS, GITLAB_REGISTRY_INFOS),
-    ids=[info.name for info in GITLAB_REGISTRY_INFOS],
+    zip(FAKE_GITLAB_REGISTRY_URLS, GITLAB_REGISTRIES),
+    ids=[info.name for info in GITLAB_REGISTRIES],
 )
 def test_scaffold_gitlab_ci_command_success_hybrid(
     dg_plus_cli_config,
@@ -794,8 +799,8 @@ def test_scaffold_gitlab_ci_command_success_hybrid(
     assert "build-baz" in Path(".gitlab-ci.yml").read_text()
     assert not Path("dagster_cloud.yaml").exists()
 
-    if registry_info.secrets_hints:
-        for hint in registry_info.secrets_hints:
+    if registry_info.gitlab_secrets:
+        for hint in registry_info.gitlab_secrets:
             assert hint in result.output
 
     validate_gitlab_ci_config(Path(".gitlab-ci.yml"))
