@@ -1,6 +1,6 @@
 from datetime import timedelta
 
-from dagster.preview.freshness import FreshnessPolicy
+from dagster import FreshnessPolicy
 
 # Create a freshness policy that requires a materialization at least once every 24 hours,
 # and warns if the latest materialization is older than 12 hours.

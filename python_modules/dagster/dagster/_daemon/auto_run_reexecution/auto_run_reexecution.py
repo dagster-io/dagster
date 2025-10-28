@@ -171,6 +171,11 @@ def retry_run(
             asset_selection=(
                 None if failed_run.asset_selection is None else list(failed_run.asset_selection)
             ),
+            asset_check_selection=(
+                None
+                if failed_run.asset_check_selection is None
+                else list(failed_run.asset_check_selection)
+            ),
         )
     )
 
@@ -208,6 +213,7 @@ def retry_run(
     tags = {RETRY_NUMBER_TAG: str(len(run_group_list))}
     new_run = instance.create_reexecuted_run(
         parent_run=failed_run,
+        request_context=workspace,
         code_location=code_location,
         remote_job=remote_job,
         strategy=strategy,

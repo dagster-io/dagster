@@ -22,8 +22,9 @@ from dagster_graphql.implementation.fetch_sensors import (
 )
 from dagster_graphql.implementation.loader import RepositoryScopedBatchLoader
 from dagster_graphql.implementation.utils import (
-    assert_permission_for_location,
+    assert_permission_for_sensor,
     capture_error,
+    has_permission_for_definition,
     require_permission_check,
 )
 from dagster_graphql.schema.asset_selections import GrapheneAssetSelection
@@ -41,6 +42,7 @@ from dagster_graphql.schema.instigation import (
     GrapheneInstigationStatus,
 )
 from dagster_graphql.schema.metadata import GrapheneMetadataEntry
+from dagster_graphql.schema.owners import GrapheneDefinitionOwner, definition_owner_from_owner_str
 from dagster_graphql.schema.tags import GrapheneDefinitionTag
 from dagster_graphql.schema.util import ResolveInfo, non_null_list
 
@@ -79,6 +81,7 @@ class GrapheneSensor(graphene.ObjectType):
     targets = graphene.List(graphene.NonNull(GrapheneTarget))
     defaultStatus = graphene.NonNull(GrapheneInstigationStatus)
     canReset = graphene.NonNull(graphene.Boolean)
+    hasCursorUpdatePermissions = graphene.NonNull(graphene.Boolean)
     sensorState = graphene.NonNull(GrapheneInstigationState)
     minIntervalSeconds = graphene.NonNull(graphene.Int)
     description = graphene.String()
@@ -86,6 +89,7 @@ class GrapheneSensor(graphene.ObjectType):
     metadata = graphene.NonNull(GrapheneSensorMetadata)
     sensorType = graphene.NonNull(GrapheneSensorType)
     assetSelection = graphene.Field(GrapheneAssetSelection)
+    owners = non_null_list(GrapheneDefinitionOwner)
     tags = non_null_list(GrapheneDefinitionTag)
     metadataEntries = non_null_list(GrapheneMetadataEntry)
 
@@ -143,12 +147,22 @@ class GrapheneSensor(graphene.ObjectType):
             self._stored_state and self._stored_state.status != InstigatorStatus.DECLARED_IN_CODE
         )
 
+    def resolve_hasCursorUpdatePermissions(self, graphene_info: ResolveInfo) -> bool:
+        return has_permission_for_definition(
+            graphene_info, Permissions.UPDATE_SENSOR_CURSOR, self._remote_sensor
+        )
+
     def resolve_sensorState(self, _graphene_info: ResolveInfo):
         # forward the batch run loader to the instigation state, which provides the sensor runs
         return GrapheneInstigationState(self._sensor_state, self._batch_loader)
 
     def resolve_nextTick(self, graphene_info: ResolveInfo):
         return get_sensor_next_tick(graphene_info, self._sensor_state)
+
+    def resolve_owners(self, _graphene_info: ResolveInfo):
+        return [
+            definition_owner_from_owner_str(owner) for owner in (self._remote_sensor.owners or [])
+        ]
 
     def resolve_tags(self, _graphene_info: ResolveInfo) -> Sequence[GrapheneDefinitionTag]:
         return [
@@ -204,12 +218,10 @@ class GrapheneStartSensorMutation(graphene.Mutation):
         name = "StartSensorMutation"
 
     @capture_error
-    @require_permission_check(Permissions.UPDATE_SENSOR_CURSOR)
+    @require_permission_check(Permissions.EDIT_SENSOR)
     def mutate(self, graphene_info: ResolveInfo, sensor_selector):
         selector = SensorSelector.from_graphql_input(sensor_selector)
-        assert_permission_for_location(
-            graphene_info, Permissions.UPDATE_SENSOR_CURSOR, selector.location_name
-        )
+        assert_permission_for_sensor(graphene_info, Permissions.EDIT_SENSOR, selector)
         return start_sensor(graphene_info, selector)
 
 
@@ -293,9 +305,7 @@ class GrapheneResetSensorMutation(graphene.Mutation):
     def mutate(self, graphene_info: ResolveInfo, sensor_selector):
         selector = SensorSelector.from_graphql_input(sensor_selector)
 
-        assert_permission_for_location(
-            graphene_info, Permissions.EDIT_SENSOR, selector.location_name
-        )
+        assert_permission_for_sensor(graphene_info, Permissions.EDIT_SENSOR, selector)
 
         return reset_sensor(graphene_info, selector)
 
@@ -313,11 +323,10 @@ class GrapheneSetSensorCursorMutation(graphene.Mutation):
         name = "SetSensorCursorMutation"
 
     @capture_error
+    @require_permission_check(Permissions.UPDATE_SENSOR_CURSOR)
     def mutate(self, graphene_info: ResolveInfo, sensor_selector, cursor=None):
         selector = SensorSelector.from_graphql_input(sensor_selector)
-        assert_permission_for_location(
-            graphene_info, Permissions.UPDATE_SENSOR_CURSOR, selector.location_name
-        )
+        assert_permission_for_sensor(graphene_info, Permissions.UPDATE_SENSOR_CURSOR, selector)
         return set_sensor_cursor(graphene_info, selector, cursor)
 
 

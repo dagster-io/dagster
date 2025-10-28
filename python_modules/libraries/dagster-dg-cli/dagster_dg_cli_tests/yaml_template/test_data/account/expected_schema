@@ -69,5 +69,10 @@ attributes:  # Optional: Attributes details
       # partition_keys:  # Optional: List of string items
         - <string>
       #
+    freshness_policy: <string>  # Optional: The freshness policy for the asset.
     key: <string>  # Optional: 
     key_prefix: <one of: string, array of string>  # Optional: Prefix the existing asset key with the provided value.
+  defs_state:  # Optional: Configuration for determining how state is stored and persisted for this component.
+    key: <string>  # Optional: The key for the state. This must be unique per deployment.
+    management_type: <string>  # Required: 
+    refresh_if_dev: <boolean>  # Optional: Whether to automatically refresh defs state when using `dagster dev` or the `dg` cli.

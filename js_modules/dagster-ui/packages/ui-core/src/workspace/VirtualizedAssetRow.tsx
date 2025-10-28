@@ -5,12 +5,11 @@ import {getAssetSelectionQueryString} from 'shared/asset-selection/useAssetSelec
 import styled from 'styled-components';
 
 import {RepoAddress} from './types';
+import {gql, useQuery} from '../apollo-client';
 import {
   SingleNonSdaAssetQuery,
   SingleNonSdaAssetQueryVariables,
 } from './types/VirtualizedAssetRow.types';
-import {workspacePathFromAddress} from './workspacePath';
-import {gql, useQuery} from '../apollo-client';
 import {useAssetsLiveData} from '../asset-data/AssetLiveDataProvider';
 import {buildAssetNodeStatusContent} from '../asset-graph/AssetNodeStatusContent';
 import {AssetRunLink} from '../asset-graph/AssetRunLinking';
@@ -20,6 +19,7 @@ import {AssetLink} from '../assets/AssetLink';
 import {PartitionCountLabels, partitionCountString} from '../assets/AssetNodePartitionCounts';
 import {StaleReasonsLabel} from '../assets/Stale';
 import {assetDetailsPathForKey} from '../assets/assetDetailsPathForKey';
+import {globalAssetGraphPathForGroup} from '../assets/globalAssetGraphPathToString';
 import {AssetTableDefinitionFragment} from '../assets/types/AssetTableFragment.types';
 import {AssetViewType} from '../assets/useAssetView';
 import {AssetKind} from '../graph/KindTags';
@@ -146,10 +146,7 @@ export const VirtualizedAssetRow = (props: AssetRowProps) => {
                 <RepositoryLink repoAddress={repoAddress} showIcon showRefresh={false} />
                 {definition && definition.groupName ? (
                   <Link
-                    to={workspacePathFromAddress(
-                      repoAddress,
-                      `/asset-groups/${definition.groupName}`,
-                    )}
+                    to={globalAssetGraphPathForGroup(definition.groupName, definition.assetKey)}
                   >
                     <Box flex={{direction: 'row', gap: 8, alignItems: 'center'}}>
                       <Icon color={Colors.accentGray()} name="asset_group" />

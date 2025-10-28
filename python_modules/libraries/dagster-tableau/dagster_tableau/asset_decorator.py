@@ -129,7 +129,6 @@ def tableau_assets(
     return multi_asset(
         name=name,
         group_name=group_name,
-        compute_kind="tableau",
         can_subset=True,
         specs=materializable_asset_specs,
     )

@@ -8,8 +8,8 @@ import dagster._check as check
 from dagster._core.definitions.assets.graph.base_asset_graph import BaseAssetNode
 from dagster._core.definitions.freshness import (
     CronFreshnessPolicy,
+    FreshnessPolicy,
     FreshnessState,
-    InternalFreshnessPolicy,
     TimeWindowFreshnessPolicy,
 )
 from dagster._core.storage.event_log.base import AssetRecord
@@ -153,9 +153,7 @@ class CronFreshnessPolicyEvaluator(FreshnessPolicyEvaluator):
         )
 
 
-FRESHNESS_EVALUATORS_BY_POLICY_TYPE: dict[
-    type[InternalFreshnessPolicy], type[FreshnessPolicyEvaluator]
-] = {
+FRESHNESS_EVALUATORS_BY_POLICY_TYPE: dict[type[FreshnessPolicy], type[FreshnessPolicyEvaluator]] = {
     TimeWindowFreshnessPolicy: TimeWindowFreshnessPolicyEvaluator,
     CronFreshnessPolicy: CronFreshnessPolicyEvaluator,
 }

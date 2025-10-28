@@ -1,12 +1,14 @@
 import re
+from typing import cast
 
 import dagster as dg
 from dagster import Any, Int
 from dagster._config import ConfigTypeKind, process_config
 from dagster._config.config_type import ConfigType
+from dagster._config.field_utils import Permissive, Shape
 from dagster._core.definitions import create_run_config_schema
 from dagster._core.definitions.job_definition import JobDefinition
-from dagster._core.definitions.run_config import RunConfigSchemaCreationData, define_node_shape
+from dagster._core.definitions.run_config import RunConfigSchemaCreationData, define_node_config
 from dagster._core.system_config.objects import OpConfig, ResolvedRunConfig, ResourceConfig
 
 
@@ -255,7 +257,7 @@ def test_whole_environment():
 
 def test_op_config_error():
     job_def = define_test_solids_config_pipeline()
-    solid_dict_type = define_node_shape(
+    solid_dict_type = define_node_config(
         nodes=job_def.nodes,
         ignored_nodes=None,
         dependency_structure=job_def.dependency_structure,
@@ -405,6 +407,94 @@ def test_required_op_with_required_subfield():
 
     res = process_config(env_type, {})
     assert not res.success
+
+
+def test_implicit_asset_job_subset_config():
+    class MyConnectionResource(dg.ConfigurableResource):
+        username: str
+
+    class MyOtherResource(dg.ConfigurableResource):
+        groupname: str
+
+    @dg.asset(config_schema={"foo": int})
+    def asset(my_conn: MyConnectionResource):
+        return 1
+
+    @dg.asset(config_schema={"bar": int})
+    def asset2():
+        return 2
+
+    @dg.asset
+    def asset3(my_other_conn: MyOtherResource):
+        return 3
+
+    @dg.asset
+    def asset_without_config():
+        return 3
+
+    defs = dg.Definitions(
+        assets=[asset, asset2, asset3, asset_without_config],
+        jobs=[
+            dg.define_asset_job(
+                "explicit_asset_job", selection=["asset", "asset2", "asset_without_config"]
+            )
+        ],
+        resources={
+            "my_conn": MyConnectionResource(username="my_user"),
+            "my_other_conn": MyOtherResource(groupname="my_group"),
+        },
+    )
+
+    explicit_asset_job = defs.resolve_job_def("explicit_asset_job")
+    explicit_asset_job_subset = explicit_asset_job.get_subset(
+        asset_selection={dg.AssetKey(["asset"])}
+    )
+
+    implicit_asset_job_subset = defs.resolve_implicit_global_asset_job_def().get_subset(
+        asset_selection={dg.AssetKey(["asset"]), dg.AssetKey(["asset2"])}
+    )
+
+    # implicit asset job subset only reference the specific assets in the subset
+    implicit_subset_env_type = create_run_config_schema_type(implicit_asset_job_subset)
+    assert isinstance(implicit_subset_env_type, Shape)
+    assert isinstance(implicit_subset_env_type.fields["ops"].config_type, Permissive)
+    assert isinstance(implicit_subset_env_type.fields["resources"].config_type, Permissive)
+    ops_permissive = cast("Permissive", implicit_subset_env_type.fields["ops"].config_type)
+    assert ops_permissive.fields.keys() == {
+        "asset",
+        "asset2",
+    }
+
+    resources_permissive = cast(
+        "Permissive", implicit_subset_env_type.fields["resources"].config_type
+    )
+    assert resources_permissive.fields.keys() == {
+        "io_manager",
+        "my_conn",
+    }
+
+    # despite having an asset_selection of just one asset, the subset job still includes the other assets
+    # in the job are not in the selection, since the job is an explicitly defined subset
+    explicit_subset_env_type = create_run_config_schema_type(explicit_asset_job_subset)
+    assert isinstance(explicit_subset_env_type, Shape)
+    assert isinstance(explicit_subset_env_type.fields["ops"].config_type, Shape)
+    assert isinstance(explicit_subset_env_type.fields["resources"].config_type, Shape)
+
+    ops_shape = cast("Shape", explicit_subset_env_type.fields["ops"].config_type)
+
+    assert ops_shape.fields.keys() == {
+        "asset",
+        "asset2",
+        "asset_without_config",
+    }
+
+    resources_shape = cast("Shape", explicit_subset_env_type.fields["resources"].config_type)
+
+    assert resources_shape.fields.keys() == {
+        "io_manager",
+        "my_conn",
+        "my_other_conn",
+    }
 
 
 def test_optional_op_with_optional_subfield():

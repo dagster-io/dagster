@@ -1,4 +1,3 @@
-import {Meta} from '@storybook/react';
 import {useState} from 'react';
 
 import {Box} from '../Box';
@@ -10,7 +9,7 @@ import {Suggest} from '../Suggest';
 export default {
   title: 'Suggest',
   component: Suggest,
-} as Meta;
+};
 
 const US_STATES = [
   'Alabama',

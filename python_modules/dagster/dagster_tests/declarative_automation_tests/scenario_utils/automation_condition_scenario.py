@@ -81,15 +81,17 @@ class AutomationConditionScenarioState(ScenarioState):
         ).asset_graph
 
         with freeze_time(self.current_time):
+            cursor = AssetDaemonCursor.empty().with_updates(
+                0, 0, [], [self.condition_cursor] if self.condition_cursor else [], asset_graph
+            )
             evaluator = AutomationConditionEvaluator(
                 asset_graph=asset_graph,
                 instance=self.instance,
                 entity_keys=asset_graph.get_all_asset_keys(),
-                cursor=AssetDaemonCursor.empty().with_updates(
-                    0, 0, [], [self.condition_cursor] if self.condition_cursor else [], asset_graph
-                ),
+                cursor=cursor,
                 logger=self.logger,
                 emit_backfills=False,
+                evaluation_id=cursor.evaluation_id,
             )
             evaluator.request_subsets_by_key = self._get_request_subsets_by_key(
                 evaluator.asset_graph_view

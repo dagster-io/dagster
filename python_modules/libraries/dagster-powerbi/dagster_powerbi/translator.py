@@ -338,7 +338,7 @@ class DagsterPowerBITranslator:
                 **table_meta,
             },
             tags={**PowerBITagSet(asset_type="semantic_model")},
-            kinds={"powerbi", "semantic model"},
+            kinds={"powerbi", "semantic_model"},
             owners=[owner] if owner and is_valid_asset_owner(owner) else None,
         )
 

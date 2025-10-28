@@ -12,7 +12,7 @@ Using dbt Cloud? Check out the [dbt Cloud with Dagster guide](/integrations/libr
 
 This reference provides a high-level look at working with dbt models through Dagster's [software-defined assets](/guides/build/assets) framework using the [`dagster-dbt` integration library](/api/libraries/dagster-dbt).
 
-For a step-by-step implementation walkthrough, refer to the [Using dbt with Dagster asset definitions tutorial](/integrations/libraries/dbt/creating-a-dbt-project-in-dagster).
+For a step-by-step implementation walkthrough, refer to the [Using dbt with Dagster asset definitions tutorial](/integrations/libraries/dbt).
 
 ## Relevant APIs
 
@@ -55,12 +55,6 @@ Here's what's happening in this example:
 
 ## Scaffolding a Dagster project from a dbt project
 
-:::note
-
-Check out [part two of the dbt & Dagster tutorial](/integrations/libraries/dbt/creating-a-dbt-project-in-dagster/load-dbt-models) to see this concept in context.
-
-:::
-
 You can create a Dagster project that wraps your dbt project by using the [`dagster-dbt project scaffold`](/api/libraries/dagster-dbt#scaffold) command line interface.
 
 ```shell
@@ -70,12 +64,6 @@ dagster-dbt project scaffold --project-name project_dagster --dbt-project-dir pa
 This creates a directory called `project_dagster/` inside the current directory. The `project_dagster/` directory contains a set of files that define a Dagster project that loads the dbt project at the path defined by `--dbt-project-dir`. The path to the dbt project must contain a `dbt_project.yml`.
 
 ## Loading dbt models from a dbt project
-
-:::note
-
-Check out [part two of the dbt & Dagster tutorial](/integrations/libraries/dbt/creating-a-dbt-project-in-dagster/load-dbt-models) to see this concept in context.
-
-:::
 
 The `dagster-dbt` library offers <PyObject section="libraries" module="dagster_dbt" object="dbt_assets" decorator /> to define Dagster assets for dbt models. It requires a [dbt manifest](https://docs.getdbt.com/reference/artifacts/manifest-json), or `manifest.json`, to be created from your dbt project to parse your dbt project's representation.
 
@@ -176,7 +164,7 @@ If you are using [Components](/guides/build/components), you can prepare your `D
 
 :::note
 
-This feature requires the `DAGSTER_BUILD_STATEDIR` environment variable to be set in your CI/CD. Learn more about required environment variables in CI/CD for Dagster+ [here](/deployment/dagster-plus/ci-cd/ci-cd-in-hybrid).
+This feature requires the `DAGSTER_BUILD_STATEDIR` environment variable to be set in your CI/CD. Learn more about required environment variables in CI/CD for Dagster+ [here](/deployment/dagster-plus/deploying-code/ci-cd/ci-cd-in-hybrid).
 
 You will also need to run the `dagster-cloud ci dagster-dbt project manage-state` command in your prod deployment before it can be run in branch deployments. This will create the baseline for comparison in the branch deployments.
 
@@ -429,7 +417,7 @@ Dagster also supports fetching additional metadata at dbt execution time to atta
 
 #### Attaching code reference metadata
 
-Dagster's dbt integration can automatically attach [code reference](/guides/build/assets/metadata-and-tags/index.md#source-code) metadata to the SQL files backing your dbt assets. To enable this feature, set the `enable_code_references` parameter to `True` in the <PyObject section="libraries" module="dagster_dbt" object="DagsterDbtTranslatorSettings" /> passed to your <PyObject section="libraries" module="dagster_dbt" object="DagsterDbtTranslator" />:
+Dagster's dbt integration can automatically attach [code reference](/guides/build/assets/metadata-and-tags#source-code) metadata to the SQL files backing your dbt assets. To enable this feature, set the `enable_code_references` parameter to `True` in the <PyObject section="libraries" module="dagster_dbt" object="DagsterDbtTranslatorSettings" /> passed to your <PyObject section="libraries" module="dagster_dbt" object="DagsterDbtTranslator" />:
 
 <CodeExample path="docs_snippets/docs_snippets/guides/dagster/code_references/with_dbt_code_references.py" />
 

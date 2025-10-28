@@ -42,7 +42,7 @@ function messageForLaunchBackfillError(data: LaunchPartitionBackfillMutation | n
       <div>An unexpected error occurred. This backfill was not launched.</div>
       {errors ? (
         <ButtonLink
-          color={Colors.accentReversed()}
+          color={Colors.accentPrimary()}
           underline="always"
           onClick={() => {
             showCustomAlert({

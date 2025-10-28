@@ -31,7 +31,7 @@ Refer to the following table for more information, including the pros and cons o
 
 ### Deployment configuration
 
-Whether you use a single repository or multiple, you can use a [`dagster_cloud.yaml` file](/deployment/code-locations/dagster-cloud-yaml) to define the code locations to deploy. For each repository, follow the [steps appropriate to your CI/CD provider](/deployment/dagster-plus/ci-cd/ci-cd-in-hybrid) and include only the code locations that are relevant to the repository in your CI/CD workflow.
+Whether you use a single repository or multiple, you can use a [`dagster_cloud.yaml` file](/deployment/code-locations/dagster-cloud-yaml) to define the code locations to deploy. For each repository, follow the [steps appropriate to your CI/CD provider](/deployment/dagster-plus/deploying-code/ci-cd/ci-cd-in-hybrid) and include only the code locations that are relevant to the repository in your CI/CD workflow.
 
 #### Example with GitHub CI/CD on Hybrid deployment
 
@@ -41,7 +41,6 @@ Whether you use a single repository or multiple, you can use a [`dagster_cloud.y
 
    ```yaml
    # dagster_cloud.yml
-
    locations:
      - location_name: project_a
        code_source:
@@ -59,7 +58,6 @@ Whether you use a single repository or multiple, you can use a [`dagster_cloud.y
 
    ```yaml
    # .github/workflows/dagster-cloud-deploy.yml
-
    jobs:
      dagster-cloud-deploy:
        # ...

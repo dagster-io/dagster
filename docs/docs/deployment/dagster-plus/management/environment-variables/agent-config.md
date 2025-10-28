@@ -22,7 +22,7 @@ Environment variables that have been set in the Dagster+ UI will take precedence
 To complete the steps in this guide, you'll need:
 
 - A Dagster+ account using [Hybrid deployment](/deployment/dagster-plus/hybrid)
-- An existing [Hybrid agent](/deployment/dagster-plus/hybrid#dagster-hybrid-agents)
+- An existing [Hybrid agent](/deployment/dagster-plus/hybrid/architecture#the-agent)
 - **Editor**, **Admin**, or **Organization Admin** permissions in Dagster+
 
 ## Setting environment variables for a code location
@@ -48,7 +48,6 @@ Using the `container_context.ecs.env_vars` and `container_context.ecs.secrets` p
 
 ```yaml
 # dagster_cloud.yaml
-
 locations:
   - location_name: cloud-examples
     image: dagster/dagster-cloud-examples:latest
@@ -110,7 +109,6 @@ Using the `container_context.k8s.env_vars` and `container_context.k8s.env_secret
 
 ```yaml
 # dagster_cloud.yaml
-
 locations:
   - location_name: cloud-examples
     image: dagster/dagster-cloud-examples:latest

@@ -229,7 +229,6 @@ export const AssetEvents = ({
                   </Box>
                 ) : (
                   <AssetEventList
-                    xAxis="time"
                     groups={grouped}
                     focused={focused}
                     setFocused={onSetFocused}

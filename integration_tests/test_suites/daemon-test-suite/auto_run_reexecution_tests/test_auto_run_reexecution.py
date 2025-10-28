@@ -4,12 +4,14 @@ from collections.abc import Sequence
 from typing import cast
 from unittest.mock import PropertyMock, patch
 
+import dagster as dg
 from dagster import DagsterEvent, DagsterEventType, DagsterInstance, EventLogEntry
 from dagster._core.errors import DagsterUserCodeUnreachableError
 from dagster._core.events import JobFailureData, RunFailureReason
 from dagster._core.execution.api import create_execution_plan
 from dagster._core.execution.plan.resume_retry import ReexecutionStrategy
 from dagster._core.execution.retries import auto_reexecution_should_retry_run
+from dagster._core.remote_representation.handle import JobHandle
 from dagster._core.snap import snapshot_from_execution_plan
 from dagster._core.storage.dagster_run import DagsterRun, DagsterRunStatus, RunsFilter
 from dagster._core.storage.tags import (
@@ -31,7 +33,7 @@ from dagster._daemon.auto_run_reexecution.auto_run_reexecution import (
 )
 from dagster._daemon.auto_run_reexecution.event_log_consumer import EventLogConsumerDaemon
 
-from auto_run_reexecution_tests.utils import foo, get_foo_job_handle
+from auto_run_reexecution_tests.utils import bar_repo, foo, get_bar_repo_handle, get_foo_job_handle
 
 logger = logging.getLogger("dagster.test_auto_run_reexecution")
 
@@ -458,6 +460,84 @@ def test_fallback_to_computing_should_retry_if_tag_not_present(instance):
         run = instance.get_run_by_id(run.run_id)
         assert run
         assert run.tags.get(WILL_RETRY_TAG) == "true"
+
+
+def test_check_only_runs_retry(instance, workspace_context):
+    instance.wipe()
+    instance.run_coordinator.queue().clear()
+    list(
+        consume_new_runs_for_automatic_reexecution(
+            workspace_context,
+            instance.get_run_records(filters=RunsFilter(statuses=[DagsterRunStatus.FAILURE])),
+            logger,
+        )
+    )
+    assert len(instance.run_coordinator.queue()) == 0
+
+    with get_bar_repo_handle(instance) as repo_handle:
+        handle = JobHandle("__ASSET_JOB", repository_handle=repo_handle)
+
+        asset_check_selection = {
+            dg.AssetCheckKey(asset_key=dg.AssetKey("my_asset"), name="my_failing_check")
+        }
+
+        check_only_job_subset = bar_repo.get_implicit_global_asset_job_def().get_subset(
+            asset_selection=set(), asset_check_selection=asset_check_selection
+        )
+
+        execution_plan = create_execution_plan(
+            check_only_job_subset,
+        )
+
+        run = create_run_for_test(
+            instance,
+            remote_job_origin=handle.get_remote_origin(),
+            job_code_origin=handle.get_python_origin(),
+            job_name=check_only_job_subset.name,
+            job_snapshot=check_only_job_subset.get_job_snapshot(),
+            execution_plan_snapshot=snapshot_from_execution_plan(
+                execution_plan, check_only_job_subset.get_job_snapshot_id()
+            ),
+            tags={
+                MAX_RETRIES_TAG: "2",
+                RESUME_RETRY_TAG: "true",
+                RETRY_STRATEGY_TAG: "ALL_STEPS",
+            },
+            asset_selection=set(),
+            asset_check_selection=asset_check_selection,
+        )
+
+        dagster_event = DagsterEvent(
+            event_type_value=DagsterEventType.PIPELINE_FAILURE.value,
+            job_name=check_only_job_subset.name,
+            message="",
+        )
+        event_record = EventLogEntry(
+            user_message="",
+            level=logging.ERROR,
+            job_name="foo",
+            run_id=run.run_id,
+            error_info=None,
+            timestamp=time.time(),
+            dagster_event=dagster_event,
+        )
+        instance.handle_new_event(event_record)
+        run = instance.get_run_by_id(run.run_id)
+        assert run
+        assert run.tags.get(WILL_RETRY_TAG) == "true"
+
+        list(
+            consume_new_runs_for_automatic_reexecution(
+                workspace_context,
+                instance.get_run_records(filters=RunsFilter(statuses=[DagsterRunStatus.FAILURE])),
+                logger,
+            )
+        )
+        assert len(instance.run_coordinator.queue()) == 1
+        process_runs_in_queue(instance, instance.run_coordinator.queue())
+        first_retry = instance.get_run_by_id(instance.run_coordinator.queue()[0].run_id)
+        run = instance.get_run_by_id(run.run_id)
+        assert run.tags.get(AUTO_RETRY_RUN_ID_TAG) == first_retry.run_id
 
 
 def test_consume_new_runs_for_automatic_reexecution(instance, workspace_context):

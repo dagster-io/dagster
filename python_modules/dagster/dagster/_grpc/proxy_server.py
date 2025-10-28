@@ -58,6 +58,7 @@ class DagsterProxyApiServicer(DagsterApiServicer):
         logger: logging.Logger,
         server_heartbeat: bool,
         server_heartbeat_timeout: int,
+        heartbeat_ttl: int,
         defs_state_info: Optional[DefsStateInfo],
     ):
         super().__init__()
@@ -85,7 +86,7 @@ class DagsterProxyApiServicer(DagsterApiServicer):
             GrpcServerRegistry(
                 instance_ref=self._instance_ref,
                 server_command=GrpcServerCommand.API_GRPC,
-                heartbeat_ttl=30,
+                heartbeat_ttl=heartbeat_ttl,
                 startup_timeout=startup_timeout,
                 log_level=self._log_level,
                 inject_env_vars_from_instance=self._inject_env_vars_from_instance,
@@ -299,7 +300,9 @@ class DagsterProxyApiServicer(DagsterApiServicer):
         return self._query("ExternalPipelineSubsetSnapshot", request, context)
 
     def ExternalRepository(self, request, context):
-        return self._query("ExternalRepository", request, context)
+        return self._query(
+            "ExternalRepository", request, context, timeout=DEFAULT_REPOSITORY_GRPC_TIMEOUT
+        )
 
     def ExternalJob(self, request, context):
         return self._query("ExternalJob", request, context)

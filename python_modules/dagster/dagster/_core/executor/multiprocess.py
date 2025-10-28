@@ -272,9 +272,27 @@ class MultiprocessExecutor(Executor):
                             event_or_none = next(step_iter)
                             if event_or_none is None:
                                 continue
-                            else:
-                                yield event_or_none
-                                active_execution.handle_event(event_or_none)
+
+                            yield event_or_none
+                            active_execution.handle_event(event_or_none)
+
+                            if event_or_none.is_resource_init_failure:
+                                step_context = plan_context.for_step(
+                                    active_execution.get_step_by_key(key)
+                                )
+                                assert isinstance(
+                                    event_or_none.engine_event_data.error, SerializableErrorInfo
+                                )
+
+                                failure_or_retry_event = (
+                                    self.get_failure_or_retry_event_after_error(
+                                        step_context,
+                                        event_or_none.engine_event_data.error,
+                                        active_execution.get_known_state(),
+                                    )
+                                )
+                                yield failure_or_retry_event
+                                active_execution.handle_event(failure_or_retry_event)
 
                         except ChildProcessCrashException as crash:
                             serializable_error = serializable_error_info_from_exc_info(
@@ -291,7 +309,7 @@ class MultiprocessExecutor(Executor):
                                 ),
                                 EngineEventData.engine_error(serializable_error),
                             )
-                            failure_or_retry_event = self.get_failure_or_retry_event_after_crash(
+                            failure_or_retry_event = self.get_failure_or_retry_event_after_error(
                                 step_context, serializable_error, active_execution.get_known_state()
                             )
 

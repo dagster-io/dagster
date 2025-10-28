@@ -20,6 +20,7 @@ const config: Config = {
     mermaid: true,
   },
   themes: ['@docusaurus/theme-mermaid'],
+  clientModules: [require.resolve('./src/clientModules/disableSlashSearch.js')],
   i18n: {defaultLocale: 'en', locales: ['en']},
   plugins: [
     require.resolve('docusaurus-plugin-sass'),
@@ -221,7 +222,7 @@ const config: Config = {
           lastVersion: 'current',
           versions: {
             current: {
-              label: 'Latest (1.11.11)',
+              label: 'Latest (1.11.16)',
               path: '/',
             },
           },

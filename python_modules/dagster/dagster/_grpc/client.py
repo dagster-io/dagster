@@ -430,6 +430,7 @@ class DagsterGrpcClient:
         self,
         remote_repository_origin: RemoteRepositoryOrigin,
         defer_snapshots: bool = False,
+        timeout=DEFAULT_REPOSITORY_GRPC_TIMEOUT,
     ) -> str:
         check.inst_param(
             remote_repository_origin,
@@ -443,6 +444,30 @@ class DagsterGrpcClient:
             # rename this param name
             serialized_repository_python_origin=serialize_value(remote_repository_origin),
             defer_snapshots=defer_snapshots,
+            timeout=timeout,
+        )
+
+        return res.serialized_external_repository_data
+
+    async def gen_external_repository(
+        self,
+        remote_repository_origin: RemoteRepositoryOrigin,
+        defer_snapshots: bool = False,
+        timeout=DEFAULT_REPOSITORY_GRPC_TIMEOUT,
+    ) -> str:
+        check.inst_param(
+            remote_repository_origin,
+            "remote_repository_origin",
+            RemoteRepositoryOrigin,
+        )
+
+        res = await self._gen_query(
+            "ExternalRepository",
+            dagster_api_pb2.ExternalRepositoryRequest,
+            # rename this param name
+            serialized_repository_python_origin=serialize_value(remote_repository_origin),
+            defer_snapshots=defer_snapshots,
+            timeout=timeout,
         )
 
         return res.serialized_external_repository_data
@@ -466,25 +491,6 @@ class DagsterGrpcClient:
             job_name=job_name,
             timeout=timeout,
         )
-
-    def streaming_external_repository(
-        self,
-        remote_repository_origin: RemoteRepositoryOrigin,
-        defer_snapshots: bool = False,
-        timeout=DEFAULT_REPOSITORY_GRPC_TIMEOUT,
-    ) -> Iterator[dict]:
-        for res in self._streaming_query(
-            "StreamingExternalRepository",
-            dagster_api_pb2.ExternalRepositoryRequest,
-            # Rename parameter
-            serialized_repository_python_origin=serialize_value(remote_repository_origin),
-            defer_snapshots=defer_snapshots,
-            timeout=timeout,
-        ):
-            yield {
-                "sequence_number": res.sequence_number,
-                "serialized_external_repository_chunk": res.serialized_external_repository_chunk,
-            }
 
     async def gen_streaming_external_repository(
         self,

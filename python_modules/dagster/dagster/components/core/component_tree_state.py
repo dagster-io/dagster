@@ -1,3 +1,4 @@
+import warnings
 from collections import defaultdict
 from pathlib import Path
 from typing import Optional
@@ -6,7 +7,6 @@ from dagster_shared.record import record, replace
 from typing_extensions import TypeVar
 
 from dagster._core.definitions.definitions_class import Definitions
-from dagster._core.errors import DagsterInvalidDefinitionError
 from dagster.components.component.component import Component
 from dagster.components.core.context import ComponentDeclLoadContext, ComponentLoadContext
 from dagster.components.core.decl import ComponentDecl
@@ -18,6 +18,12 @@ T = TypeVar("T", bound=Component)
 
 
 class ComponentTreeException(Exception):
+    pass
+
+
+class DuplicateDefsStateKeyWarning(Warning):
+    """Warning raised when multiple StateBackedComponents share the same defs state key."""
+
     pass
 
 
@@ -86,15 +92,17 @@ class ComponentTreeStateTracker:
         self._component_defs_dependents_dict[to_path].add(from_path)
 
     def mark_component_defs_state_key(self, path: ComponentPath, defs_state_key: str) -> None:
-        # ensures that no components share the same defs state key
+        # warns if components share the same defs state key
         existing_path = self._component_defs_state_key_dict.get(defs_state_key)
         if existing_path is not None and existing_path != path:
-            raise DagsterInvalidDefinitionError(
+            warnings.warn(
                 f"Multiple components have the same defs state key: {defs_state_key}\n"
                 "Component paths: \n"
                 f"  {existing_path}\n"
                 f"  {path}\n"
-                "Configure or override the `get_defs_state_key` method on one or both components to disambiguate."
+                "Configure or override the `get_defs_state_config` method on one or both components to disambiguate.",
+                category=DuplicateDefsStateKeyWarning,
+                stacklevel=2,
             )
         self._component_defs_state_key_dict[defs_state_key] = path
 

@@ -1,7 +1,7 @@
 from datetime import timedelta
 
 import dagster as dg
-from dagster._core.definitions.freshness import InternalFreshnessPolicy
+from dagster._core.definitions.freshness import FreshnessPolicy
 from dagster._time import get_current_timestamp
 
 
@@ -44,9 +44,31 @@ def always_fails():
     raise Exception("always_fails failed")
 
 
+@dg.asset(output_required=False)
+def always_skips():
+    if False:
+        yield dg.Output(1)
+
+
+@dg.asset(output_required=False)
+def sometimes_skips(context):
+    # if should_fail is True twice, fail the asset. If true once, skip the asset. If false, materialize the asset.
+    if should_fail(context.log):
+        if should_fail(context.log):
+            raise Exception("sometimes_skips failed")
+    else:
+        yield dg.Output(1)
+
+
 static_partitions = dg.StaticPartitionsDefinition(
     ["a", "b", "c", "d", "e", "f", "g", "h", "i", "j"]
 )
+
+
+@dg.asset(partitions_def=static_partitions, output_required=False)
+def always_skips_partitioned():
+    if False:
+        yield dg.Output(1)
 
 
 @dg.asset(partitions_def=static_partitions)
@@ -132,7 +154,7 @@ def observable_source_asset_random_execution_error(context):
 
 
 @dg.asset(
-    freshness_policy=InternalFreshnessPolicy.time_window(
+    freshness_policy=FreshnessPolicy.time_window(
         fail_window=timedelta(minutes=5), warn_window=timedelta(minutes=1)
     )
 )
@@ -242,4 +264,7 @@ def get_assets_and_checks():
         observe_no_def_observable_job,
         random_assets_job,
         random_assets_every_15m_schedule,
+        always_skips,
+        sometimes_skips,
+        always_skips_partitioned,
     ]

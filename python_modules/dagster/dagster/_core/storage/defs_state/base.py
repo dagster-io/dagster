@@ -1,3 +1,4 @@
+import re
 from abc import ABC, abstractmethod
 from contextlib import contextmanager
 from contextvars import ContextVar
@@ -24,7 +25,13 @@ def set_defs_state_storage(storage: Optional["DefsStateStorage"]):
     try:
         yield
     finally:
-        _current_storage.reset(token)
+        try:
+            _current_storage.reset(token)
+        except ValueError:
+            # in certain async contexts, we exit the context manager in a separate
+            # async task from the one that created the token. in these cases, we
+            # can't reset the token value, so we just set it to None
+            _current_storage.set(None)
 
 
 class DefsStateStorage(ABC, MayHaveInstanceWeakref[T_DagsterInstance]):
@@ -90,6 +97,9 @@ class DefsStateStorage(ABC, MayHaveInstanceWeakref[T_DagsterInstance]):
             version (str): The version of the state to persist.
         """
         raise NotImplementedError()
+
+    def _sanitize_key(self, key: str) -> str:
+        return re.sub(r"[^A-Za-z0-9._-]", "__", key)
 
     def _get_version_key(self, key: str) -> str:
         """Returns a storage key under which the latest version of a given key's state is stored."""

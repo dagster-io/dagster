@@ -92,7 +92,7 @@ from dagster._core.definitions.definitions_class import Definitions
 from dagster._core.definitions.events import Failure
 from dagster._core.definitions.executor_definition import in_process_executor
 from dagster._core.definitions.external_asset import external_asset_from_spec
-from dagster._core.definitions.freshness import InternalFreshnessPolicy
+from dagster._core.definitions.freshness import FreshnessPolicy
 from dagster._core.definitions.freshness_policy import LegacyFreshnessPolicy
 from dagster._core.definitions.job_definition import JobDefinition
 from dagster._core.definitions.metadata import MetadataValue
@@ -1155,6 +1155,8 @@ def define_schedules():
         provide_config_schedule,
         always_error,
         jobless_schedule,
+        owned_schedule,
+        unowned_schedule,
     ]
 
 
@@ -1303,6 +1305,8 @@ def define_sensors():
         every_asset_sensor,
         invalid_asset_selection_error,
         jobless_sensor,
+        owned_sensor,
+        unowned_sensor,
     ]
 
 
@@ -1709,7 +1713,7 @@ def req_config_job():
 
 @asset(
     owners=["user@dagsterlabs.com", "team:team1"],
-    freshness_policy=InternalFreshnessPolicy.time_window(
+    freshness_policy=FreshnessPolicy.time_window(
         fail_window=timedelta(minutes=10), warn_window=timedelta(minutes=5)
     ),
 )
@@ -1724,7 +1728,7 @@ def asset_2():
 
 @asset(
     deps=[AssetKey("asset_2")],
-    freshness_policy=InternalFreshnessPolicy.time_window(
+    freshness_policy=FreshnessPolicy.time_window(
         fail_window=timedelta(minutes=10), warn_window=timedelta(minutes=5)
     ),
 )
@@ -2199,7 +2203,97 @@ def define_standard_jobs() -> Sequence[JobDefinition]:
         tagged_job,
         two_ins_job,
         some_external_job,
+        owned_job,
+        unowned_job,
+        owned_partitioned_job,
+        unowned_partitioned_job,
     ]
+
+
+partitions_def_for_permissions = StaticPartitionsDefinition(["a", "b", "c"])
+
+
+@asset(
+    owners=["test@elementl.com", "team:foo"],
+)
+def owned_asset():
+    return 1
+
+
+@asset_check(asset=owned_asset, description="owned asset check", blocking=True)
+def owned_asset_check(owned_asset):
+    return AssetCheckResult(passed=True)
+
+
+@asset
+def unowned_asset():
+    return 2
+
+
+@asset_check(asset=unowned_asset, description="unowned asset check", blocking=True)
+def unowned_asset_check(unowned_asset):
+    return AssetCheckResult(passed=True)
+
+
+@asset(partitions_def=partitions_def_for_permissions, owners=["test@elementl.com", "team:foo"])
+def owned_partitioned_asset():
+    return 1
+
+
+@asset(partitions_def=partitions_def_for_permissions)
+def unowned_partitioned_asset():
+    return 2
+
+
+@op
+def permission_test_op():
+    pass
+
+
+@job(owners=["test@elementl.com", "team:foo"])
+def owned_job():
+    permission_test_op()
+
+
+@job
+def unowned_job():
+    permission_test_op()
+
+
+@op
+def permission_partitioned_op(context):
+    context.log.info(f"Processing partition: {context.partition_key}")
+    return context.partition_key
+
+
+@job(partitions_def=partitions_def_for_permissions, owners=["test@elementl.com", "team:foo"])
+def owned_partitioned_job():
+    permission_partitioned_op()
+
+
+@job(partitions_def=partitions_def_for_permissions)
+def unowned_partitioned_job():
+    permission_partitioned_op()
+
+
+@sensor(job=owned_job, owners=["test@elementl.com", "team:foo"])
+def owned_sensor():
+    pass
+
+
+@sensor(job=unowned_job)
+def unowned_sensor():
+    pass
+
+
+@schedule(job=owned_job, cron_schedule="* * * * *", owners=["test@elementl.com", "team:foo"])
+def owned_schedule():
+    return {}
+
+
+@schedule(job=unowned_job, cron_schedule="* * * * *")
+def unowned_schedule():
+    return {}
 
 
 def define_assets():
@@ -2276,6 +2370,10 @@ def define_assets():
         asset_with_prefix_3,
         asset_with_prefix_4,
         asset_with_prefix_5,
+        owned_asset,
+        unowned_asset,
+        owned_partitioned_asset,
+        unowned_partitioned_asset,
     ]
 
 
@@ -2287,7 +2385,13 @@ def define_resources():
 
 
 def define_asset_checks():
-    return [my_check, asset_3_check, asset_3_other_check]
+    return [
+        my_check,
+        asset_3_check,
+        asset_3_other_check,
+        owned_asset_check,
+        unowned_asset_check,
+    ]
 
 
 asset_jobs = define_asset_jobs()

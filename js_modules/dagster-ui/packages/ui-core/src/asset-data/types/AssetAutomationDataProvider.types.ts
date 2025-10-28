@@ -29,6 +29,8 @@ export type AssetAutomationQuery = {
             id: string;
             selectorId: string;
             status: Types.InstigationStatus;
+            hasStartPermission: boolean;
+            hasStopPermission: boolean;
           };
         }
       | {
@@ -41,6 +43,8 @@ export type AssetAutomationQuery = {
             id: string;
             selectorId: string;
             status: Types.InstigationStatus;
+            hasStartPermission: boolean;
+            hasStopPermission: boolean;
             typeSpecificData:
               | {__typename: 'ScheduleData'}
               | {__typename: 'SensorData'; lastCursor: string | null}
@@ -76,6 +80,8 @@ export type AssetAutomationFragment = {
           id: string;
           selectorId: string;
           status: Types.InstigationStatus;
+          hasStartPermission: boolean;
+          hasStopPermission: boolean;
         };
       }
     | {
@@ -88,6 +94,8 @@ export type AssetAutomationFragment = {
           id: string;
           selectorId: string;
           status: Types.InstigationStatus;
+          hasStartPermission: boolean;
+          hasStopPermission: boolean;
           typeSpecificData:
             | {__typename: 'ScheduleData'}
             | {__typename: 'SensorData'; lastCursor: string | null}
@@ -113,6 +121,8 @@ export type AssetInstigatorFragment_Schedule = {
     id: string;
     selectorId: string;
     status: Types.InstigationStatus;
+    hasStartPermission: boolean;
+    hasStopPermission: boolean;
   };
 };
 
@@ -126,6 +136,8 @@ export type AssetInstigatorFragment_Sensor = {
     id: string;
     selectorId: string;
     status: Types.InstigationStatus;
+    hasStartPermission: boolean;
+    hasStopPermission: boolean;
     typeSpecificData:
       | {__typename: 'ScheduleData'}
       | {__typename: 'SensorData'; lastCursor: string | null}
@@ -137,4 +149,4 @@ export type AssetInstigatorFragment =
   | AssetInstigatorFragment_Schedule
   | AssetInstigatorFragment_Sensor;
 
-export const AssetAutomationQueryVersion = '30c89838e2bb20980912b383d35a539fa7a67c6df4f721063f4321892d8ca647';
+export const AssetAutomationQueryVersion = 'a7b9f9d72e79dd3cc60f094649f0e2f810feaa1563b886f7499be3087dc7cb65';

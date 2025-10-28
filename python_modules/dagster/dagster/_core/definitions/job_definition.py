@@ -7,7 +7,7 @@ from functools import cached_property, update_wrapper
 from typing import TYPE_CHECKING, AbstractSet, Any, Optional, Union, cast  # noqa: UP035
 
 import dagster._check as check
-from dagster._annotations import deprecated, public
+from dagster._annotations import beta_param, deprecated, public
 from dagster._config import Field, Shape, StringSource
 from dagster._config.config_type import ConfigType
 from dagster._config.validate import validate_config
@@ -53,7 +53,11 @@ from dagster._core.definitions.resource_requirement import (
     ResourceRequirement,
     ensure_requirements_satisfied,
 )
-from dagster._core.definitions.utils import DEFAULT_IO_MANAGER_KEY, check_valid_name
+from dagster._core.definitions.utils import (
+    DEFAULT_IO_MANAGER_KEY,
+    check_valid_name,
+    validate_definition_owner,
+)
 from dagster._core.errors import (
     DagsterInvalidConfigError,
     DagsterInvalidDefinitionError,
@@ -90,6 +94,7 @@ DEFAULT_EXECUTOR_DEF = multi_or_in_process_executor
 
 
 @public
+@beta_param(param="owners")
 class JobDefinition(IHasInternalInit):
     """Defines a Dagster job."""
 
@@ -108,6 +113,7 @@ class JobDefinition(IHasInternalInit):
     _cached_run_config_schemas: dict[str, "RunConfigSchema"]
     _subset_selection_data: Optional[Union[OpSelectionData, AssetSelectionData]]
     input_values: Mapping[str, object]
+    _owners: Optional[Sequence[str]]
 
     def __init__(
         self,
@@ -131,6 +137,7 @@ class JobDefinition(IHasInternalInit):
         asset_layer: Optional[AssetLayer] = None,
         input_values: Optional[Mapping[str, object]] = None,
         _was_explicitly_provided_resources: Optional[bool] = None,
+        owners: Optional[Sequence[str]] = None,
     ):
         from dagster._core.definitions.run_config import RunConfig, convert_config_input
 
@@ -166,7 +173,9 @@ class JobDefinition(IHasInternalInit):
         # same graph may be in multiple jobs, keep separate layer
         self._description = check.opt_str_param(description, "description")
 
-        self._tags = normalize_tags(tags)
+        self._tags = normalize_tags(
+            tags, warning_stacklevel=5
+        )  # reset once owners is out of beta_param
         self._run_tags = run_tags  # don't normalize to preserve None
 
         self._metadata = normalize_metadata(
@@ -209,6 +218,10 @@ class JobDefinition(IHasInternalInit):
 
         self._subset_selection_data = _subset_selection_data
         self.input_values = input_values
+        if owners:
+            for owner in owners:
+                validate_definition_owner(owner, "job", self._name)
+        self._owners = owners
         for input_name in sorted(list(self.input_values.keys())):
             if not graph_def.has_input(input_name):
                 raise DagsterInvalidDefinitionError(
@@ -237,6 +250,7 @@ class JobDefinition(IHasInternalInit):
         asset_layer: Optional[AssetLayer],
         input_values: Optional[Mapping[str, object]],
         _was_explicitly_provided_resources: Optional[bool],
+        owners: Optional[Sequence[str]],
     ) -> "JobDefinition":
         return JobDefinition(
             graph_def=graph_def,
@@ -256,6 +270,7 @@ class JobDefinition(IHasInternalInit):
             asset_layer=asset_layer,
             input_values=input_values,
             _was_explicitly_provided_resources=_was_explicitly_provided_resources,
+            owners=owners,
         )
 
     @staticmethod
@@ -307,7 +322,9 @@ class JobDefinition(IHasInternalInit):
         if self._run_tags is None:
             return self.tags
         else:
-            return normalize_tags({**self._graph_def.tags, **self._run_tags})
+            return normalize_tags(
+                {**self._graph_def.tags, **self._run_tags}, warning_stacklevel=5
+            )  # reset once owners is out of beta_param
 
     # This property exists for backcompat purposes. If it is False, then we omit run_tags when
     # generating a job snapshot. This lets host processes distinguish between None and {} `run_tags`
@@ -326,6 +343,10 @@ class JobDefinition(IHasInternalInit):
     @property
     def description(self) -> Optional[str]:
         return self._description
+
+    @property
+    def owners(self) -> Optional[Sequence[str]]:
+        return self._owners
 
     @property
     def graph(self) -> GraphDefinition:
@@ -425,7 +446,7 @@ class JobDefinition(IHasInternalInit):
     @property
     def run_config_schema(self) -> "RunConfigSchema":
         if self._run_config_schema is None:
-            self._run_config_schema = _create_run_config_schema(self, self.required_resource_keys)
+            self._run_config_schema = _create_run_config_schema(self)
         return self._run_config_schema
 
     @public
@@ -809,6 +830,7 @@ class JobDefinition(IHasInternalInit):
             metadata=self.metadata,
             _subset_selection_data=None,  # this is added below
             _was_explicitly_provided_resources=True,
+            owners=self._owners,
         ).get_subset(
             op_selection=op_selection,
             asset_selection=frozenset(asset_selection) if asset_selection else None,
@@ -1127,6 +1149,7 @@ class JobDefinition(IHasInternalInit):
             _was_explicitly_provided_resources=(
                 "resource_defs" in kwargs or self._was_provided_resources
             ),
+            owners=self._owners,
         )
         resolved_kwargs = {**base_kwargs, **kwargs}  # base kwargs overwritten for conflicts
         job_def = JobDefinition.dagster_internal_init(**resolved_kwargs)
@@ -1408,7 +1431,6 @@ def _build_all_node_defs(node_defs: Sequence[NodeDefinition]) -> Mapping[str, No
 
 def _create_run_config_schema(
     job_def: JobDefinition,
-    required_resources: AbstractSet[str],
 ) -> "RunConfigSchema":
     from dagster._core.definitions.run_config import (
         RunConfigSchemaCreationData,
@@ -1416,12 +1438,19 @@ def _create_run_config_schema(
         define_run_config_schema_type,
     )
     from dagster._core.definitions.run_config_schema import RunConfigSchema
+    from dagster._core.remote_representation.code_location import is_implicit_asset_job_name
 
-    # When executing with a subset job, include the missing nodes
+    # When executing with a subset job that is not an implicit asset job, include the missing nodes
     # from the original job as ignored to allow execution with
     # run config that is valid for the original
     ignored_nodes: Sequence[Node] = []
-    if job_def.is_subset:
+
+    if job_def.is_subset and is_implicit_asset_job_name(job_def.name):
+        included_resource_defs = job_def.get_required_resource_defs()
+    else:
+        included_resource_defs = job_def.resource_defs
+
+    if job_def.is_subset and not is_implicit_asset_job_name(job_def.name):
         if isinstance(job_def.graph, SubselectedGraphDefinition):  # op selection provided
             ignored_nodes = job_def.graph.get_top_level_omitted_nodes()
         elif job_def.asset_selection_data:
@@ -1442,10 +1471,10 @@ def _create_run_config_schema(
             graph_def=job_def.graph,
             dependency_structure=job_def.graph.dependency_structure,
             executor_def=job_def.executor_def,
-            resource_defs=job_def.resource_defs,
+            resource_defs=included_resource_defs,
             logger_defs=job_def.loggers,
             ignored_nodes=ignored_nodes,
-            required_resources=required_resources,
+            required_resources=job_def.required_resource_keys,
             direct_inputs=job_def.input_values,
             asset_layer=job_def.asset_layer,
         )

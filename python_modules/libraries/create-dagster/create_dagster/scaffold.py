@@ -13,7 +13,7 @@ from dagster_shared.scaffold import scaffold_subtree
 
 def scaffold_workspace(
     path: Path,
-    use_editable_dagster: Optional[str],
+    use_editable_dagster: bool,
 ) -> None:
     scaffold_subtree(
         path=path,
@@ -50,7 +50,7 @@ def scaffold_workspace(
 
 
 def get_dependencies_template_params(
-    use_editable_dagster: Optional[str],
+    use_editable_dagster: bool,
     scaffold_project_options: Optional[DgWorkspaceScaffoldProjectOptions],
     *,
     editable_deps: list[str],
@@ -64,16 +64,10 @@ def get_dependencies_template_params(
         "use_editable_dagster",
         scaffold_project_options.use_editable_dagster if scaffold_project_options else None,
     )
-
     if final_use_editable_dagster:
-        editable_dagster_root = (
-            _get_editable_dagster_from_env()
-            if final_use_editable_dagster is True
-            else final_use_editable_dagster
-        )
         deps = editable_deps
         dev_deps = editable_dev_deps
-        sources = _gather_dagster_packages(Path(editable_dagster_root))
+        sources = _gather_dagster_packages(Path(_get_editable_dagster_from_env()))
     else:
         dev_deps = pypi_dev_deps
         deps = pypi_deps
@@ -108,7 +102,7 @@ def _get_pypi_local_workspace_environment_deps() -> list[str]:
 def scaffold_project(
     path: Path,
     dg_context: DgContext,
-    use_editable_dagster: Optional[str],
+    use_editable_dagster: bool,
 ) -> None:
     import tomlkit
     import tomlkit.items

@@ -19,7 +19,7 @@ from typing import TYPE_CHECKING, Any, Callable, Optional, TypedDict, cast
 
 import dagster_shared.seven as seven
 import grpc
-from dagster_shared.error import remove_system_frames_from_error
+from dagster_shared.error import DagsterError, remove_system_frames_from_error
 from dagster_shared.ipc import open_ipc_subprocess
 from dagster_shared.libraries import DagsterLibraryRegistry
 from dagster_shared.serdes.objects.models.defs_state_info import DefsStateInfo
@@ -279,6 +279,7 @@ class LoadedRepositories:
                     working_directory=loadable_target_origin.working_directory,
                     attribute=loadable_target_origin.attribute,
                     autoload_defs_module_name=loadable_target_origin.autoload_defs_module_name,
+                    resolve_lazy_defs=True,
                 )
             for loadable_target in loadable_targets:
                 pointer = _get_code_pointer(loadable_target_origin, loadable_target)
@@ -440,26 +441,22 @@ class DagsterApiServer(DagsterApiServicer):
         self._server_threadpool_executor = server_threadpool_executor
 
         try:
-            if inject_env_vars_from_instance:
-                from dagster._cli.utils import get_instance_for_cli
+            from dagster._cli.utils import get_instance_for_cli
 
-                # If arguments indicate it wants to load env vars, use the passed-in instance
-                # ref (or the dagster.yaml on the filesystem if no instance ref is provided)
+            instance_required = inject_env_vars_from_instance or defs_state_info is not None
+
+            try:
+                # we only require the instance if we need it to inject env vars or to load state,
+                # so in other cases we can swallow the error, but we should try to get it if possible
                 self._instance = self._exit_stack.enter_context(
                     get_instance_for_cli(instance_ref=instance_ref)
                 )
-
-                self._instance.inject_env_vars(location_name)
-            else:
+                if inject_env_vars_from_instance:
+                    self._instance.inject_env_vars(location_name)
+            except DagsterError as e:
+                if instance_required:
+                    raise e
                 self._instance = None
-
-            if defs_state_info is not None and self._instance is None:
-                instance_ref = check.not_none(
-                    self._instance_ref, "Cannot set defs_state_info without an instance_ref."
-                )
-                self._instance = self._exit_stack.enter_context(
-                    DagsterInstance.from_ref(instance_ref)
-                )
 
             self._loaded_repositories: Optional[LoadedRepositories] = LoadedRepositories(
                 loadable_target_origin,

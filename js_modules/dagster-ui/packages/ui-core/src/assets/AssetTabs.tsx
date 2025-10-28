@@ -1,4 +1,4 @@
-import {Tab, Tabs} from '@dagster-io/ui-components';
+import {Tab, Tabs, Tooltip} from '@dagster-io/ui-components';
 import qs from 'qs';
 import {useMemo} from 'react';
 
@@ -17,9 +17,20 @@ export const AssetTabs = (props: Props) => {
     <Tabs size="large" selectedTabId={selectedTab}>
       {tabs
         .filter((tab) => !tab.hidden)
-        .map(({id, title, to, disabled}) => {
+        .map(({id, title, to, tooltip, disabled}) => {
           if (disabled) {
-            return <Tab disabled key={id} id={id} title={title} />;
+            return (
+              <Tab
+                disabled
+                key={id}
+                id={id}
+                title={
+                  <Tooltip content={tooltip || ''} canShow={!!tooltip} placement="top">
+                    {title}
+                  </Tooltip>
+                }
+              />
+            );
           }
           return <TabLink key={id} id={id} title={title} to={to} disabled={disabled} />;
         })}
@@ -54,6 +65,7 @@ export type AssetTabConfig = {
   title: string;
   to: string;
   disabled?: boolean;
+  tooltip?: string;
   hidden?: boolean;
 };
 

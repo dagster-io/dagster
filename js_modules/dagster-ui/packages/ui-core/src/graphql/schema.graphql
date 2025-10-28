@@ -630,6 +630,9 @@ type Asset {
   latestEventSortKey: ID
   assetHealth: AssetHealth
   latestMaterializationTimestamp: Float
+  hasDefinitionOrRecord: Boolean!
+  latestFailedToMaterializeTimestamp: Float
+  freshnessStatusChangedTimestamp: Float
 }
 
 type AssetResultEventHistoryConnection {
@@ -745,6 +748,7 @@ type AssetNode {
   staleCausesByPartition(partitions: [String!]): [[StaleCause!]!]
   type: DagsterType
   hasMaterializePermission: Boolean!
+  hasWipePermission: Boolean!
   hasReportRunlessAssetEventPermission: Boolean!
   hasAssetChecks: Boolean!
   assetChecksOrError(limit: Int, pipeline: PipelineSelector): AssetChecksOrError!
@@ -1222,6 +1226,7 @@ type FieldsNotDefinedConfigError implements PipelineConfigValidationError {
 interface IPipelineSnapshot {
   name: String!
   description: String
+  owners: [DefinitionOwner!]!
   pipelineSnapshotId: String!
   dagsterTypes: [DagsterType!]!
   dagsterTypeOrError(dagsterTypeName: String!): DagsterTypeOrError!
@@ -1236,6 +1241,16 @@ interface IPipelineSnapshot {
   sensors: [Sensor!]!
   parentSnapshotId: String
   graphName: String!
+}
+
+union DefinitionOwner = UserDefinitionOwner | TeamDefinitionOwner
+
+type UserDefinitionOwner {
+  email: String!
+}
+
+type TeamDefinitionOwner {
+  team: String!
 }
 
 type Logger {
@@ -1276,6 +1291,7 @@ type Pipeline implements SolidContainer & IPipelineSnapshot {
   solidHandle(handleID: String!): SolidHandle
   solidHandles(parentHandleID: String): [SolidHandle!]!
   modes: [Mode!]!
+  owners: [DefinitionOwner!]!
   pipelineSnapshotId: String!
   dagsterTypes: [DagsterType!]!
   dagsterTypeOrError(dagsterTypeName: String!): DagsterTypeOrError!
@@ -1299,6 +1315,8 @@ type Pipeline implements SolidContainer & IPipelineSnapshot {
     selectedAssetKeys: [AssetKeyInput!]
   ): PartitionKeys!
   partition(partitionName: String!, selectedAssetKeys: [AssetKeyInput!]): PartitionTagsAndConfig
+  hasLaunchExecutionPermission: Boolean!
+  hasLaunchReexecutionPermission: Boolean!
 }
 
 type PartitionTagsAndConfig {
@@ -1594,6 +1612,7 @@ type PipelineSnapshot implements SolidContainer & IPipelineSnapshot & PipelineRe
   solidHandle(handleID: String!): SolidHandle
   solidHandles(parentHandleID: String): [SolidHandle!]!
   modes: [Mode!]!
+  owners: [DefinitionOwner!]!
   pipelineSnapshotId: String!
   dagsterTypes: [DagsterType!]!
   dagsterTypeOrError(dagsterTypeName: String!): DagsterTypeOrError!
@@ -1880,6 +1899,7 @@ type Schedule {
   futureTick(tickTimestamp: Int!): DryRunInstigationTick!
   potentialTickTimestamps(startTimestamp: Float, upperLimit: Int, lowerLimit: Int): [Float!]!
   assetSelection: AssetSelection
+  owners: [DefinitionOwner!]!
   tags: [DefinitionTag!]!
   metadataEntries: [MetadataEntry!]!
 }
@@ -2398,6 +2418,7 @@ type Job implements SolidContainer & IPipelineSnapshot {
   solidHandle(handleID: String!): SolidHandle
   solidHandles(parentHandleID: String): [SolidHandle!]!
   modes: [Mode!]!
+  owners: [DefinitionOwner!]!
   pipelineSnapshotId: String!
   dagsterTypes: [DagsterType!]!
   dagsterTypeOrError(dagsterTypeName: String!): DagsterTypeOrError!
@@ -2421,6 +2442,8 @@ type Job implements SolidContainer & IPipelineSnapshot {
     selectedAssetKeys: [AssetKeyInput!]
   ): PartitionKeys!
   partition(partitionName: String!, selectedAssetKeys: [AssetKeyInput!]): PartitionTagsAndConfig
+  hasLaunchExecutionPermission: Boolean!
+  hasLaunchReexecutionPermission: Boolean!
 }
 
 enum SensorType {
@@ -2521,11 +2544,18 @@ type DefsStateInfo {
 type DefsKeyStateInfo {
   version: String!
   createTimestamp: Float!
+  managementType: DefsStateManagementType!
 }
 
 type DefsStateInfoEntry {
   name: String!
   info: DefsKeyStateInfo
+}
+
+enum DefsStateManagementType {
+  VERSIONED_STATE_STORAGE
+  LOCAL_FILESYSTEM
+  LEGACY_CODE_SERVER_SNAPSHOTS
 }
 
 input AssetKeyInput {
@@ -3111,6 +3141,8 @@ type PartitionSet {
   partitionStatusesOrError: PartitionStatusesOrError!
   partitionRuns: [PartitionRun!]!
   repositoryOrigin: RepositoryOrigin!
+  hasLaunchBackfillPermission: Boolean!
+  hasCancelBackfillPermission: Boolean!
   backfills(cursor: String, limit: Int): [PartitionBackfill!]!
 }
 
@@ -3323,6 +3355,7 @@ type Sensor {
   targets: [Target!]
   defaultStatus: InstigationStatus!
   canReset: Boolean!
+  hasCursorUpdatePermissions: Boolean!
   sensorState: InstigationState!
   minIntervalSeconds: Int!
   description: String
@@ -3330,6 +3363,7 @@ type Sensor {
   metadata: SensorMetadata!
   sensorType: SensorType!
   assetSelection: AssetSelection
+  owners: [DefinitionOwner!]!
   tags: [DefinitionTag!]!
   metadataEntries: [MetadataEntry!]!
 }

@@ -7,6 +7,7 @@ from dagster_tableau.asset_utils import (
 from dagster_tableau.assets import (
     build_tableau_materializable_assets_definition as build_tableau_materializable_assets_definition,
 )
+from dagster_tableau.components import TableauComponent as TableauComponent
 from dagster_tableau.resources import (
     TableauCloudWorkspace as TableauCloudWorkspace,
     TableauServerWorkspace as TableauServerWorkspace,

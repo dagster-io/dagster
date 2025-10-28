@@ -12,6 +12,7 @@ export type AssetViewDefinitionQuery = {
     | {
         __typename: 'Asset';
         id: string;
+        hasDefinitionOrRecord: boolean;
         key: {__typename: 'AssetKey'; path: Array<string>};
         assetMaterializations: Array<{
           __typename: 'MaterializationEvent';
@@ -663,6 +664,8 @@ export type AssetViewDefinitionQuery = {
                   id: string;
                   selectorId: string;
                   status: Types.InstigationStatus;
+                  hasStartPermission: boolean;
+                  hasStopPermission: boolean;
                 };
               }
             | {
@@ -675,6 +678,8 @@ export type AssetViewDefinitionQuery = {
                   id: string;
                   selectorId: string;
                   status: Types.InstigationStatus;
+                  hasStartPermission: boolean;
+                  hasStopPermission: boolean;
                   typeSpecificData:
                     | {__typename: 'ScheduleData'}
                     | {__typename: 'SensorData'; lastCursor: string | null}
@@ -17135,6 +17140,8 @@ export type AssetViewDefinitionNodeFragment = {
           id: string;
           selectorId: string;
           status: Types.InstigationStatus;
+          hasStartPermission: boolean;
+          hasStopPermission: boolean;
         };
       }
     | {
@@ -17147,6 +17154,8 @@ export type AssetViewDefinitionNodeFragment = {
           id: string;
           selectorId: string;
           status: Types.InstigationStatus;
+          hasStartPermission: boolean;
+          hasStopPermission: boolean;
           typeSpecificData:
             | {__typename: 'ScheduleData'}
             | {__typename: 'SensorData'; lastCursor: string | null}
@@ -32753,4 +32762,4 @@ export type AssetViewDefinitionNodeFragment = {
     | null;
 };
 
-export const AssetViewDefinitionQueryVersion = '1bc39b27e9080474973f7426813abf75782273dd4d95bea8ee97ab92b83d3023';
+export const AssetViewDefinitionQueryVersion = '085912b81c1d063190109b0133df9a51f8f3c98952df345ebf1871676d983d10';

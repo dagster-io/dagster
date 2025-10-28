@@ -35,6 +35,7 @@ class MinimalAssetMaterializationHealthState(LoadableBy[AssetKey]):
     num_failed_partitions: int
     num_currently_materialized_partitions: int
     partitions_snap: Optional[PartitionsSnap]
+    latest_failed_to_materialize_timestamp: Optional[float] = None
 
     @property
     def health_status(self) -> AssetHealthStatus:
@@ -62,6 +63,7 @@ class MinimalAssetMaterializationHealthState(LoadableBy[AssetKey]):
             num_failed_partitions=asset_materialization_health_state.failed_subset.size,
             num_currently_materialized_partitions=asset_materialization_health_state.currently_materialized_subset.size,
             partitions_snap=asset_materialization_health_state.partitions_snap,
+            latest_failed_to_materialize_timestamp=asset_materialization_health_state.latest_failed_to_materialize_timestamp,
         )
 
     @classmethod
@@ -101,6 +103,7 @@ class AssetMaterializationHealthState(LoadableBy[AssetKey]):
     partitions_snap: Optional[PartitionsSnap]
     latest_terminal_run_id: Optional[str]
     latest_materialization_timestamp: Optional[float] = None
+    latest_failed_to_materialize_timestamp: Optional[float] = None
 
     @property
     def partitions_def(self) -> Optional[PartitionsDefinition]:
@@ -152,6 +155,7 @@ class AssetMaterializationHealthState(LoadableBy[AssetKey]):
 
             last_run_id = None
             latest_materialization_timestamp = None
+            latest_failed_to_materialize_timestamp = None
             if asset_record is not None:
                 entry = asset_record.asset_entry
                 latest_record = max(
@@ -167,6 +171,11 @@ class AssetMaterializationHealthState(LoadableBy[AssetKey]):
                     if entry.last_materialization_record
                     else None
                 )
+                latest_failed_to_materialize_timestamp = (
+                    entry.last_failed_to_materialize_record.timestamp
+                    if entry.last_failed_to_materialize_record
+                    else None
+                )
 
             return cls(
                 materialized_subset=SerializableEntitySubset(
@@ -178,6 +187,7 @@ class AssetMaterializationHealthState(LoadableBy[AssetKey]):
                 partitions_snap=PartitionsSnap.from_def(partitions_def),
                 latest_terminal_run_id=last_run_id,
                 latest_materialization_timestamp=latest_materialization_timestamp,
+                latest_failed_to_materialize_timestamp=latest_failed_to_materialize_timestamp,
             )
 
         if asset_record is None:
@@ -187,12 +197,18 @@ class AssetMaterializationHealthState(LoadableBy[AssetKey]):
                 partitions_snap=None,
                 latest_terminal_run_id=None,
                 latest_materialization_timestamp=None,
+                latest_failed_to_materialize_timestamp=None,
             )
 
         asset_entry = asset_record.asset_entry
         latest_materialization_timestamp = (
             asset_entry.last_materialization_record.timestamp
             if asset_entry.last_materialization_record
+            else None
+        )
+        latest_failed_to_materialize_timestamp = (
+            asset_entry.last_failed_to_materialize_record.timestamp
+            if asset_entry.last_failed_to_materialize_record
             else None
         )
         if asset_entry.last_run_id is None:
@@ -202,6 +218,7 @@ class AssetMaterializationHealthState(LoadableBy[AssetKey]):
                 partitions_snap=None,
                 latest_terminal_run_id=None,
                 latest_materialization_timestamp=latest_materialization_timestamp,
+                latest_failed_to_materialize_timestamp=latest_failed_to_materialize_timestamp,
             )
 
         has_ever_materialized = asset_entry.last_materialization is not None
@@ -218,6 +235,7 @@ class AssetMaterializationHealthState(LoadableBy[AssetKey]):
             partitions_snap=None,
             latest_terminal_run_id=latest_terminal_run_id,
             latest_materialization_timestamp=latest_materialization_timestamp,
+            latest_failed_to_materialize_timestamp=latest_failed_to_materialize_timestamp,
         )
 
     @classmethod

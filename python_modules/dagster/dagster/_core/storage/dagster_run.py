@@ -40,6 +40,7 @@ from dagster._core.utils import make_new_run_id
 from dagster._utils.tags import get_boolean_tag_value
 
 if TYPE_CHECKING:
+    from dagster._core.definitions.assets.graph.base_asset_graph import EntityKey
     from dagster._core.definitions.schedule_definition import ScheduleDefinition
     from dagster._core.definitions.sensor_definition import SensorDefinition
     from dagster._core.remote_representation.external import RemoteSchedule, RemoteSensor
@@ -496,6 +497,13 @@ class DagsterRun(
     def previous_run_id(self) -> Optional[str]:
         # Compat
         return self.parent_run_id
+
+    @property
+    def entity_selection(self) -> Optional[AbstractSet["EntityKey"]]:
+        if self.asset_selection is None and self.asset_check_selection is None:
+            return None
+
+        return (self.asset_selection or set()) | (self.asset_check_selection or set())
 
     @staticmethod
     def tags_for_schedule(

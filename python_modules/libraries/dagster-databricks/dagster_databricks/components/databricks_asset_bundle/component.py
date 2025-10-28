@@ -1,5 +1,6 @@
 import os
 import re
+from collections import defaultdict
 from dataclasses import dataclass, field
 from functools import cached_property
 from pathlib import Path
@@ -153,7 +154,7 @@ class DatabricksAssetBundleComponent(Component, Resolvable):
         return DatabricksConfig(databricks_config_path=self.databricks_config_path)
 
     @cached_property
-    def asset_specs(self) -> list[AssetSpec]:
+    def asset_specs_by_task_key(self) -> dict[str, list[AssetSpec]]:
         tasks_by_task_key = self.databricks_config.tasks_by_task_key
         default_asset_specs_by_task_key = {
             task_key: self.get_asset_spec(task=task) for task_key, task in tasks_by_task_key.items()
@@ -164,13 +165,13 @@ class DatabricksAssetBundleComponent(Component, Resolvable):
         provided_task_keys = provided_asset_specs_by_task_key.keys()
         missing_task_keys = tasks_by_task_key.keys() - provided_task_keys
 
-        missing_asset_specs = [
-            asset_spec
+        missing_asset_specs_by_task_key = {
+            task_key: [asset_spec]
             for task_key, asset_spec in default_asset_specs_by_task_key.items()
             if task_key in missing_task_keys
-        ]
+        }
 
-        updated_provided_asset_specs = []
+        updated_provided_asset_specs = defaultdict(list)
         for task_key, asset_specs in provided_asset_specs_by_task_key.items():
             for asset_spec in asset_specs:
                 curr_spec = asset_spec
@@ -184,9 +185,9 @@ class DatabricksAssetBundleComponent(Component, Resolvable):
                     metadata=default_asset_specs_by_task_key[task_key].metadata,
                     kinds=default_asset_specs_by_task_key[task_key].kinds,
                 )
-                updated_provided_asset_specs.append(curr_spec)
+                updated_provided_asset_specs[task_key].append(curr_spec)
 
-        return missing_asset_specs + updated_provided_asset_specs
+        return {**missing_asset_specs_by_task_key, **updated_provided_asset_specs}
 
     def get_asset_spec(self, task: DatabricksBaseTask) -> AssetSpec:
         return AssetSpec(
@@ -222,27 +223,30 @@ class DatabricksAssetBundleComponent(Component, Resolvable):
             os.path.relpath(context.component_path.file_path, start=context.project_root)
         ).replace("/", "_")
 
-        @multi_asset(
-            name=self.op.name
-            if self.op and self.op.name
-            else f"databricks_tasks_multi_asset_{component_defs_path_as_python_str}",
-            specs=self.asset_specs,
-            can_subset=True,
-            op_tags=self.op.tags if self.op else None,
-            description=self.op.description if self.op else None,
-            pool=self.op.pool if self.op else None,
-            backfill_policy=self.op.backfill_policy if self.op else None,
-        )
-        def databricks_tasks_multi_asset(
-            context: AssetExecutionContext,
-            databricks: DatabricksWorkspace,
-        ):
-            """Multi-asset that runs multiple tasks as a single Databricks job."""
-            yield from databricks.submit_and_poll(
-                component=self,
-                context=context,
-            )
+        databricks_assets = []
+        for task_key, asset_specs in self.asset_specs_by_task_key.items():
 
-        return Definitions(
-            assets=[databricks_tasks_multi_asset], resources={"databricks": self.workspace}
-        )
+            @multi_asset(
+                name=self.op.name
+                if self.op and self.op.name
+                else f"databricks_{task_key}_multi_asset_{component_defs_path_as_python_str}",
+                specs=asset_specs,
+                can_subset=False,
+                op_tags=self.op.tags if self.op else None,
+                description=self.op.description if self.op else None,
+                pool=self.op.pool if self.op else None,
+                backfill_policy=self.op.backfill_policy if self.op else None,
+            )
+            def _databricks_task_multi_asset(
+                context: AssetExecutionContext,
+                databricks: DatabricksWorkspace,
+            ):
+                """Multi-asset that runs multiple assets of a task as a single Databricks job."""
+                yield from databricks.submit_and_poll(
+                    component=self,
+                    context=context,
+                )
+
+            databricks_assets.append(_databricks_task_multi_asset)
+
+        return Definitions(assets=databricks_assets, resources={"databricks": self.workspace})

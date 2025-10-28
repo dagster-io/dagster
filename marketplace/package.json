@@ -13,7 +13,7 @@
   "author": "",
   "license": "ISC",
   "description": "",
-  "packageManager": "yarn@4.9.2",
+  "packageManager": "yarn@4.10.3",
   "dependencies": {
     "express": "^5.1.0"
   },
@@ -27,8 +27,8 @@
     "prettier": "^3.5.3",
     "to-vfile": "^8.0.0",
     "ts-node": "^10.9.2",
-    "typescript": "^5.8.3",
-    "typescript-eslint": "^8.29.1",
+    "typescript": "^5.9.2",
+    "typescript-eslint": "^8.44.0",
     "vfile-matter": "^5.0.1"
   }
 }

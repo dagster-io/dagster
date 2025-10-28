@@ -515,6 +515,22 @@
           }),
         }),
         dict({
+          'id': '["owned_asset"]',
+          'key': dict({
+            'path': list([
+              'owned_asset',
+            ]),
+          }),
+        }),
+        dict({
+          'id': '["owned_partitioned_asset"]',
+          'key': dict({
+            'path': list([
+              'owned_partitioned_asset',
+            ]),
+          }),
+        }),
+        dict({
           'id': '["second_kinds_key"]',
           'key': dict({
             'path': list([
@@ -591,6 +607,22 @@
           'key': dict({
             'path': list([
               'ungrouped_asset_5',
+            ]),
+          }),
+        }),
+        dict({
+          'id': '["unowned_asset"]',
+          'key': dict({
+            'path': list([
+              'unowned_asset',
+            ]),
+          }),
+        }),
+        dict({
+          'id': '["unowned_partitioned_asset"]',
+          'key': dict({
+            'path': list([
+              'unowned_partitioned_asset',
             ]),
           }),
         }),
@@ -988,6 +1020,16 @@
       dict({
         'freshnessInfo': None,
         'freshnessPolicy': None,
+        'id': 'test_location.test_repo.["owned_asset"]',
+      }),
+      dict({
+        'freshnessInfo': None,
+        'freshnessPolicy': None,
+        'id': 'test_location.test_repo.["owned_partitioned_asset"]',
+      }),
+      dict({
+        'freshnessInfo': None,
+        'freshnessPolicy': None,
         'id': 'test_location.test_repo.["second_kinds_key"]',
       }),
       dict({
@@ -1038,6 +1080,16 @@
       dict({
         'freshnessInfo': None,
         'freshnessPolicy': None,
+        'id': 'test_location.test_repo.["unowned_asset"]',
+      }),
+      dict({
+        'freshnessInfo': None,
+        'freshnessPolicy': None,
+        'id': 'test_location.test_repo.["unowned_partitioned_asset"]',
+      }),
+      dict({
+        'freshnessInfo': None,
+        'freshnessPolicy': None,
         'id': 'test_location.test_repo.["unpartitioned_upstream_of_partitioned"]',
       }),
       dict({
@@ -1083,13 +1135,16 @@
           'label': 'a',
         }),
       ]),
+      'hasDefinitionOrRecord': True,
     }),
   })
 # ---
 # name: TestAssetAwareEventLog.test_get_asset_key_not_found[0]
   dict({
     'assetOrError': dict({
-      '__typename': 'AssetNotFoundError',
+      'assetMaterializations': list([
+      ]),
+      'hasDefinitionOrRecord': False,
     }),
   })
 # ---

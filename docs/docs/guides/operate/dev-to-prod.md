@@ -114,7 +114,7 @@ We can easily solve these problems using <PyObject section="resources" module="d
 
 Depending on your organization’s Dagster setup, there are a couple of options for a staging environment.
 
-- **For Dagster+ users**, we recommend using [branch deployments](/deployment/dagster-plus/ci-cd/branch-deployments) as your staging step. A branch deployment is a new Dagster deployment that is automatically generated for each git branch, and can be used to verify data pipelines before deploying them to production.
+- **For Dagster+ users**, we recommend using [branch deployments](/deployment/dagster-plus/deploying-code/branch-deployments) as your staging step. A branch deployment is a new Dagster deployment that is automatically generated for each git branch, and can be used to verify data pipelines before deploying them to production.
 
 - **For a self-hosted staging deployment**, we’ve already done most of the necessary work to run our assets in staging! All we need to do is add another entry to the `resources` dictionary and set `DAGSTER_DEPLOYMENT=staging` in our staging deployment.
 

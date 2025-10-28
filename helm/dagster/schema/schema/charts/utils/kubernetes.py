@@ -39,11 +39,17 @@ class PullPolicy(str, Enum):
 class Image(BaseModelWithNullableRequiredFields):
     repository: str
     tag: Optional[Union[str, int]] = None
+    digest: Optional[str] = None
     pullPolicy: PullPolicy
 
     @property
     def name(self) -> str:
-        return f"{self.repository}:{self.tag}" if self.tag else self.repository
+        if self.digest:
+            return f"{self.repository}@{self.digest}"
+        elif self.tag:
+            return f"{self.repository}:{self.tag}"
+        else:
+            return self.repository
 
 
 class ExternalImage(Image):

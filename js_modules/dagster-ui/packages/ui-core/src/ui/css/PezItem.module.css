@@ -1,0 +1,12 @@
+.pezItem {
+  border-radius: 2px;
+  height: 16px;
+  width: 6px;
+  background: var(--pez-color);
+  opacity: var(--pez-opacity);
+  transition: opacity 0.2s ease-in-out;
+}
+
+.pezItem:hover {
+  opacity: 1;
+}

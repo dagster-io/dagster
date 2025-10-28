@@ -46,7 +46,7 @@ export async function getQuarantinedTests(state: QuarantinedTestState): Promise<
     const timeout = 10000; // 10 seconds in milliseconds
 
     while (url && Date.now() - startTime < timeout) {
-      const response = await fetch(url, {
+      const response: Response = await fetch(url, {
         headers: {
           Authorization: `Bearer ${token}`,
         },

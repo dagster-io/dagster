@@ -39,7 +39,7 @@ The `changed_in_branch` filter selects assets that have been changed for a speci
 
 :::info
 
-The `changed_in_branch` filter is only available in [Dagster+ branch deployments](/deployment/dagster-plus/ci-cd/branch-deployments).
+The `changed_in_branch` filter is only available in [Dagster+ branch deployments](/deployment/dagster-plus/deploying-code/branch-deployments).
 
 :::
 

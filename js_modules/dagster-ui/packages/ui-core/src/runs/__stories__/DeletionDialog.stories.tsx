@@ -1,4 +1,4 @@
-import {Meta, StoryFn} from '@storybook/react';
+import {StoryFn} from '@storybook/nextjs';
 import faker from 'faker';
 
 import {StorybookProvider} from '../../testing/StorybookProvider';
@@ -8,7 +8,7 @@ import {DeletionDialog, Props as DeletionDialogProps} from '../DeletionDialog';
 export default {
   title: 'DeletionDialog',
   component: DeletionDialog,
-} as Meta;
+};
 
 const Template: StoryFn<DeletionDialogProps & {mocks?: any}> = ({mocks, ...props}) => (
   <StorybookProvider apolloProps={{mocks}}>

@@ -1,4 +1,3 @@
-import {Meta} from '@storybook/react';
 import {useState} from 'react';
 
 import {OpNameOrPath} from '../../ops/OpNameOrPath';
@@ -16,7 +15,7 @@ import {getFullOpLayout} from '../asyncGraphLayout';
 export default {
   title: 'OpGraph',
   component: OpGraph,
-} as Meta;
+};
 
 export const Basic = () => {
   const [focusOps, setsetFocusOps] = useState<string[]>([]);

@@ -1,5 +1,108 @@
 # Changelog
 
+## 1.11.16 (core) / 0.27.16 (libraries)
+
+### New
+
+- The proxy GRPC server heartbeat TTL can now be configured with the DAGSTER_GRPC_PROXY_HEARTBEAT_TTL_SECONDS env var (default remains 30 seconds).
+
+### Bugfixes
+
+- Fixed an issue introduced in dagster 1.11.15 where code locations that previously loaded would sometimes fail to load with a `gRPC Error code: RESOURCE_EXHAUSTED` error.
+- Fixed an issue where defining a repository using a dictionary of job definitions with a key that did not match the name of the job would work when running dagster locally but not when using Dagster+.
+- [components] Fixed a bug that caused errors when using the `DbtProjectComponent`, `FivetranAccountComponent`, and similar state-based components in k8s deployments due to a missing `StateStorage` object in context.
+- [dagster-omni] Added a dependency on `python-dateutil` to `dagster-omni`. (Thanks, [@bollwyvl](https://github.com/bollwyvl)!)
+
+## 1.11.15 (core) / 0.27.15 (libraries)
+
+### New
+
+- All sequences are now supported in `AssetKey.with_prefix`. (Thanks, [@aksestok](https://github.com/aksestok)!)
+- [ui] Introduce new navigation, with main navigation items previously in top navigation now in a collapsible left nav.
+- [ui] Improve loading performance of Runs page.
+- [dagster-databricks] Add support for `notebook_task` in `PipesDatabricksClient`. (Thanks, [@SoerenStahlmann](https://github.com/SoerenStahlmann)!)
+
+### Bugfixes
+
+- Fixed an issue where `fetch_row_counts` and `fetch_column_metadata` do not execute in the same working directory as the underlying dbt command.
+- Fixed a bug with `AutomationCondition.execution_failed` that would cause it to be evaluated as `True` for an unpartitioned asset in cases where the latest run failed, but the asset itself materialized successfully before that failure.
+- Unrelated resource keys are now no longer included in the run config schema for subselections of assets.
+- Ignored nodes are properly excluded when generating run config for an implicit asset job
+- Invalid UTF-8 in stderr compute logs are now handled gracefully. (Thanks, [@2bxtech](https://github.com/2bxtech)!)
+- [ui] Fix top nav rendering for Plus users.
+- [dagster-celery] Fix Celery executor ignoring pools for ops. (Thanks, [@kkanter-asml](https://github.com/kkanter-asml)!)
+- [dagster-dbt] Fixed issue that made custom template vars unavailable when specifying them for the `cli_args:` field of the `DbtProjectComponent`.
+- [dagster-cloud-cli] Fixed an issue where deploying multiple serverless code locations or code locations with a custom project directory would sometimes fail with an "The dagster package dependency was expected but not found." error.
+
+### Documentation
+
+- Fixed broken social media link in docs. (Thanks, [@MandyMeindersma](https://github.com/MandyMeindersma)!)
+
+### Dagster Plus
+
+- [ui] Fix home page performance for users with large numbers of automations and jobs.
+- [ui] Fix a sporadic JavaScript error that can crash the page when loading insights charts.
+
+## 1.11.14 (core) / 0.27.14 (libraries)
+
+### New
+
+- `UnionTypes` (e.g. `Foo | Bar`) are now supported in `ConfigurableResources`. (Thanks, [@DominikHallab](https://github.com/DominikHallab)!)
+- Added an `output_metadata` parameter to `build_output_context` (Thanks, [@zyd14](https://github.com/zyd14)!)
+- `ResolvedAssetSpec` and related resolvers now support setting the `freshness_policy` field.
+- `dagster-dbt project prepare-and-package --components .` will no longer attempt to load components outside of `DbtProjectComponent`, preventing errors when attempting to run this command in environments that do not have the necessary env vars set for other components.
+- `click<8.2` upper bound has been removed
+- [dagster-airbyte][dagster-fivetran][dagster-powerbi][dagster-sling][dagster-dlt] The `AirbyteWorkspaceComponent`, `FivetranAccountComponent`, `PowerBIWorkspaceComponent`, `SlingReplicationCollectionComponent`, and `DltLoadCollectionComponent` components have been updated to include a `get_asset_spec` method that can be overridden by subclasses to modify translation behavior.
+- [dagster-airbyte][dagster-fivetran] The `AirbyteWorkspaceComponent` and `FivetranAccountComponent` have been updated to include an `execute()` method that can be overridden by subclasses to modify runtime execution behavior.
+- [dagster-airbyte] The `AirbyteWorkspaceComponent` no longer binds an `"io_manager"` or `"airbyte"` resource, meaning it can be used in tandem with other definitions that use those keys without causing conflicts.
+- [dagster-dbt] The `DbtProjectComponent` now supports overriding `get_asset_spec` and `get_asset_check_spec` methods when subclassing.
+- [dagster-fivetran] The `FivetranAccountComponent` no longer binds an `"io_manager"` or `"fivetran"` resource, meaning it can be used in tandem with other definitions that use those keys without causing conflicts.
+
+### Bugfixes
+
+- Fixed a bug that would cause errors when instantiating a `TimeWindowPartitionsDefinition` with a monthly schedule and the default day offset.
+- [ui] The `Materialize` button in the lineage view is now disabled while the view is updating to avoid inconsistencies when launching runs.
+- [ui] Fixed an issue where the "View error" link in the popup that displayed when a backfill failed to launch was very difficult to see.
+- [dagster-dbt] Fixed issue where the `select` and `exclude` parameters to `@dbt_assets` would be ignored when generating `AssetCheckSpecs` (Thanks, [@nathanskone](https://github.com/nathanskone)!)
+- [dagster-powerbi] Previously, assets generated for semantic models would have a kind tag with an invalid space character (`"semantic model"`). Now, they have the kind tag `"semantic_model"`.
+- [dagster-sling] Resolved issue that caused the substring "INF" to be stripped from all logs.
+
+## 1.11.13 (core) / 0.27.13 (libraries)
+
+### New
+
+- [dagster-deltalake,dagster-deltalake-polars] BREAKING CHANGE - we now support `deltalake>=1.0.0` for `dagster-deltalake` and `dagster-deltalake-polars` and we will no longer support `deltalake<1.0.0` moving forward. End user APIs remain the same for both libraries.
+- [dagster-databricks] Spark Python and Python Wheel tasks are now supported in `PipesDatabricksServerlessClient`.
+- [dagster-dbt] `dagster-dbt project prepare-and-package --components .` will no longer attempt to load components outside of `DbtProjectComponent`, preventing errors when attempting to run this command in environments that do not have the necessary env vars set for other components.
+- [dg] adds `dg api secret list` and `dg api secret get`
+
+### Bugfixes
+
+- Fixed a bug in the backfill daemon where an asset backfill with CANCELING​ or FAILING​ status could become permanently stuck in CANCELING​ or FAILING​ if the partitions definitions of the assets changed.
+- Fixed an issue introduced in the 1.11.12 release where auto-complete in the Launchpad for nested fields stopped working.
+- Fixed an issue where backfills would fail if a TimeWindowPartitionsDefinition's start date was changed in the middle of the backfill, even if it did not remove any of the targeted partitions.
+- [ui] Fixed the link to "View asset lineage" on runs that don't specify an asset selection.
+
+## 1.11.12 (core) / 0.27.12 (libraries)
+
+### New
+
+- [ui] Allow searching across code locations with `*` wildcard in selection inputs for jobs and automations.
+- [ui] Added `AutomationCondition.all_new_executed_with_tags`, which allows automation conditions to be filtered to partitions that have been materialized since the last tick from runs with certain tags. This condition can be used to require or prevent certain run tags from triggering downstream declarative automation conditions.
+
+### Bugfixes
+
+- In `dagster==1.11.1`, `partitioned_config` was unintentionally removed from the public exports of the top-level `dagster` package. This has been fixed.
+- Avoid adding trailing whitespace in env vars that use dot notation in components. Thanks [@edgarrmondragon](https://github.com/edgarrmondragon)!
+- [dagster-airbyte] Fix the pagination url issue for the Airbyte API. Thanks [@stevenayers](https://github.com/stevenayers)!
+- [dagster-dbt] Fixed an issue with the DbtCloudWorkspaceClient that would cause errors when calling `trigger_job_run` with no steps_override parameter.
+
+### Dagster Plus
+
+- [ui] Add Cost insights.
+- [ui] For users who have inherited org roles from a team, show those roles when editing the user.
+- [ui] Fix per-asset and per-job insights graphs.
+
 ## 1.11.11 (core) / 0.27.11 (libraries)
 
 ### New

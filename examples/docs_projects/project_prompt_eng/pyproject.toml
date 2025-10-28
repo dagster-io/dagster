@@ -6,24 +6,29 @@ readme = "README.md"
 requires-python = ">=3.9"
 dependencies = [
     "dagster",
-    "dagster-dg-cli",
     "dagster-anthropic",
     "pydantic",
     "requests",
 ]
 
-[project.optional-dependencies]
+[dependency-groups]
 dev = [
-    "ruff",
-    "pytest",
     "dagster-webserver",
+    "dagster-dg-cli",
 ]
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+force-include = { "pyproject.toml" = "pyproject.toml" }
 
 [tool.dg]
 directory_type = "project"
 
 [tool.dg.project]
 root_module = "project_prompt_eng"
-
-[tool.dg.project.python_environment]
-active = true
+registry_modules = [
+    "project_prompt_eng.components.*",
+]

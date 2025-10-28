@@ -35,7 +35,7 @@ from dagster._core.definitions.backfill_policy import BackfillPolicy
 from dagster._core.definitions.declarative_automation.automation_condition import (
     AutomationCondition,
 )
-from dagster._core.definitions.freshness import InternalFreshnessPolicy
+from dagster._core.definitions.freshness import FreshnessPolicy
 from dagster._core.definitions.freshness_policy import LegacyFreshnessPolicy
 from dagster._core.definitions.metadata import ArbitraryMetadataMapping
 from dagster._core.definitions.partitions.definition import PartitionsDefinition
@@ -48,6 +48,7 @@ from dagster._record import ImportFrom, record
 from dagster._utils.cached_method import cached_method
 
 if TYPE_CHECKING:
+    from dagster._core.definitions.selector import RepositorySelector
     from dagster._core.remote_representation.external_data import AssetCheckNodeSnap, AssetNodeSnap
 
 
@@ -65,6 +66,11 @@ class RemoteAssetCheckNode:
 class RemoteAssetNode(BaseAssetNode, ABC):
     @abstractmethod
     def resolve_to_singular_repo_scoped_node(self) -> "RemoteRepositoryAssetNode": ...
+
+    @abstractmethod
+    def resolve_to_repo_scoped_node(
+        self, repository_selector: "RepositorySelector"
+    ) -> Optional["RemoteRepositoryAssetNode"]: ...
 
     @property
     def execution_set_asset_keys(self) -> AbstractSet[AssetKey]:
@@ -117,7 +123,7 @@ class RemoteAssetNode(BaseAssetNode, ABC):
         return self.resolve_to_singular_repo_scoped_node().asset_node_snap.legacy_freshness_policy
 
     @property
-    def freshness_policy(self) -> Optional[InternalFreshnessPolicy]:
+    def freshness_policy(self) -> Optional[FreshnessPolicy]:
         return self.resolve_to_singular_repo_scoped_node().asset_node_snap.freshness_policy
 
     @property
@@ -156,6 +162,15 @@ class RemoteRepositoryAssetNode(RemoteAssetNode):
         # we create sets of these objects in the context of asset graphs but don't want to
         # enforce that all recursively contained types are hashable so use object hash instead
         return object.__hash__(self)
+
+    def resolve_to_repo_scoped_node(
+        self, repository_selector: "RepositorySelector"
+    ) -> Optional["RemoteRepositoryAssetNode"]:
+        return (
+            self
+            if self.repository_handle.get_remote_origin().get_selector() == repository_selector
+            else None
+        )
 
     def resolve_to_singular_repo_scoped_node(self) -> "RemoteRepositoryAssetNode":
         return self
@@ -335,6 +350,19 @@ class RemoteWorkspaceAssetNode(RemoteAssetNode):
     def backfill_policy(self) -> Optional[BackfillPolicy]:
         return self._materializable_node_snap.backfill_policy if self.is_materializable else None
 
+    def resolve_to_repo_scoped_node(
+        self, repository_selector: "RepositorySelector"
+    ) -> Optional["RemoteRepositoryAssetNode"]:
+        return next(
+            iter(
+                info.asset_node
+                for info in self.repo_scoped_asset_infos
+                if info.asset_node.repository_handle.get_remote_origin().get_selector()
+                == repository_selector
+            ),
+            None,
+        )
+
     ##### REMOTE-SPECIFIC INTERFACE
     @cached_method
     def resolve_to_singular_repo_scoped_node(self) -> "RemoteRepositoryAssetNode":
@@ -435,18 +463,27 @@ class RemoteAssetGraph(BaseAssetGraph[TRemoteAssetNode], ABC, Generic[TRemoteAss
         self,
     ) -> Mapping[AssetCheckKey, RemoteAssetCheckNode]: ...
 
+    # TODO this should just be what is returned from get()
+    def get_remote_asset_check_node(self, key: AssetCheckKey) -> RemoteAssetCheckNode:
+        return self.remote_asset_check_nodes_by_key[key]
+
+    def _get_asset_check_node_from_remote_asset_check_node(
+        self, remote_node: RemoteAssetCheckNode
+    ) -> AssetCheckNode:
+        return AssetCheckNode(
+            remote_node.asset_check.key,
+            remote_node.asset_check.additional_asset_keys,
+            remote_node.asset_check.blocking,
+            remote_node.asset_check.description,
+            remote_node.asset_check.automation_condition,
+            {},  # metadata not yet on AssetCheckNodeSnap
+        )
+
     ##### COMMON ASSET GRAPH INTERFACE
     @cached_property
     def _asset_check_nodes_by_key(self) -> Mapping[AssetCheckKey, AssetCheckNode]:  # pyright: ignore[reportIncompatibleVariableOverride]
         return {
-            k: AssetCheckNode(
-                k,
-                v.asset_check.additional_asset_keys,
-                v.asset_check.blocking,
-                v.asset_check.description,
-                v.asset_check.automation_condition,
-                {},  # metadata not yet on AssetCheckNodeSnap
-            )
+            k: self._get_asset_check_node_from_remote_asset_check_node(v)
             for k, v in self.remote_asset_check_nodes_by_key.items()
         }
 
@@ -456,7 +493,7 @@ class RemoteAssetGraph(BaseAssetGraph[TRemoteAssetNode], ABC, Generic[TRemoteAss
         if isinstance(entity_key, AssetKey):
             return self.get(entity_key).execution_set_entity_keys
         else:  # AssetCheckKey
-            return self.remote_asset_check_nodes_by_key[entity_key].execution_set_entity_keys
+            return self.get_remote_asset_check_node(entity_key).execution_set_entity_keys
 
     ##### REMOTE-SPECIFIC METHODS
 
@@ -656,7 +693,17 @@ class RemoteWorkspaceAssetGraph(RemoteAssetGraph[RemoteWorkspaceAssetNode]):
         if isinstance(key, AssetKey):
             return self.get(key).resolve_to_singular_repo_scoped_node().repository_handle
         else:
-            return self.remote_asset_check_nodes_by_key[key].handle
+            return self.get_remote_asset_check_node(key).handle
+
+    def get_repo_scoped_node(
+        self, key: EntityKey, repository_selector: "RepositorySelector"
+    ) -> Optional[Union[RemoteRepositoryAssetNode, RemoteAssetCheckNode]]:
+        if isinstance(key, AssetKey):
+            if not self.has(key):
+                return None
+            return self.get(key).resolve_to_repo_scoped_node(repository_selector)
+        else:
+            raise Exception("Key must be an asset key for get_repo_scoped_node")
 
     def split_entity_keys_by_repository(
         self, keys: AbstractSet[EntityKey]

@@ -39,7 +39,11 @@ from dagster_graphql.implementation.execution.backfill import (
     resume_partition_backfill as resume_partition_backfill,
     retry_partition_backfill as retry_partition_backfill,
 )
-from dagster_graphql.implementation.utils import assert_permission, assert_permission_for_location
+from dagster_graphql.implementation.utils import (
+    assert_permission,
+    assert_permission_for_run,
+    has_permission_for_run,
+)
 
 if TYPE_CHECKING:
     from dagster._core.storage.compute_log_manager import CapturedLogData
@@ -113,22 +117,11 @@ def terminate_pipeline_execution(
     run = record.dagster_run
     graphene_run = GrapheneRun(record)
 
-    location_name = run.remote_job_origin.location_name if run.remote_job_origin else None
-
-    if location_name:
-        if not graphene_info.context.has_permission_for_location(
-            Permissions.TERMINATE_PIPELINE_EXECUTION, location_name
-        ):
-            return GrapheneTerminateRunFailure(
-                run=graphene_run,
-                message="You do not have permission to terminate this run",
-            )
-    else:
-        if not graphene_info.context.has_permission(Permissions.TERMINATE_PIPELINE_EXECUTION):
-            return GrapheneTerminateRunFailure(
-                run=graphene_run,
-                message="You do not have permission to terminate this run",
-            )
+    if not has_permission_for_run(graphene_info, Permissions.TERMINATE_PIPELINE_EXECUTION, run):
+        return GrapheneTerminateRunFailure(
+            run=graphene_run,
+            message="You do not have permission to terminate this run",
+        )
 
     can_cancel_run = run.status in CANCELABLE_RUN_STATUSES
 
@@ -199,13 +192,7 @@ def delete_pipeline_run(
         assert_permission(graphene_info, Permissions.DELETE_PIPELINE_RUN)
         return GrapheneRunNotFoundError(run_id)
 
-    location_name = run.remote_job_origin.location_name if run.remote_job_origin else None
-    if location_name:
-        assert_permission_for_location(
-            graphene_info, Permissions.DELETE_PIPELINE_RUN, location_name
-        )
-    else:
-        assert_permission(graphene_info, Permissions.DELETE_PIPELINE_RUN)
+    assert_permission_for_run(graphene_info, Permissions.DELETE_PIPELINE_RUN, run)
 
     instance.delete_run(run_id)
 

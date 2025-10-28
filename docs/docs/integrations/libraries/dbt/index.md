@@ -18,6 +18,12 @@ The [`dagster-dbt` library](/api/libraries/dagster-dbt) provides a `DbtProjectCo
 - Track failures, logs, and run history for individual dbt models, seeds, and snapshots.
 - Define dependencies between individual dbt models and other data assets. For example, put dbt models after the Fivetran-ingested table that they read from, or put a machine learning after the dbt models that it's trained from.
 
+:::info
+
+`DbtProjectComponent` is a [state-backed component](/guides/build/components/state-backed-components), which compiles and caches your dbt project's manifest. For information on managing component state, see [Configuring state-backed components](/guides/build/components/state-backed-components/configuring-state-backed-components).
+
+:::
+
 :::tip[dbt Fusion is supported as of 1.11.5]
 
 Dagster supports dbt Fusion as of the 1.11.5 release. Dagster will automatically detect which engine you have installed. If you're currently using core, to migrate uninstall dbt-core and install dbt Fusion. For more information please reference the dbt [docs](https://docs.getdbt.com/docs/dbt-versions/core-upgrade/upgrading-to-fusion).

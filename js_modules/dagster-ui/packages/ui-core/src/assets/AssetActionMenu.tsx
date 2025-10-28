@@ -13,6 +13,7 @@ import {AddToFavoritesMenuItem} from 'shared/assets/AddToFavoritesMenuItem.oss';
 
 import {optionsForExecuteButton, useMaterializationAction} from './LaunchAssetExecutionButton';
 import {assetDetailsPathForKey} from './assetDetailsPathForKey';
+import {globalAssetGraphPathForGroup} from './globalAssetGraphPathToString';
 import {AssetTableDefinitionFragment} from './types/AssetTableFragment.types';
 import {useDeleteDynamicPartitionsDialog} from './useDeleteDynamicPartitionsDialog';
 import {useObserveAction} from './useObserveAction';
@@ -23,7 +24,6 @@ import {showSharedToaster} from '../app/DomUtils';
 import {AssetKeyInput} from '../graphql/types';
 import {MenuLink} from '../ui/MenuLink';
 import {RepoAddress} from '../workspace/types';
-import {workspacePathFromAddress} from '../workspace/workspacePath';
 interface Props {
   path: string[];
   definition: AssetTableDefinitionFragment | null;
@@ -93,9 +93,9 @@ export const AssetActionMenu = memo((props: Props) => {
             <MenuLink
               text="Show in group"
               to={
-                repoAddress && definition?.groupName
-                  ? workspacePathFromAddress(repoAddress, `/asset-groups/${definition.groupName}`)
-                  : ''
+                definition
+                  ? globalAssetGraphPathForGroup(definition.groupName, definition.assetKey)
+                  : '/asset-groups'
               }
               disabled={!definition}
               icon="asset_group"

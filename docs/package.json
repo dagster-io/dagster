@@ -27,11 +27,11 @@
     "format:diff": "prettier --list-different ."
   },
   "dependencies": {
-    "@docusaurus/core": "^3.8.1",
-    "@docusaurus/plugin-google-gtag": "^3.8.1",
-    "@docusaurus/plugin-ideal-image": "^3.8.1",
-    "@docusaurus/preset-classic": "^3.8.1",
-    "@docusaurus/theme-mermaid": "^3.8.1",
+    "@docusaurus/core": "^3.9.1",
+    "@docusaurus/plugin-google-gtag": "^3.9.1",
+    "@docusaurus/plugin-ideal-image": "^3.9.1",
+    "@docusaurus/preset-classic": "^3.9.1",
+    "@docusaurus/theme-mermaid": "^3.9.1",
     "@mdx-js/react": "^3.0.1",
     "clsx": "^2.1.1",
     "docusaurus-lunr-search": "3.6.0",
@@ -46,17 +46,17 @@
   "devDependencies": {
     "@babel/core": "^7.25.2",
     "@babel/eslint-parser": "^7.25.1",
-    "@docusaurus/eslint-plugin": "^3.8.1",
-    "@docusaurus/module-type-aliases": "^3.8.1",
-    "@docusaurus/theme-classic": "^3.8.1",
-    "@docusaurus/tsconfig": "^3.8.1",
-    "@docusaurus/types": "^3.8.1",
+    "@docusaurus/eslint-plugin": "^3.9.1",
+    "@docusaurus/module-type-aliases": "^3.9.1",
+    "@docusaurus/theme-classic": "^3.9.1",
+    "@docusaurus/tsconfig": "^3.9.1",
+    "@docusaurus/types": "^3.9.1",
     "@eslint/js": "^9.10.0",
     "@testing-library/react": "^14.2.1",
     "@types/babel__core": "^7.20.5",
     "@types/node": "^22.5.4",
     "@types/react": "^18.3.5",
-    "@typescript-eslint/parser": "^8.4.0",
+    "@typescript-eslint/parser": "^8.44.0",
     "eslint": "^8.57.0",
     "eslint-config-prettier": "^9.1.0",
     "eslint-plugin-mdx": "^3.1.5",
@@ -69,8 +69,8 @@
     "remark-frontmatter": "^5.0.0",
     "remark-mdx": "^3.0.1",
     "sass": "^1.78.0",
-    "typescript": "~5.5.4",
-    "typescript-eslint": "^8.4.0",
+    "typescript": "5.9.2",
+    "typescript-eslint": "^8.44.0",
     "vitest": "^3.0.9",
     "webpack": "^5.94.0"
   },
@@ -92,5 +92,5 @@
   "engines": {
     "node": "20.x"
   },
-  "packageManager": "yarn@4.5.0"
+  "packageManager": "yarn@4.10.3"
 }

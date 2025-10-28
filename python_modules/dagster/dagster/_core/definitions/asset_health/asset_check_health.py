@@ -25,6 +25,9 @@ class AssetCheckHealthState(LoadableBy[AssetKey]):
     failing_checks: set[AssetCheckKey]
     warning_checks: set[AssetCheckKey]
     all_checks: set[AssetCheckKey]
+    latest_passing_check_timestamp: Optional[float] = None
+    latest_failing_check_timestamp: Optional[float] = None
+    latest_warning_check_timestamp: Optional[float] = None
 
     @classmethod
     def default(cls) -> "AssetCheckHealthState":
@@ -33,6 +36,9 @@ class AssetCheckHealthState(LoadableBy[AssetKey]):
             failing_checks=set(),
             warning_checks=set(),
             all_checks=set(),
+            latest_passing_check_timestamp=None,
+            latest_failing_check_timestamp=None,
+            latest_warning_check_timestamp=None,
         )
 
     @property
@@ -76,6 +82,10 @@ class AssetCheckHealthState(LoadableBy[AssetKey]):
         passing_checks = set()
         warning_checks = set()
         failing_checks = set()
+
+        latest_passing_check_timestamp = None
+        latest_failing_check_timestamp = None
+        latest_warning_check_timestamp = None
 
         check_records = await AssetCheckSummaryRecord.gen_many(
             loading_context,
@@ -125,20 +135,55 @@ class AssetCheckHealthState(LoadableBy[AssetKey]):
                     and last_check_evaluation.severity == AssetCheckSeverity.WARN
                 ):
                     warning_checks.add(check_key)
+                    if check_record.last_completed_check_execution_record is not None and (
+                        latest_warning_check_timestamp is None
+                        or latest_warning_check_timestamp
+                        < check_record.last_completed_check_execution_record.create_timestamp
+                    ):
+                        latest_warning_check_timestamp = (
+                            check_record.last_completed_check_execution_record.create_timestamp
+                        )
                 else:
                     failing_checks.add(check_key)
+                    if check_record.last_completed_check_execution_record is not None and (
+                        latest_failing_check_timestamp is None
+                        or latest_failing_check_timestamp
+                        < check_record.last_completed_check_execution_record.create_timestamp
+                    ):
+                        latest_failing_check_timestamp = (
+                            check_record.last_completed_check_execution_record.create_timestamp
+                        )
             elif last_check_execution_status == AssetCheckExecutionResolvedStatus.EXECUTION_FAILED:
                 # EXECUTION_FAILED checks don't have an evaluation and we want to report them as failures
                 failing_checks.add(check_key)
+                if check_record.last_completed_check_execution_record is not None and (
+                    latest_failing_check_timestamp is None
+                    or latest_failing_check_timestamp
+                    < check_record.last_completed_check_execution_record.create_timestamp
+                ):
+                    latest_failing_check_timestamp = (
+                        check_record.last_completed_check_execution_record.create_timestamp
+                    )
             else:
                 # asset check passed
                 passing_checks.add(check_key)
+                if check_record.last_completed_check_execution_record is not None and (
+                    latest_passing_check_timestamp is None
+                    or latest_passing_check_timestamp
+                    < check_record.last_completed_check_execution_record.create_timestamp
+                ):
+                    latest_passing_check_timestamp = (
+                        check_record.last_completed_check_execution_record.create_timestamp
+                    )
 
         return AssetCheckHealthState(
             passing_checks=passing_checks,
             failing_checks=failing_checks,
             warning_checks=warning_checks,
             all_checks=check_keys,
+            latest_passing_check_timestamp=latest_passing_check_timestamp,
+            latest_failing_check_timestamp=latest_failing_check_timestamp,
+            latest_warning_check_timestamp=latest_warning_check_timestamp,
         )
 
     @classmethod

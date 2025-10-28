@@ -1,5 +1,3 @@
-import {Meta} from '@storybook/react';
-
 import {LEFT_NAV_WIDTH} from '../../nav/LeftNav';
 import {
   abcLocationOption,
@@ -12,7 +10,7 @@ import {SectionedLeftNav} from '../SectionedLeftNav';
 export default {
   title: 'SectionedLeftNav',
   component: SectionedLeftNav,
-} as Meta;
+};
 
 export const Default = () => {
   return (

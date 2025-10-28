@@ -2,11 +2,23 @@
 description: Configure multiple Dagster+ agents for redundancy or isolation in the same environment or across different environments using Docker, Kubernetes, or Amazon ECS.
 sidebar_label: Multiple agents
 sidebar_position: 7000
-title: Running multiple agents
+title: Running multiple Dagster agents
 tags: [dagster-plus-feature]
 ---
 
 Each Dagster+ full deployment (e.g., `prod`) needs to have at least one agent running. A single agent is adequate for many use cases, but you may want to run multiple agents to provide redundancy if a single agent goes down.
+
+## When to use multiple agents
+
+- For redundancy and high availability
+- When you need to run agents in completely separate infrastructure environments or AWS accounts, with separate compute resources, volumes, and networks
+- To dedicate specific agents for [branch deployments](/deployment/dagster-plus/deploying-code/branch-deployments)
+
+## Considerations
+
+- Additional infrastructure management overhead
+- More complex configuration required for multiple agent setup
+- Need to configure agent queues for proper workload routing
 
 ## Running multiple agents in the same environment
 
@@ -83,6 +95,7 @@ To run multiple agents in an environment where each agent can not access the oth
 Add the following to the `dagster.yaml` file:
 
 ```yaml
+# dagster.yaml
 isolated_agents:
   enabled: true
 
@@ -201,9 +214,10 @@ dagsterCloud:
 
 #### In Amazon ECS
 
-Modify your ECS Cloud Formation template to add the following configuration to the `config.yaml` passed to the agent:
+Modify your ECS Cloud Formation template to add the following configuration to the `dagster.yaml` file passed to the agent (the ECS agent configuration reference can be found [here](/deployment/dagster-plus/hybrid/amazon-ecs/configuration-reference#per-deployment-configuration)):
 
 ```yaml
+# dagster.yaml
 agent_queues:
   # Continue to handle requests for code locations that aren't
   # assigned to a specific agent queue

@@ -11,6 +11,7 @@ export type SensorFragment = {
   sensorType: Types.SensorType;
   defaultStatus: Types.InstigationStatus;
   canReset: boolean;
+  hasCursorUpdatePermissions: boolean;
   nextTick: {__typename: 'DryRunInstigationTick'; timestamp: number | null} | null;
   sensorState: {
     __typename: 'InstigationState';
@@ -68,4 +69,8 @@ export type SensorFragment = {
     __typename: 'SensorMetadata';
     assetKeys: Array<{__typename: 'AssetKey'; path: Array<string>}> | null;
   };
+  owners: Array<
+    | {__typename: 'TeamDefinitionOwner'; team: string}
+    | {__typename: 'UserDefinitionOwner'; email: string}
+  >;
 };

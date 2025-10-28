@@ -16,7 +16,7 @@ Kinds can also be specified on an <PyObject section="assets" module="dagster" ob
 
 <CodeExample path="docs_snippets/docs_snippets/concepts/metadata-tags/asset_kinds_multi.py" title="src/<project_name>/defs/assets.py" />
 
-On the backend, these kind inputs are stored as tags on the asset. For more information, see [Tags](/guides/build/assets/metadata-and-tags/index.md#tags).
+On the backend, these kind inputs are stored as tags on the asset. For more information, see [Tags](/guides/build/assets/metadata-and-tags#tags).
 
 When viewing the asset in the lineage view, the attached kinds will be visible at the bottom the asset.
 

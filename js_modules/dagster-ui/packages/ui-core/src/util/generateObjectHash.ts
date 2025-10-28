@@ -6,7 +6,7 @@ import SparkMD5 from 'spark-md5';
  *
  * @param obj - The JSON-serializable object to hash.
  * @param replacer - Optional JSON.stringify replacer function.
- * @returns A Promise that resolves to the hexadecimal string representation of the hash.
+ * @returns The hexadecimal string representation of the hash.
  */
 export function generateObjectHashStream(
   obj: any,
@@ -34,7 +34,7 @@ export function generateObjectHashStream(
     isFirst: true,
   });
 
-  hash.append(encoder.encode(isRootArray ? '[' : '{'));
+  hash.append(encoder.encode(isRootArray ? '[' : '{') as any);
 
   while (stack.length > 0) {
     // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
@@ -42,7 +42,7 @@ export function generateObjectHashStream(
 
     if (currentFrame.index >= currentFrame.keys.length) {
       stack.pop();
-      hash.append(encoder.encode(currentFrame.isArray ? ']' : '}'));
+      hash.append(encoder.encode(currentFrame.isArray ? ']' : '}') as any);
       if (stack.length > 0) {
         // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
         const parentFrame = stack[stack.length - 1]!;
@@ -52,7 +52,7 @@ export function generateObjectHashStream(
     }
 
     if (!currentFrame.isFirst) {
-      hash.append(encoder.encode(','));
+      hash.append(encoder.encode(',') as any);
     }
     currentFrame.isFirst = false;
 
@@ -70,12 +70,12 @@ export function generateObjectHashStream(
 
     if (!currentFrame.isArray) {
       const serializedKey = JSON.stringify(key) + ':';
-      hash.append(encoder.encode(serializedKey));
+      hash.append(encoder.encode(serializedKey) as any);
     }
 
     if (value && typeof value === 'object') {
       if (Array.isArray(value)) {
-        hash.append(encoder.encode('['));
+        hash.append(encoder.encode('[') as any);
         const childKeys = Array.from(Array(value.length).keys());
         stack.push({
           obj: value,
@@ -86,7 +86,7 @@ export function generateObjectHashStream(
         });
       } else {
         const childKeys = Object.keys(value).sort();
-        hash.append(encoder.encode('{'));
+        hash.append(encoder.encode('{') as any);
         stack.push({
           obj: value,
           keys: childKeys,
@@ -97,7 +97,7 @@ export function generateObjectHashStream(
       }
     } else {
       const serializedValue = JSON.stringify(value);
-      hash.append(encoder.encode(serializedValue));
+      hash.append(encoder.encode(serializedValue) as any);
     }
   }
 

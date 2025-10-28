@@ -7,28 +7,29 @@ requires-python = ">=3.9,<3.14"
 dependencies = [
     "atproto",
     "dagster",
-    "dagster-dg-cli",
     "dagster-aws",
     "dagster-dbt",
     "dagster-duckdb",
     "dagster-powerbi",
-    "dagster-webserver",
     "dbt-duckdb",
     "tenacity",
 ]
 
-[project.optional-dependencies]
+[dependency-groups]
 dev = [
     "dagster-webserver",
-    "pytest",
-    "ruff",
+    "dagster-dg-cli",
 ]
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
 
 [tool.dg]
 directory_type = "project"
 
 [tool.dg.project]
 root_module = "project_atproto_dashboard"
-
-[tool.dg.project.python_environment]
-active = true
+registry_modules = [
+    "project_atproto_dashboard.components.*",
+]

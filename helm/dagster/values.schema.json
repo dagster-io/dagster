@@ -974,6 +974,18 @@
                     "title": "Tag",
                     "type": "string"
                 },
+                "digest": {
+                    "anyOf": [
+                        {
+                            "type": "string"
+                        },
+                        {
+                            "type": "null"
+                        }
+                    ],
+                    "default": null,
+                    "title": "Digest"
+                },
                 "pullPolicy": {
                     "$ref": "#/$defs/PullPolicy"
                 }
@@ -1218,13 +1230,18 @@
                 "celeryConfigSecretName": {
                     "title": "Celeryconfigsecretname",
                     "type": "string"
+                },
+                "dagsterInstanceConfigMap": {
+                    "title": "Dagsterinstanceconfigmap",
+                    "type": "string"
                 }
             },
             "required": [
                 "postgresqlSecretName",
                 "dagsterHome",
                 "serviceAccountName",
-                "celeryConfigSecretName"
+                "celeryConfigSecretName",
+                "dagsterInstanceConfigMap"
             ],
             "title": "Global",
             "type": "object"
@@ -1249,6 +1266,18 @@
                     ],
                     "default": null,
                     "title": "Tag"
+                },
+                "digest": {
+                    "anyOf": [
+                        {
+                            "type": "string"
+                        },
+                        {
+                            "type": "null"
+                        }
+                    ],
+                    "default": null,
+                    "title": "Digest"
                 },
                 "pullPolicy": {
                     "$ref": "#/$defs/PullPolicy"

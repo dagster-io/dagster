@@ -42,6 +42,10 @@ class RepositoryScopedBatchLoader:
         self._data: dict[RepositoryDataType, dict[str, list[Any]]] = {}
         self._limits: dict[RepositoryDataType, int] = {}
 
+    @property
+    def repository(self) -> RemoteRepository:
+        return self._repository
+
     def _get(self, data_type: RepositoryDataType, key: str, limit: int) -> Sequence[Any]:
         check.inst_param(data_type, "data_type", RepositoryDataType)
         check.str_param(key, "key")

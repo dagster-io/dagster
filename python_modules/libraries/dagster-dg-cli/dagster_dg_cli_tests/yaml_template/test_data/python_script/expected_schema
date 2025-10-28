@@ -52,6 +52,7 @@ attributes:  # Optional: Attributes details
         # partition_keys:  # Optional: List of string items
           - <string>
         #
+      freshness_policy: <string>  # Optional: The freshness policy for the asset.
       key: <string>  # Required: A unique identifier for the asset.
   checks:  # Optional: 
     - # Array of AssetCheckSpecKwargsModel objects:

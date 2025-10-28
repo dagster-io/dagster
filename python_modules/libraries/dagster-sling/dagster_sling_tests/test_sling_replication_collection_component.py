@@ -1,5 +1,4 @@
 import shutil
-import warnings
 from collections.abc import Iterator, Mapping
 from contextlib import contextmanager
 from pathlib import Path
@@ -39,7 +38,6 @@ if TYPE_CHECKING:
     from dagster._core.definitions.assets.definition.assets_definition import AssetsDefinition
 
 STUB_LOCATION_PATH = Path(__file__).parent / "code_locations" / "sling_location"
-STUB_LOCATION_PATH_LEGACY = Path(__file__).parent / "code_locations" / "sling_location_legacy"
 COMPONENT_RELPATH = "defs/ingest"
 REPLICATION_PATH = STUB_LOCATION_PATH / COMPONENT_RELPATH / "replication.yaml"
 
@@ -55,7 +53,7 @@ def _modify_yaml(path: Path) -> Iterator[dict[str, Any]]:
 
 @contextmanager
 def temp_sling_component_instance(
-    replication_specs: Optional[list[dict[str, Any]]] = None, legacy_format: bool = False
+    replication_specs: Optional[list[dict[str, Any]]] = None,
 ) -> Iterator[tuple[SlingReplicationCollectionComponent, Definitions]]:
     """Sets up a temporary directory with a replication.yaml and defs.yaml file that reference
     the proper temp path.
@@ -66,9 +64,7 @@ def temp_sling_component_instance(
     ):
         # Copy the entire component structure from the stub location
         shutil.copytree(
-            (STUB_LOCATION_PATH_LEGACY if legacy_format else STUB_LOCATION_PATH)
-            / "defs"
-            / "ingest",
+            STUB_LOCATION_PATH / "defs" / "ingest",
             sandbox.defs_folder_path / "ingest",
         )
         shutil.copy(STUB_LOCATION_PATH / "input.csv", sandbox.defs_folder_path / "input.csv")
@@ -86,14 +82,9 @@ def temp_sling_component_instance(
                 data["attributes"]["replications"] = replication_specs
 
             # update the defs yaml to add a duckdb instance
-            if legacy_format:
-                data["attributes"]["sling"]["connections"][0]["instance"] = (
-                    f"{sandbox.defs_folder_path}/duckdb"
-                )
-            else:
-                data["attributes"]["connections"]["DUCKDB"]["instance"] = (
-                    f"{sandbox.defs_folder_path}/duckdb"
-                )
+            data["attributes"]["connections"]["DUCKDB"]["instance"] = (
+                f"{sandbox.defs_folder_path}/duckdb"
+            )
 
         with sandbox.load_component_and_build_defs(defs_path=defs_path) as (
             component,
@@ -162,26 +153,6 @@ def test_python_params_include_metadata() -> None:
         materialization = materializations[0].materialization
         assert "dagster/row_count" in materialization.metadata
         assert "dagster/column_schema" in materialization.metadata
-
-
-@pytest.mark.parametrize("legacy_format", [True, False])
-def test_python_params_legacy_format(legacy_format: bool) -> None:
-    with warnings.catch_warnings(record=True) as w:
-        warnings.simplefilter("always")
-        with temp_sling_component_instance(
-            [{"path": "./replication.yaml"}], legacy_format=legacy_format
-        ) as (component, defs):
-            replications = component.replications
-            assert len(replications) == 1
-            input_duckdb = defs.resolve_assets_def("input_duckdb")
-
-            with instance_for_test() as instance:
-                result = materialize([input_duckdb], instance=instance)
-            materializations = result.get_asset_materialization_events()
-            assert len(materializations) == 1
-
-        deprecation_warnings = [warning for warning in w if "sling" in str(warning.message)]
-        assert len(deprecation_warnings) == (1 if legacy_format else 0)
 
 
 def test_load_from_path() -> None:
@@ -265,6 +236,40 @@ def test_spec_is_available_in_scope() -> None:
         assert assets_def.get_asset_spec(AssetKey("input_duckdb")).metadata["asset_key"] == [
             "input_duckdb"
         ]
+
+
+def test_subclass_override_get_asset_spec() -> None:
+    """Test that subclasses of SlingReplicationCollectionComponent can override get_asset_spec method."""
+
+    class CustomSlingReplicationComponent(SlingReplicationCollectionComponent):
+        def get_asset_spec(self, stream_definition: Mapping[str, Any]) -> AssetSpec:
+            # Override to add custom metadata and tags
+            base_spec = super().get_asset_spec(stream_definition)
+            return base_spec.replace_attributes(
+                metadata={"custom_override": "test_value"}, tags={"custom_tag": "override_test"}
+            )
+
+    defs = build_component_defs_for_test(
+        CustomSlingReplicationComponent,
+        {
+            "connections": {},
+            "replications": [{"path": str(REPLICATION_PATH)}],
+        },
+    )
+
+    # Verify that the custom get_asset_spec method is being used
+    assets_def: AssetsDefinition = defs.resolve_assets_def("input_duckdb")
+    asset_spec = assets_def.get_asset_spec(AssetKey("input_duckdb"))
+
+    # Check that our custom metadata and tags are present
+    assert asset_spec.metadata["custom_override"] == "test_value"
+    assert asset_spec.tags["custom_tag"] == "override_test"
+
+    # Verify that the asset keys are still correct
+    assert defs.resolve_asset_graph().get_all_asset_keys() == {
+        AssetKey("input_csv"),
+        AssetKey("input_duckdb"),
+    }
 
 
 def map_spec(spec: AssetSpec) -> AssetSpec:

@@ -61,7 +61,12 @@ class MdxBuilder(Builder):
                 pass
 
     def get_target_uri(self, docname: str, typ: str | None = None) -> str:
-        return self.link_transform(docname)
+        # Transform the docname to match the actual documentation URL structure
+        # Remove 'sections/api/apidocs/' prefix if present
+        transformed = docname
+        if transformed.startswith("sections/api/apidocs/"):
+            transformed = transformed.replace("sections/api/apidocs/", "api/", 1)
+        return self.link_transform(transformed)
 
     def prepare_writing(self, docnames: set[str]) -> None:
         self.writer = MdxWriter(self)

@@ -5,6 +5,7 @@ from unittest.mock import patch
 
 import pytest
 import responses
+from dagster._core.instance_for_test import instance_for_test
 from dagster_airbyte.resources import (
     AIRBYTE_CLOUD_CONFIGURATION_API_BASE_URL,
     AIRBYTE_CLOUD_REST_API_BASE_URL,
@@ -65,10 +66,10 @@ SAMPLE_ACCESS_TOKEN = {"access_token": TEST_ACCESS_TOKEN}
 
 # Taken from Airbyte REST API documentation
 # https://reference.airbyte.com/reference/listconnections
-def get_sample_connections(api_base_url: str) -> Mapping[str, Any]:
+def get_sample_connections() -> Mapping[str, Any]:
     return {
-        "next": f"{api_base_url}/connections?limit=5&offset=10",
-        "previous": f"{api_base_url}/connections?limit=5&offset=0",
+        "next": "http://incorrect-url:9999/api/public/v1/connections?limit=5&offset=10",
+        "previous": "http://incorrect-url:9999/api/public/v1/connections?limit=5&offset=0",
         "data": [
             {
                 "connectionId": TEST_CONNECTION_ID,
@@ -85,10 +86,10 @@ def get_sample_connections(api_base_url: str) -> Mapping[str, Any]:
     }
 
 
-def get_sample_connections_next_page(api_base_url: str) -> Mapping[str, Any]:
+def get_sample_connections_next_page() -> Mapping[str, Any]:
     return {
         "next": "",
-        "previous": f"{api_base_url}/connections?limit=5&offset=10",
+        "previous": "http://incorrect-url:9999/api/public/v1/connections?limit=5&offset=10",
         "data": [],
     }
 
@@ -257,7 +258,7 @@ def config_api_url(api_urls) -> str:
 
 @pytest.fixture(name="base_api_mocks")
 def base_api_mocks_fixture(rest_api_url) -> Iterator[responses.RequestsMock]:
-    with responses.RequestsMock() as response:
+    with responses.RequestsMock() as response, instance_for_test():
         response.add(
             method=responses.POST,
             url=f"{rest_api_url}/applications/token",
@@ -281,15 +282,17 @@ def fetch_workspace_data_api_mocks_fixture(
     )
     base_api_mocks.add(
         method=responses.GET,
-        url=f"{rest_api_url}/connections",
-        json=get_sample_connections(api_base_url=rest_api_url),
+        url=f"{rest_api_url}/connections?workspaceIds={TEST_WORKSPACE_ID}",
+        json=get_sample_connections(),
         status=200,
+        match_querystring=True,
     )
     base_api_mocks.add(
         method=responses.GET,
-        url=f"{rest_api_url}/connections?limit=5&offset=10",
-        json=get_sample_connections_next_page(api_base_url=rest_api_url),
+        url=f"{rest_api_url}/connections?workspaceIds={TEST_WORKSPACE_ID}&limit=5&offset=10",
+        json=get_sample_connections_next_page(),
         status=200,
+        match_querystring=True,
     )
     base_api_mocks.add(
         method=responses.POST,

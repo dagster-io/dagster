@@ -54,6 +54,7 @@ When using the <PyObject section="internals" module="dagster._core.run_coordinat
 Alternatively, you can define your own task definition in your `dagster.yaml`:
 
 ```yaml
+# dagster.yaml
 run_launcher:
   module: 'dagster_aws.ecs'
   class: 'EcsRunLauncher'
@@ -67,6 +68,7 @@ run_launcher:
 You can set the `run_launcher.config.run_resources` field to customize the default resources for Dagster runs. For example:
 
 ```yaml
+# dagster.yaml
 run_launcher:
   module: 'dagster_aws.ecs'
   class: 'EcsRunLauncher'
@@ -86,13 +88,13 @@ Fargate tasks only support [certain combinations of CPU and memory](https://docs
 You can also use job tags to customize the CPU, memory, or ephemeral storage of every run for a particular job:
 
 ```py
-from dagster import job, op
+import dagster as dg
 
-@op()
+@dg.op()
 def my_op(context):
   context.log.info('running')
 
-@job(
+@dg.job(
   tags = {
     "ecs/cpu": "256",
     "ecs/memory": "512",
@@ -112,6 +114,7 @@ The <PyObject section="libraries" module="dagster_aws" object="ecs.EcsRunLaunche
 To adjust the configuration of the launched run's task, set the `run_launcher.config.run_task_kwargs` field to a dictionary with additional key-value pairs that should be passed into the `run_task` boto3 API call. For example, to launch new runs in EC2 from a task running in Fargate, you could apply this configuration:
 
 ```yaml
+# dagster.yaml
 run_launcher:
   module: 'dagster_aws.ecs'
   class: 'EcsRunLauncher'
@@ -123,6 +126,7 @@ run_launcher:
 or to set the capacity provider strategy to run in Fargate Spot instances:
 
 ```yaml
+# dagster.yaml
 run_launcher:
   module: 'dagster_aws.ecs'
   class: 'EcsRunLauncher'
@@ -135,13 +139,13 @@ run_launcher:
 You can also use the `ecs/run_task_kwargs` tag to customize the ECS task of every run for a particular job:
 
 ```py
-from dagster import job, op
+import dagster as dg
 
-@op()
+@dg.op()
 def my_op(context):
   context.log.info('running')
 
-@job(
+@dg.job(
   tags = {
     "ecs/run_task_kwargs": {
       "capacityProviderStrategy": [
@@ -168,6 +172,7 @@ ECS can bind [AWS Secrets Managers secrets as environment variables when runs la
 Alternatively, you can set your own tag name in your `dagster.yaml`:
 
 ```yaml
+# dagster.yaml
 run_launcher:
   module: 'dagster_aws.ecs'
   class: 'EcsRunLauncher'
@@ -180,6 +185,7 @@ In this example, any secret tagged with a key `my-tag-name` will be included as 
 Additionally, you can pass specific secrets using the [same structure as the ECS API](https://docs.aws.amazon.com/AmazonECS/latest/APIReference/API_Secret.html):
 
 ```yaml
+# dagster.yaml
 run_launcher:
   module: 'dagster_aws.ecs'
   class: 'EcsRunLauncher'

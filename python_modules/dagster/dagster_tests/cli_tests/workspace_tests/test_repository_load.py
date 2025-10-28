@@ -106,7 +106,7 @@ def test_multiple_module_load_with_attribute():
         ["-m", MODULE_ONE, "-m", MODULE_TWO, "-a", "defs"],  # does not accept attribute
     )
 
-    assert "If you are specifying multiple modules you cannot specify an attribute" in result.stdout
+    assert "If you are specifying multiple modules you cannot specify an attribute" in result.output
     assert result.exit_code != 0
 
 
@@ -139,7 +139,7 @@ def test_multiple_file_load_with_attribute():
         ["-f", FILE_ONE, "-f", FILE_TWO, "-a", "defs"],
     )
 
-    assert "If you are specifying multiple files you cannot specify an attribute" in result.stdout
+    assert "If you are specifying multiple files you cannot specify an attribute" in result.output
     assert result.exit_code != 0
 
 
@@ -175,7 +175,7 @@ def test_repository_target_argument_one_repo_and_specified_wrong():
 
     assert (
         """Repository "not_present" not found in location "hello_world_location". """
-        """Found ['hello_world_repository'] instead.""" in result.stdout
+        """Found ['hello_world_repository'] instead.""" in result.output
     )
 
 
@@ -189,7 +189,7 @@ def test_repository_target_argument_one_location_and_specified_wrong():
     assert (
         """Location "location_not_present" not found in workspace. """
         """Found ['hello_world_location'] instead."""
-    ) in result.stdout
+    ) in result.output
 
 
 MULTI_LOCATION_WORKSPACE = dg.file_relative_path(__file__, "multi_location/multi_location.yaml")
@@ -223,7 +223,7 @@ def test_missing_location_name_multi_location():
     assert (
         """Must provide --location as there are multiple locations available. """
         """Options are: ['loaded_from_file', 'loaded_from_module', 'loaded_from_package']"""
-    ) in result.stdout
+    ) in result.output
 
 
 SINGLE_LOCATION_MULTI_REPO_WORKSPACE = dg.file_relative_path(__file__, "multi_repo/multi_repo.yaml")
@@ -253,7 +253,7 @@ def test_missing_repo_name_in_multi_repo_code_location():
     assert (
         """Must provide --repository as there is more than one repository in """
         """multi_repo. Options are: ['repo_one', 'repo_two']."""
-    ) in result.stdout
+    ) in result.output
 
 
 def test_pending_repo():

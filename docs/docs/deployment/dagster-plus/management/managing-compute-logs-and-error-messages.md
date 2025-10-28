@@ -24,6 +24,7 @@ If using the Kubernetes agent, you can instead forward logs to your own S3 bucke
 You can configure the `S3ComputeLogManager` in your [`dagster.yaml` file](/deployment/dagster-plus/management/customizing-agent-settings):
 
 ```yaml
+# dagster.yaml
 compute_logs:
   module: dagster_aws.s3.compute_log_manager
   class: S3ComputeLogManager
@@ -36,6 +37,7 @@ compute_logs:
 If you are using Helm to deploy the Kubernetes agent, you can provide the following configuration in your `values.yaml` file:
 
 ```yaml
+# values.yaml
 computeLogs:
   enabled: true
   custom:
@@ -54,6 +56,7 @@ If your organization has its own logging solution which ingests `stdout` and `st
 You can configure the `NoOpComputeLogManager` in your [`dagster.yaml` file](/deployment/dagster-plus/management/customizing-agent-settings):
 
 ```yaml
+# dagster.yaml
 compute_logs:
   module: dagster.core.storage.noop_compute_log_manager
   class: NoOpComputeLogManager

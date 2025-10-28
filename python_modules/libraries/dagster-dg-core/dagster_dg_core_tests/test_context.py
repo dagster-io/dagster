@@ -5,7 +5,7 @@ import textwrap
 from collections.abc import Sequence
 from contextlib import contextmanager
 from pathlib import Path
-from typing import Any, Union
+from typing import Any
 
 import pytest
 from dagster_dg_core.component import EnvRegistry, get_used_env_vars
@@ -338,7 +338,7 @@ def test_invalid_config_workspace(config_file: ConfigFileType):
             ["workspace.scaffold_project_options", dict, 1],
             [
                 "workspace.scaffold_project_options.use_editable_dagster",
-                Union[bool, str],
+                bool,
                 1,
             ],
         ]

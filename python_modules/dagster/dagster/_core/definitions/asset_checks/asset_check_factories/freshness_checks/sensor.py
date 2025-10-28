@@ -3,7 +3,6 @@ from collections.abc import Iterator, Mapping, Sequence
 from typing import Any, Optional, Union, cast
 
 from dagster import _check as check
-from dagster._annotations import beta
 from dagster._core.definitions.asset_checks.asset_check_factories.utils import (
     FRESH_UNTIL_METADATA_KEY,
     ensure_no_duplicate_asset_checks,
@@ -21,6 +20,7 @@ from dagster._core.definitions.sensor_definition import (
 )
 from dagster._core.storage.asset_check_execution_record import AssetCheckExecutionRecordStatus
 from dagster._core.storage.tags import SENSOR_NAME_TAG
+from dagster._symbol_annotations.lifecycle import superseded
 from dagster._time import get_current_datetime, get_current_timestamp
 
 DEFAULT_FRESHNESS_SENSOR_NAME = "freshness_checks_sensor"
@@ -34,7 +34,9 @@ FRESHNESS_SENSOR_DESCRIPTION = """
     """
 
 
-@beta
+@superseded(
+    additional_warn_text="Use `FreshnessPolicy` objects, which do not require a sensor, instead."
+)
 def build_sensor_for_freshness_checks(
     *,
     freshness_checks: Sequence[AssetChecksDefinition],

@@ -24,8 +24,12 @@ export type PipelineEnvironmentQuery = {
           repositoryName: string;
           repositoryLocationName: string;
         } | null;
+        executionPlan: {
+          __typename: 'ExecutionPlan';
+          assetKeys: Array<{__typename: 'AssetKey'; path: Array<string>}>;
+        } | null;
       }
     | {__typename: 'RunNotFoundError'};
 };
 
-export const PipelineEnvironmentQueryVersion = '3b668b028997fb35b17b4d8a90a18b78dd8a70910f2c12aac63065c0584e3a10';
+export const PipelineEnvironmentQueryVersion = '159c70bc524e11bca5337e75b0f9a5c9d4e1ad96cf72d98e5e9ff6f9e4bde6b0';

@@ -1,5 +1,4 @@
 // eslint-disable-next-line no-restricted-imports
-import {Meta} from '@storybook/react';
 
 import {Button} from '../Button';
 import {Group} from '../Group';
@@ -8,7 +7,7 @@ import {showToast} from '../Toaster';
 // eslint-disable-next-line import/no-default-export
 export default {
   title: 'Toaster',
-} as Meta;
+};
 
 export const Sizes = () => {
   return (

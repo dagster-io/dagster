@@ -1,0 +1,1 @@
+dg project scaffold --name project my-project && cd my-project/src

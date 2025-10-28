@@ -10,7 +10,12 @@ from dagster._annotations import public
 from dagster._core.execution.context.asset_execution_context import AssetExecutionContext
 from dagster.components.resolved.context import ResolutionContext
 from dagster.components.scaffold.scaffold import scaffold_with
-from dagster.components.utils.translation import TranslationFn, TranslationFnResolver
+from dagster.components.utils.translation import (
+    ComponentTranslator,
+    TranslationFn,
+    TranslationFnResolver,
+    create_component_translator_cls,
+)
 from dlt import Pipeline
 from dlt.extract.source import DltSource
 
@@ -38,27 +43,6 @@ def _load_object_from_python_path(resolution_context: ResolutionContext, path: s
     return getattr(module, object_name)
 
 
-class ComponentDagsterDltTranslator(DagsterDltTranslator):
-    """Custom base translator, which generates keys from dataset and table names."""
-
-    def __init__(self, *, fn: Optional[TranslationFn[DltResourceTranslatorData]] = None):
-        super().__init__()
-        self._fn = fn or (lambda spec, _: spec)
-
-    def get_asset_spec(self, data: DltResourceTranslatorData) -> AssetSpec:
-        table_name = data.resource.table_name
-        if isinstance(table_name, Callable):
-            table_name = data.resource.name
-        prefix = (
-            [data.pipeline.dataset_name] if data.pipeline and data.pipeline.dataset_name else []
-        )
-        base_asset_spec = (
-            super().get_asset_spec(data).replace_attributes(key=AssetKey(prefix + [table_name]))
-        )
-
-        return self._fn(base_asset_spec, data)
-
-
 @dataclass
 class DltLoadSpecModel(Resolvable):
     """Represents a single dlt load, a combination of pipeline and source."""
@@ -83,12 +67,6 @@ class DltLoadSpecModel(Resolvable):
         ]
     ] = None
 
-    @cached_property
-    def translator(self):
-        if self.translation:
-            return ComponentDagsterDltTranslator(fn=self.translation)
-        return ComponentDagsterDltTranslator()
-
 
 @public
 @scaffold_with(DltLoadCollectionScaffolder)
@@ -104,15 +82,23 @@ class DltLoadCollectionComponent(Component, Resolvable):
 
         return DagsterDltResource()
 
+    @cached_property
+    def _base_translator(self) -> DagsterDltTranslator:
+        return DagsterDltTranslator()
+
+    def get_asset_spec(self, data: DltResourceTranslatorData) -> AssetSpec:
+        return self._base_translator.get_asset_spec(data)
+
     def build_defs(self, context: ComponentLoadContext) -> dg.Definitions:
         output = []
         for load in self.loads:
+            translator = DltComponentTranslator(self, load)
 
             @dlt_assets(
                 dlt_source=load.source,
                 dlt_pipeline=load.pipeline,
                 name=f"dlt_assets_{load.source.name}_{load.pipeline.dataset_name}",
-                dagster_dlt_translator=load.translator,
+                dagster_dlt_translator=translator,
             )
             def dlt_assets_def(context: AssetExecutionContext):
                 yield from self.execute(context, self.dlt_pipeline_resource)
@@ -126,3 +112,27 @@ class DltLoadCollectionComponent(Component, Resolvable):
     ) -> Iterator:
         """Runs the dlt pipeline. Override this method to customize the execution logic."""
         yield from dlt_pipeline_resource.run(context=context)
+
+
+class DltComponentTranslator(
+    create_component_translator_cls(DltLoadCollectionComponent, DagsterDltTranslator),
+    ComponentTranslator[DltLoadCollectionComponent],
+):
+    def __init__(self, component: "DltLoadCollectionComponent", load_spec: "DltLoadSpecModel"):
+        self._component = component
+        self._load_spec = load_spec
+
+    def get_asset_spec(self, data: DltResourceTranslatorData) -> AssetSpec:
+        table_name = data.resource.table_name
+        if isinstance(table_name, Callable):
+            table_name = data.resource.name
+        prefix = (
+            [data.pipeline.dataset_name] if data.pipeline and data.pipeline.dataset_name else []
+        )
+        base_asset_spec = (
+            super().get_asset_spec(data).replace_attributes(key=AssetKey(prefix + [table_name]))
+        )
+        if self._load_spec.translation is None:
+            return base_asset_spec
+        else:
+            return self._load_spec.translation(base_asset_spec, data)

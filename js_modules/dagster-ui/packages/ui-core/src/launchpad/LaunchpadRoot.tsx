@@ -1,5 +1,6 @@
 import {Dialog, DialogHeader} from '@dagster-io/ui-components';
 import {CodeMirrorInDialogStyle} from '@dagster-io/ui-components/editor';
+import {useMemo} from 'react';
 import {Redirect, useParams} from 'react-router-dom';
 
 import {useQuery} from '../apollo-client';
@@ -9,9 +10,11 @@ import {LaunchpadSessionError} from './LaunchpadSessionError';
 import {LaunchpadSessionLoading} from './LaunchpadSessionLoading';
 import {LaunchpadTransientSessionContainer} from './LaunchpadTransientSessionContainer';
 import {IExecutionSession} from '../app/ExecutionSessionStorage';
-import {usePermissionsForLocation} from '../app/Permissions';
+import {useJobPermissions} from '../app/useJobPermissions';
 import {__ASSET_JOB_PREFIX} from '../asset-graph/Utils';
+import {asAssetKeyInput} from '../assets/asInput';
 import {useBlockTraceUntilTrue} from '../performance/TraceContext';
+import {explorerPathFromString} from '../pipelines/PipelinePathUtils';
 import {RepoAddress} from '../workspace/types';
 import {LaunchpadRootQuery, LaunchpadRootQueryVariables} from './types/LaunchpadAllowedRoot.types';
 import {AssetKey} from '../graphql/types';
@@ -76,6 +79,11 @@ export const BackfillLaunchpad = ({
 }) => {
   const title = 'Config Editor';
 
+  // Convert assetKeys to the format expected by sessionPresets.assetSelection
+  const assetSelection = assetKeys?.map((assetKey) => ({
+    assetKey: {path: assetKey.path},
+  }));
+
   const result = useQuery<LaunchpadRootQuery, LaunchpadRootQueryVariables>(
     PIPELINE_EXECUTION_ROOT_QUERY,
     {
@@ -83,6 +91,7 @@ export const BackfillLaunchpad = ({
         repositoryName: repoAddress.name,
         repositoryLocationName: repoAddress.location,
         pipelineName: assetJobName,
+        assetSelection: assetSelection?.map(asAssetKeyInput) || null,
       },
     },
   );
@@ -111,11 +120,6 @@ export const BackfillLaunchpad = ({
   // Use the saved config's runConfigYaml as rootDefaultYaml if available
   const rootDefaultYaml = savedConfig?.runConfigYaml;
 
-  // Convert assetKeys to the format expected by sessionPresets.assetSelection
-  const assetSelection = assetKeys?.map((assetKey) => ({
-    assetKey: {path: assetKey.path},
-  }));
-
   return (
     <Dialog
       style={{height: '90vh', width: '80%', minWidth: '1000px'}}
@@ -135,6 +139,11 @@ export const BackfillLaunchpad = ({
         }}
         rootDefaultYaml={rootDefaultYaml}
         onSaveConfig={onSaveConfig}
+        runConfigSchema={
+          result.data?.runConfigSchemaOrError.__typename === 'RunConfigSchema'
+            ? result.data.runConfigSchemaOrError
+            : undefined
+        }
       />
     </Dialog>
   );
@@ -143,17 +152,29 @@ export const BackfillLaunchpad = ({
 export const JobOrAssetLaunchpad = (props: {repoAddress: RepoAddress}) => {
   const {repoAddress} = props;
   const {pipelinePath, repoPath} = useParams<{repoPath: string; pipelinePath: string}>();
-  const {
-    permissions: {canLaunchPipelineExecution},
-    loading,
-  } = usePermissionsForLocation(repoAddress.location);
+
+  const explorerPath = explorerPathFromString(pipelinePath);
+  const {pipelineName} = explorerPath;
+  const pipelineSelector = useMemo(
+    () => ({
+      pipelineName,
+      repositoryName: repoAddress.name,
+      repositoryLocationName: repoAddress.location,
+    }),
+    [pipelineName, repoAddress.name, repoAddress.location],
+  );
+
+  const {hasLaunchExecutionPermission, loading} = useJobPermissions(
+    pipelineSelector,
+    repoAddress.location,
+  );
   useBlockTraceUntilTrue('Permissions', !loading);
 
   if (loading) {
     return null;
   }
 
-  if (!canLaunchPipelineExecution) {
+  if (!hasLaunchExecutionPermission) {
     return <Redirect to={`/locations/${repoPath}/pipeline_or_job/${pipelinePath}`} />;
   }
 

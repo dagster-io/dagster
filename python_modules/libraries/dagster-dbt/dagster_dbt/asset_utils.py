@@ -18,7 +18,6 @@ from dagster import (
     DagsterInvalidDefinitionError,
     DagsterInvariantViolationError,
     DefaultScheduleStatus,
-    LegacyFreshnessPolicy,
     OpExecutionContext,
     RunConfig,
     ScheduleDefinition,
@@ -168,7 +167,9 @@ def get_asset_keys_by_output_name_for_source(
         raise KeyError(f"Could not find a dbt source with name: {source_name}")
 
     return {
-        dagster_name_fn(value): dagster_dbt_translator.get_asset_spec(manifest, unique_id, None).key
+        dagster_name_fn(value): dagster_dbt_translator.get_asset_spec(
+            manifest, unique_id, dbt_project
+        ).key
         for unique_id, value in matching.items()
     }
 
@@ -604,25 +605,6 @@ def default_owners_from_dbt_resource_props(
     return [owner] if isinstance(owner, str) else owner
 
 
-def default_freshness_policy_fn(
-    dbt_resource_props: Mapping[str, Any],
-) -> Optional[LegacyFreshnessPolicy]:
-    dagster_metadata = dbt_resource_props.get("meta", {}).get("dagster", {})
-    freshness_policy_config = dagster_metadata.get("freshness_policy", {})
-
-    freshness_policy = (
-        LegacyFreshnessPolicy(
-            maximum_lag_minutes=float(freshness_policy_config["maximum_lag_minutes"]),
-            cron_schedule=freshness_policy_config.get("cron_schedule"),
-            cron_schedule_timezone=freshness_policy_config.get("cron_schedule_timezone"),
-        )
-        if freshness_policy_config
-        else None
-    )
-
-    return freshness_policy
-
-
 def default_auto_materialize_policy_fn(
     dbt_resource_props: Mapping[str, Any],
 ) -> Optional[AutoMaterializePolicy]:
@@ -758,7 +740,7 @@ def get_upstream_unique_ids(
 
 
 def _build_child_map(manifest: Mapping[str, Any]) -> Mapping[str, AbstractSet[str]]:
-    """Manifests produced by dbt Fusion do not contain a child map, so we need to build it manually."""
+    """Manifests produced by early versions of dbt Fusion do not contain a child map, so we need to build it manually."""
     if manifest.get("child_map"):
         return manifest["child_map"]
 
@@ -812,9 +794,8 @@ def build_dbt_specs(
         specs.append(spec)
 
         # add check specs associated with the asset
-
-        for child_unique_id in child_map[unique_id]:
-            if not child_unique_id.startswith("test"):
+        for child_unique_id in child_map.get(unique_id, []):
+            if child_unique_id not in selected_unique_ids or not child_unique_id.startswith("test"):
                 continue
             check_spec = translator.get_asset_check_spec(
                 asset_spec=spec,
@@ -836,7 +817,7 @@ def build_dbt_specs(
                 upstream_id.startswith("source")
                 and translator.settings.enable_source_tests_as_checks
             ):
-                for child_unique_id in child_map[upstream_id]:
+                for child_unique_id in child_map.get(upstream_id, []):
                     if not child_unique_id.startswith("test"):
                         continue
                     check_spec = translator.get_asset_check_spec(

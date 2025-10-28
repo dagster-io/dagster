@@ -38,24 +38,19 @@ if TYPE_CHECKING:
 
 
 def get_partition_sets_or_error(
-    graphene_info: ResolveInfo, repository_selector: RepositorySelector, pipeline_name: str
+    graphene_info: ResolveInfo,
+    repository_selector: RepositorySelector,
+    pipeline_name: str,
 ) -> "GraphenePartitionSets":
     from dagster_graphql.schema.partition_sets import GraphenePartitionSet, GraphenePartitionSets
 
     check.inst_param(repository_selector, "repository_selector", RepositorySelector)
     check.str_param(pipeline_name, "pipeline_name")
-    location = graphene_info.context.get_code_location(repository_selector.location_name)
-    repository = location.get_repository(repository_selector.repository_name)
-    partition_sets = [
-        partition_set
-        for partition_set in repository.get_partition_sets()
-        if partition_set.job_name == pipeline_name
-    ]
+    partition_sets = graphene_info.context.get_partition_sets(repository_selector)
 
     return GraphenePartitionSets(
         results=[
             GraphenePartitionSet(
-                repository_handle=repository.handle,
                 remote_partition_set=partition_set,
             )
             for partition_set in sorted(
@@ -66,12 +61,15 @@ def get_partition_sets_or_error(
                     partition_set.name,
                 ),
             )
+            if partition_set.job_name == pipeline_name
         ]
     )
 
 
 def get_partition_set(
-    graphene_info: ResolveInfo, repository_selector: RepositorySelector, partition_set_name: str
+    graphene_info: ResolveInfo,
+    repository_selector: RepositorySelector,
+    partition_set_name: str,
 ) -> Union["GraphenePartitionSet", "GraphenePartitionSetNotFoundError"]:
     from dagster_graphql.schema.partition_sets import (
         GraphenePartitionSet,
@@ -80,13 +78,10 @@ def get_partition_set(
 
     check.inst_param(repository_selector, "repository_selector", RepositorySelector)
     check.str_param(partition_set_name, "partition_set_name")
-    location = graphene_info.context.get_code_location(repository_selector.location_name)
-    repository = location.get_repository(repository_selector.repository_name)
-    partition_sets = repository.get_partition_sets()
+    partition_sets = graphene_info.context.get_partition_sets(repository_selector)
     for partition_set in partition_sets:
         if partition_set.name == partition_set_name:
             return GraphenePartitionSet(
-                repository_handle=repository.handle,
                 remote_partition_set=partition_set,
             )
 
@@ -105,7 +100,6 @@ def get_partition_by_name(
     check.inst_param(partition_set, "partition_set", RemotePartitionSet)
     check.str_param(partition_name, "partition_name")
     return GraphenePartition(
-        repository_handle=repository_handle,
         remote_partition_set=partition_set,
         partition_name=partition_name,
     )
@@ -136,7 +130,7 @@ def get_partition_config(
 
 def get_partition_tags(
     graphene_info: ResolveInfo,
-    repository_handle: RepositoryHandle,
+    repository_selector: RepositorySelector,
     job_name: str,
     partition_name: str,
     selected_asset_keys: Optional[AbstractSet[AssetKey]],
@@ -144,12 +138,12 @@ def get_partition_tags(
     from dagster_graphql.schema.partition_sets import GraphenePartitionTags
     from dagster_graphql.schema.tags import GraphenePipelineTag
 
-    check.inst_param(repository_handle, "repository_handle", RepositoryHandle)
+    check.inst_param(repository_selector, "repository_selector", RepositorySelector)
     check.str_param(job_name, "job_name")
     check.str_param(partition_name, "partition_name")
 
     result = graphene_info.context.get_partition_tags(
-        repository_handle,
+        repository_selector,
         job_name,
         partition_name,
         graphene_info.context.instance,
@@ -187,7 +181,6 @@ def get_partitions(
         results=[
             GraphenePartition(
                 remote_partition_set=partition_set,
-                repository_handle=repository_handle,
                 partition_name=partition_name,
             )
             for partition_name in partition_names

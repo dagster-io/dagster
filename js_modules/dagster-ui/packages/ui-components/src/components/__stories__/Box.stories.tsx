@@ -1,4 +1,3 @@
-import {Meta} from '@storybook/react';
 import styled from 'styled-components';
 
 import {Box} from '../Box';
@@ -17,7 +16,7 @@ import {
 export default {
   title: 'Box',
   component: Box,
-} as Meta;
+};
 
 export const Padding = () => {
   const spacings: Spacing[] = [0, 2, 4, 8, 12, 16, 20, 24, 32, 48, 64];

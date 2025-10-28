@@ -157,6 +157,7 @@
         }
       ],
       "name": "noop_job",
+      "owners": [],
       "pipelineSnapshotId": "dbc0d71fefa48d56ff94e517235980f1bbf0d8e8",
       "runTags": [],
       "solidHandles": [

@@ -1,0 +1,121 @@
+{
+  "repositoriesOrError": {
+    "__typename": "RepositoryConnection",
+    "nodes": [
+      {
+        "location": {
+          "name": "basics"
+        },
+        "name": "__repository__",
+        "sensors": []
+      },
+      {
+        "location": {
+          "name": "batch_enrichment"
+        },
+        "name": "__repository__",
+        "sensors": []
+      },
+      {
+        "location": {
+          "name": "data-eng-pipeline"
+        },
+        "name": "__repository__",
+        "sensors": [
+          {
+            "description": null,
+            "id": "724c964095cdedc50cedd03a245a263d37becd99::ca9937809e3046f25a8fb5c296fdff1c5f12bcf7",
+            "name": "dbt_code_version_sensor",
+            "sensorState": {
+              "status": "STOPPED"
+            },
+            "sensorType": "STANDARD"
+          },
+          {
+            "description": null,
+            "id": "e978000fa5b80d672b498a2668c291bc62cf7b46::e60638d37f3f02db40f907c5f1efd7bbb67fc8f1",
+            "name": "default_automation_condition_sensor",
+            "sensorState": {
+              "status": "RUNNING"
+            },
+            "sensorType": "AUTO_MATERIALIZE"
+          },
+          {
+            "description": null,
+            "id": "4b12429d4c77624d0b61681623d2cb9180406eae::01471ff0a6a807ad3b7f2cff81c4ebbe375bac85",
+            "name": "orders_sensor",
+            "sensorState": {
+              "status": "RUNNING"
+            },
+            "sensorType": "ASSET"
+          },
+          {
+            "description": null,
+            "id": "4c2bb07fe127bdefbe6e6526abe6086db6fb876e::d61d76331cbadbca7a26e3d94fc77416038818e6",
+            "name": "watch_s3_sensor",
+            "sensorState": {
+              "status": "RUNNING"
+            },
+            "sensorType": "STANDARD"
+          },
+          {
+            "description": "\n    This sensor launches execution of freshness checks for the provided assets. The sensor will\n    only launch a new execution of a freshness check if the check previously passed, but enough\n    time has passed that the check could be overdue again. Once a check has failed, the sensor\n    will not launch a new execution until the asset has been updated (which should automatically\n    execute the check).\n    ",
+            "id": "323dcd58a32efb9ec810d95bc9cd99572809de24::04f66d6b3ed306555381c2f9d815656a813769ed",
+            "name": "weekly_freshness_check_sensor",
+            "sensorState": {
+              "status": "RUNNING"
+            },
+            "sensorType": "STANDARD"
+          }
+        ]
+      },
+      {
+        "location": {
+          "name": "hooli_airlift"
+        },
+        "name": "__repository__",
+        "sensors": [
+          {
+            "description": null,
+            "id": "29af2b4a57d8e09fa53485d31d59571b2f143973::6be20a075ae25f5a057f7fe8634cfdc2419c56bd",
+            "name": "default_automation_condition_sensor",
+            "sensorState": {
+              "status": "RUNNING"
+            },
+            "sensorType": "AUTO_MATERIALIZE"
+          },
+          {
+            "description": null,
+            "id": "b608513f9f81b03a3426b8bf65c6f3039f28c42b::f4f5420a81959a874c0a1b08578b6adbc7264bc5",
+            "name": "mwaa_hooli_airflow_01__airflow_dag_status_sensor",
+            "sensorState": {
+              "status": "RUNNING"
+            },
+            "sensorType": "STANDARD"
+          }
+        ]
+      },
+      {
+        "location": {
+          "name": "hooli_bi"
+        },
+        "name": "__repository__",
+        "sensors": []
+      },
+      {
+        "location": {
+          "name": "hooli_data_ingest"
+        },
+        "name": "__repository__",
+        "sensors": []
+      },
+      {
+        "location": {
+          "name": "snowflake_insights"
+        },
+        "name": "__repository__",
+        "sensors": []
+      }
+    ]
+  }
+}

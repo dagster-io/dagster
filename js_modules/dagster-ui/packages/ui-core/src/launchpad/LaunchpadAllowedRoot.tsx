@@ -15,6 +15,8 @@ import {LaunchpadRootQuery, LaunchpadRootQueryVariables} from './types/Launchpad
 import {IExecutionSession} from '../app/ExecutionSessionStorage';
 import {PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorFragment';
 import {useTrackPageView} from '../app/analytics';
+import {asAssetKeyInput} from '../assets/asInput';
+import {CONFIG_EDITOR_RUN_CONFIG_SCHEMA_FRAGMENT} from '../configeditor/ConfigEditorUtils';
 import {explorerPathFromString, useStripSnapshotFromPath} from '../pipelines/PipelinePathUtils';
 import {useJobTitle} from '../pipelines/useJobTitle';
 import {lazy} from '../util/lazy';
@@ -36,7 +38,7 @@ const filterDefaultYamlForSubselection = (defaultYaml: string, opNames: Set<stri
 
   const opsConfig = parsedYaml['ops'];
   if (opsConfig) {
-    const filteredOpKeys = Object.keys(opsConfig).filter((entry: any) => {
+    const filteredOpKeys = Object.keys(opsConfig).filter((entry) => {
       return opNames.has(entry);
     });
     const filteredOpsConfig = Object.fromEntries(
@@ -66,7 +68,12 @@ export const LaunchpadAllowedRoot = (props: Props) => {
   const result = useQuery<LaunchpadRootQuery, LaunchpadRootQueryVariables>(
     PIPELINE_EXECUTION_ROOT_QUERY,
     {
-      variables: {repositoryName, repositoryLocationName, pipelineName},
+      variables: {
+        repositoryName,
+        repositoryLocationName,
+        pipelineName,
+        assetSelection: sessionPresets?.assetSelection?.map(asAssetKeyInput) || null,
+      },
     },
   );
 
@@ -83,7 +90,11 @@ export const LaunchpadAllowedRoot = (props: Props) => {
     const opNameList = sessionPresets?.assetSelection
       ? sessionPresets.assetSelection.map((entry) => entry.opNames ?? []).flat()
       : [];
-    const opNames = new Set(opNameList);
+
+    // to correctly handle graph assets, where the op name is 'graph_asset.inner_asset', split by "."
+    // and just consider the top level for filtering purposes..
+    const opNames = new Set(opNameList.map((entry) => entry.split('.')[0] ?? ''));
+
     return filterDefaultYamlForSubselection(rootDefaultYaml, opNames);
   }, [runConfigSchemaOrError, sessionPresets]);
 
@@ -115,11 +126,10 @@ export const LaunchpadAllowedRoot = (props: Props) => {
     );
   }
 
-  if (pipelineOrError.__typename === 'InvalidSubsetError') {
-    throw new Error(`Should never happen because we do not request a subset`);
-  }
-
-  if (pipelineOrError.__typename === 'PythonError') {
+  if (
+    pipelineOrError.__typename === 'PythonError' ||
+    pipelineOrError.__typename === 'InvalidSubsetError'
+  ) {
     return (
       <LaunchpadSessionError
         icon="error"
@@ -148,6 +158,11 @@ export const LaunchpadAllowedRoot = (props: Props) => {
         sessionPresets={sessionPresets || {}}
         rootDefaultYaml={filteredRootDefaultYaml}
         onSaveConfig={onSaveConfig}
+        runConfigSchema={
+          result.data?.runConfigSchemaOrError.__typename === 'RunConfigSchema'
+            ? result.data.runConfigSchemaOrError
+            : undefined
+        }
       />
     );
   } else {
@@ -163,6 +178,11 @@ export const LaunchpadAllowedRoot = (props: Props) => {
             ? result.data.runConfigSchemaOrError.rootDefaultYaml
             : undefined
         }
+        runConfigSchema={
+          result.data?.runConfigSchemaOrError.__typename === 'RunConfigSchema'
+            ? result.data.runConfigSchemaOrError
+            : undefined
+        }
       />
     );
   }
@@ -173,15 +193,20 @@ export const PIPELINE_EXECUTION_ROOT_QUERY = gql`
     $pipelineName: String!
     $repositoryName: String!
     $repositoryLocationName: String!
+    $assetSelection: [AssetKeyInput!]
   ) {
     pipelineOrError(
       params: {
         pipelineName: $pipelineName
         repositoryName: $repositoryName
         repositoryLocationName: $repositoryLocationName
+        assetSelection: $assetSelection
       }
     ) {
       ... on PipelineNotFoundError {
+        message
+      }
+      ... on InvalidSubsetError {
         message
       }
       ... on Pipeline {
@@ -208,12 +233,14 @@ export const PIPELINE_EXECUTION_ROOT_QUERY = gql`
         pipelineName: $pipelineName
         repositoryName: $repositoryName
         repositoryLocationName: $repositoryLocationName
+        assetSelection: $assetSelection
       }
     ) {
       __typename
       ... on RunConfigSchema {
         rootDefaultYaml
       }
+      ...LaunchpadSessionRunConfigSchemaFragment
     }
   }
 
@@ -233,7 +260,21 @@ export const PIPELINE_EXECUTION_ROOT_QUERY = gql`
     }
   }
 
+  fragment LaunchpadSessionRunConfigSchemaFragment on RunConfigSchemaOrError {
+    ... on RunConfigSchema {
+      ...ConfigEditorRunConfigSchemaFragment
+    }
+    ... on ModeNotFoundError {
+      ...LaunchpadSessionModeNotFound
+    }
+  }
+
+  fragment LaunchpadSessionModeNotFound on ModeNotFoundError {
+    message
+  }
+
   ${PYTHON_ERROR_FRAGMENT}
   ${CONFIG_EDITOR_GENERATOR_PARTITION_SETS_FRAGMENT}
   ${CONFIG_EDITOR_GENERATOR_PIPELINE_FRAGMENT}
+  ${CONFIG_EDITOR_RUN_CONFIG_SCHEMA_FRAGMENT}
 `;

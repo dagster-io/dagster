@@ -7,9 +7,12 @@ canonicalUrl: '/guides/observe/insights'
 slug: '/guides/observe/insights'
 ---
 
+import Beta from '@site/docs/partials/\_Beta.md';
 import DagsterPlus from '@site/docs/partials/\_DagsterPlus.md';
 
 <DagsterPlus />
+
+<Beta />
 
 Using Dagster+ Insights, you can gain visibility into historical usage and trends, such as execution time, success rate, and time to resolving failures. You can also build custom reports to compare different deployments or selections of assets against each other to quickly identify issues across your data platform.
 
@@ -30,7 +33,7 @@ To access Insights views, you can either:
 
 ![Insights UI](/images/guides/observe/insights/insights-ui.png)
 
-Key asset health metrics, like materialization and failure count, are prominently displayed for assets and selections, and additional metrics are displayed for jobs and deployments. Historical Insights data is retained for 120 days.
+Key asset health metrics, like materialization and failure count, are prominently displayed for assets and selections, and additional metrics are displayed for jobs and deployments. Historical Insights data can be queried for up to 30 days.
 
 For a full list of metrics, see the [supported metrics](#supported-metrics) section.
 
@@ -48,7 +51,7 @@ Insights views also features activity charts that group events by hour to help y
 
 Since updated Insights views are still under active development, there are a few limitations we aim to address in upcoming releases:
 
-- Insights views do not currently show cost, Dagster credits, and metadata metrics
+- Insights views do not currently show metadata metrics
 
 :::
 
@@ -72,34 +75,29 @@ To choose which metrics to compare across selections, click **Choose metrics**, 
 
 #### Assets and selections
 
-| Metric                                | Description                                                                     |
-| ------------------------------------- | ------------------------------------------------------------------------------- |
-| Materialization success rate          | Percentage of successful executions.                                            |
-| Avg. time to resolution               | Duration an asset spent in a failed state before materializing.                 |
-| Freshess pass rate                    | Percentage of time an asset was fresh.                                          |
-| Check success rate                    | Percentage of successful check executions.                                      |
-| Materialization count                 | Number of times an asset was materialized.                                      |
-| Failure count                         | Number of times an asset failed to materialize.                                 |
-| Step execution time                   |                                                                                 |
-| Top assets by retry count             |                                                                                 |
-| Top assets by check error count       | The top assets that produced [asset check](/guides/test/asset-checks) errors.   |
-| Top assets by check warning count     | The top assets that produced [asset check](/guides/test/asset-checks) warnings. |
-| Top assets by freshness failure count | Number of times an asset entered a degraded freshness state.                    |
-| Top assets by freshness warning count | Number of times an asset entered a degraded freshness state.                    |
+| Metric                       | Description                                                                                                                                                                                                                                                                                                                                                                                                                       |
+| ---------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Materialization success rate | Average of materialization success rates for all assets in selection over the selected time range. A single asset's materialization success rate is (number of successful materializations) / (number of successful materializations + number of failed materializations) for that asset. Note that failed retries do not count towards the number of failed materializations in the denominator of the success rate calculation. |
+| Avg. time to resolution      | Average time the selected assets spent in a failed materialization state before being successfully materialized.                                                                                                                                                                                                                                                                                                                  |
+| Freshness pass rate          | Average percentage of time that assets from the selection with a defined freshness policy were passing their freshness policy.                                                                                                                                                                                                                                                                                                    |
+| Check success rate           | Average of check success rates for all assets in selection over the selected time range. A single asset's check success rate is (number of passing check executions) / (number of total check executions).                                                                                                                                                                                                                        |
+| Materialization count        | Count of successful materialization attempts. Each retry is counted as a distinct materialization attempt.                                                                                                                                                                                                                                                                                                                        |
+| Failure count                | Count of failed materialization attempts. Each retry is counted as a distinct materialization attempt.                                                                                                                                                                                                                                                                                                                            |
+| Step execution time          | Total step execution time for selected assets. Includes time spent by steps that failed to materialize an asset, steps that retried an asset, and steps that ran asset checks.                                                                                                                                                                                                                                                    |
 
 #### Jobs
 
-| Metric                | Description                                                                                                                                                                                                                                 |
-| --------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Run success count     | The number of successful runs.                                                                                                                                                                                                              |
-| Run failure count     | The number of run failures.                                                                                                                                                                                                                 |
-| Run duration          | Wall clock time from when a run starts to when it completes. For jobs which run steps in parallel, the run duration may be shorter than the sum of the compute duration for all steps.                                                      |
-| Step failures         | The number of times steps failed when computing this object. **Note:** Steps that retry and succeed aren't included in this metric.                                                                                                         |
-| Dagster credits       | The Dagster credit cost associated with computing this object. Dagster credits are charged for every step that's run, and for every asset that's materialized. For more information, see the [pricing FAQ](https://dagster.io/pricing#faq). |
-| Materializations      | The number of asset materializations associated with computing this object.                                                                                                                                                                 |
-| Failed to materialize | The number of materialization failures associated with this object.                                                                                                                                                                         |
-| Observations          | The number of [asset observations](/guides/build/assets/metadata-and-tags/asset-observations) associated with computing this object.                                                                                                        |
-| Step retries          | The number of times steps were retried when computing this object.                                                                                                                                                                          |
+| Metric                | Description                                                                                                                                                                                                                                                                                                                    |
+| --------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| Run success count     | Count of successful runs for the selected jobs. The count includes run retries.                                                                                                                                                                                                                                                |
+| Run failure count     | Count of failed runs for the selected jobs. The count includes runs that failed for any reason, including but not limited to timeouts, step failure, and run worker restarts. The count also includes run retries.                                                                                                             |
+| Run duration          | Total duration of runs for selected jobs. Each run retry is counted as a separate run.                                                                                                                                                                                                                                         |
+| Step failures         | Count of step failures across all runs for the selected jobs.                                                                                                                                                                                                                                                                  |
+| Dagster credits       | Total Dagster credits consumed by all runs for the selected jobs. For more information, see the [pricing FAQ](https://dagster.io/pricing#faq).                                                                                                                                                                                 |
+| Materializations      | Count of successful asset materializations produced by runs for the selected jobs.                                                                                                                                                                                                                                             |
+| Failed to materialize | Count of failed asset materialization attempts by selected jobs. A failed materialization attempt is when a run that expects to materialize an asset does not do so, either because the run itself failed or the run completed but did not materialize the asset. Each run retry counts as a distinct materialization attempt. |
+| Observations          | Count of [asset observations](/guides/build/assets/metadata-and-tags/asset-observations) recorded by the selected jobs. Does not include runless asset observations.                                                                                                                                                           |
+| Step retries          | Count of step retries across all runs for the selected jobs. Run retries by themselves do not contribute to this metric, only retries of the underlying step.                                                                                                                                                                  |
 
 #### Deployments
 

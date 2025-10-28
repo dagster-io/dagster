@@ -9,7 +9,7 @@ import ThemedImage from '@theme/ThemedImage';
 
 In this guide, we'll walk you through creating user tokens in Dagster+.
 
-## Managing user tokens
+## Creating and revoking user tokens
 
 1. Sign in to your Dagster+ account.
 2. Click the **user menu (your icon) > Organization Settings**.
@@ -22,7 +22,7 @@ After the token is created:
 - **To view a token**, click **Reveal token**. Clicking on the token value will copy it to the clipboard.
 - **To revoke a token**, click **Revoke**.
 
-To manage tokens for another user, select the user from the **Manage tokens for** dropdown:
+To revoke an existing token for another user, select the user from the **Manage tokens for** dropdown:
 
 <ThemedImage
   style={{width: '100%', height: 'auto'}}
@@ -33,5 +33,5 @@ To manage tokens for another user, select the user from the **Manage tokens for*
 />
 
 :::note
-**Organization Admin** permissions are required to manage another user's tokens.
+**Organization Admin** permissions are required to revoke another user's tokens. Nobody, including Organization Admins, can create a user token for another user or view the value of a user token for another user.
 :::

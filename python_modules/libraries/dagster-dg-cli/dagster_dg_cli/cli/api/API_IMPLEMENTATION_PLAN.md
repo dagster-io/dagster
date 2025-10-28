@@ -32,8 +32,11 @@ dg api deployment delete <name>
 ### 2. **secret**
 
 ```bash
+# Implemented
 dg api secret list [--location <name>] [--scope <deployment|organization>] [--json]
 dg api secret get <name> [--location <name>] [--json]
+
+# Future verbs
 dg api secret create --name <name> --value <value> [--location <name>] [--scope <scope>]
 dg api secret update <name> --value <value> [--location <name>]
 dg api secret delete <name> [--location <name>]
@@ -151,11 +154,14 @@ dg api schedule stop <schedule-name> --location <name>
 
 **GraphQL**: `schedulesOrError`, `scheduleOrError`
 
-### 13. **sensor**
+### 13. **sensor** ✅ _list/get implemented_
 
 ```bash
-dg api sensor list [--location <name>] [--status <running|stopped>] [--json]
-dg api sensor get <sensor-name> --location <name> [--json]
+# Implemented
+dg api sensor list [--status <running|stopped>] [--json]
+dg api sensor get <sensor-name> [--json]
+
+# Future verbs
 dg api sensor start <sensor-name> --location <name>
 dg api sensor stop <sensor-name> --location <name>
 ```
@@ -380,6 +386,7 @@ dagster_dg_cli/cli/plus/api/
 ## **Implementation Status**
 
 - ✅ **deployment list** - Completed
+- ✅ **sensor list/get** - Completed (repository concepts hidden from end users)
 - 🚧 **Next**: secret, agent, run, asset (Phase 1)
 - 📋 **Planned**: 22 additional nouns across 4 more phases
 

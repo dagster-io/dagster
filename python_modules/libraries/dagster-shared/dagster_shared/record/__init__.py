@@ -628,12 +628,12 @@ def __defaults_new__(cls{kw_args_str}):
     """
 
 
-def _banned_iter(*args, **kwargs):
-    raise Exception("Iteration is not allowed on `@record`s.")
+def _banned_iter(self, *args, **kwargs):
+    raise Exception(f"Iteration is not allowed on `@record` {self.__class__.__name__}.")
 
 
-def _banned_idx(*args, **kwargs):
-    raise Exception("Index access is not allowed on `@record`s.")
+def _banned_idx(self, *args, **kwargs):
+    raise Exception(f"Index access is not allowed on `@record` {self.__class__.__name__}.")
 
 
 def _true(_):
@@ -641,12 +641,17 @@ def _true(_):
 
 
 def _from_reduce(cls, kwargs):
-    return cls(**kwargs)
+    # loading from pickle bypasses checked / custom __new__ and
+    # just reconstructs the base namedtuple
+    return getattr(cls, _NAMED_TUPLE_BASE_NEW_FIELD)(
+        cls,
+        **kwargs,
+    )
 
 
 def _reduce(self):
     # pickle support
-    return _from_reduce, (self.__class__, as_dict_for_new(self))
+    return _from_reduce, (self.__class__, as_dict(self))
 
 
 def _repr(self) -> str:

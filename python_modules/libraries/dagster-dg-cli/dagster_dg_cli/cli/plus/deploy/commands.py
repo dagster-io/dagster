@@ -1,7 +1,7 @@
 import asyncio
 import os
 from pathlib import Path
-from typing import Optional
+from typing import TYPE_CHECKING, Optional
 
 import click
 from dagster_cloud_cli.types import SnapshotBaseDeploymentCondition
@@ -28,7 +28,10 @@ from dagster_dg_cli.cli.plus.deploy.deploy_session import (
     finish_deploy_session,
     init_deploy_session,
 )
-from dagster_dg_cli.utils.plus.build import defs_state_storage_from_config, get_agent_type
+from dagster_dg_cli.utils.plus.build import defs_state_storage_from_location_state, get_agent_type
+
+if TYPE_CHECKING:
+    from dagster_shared.serdes.objects.models.defs_state_info import DefsStateManagementType
 
 DEFAULT_STATEDIR_PATH = os.path.join(get_system_temp_directory(), "dg-build-state")
 
@@ -386,45 +389,73 @@ def build_and_push_command(
     )
 
 
-def refresh_defs_state_impl(statedir: str, project_path: Path):
+def refresh_defs_state_impl(
+    ctx: click.Context,
+    statedir: str,
+    project_path: Path,
+    management_types: set["DefsStateManagementType"],
+):
     from dagster_cloud_cli.commands.ci import state
 
-    plus_config = (
-        DagsterPlusCliConfig.get() if DagsterPlusCliConfig.exists() else DagsterPlusCliConfig()
-    )
-    with defs_state_storage_from_config(plus_config) as defs_state_storage:
-        defs_state_info, statuses = asyncio.run(
-            get_updated_defs_state_info_and_statuses(project_path, defs_state_storage)
-        )
-        raise_component_state_refresh_errors(statuses)
-
     state_store = state.FileStore(statedir=statedir)
-    if defs_state_info is None:
-        click.echo("No defs_state_info to update")
-        return
+    locations = state_store.list_selected_locations()
 
-    for location_state in state_store.list_locations():
+    for location_state in locations:
+        with defs_state_storage_from_location_state(ctx, location_state) as defs_state_storage:
+            defs_state_info, statuses = asyncio.run(
+                get_updated_defs_state_info_and_statuses(
+                    project_path, defs_state_storage, management_types=management_types
+                )
+            )
+            raise_component_state_refresh_errors(statuses)
+        if defs_state_info is None:
+            click.echo("No defs_state_info to update")
+            return
+
         location_state.defs_state_info = defs_state_info
         state_store.save(location_state)
-    click.echo("Updated defs_state_info for all locations.")
+
+    click.echo(f"Updated defs_state_info for all {len(locations)} locations.")
 
 
 @deploy_group.command(name="refresh-defs-state", cls=DgClickCommand)
 @dg_editable_dagster_options
 @dg_path_options
 @dg_global_options
+@click.option(
+    "--management-type",
+    multiple=True,
+    type=click.Choice(["LOCAL_FILESYSTEM", "VERSIONED_STATE_STORAGE"]),
+    help="Only refresh components with the specified management type. Can be specified multiple times to include multiple types. By default, refreshes only VERSIONED_STATE_STORAGE components.",
+)
 @cli_telemetry_wrapper
 def refresh_defs_state_command(
     target_path: Path,
+    management_type: tuple[str, ...],
     **global_options: object,
 ):
     """[Experimental] If using StateBackedComponents, this command will execute the `refresh_state` on each of them,
     and set the defs_state_info for each location.
     """
-    cli_config = normalize_cli_config(global_options, click.get_current_context())
+    from dagster_shared.serdes.objects.models.defs_state_info import DefsStateManagementType
+
+    ctx = click.get_current_context()
+    cli_config = normalize_cli_config(global_options, ctx)
     # ensure that the command is executed in a project
     dg_context = DgContext.for_project_environment(target_path, cli_config)
-    refresh_defs_state_impl(statedir=_get_statedir(), project_path=dg_context.root_path)
+    management_types = (
+        {DefsStateManagementType(mt) for mt in management_type}
+        if management_type
+        else {
+            DefsStateManagementType.VERSIONED_STATE_STORAGE,
+        }
+    )
+    refresh_defs_state_impl(
+        ctx=ctx,
+        statedir=_get_statedir(),
+        project_path=dg_context.root_path,
+        management_types=management_types,
+    )
 
 
 @deploy_group.command(name="set-build-output", cls=DgClickCommand)

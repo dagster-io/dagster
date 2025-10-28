@@ -103,14 +103,11 @@ EDITABLE_DAGSTER_OPTIONS = {
     for option in [
         click.Option(
             ["--use-editable-dagster"],
-            type=str,
-            flag_value="TRUE",
-            is_flag=False,
-            default="TRUE" if is_use_editable_env_var_true() else None,
+            is_flag=True,
+            default=True if is_use_editable_env_var_true() else False,
             help=(
-                "Install all Dagster package dependencies from a local Dagster clone. Accepts a path to local Dagster clone root or"
-                " may be set as a flag (no value is passed). If set as a flag,"
-                " the location of the local Dagster clone will be read from the `DAGSTER_GIT_REPO_DIR` environment variable."
+                "Install all Dagster package dependencies from a local Dagster clone. The location "
+                "of the local Dagster clone will be read from the `DAGSTER_GIT_REPO_DIR` environment variable."
             ),
         ),
     ]

@@ -1,6 +1,6 @@
 from abc import ABC
 from collections.abc import Iterable, Mapping
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from enum import Enum
 from typing import TYPE_CHECKING, Any, Optional, Union
 
@@ -48,7 +48,7 @@ class FreshnessStateChange:
 INTERNAL_FRESHNESS_POLICY_METADATA_KEY = "dagster/internal_freshness_policy"
 
 
-class InternalFreshnessPolicy(ABC):
+class FreshnessPolicy(ABC):
     """Base class for all freshness policies.
     The "internal" prefix is a temporary measure to distinguish these policies from an existing, deprecated freshness policy model
     which has since been renamed to `LegacyFreshnessPolicy`.
@@ -57,9 +57,7 @@ class InternalFreshnessPolicy(ABC):
     """
 
     @classmethod
-    def from_asset_spec_metadata(
-        cls, metadata: Mapping[str, Any]
-    ) -> Optional["InternalFreshnessPolicy"]:
+    def from_asset_spec_metadata(cls, metadata: Mapping[str, Any]) -> Optional["FreshnessPolicy"]:
         serialized_policy = metadata.get(INTERNAL_FRESHNESS_POLICY_METADATA_KEY)
 
         # We had a few asset spec metadatas with internal freshness policies set to literal "null" string,
@@ -86,7 +84,7 @@ class InternalFreshnessPolicy(ABC):
 
 @whitelist_for_serdes
 @record
-class TimeWindowFreshnessPolicy(InternalFreshnessPolicy, IHaveNew):
+class TimeWindowFreshnessPolicy(FreshnessPolicy, IHaveNew):
     fail_window: SerializableTimeDelta
     warn_window: Optional[SerializableTimeDelta] = None
 
@@ -115,7 +113,7 @@ class TimeWindowFreshnessPolicy(InternalFreshnessPolicy, IHaveNew):
         "serializable_lower_bound_delta": "lower_bound_delta",
     }
 )
-class CronFreshnessPolicy(InternalFreshnessPolicy, IHaveNew):
+class CronFreshnessPolicy(FreshnessPolicy, IHaveNew):
     """Defines freshness with reference to a predetermined cron schedule.
 
     Args:
@@ -125,7 +123,7 @@ class CronFreshnessPolicy(InternalFreshnessPolicy, IHaveNew):
         timezone: optionally provide a timezone for cron evaluation. IANA time zone strings are supported. If not provided, defaults to UTC.
 
     Example:
-    policy = InternalFreshnessPolicy.cron(
+    policy = FreshnessPolicy.cron(
         deadline_cron="0 10 * * *", # 10am daily
         lower_bound_delta=timedelta(hours=1),
     )
@@ -219,10 +217,10 @@ class FreshnessStateRecord(LoadableBy[AssetKey]):
     @staticmethod
     def from_db_row(db_row):
         return FreshnessStateRecord(
-            entity_key=check.not_none(AssetKey.from_db_string(db_row[0])),
-            freshness_state=FreshnessState(db_row[3]),
-            record_body=deserialize_value(db_row[4], FreshnessStateRecordBody),
-            updated_at=db_row[5],
+            entity_key=check.not_none(AssetKey.from_db_string(db_row.entity_key)),
+            freshness_state=FreshnessState(db_row.freshness_state),
+            record_body=deserialize_value(db_row.record_body, FreshnessStateRecordBody),
+            updated_at=db_row.update_timestamp.replace(tzinfo=timezone.utc),
         )
 
     @staticmethod
