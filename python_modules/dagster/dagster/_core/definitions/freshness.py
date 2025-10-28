@@ -50,10 +50,18 @@ INTERNAL_FRESHNESS_POLICY_METADATA_KEY = "dagster/internal_freshness_policy"
 
 class FreshnessPolicy(ABC):
     """Base class for all freshness policies.
-    The "internal" prefix is a temporary measure to distinguish these policies from an existing, deprecated freshness policy model
-    which has since been renamed to `LegacyFreshnessPolicy`.
-    Expect the name of this class to change to `FreshnessPolicy` in a future release.
 
+    A freshness policy allows you to define expectations for the timing and frequency of asset materializations.
+
+    An asset with a defined freshness policy can take on different freshness states:
+    - ``PASS``: The asset is passing its freshness policy.
+    - ``WARN``: The asset is close to failing its freshness policy.
+    - ``FAIL``: The asset is failing its freshness policy.
+    - ``UNKNOWN``: The asset has no materialization events, and the freshness state cannot be determined.
+
+    If an asset does not have a freshness policy defined, it will have a freshness state of ``NOT_APPLICABLE``.
+
+    This class provides static constructors for each of the supported freshness policy types. It is preferred to use these constructors to instantiate freshness policies, instead of instantiating the policy subtypes directly.
     """
 
     @classmethod
@@ -71,12 +79,67 @@ class FreshnessPolicy(ABC):
     def time_window(
         fail_window: timedelta, warn_window: Optional[timedelta] = None
     ) -> "TimeWindowFreshnessPolicy":
+        """Defines freshness with reference to a time window.
+
+        Args:
+            fail_window: a timedelta that defines the failure window for the asset.
+            warn_window: an optional timedelta that defines the warning window for the asset.
+
+        Returns:
+            A ``TimeWindowFreshnessPolicy`` instance.
+
+        Examples:
+            .. code-block:: python
+
+                policy = FreshnessPolicy.time_window(
+                    fail_window=timedelta(hours=24), warn_window=timedelta(hours=12)
+                )
+
+            This policy expects the asset to materialize at least once every 24 hours, and warns if the latest materialization is older than 12 hours.
+
+            - If it has been less than 12 hours since the latest materialization, the asset is passing its freshness policy, and will have a freshness state of ``PASS``.
+            - If it has been between 12 and 24 hours since the latest materialization, the asset will have a freshness state of ``WARN``.
+            - If it has been more than 24 hours since the latest materialization, the asset is failing its freshness policy, and will have a freshness state of ``FAIL``.
+
+        """
         return TimeWindowFreshnessPolicy.from_timedeltas(fail_window, warn_window)
 
     @staticmethod
     def cron(
         deadline_cron: str, lower_bound_delta: timedelta, timezone: str = "UTC"
     ) -> "CronFreshnessPolicy":
+        """Defines freshness with reference to a predetermined cron schedule.
+
+        Args:
+            deadline_cron: a cron string that defines a deadline for the asset to be materialized.
+            lower_bound_delta: a timedelta that defines the lower bound for when the asset could have been materialized.
+                If a deadline cron tick has passed and the most recent materialization is older than (deadline cron tick timestamp - lower bound delta),
+                the asset is considered stale until it materializes again.
+            timezone: optionally provide a timezone for cron evaluation. IANA time zone strings are supported. If not provided, defaults to UTC.
+
+        Returns:
+            A ``CronFreshnessPolicy`` instance.
+
+        Examples:
+            .. code-block:: python
+
+                policy = FreshnessPolicy.cron(
+                    deadline_cron="0 10 * * *",  # 10am daily
+                    lower_bound_delta=timedelta(hours=1),
+                )
+
+            This policy expects the asset to materialize every day between 9:00 AM and 10:00 AM.
+
+            - If the asset is materialized at 9:30 AM, the asset is passing its freshness policy, and will have a freshness state of ``PASS``. The asset will continue to pass the freshness policy until at least the deadline next day (10AM).
+            - If the asset is materialized at 9:59 AM, the asset is passing its freshness policy, and will have a freshness state of ``PASS``. The asset will continue to pass the freshness policy until at least the deadline next day (10AM).
+            - If the asset is not materialized by 10:00 AM, the asset is failing its freshness policy, and will have a freshness sate of ``FAIL``. The asset will continue to fail the freshness policy until it is materialized again.
+            - If the asset is then materialized at 10:30AM, it will pass the freshness policy again until at least the deadline the next day (10AM).
+
+            Keep in mind that the policy will always look at the last completed cron tick.
+            So in the example above, if asset freshness is evaluated at 9:59 AM, the policy will still consider the previous day's 9-10AM window.
+
+
+        """
         return CronFreshnessPolicy(
             deadline_cron=deadline_cron, lower_bound_delta=lower_bound_delta, timezone=timezone
         )
@@ -114,31 +177,6 @@ class TimeWindowFreshnessPolicy(FreshnessPolicy, IHaveNew):
     }
 )
 class CronFreshnessPolicy(FreshnessPolicy, IHaveNew):
-    """Defines freshness with reference to a predetermined cron schedule.
-
-    Args:
-        deadline_cron: a cron string that defines a deadline for the asset to be materialized.
-        lower_bound_delta: a timedelta that defines the lower bound for when the asset could have been materialized.
-        If a deadline cron tick has passed and the most recent materialization is older than (deadline cron tick timestamp - lower bound delta), the asset is considered stale until it materializes again.
-        timezone: optionally provide a timezone for cron evaluation. IANA time zone strings are supported. If not provided, defaults to UTC.
-
-    Example:
-    policy = FreshnessPolicy.cron(
-        deadline_cron="0 10 * * *", # 10am daily
-        lower_bound_delta=timedelta(hours=1),
-    )
-
-    This policy expects the asset to materialize every day between 9:00 AM and 10:00 AM.
-
-    If the asset is materialized at 9:30 AM, the asset is fresh, and will continue to be fresh until at least the deadline next day (10AM)
-    If the asset is materialized at 9:59 AM, the asset is fresh, and will continue to be fresh until at least the deadline next day (10AM)
-    If the asset is not materialized by 10:00 AM, the asset is stale, and will continue to be stale until it is materialized.
-    If the asset is then materialized at 10:30AM, it becomes fresh again until at least the deadline the next day (10AM).
-
-    Keep in mind that the policy will always look at the last completed cron tick.
-    So in the example above, if asset freshness is evaluated at 9:59 AM, the policy will still consider the previous day's 9-10AM window.
-    """
-
     deadline_cron: str
     serializable_lower_bound_delta: SerializableTimeDelta
     timezone: str
