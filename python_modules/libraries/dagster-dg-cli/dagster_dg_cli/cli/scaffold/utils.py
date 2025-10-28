@@ -1,5 +1,6 @@
 """Shared utilities for CI scaffolding commands (GitHub Actions, GitLab CI, etc.)."""
 
+from collections.abc import Mapping
 from pathlib import Path
 from typing import Optional, cast
 
@@ -85,7 +86,7 @@ class CIScaffoldConfig:
 
 def gather_ci_config(
     git_root: Optional[Path],
-    global_options: object,
+    global_options: Mapping[str, object],
     click_context,
 ) -> CIScaffoldConfig:
     """Gather common configuration for CI scaffolding.

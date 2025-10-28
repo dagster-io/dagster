@@ -25,7 +25,7 @@ class ContainerRegistryInfo(NamedTuple):
 
     name: str
     match: Callable[[str], bool]
-    github_fragment: Path
+    github_fragment: Optional[Path]
     gitlab_fragment: Optional[Path]
     github_secrets: list[str]
     gitlab_secrets: list[str]
