@@ -174,7 +174,7 @@ export const ObserveAutomationScheduleRow = forwardRef(
                 <Box flex={{direction: 'row', gap: 8, alignItems: 'center'}}>{name}</Box>
                 {scheduleData?.description ? (
                   <Tooltip
-                    content={<div style={{width: 320}}>{scheduleData.description}</div>}
+                    content={<div style={{maxWidth: 320}}>{scheduleData.description}</div>}
                     placement="top"
                   >
                     <Icon name="info" color={Colors.textLight()} />
