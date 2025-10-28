@@ -9,14 +9,13 @@ import {
 } from '@dagster-io/ui-components';
 import {TZDate} from '@date-fns/tz';
 import {endOfDay} from 'date-fns';
+import dayjs from 'dayjs';
 import memoize from 'lodash/memoize';
-import {useContext, useEffect, useState} from 'react';
+import {useContext, useEffect, useMemo, useState} from 'react';
 
 import {TimeContext} from '../app/time/TimeContext';
 import {browserTimezone} from '../app/time/browserTimezone';
 import {lazy} from '../util/lazy';
-import {useMemo} from 'react';
-import dayjs from 'dayjs';
 
 const DayPickerWrapper = lazy(() => import('./DayPickerWrapperForLazyImport'));
 
@@ -80,7 +79,7 @@ export function DateRangeDialog({onCancel, onApply, isOpen, hidden}: DialogProps
     <Dialog
       isOpen={isOpen}
       title="Select a date range"
-      onClosed={close}
+      onClosed={onCancel}
       style={{width: 'auto', minWidth: 688}}
     >
       <DialogBody>
