@@ -114,7 +114,7 @@ dg scaffold build-artifacts
 
 **Note:** Before scaffolding build artifacts with ``dg``, you must `create a Dagster project <https://docs.dagster.io/guides/build/projects/creating-a-new-project>`_ with the `create-dagster CLI <https://docs.dagster.io/api/clis/create-dagster>`_ and activate its virtual environment.
 
-If you have a `Dagster+ Hybrid <https://docs.dagster.io/deployment/dagster-plus/hybrid>` deployment, you can use ``dg scaffold build-artifacts`` to scaffold a deployment configuration file (``build.yaml``) and a Dockerfile for your Dagster project:
+If you have a `Dagster+ Hybrid <https://docs.dagster.io/deployment/dagster-plus/hybrid>`_ deployment, you can use ``dg scaffold build-artifacts`` to scaffold a deployment configuration file (``build.yaml``) and a Dockerfile for your Dagster project:
 
 .. code-block:: bash
 
