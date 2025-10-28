@@ -28,7 +28,7 @@ jobs:
     steps:
       - name: Prerun Checks
         id: prerun
-        uses: dagster-io/dagster-cloud-action/actions/utils/prerun@v0.1
+        uses: dagster-io/dagster-cloud-action/actions/utils/prerun@TEMPLATE_DAGSTER_CLOUD_ACTION_VERSION
 
       - name: Checkout
         uses: actions/checkout@v3
@@ -90,7 +90,7 @@ jobs:
       - name: Update PR comment for branch deployments
         id: ci-notify
         if: steps.prerun.outputs.result != 'skip'
-        uses: dagster-io/dagster-cloud-action/actions/utils/dagster-cloud-cli@v0.1
+        uses: dagster-io/dagster-cloud-action/actions/utils/dagster-cloud-cli@TEMPLATE_DAGSTER_CLOUD_ACTION_VERSION
         with:
           command: "ci notify --project-dir=${{ env.DAGSTER_PROJECT_DIR }}"
 
@@ -98,6 +98,6 @@ jobs:
       - name: Generate a summary
         id: ci-summary
         if: steps.prerun.outputs.result != 'skip'
-        uses: dagster-io/dagster-cloud-action/actions/utils/dagster-cloud-cli@v0.1
+        uses: dagster-io/dagster-cloud-action/actions/utils/dagster-cloud-cli@TEMPLATE_DAGSTER_CLOUD_ACTION_VERSION
         with:
           command: "ci status --output-format=markdown >> $GITHUB_STEP_SUMMARY"
