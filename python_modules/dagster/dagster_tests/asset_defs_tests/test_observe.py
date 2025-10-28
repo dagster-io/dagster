@@ -50,6 +50,25 @@ def test_observe_partitions():
         "dagster/data_version": "two"
     }
 
+def test_multi_observe_partitions():
+    @dg.multi_observable_source_asset(
+        specs=[
+            dg.AssetSpec(
+                key=["multi", "foo"],
+                partitions_def=dg.StaticPartitionsDefinition(["apple", "orange", "kiwi"]),
+            )
+        ],
+        can_subset=True
+    )
+    def foo(context: dg.AssetExecutionContext):
+        for asset_key in context.selected_asset_keys:
+            yield dg.ObserveResult(
+                asset_key=asset_key,
+                data_version=dg.DataVersionsByPartition({"apple": "one", "orange": dg.DataVersion("two")}),
+            )
+    observe([foo])
+
+
 
 def test_observe_partitions_non_partitioned_asset():
     @dg.observable_source_asset
