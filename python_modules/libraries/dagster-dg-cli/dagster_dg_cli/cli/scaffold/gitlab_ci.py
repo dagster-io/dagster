@@ -13,6 +13,11 @@ from dagster_shared.plus.config import DagsterPlusCliConfig
 from dagster_dg_cli.cli.plus.constants import DgPlusAgentType
 from dagster_dg_cli.utils.plus.build import get_agent_type, get_dockerfile_path, merge_build_configs
 
+TEMPLATES_DIR = Path(__file__).parent.parent.parent / "templates"
+SERVERLESS_GITLAB_CI_FILE = TEMPLATES_DIR / "serverless-gitlab-ci.yml"
+HYBRID_GITLAB_CI_FILE = TEMPLATES_DIR / "hybrid-gitlab-ci.yml"
+BUILD_LOCATION_FRAGMENT = TEMPLATES_DIR / "build-location-fragment-gitlab.yml"
+
 
 def get_cli_version_or_main() -> str:
     from dagster_dg_cli.version import __version__ as cli_version
@@ -60,14 +65,6 @@ def _get_git_web_url(git_root: Path) -> Optional[str]:
         return remote_url
     except subprocess.CalledProcessError:
         return None
-
-
-# Template file paths
-TEMPLATES_DIR = Path(__file__).parent.parent.parent / "templates"
-SERVERLESS_GITLAB_CI_FILE = TEMPLATES_DIR / "serverless-gitlab-ci.yml"
-HYBRID_GITLAB_CI_FILE = TEMPLATES_DIR / "hybrid-gitlab-ci.yml"
-
-BUILD_LOCATION_FRAGMENT = TEMPLATES_DIR / "build-location-fragment-gitlab.yml"
 
 
 class ContainerRegistryInfo(NamedTuple):
