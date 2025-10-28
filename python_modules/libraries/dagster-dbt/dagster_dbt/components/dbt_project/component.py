@@ -265,9 +265,38 @@ class DbtProjectComponent(StateBackedComponent, dg.Resolvable):
         """
         return get_node(manifest, unique_id)
 
+    @public
     def get_asset_spec(
         self, manifest: Mapping[str, Any], unique_id: str, project: Optional[DbtProject]
     ) -> dg.AssetSpec:
+        """Generates an AssetSpec for a given dbt node.
+
+        This method can be overridden in a subclass to customize how dbt nodes are converted
+        to Dagster asset specs. By default, it delegates to the configured DagsterDbtTranslator.
+
+        Args:
+            manifest: The dbt manifest dictionary containing information about all dbt nodes
+            unique_id: The unique identifier for the dbt node (e.g., "model.my_project.my_model")
+            project: The DbtProject object, if available
+
+        Returns:
+            An AssetSpec that represents the dbt node as a Dagster asset
+
+        Example:
+            Override this method to add custom tags to all dbt models:
+
+            .. code-block:: python
+
+                from dagster_dbt import DbtProjectComponent
+                import dagster as dg
+
+                class CustomDbtProjectComponent(DbtProjectComponent):
+                    def get_asset_spec(self, manifest, unique_id, project):
+                        base_spec = super().get_asset_spec(manifest, unique_id, project)
+                        return base_spec.replace_attributes(
+                            tags={**base_spec.tags, "custom_tag": "my_value"}
+                        )
+        """
         return self._base_translator.get_asset_spec(manifest, unique_id, project)
 
     def get_asset_check_spec(
@@ -376,7 +405,34 @@ class DbtProjectComponent(StateBackedComponent, dg.Resolvable):
             iterator = iterator.fetch_row_counts()
         return iterator
 
+    @public
     def execute(self, context: dg.AssetExecutionContext, dbt: DbtCliResource) -> Iterator:
+        """Executes the dbt command for the selected assets.
+
+        This method can be overridden in a subclass to customize the execution behavior,
+        such as adding custom logging, modifying CLI arguments, or handling events differently.
+
+        Args:
+            context: The asset execution context provided by Dagster
+            dbt: The DbtCliResource used to execute dbt commands
+
+        Yields:
+            Events from the dbt CLI execution (e.g., AssetMaterialization, AssetObservation)
+
+        Example:
+            Override this method to add custom logging before and after execution:
+
+            .. code-block:: python
+
+                from dagster_dbt import DbtProjectComponent
+                import dagster as dg
+
+                class CustomDbtProjectComponent(DbtProjectComponent):
+                    def execute(self, context, dbt):
+                        context.log.info("Starting custom dbt execution")
+                        yield from super().execute(context, dbt)
+                        context.log.info("Completed custom dbt execution")
+        """
         yield from self._get_dbt_event_iterator(context, dbt)
 
     @cached_property

@@ -13,6 +13,7 @@ Component
 *********
 
 .. autoclass:: SlingReplicationCollectionComponent
+    :members:
 
 To use the Sling component, see the `Sling component integration guide <https://docs.dagster.io/integrations/libraries/sling>`_.
 

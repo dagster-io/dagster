@@ -13,6 +13,7 @@ Component
 *********
 
 .. autoclass:: LookerComponent
+    :members:
 
 To use the Looker component, see the `Looker component integration guide <https://docs.dagster.io/integrations/libraries/looker>`_.
 
