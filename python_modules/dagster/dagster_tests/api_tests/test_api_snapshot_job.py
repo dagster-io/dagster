@@ -3,6 +3,7 @@ import sys
 
 import dagster._check as check
 import pytest
+from dagster import file_relative_path
 from dagster._api.snapshot_job import (
     gen_external_job_subset_grpc,
     sync_get_external_job_subset_grpc,
@@ -12,10 +13,14 @@ from dagster._core.errors import DagsterUserCodeProcessError
 from dagster._core.remote_representation.external import RemoteJob
 from dagster._core.remote_representation.external_data import RemoteJobSubsetResult
 from dagster._core.remote_representation.handle import JobHandle
-from dagster._core.test_utils import environ
+from dagster._core.test_utils import environ, instance_for_test
 from dagster._utils.error import serializable_error_info_from_exc_info
 
-from dagster_tests.api_tests.utils import get_bar_repo_code_location, get_bar_workspace
+from dagster_tests.api_tests.utils import (
+    get_bar_repo_code_location,
+    get_bar_workspace,
+    get_workspace,
+)
 
 
 def _test_job_subset_grpc(job_handle, api_client, op_selection=None, include_parent_snapshot=True):
@@ -52,6 +57,24 @@ def test_job_snapshot_api_grpc(instance):
             remote_job_subset_result.repository_python_origin
             == code_location.get_repository("bar_repo").handle.repository_python_origin
         )
+
+
+def test_get_multiple_jobs_with_same_name():
+    with instance_for_test() as instance:
+        with get_workspace(
+            instance,
+            python_file=file_relative_path(__file__, "api_tests_repo.py"),
+            attribute=None,
+            location_name="multiple_repos_code_location",
+        ) as workspace:
+            code_location = workspace.get_code_location("multiple_repos_code_location")
+            repo = code_location.get_repository("bar_repo")
+            other_repo = code_location.get_repository("other_repo")
+
+            assert (
+                repo.get_full_job("bar").job_snapshot.snapshot_id
+                != other_repo.get_full_job("bar").job_snapshot.snapshot_id
+            )
 
 
 @pytest.mark.asyncio
