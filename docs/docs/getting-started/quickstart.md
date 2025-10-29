@@ -269,18 +269,18 @@ Once you have run your pipeline locally, you can optionally deploy it to the clo
 
 <Tabs>
   <TabItem value="oss" label="OSS">
-    To deploy to OSS: 1. Set up an [OSS deployment](/deployment/oss), if you haven't already. 2. Add a `workspace.yaml`
+    To deploy to OSS:
+    
+    1. Set up an [OSS deployment](/deployment/oss), if you haven't already.
+    2. Add a `workspace.yaml`
     file to the root directory of your project. For more information, see the [`workspace.yaml`
-    reference](/deployment/code-locations/workspace-yaml). 3. TK - what else?
+    reference](/deployment/code-locations/workspace-yaml).
+    3. TK - what else?
   </TabItem>
   <TabItem value="hybrid" label="Dagster+ Hybrid">
-    1. Set up a [Hybrid deployment](/deployment/dagster-plus/hybrid), if you haven't already. 2. In the root directory
-    of your project, run [`dg scaffold build-artifacts`](/api/clis/dg-cli/dg-cli-reference#dg-scaffold-build-artifacts)
-    to create a `build.yaml` deployment configuration file and a Dockerfile. 3. To deploy to the cloud, you can perform
-    a one-time deployment with the [`dagster-cloud` CLI](/api/clis/dagster-cloud-cli) or [set up
-    CI/CD](/deployment/dagster-plus/deploying-code/ci-cd/ci-cd-in-hybrid) for continuous deployment. You can also use
-    [branch deployments](/deployment/dagster-plus/deploying-code/branch-deployments) to see how your changes will look
-    in production.
+    1. Set up a [Hybrid deployment](/deployment/dagster-plus/hybrid), if you haven't already.
+    2. In the root directory of your project, run [`dg scaffold build-artifacts`](/api/clis/dg-cli/dg-cli-reference#dg-scaffold-build-artifacts) to create a `build.yaml` deployment configuration file and a Dockerfile.
+    3. To deploy to the cloud, you can perform a one-time deployment with the [`dagster-cloud` CLI](/api/clis/dagster-cloud-cli) or [set up CI/CD](/deployment/dagster-plus/deploying-code/ci-cd/ci-cd-in-hybrid) for continuous deployment. You can also use [branch deployments](/deployment/dagster-plus/deploying-code/branch-deployments) to see how your changes will look in production.
   </TabItem>
 </Tabs>
 
