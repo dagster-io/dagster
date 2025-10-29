@@ -78,7 +78,6 @@ class FreshnessPolicy(ABC):
         return deserialize_value(serialized_policy.value, cls)  # pyright: ignore
 
     @staticmethod
-    @public
     def time_window(
         fail_window: timedelta, warn_window: Optional[timedelta] = None
     ) -> "TimeWindowFreshnessPolicy":
@@ -108,7 +107,6 @@ class FreshnessPolicy(ABC):
         return TimeWindowFreshnessPolicy.from_timedeltas(fail_window, warn_window)
 
     @staticmethod
-    @public
     def cron(
         deadline_cron: str, lower_bound_delta: timedelta, timezone: str = "UTC"
     ) -> "CronFreshnessPolicy":
