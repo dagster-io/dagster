@@ -877,5 +877,8 @@ def set_atlan_integration_settings(
         variable_values={"atlanIntegrationSettings": {"token": token, "domain": domain}},
     )
 
-    if result["data"]["setAtlanIntegrationSettings"]["__typename"] != "SetAtlanIntegrationSettingsSuccess":
+    if (
+        result["data"]["setAtlanIntegrationSettings"]["__typename"]
+        != "SetAtlanIntegrationSettingsSuccess"
+    ):
         raise Exception(f"Unable to set Atlan integration settings: {result}")
