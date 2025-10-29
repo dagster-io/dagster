@@ -1,11 +1,12 @@
 ---
-title: Quickstart (Dagster+ Serverless)
+title: Develop and deploy your first Dagster pipeline
+sidebar_label: Quickstart (Dagster+ Serverless)
 description: Iterate on, test, and deploy your first Dagster+ Serverless pipeline
 ---
 
 import InstallUv from '@site/docs/partials/\_InstallUv.md';
 
-Welcome to Dagster! In this guide, we'll cover developing and testing your Dagster project locally, using branch deployments to test against a production environment, and finally, pushing your changes to production.
+Welcome to Dagster+ Serverless! In this guide, we'll cover developing and testing your Dagster project locally, using branch deployments to safely test against production data, and finally, pushing your changes to production.
 
 :::info Dagster OSS and Dagster+ Hybrid users
 
@@ -109,19 +110,19 @@ If you will be using `uv` as your package manager, follow the steps below to ins
    dg dev
    ```
 
-2. Open your web browser and navigate to [http://localhost:3000](http://localhost:3000), where you should see the Dagster UI.
+2. Open your web browser and navigate to [http://localhost:3000](http://localhost:3000), where you should see the Dagster UI:
 
    ![Dagster UI overview](/images/getting-started/quickstart-serverless/oss-ui-overview.png)
 
-3. In the top navigation, click the **Assets** tab, then click **View lineage**.
+3. In the top navigation, click the **Assets** tab, then click **View lineage**:
 
    ![Dagster UI asset lineage page](/images/getting-started/quickstart-serverless/oss-ui-assets-view-lineage.png)
 
-4. To run the pipeline, click **Materialize all**.
+4. To run the pipeline, click **Materialize all**:
 
    ![Dagster asset lineage page with materialize all button](/images/getting-started/quickstart-serverless/oss-ui-materialize-all.png)
 
-5. To view the run as it executes, click the **Runs** tab, then on the right side of the page, click **View**.
+5. To view the run as it executes, click the **Runs** tab, then on the right side of the page, click **View**:
 
    ![Dagster run view](/images/getting-started/quickstart-serverless/oss-ui-run-view.png)
 
@@ -156,13 +157,13 @@ To test your pipeline, you can:
 
 ## Step 5: Deploy to staging with branch deployments
 
-To see how your changes will look in production without altering production data, you can use [branch deployments](/deployment/dagster-plus/deploying-code/branch-deployments). All you need to do is make your changes in a Git branch and create a pull request, then select your branch from the deployment dropdown in the Dagster Serverless UI:
+To see how your changes will look in production without altering production data, you can use [branch deployments](/deployment/dagster-plus/deploying-code/branch-deployments). To get started, make your changes in a Git branch and create a pull request, then select your branch from the deployment dropdown in the Dagster+ Serverless UI:
 
 <img src="/images/getting-started/quickstart-serverless/branch-deployment-switcher.png" height="400" />
 
 ## Step 6: Deploy to production
 
-Once you are satisfied with your changes, you can merge your branch into `main`, and the changes will be deployed to your production Serverless deployment.
+Once you are satisfied with your changes, you can merge your branch into `main` and the changes will be deployed to your production Serverless deployment.
 
 ## Next steps
 

@@ -8,7 +8,7 @@ const sidebars: SidebarsConfig = {
       items: [
         'intro',
         'getting-started/quickstart',
-        'getting-started/serverless-quickstart',
+        'getting-started/quickstart-serverless',
         'getting-started/installation',
         'getting-started/concepts',
         {

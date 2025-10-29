@@ -9,6 +9,7 @@ Welcome to Dagster! In this guide, we'll cover:
 - Setting up a basic Dagster project using Dagster OSS for local development
 - Creating a single Dagster [asset](/guides/build/assets) that encapsulates the entire Extract, Transform, and Load (ETL) process
 - Using Dagster's UI to monitor and execute your pipeline
+- Deploying your changes to the cloud
 
 :::info Dagster+ Serverless users
 
@@ -205,7 +206,7 @@ You can also load and validate your Dagster definitions with [`dg check defs`](/
 
 <CliInvocationExample path="docs_snippets/docs_snippets/getting-started/quickstart/dg_check_defs.txt" />
 
-## Step 5: Run the pipeline
+## Step 5: Start the webserver and run your pipeline
 
 1. In the terminal, navigate to your project's root directory and run:
 
@@ -215,17 +216,23 @@ You can also load and validate your Dagster definitions with [`dg check defs`](/
 
 2. Open your web browser and navigate to [http://localhost:3000](http://localhost:3000), where you should see the Dagster UI:
 
-   ![Dagster UI](/images/getting-started/quickstart/dagster-ui-start.png)
+   ![Dagster UI overview](/images/getting-started/quickstart-serverless/oss-ui-overview.png)
 
-3. In the top navigation, click **Assets > View lineage**.
+3. In the top navigation, click the **Assets** tab, then click **View lineage**:
 
-4. To run the pipeline, click **Materialize all**.
+   ![Dagster UI asset lineage page](/images/getting-started/quickstart/assets-view-lineage.png)
 
-5. In the popup, click **View**. This will open the **Run details** page, allowing you to view the run as it executes.
+4. To run the pipeline, click **Materialize**:
 
-   ![Run details page](/images/getting-started/quickstart/run-details.png)
+   ![Dagster asset lineage page with materialize button](/images/getting-started/quickstart/materialize-button.png)
 
-   Use the **view buttons** in the top left corner of the page to change how the run is displayed. You can also click on the asset to view logs and metadata.
+5. To view the run as it executes, click the **Runs** tab, then on the right side of the page, click **View**:
+
+   ![Dagster run view](/images/getting-started/quickstart/run-view.png)
+
+   To change how the run is displayed, you can use the **view buttons** in the top left corner of the page:
+
+   <img src="/images/getting-started/quickstart/run-view-options.png" height="100" />
 
 :::tip
 
