@@ -26,7 +26,7 @@ To follow the steps in this guide, you will need to:
 
 :::note
 
-If you will be using `pip`, skip to [step 2.](#step-2-configure-your-project)
+If you will be using `pip`, skip to [step 2](#step-2).
 
 :::
 
@@ -34,7 +34,7 @@ If you will be using `uv` as your package manager, follow the steps below to ins
 
 <InstallUv />
 
-## Step 2: Install project dependencies
+## Step 2: Install project dependencies \{#step-2}
 
 <Tabs groupId="package-manager">
    <TabItem value="uv" label="uv">
