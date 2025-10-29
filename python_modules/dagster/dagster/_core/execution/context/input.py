@@ -486,15 +486,18 @@ class InputContext:
         if self.has_asset_key:
             check.opt_str_param(description, "description")
 
-            observation = AssetObservation(
-                asset_key=self.asset_key,
-                description=description,
-                partition=self.asset_partition_key if self.has_asset_partitions else None,
-                metadata=metadata,
-            )
-            self._observations.append(observation)
-            if self._step_context:
-                self._events.append(DagsterEvent.asset_observation(self._step_context, observation))
+            # Append one observation per asset partition key, or only one without a partition key if there are none.
+            for partition_key in (self.asset_partition_keys or [None]):
+                observation = AssetObservation(
+                    asset_key=self.asset_key,
+                    description=description,
+                    partition=partition_key,
+                    metadata=metadata,
+                )
+
+                self._observations.append(observation)
+                if self._step_context:
+                    self._events.append(DagsterEvent.asset_observation(self._step_context, observation))
 
     def get_observations(
         self,

@@ -129,6 +129,52 @@ def test_io_manager_single_partition_add_input_metadata():
     )
 
 
+def test_io_manager_multi_partition_add_input_metadata():
+    partitions_def = dg.StaticPartitionsDefinition(["a", "b", "c"])
+
+    @dg.asset(partitions_def=partitions_def)
+    def asset_1():
+        return 1
+
+    @dg.asset(ins={"asset_1": dg.AssetIn(key=asset_1.key, partition_mapping=dg.AllPartitionMapping())})
+    def asset_2(asset_1):
+        return asset_1 + 1
+
+    class MyIOManager(dg.IOManager):
+        def handle_output(self, context, obj):
+            pass
+
+        def load_input(self, context):
+            context.add_input_metadata(metadata={"foo": "bar"}, description="hello world")
+            return 1
+
+    resources = {"io_manager": MyIOManager()}
+
+    # Materialize all the partition keys in asset_1.
+    partition_keys = partitions_def.get_partition_keys()
+    for partition_key in partition_keys:
+        dg.materialize([asset_1], resources=resources, partition_key=partition_key)
+
+    # Materialize asset_2 which should consume all partition keys from asset_1.
+    result = dg.materialize([asset_2], resources=resources)
+
+    get_observation = lambda event: event.event_specific_data.asset_observation
+
+    observations = [
+        event for event in result.all_node_events if event.event_type_value == "ASSET_OBSERVATION"
+    ]
+
+    assert len(observations) == len(partition_keys)
+    for idx, observation in enumerate(observations):
+        assert observation.step_key == "asset_2"
+        assert get_observation(observation) == dg.AssetObservation(
+            asset_key="asset_1",
+            metadata={"foo": "bar"},
+            description="hello world",
+            partition=partition_keys[idx],  # a little janky, I know.
+        )
+
+
 def test_build_input_context_add_input_metadata():
     @dg.op
     def my_op():
