@@ -10,6 +10,7 @@ from dagster._core.definitions.asset_key import AssetKey
 from dagster._core.loader import LoadableBy, LoadingContext
 from dagster._record import IHaveNew, record, record_custom
 from dagster._serdes import deserialize_value, whitelist_for_serdes
+from dagster._symbol_annotations.public import public
 from dagster._time import datetime_from_timestamp, get_timezone
 from dagster._utils import check
 from dagster._utils.schedules import get_smallest_cron_interval, is_valid_cron_string
@@ -48,6 +49,7 @@ class FreshnessStateChange:
 INTERNAL_FRESHNESS_POLICY_METADATA_KEY = "dagster/internal_freshness_policy"
 
 
+@public
 class FreshnessPolicy(ABC):
     """Base class for all freshness policies.
 
@@ -76,6 +78,7 @@ class FreshnessPolicy(ABC):
         return deserialize_value(serialized_policy.value, cls)  # pyright: ignore
 
     @staticmethod
+    @public
     def time_window(
         fail_window: timedelta, warn_window: Optional[timedelta] = None
     ) -> "TimeWindowFreshnessPolicy":
@@ -105,6 +108,7 @@ class FreshnessPolicy(ABC):
         return TimeWindowFreshnessPolicy.from_timedeltas(fail_window, warn_window)
 
     @staticmethod
+    @public
     def cron(
         deadline_cron: str, lower_bound_delta: timedelta, timezone: str = "UTC"
     ) -> "CronFreshnessPolicy":
