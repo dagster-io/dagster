@@ -219,7 +219,7 @@ You can also load and validate your Dagster definitions with [`dg check defs`](/
 
 3. In the top navigation, click **Assets > View lineage**.
 
-4. Click **Materialize** to run the pipeline.
+4. To run the pipeline, click **Materialize all**.
 
 5. In the popup, click **View**. This will open the **Run details** page, allowing you to view the run as it executes.
 
