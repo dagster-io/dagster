@@ -1,30 +1,14 @@
-import {
-  Box,
-  Button,
-  Colors,
-  DateRange,
-  Dialog,
-  DialogBody,
-  DialogFooter,
-  Icon,
-  IconName,
-} from '@dagster-io/ui-components';
-import {TZDate} from '@date-fns/tz';
-import {endOfDay} from 'date-fns';
+import {Box, Colors, Icon, IconName} from '@dagster-io/ui-components';
 import dayjs from 'dayjs';
 import isEqual from 'lodash/isEqual';
-import memoize from 'lodash/memoize';
-import {useContext, useMemo, useState} from 'react';
+import {useContext, useMemo} from 'react';
 
 import {FilterObject, FilterTag, FilterTagHighlightedText} from './useFilter';
 import {TimeContext} from '../../app/time/TimeContext';
 import {browserTimezone} from '../../app/time/browserTimezone';
 import {useUpdatingRef} from '../../hooks/useUpdatingRef';
-import {lazy} from '../../util/lazy';
-
-const DayPickerWrapper = lazy(() => import('./DayPickerWrapperForLazyImport'));
-
 import '../../util/dayjsExtensions';
+import {DateRangeDialog} from '../DateRangeDialog';
 
 export type TimeRangeState = [number | null, number | null];
 
@@ -146,9 +130,11 @@ export function useTimeRangeFilter({
       }) => {
         if (value === 'CUSTOM') {
           const closeFn = createPortal(
-            <CustomTimeRangeFilterDialog
-              filter={filterObjRef.current}
-              close={() => {
+            <DateRangeDialog
+              isOpen
+              onCancel={() => closeFn()}
+              onApply={(value) => {
+                filterObjRef.current.setState(value);
                 closeFn();
               }}
             />,
@@ -288,88 +274,5 @@ export function ActiveFilterState({
       }
       onRemove={remove}
     />
-  );
-}
-
-const buildFormatter = memoize(
-  (timeZone: string) =>
-    new Intl.DateTimeFormat('en-US', {
-      month: 'short',
-      day: 'numeric',
-      year: 'numeric',
-      timeZone,
-    }),
-);
-
-interface DialogProps {
-  filter: TimeRangeFilter;
-  close: () => void;
-}
-
-export function CustomTimeRangeFilterDialog({filter, close}: DialogProps) {
-  const {
-    timezone: [_timezone],
-  } = useContext(TimeContext);
-  const targetTimezone = _timezone === 'Automatic' ? browserTimezone() : _timezone;
-
-  const [selected, setSelected] = useState<DateRange>(() => ({from: undefined, to: undefined}));
-
-  const [isOpen, setIsOpen] = useState(true);
-  const formatter = buildFormatter(targetTimezone);
-
-  const leftContent = () => {
-    if (selected.from) {
-      if (selected.to) {
-        return (
-          <div>
-            <span style={{color: Colors.textLight()}}>Selected:</span>{' '}
-            {formatter.format(selected.from)} - {formatter.format(selected.to)}
-          </div>
-        );
-      }
-      return (
-        <div>
-          Selected{' '}
-          <span style={{color: Colors.textLight()}}>{formatter.format(selected.from)}</span>
-        </div>
-      );
-    }
-
-    return null;
-  };
-
-  return (
-    <Dialog isOpen={isOpen} title="Select a date range" onClosed={close} style={{width: 'auto'}}>
-      <DialogBody>
-        <div style={{height: '344px'}}>
-          <DayPickerWrapper
-            timeZone={targetTimezone}
-            mode="range"
-            navLayout="around"
-            selected={selected}
-            onSelect={setSelected}
-            excludeDisabled
-            required
-            numberOfMonths={2}
-          />
-        </div>
-      </DialogBody>
-      <DialogFooter topBorder left={leftContent()}>
-        <Button onClick={() => setIsOpen(false)}>Cancel</Button>
-        <Button
-          intent="primary"
-          disabled={!selected.from || !selected.to}
-          onClick={() => {
-            if (selected.from && selected.to) {
-              const endDateEndOfDay = endOfDay(new TZDate(selected.to, targetTimezone));
-              filter.setState([selected.from.valueOf(), endDateEndOfDay.valueOf()]);
-              setIsOpen(false);
-            }
-          }}
-        >
-          Apply
-        </Button>
-      </DialogFooter>
-    </Dialog>
   );
 }
