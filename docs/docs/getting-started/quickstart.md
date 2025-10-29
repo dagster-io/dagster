@@ -206,7 +206,7 @@ You can also load and validate your Dagster definitions with [`dg check defs`](/
 
 <CliInvocationExample path="docs_snippets/docs_snippets/getting-started/quickstart/dg_check_defs.txt" />
 
-## Step 5: Start the webserver and run your pipeline
+## Step 5: Run your pipeline
 
 1. In the terminal, navigate to your project's root directory and run:
 

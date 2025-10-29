@@ -102,7 +102,7 @@ If you will be using `uv` as your package manager, follow the steps below to ins
    </TabItem>
 </Tabs>
 
-## Step 3: Start the webserver and run your pipeline
+## Step 3: Run your pipeline
 
 1. In the terminal, navigate to your project's root directory and run:
 
