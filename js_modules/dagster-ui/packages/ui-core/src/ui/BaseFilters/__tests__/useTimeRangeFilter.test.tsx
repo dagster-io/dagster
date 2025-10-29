@@ -7,9 +7,9 @@ import {endOfDay, startOfDay, subDays} from 'date-fns';
 import {act, useState} from 'react';
 
 import {TimeContext} from '../../../app/time/TimeContext';
+import {DateRangeDialog} from '../../DateRangeDialog';
 import {
   ActiveFilterState,
-  CustomTimeRangeFilterDialog,
   TimeRangeState,
   calculateTimeRanges,
   useTimeRangeFilter,
@@ -116,12 +116,14 @@ describe('useTimeRangeFilter', () => {
   });
 });
 
-describe('CustomTimeRangeFilterDialog', () => {
+describe('DateRangeDialog', () => {
   it('should render', () => {
     const {result} = renderHook(() => useTimeRangeFilterWrapper({state: [null, null]}));
     const filter = result.current;
 
-    const {getByText} = render(<CustomTimeRangeFilterDialog filter={filter} close={() => {}} />);
+    const {getByText} = render(
+      <DateRangeDialog onApply={filter.setState} onCancel={() => {}} isOpen={true} />,
+    );
 
     expect(getByText('Select a date range')).toBeInTheDocument();
   });
@@ -137,7 +139,7 @@ describe('CustomTimeRangeFilterDialog', () => {
           hourCycle: ['h23', () => {}, () => {}],
         }}
       >
-        <CustomTimeRangeFilterDialog filter={result.current} close={() => {}} />
+        <DateRangeDialog onApply={result.current.setState} onCancel={() => {}} isOpen={true} />
       </TimeContext.Provider>,
     );
 
@@ -168,7 +170,7 @@ describe('CustomTimeRangeFilterDialog', () => {
           hourCycle: ['h23', () => {}, () => {}],
         }}
       >
-        <CustomTimeRangeFilterDialog filter={result.current} close={() => {}} />
+        <DateRangeDialog onApply={result.current.setState} onCancel={() => {}} isOpen={true} />
       </TimeContext.Provider>,
     );
 
@@ -195,7 +197,16 @@ describe('CustomTimeRangeFilterDialog', () => {
     );
     let filter = result.current;
 
-    const {getByText} = render(<CustomTimeRangeFilterDialog filter={filter} close={closeMock} />);
+    const {getByText} = render(
+      <DateRangeDialog
+        onApply={(val) => {
+          filter.setState(val);
+          closeMock();
+        }}
+        onCancel={closeMock}
+        isOpen={true}
+      />,
+    );
 
     // Click cancel button
     await userEvent.click(getByText('Cancel'));
