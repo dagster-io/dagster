@@ -851,9 +851,9 @@ SET_ATLAN_INTEGRATION_SETTINGS_MUTATION = """
     mutation CliSetAtlanIntegrationSettings($atlanIntegrationSettings: AtlanIntegrationSettingsInput!) {
         setAtlanIntegrationSettings(atlanIntegrationSettings: $atlanIntegrationSettings) {
             __typename
-            ... on AtlanIntegrationSettings {
-                token
-                domain
+            ... on SetAtlanIntegrationSettingsSuccess {
+                organization
+                success
             }
             ...on UnauthorizedError {
                 message
@@ -877,5 +877,5 @@ def set_atlan_integration_settings(
         variable_values={"atlanIntegrationSettings": {"token": token, "domain": domain}},
     )
 
-    if result["data"]["setAtlanIntegrationSettings"]["__typename"] != "AtlanIntegrationSettings":
+    if result["data"]["setAtlanIntegrationSettings"]["__typename"] != "SetAtlanIntegrationSettingsSuccess":
         raise Exception(f"Unable to set Atlan integration settings: {result}")
