@@ -12,6 +12,7 @@ OmniComponent
 **************************
 
 .. autoclass:: OmniComponent
+    :members:
 
 The main class for interacting with Omni is the ``OmniComponent``. This class is responsible for connecting to your Omni instance,
 fetching information about your documents, and building Dagster asset definitions from that information.
