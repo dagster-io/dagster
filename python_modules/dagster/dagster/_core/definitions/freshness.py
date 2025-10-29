@@ -136,7 +136,7 @@ class FreshnessPolicy(ABC):
 
             - If the asset is materialized at 9:30 AM, the asset is passing its freshness policy, and will have a freshness state of ``PASS``. The asset will continue to pass the freshness policy until at least the deadline next day (10AM).
             - If the asset is materialized at 9:59 AM, the asset is passing its freshness policy, and will have a freshness state of ``PASS``. The asset will continue to pass the freshness policy until at least the deadline next day (10AM).
-            - If the asset is not materialized by 10:00 AM, the asset is failing its freshness policy, and will have a freshness sate of ``FAIL``. The asset will continue to fail the freshness policy until it is materialized again.
+            - If the asset is not materialized by 10:00 AM, the asset is failing its freshness policy, and will have a freshness state of ``FAIL``. The asset will continue to fail the freshness policy until it is materialized again.
             - If the asset is then materialized at 10:30AM, it will pass the freshness policy again until at least the deadline the next day (10AM).
 
             Keep in mind that the policy will always look at the last completed cron tick.
