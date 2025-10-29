@@ -35,6 +35,7 @@ from dagster._grpc.types import ExecuteRunArgs
 from dagster._serdes import ConfigurableClass
 from dagster._serdes.config_class import ConfigurableClassData
 from dagster._utils.backoff import backoff
+from dagster._utils.tags import get_boolean_tag_value
 from typing_extensions import Self
 
 from dagster_aws.ecs.container_context import (
@@ -80,8 +81,6 @@ TAGS_TO_EXCLUDE_FROM_PROPAGATION = {"dagster/op_selection", "dagster/solid_selec
 
 DEFAULT_REGISTER_TASK_DEFINITION_RETRIES = 5
 DEFAULT_RUN_TASK_RETRIES = 5
-
-ENI_TAGGING_ENABLED = os.getenv("DAGSTER_AWS_ENI_TAGGING_ENABLED", "false").lower() == "true"
 
 
 class EcsRunLauncher(RunLauncher[T_DagsterInstance], ConfigurableClass):
@@ -894,7 +893,9 @@ class EcsRunLauncher(RunLauncher[T_DagsterInstance], ConfigurableClass):
 
         t = tasks[0]
 
-        if ENI_TAGGING_ENABLED and not run.tags.get(f"{HIDDEN_TAG_PREFIX}eni_id"):
+        if get_boolean_tag_value(os.getenv("DAGSTER_AWS_ENI_TAGGING_ENABLED")) and not run.tags.get(
+            f"{HIDDEN_TAG_PREFIX}eni_id"
+        ):
             try:
                 self._add_eni_id_tags(run, t)
             except Exception:
