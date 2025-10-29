@@ -29,3 +29,14 @@ def set_atlan_settings_command(
     """Upload your Atlan settings to enable the Dagster<>Atlan integration in Dagster Cloud."""
     with gql.graphql_client_from_url(url, api_token) as client:
         gql.set_atlan_integration_settings(client, token=atlan_token, domain=atlan_domain)
+
+
+@app.command(name="delete-settings")
+@dagster_cloud_options(allow_empty=True, requires_url=True)
+def delete_atlan_settings_command(
+    api_token: str,
+    url: str,
+):
+    """Delete your Atlan settings to disable the Dagster<>Atlan integration in Dagster Cloud."""
+    with gql.graphql_client_from_url(url, api_token) as client:
+        gql.delete_atlan_integration_settings(client)
