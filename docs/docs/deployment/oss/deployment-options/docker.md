@@ -49,7 +49,7 @@ Additionally, the following files should be in the same directory as the Docker 
 
 Each code location typically has its own Docker image, and that image is also used for runs launched for that code location.
 
-To build a Docker image for a code location, use a Dockerfile like the following, with a name like `Dockerfile_code_location_1`:
+To build a Docker image for a code location, use a Dockerfile like the following, with a name like `Dockerfile_user_code`:
 
 ```dockerfile
 FROM python:3.10-slim
