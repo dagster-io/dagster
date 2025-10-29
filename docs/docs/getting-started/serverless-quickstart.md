@@ -57,7 +57,7 @@ If you will be using `uv` as your package manager, follow the steps below to ins
             </TabItem>
          </Tabs>
 
-      3. Install any required dependencies in the virtual environment:
+      3. Install required dependencies in the virtual environment:
 
          ```shell
          uv sync
@@ -127,7 +127,7 @@ If you will be using `uv` as your package manager, follow the steps below to ins
 
    To change how the run is displayed, you can use the **view buttons** in the top left corner of the page:
 
-   ![Dagster run view options](/images/getting-started/quickstart-serverless/oss-ui-run-view-options.png)
+   <img src="/images/getting-started/quickstart-serverless/oss-ui-run-view-options.png" height="100" />
 
 :::tip
 
@@ -156,7 +156,9 @@ To test your pipeline, you can:
 
 ## Step 5: Deploy to staging with branch deployments
 
-To see how your changes will look in production without altering production data, you can make your changes in a Git branch and create a pull request. The changes will appear in your Serverless deployment. For more information, see the [branch deployments docs](/deployment/dagster-plus/deploying-code/branch-deployments).
+To see how your changes will look in production without altering production data, you can use [branch deployments](/deployment/dagster-plus/deploying-code/branch-deployments). All you need to do is make your changes in a Git branch and create a pull request, then select your branch from the deployment dropdown in the Dagster Serverless UI:
+
+<img src="/images/getting-started/quickstart-serverless/branch-deployment-switcher.png" height="400" />
 
 ## Step 6: Deploy to production
 
