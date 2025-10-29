@@ -273,9 +273,7 @@ Once you have run your pipeline locally, you can optionally deploy it to the clo
 To deploy to OSS:
 
 1. Set up an [OSS deployment](/deployment/oss), if you haven't already.
-2. Add a `workspace.yaml`
-file to the root directory of your project. For more information, see the [`workspace.yaml`
-reference](/deployment/code-locations/workspace-yaml).
+2. Add a [`workspace.yaml` file](/deployment/code-locations/workspace-yaml) to the root directory of your project.
 3. TK - what else?
 
 </TabItem>
