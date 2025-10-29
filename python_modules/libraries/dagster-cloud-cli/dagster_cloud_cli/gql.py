@@ -871,7 +871,10 @@ DELETE_ATLAN_INTEGRATION_SETTINGS_MUTATION = """
     mutation CliDeleteAtlanIntegrationSettings() {
         deleteAtlanIntegrationSettings() {
             __typename
-            ...on DeleteAtlanIntegrationSuccess
+            ...on DeleteAtlanIntegrationSuccess {
+                organization
+                success
+            }
             ...on UnauthorizedError {
                 message
             }
