@@ -276,7 +276,7 @@ Once you have run your pipeline locally, you can optionally deploy it to the clo
    <TabItem value="hybrid" label="Dagster+ Hybrid">
    1. Set up a [Hybrid deployment](/deployment/dagster-plus/hybrid), if you haven't already.
    2. In the root directory of your project, run [`dg scaffold build-artifacts`](/api/clis/dg-cli/dg-cli-reference#dg-scaffold-build-artifacts) to create a `build.yaml` deployment configuration file and a Dockerfile.
-   3. To deploy to the cloud, you can perform a one-time deployment with the [`dagster-cloud` CLI](/api/clis/dagster-cloud-cli) or [set up CI/CD](/deployment/dagster-plus/deploying-code/ci-cd/ci-cd-in-hybrid) for continuous deployment.
+   3. To deploy to the cloud, you can perform a one-time deployment with the [`dagster-cloud` CLI](/api/clis/dagster-cloud-cli) or [set up CI/CD](/deployment/dagster-plus/deploying-code/ci-cd/ci-cd-in-hybrid) for continuous deployment. You can also use [branch deployments](/deployment/dagster-plus/deploying-code/branch-deployments) to see how your changes will look in production.
    </TabItem>
 </Tabs>
 
@@ -285,5 +285,6 @@ Once you have run your pipeline locally, you can optionally deploy it to the clo
 Congratulations! You've just built and run your first pipeline with Dagster. Next, you can:
 
 - Follow the [Tutorial](/dagster-basics-tutorial) to learn how to build a more complex ETL pipeline
-- [Create your own Dagster project](/guides/build/projects/creating-a-new-project) and [add assets](/guides/build/assets/defining-assets) to it
 - Check out our [Python primer series](https://dagster.io/blog/python-packages-primer-1) for an in-depth tour of Python modules, packages and imports
+- [Create your own Dagster project](/guides/build/projects/creating-a-new-project), [add assets](/guides/build/assets/defining-assets) and [integrations](/integrations/libraries), and [automate](/guides/automate) your pipeline
+- Test your pipelines with [asset checks](/guides/test/asset-checks) and [debug them in real time with pdb](/guides/log-debug/debugging/debugging-pdb)
