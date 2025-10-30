@@ -12,71 +12,124 @@ import TabItem from '@theme/TabItem';
 
 This guide explains how to refresh state for both Local Filesystem and Versioned State Storage strategies while deploying your Dagster project.
 
-## Before you begin
+:::tip Dagster+ users
+If you're using Dagster+, the `dg scaffold github-actions` command will generate a GitHub Actions workflow that automatically refreshes state for all `StateBackedComponents` in your project.
+:::
 
-Ensure your project is installed in the current environment (e.g. GitHub Actions, Docker, etc.) where you'll run state refresh commands.
+## Understanding state storage
 
-<Tabs groupId="package-manager">
-<TabItem value="uv" label="uv">
+Before configuring state refresh in your CI/CD pipeline, it's important to understand where component state is stored:
 
-```bash
-uv pip install -e .
+### Versioned State Storage
+
+State is written to your Dagster instance:
+- **Dagster+**: State is written to Dagster+ managed state storage
+- **OSS**: State is written to a configured backend (S3, GCS, etc.) that you set up
+
+### Local Filesystem
+
+State is written to a `.local_defs_state` directory within your Python project, then copied into your Docker image or PEX build as part of your deployment artifact.
+
+### Dagster+ vs OSS
+
+In **Dagster+**, connecting to the instance and copying project files into your deployment artifact is handled automatically by the deployment process.
+
+In **OSS**, you need to ensure these steps are followed accurately in your deployment configuration.
+
+## OSS deployments
+
+For OSS deployments, you'll run state refresh commands in your CI/CD pipeline before building your deployment artifacts.
+
+### Refreshing state in CI/CD
+
+Run state refresh commands in your CI/CD pipeline (GitHub Actions, GitLab CI, etc.) before building your deployment artifacts.
+
+#### Basic steps
+
+1. **Install uv**: `python -m pip install uv`
+2. **Navigate to your project**: `cd path/to/your/project`
+3. **Run refresh command**: `uv run dg utils refresh-defs-state`
+
+#### Example: GitHub Actions workflow
+
+```yaml
+- name: Install uv
+  run: python -m pip install uv
+  
+- name: Refresh component state
+  run: |
+    cd path/to/your/project
+    uv run dg utils refresh-defs-state
+  shell: bash
+  
+- name: Build Docker image
+  run: docker build -t my-dagster-image .
 ```
 
-</TabItem>
-<TabItem value="pip" label="pip">
+### Making the instance available (Versioned State Storage)
 
-```bash
-pip install -e .
+If you're using Versioned State Storage, your refresh command needs access to your Dagster instance configuration.
+
+#### Requirements
+
+- Set the `DAGSTER_HOME` environment variable to point to a valid `dagster.yaml` file
+- The `dagster.yaml` must be configured with your `defs_state_storage` backend
+- Your environment must have credentials to access the storage backend (S3, GCS, etc.)
+
+For more information on configuring state storage, see [Configuring versioned state storage](/guides/build/components/state-backed-components/configuring-versioned-state-storage).
+
+#### Example: GitHub Actions with DAGSTER_HOME
+
+```yaml
+- name: Set up Dagster instance config
+  run: |
+    mkdir -p $HOME/dagster_home
+    echo "$DAGSTER_YAML_CONTENT" > $HOME/dagster_home/dagster.yaml
+  env:
+    DAGSTER_YAML_CONTENT: ${{ secrets.DAGSTER_YAML }}
+    
+- name: Refresh defs state
+  run: |
+    cd path/to/your/project
+    uv run dg utils refresh-defs-state
+  env:
+    DAGSTER_HOME: $HOME/dagster_home
+    AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+    AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+  shell: bash
 ```
 
-</TabItem>
-</Tabs>
+#### Kubernetes deployments
 
-## Refreshing state for Local Filesystem components
+For Kubernetes deployments using Helm, you'll need to mount your instance ConfigMap into your pods to make the `dagster.yaml` configuration available using the `includeInstance` flag.
 
-If your components use the `LOCAL_FILESYSTEM` state management type, you typically refresh state during your CI/CD pipeline as part of building your Docker image.
+For more information, see [Customizing your Kubernetes deployment](/deployment/oss/deployment-options/kubernetes/customizing-your-deployment).
 
-### Basic refresh command
+### Copying files into your Docker image (Local Filesystem)
 
-Run this command to refresh state for all Local Filesystem components:
+When using Local Filesystem state storage, the `.local_defs_state` directory must be included in your Docker image.
 
-```bash
-dg utils refresh-defs-state --management-type LOCAL_FILESYSTEM
-```
+#### How it works
 
-This command:
-1. Discovers and loads all state-backed components in your project
-2. Filters to only those using `LOCAL_FILESYSTEM` management type
-3. Fetches fresh state from each external system (Tableau, Fivetran, etc.)
-4. Writes the state to the `.local_defs_state` directory in your project
-5. Reports success or failure for each component
+1. After running the refresh command in CI/CD, the `.local_defs_state` directory exists in your project
+2. When you copy your project files into the Docker image, this directory is automatically included
+3. Your deployed code will have access to the refreshed state
 
-### Example: Dockerfile with state refresh
-
-Here's a Dockerfile that refreshes state during the image build process:
+#### Example: Dockerfile
 
 ```dockerfile
 FROM python:3.11-slim
 
 WORKDIR /app
 
-# Copy project files
+# Copy project files (includes .local_defs_state directory)
 COPY . /app/
 
 # Install dependencies
 RUN pip install -e .
 
-# Refresh component state during build
-RUN dg utils refresh-defs-state --management-type LOCAL_FILESYSTEM
+# Your application will now have access to refreshed state
 ```
-
-This approach:
-1. Installs your project and its dependencies
-2. Runs `dg utils refresh-defs-state` to fetch fresh state from external APIs
-3. Stores the state in the `.local_defs_state` directory within the image
-
-This causes the state to become part of your deployment artifact.
 
 :::info .local_defs_state and version control
 
@@ -84,73 +137,48 @@ The `.local_defs_state` directory is automatically excluded from version control
 
 :::
 
+## Dagster+ deployments
 
-## Refreshing state for Versioned State Storage components
+For Dagster+ deployments, most of the configuration is handled automatically by the builtin `dg plus deploy` commands.
 
-If your components use the `VERSIONED_STATE_STORAGE` state management type, the refresh workflow differs between OSS and Dagster+ deployments.
+### Scaffolded GitHub Actions
 
-### Dagster+ deployments
+If you use `dg scaffold github-actions` to generate your deployment workflow, state refresh is included by default. You don't need to configure anything additional.
 
-For Dagster+ deployments, use the specialized `dg plus deploy` command during your GitHub or GitLab build:
+### Manual configuration
 
-```bash
-dg plus deploy refresh-defs-state
-```
+If you're manually configuring your deployment workflow, add a state refresh step after the `ci-init` step.
 
-This should be executed *after* the `init` step.
+#### Basic steps
 
-:::note
+1. **Install uv**: `python -m pip install uv`
+2. **Navigate to your project**: `cd path/to/your/project`
+3. **Run refresh command**: `uv run dg plus deploy refresh-defs-state`
 
-This command should *not* be executed inside a Dockerfile, as it relies on having access to the configuration available within the deploy context.
+This command automatically handles both storage types:
+- **Local Filesystem**: State is written to `.local_defs_state`, which is later copied into your deployment artifact
+- **Versioned State Storage**: The deployment environment has credentials to write state to Dagster+ managed state storage
 
-:::
-
-This command automatically:
-1. Uses your Dagster+ credentials to access the cloud instance
-2. Refreshes state for all `VERSIONED_STATE_STORAGE` components
-3. Uploads state to Dagster+'s managed state storage
-4. Updates version metadata in the Dagster+ instance
-
-For more information on deployment commands, see [CI/CD guide](/deployment/dagster-plus/deploying-code/ci-cd/).
-
-**Example: Dagster+ Github Action step**
-
-Here's an example of a Github Action step that refreshes state for Versioned State Storage components:
+#### Example: GitHub Actions workflow
 
 ```yaml
-    - name: Refresh defs state
-      if: steps.prerun.outputs.result != 'skip'
-      run: |
-        python -m pip install uv
-        cd path/to/project
-        uv run dg plus deploy refresh-defs-state
-      shell: bash
+  - name: Initialize build session
+    id: ci-init
+    uses: dagster-io/dagster-cloud-action/actions/utils/dg-deploy-init@vX.Y.Z
+  # ... ci-init configuration ...
+  
+- name: Refresh defs state
+  run: |
+    python -m pip install uv
+    cd path/to/your/project
+    uv run dg plus deploy refresh-defs-state
+  shell: bash
+
+# ... other deployment steps ...
+  
 ```
 
-It first installs `uv`, then executes the `dg plus deploy refresh-defs-state` command (`uv run` will automatically install your project into a new virtual environment). Once this completes, new state for all of your `VERSIONED_STATE_STORAGE` components will be uploaded to Dagster+'s managed state storage, and your build metadata will be updated with pointers to the new state.
-
-### OSS deployments
-
-For OSS deployments, you first need to configure a state storage backend in your Dagster instance (see [Configuring versioned state storage](/guides/build/components/state-backed-components/configuring-versioned-state-storage) for more information).
-
-#### Refreshing state
-
-For OSS deployments with Versioned State Storage configured, run:
-
-```bash
-dg utils refresh-defs-state --management-type VERSIONED_STATE_STORAGE
-```
-
-This command:
-1. Discovers all state-backed components using `VERSIONED_STATE_STORAGE`
-2. Fetches fresh metadata from each external system
-3. Generates a new UUID version identifier for each state
-4. Uploads state to your configured state storage backend (S3, GCS, etc.)
-5. Updates the instance database with the new version identifiers
-
-The specifics of how and where you run this command will depend on your deployment strategy, but you must have access to your production `DagsterInstance` in order for state to be written to the correct spot.
-
-In a k8s+helm deployment, this would mean mouting your instance ConfigMap into your pod. For more information, see [Customizing your Kubernetes deployment](/deployment/oss/deployment-options/kubernetes/customizing-your-deployment).
+For more information on Dagster+ deployment commands, see the [CI/CD deployment guide](/deployment/dagster-plus/deploying-code/ci-cd/).
 
 ## Checking state status
 
