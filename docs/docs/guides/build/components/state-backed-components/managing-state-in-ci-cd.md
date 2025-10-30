@@ -111,7 +111,7 @@ This command automatically:
 3. Uploads state to Dagster+'s managed state storage
 4. Updates version metadata in the Dagster+ instance
 
-For more information on deployment commands, see [CI/CD guide](/deployment/dagster-plus/deploying-code/ci-cd/).
+For more information on deployment commands, see [CI/CD guide](/deployment/dagster-plus/deploying-code/ci-cd).
 
 **Example: Dagster+ Github Action step**
 
