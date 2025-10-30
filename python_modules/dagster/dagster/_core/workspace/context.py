@@ -8,7 +8,7 @@ from collections.abc import Mapping, Sequence
 from contextlib import ExitStack
 from functools import cached_property
 from itertools import count
-from typing import TYPE_CHECKING, AbstractSet, Any, Optional, TypeVar, Union  # noqa: UP035
+from typing import TYPE_CHECKING, AbstractSet, Any, Generic, Optional, TypeVar, Union  # noqa: UP035
 
 from typing_extensions import Self
 
@@ -135,8 +135,10 @@ class BaseWorkspaceRequestContext(LoadingContext):
     def get_current_workspace(self) -> CurrentWorkspace: ...
 
     # abstracted since they may be calculated without the full CurrentWorkspace
+    @abstractmethod
     def get_location_entry(self, name: str) -> Optional[CodeLocationEntry]: ...
 
+    @abstractmethod
     def get_code_location_statuses(self) -> Sequence[CodeLocationStatusEntry]: ...
 
     # implemented here since they require the full CurrentWorkspace
@@ -833,14 +835,17 @@ class WorkspaceRequestContext(BaseWorkspaceRequestContext):
         return int(os.getenv("DAGSTER_UI_EVENT_LOAD_CHUNK_SIZE", "1000"))
 
 
-class IWorkspaceProcessContext(ABC):
+TRequestContext = TypeVar("TRequestContext", bound="BaseWorkspaceRequestContext")
+
+
+class IWorkspaceProcessContext(ABC, Generic[TRequestContext]):
     """Class that stores process-scoped information about a webserver session.
     In most cases, you will want to create a `BaseWorkspaceRequestContext` to create a request-scoped
     object.
     """
 
     @abstractmethod
-    def create_request_context(self, source: Optional[Any] = None) -> BaseWorkspaceRequestContext:
+    def create_request_context(self, source: Optional[Any] = None) -> TRequestContext:
         """Create a usable fixed context for the scope of a request.
 
         Args:
@@ -883,7 +888,7 @@ class IWorkspaceProcessContext(ABC):
         pass
 
 
-class WorkspaceProcessContext(IWorkspaceProcessContext):
+class WorkspaceProcessContext(IWorkspaceProcessContext[WorkspaceRequestContext]):
     """Process-scoped object that tracks the state of a workspace.
 
     1. Maintains an update-to-date dictionary of repository locations
