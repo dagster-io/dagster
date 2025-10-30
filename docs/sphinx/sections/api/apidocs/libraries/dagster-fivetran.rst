@@ -10,6 +10,7 @@ Component
 *********
 
 .. autoclass:: FivetranAccountComponent
+    :members:
 
 To use the Fivetran component, see the `Fivetran component integration guide <https://docs.dagster.io/integrations/libraries/fivetran>`_.
 

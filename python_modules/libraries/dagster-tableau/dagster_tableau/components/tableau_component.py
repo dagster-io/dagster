@@ -208,7 +208,40 @@ class TableauComponent(StateBackedComponent, Resolvable):
     def _base_translator(self) -> DagsterTableauTranslator:
         return DagsterTableauTranslator()
 
+    @public
     def get_asset_spec(self, data: TableauTranslatorData) -> AssetSpec:
+        """Generates an AssetSpec for a given Tableau content item.
+
+        This method can be overridden in a subclass to customize how Tableau content
+        (workbooks, dashboards, sheets, data sources) are converted to Dagster asset specs.
+        By default, it delegates to the configured DagsterTableauTranslator.
+
+        Args:
+            data: The TableauTranslatorData containing information about the Tableau content
+                item and workspace
+
+        Returns:
+            An AssetSpec that represents the Tableau content as a Dagster asset
+
+        Example:
+            Override this method to add custom metadata based on content properties:
+
+            .. code-block:: python
+
+                from dagster_tableau import TableauComponent
+                from dagster import AssetSpec
+
+                class CustomTableauComponent(TableauComponent):
+                    def get_asset_spec(self, data):
+                        base_spec = super().get_asset_spec(data)
+                        return base_spec.replace_attributes(
+                            metadata={
+                                **base_spec.metadata,
+                                "tableau_type": data.content_data.content_type,
+                                "project": data.content_data.properties.get("project", {}).get("name")
+                            }
+                        )
+        """
         return self._base_translator.get_asset_spec(data)
 
     def _load_asset_specs(self, state: TableauWorkspaceData) -> list[AssetSpec]:
