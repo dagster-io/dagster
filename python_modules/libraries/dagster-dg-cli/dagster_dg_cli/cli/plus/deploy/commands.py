@@ -426,7 +426,7 @@ def refresh_defs_state_impl(
     "--management-type",
     multiple=True,
     type=click.Choice(["LOCAL_FILESYSTEM", "VERSIONED_STATE_STORAGE"]),
-    help="Only refresh components with the specified management type. Can be specified multiple times to include multiple types. By default, refreshes only VERSIONED_STATE_STORAGE components.",
+    help="Only refresh components with the specified management type. Can be specified multiple times to include multiple types. By default, refreshes VERSIONED_STATE_STORAGE and LOCAL_FILESYSTEM components.",
 )
 @cli_telemetry_wrapper
 def refresh_defs_state_command(
@@ -448,6 +448,7 @@ def refresh_defs_state_command(
         if management_type
         else {
             DefsStateManagementType.VERSIONED_STATE_STORAGE,
+            DefsStateManagementType.LOCAL_FILESYSTEM,
         }
     )
     refresh_defs_state_impl(
