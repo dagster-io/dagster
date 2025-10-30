@@ -2,8 +2,8 @@ import {Colors, Icon, MenuDivider, MenuItem} from '@dagster-io/ui-components';
 import {useContext, useState} from 'react';
 import {AssetWipeDialog} from 'shared/assets/AssetWipeDialog.oss';
 
-import {useAssetPermissions} from './useAssetPermissions';
 import {CloudOSSContext} from '../app/CloudOSSContext';
+import {usePermissionsForLocation} from '../app/Permissions';
 import {AssetKeyInput} from '../graphql/types';
 
 export function useWipeDialog(
@@ -11,15 +11,13 @@ export function useWipeDialog(
   refresh?: () => void,
 ) {
   const [showing, setShowing] = useState(false);
+  const {
+    permissions: {canWipeAssets},
+  } = usePermissionsForLocation(opts && opts.repository ? opts.repository.location.name : null);
 
   const {
     featureContext: {canSeeWipeMaterializationAction},
   } = useContext(CloudOSSContext);
-
-  const {hasWipePermission} = useAssetPermissions(
-    opts?.assetKey || {path: []},
-    opts?.repository?.location.name || '',
-  );
 
   return {
     element: (
@@ -38,7 +36,7 @@ export function useWipeDialog(
               key="wipe"
               text="Wipe materializations"
               icon={<Icon name="delete" color={Colors.accentRed()} />}
-              disabled={!hasWipePermission}
+              disabled={!canWipeAssets}
               intent="danger"
               onClick={() => setShowing(true)}
             />,
