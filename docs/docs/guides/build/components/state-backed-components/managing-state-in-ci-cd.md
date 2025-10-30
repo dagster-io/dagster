@@ -178,7 +178,7 @@ This command automatically handles both storage types:
   
 ```
 
-For more information on Dagster+ deployment commands, see the [CI/CD deployment guide](/deployment/dagster-plus/deploying-code/ci-cd/).
+For more information on Dagster+ deployment commands, see the [CI/CD deployment guide](/deployment/dagster-plus/deploying-code/ci-cd).
 
 ## Checking state status
 
