@@ -263,25 +263,33 @@ id,name,age,city,age_group
 4,Diana,31,Los Angeles,Middle
 ```
 
-## Step 7. Deploy to the cloud (Optional)
+## Step 7. Deploy to production
 
-Once you have run your pipeline locally, you can optionally deploy it to the cloud.
+Once you have run your pipeline locally, you can optionally deploy it to production.
 
 <Tabs>
 <TabItem value="oss" label="OSS">
 
-To deploy to OSS:
+To deploy to OSS production:
 
-1. Set up an [OSS deployment](/deployment/oss), if you haven't already.
+1. Set up a production [OSS deployment](/deployment/oss), if you haven't already.
 2. Add a [`workspace.yaml` file](/deployment/code-locations/workspace-yaml) to the root directory of your project.
-3. TK - what else?
+3. Add your Dagster project code to the Docker container that you will use in your deployment.
 
 </TabItem>
 <TabItem value="hybrid" label="Dagster+ Hybrid">
 
 1. Set up a [Hybrid deployment](/deployment/dagster-plus/hybrid), if you haven't already.
 2. In the root directory of your project, run [`dg scaffold build-artifacts`](/api/clis/dg-cli/dg-cli-reference#dg-scaffold-build-artifacts) to create a `build.yaml` deployment configuration file and a Dockerfile.
-3. To deploy to the cloud, you can perform a one-time deployment with the [`dagster-cloud` CLI](/api/clis/dagster-cloud-cli) or [set up CI/CD](/deployment/dagster-plus/deploying-code/ci-cd/ci-cd-in-hybrid) for continuous deployment. You can also use [branch deployments](/deployment/dagster-plus/deploying-code/branch-deployments) to see how your changes will look in production.
+3. To deploy to the cloud, you can either:
+  - Perform a one-time deployment with the [`dagster-cloud` CLI](/api/clis/dagster-cloud-cli)
+  - [Set up CI/CD](/deployment/dagster-plus/deploying-code/ci-cd/ci-cd-in-hybrid) for continuous deployment.
+
+:::tip
+
+With Dagster+ Hybrid, you can also use [branch deployments](/deployment/dagster-plus/deploying-code/branch-deployments) to safely test your changes against production data.
+
+:::
 
 </TabItem>
 </Tabs>
