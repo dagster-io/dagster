@@ -4,6 +4,8 @@ description: Learn how to set up a Dagster environment, create a project, define
 sidebar_label: Quickstart (Dagster+ Hybrid and OSS)
 ---
 
+import PipInstallEditable from '@site/docs/partials/_PipInstallEditable.md';
+
 Welcome to Dagster! In this guide, we'll cover:
 
 - Setting up a basic Dagster project using Dagster OSS for local development
@@ -110,9 +112,7 @@ For detailed instructions, see the [Installation guide](/getting-started/install
 
       5. Install your project as an editable package:
 
-         ```shell
-         pip install --editable .
-         ```
+         <PipInstallEditable />
 
    </TabItem>
 </Tabs>
