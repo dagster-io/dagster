@@ -244,6 +244,7 @@ from dagster._core.definitions.events import (
     DynamicOutput as DynamicOutput,
     ExpectationResult as ExpectationResult,
     Failure as Failure,
+    HookExecutionResult as HookExecutionResult,
     Output as Output,
     RetryRequested as RetryRequested,
     TypeCheck as TypeCheck,
@@ -257,9 +258,7 @@ from dagster._core.definitions.executor_definition import (
     multiple_process_executor_requirements as multiple_process_executor_requirements,
     multiprocess_executor as multiprocess_executor,
 )
-from dagster._core.definitions.freshness import (
-    InternalFreshnessPolicy as FreshnessPolicy,  # noqa: F401
-)
+from dagster._core.definitions.freshness import FreshnessPolicy as FreshnessPolicy
 from dagster._core.definitions.freshness_policy import (
     LegacyFreshnessPolicy as LegacyFreshnessPolicy,
 )

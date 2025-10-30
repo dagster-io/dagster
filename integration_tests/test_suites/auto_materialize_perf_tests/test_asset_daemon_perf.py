@@ -93,6 +93,7 @@ def test_auto_materialize_perf(scenario: PerfScenario):
             asset_graph=asset_graph,
             emit_backfills=False,
             cursor=AssetDaemonCursor.empty(),
+            evaluation_id=1,
         ).evaluate()
 
         end = time.time()

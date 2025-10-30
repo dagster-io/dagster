@@ -1,7 +1,7 @@
 import graphene
 from dagster._core.definitions.freshness import (
     CronFreshnessPolicy,
-    InternalFreshnessPolicy,
+    FreshnessPolicy,
     TimeWindowFreshnessPolicy,
 )
 
@@ -42,7 +42,7 @@ class GrapheneInternalFreshnessPolicy(graphene.Union):
         types = (GrapheneTimeWindowFreshnessPolicy, GrapheneCronFreshnessPolicy)
 
     @classmethod
-    def from_policy(cls, policy: InternalFreshnessPolicy):
+    def from_policy(cls, policy: FreshnessPolicy):
         if isinstance(policy, TimeWindowFreshnessPolicy):
             return GrapheneTimeWindowFreshnessPolicy(
                 failWindowSeconds=policy.fail_window.to_timedelta().total_seconds(),

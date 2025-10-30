@@ -211,7 +211,13 @@ export const AssetCatalogTableV2 = React.memo(() => {
             selection={assetSelection}
             tabs={tabs}
             visibleSections={
-              new Set(['rate-cards', 'performance-metrics', 'activity-charts', 'top-assets'])
+              new Set([
+                'rate-cards',
+                'performance-metrics',
+                'cost-metrics',
+                'activity-charts',
+                'top-assets',
+              ])
             }
           />
         );

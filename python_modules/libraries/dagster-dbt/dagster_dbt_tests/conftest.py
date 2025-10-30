@@ -131,7 +131,9 @@ def test_dbt_python_interleaving_manifest_fixture() -> dict[str, Any]:
 
 @pytest.fixture(name="test_dbt_semantic_models_manifest", scope="session")
 def test_dbt_semantic_models_manifest_fixture() -> dict[str, Any]:
-    return _create_dbt_invocation(test_dbt_semantic_models_path).get_artifact("manifest.json")
+    return _create_dbt_invocation(test_dbt_semantic_models_path, build_project=True).get_artifact(
+        "manifest.json"
+    )
 
 
 @pytest.fixture(name="test_dbt_source_freshness_manifest", scope="session")

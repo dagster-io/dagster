@@ -1,4 +1,6 @@
 import hashlib
+import re
+import traceback
 
 import dagster as dg
 import pytest
@@ -12,6 +14,7 @@ from dagster import (
 )
 from dagster._core.storage.tags import PARTITION_NAME_TAG
 from dagster._core.test_utils import create_test_asset_job
+from dagster_shared.error import SerializableErrorInfo
 
 
 def _all_asset_keys(result):
@@ -200,8 +203,17 @@ def _get_assets_defs(use_multi: bool = False, allow_subset: bool = False):
 def test_resolve_subset_job_errors(job_selection, use_multi, expected_error):
     if expected_error:
         expected_class, expected_message = expected_error
-        with pytest.raises(expected_class, match=expected_message):
+        with pytest.raises(dg.DagsterInvalidDefinitionError) as exc_info:
             create_test_asset_job(_get_assets_defs(use_multi), selection=job_selection)
+
+        tb_exc = traceback.TracebackException.from_exception(exc_info.value)
+        error_info = SerializableErrorInfo.from_traceback(tb_exc)
+
+        # assert exception context has the expected message and class
+        assert error_info.cause.cls_name == expected_class.__name__
+        if expected_message:
+            assert re.compile(expected_message).search(error_info.cause.message) is not None
+
     else:
         assert create_test_asset_job(_get_assets_defs(use_multi), selection=job_selection)
 
@@ -637,13 +649,17 @@ def test_hooks_with_resources():
 
     with pytest.raises(
         dg.DagsterInvalidDefinitionError,
-        match="resource with key 'c' required by hook 'bar'",
-    ):
+    ) as exc_info:
         defs = dg.Definitions(
             assets=[a, b],
             jobs=[dg.define_asset_job("with_hooks", hooks={foo, bar})],
             resources={"a": 1, "b": 2},
         ).resolve_job_def("with_hooks")
+
+    tb_exc = traceback.TracebackException.from_exception(exc_info.value)
+    error_info = SerializableErrorInfo.from_traceback(tb_exc)
+
+    assert "resource with key 'c' required by hook 'bar'" in str(error_info)
 
 
 def test_partitioned_schedule():
@@ -683,7 +699,7 @@ def test_intersecting_partitions_on_repo_invalid():
     def d(c):
         return c
 
-    with pytest.raises(dg.DagsterInvalidDefinitionError, match="must have the same partitions def"):
+    with pytest.raises(dg.DagsterInvalidDefinitionError) as exc_info:
 
         @dg.repository
         def my_repo():
@@ -695,6 +711,11 @@ def test_intersecting_partitions_on_repo_invalid():
             ]
 
         my_repo.get_all_jobs()
+
+    tb_exc = traceback.TracebackException.from_exception(exc_info.value)
+    error_info = SerializableErrorInfo.from_traceback(tb_exc)
+
+    assert "must have the same partitions def" in str(error_info)
 
 
 def test_intersecting_partitions_on_repo_valid():
@@ -839,13 +860,18 @@ def test_backfill_policy():
         ).backfill_policy == BackfillPolicy.multi_run(1)
 
     # can't do PartitionedConfig for single-run backfills
-    with pytest.raises(dg.DagsterInvalidDefinitionError, match="PartitionedConfig"):
+    with pytest.raises(dg.DagsterInvalidDefinitionError) as exc_info:
 
         @dg.static_partitioned_config(partition_keys=partitions_def.get_partition_keys())
         def my_partitioned_config(partition_key: str):
             return {"ops": {"foo": {"config": {"partition": partition_key}}}}
 
         create_test_asset_job([foo], config=my_partitioned_config)
+
+    tb_exc = traceback.TracebackException.from_exception(exc_info.value)
+    error_info = SerializableErrorInfo.from_traceback(tb_exc)
+
+    assert "PartitionedConfig" in str(error_info)
 
 
 def test_metadata():

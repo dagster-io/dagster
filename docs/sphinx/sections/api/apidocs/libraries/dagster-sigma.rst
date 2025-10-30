@@ -16,6 +16,7 @@ Component
 *********
 
 .. autoclass:: SigmaComponent
+    :members:
 
 To use the Sigma component, see the `Sigma component integration guide <https://docs.dagster.io/integrations/libraries/sigma>`_.
 

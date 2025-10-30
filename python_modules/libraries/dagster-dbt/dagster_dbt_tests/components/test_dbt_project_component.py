@@ -1,3 +1,4 @@
+import os
 import shutil
 import sys
 import tempfile
@@ -17,21 +18,22 @@ from dagster._core.definitions.metadata.source_code import (
     LocalFileCodeReference,
 )
 from dagster._core.instance_for_test import instance_for_test
-from dagster._core.test_utils import ensure_dagster_tests_import
+from dagster._core.test_utils import ensure_dagster_tests_import, new_cwd
 from dagster._utils.env import environ
 from dagster._utils.test.definitions import scoped_definitions_load_context
 from dagster.components.core.component_tree import ComponentTree
 from dagster.components.core.load_defs import build_component_defs
 from dagster.components.resolved.context import ResolutionContext
 from dagster.components.resolved.core_models import AssetAttributesModel, OpSpec
-from dagster.components.resolved.errors import ResolutionException
 from dagster.components.testing.test_cases import TestOpCustomization, TestTranslation
+from dagster.components.testing.utils import create_defs_folder_sandbox
 from dagster_dbt import DbtProject, DbtProjectComponent
 from dagster_dbt.cli.app import project_app_typer_click_object
 from dagster_dbt.components.dbt_project.component import (
     _set_resolution_context,
     get_projects_from_dbt_component,
 )
+from dagster_dg_cli.cli import cli as dg_cli
 from dagster_shared import check
 
 ensure_dagster_tests_import()
@@ -82,6 +84,14 @@ def dbt_path() -> Iterator[Path]:
         dbt_path = Path(temp_dir) / "defs/jaffle_shop_dbt/jaffle_shop"
         project = DbtProject(dbt_path)
         project.preparer.prepare(project)
+        yield dbt_path
+
+
+@pytest.fixture(scope="function")
+def tmp_dbt_path() -> Iterator[Path]:
+    with tempfile.TemporaryDirectory() as temp_dir:
+        shutil.copytree(STUB_LOCATION_PATH, temp_dir, dirs_exist_ok=True)
+        dbt_path = Path(temp_dir) / "defs/jaffle_shop_dbt/jaffle_shop"
         yield dbt_path
 
 
@@ -346,13 +356,13 @@ def test_state_path(
             },
         },
     )
-    state_path = comp.cli_resource.state_path
+    state_path = comp.dbt_project.state_path
     assert state_path
     assert Path(state_path).relative_to(dbt_path.resolve())
-    assert comp.project.state_path
-    assert comp.project.state_path.resolve() == Path(state_path)
-    assert comp.project.target == "target"
-    assert comp.project.profile == "profile"
+    assert comp.dbt_project.state_path
+    assert comp.dbt_project.state_path.resolve() == Path(state_path)
+    assert comp.dbt_project.target == "target"
+    assert comp.dbt_project.profile == "profile"
 
 
 @pytest.mark.parametrize(
@@ -443,22 +453,7 @@ project:
   project_dir: {dbt_path!s}
   {target}
         """)
-    assert c.project.target == "prod"
-
-
-def test_project_root(dbt_path: Path):
-    # match to ensure {{ project_root }} is evaluated
-    with pytest.raises(ResolutionException, match="project_dir /dbt does not exist"):
-        DbtProjectComponent.resolve_from_yaml("""
-project: "{{ project_root }}/dbt"
-        """)
-
-    # match to ensure {{ project_root }} is evaluated
-    with pytest.raises(ResolutionException, match="project_dir /dbt does not exist"):
-        DbtProjectComponent.resolve_from_yaml("""
-project:
-  project_dir: "{{ project_root }}/dbt"
-        """)
+    assert c.dbt_project.target == "prod"
 
 
 def test_disable_prep_if_dev(dbt_path: Path):
@@ -517,3 +512,92 @@ def test_subclass_override_get_asset_spec(dbt_path: Path) -> None:
 
     assert asset_spec_orders.tags["custom_override"] == "true"
     assert asset_spec_orders.tags["model_name"] == "stg_orders"
+
+
+def test_basic_component_dev_mode(tmp_dbt_path: Path) -> None:
+    with (
+        instance_for_test(),
+        create_defs_folder_sandbox() as sandbox,
+        environ({"DAGSTER_IS_DEV_CLI": "1"}),
+    ):
+        defs_path = sandbox.scaffold_component(
+            component_cls=DbtProjectComponent,
+            defs_yaml_contents={
+                "type": "dagster_dbt.DbtProjectComponent",
+                "attributes": {
+                    "project": {"project_dir": str(tmp_dbt_path)},
+                },
+            },
+            defs_path="dbt",
+        )
+
+        with (
+            scoped_definitions_load_context() as load_context,
+            sandbox.load_component_and_build_defs(defs_path=defs_path) as (component, defs),
+        ):
+            assert isinstance(component, DbtProjectComponent)
+
+            # make sure assets are still loaded even though original project dir is gone
+            specs = defs.get_all_asset_specs()
+            assert len(specs) > 0
+
+            # Verify we have the expected assets from jaffle_shop
+            asset_keys = {spec.key for spec in specs}
+            assert dg.AssetKey("customers") in asset_keys
+            assert dg.AssetKey("orders") in asset_keys
+
+            # Verify the state key was accessed
+            assert load_context.accessed_defs_state_info is not None
+
+            expected_key = "DbtProjectComponent[jaffle_shop]"
+            assert expected_key in load_context.accessed_defs_state_info.info_mapping
+
+
+def test_basic_component_non_dev_mode(tmp_dbt_path: Path) -> None:
+    with (
+        instance_for_test(),
+        create_defs_folder_sandbox() as sandbox,
+    ):
+        defs_path = sandbox.scaffold_component(
+            component_cls=DbtProjectComponent,
+            defs_yaml_contents={
+                "type": "dagster_dbt.DbtProjectComponent",
+                "attributes": {
+                    "project": {"project_dir": str(tmp_dbt_path)},
+                },
+            },
+            defs_path="dbt",
+        )
+
+        # simulate running refresh-defs-state in CI
+        original_env = os.environ.copy()
+        with new_cwd(str(sandbox.project_root)), sandbox.activate_venv_for_project():
+            result = CliRunner().invoke(dg_cli, ["utils", "refresh-defs-state"])
+            assert result.exit_code == 0
+        # a side effect of running refresh-defs-state in process is that DAGSTER_IS_DEV_CLI is set to 1,
+        # so avoid that by restoring the original environment
+        os.environ = original_env
+
+        # delete the original dbt project directory entirely to simulate a PEX deploy
+        shutil.rmtree(tmp_dbt_path)
+
+        with (
+            scoped_definitions_load_context() as load_context,
+            sandbox.load_component_and_build_defs(defs_path=defs_path) as (component, defs),
+        ):
+            assert isinstance(component, DbtProjectComponent)
+
+            # make sure assets are still loaded even though original project dir is gone
+            specs = defs.get_all_asset_specs()
+            assert len(specs) > 0
+
+            # Verify we have the expected assets from jaffle_shop
+            asset_keys = {spec.key for spec in specs}
+            assert dg.AssetKey("customers") in asset_keys
+            assert dg.AssetKey("orders") in asset_keys
+
+            # Verify the state key was accessed
+            assert load_context.accessed_defs_state_info is not None
+
+            expected_key = "DbtProjectComponent[jaffle_shop]"
+            assert expected_key in load_context.accessed_defs_state_info.info_mapping

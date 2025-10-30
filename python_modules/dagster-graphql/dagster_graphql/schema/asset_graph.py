@@ -325,6 +325,7 @@ class GrapheneAssetNode(graphene.ObjectType):
     )
     type = graphene.Field(GrapheneDagsterType)
     hasMaterializePermission = graphene.NonNull(graphene.Boolean)
+    hasWipePermission = graphene.NonNull(graphene.Boolean)
     hasReportRunlessAssetEventPermission = graphene.NonNull(graphene.Boolean)
 
     # the acutal checks are listed in the assetChecksOrError resolver. We use this boolean
@@ -567,6 +568,14 @@ class GrapheneAssetNode(graphene.ObjectType):
     ) -> bool:
         return graphene_info.context.has_permission_for_selector(
             Permissions.LAUNCH_PIPELINE_EXECUTION, self._asset_node_snap.asset_key
+        )
+
+    def resolve_hasWipePermission(
+        self,
+        graphene_info: ResolveInfo,
+    ) -> bool:
+        return graphene_info.context.has_permission_for_selector(
+            Permissions.WIPE_ASSETS, self._asset_node_snap.asset_key
         )
 
     def resolve_hasReportRunlessAssetEventPermission(

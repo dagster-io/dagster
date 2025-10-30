@@ -222,7 +222,40 @@ class SigmaComponent(StateBackedComponent, Resolvable):
     def _base_translator(self) -> DagsterSigmaTranslator:
         return DagsterSigmaTranslator()
 
+    @public
     def get_asset_spec(self, data: SigmaTranslatorData) -> AssetSpec:
+        """Generates an AssetSpec for a given Sigma content item.
+
+        This method can be overridden in a subclass to customize how Sigma content
+        (workbooks, datasets) are converted to Dagster asset specs. By default, it delegates
+        to the configured DagsterSigmaTranslator.
+
+        Args:
+            data: The SigmaTranslatorData containing information about the Sigma content item
+                and organization
+
+        Returns:
+            An AssetSpec that represents the Sigma content as a Dagster asset
+
+        Example:
+            Override this method to add custom tags based on content properties:
+
+            .. code-block:: python
+
+                from dagster_sigma import SigmaComponent
+                from dagster import AssetSpec
+
+                class CustomSigmaComponent(SigmaComponent):
+                    def get_asset_spec(self, data):
+                        base_spec = super().get_asset_spec(data)
+                        return base_spec.replace_attributes(
+                            tags={
+                                **base_spec.tags,
+                                "sigma_type": data.properties.get("type"),
+                                "owner": data.properties.get("ownerId")
+                            }
+                        )
+        """
         return self._base_translator.get_asset_spec(data)
 
     @cached_property
