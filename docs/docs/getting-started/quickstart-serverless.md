@@ -5,6 +5,7 @@ description: Iterate on, test, and deploy your first Dagster+ Serverless pipelin
 ---
 
 import InstallUv from '@site/docs/partials/\_InstallUv.md';
+import PipInstallEditable from '@site/docs/partials/_PipInstallEditable.md';
 
 Welcome to Dagster+ Serverless! In this guide, we'll cover developing and testing your Dagster project locally, using branch deployments to safely test against production data, and finally, pushing your changes to production.
 
@@ -95,9 +96,7 @@ If you will be using `uv` as your package manager, follow the steps below to ins
 
       3. Install your project as an editable package:
 
-         ```shell
-         pip install --editable .
-         ```
+         <PipInstallEditable />
 
    </TabItem>
 </Tabs>

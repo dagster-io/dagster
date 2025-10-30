@@ -4,7 +4,9 @@ description: The Dagster project
 sidebar_position: 10
 ---
 
-Dagster follows standard Python conventions, and most work in Dagster begins by creating a Python package called a [project](/guides/build/projects). This is where you’ll define your pipelines, as well as any dependencies within your project.
+import PipInstallEditable from '@site/docs/partials/_PipInstallEditable.md';
+
+Dagster follows standard Python conventions, and most work in Dagster begins by creating a Python package called a [project](/guides/build/projects). This is where you'll define your pipelines, as well as any dependencies within your project.
 
 To streamline project creation, Dagster provides the [`create-dagster` CLI](/api/clis/create-dagster), which quickly scaffolds a Python package containing a Dagster `Definitions` object. When you scaffold the project, the `Definitions` object will not contain any other Dagster objects.
 
@@ -81,9 +83,7 @@ To streamline project creation, Dagster provides the [`create-dagster` CLI](/api
 
       4. Install your project as an editable package:
 
-         ```shell
-         pip install --editable .
-         ```
+         <PipInstallEditable />
 
    </TabItem>
 </Tabs>
