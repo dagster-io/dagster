@@ -1,19 +1,31 @@
 ---
 title: Build your first Dagster pipeline
 description: Learn how to set up a Dagster environment, create a project, define assets, and run your first pipeline.
-sidebar_position: 30
-sidebar_label: 'Quickstart'
+sidebar_label: Quickstart (Dagster+ Hybrid and OSS)
 ---
 
 Welcome to Dagster! In this guide, we'll cover:
 
-- Setting up a basic Dagster project
+- Setting up a basic Dagster project using Dagster OSS for local development
 - Creating a single Dagster [asset](/guides/build/assets) that encapsulates the entire Extract, Transform, and Load (ETL) process
 - Using Dagster's UI to monitor and execute your pipeline
+- Deploying your changes to the cloud
 
-import ProjectCreationPrereqs from '@site/docs/partials/\_ProjectCreationPrereqs.md';
+:::info Dagster+ Serverless users
 
-<ProjectCreationPrereqs />
+If you have created a project through the Dagster+ Serverless UI, see the [Dagster+ Serverless quickstart guide](/getting-started/quickstart-serverless) instead.
+
+:::
+
+## Prerequisites
+
+Before getting started, you will need to make sure you install the following prerequisites:
+
+- Python 3.9+
+- **If using uv as your package manager**, you will need to install `uv` (**Recommended**).
+- **If using pip as your package manager**, you will need to install the `create-dagster` CLI with Homebrew, `curl`, or `pip`.
+
+For detailed instructions, see the [Installation guide](/getting-started/installation).
 
 ## Step 1: Scaffold a new Dagster project
 
@@ -195,7 +207,7 @@ You can also load and validate your Dagster definitions with [`dg check defs`](/
 
 <CliInvocationExample path="docs_snippets/docs_snippets/getting-started/quickstart/dg_check_defs.txt" />
 
-## Step 5: Run the pipeline
+## Step 5: Run your pipeline
 
 1. In the terminal, navigate to your project's root directory and run:
 
@@ -205,17 +217,23 @@ You can also load and validate your Dagster definitions with [`dg check defs`](/
 
 2. Open your web browser and navigate to [http://localhost:3000](http://localhost:3000), where you should see the Dagster UI:
 
-   ![Dagster UI](/images/getting-started/quickstart/dagster-ui-start.png)
+   ![Dagster UI overview](/images/getting-started/quickstart-serverless/oss-ui-overview.png)
 
-3. In the top navigation, click **Assets > View lineage**.
+3. In the top navigation, click the **Assets** tab, then click **View lineage**:
 
-4. Click **Materialize** to run the pipeline.
+   ![Dagster UI asset lineage page](/images/getting-started/quickstart/assets-view-lineage.png)
 
-5. In the popup, click **View**. This will open the **Run details** page, allowing you to view the run as it executes.
+4. To run the pipeline, click **Materialize**:
 
-   ![Run details page](/images/getting-started/quickstart/run-details.png)
+   ![Dagster asset lineage page with materialize button](/images/getting-started/quickstart/materialize-button.png)
 
-   Use the **view buttons** in near the top left corner of the page to change how the run is displayed. You can also click the asset to view logs and metadata.
+5. To view the run as it executes, click the **Runs** tab, then on the right side of the page, click **View**:
+
+   ![Dagster run view](/images/getting-started/quickstart/run-view.png)
+
+   To change how the run is displayed, you can use the **view buttons** in the top left corner of the page:
+
+   <img src="/images/getting-started/quickstart/run-view-options.png" height="100" />
 
 :::tip
 
@@ -245,10 +263,38 @@ id,name,age,city,age_group
 4,Diana,31,Los Angeles,Middle
 ```
 
+## Step 7. Deploy to production
+
+Once you have run your pipeline locally, you can optionally deploy it to production.
+
+<Tabs>
+<TabItem value="oss" label="OSS">
+
+To deploy to OSS production, see the [OSS deployment docs](/deployment/oss). If you have already set up a production OSS deployment with an existing project, you will need to create a [`workspace.yaml` file](/deployment/code-locations/workspace-yaml) to tell your deployment where to find each project (also known as a code location).
+
+</TabItem>
+<TabItem value="hybrid" label="Dagster+ Hybrid">
+
+1. Set up a [Hybrid deployment](/deployment/dagster-plus/hybrid), if you haven't already.
+2. In the root directory of your project, run [`dg scaffold build-artifacts`](/api/clis/dg-cli/dg-cli-reference#dg-scaffold-build-artifacts) to create a `build.yaml` deployment configuration file and a Dockerfile.
+3. To deploy to the cloud, you can either:
+   - Perform a one-time deployment with the [`dagster-cloud` CLI](/api/clis/dagster-cloud-cli)
+   - [Set up CI/CD](/deployment/dagster-plus/deploying-code/ci-cd/ci-cd-in-hybrid) for continuous deployment.
+
+:::tip
+
+With Dagster+ Hybrid, you can also use [branch deployments](/deployment/dagster-plus/deploying-code/branch-deployments) to safely test your changes against production data.
+
+:::
+
+</TabItem>
+</Tabs>
+
 ## Next steps
 
 Congratulations! You've just built and run your first pipeline with Dagster. Next, you can:
 
 - Follow the [Tutorial](/dagster-basics-tutorial) to learn how to build a more complex ETL pipeline
-- [Create your own Dagster project](/guides/build/projects/creating-a-new-project) and [add assets](/guides/build/assets/defining-assets) to it
 - Check out our [Python primer series](https://dagster.io/blog/python-packages-primer-1) for an in-depth tour of Python modules, packages and imports
+- [Create your own Dagster project](/guides/build/projects/creating-a-new-project), [add assets](/guides/build/assets/defining-assets) and [integrations](/integrations/libraries), and [automate](/guides/automate) your pipeline
+- Test your pipelines with [asset checks](/guides/test/asset-checks) and [debug them in real time with pdb](/guides/log-debug/debugging/debugging-pdb)
