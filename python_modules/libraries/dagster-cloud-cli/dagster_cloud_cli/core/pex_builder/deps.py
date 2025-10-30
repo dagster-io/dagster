@@ -88,6 +88,7 @@ def local_path_for(line: str, relative_to: str) -> Optional[str]:
 
 def get_requirements_lines(local_dir, python_interpreter: str) -> list[str]:
     # Combine dependencies specified in requirements.txt, setup.py, and pyproject.toml
+
     lines = get_requirements_txt_deps(local_dir)
     lines.extend(get_setup_py_deps(local_dir, python_interpreter))
     lines.extend(get_pyproject_toml_deps(local_dir))
@@ -95,6 +96,20 @@ def get_requirements_lines(local_dir, python_interpreter: str) -> list[str]:
 
 
 def collect_requirements(code_directory, python_interpreter: str) -> tuple[list[str], list[str]]:
+    if not os.path.exists(code_directory):
+        raise Exception(f"Specified a build directory that does not exist: {code_directory}.")
+
+    required_files = [
+        "setup.py",
+        "requirements.txt",
+        "pyproject.toml",
+    ]
+
+    if not any(os.path.exists(os.path.join(code_directory, file)) for file in required_files):
+        raise Exception(
+            f"Could not find a setup.py, requirements.txt, or pyproject.toml in {code_directory}."
+        )
+
     # traverse all local packages and return the list of local packages and other requirements
     pending = [os.path.abspath(code_directory)]  # local packages to be processed
     seen = set()
