@@ -1,5 +1,4 @@
 import {useMemo} from 'react';
-import * as yaml from 'yaml';
 
 import {
   CONFIG_EDITOR_GENERATOR_PARTITION_SETS_FRAGMENT,
@@ -11,6 +10,7 @@ import {LaunchpadSessionLoading} from './LaunchpadSessionLoading';
 import {LaunchpadTransientSessionContainer} from './LaunchpadTransientSessionContainer';
 import {LaunchpadType} from './types';
 import {gql, useQuery} from '../apollo-client';
+import {filterDefaultYamlForSubselection} from './configFiltering';
 import {LaunchpadRootQuery, LaunchpadRootQueryVariables} from './types/LaunchpadAllowedRoot.types';
 import {IExecutionSession} from '../app/ExecutionSessionStorage';
 import {PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorFragment';
@@ -32,23 +32,6 @@ interface Props {
   sessionPresets?: Partial<IExecutionSession>;
   onSaveConfig?: (config: LaunchpadConfig) => void;
 }
-
-const filterDefaultYamlForSubselection = (defaultYaml: string, opNames: Set<string>): string => {
-  const parsedYaml = yaml.parse(defaultYaml);
-
-  const opsConfig = parsedYaml['ops'];
-  if (opsConfig) {
-    const filteredOpKeys = Object.keys(opsConfig).filter((entry) => {
-      return opNames.has(entry);
-    });
-    const filteredOpsConfig = Object.fromEntries(
-      filteredOpKeys.map((key) => [key, opsConfig[key]]),
-    );
-    parsedYaml['ops'] = filteredOpsConfig;
-  }
-
-  return yaml.stringify(parsedYaml);
-};
 
 export const LaunchpadAllowedRoot = (props: Props) => {
   useTrackPageView();
