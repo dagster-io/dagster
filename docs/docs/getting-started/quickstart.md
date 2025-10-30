@@ -270,11 +270,7 @@ Once you have run your pipeline locally, you can optionally deploy it to product
 <Tabs>
 <TabItem value="oss" label="OSS">
 
-To deploy to OSS production:
-
-1. Set up a production [OSS deployment](/deployment/oss), if you haven't already.
-2. Add a [`workspace.yaml` file](/deployment/code-locations/workspace-yaml) to the root directory of your project.
-3. Add your Dagster project code to the Docker container that you will use in your deployment.
+To deploy to OSS production, see the [OSS deployment docs](/deployment/oss). If you have already set up a production OSS deployment with an existing project, you will need to create a [`workspace.yaml` file](/deployment/code-locations/workspace-yaml) to tell your deployment where to find each project (also known as a code location).
 
 </TabItem>
 <TabItem value="hybrid" label="Dagster+ Hybrid">
