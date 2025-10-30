@@ -2,8 +2,8 @@ import {Colors, Icon, MenuItem} from '@dagster-io/ui-components';
 import {useContext, useState} from 'react';
 
 import {DeleteDynamicPartitionsDialog} from './DeleteDynamicPartitionsDialog';
-import {useAssetPermissions} from './useAssetPermissions';
 import {CloudOSSContext} from '../app/CloudOSSContext';
+import {usePermissionsForLocation} from '../app/Permissions';
 import {AssetKeyInput, PartitionDefinitionType} from '../graphql/types';
 import {RepoAddress} from '../workspace/types';
 
@@ -22,6 +22,9 @@ export function useDeleteDynamicPartitionsDialog(
   refresh?: () => void,
 ) {
   const [showing, setShowing] = useState(false);
+  const {
+    permissions: {canWipeAssets},
+  } = usePermissionsForLocation(opts ? opts.repoAddress.location : null);
 
   const {
     featureContext: {canSeeWipeMaterializationAction},
@@ -29,11 +32,6 @@ export function useDeleteDynamicPartitionsDialog(
 
   const dynamicDimension = opts?.definition.partitionDefinition?.dimensionTypes?.find(
     (d) => d.type === PartitionDefinitionType.DYNAMIC,
-  );
-
-  const {hasWipePermission} = useAssetPermissions(
-    opts?.assetKey || {path: []},
-    opts?.repoAddress.location || '',
   );
 
   if (
@@ -63,7 +61,7 @@ export function useDeleteDynamicPartitionsDialog(
         key="delete"
         text="Delete partitions"
         icon={<Icon name="delete" color={Colors.accentRed()} />}
-        disabled={!hasWipePermission}
+        disabled={!canWipeAssets}
         intent="danger"
         onClick={() => setShowing(true)}
       />,
