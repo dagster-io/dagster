@@ -32,11 +32,13 @@ def _get_heartbeat_tolerance():
     )
     return int(tolerance) if tolerance else DEFAULT_DAEMON_HEARTBEAT_TOLERANCE_SECONDS
 
+
 def _get_reload_workspace_interval():
     interval = os.getenv(
         "DAGSTER_RELOAD_WORKSPACE_INTERVAL",
     )
     return int(interval) if interval else RELOAD_WORKSPACE_INTERVAL
+
 
 @click.command(
     name="run",
