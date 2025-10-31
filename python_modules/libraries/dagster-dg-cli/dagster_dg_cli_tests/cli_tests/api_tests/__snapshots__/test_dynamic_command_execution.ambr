@@ -2224,6 +2224,300 @@
   
   '''
 # ---
+# name: TestDynamicCommandExecution.test_command_execution[schedule_error_empty_schedule_name_json]
+  dict({
+    'error': 'Exhausted 0 responses',
+  })
+# ---
+# name: TestDynamicCommandExecution.test_command_execution[schedule_error_invalid_status_filter_json]
+  '''
+  Usage: dg api schedule list [OPTIONS]
+  Try 'dg api schedule list -h' for help.
+  
+  Error: Invalid value for '--status': 'INVALID' is not one of 'RUNNING', 'STOPPED'.
+  
+  '''
+# ---
+# name: TestDynamicCommandExecution.test_command_execution[schedule_error_schedule_not_found_human_readable_text]
+  '''
+  Error: Failed to get schedule: Schedule not found: nonexistent_schedule
+  
+  '''
+# ---
+# name: TestDynamicCommandExecution.test_command_execution[schedule_error_schedule_not_found_json]
+  dict({
+    'error': 'Schedule not found: nonexistent_schedule',
+  })
+# ---
+# name: TestDynamicCommandExecution.test_command_execution[schedule_success_get_daily_schedule_json]
+  dict({
+    'cron_schedule': '0 0 * * *',
+    'description': None,
+    'execution_timezone': 'UTC',
+    'name': 'daily_sling_job_schedule',
+    'next_tick_timestamp': None,
+    'pipeline_name': 'daily_sling_job',
+    'status': 'RUNNING',
+  })
+# ---
+# name: TestDynamicCommandExecution.test_command_execution[schedule_success_get_single_schedule_human_readable_text]
+  '''
+  Name: run_assets_30min
+  Status: RUNNING
+  Cron Schedule: */30 * * * *
+  Pipeline: run_etl_pipeline
+  Description: None
+  Timezone: UTC
+  
+  '''
+# ---
+# name: TestDynamicCommandExecution.test_command_execution[schedule_success_get_single_schedule_json]
+  dict({
+    'cron_schedule': '*/30 * * * *',
+    'description': None,
+    'execution_timezone': 'UTC',
+    'name': 'run_assets_30min',
+    'next_tick_timestamp': None,
+    'pipeline_name': 'run_etl_pipeline',
+    'status': 'RUNNING',
+  })
+# ---
+# name: TestDynamicCommandExecution.test_command_execution[schedule_success_get_stopped_schedule_json]
+  dict({
+    'cron_schedule': '0 8 * * *',
+    'description': None,
+    'execution_timezone': 'UTC',
+    'name': 'dbt_components_job_schedule',
+    'next_tick_timestamp': None,
+    'pipeline_name': 'dbt_components_job',
+    'status': 'STOPPED',
+  })
+# ---
+# name: TestDynamicCommandExecution.test_command_execution[schedule_success_list_all_schedules_human_readable_text]
+  '''
+  Name: run_assets_30min
+  Status: RUNNING
+  Cron Schedule: */30 * * * *
+  Pipeline: run_etl_pipeline
+  Description: None
+  Timezone: UTC
+  
+  Name: check_avg_orders_freshness_schdule
+  Status: RUNNING
+  Cron Schedule: */10 * * * *
+  Pipeline: check_avg_orders_freshness_job
+  Description: None
+  Timezone: UTC
+  
+  Name: dbt_components_job_schedule
+  Status: STOPPED
+  Cron Schedule: 0 8 * * *
+  Pipeline: dbt_components_job
+  Description: None
+  Timezone: UTC
+  
+  Name: refresh_analytics_model_job_schedule
+  Status: RUNNING
+  Cron Schedule: 0 0 * * *
+  Pipeline: refresh_analytics_model_job
+  Description: None
+  Timezone: UTC
+  
+  Name: daily_sling_job_schedule
+  Status: RUNNING
+  Cron Schedule: 0 0 * * *
+  Pipeline: daily_sling_job
+  Description: None
+  Timezone: UTC
+  
+  Name: snowflake_insights_import_schedule
+  Status: RUNNING
+  Cron Schedule: 59 * * * *
+  Pipeline: snowflake_insights_import
+  Description: None
+  Timezone: UTC
+  
+  '''
+# ---
+# name: TestDynamicCommandExecution.test_command_execution[schedule_success_list_all_schedules_json]
+  dict({
+    'items': list([
+      dict({
+        'cron_schedule': '*/30 * * * *',
+        'description': None,
+        'execution_timezone': 'UTC',
+        'name': 'run_assets_30min',
+        'next_tick_timestamp': None,
+        'pipeline_name': 'run_etl_pipeline',
+        'status': 'RUNNING',
+      }),
+      dict({
+        'cron_schedule': '*/10 * * * *',
+        'description': None,
+        'execution_timezone': 'UTC',
+        'name': 'check_avg_orders_freshness_schdule',
+        'next_tick_timestamp': None,
+        'pipeline_name': 'check_avg_orders_freshness_job',
+        'status': 'RUNNING',
+      }),
+      dict({
+        'cron_schedule': '0 8 * * *',
+        'description': None,
+        'execution_timezone': 'UTC',
+        'name': 'dbt_components_job_schedule',
+        'next_tick_timestamp': None,
+        'pipeline_name': 'dbt_components_job',
+        'status': 'STOPPED',
+      }),
+      dict({
+        'cron_schedule': '0 0 * * *',
+        'description': None,
+        'execution_timezone': 'UTC',
+        'name': 'refresh_analytics_model_job_schedule',
+        'next_tick_timestamp': None,
+        'pipeline_name': 'refresh_analytics_model_job',
+        'status': 'RUNNING',
+      }),
+      dict({
+        'cron_schedule': '0 0 * * *',
+        'description': None,
+        'execution_timezone': 'UTC',
+        'name': 'daily_sling_job_schedule',
+        'next_tick_timestamp': None,
+        'pipeline_name': 'daily_sling_job',
+        'status': 'RUNNING',
+      }),
+      dict({
+        'cron_schedule': '59 * * * *',
+        'description': None,
+        'execution_timezone': 'UTC',
+        'name': 'snowflake_insights_import_schedule',
+        'next_tick_timestamp': None,
+        'pipeline_name': 'snowflake_insights_import',
+        'status': 'RUNNING',
+      }),
+    ]),
+    'total': 6,
+  })
+# ---
+# name: TestDynamicCommandExecution.test_command_execution[schedule_success_list_running_schedules_human_readable_text]
+  '''
+  Name: run_assets_30min
+  Status: RUNNING
+  Cron Schedule: */30 * * * *
+  Pipeline: run_etl_pipeline
+  Description: None
+  Timezone: UTC
+  
+  Name: check_avg_orders_freshness_schdule
+  Status: RUNNING
+  Cron Schedule: */10 * * * *
+  Pipeline: check_avg_orders_freshness_job
+  Description: None
+  Timezone: UTC
+  
+  Name: refresh_analytics_model_job_schedule
+  Status: RUNNING
+  Cron Schedule: 0 0 * * *
+  Pipeline: refresh_analytics_model_job
+  Description: None
+  Timezone: UTC
+  
+  Name: daily_sling_job_schedule
+  Status: RUNNING
+  Cron Schedule: 0 0 * * *
+  Pipeline: daily_sling_job
+  Description: None
+  Timezone: UTC
+  
+  Name: snowflake_insights_import_schedule
+  Status: RUNNING
+  Cron Schedule: 59 * * * *
+  Pipeline: snowflake_insights_import
+  Description: None
+  Timezone: UTC
+  
+  '''
+# ---
+# name: TestDynamicCommandExecution.test_command_execution[schedule_success_list_running_schedules_json]
+  dict({
+    'items': list([
+      dict({
+        'cron_schedule': '*/30 * * * *',
+        'description': None,
+        'execution_timezone': 'UTC',
+        'name': 'run_assets_30min',
+        'next_tick_timestamp': None,
+        'pipeline_name': 'run_etl_pipeline',
+        'status': 'RUNNING',
+      }),
+      dict({
+        'cron_schedule': '*/10 * * * *',
+        'description': None,
+        'execution_timezone': 'UTC',
+        'name': 'check_avg_orders_freshness_schdule',
+        'next_tick_timestamp': None,
+        'pipeline_name': 'check_avg_orders_freshness_job',
+        'status': 'RUNNING',
+      }),
+      dict({
+        'cron_schedule': '0 0 * * *',
+        'description': None,
+        'execution_timezone': 'UTC',
+        'name': 'refresh_analytics_model_job_schedule',
+        'next_tick_timestamp': None,
+        'pipeline_name': 'refresh_analytics_model_job',
+        'status': 'RUNNING',
+      }),
+      dict({
+        'cron_schedule': '0 0 * * *',
+        'description': None,
+        'execution_timezone': 'UTC',
+        'name': 'daily_sling_job_schedule',
+        'next_tick_timestamp': None,
+        'pipeline_name': 'daily_sling_job',
+        'status': 'RUNNING',
+      }),
+      dict({
+        'cron_schedule': '59 * * * *',
+        'description': None,
+        'execution_timezone': 'UTC',
+        'name': 'snowflake_insights_import_schedule',
+        'next_tick_timestamp': None,
+        'pipeline_name': 'snowflake_insights_import',
+        'status': 'RUNNING',
+      }),
+    ]),
+    'total': 5,
+  })
+# ---
+# name: TestDynamicCommandExecution.test_command_execution[schedule_success_list_stopped_schedules_human_readable_text]
+  '''
+  Name: dbt_components_job_schedule
+  Status: STOPPED
+  Cron Schedule: 0 8 * * *
+  Pipeline: dbt_components_job
+  Description: None
+  Timezone: UTC
+  
+  '''
+# ---
+# name: TestDynamicCommandExecution.test_command_execution[schedule_success_list_stopped_schedules_json]
+  dict({
+    'items': list([
+      dict({
+        'cron_schedule': '0 8 * * *',
+        'description': None,
+        'execution_timezone': 'UTC',
+        'name': 'dbt_components_job_schedule',
+        'next_tick_timestamp': None,
+        'pipeline_name': 'dbt_components_job',
+        'status': 'STOPPED',
+      }),
+    ]),
+    'total': 1,
+  })
+# ---
 # name: TestDynamicCommandExecution.test_command_execution[secret_success_multiple_secrets_json]
   dict({
     'items': list([
