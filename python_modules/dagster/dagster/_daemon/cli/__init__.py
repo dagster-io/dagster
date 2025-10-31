@@ -14,6 +14,7 @@ from dagster._core.instance import DagsterInstance, InstanceRef
 from dagster._core.telemetry import telemetry_wrapper
 from dagster._daemon.controller import (
     DEFAULT_DAEMON_HEARTBEAT_TOLERANCE_SECONDS,
+    RELOAD_WORKSPACE_INTERVAL,
     DagsterDaemonController as DagsterDaemonController,
     all_daemons_live,
     daemon_controller_from_instance,
@@ -31,6 +32,11 @@ def _get_heartbeat_tolerance():
     )
     return int(tolerance) if tolerance else DEFAULT_DAEMON_HEARTBEAT_TOLERANCE_SECONDS
 
+def _get_reload_workspace_interval():
+    interval = os.getenv(
+        "DAGSTER_RELOAD_WORKSPACE_INTERVAL",
+    )
+    return int(interval) if interval else RELOAD_WORKSPACE_INTERVAL
 
 @click.command(
     name="run",
@@ -114,6 +120,7 @@ def _daemon_run_command(
         instance,
         workspace_load_target=workspace_opts_to_load_target(workspace_opts),
         heartbeat_tolerance_seconds=_get_heartbeat_tolerance(),
+        workspace_reload_interval_seconds=_get_reload_workspace_interval(),
         log_level=log_level,
         code_server_log_level=code_server_log_level,
         log_format=log_format,
