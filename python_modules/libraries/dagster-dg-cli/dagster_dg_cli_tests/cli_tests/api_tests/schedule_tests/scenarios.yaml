@@ -1,0 +1,46 @@
+# Success scenarios - List operations
+success_list_all_schedules:
+  command: "dg api schedule list --json"
+
+success_list_all_schedules_human_readable:
+  command: "dg api schedule list"
+
+success_list_running_schedules:
+  command: "dg api schedule list --status RUNNING --json"
+
+success_list_running_schedules_human_readable:
+  command: "dg api schedule list --status RUNNING"
+
+success_list_stopped_schedules:
+  command: "dg api schedule list --status STOPPED --json"
+
+success_list_stopped_schedules_human_readable:
+  command: "dg api schedule list --status STOPPED"
+
+# Success scenarios - Get operations
+success_get_single_schedule:
+  command: "dg api schedule get daily_job --json"
+
+success_get_single_schedule_human_readable:
+  command: "dg api schedule get daily_job"
+
+success_get_hourly_schedule:
+  command: "dg api schedule get hourly_job --json"
+
+success_get_weekly_schedule:
+  command: "dg api schedule get weekly_job --json"
+
+# Error scenarios
+error_schedule_not_found:
+  command: "dg api schedule get nonexistent_schedule --json"
+
+error_schedule_not_found_human_readable:
+  command: "dg api schedule get nonexistent_schedule"
+
+error_invalid_status_filter:
+  command: "dg api schedule list --status INVALID --json"
+  has_recording: false
+
+error_empty_schedule_name:
+  command: "dg api schedule get '' --json"
+  has_recording: false
