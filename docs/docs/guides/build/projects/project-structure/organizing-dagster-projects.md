@@ -180,14 +180,6 @@ You can also organize your project by data processing concept -- for example, da
 </TabItem>
 </Tabs>
 
-## Configuring multiple projects in a workspace
-
-This guide has outlined how to structure a single project that defines a single code location. Most people will only need one project and code location. However, Dagster also allows you to create a workspace with multiple projects that define multiple code locations.
-
-A helpful pattern uses multiple projects to separate conflicting dependencies, where each definition has its own package requirements and deployment specs.
-
-To learn more about creating a workspace with multiple projects, see [Managing multiple projects with workspaces](/guides/build/projects/managing-multiple-projects).
-
 ## External projects
 
 As your data platform evolves, you can integrate other data tools, such as dbt, Sling, or Jupyter notebooks.
@@ -214,3 +206,11 @@ We recommended storing these projects outside your Dagster project, as demonstra
 │       └── assert_true.sql
 └── example_dagster_project/
 ```
+
+:::info Using a workspace to manage multiple projects
+
+This guide has outlined how to structure a single Dagster project. Most people will only need one project. However, Dagster also allows you to create a workspace with multiple projects.
+
+A helpful pattern uses a workspace with multiple projects to separate conflicting dependencies, where each project has its own package requirements and deployment specs. For more information, see [Creating workspaces to manage multiple projects](/guides/build/projects/workspaces/creating-workspaces).
+
+:::

@@ -1,10 +1,10 @@
 ---
 title: Creating Dagster projects
-description: dg allows you to create a special type of Python package, called a project, that defines a Dagster code location.
+description: dg allows you to create a Dagster project, which is a special type of Python package accessible to the Dagster webserver and UI.
 sidebar_position: 100
 ---
 
-The easiest way to start building a Dagster project is by using the [`create-dagster` CLI](/api/clis/create-dagster). This CLI tool allows you to create a special type of Python package, called a _project_, that defines a [Dagster code location](/guides/build/projects#code-location.
+The easiest way to start building a Dagster project is by using the [`create-dagster` CLI](/api/clis/create-dagster). This CLI tool allows you to create a special type of Python package accessible to the Dagster webserver and UI.
 
 import ProjectCreationPrereqs from '@site/docs/partials/\_ProjectCreationPrereqs.md';
 

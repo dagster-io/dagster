@@ -73,9 +73,10 @@ if os.getenv("DAGSTER_IS_DEV_CLI"):
 ## Moving to production
 
 `dg dev` is primarily useful for running Dagster locally for development and testing. It isn't suitable for the demands of most production deployments. We recommend switching to a production deployment if you need the following:
-* Authentication or web security features (`dg dev` does not include these)
-* The ability to run multiple webserver replicas
-* The ability to configure zero downtime continuous deployment of your code
-* The ability to set up your Dagster daemon to automatically restart if it crashes
+
+- Authentication or web security features (`dg dev` does not include these)
+- The ability to run multiple webserver replicas
+- The ability to configure zero downtime continuous deployment of your code
+- The ability to set up your Dagster daemon to automatically restart if it crashes
 
 For mores information about deploying Dagster in production, see the [Dagster Open Source deployment options documentation](/deployment/oss/deployment-options) or the [Dagster+ deployment documentation](/deployment/dagster-plus).

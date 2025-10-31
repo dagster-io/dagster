@@ -1,5 +1,5 @@
 ---
-title: Migrating your project to Dagster Components
+title: Migrating Dagster projects to Dagster Components
 description: TK
 sidebar_position: 500
 canonicalUrl: "/guides/build/projects/moving-to-components"

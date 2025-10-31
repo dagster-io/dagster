@@ -1,5 +1,5 @@
 ---
-description: Track and manage code location history and rollbacks in Dagster+.
+description: Track and manage project history and rollbacks in Dagster+.
 sidebar_position: 500
 tags: [dagster-plus-feature]
 title: Dagster+ project history and rollbacks
@@ -9,14 +9,15 @@ import DagsterPlus from '@site/docs/partials/\_DagsterPlus.md';
 
 <DagsterPlus />
 
-Dagster+ automatically tracks metadata every time a project (also known as a code location) is loaded. This can be used to understand when changes have been made, and what those changes were. In addition, this metadata can be used to quickly redeploy an older version.
+Dagster+ automatically tracks metadata every time a project is loaded, which you can use to understand when changes have been made, and what those changes were. You can also use this metadata to quickly redeploy an older project version.
 
 ## Viewing project history
 
 1. In the Dagster+ UI, navigate to the **Deployment** tab.
-2. In the row associated with the code location you're interested in, click **View history** in the **Updated** column.
+2. In the row associated with the project you're interested in, click **View history** in the **Updated** column.
 
-![Screenshot highlighting the "Updated" column for a code location](/images/dagster-plus/deployment/code-locations/view-code-location-history.png)
+TK - update screenshot
+![Screenshot highlighting the "Updated" column for a project](/images/dagster-plus/deployment/code-locations/view-code-location-history.png)
 
 This will bring up a modal showing a history of every time that project has been loaded, and metadata associated with that load. If you have connected Dagster+ to a GitHub or GitLab repository, each row will have a link to the commit that was deployed at that point in time.
 
@@ -41,13 +42,14 @@ To initiate a rollback, you'll need [**Organization**, **Admin**, or **Editor** 
 If you notice an issue with newly deployed code, or your code fails to deploy successfully, you can quickly roll back to a previously deployed image that's known to work properly.
 
 1. In the Dagster+ UI, navigate to the **Deployment** tab.
-2. In the row associated with the code location you're interested in, click **View history** in the **Updated** column.
+2. In the row associated with the project you're interested in, click **View history** in the **Updated** column.
 3. In the **Actions** column click the dropdown menu to the right of **View metadata**, select **Rollback to this version**.
 
-![Screenshot highlighting the "Updated" column for a code location](/images/dagster-plus/deployment/code-locations/rollback-code-location.png)
+TK - update screenshot
+![Screenshot highlighting the "Updated" column for a project](/images/dagster-plus/deployment/code-locations/rollback-code-location.png)
 
 :::tip
 
-You can [create an alert](/guides/observe/alerts/creating-alerts) to let you know when a code location fails to load.
+You can [create an alert](/guides/observe/alerts/creating-alerts) to let you know when a project fails to load.
 
 :::

@@ -31,31 +31,9 @@ my-project/
 
 While Dagster is flexible about how you organize your code, it provides an opinionated starting point with the [`create-dagster` CLI](/api/clis/create-dagster). For more information on creating Dagster projects from the CLI, see [Creating Dagster projects](/guides/build/projects/creating-dagster-projects).
 
-## Code location
+To make your Dagster project deployable to Dagster+, you will need to create additional configuration files. For more information, see [Deploying Dagster projects](/guides/build/projects/deploying-dagster-projects).
 
-A [code location](/guides/build/projects) is a Dagster project that can be loaded and accessed by Dagster tools, such as the UI, CLI, and Dagster+. A code location must contain a module with an instance of [`Definitions`](/api/dagster/definitions#dagster.Definitions) in a top-level variable and a Python environment that can load that module. Dagster projects created with the [`create-dagster` CLI](/api/clis/create-dagster) are also code locations. Whenever an asset runs in Dagster, it executes within the context of its code location, both the specific environment and project from which it originates.
-
-![Code locations](/images/guides/deploy/code-locations/code-locations.png)
-
-------- TK clean up below
-
-A code location is a collection of Dagster definitions loadable and accessible by Dagster's tools, such as the CLI, UI, and Dagster+. A code location comprises:
-
-- A reference to a Python module that has an instance of <PyObject section="definitions" module="dagster" object="Definitions" /> in a top-level variable
-- A Python environment that can successfully load that module
-
-Definitions within a code location have a common namespace and must have unique names. This allows them to be grouped and organized by code location in tools.
-
-![Code locations](/images/guides/deploy/code-locations/code-locations-diagram.png)
-
-A single deployment can have one or multiple code locations.
-
-Code locations are loaded in a different process and communicate with Dagster system processes over an RPC mechanism. This architecture provides several advantages:
-
-- When there is an update to user code, the Dagster webserver/UI can pick up the change without a restart.
-- You can use multiple code locations to organize jobs, but still work on all of your code locations using a single instance of the webserver/UI.
-- The Dagster webserver process can run in a separate Python environment from user code so job dependencies don't need to be installed into the webserver environment.
-- Each code location can be sourced from a separate Python environment, so teams can manage their dependencies (or even their Python versions) separately.
+A single deployment of Dagster can contain multiple projects organized into workspaces.
 
 ## Workspace
 
@@ -66,4 +44,4 @@ A workspace allows you to manage and orchestrate multiple Dagster projects toget
 - You want to deploy multiple projects in a coordinated way.
 
 
-As with projects, Dagster provides an opinionated starting point for workspaces with the [`create-dagster` CLI](/api/clis/create-dagster). For more information on creating Dagster workspaces from the CLI, see [Managing multiple projects with workspaces](/guides/build/projects/managing-multiple-projects).
+As with projects, Dagster provides an opinionated starting point for workspaces with the [`create-dagster` CLI](/api/clis/create-dagster). To learn how to create a Dagster workspaces from the CLI, see [Creating workspaces to manage multiple projects](/guides/build/projects/workspaces/managing-multiple-projects).
