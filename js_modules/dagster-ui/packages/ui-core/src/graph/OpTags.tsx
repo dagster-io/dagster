@@ -59,6 +59,7 @@ import dlthub from './kindtag-images/tool-dlthub-color.svg';
 import docker from './kindtag-images/tool-docker-color.svg';
 import doris from './kindtag-images/tool-doris-color.svg';
 import doubao from './kindtag-images/tool-doubao-color.svg';
+import dremio from './kindtag-images/tool-dremio-color.svg';
 import druid from './kindtag-images/tool-druid-color.svg';
 import dspy from './kindtag-images/tool-dspy-color.svg';
 import duckdb from './kindtag-images/tool-duckdb-color.svg';
@@ -443,6 +444,7 @@ export type KnownTagType =
   | 'clickhouse'
   | 'cockroachdb'
   | 'doris'
+  | 'dremio'
   | 'druid'
   | 'elasticsearch'
   | 'flink'
@@ -1315,6 +1317,10 @@ export const KNOWN_TAGS: Record<KnownTagType, KnownTag> = {
   doris: {
     icon: doris,
     content: 'Doris',
+  },
+  dremio: {
+      icon: dremio,
+      content: 'Dremio',
   },
   druid: {
     icon: druid,
