@@ -19,16 +19,16 @@ success_list_stopped_schedules_human_readable:
 
 # Success scenarios - Get operations
 success_get_single_schedule:
-  command: "dg api schedule get daily_job --json"
+  command: "dg api schedule get run_assets_30min --json"
 
 success_get_single_schedule_human_readable:
-  command: "dg api schedule get daily_job"
+  command: "dg api schedule get run_assets_30min"
 
-success_get_hourly_schedule:
-  command: "dg api schedule get hourly_job --json"
+success_get_daily_schedule:
+  command: "dg api schedule get daily_sling_job_schedule --json"
 
-success_get_weekly_schedule:
-  command: "dg api schedule get weekly_job --json"
+success_get_stopped_schedule:
+  command: "dg api schedule get dbt_components_job_schedule --json"
 
 # Error scenarios
 error_schedule_not_found:
