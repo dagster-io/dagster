@@ -272,6 +272,20 @@ class CodeLocation(AbstractContextManager):
     def get_notebook_data(self, notebook_path: str) -> bytes:
         pass
 
+    @abstractmethod
+    def reload_code_with_state(self, defs_state_info: DefsStateInfo) -> None:
+        """Reload the code with the provided defs_state_info.
+
+        This method reloads all code in this code location using the specified
+        defs_state_info, which contains versioning information for stateful definitions.
+        This allows for reloading code with updated state without restarting
+        the entire server process.
+
+        Args:
+            defs_state_info: The state information to use when reloading code
+        """
+        pass
+
     @property
     @abstractmethod
     def is_reload_supported(self) -> bool:
@@ -645,6 +659,61 @@ class InProcessCodeLocation(CodeLocation):
 
     def get_dagster_library_versions(self) -> Mapping[str, str]:
         return DagsterLibraryRegistry.get()
+
+    def reload_code_with_state(self, defs_state_info: DefsStateInfo) -> None:
+        """Reload the code with the provided defs_state_info.
+
+        For InProcess code locations, this recreates the LoadedRepositories with the
+        new defs_state_info and updates the internal repository mapping.
+        """
+        from dagster._grpc.server import LoadedRepositories
+
+        # Attempt partial reloads first if we have existing repositories
+        if self._loaded_repositories is not None:
+            repositories_reloaded = 0
+
+            for repo_name in list(self._loaded_repositories.definitions_by_name.keys()):
+                reloaded_repo = self._loaded_repositories.reload_code_with_component_tree(
+                    repo_name, defs_state_info
+                )
+                if reloaded_repo is not None:
+                    repositories_reloaded += 1
+                    # Update the corresponding RemoteRepository
+                    self._repositories[repo_name] = RemoteRepository(
+                        RepositorySnap.from_def(reloaded_repo),
+                        RepositoryHandle.from_location(
+                            repository_name=repo_name, code_location=self
+                        ),
+                        auto_materialize_use_sensors=self._instance.auto_materialize_use_sensors,
+                    )
+
+            # If we successfully reloaded at least some repositories via ComponentTree, we're done
+            if repositories_reloaded > 0:
+                return
+
+        # Fallback to full reload if partial reload wasn't possible or no existing repositories
+        self._loaded_repositories = LoadedRepositories(
+            self._origin.loadable_target_origin,
+            entry_point=self._origin.entry_point,
+            container_image=self._origin.container_image,
+            container_context=self._origin.container_context,
+            defs_state_info=defs_state_info,
+        )
+
+        # Update the repository code pointer dict
+        self._repository_code_pointer_dict = self._loaded_repositories.code_pointers_by_repo_name
+
+        # Recreate the RemoteRepository objects with the new definitions
+        self._repositories = {}
+        for (
+            repo_name,
+            repo_def,
+        ) in self._loaded_repositories.definitions_by_name.items():
+            self._repositories[repo_name] = RemoteRepository(
+                RepositorySnap.from_def(repo_def),
+                RepositoryHandle.from_location(repository_name=repo_name, code_location=self),
+                auto_materialize_use_sensors=self._instance.auto_materialize_use_sensors,
+            )
 
 
 class GrpcServerCodeLocation(CodeLocation):
@@ -1131,6 +1200,53 @@ class GrpcServerCodeLocation(CodeLocation):
 
     def get_dagster_library_versions(self) -> Optional[Mapping[str, str]]:
         return self._dagster_library_versions
+
+    def reload_code_with_state(self, defs_state_info: DefsStateInfo) -> None:
+        """Reload the code with the provided defs_state_info.
+
+        For gRPC code locations, this sends a gRPC command to the server to reload
+        the code with the new defs_state_info and updates the local cache.
+        """
+        from dagster._api.list_repositories import sync_list_repositories_grpc
+        from dagster._api.reload_code_with_state import sync_reload_code_with_state_grpc
+        from dagster._api.snapshot_repository import (
+            sync_get_streaming_external_repositories_data_grpc,
+        )
+
+        # Reload code on the server with the new defs_state_info
+        sync_reload_code_with_state_grpc(self.client, defs_state_info)
+
+        # Update the local cache by re-fetching repository information
+        list_repositories_response = sync_list_repositories_grpc(self.client)
+
+        # Update cached information
+        self._executable_path = list_repositories_response.executable_path
+        self._repository_code_pointer_dict = list_repositories_response.repository_code_pointer_dict
+        self._entry_point = list_repositories_response.entry_point
+        self._dagster_library_versions = list_repositories_response.dagster_library_versions
+        self._container_image = (
+            list_repositories_response.container_image or self._reload_current_image()
+        )
+        self._container_context = list_repositories_response.container_context
+
+        # Refresh repository snapshots
+        self._repository_snaps = sync_get_streaming_external_repositories_data_grpc(
+            self.client,
+            self,
+        )
+
+        # Update remote repositories cache
+        self.remote_repositories = {
+            repo_name: RemoteRepository(
+                repo_data,
+                RepositoryHandle.from_location(
+                    repository_name=repo_name,
+                    code_location=self,
+                ),
+                auto_materialize_use_sensors=self._instance.auto_materialize_use_sensors,
+            )
+            for repo_name, repo_data in self._repository_snaps.items()
+        }
 
 
 def is_implicit_asset_job_name(job_name: str) -> bool:
