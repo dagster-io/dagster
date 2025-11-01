@@ -128,20 +128,60 @@ Type: HYBRID
 ]
 ```
 
-## Error Handling
+## Error Handling Standards
 
-### Human-Readable Errors:
+### Enhanced JSON Error Format (--json flag):
+
+```json
+{
+  "error": "Human-readable error message",
+  "code": "MACHINE_READABLE_CODE",
+  "statusCode": 401,
+  "type": "error_category"
+}
+```
+
+### HTTP Status Code Mapping:
+
+- **401**: Authentication errors (UNAUTHORIZED)
+- **403**: Authorization errors (FORBIDDEN, INSUFFICIENT_PERMISSIONS)
+- **400**: Client errors (INVALID_INPUT, VALIDATION_ERROR)
+- **404**: Resource not found (RESOURCE_NOT_FOUND, PIPELINE_NOT_FOUND)
+- **422**: Migration/upgrade required (MIGRATION_REQUIRED, UPGRADE_REQUIRED)
+- **500**: Server errors (INTERNAL_ERROR, PYTHON_ERROR)
+
+### Error Types:
+
+- `authentication_error`: Authentication required or failed
+- `authorization_error`: Valid auth but insufficient permissions
+- `client_error`: Invalid request parameters or format
+- `server_error`: Internal server or GraphQL errors
+- `not_found_error`: Requested resource doesn't exist
+- `migration_error`: Migration or upgrade required
+
+### Human-Readable Format (default):
 
 ```
 Error querying Dagster Plus API: Unauthorized access
 ```
 
-### JSON Errors (when --json used):
+### Example Usage:
 
-```json
+```bash
+# Command that fails with authentication error
+$ dg api deployment list --json
 {
-  "error": "Unauthorized access"
+  "error": "Authentication required. Run 'dg plus login' to authenticate.",
+  "code": "UNAUTHORIZED",
+  "statusCode": 401,
+  "type": "authentication_error"
 }
+
+# Client can handle programmatically
+if error.code == "UNAUTHORIZED":
+    prompt_for_login()
+elif error.type == "client_error":
+    show_usage_help()
 ```
 
 ## Pagination Standards

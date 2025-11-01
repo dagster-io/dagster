@@ -2,7 +2,7 @@
 
 ## QUICKSTART
 
-Highly recommend you use prompting (and point the AI to thie file) to accomplish it.
+Highly recommend you use prompting (and point the AI to this file) to accomplish it.
 
 We have the dagster plus schema checked in at python_modules/libraries/dagster-dg-cli/dagster_dg_cli/cli/plus/schema.graphql
 which is critical to have in context. It should be combine to generate most of this code easily.
