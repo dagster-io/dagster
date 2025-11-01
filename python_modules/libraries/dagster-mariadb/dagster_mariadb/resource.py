@@ -1,7 +1,7 @@
 from collections.abc import Generator
 from contextlib import contextmanager
 from typing import Any, Optional
-
+import pymysql
 from dagster import ConfigurableResource
 from dagster._utils.backoff import backoff
 from pydantic import Field
@@ -55,7 +55,7 @@ class MariaDBResource(ConfigurableResource):
 
     def _get_connection_string(self) -> str:
         """Build the MariaDB connection string."""
-        driver = "pymysql"
+        driver = "mariadb+pymysql"
 
         components = [f"{driver}://{self.user}"]
         
@@ -107,4 +107,5 @@ class MariaDBResource(ConfigurableResource):
             yield connection
         finally:
             connection.close()
+
 
