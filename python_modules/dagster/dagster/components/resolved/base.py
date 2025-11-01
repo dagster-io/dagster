@@ -3,7 +3,7 @@ from collections.abc import Mapping, Sequence
 from dataclasses import MISSING, fields, is_dataclass
 from enum import Enum, auto
 from functools import partial
-from typing import Annotated, Any, Final, Literal, Optional, TypeVar, Union, get_args, get_origin
+from typing import Annotated, Any, Callable, Final, Literal, Optional, TypeVar, Union, get_args, get_origin
 
 import yaml
 from dagster_shared.record import get_record_annotations, get_record_defaults, is_record, record
@@ -115,17 +115,18 @@ class Resolvable:
 
     @classmethod
     def model(cls) -> type[BaseModel]:
-        print("------------ENTERED CLASS RESOLVABLE DEF MODEL ----------------------")
+        print("------------ENTERED MODEL(CLS)/ Calling derive_model_type ----------------------")
         return derive_model_type(cls)
 
     @classmethod
     def resolve_from_model(cls, context: "ResolutionContext", model: BaseModel):
-        print("------------ENTERED CLASS RESOLVABLE RESOLVE FROM MODEL!!!!!! ----------------------")
+        print(
+            "------------ENTERED resolce_from_model/ Calling resolve_fields ----------------------"
+        )
         return cls(**resolve_fields(model, cls, context))
 
     @classmethod
     def resolve_from_yaml(
-        
         cls,
         yaml: str,
         *,
@@ -141,8 +142,8 @@ class Resolvable:
             )
         else:  # yaml parsed as None
             model = model_cls()
-        
-        print("------------ENTERED CLASS RESOLVABLE RESOLVE FROM YAML ----------------------")
+
+        print("------------ENTERED RESOLVE FROM YAML ----------------------")
 
         context = ResolutionContext.default(
             parsed_and_src_tree.source_position_tree if parsed_and_src_tree else None
@@ -157,7 +158,7 @@ class Resolvable:
     def resolve_from_dict(cls, dictionary: dict[str, Any]):
         # Convert dictionary to YAML string
         # default_flow_style=False makes it use block style instead of inline
-        print("------------ENTERED CLASS RESOLVABLE RESOLVE FROM DICT ----------------------")
+        print("---------------------------ENTERED RESOLVE FROM DICT ----------------------")
         yaml_string = yaml.dump(
             dictionary,
             default_flow_style=False,
@@ -176,7 +177,7 @@ def derive_model_type(
     target_type: type[Resolvable],
 ) -> type[BaseModel]:
     if target_type not in _DERIVED_MODEL_REGISTRY:
-        #PRINT STATEMENT ADDED FOR CLARITY DELETE LATER
+        # PRINT STATEMENT ADDED FOR CLARITY DELETE LATER
         print("_-_-__-___-______-INSIDE DERIVE_MODEL_TYPE-____--______---____")
         model_name = f"{target_type.__name__}Model"
 
@@ -193,44 +194,28 @@ def derive_model_type(
             if annotation_info.field_info:
                 field_infos.append(annotation_info.field_info)
 
+            #Prefer a factory in Present (from pydantic FieldINfor of from Annotation info)
+            #This makes it so now dataclasses can have default_factory as well
+            factory = ((annotation_info.field_info.default_factory if annotation_info.field_info else None)
+                    or annotation_info.default_factory)
+
             if annotation_info.has_default:
                 # if the annotation has a serializable default
                 # value, propagate it to the inner schema, otherwise
                 # use a marker value that will cause the kwarg
                 # to get omitted when we resolve fields in order
                 # to trigger the default on the target type
-                """
-                Person{
-                    value: dit factory_default = dict
-                    job: str
-                    ID: int
-                    ShoppingList: dict 'apples': 2 
-                }
-                   
-                """
 
-                """
-                    name: str
-                    job: str
-                    ID: int
-                    ShopppingList: 
-                
-                
-                """
                 default_value = (
                     annotation_info.default
                     if type(annotation_info.default) in {int, float, str, bool, type(None)}
                     else _Unset
                 )
-                #We want the derived Pydantic model to materialize a value even if the user omits the field
-                if (annotation_info.field_info is not None
-                    and annotation_info.field_info.default_factory is not None):
-                    # if we have a field_info with default_factory, preserve it
-                    field_infos.append(
-                        Field(
-                            default_factory = annotation_info.field_info.default_factory)
-                    )
-                            
+                # We want the derived Pydantic model to materialize a value even if the user omits the field
+                if factory is not None and _zero_arg_callable(factory):
+                    # keep factory
+                    field_infos.append(Field(default_factory=factory))
+
                 else:
                     field_infos.append(
                         Field(
@@ -255,9 +240,6 @@ def derive_model_type(
                 field_type,
                 FieldInfo.merge_field_infos(*field_infos),
             )
-
-            #ADDED LINE 258 FOR CLARITY 
-            print(field_infos)
 
         try:
             _DERIVED_MODEL_REGISTRY[target_type] = create_model(
@@ -311,21 +293,26 @@ class AnnotationInfo:
     default: Any
     has_default: bool
     field_info: Optional[FieldInfo]
+    default_factory: Optional[Callable[..., Any]] = None
 
 
 def _get_annotations(
     resolved_type: type[Resolvable],
 ) -> dict[str, AnnotationInfo]:
+    print("----------------GET ANNOTATIONS HAS BEEN ENTERED--------------------")
     annotations: dict[str, AnnotationInfo] = {}
     init_kwargs = _get_init_kwargs(resolved_type)
     if is_dataclass(resolved_type):
         for f in fields(resolved_type):
             has_default = f.default is not MISSING or f.default_factory is not MISSING
+            default_value = None if f.default is MISSING else f.default
+            factory = None if f.default_factory is MISSING else f.default_factory
             annotations[f.name] = AnnotationInfo(
                 type=f.type,
-                default=f.default,
+                default= default_value,
                 has_default=has_default,
                 field_info=None,
+                default_factory= factory,
             )
         return annotations
     elif safe_is_subclass(resolved_type, BaseModel):
@@ -336,6 +323,7 @@ def _get_annotations(
                 default=field_info.default,
                 has_default=has_default,
                 field_info=field_info,
+                default_factory= field_info.default_factory,
             )
         return annotations
     elif is_record(resolved_type):
@@ -346,6 +334,7 @@ def _get_annotations(
                 default=defaults[name] if name in defaults else None,
                 has_default=name in defaults,
                 field_info=None,
+                default_factory=None,
             )
         return annotations
     elif init_kwargs is not None:
@@ -416,9 +405,12 @@ def resolve_fields(
     }
 
     fields_with_factory = {
-        fname 
+        fname
         for fname, info in _get_annotations(resolved_cls).items()
-        if info.field_info is not None and info.field_info.default_factory is not None
+        if (
+            (info.field_info is not None and info.field_info.default_factory is not None) or
+            (getattr(info, "default_factory",None) is not None)
+        )
     }
 
     dumped = model.model_dump(exclude_unset=True)
@@ -426,17 +418,17 @@ def resolve_fields(
     out = {}
     for field_name, resolver in field_resolvers.items():
         model_field_name = resolver.model_field_name or field_name
-        
-        #include if explicity set Or it had a default_factory
+
+        # include if explicity set Or it had a default_factory
         should_include = (model_field_name in dumped) or (field_name in fields_with_factory)
         if not should_include:
             continue
-        
-        value = getattr(model,model_field_name)
+
+        value = getattr(model, model_field_name)
         if value == _Unset:
             continue
 
-        out[field_name] = resolver.execute(context= context, model= model, field_name = field_name)
+        out[field_name] = resolver.execute(context=context, model=model, field_name=field_name)
 
     """
     for field_name, resolver in field_resolvers.items():
@@ -591,6 +583,27 @@ def _wrap(ttype, path: Sequence[_TypeContainer]):
         else:
             check.assert_never(container)
     return result_type
+
+def _zero_arg_callable(fn:Any) -> bool:
+    """True if fn had no required positional param (Pydantic default_factory must be zero-arg)."""
+    if not callable(fn):
+        return  False
+    try:
+        sig = inspect.signature(fn)
+        for p in sig.parameters.values():
+            if p.kind in (inspect.Parameter.VAR_POSITIONAL, inspect.Parameter.VAR_KEYWORD):
+                # *args/**Kwargs -> no required positional params => OK
+                return True
+            if p.default is inspect.Parameter.empty and p.kind in (
+                inspect.Parameter.POSITIONAL_ONLY,
+                inspect.Parameter.POSITIONAL_OR_KEYWORD):
+                #a required postional param exists => NOT OK
+                return False
+        return True
+    except Exception:
+        #if instrospection fails, allow it (same behavior as before but guarded)
+        return True
+
 
 
 def _resolve_at_path(
