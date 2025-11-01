@@ -44,23 +44,24 @@ from dagster_webserver.version import __version__
 
 mimetypes.init()
 
-T_IWorkspaceProcessContext = TypeVar("T_IWorkspaceProcessContext", bound=IWorkspaceProcessContext)
+TRequestContext = TypeVar("TRequestContext", bound=BaseWorkspaceRequestContext)
+TProcessContext = TypeVar("TProcessContext", bound=IWorkspaceProcessContext)
 
 
 class DagsterWebserver(
-    GraphQLServer[BaseWorkspaceRequestContext],
-    Generic[T_IWorkspaceProcessContext],
+    GraphQLServer[TRequestContext],
+    Generic[TProcessContext, TRequestContext],
 ):
-    _process_context: T_IWorkspaceProcessContext
+    _process_context: TProcessContext
     _uses_app_path_prefix: bool
 
     def __init__(
         self,
-        process_context: T_IWorkspaceProcessContext,
+        process_context: TProcessContext,
         app_path_prefix: str = "",
         live_data_poll_rate: Optional[int] = None,
         uses_app_path_prefix: bool = True,
-    ):
+    ) -> None:
         self._process_context = process_context
         self._live_data_poll_rate = live_data_poll_rate
         self._uses_app_path_prefix = uses_app_path_prefix
@@ -75,7 +76,7 @@ class DagsterWebserver(
     def relative_path(self, rel: str) -> str:
         return path.join(path.dirname(__file__), rel)
 
-    def _make_request_context(self, conn: HTTPConnection) -> BaseWorkspaceRequestContext:
+    def _make_request_context(self, conn: HTTPConnection) -> TRequestContext:
         return self._process_context.create_request_context(conn)
 
     def build_middleware(self) -> list[Middleware]:
