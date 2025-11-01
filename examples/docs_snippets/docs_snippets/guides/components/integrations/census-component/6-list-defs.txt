@@ -1,0 +1,7 @@
+$ dg list defs
+
+Component defs/census_ingest (type dagster_census.CensusComponent):
+  Assets:
+    census_my_first_sync
+    census_my_second_sync
+    census_my_third_sync

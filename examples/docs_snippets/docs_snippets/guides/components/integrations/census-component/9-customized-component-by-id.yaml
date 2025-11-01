@@ -1,0 +1,9 @@
+type: dagster_census.CensusComponent
+
+attributes:
+  census_resource:
+    api_key: "{{ env.CENSUS_API_KEY }}"
+  sync_selector:
+    by_id:
+      - 12345
+      - 67890

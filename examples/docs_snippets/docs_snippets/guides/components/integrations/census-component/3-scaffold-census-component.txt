@@ -1,0 +1,1 @@
+dg scaffold defs dagster_census.CensusComponent --api-key "{{ env.CENSUS_API_KEY }}"
