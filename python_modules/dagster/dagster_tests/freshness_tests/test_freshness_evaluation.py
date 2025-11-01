@@ -7,7 +7,7 @@ import dagster as dg
 import pytest
 from dagster import AssetKey, DagsterEventType, DagsterInstance
 from dagster._check import CheckError
-from dagster._core.definitions.freshness import FreshnessState, InternalFreshnessPolicy
+from dagster._core.definitions.freshness import FreshnessPolicy, FreshnessState
 from dagster._core.definitions.freshness_evaluator import (
     CronFreshnessPolicyEvaluator,
     TimeWindowFreshnessPolicyEvaluator,
@@ -66,7 +66,7 @@ class TestTimeWindowFreshnessPolicyEvaluator:
 
         def create_defs() -> dg.Definitions:
             @dg.asset(
-                freshness_policy=InternalFreshnessPolicy.time_window(
+                freshness_policy=FreshnessPolicy.time_window(
                     fail_window=datetime.timedelta(hours=24),
                 )
             )
@@ -104,7 +104,7 @@ class TestTimeWindowFreshnessPolicyEvaluator:
 
         def create_defs() -> dg.Definitions:
             @dg.asset(
-                freshness_policy=InternalFreshnessPolicy.time_window(
+                freshness_policy=FreshnessPolicy.time_window(
                     fail_window=datetime.timedelta(minutes=10),
                 )
             )
@@ -112,7 +112,7 @@ class TestTimeWindowFreshnessPolicyEvaluator:
                 return 1
 
             @dg.asset(
-                freshness_policy=InternalFreshnessPolicy.time_window(
+                freshness_policy=FreshnessPolicy.time_window(
                     fail_window=datetime.timedelta(days=10),
                 )
             )
@@ -120,7 +120,7 @@ class TestTimeWindowFreshnessPolicyEvaluator:
                 return 2
 
             @dg.asset(
-                freshness_policy=InternalFreshnessPolicy.time_window(
+                freshness_policy=FreshnessPolicy.time_window(
                     fail_window=datetime.timedelta(days=30),
                 )
             )
@@ -197,7 +197,7 @@ class TestTimeWindowFreshnessPolicyEvaluator:
 
         def create_defs() -> dg.Definitions:
             @dg.asset(
-                freshness_policy=InternalFreshnessPolicy.time_window(
+                freshness_policy=FreshnessPolicy.time_window(
                     fail_window=datetime.timedelta(hours=24),
                 )
             )
@@ -230,7 +230,7 @@ class TestTimeWindowFreshnessPolicyEvaluator:
 
         def create_defs() -> dg.Definitions:
             @dg.asset(
-                freshness_policy=InternalFreshnessPolicy.time_window(
+                freshness_policy=FreshnessPolicy.time_window(
                     fail_window=datetime.timedelta(hours=24),
                     warn_window=datetime.timedelta(hours=12),
                 )
@@ -263,7 +263,7 @@ class TestTimeWindowFreshnessPolicyEvaluator:
 
         def create_defs() -> dg.Definitions:
             @dg.asset(
-                freshness_policy=InternalFreshnessPolicy.time_window(
+                freshness_policy=FreshnessPolicy.time_window(
                     fail_window=datetime.timedelta(hours=24),
                 )
             )
@@ -271,7 +271,7 @@ class TestTimeWindowFreshnessPolicyEvaluator:
                 return 1
 
             @dg.asset(
-                freshness_policy=InternalFreshnessPolicy.time_window(
+                freshness_policy=FreshnessPolicy.time_window(
                     fail_window=datetime.timedelta(hours=24),
                     warn_window=datetime.timedelta(hours=12),
                 )
@@ -318,7 +318,7 @@ class TestCronFreshnessPolicyEvaluator:
 
         def create_defs() -> dg.Definitions:
             @dg.asset(
-                freshness_policy=InternalFreshnessPolicy.cron(
+                freshness_policy=FreshnessPolicy.cron(
                     deadline_cron="0 9 * * *",  # Daily at 9 AM
                     lower_bound_delta=datetime.timedelta(hours=1),
                 )
@@ -387,7 +387,7 @@ class TestCronFreshnessPolicyEvaluator:
 
         def create_defs() -> dg.Definitions:
             @dg.asset(
-                freshness_policy=InternalFreshnessPolicy.cron(
+                freshness_policy=FreshnessPolicy.cron(
                     deadline_cron="0 */6 * * *",  # Every 6 hours
                     lower_bound_delta=datetime.timedelta(minutes=30),
                 )
@@ -396,7 +396,7 @@ class TestCronFreshnessPolicyEvaluator:
                 return 1
 
             @dg.asset(
-                freshness_policy=InternalFreshnessPolicy.cron(
+                freshness_policy=FreshnessPolicy.cron(
                     deadline_cron="0 12 * * 1",  # Every Monday at noon
                     lower_bound_delta=datetime.timedelta(hours=2),
                 )
@@ -405,7 +405,7 @@ class TestCronFreshnessPolicyEvaluator:
                 return 2
 
             @dg.asset(
-                freshness_policy=InternalFreshnessPolicy.cron(
+                freshness_policy=FreshnessPolicy.cron(
                     deadline_cron="*/15 * * * *",  # Every 15 minutes
                     lower_bound_delta=datetime.timedelta(minutes=5),
                 )
@@ -477,7 +477,7 @@ class TestCronFreshnessPolicyEvaluator:
 
         def create_defs() -> dg.Definitions:
             @dg.asset(
-                freshness_policy=InternalFreshnessPolicy.cron(
+                freshness_policy=FreshnessPolicy.cron(
                     deadline_cron="0 9 * * *",  # Daily at 9 AM
                     lower_bound_delta=datetime.timedelta(hours=1),
                 )
@@ -513,7 +513,7 @@ class TestCronFreshnessPolicyEvaluator:
 
         def create_defs() -> dg.Definitions:
             @dg.asset(
-                freshness_policy=InternalFreshnessPolicy.cron(
+                freshness_policy=FreshnessPolicy.cron(
                     deadline_cron="0 9 * * *",  # Daily at 9 AM
                     lower_bound_delta=datetime.timedelta(hours=1),
                 )
@@ -576,7 +576,7 @@ class TestCronFreshnessPolicyEvaluator:
 
         def create_defs() -> dg.Definitions:
             @dg.asset(
-                freshness_policy=InternalFreshnessPolicy.cron(
+                freshness_policy=FreshnessPolicy.cron(
                     deadline_cron="0 9 * * *",  # Daily at 9 AM
                     lower_bound_delta=datetime.timedelta(hours=1),
                 )
@@ -585,7 +585,7 @@ class TestCronFreshnessPolicyEvaluator:
                 return 1
 
             @dg.asset(
-                freshness_policy=InternalFreshnessPolicy.cron(
+                freshness_policy=FreshnessPolicy.cron(
                     deadline_cron="0 */12 * * *",  # Every 12 hours
                     lower_bound_delta=datetime.timedelta(hours=2),
                 )
@@ -630,7 +630,7 @@ class TestCronFreshnessPolicyEvaluator:
 
         def create_defs() -> dg.Definitions:
             @dg.asset(
-                freshness_policy=InternalFreshnessPolicy.cron(
+                freshness_policy=FreshnessPolicy.cron(
                     deadline_cron="0 9 * * *",  # Daily at 9 AM
                     lower_bound_delta=datetime.timedelta(hours=1),
                     timezone="America/New_York",
@@ -670,7 +670,7 @@ class TestCronFreshnessPolicyEvaluator:
 
         def create_defs() -> dg.Definitions:
             @dg.asset(
-                freshness_policy=InternalFreshnessPolicy.cron(
+                freshness_policy=FreshnessPolicy.cron(
                     deadline_cron="0 9 * * *",  # Daily at 9 AM
                     lower_bound_delta=datetime.timedelta(hours=1),  # Window: 8-9 AM
                 )
@@ -747,7 +747,7 @@ class TestCronFreshnessPolicyEvaluator:
 
         def create_defs() -> dg.Definitions:
             @dg.asset(
-                freshness_policy=InternalFreshnessPolicy.cron(
+                freshness_policy=FreshnessPolicy.cron(
                     deadline_cron="0 9 * * *",  # Daily at 9 AM
                     lower_bound_delta=datetime.timedelta(hours=1),  # Window: 8-9 AM
                 )
@@ -826,7 +826,7 @@ class TestCronFreshnessPolicyEvaluator:
 
         def create_defs() -> dg.Definitions:
             @dg.asset(
-                freshness_policy=InternalFreshnessPolicy.cron(
+                freshness_policy=FreshnessPolicy.cron(
                     deadline_cron="0 */6 * * *",  # Every 6 hours (midnight, 6am, noon, 6pm)
                     lower_bound_delta=datetime.timedelta(hours=1),  # Window: 1 hour before deadline
                 )

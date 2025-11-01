@@ -39,7 +39,7 @@ To access the overview page, click **Overview** in the top navigation bar.
 <Tabs>
 <TabItem value="Asset catalog (OSS)">
 
-The **Asset catalog** page lists all [assets](/guides/build/assets) in your Dagster deployment, which can be filtered by asset key, compute kind, asset group, [code location](/deployment/code-locations), and [tags](/guides/build/assets/metadata-and-tags/index.md#tags).
+The **Asset catalog** page lists all [assets](/guides/build/assets) in your Dagster deployment, which can be filtered by asset key, compute kind, asset group, [code location](/deployment/code-locations), and [tags](/guides/build/assets/metadata-and-tags#tags).
 
 Clicking an asset opens the **Asset details** page for that asset. You can also navigate to the **Global asset lineage** page, reload definitions, and materialize assets.
 
@@ -56,7 +56,7 @@ This feature is only available in Dagster+ Pro.
 
 :::
 
-The Dagster+ Pro **Asset catalog** page includes all the information and functionality of the original page, broken out by saved selections, asset group, kind, [owners](/guides/build/assets/metadata-and-tags/index.md#owners), [tags](/guides/build/assets/metadata-and-tags/index.md#tags), and [code location](/deployment/code-locations).
+The Dagster+ Pro **Asset catalog** page includes all the information and functionality of the original page, broken out by saved selections, asset group, kind, [owners](/guides/build/assets/metadata-and-tags#owners), [tags](/guides/build/assets/metadata-and-tags#tags), and [code location](/deployment/code-locations).
 
 On this page, you can:
 

@@ -7,6 +7,7 @@ from typing import Annotated, Callable, Optional, Union
 import dagster as dg
 import pydantic
 from dagster._annotations import superseded
+from dagster._symbol_annotations.public import public
 from dagster._utils.names import clean_name
 from dagster.components.component.state_backed_component import StateBackedComponent
 from dagster.components.resolved.base import resolve_fields
@@ -172,11 +173,31 @@ def resolve_airbyte_workspace_type(context: dg.ResolutionContext, model):
         check.failed(f"Unknown Airbyte workspace type: {type(model)}")
 
 
+@public
 @dg.scaffold_with(AirbyteWorkspaceComponentScaffolder)
 class AirbyteWorkspaceComponent(StateBackedComponent, dg.Model, dg.Resolvable):
     """Loads Airbyte connections from a given Airbyte workspace as Dagster assets.
     Materializing these assets will trigger a sync of the Airbyte connection, enabling
     you to schedule Airbyte syncs using Dagster.
+
+    Example:
+
+        .. code-block:: yaml
+
+            # defs.yaml
+
+            type: dagster_airbyte.AirbyteWorkspaceComponent
+            attributes:
+              workspace:
+                rest_api_base_url: http://localhost:8000/api/public/v1
+                configuration_api_base_url: http://localhost:8000/api/v1
+                workspace_id: your-workspace-id
+                client_id: "{{ env.AIRBYTE_CLIENT_ID }}"
+                client_secret: "{{ env.AIRBYTE_CLIENT_SECRET }}"
+              connection_selector:
+                by_name:
+                  - my_postgres_to_snowflake_connection
+                  - my_mysql_to_bigquery_connection
     """
 
     workspace: Annotated[
@@ -220,12 +241,72 @@ class AirbyteWorkspaceComponent(StateBackedComponent, dg.Model, dg.Resolvable):
     def _base_translator(self) -> DagsterAirbyteTranslator:
         return DagsterAirbyteTranslator()
 
+    @public
     def get_asset_spec(self, props: AirbyteConnectionTableProps) -> dg.AssetSpec:
+        """Generates an AssetSpec for a given Airbyte connection table.
+
+        This method can be overridden in a subclass to customize how Airbyte connection tables
+        are converted to Dagster asset specs. By default, it delegates to the configured
+        DagsterAirbyteTranslator.
+
+        Args:
+            props: The AirbyteConnectionTableProps containing information about the connection
+                and table/stream being synced
+
+        Returns:
+            An AssetSpec that represents the Airbyte connection table as a Dagster asset
+
+        Example:
+            Override this method to add custom metadata to all Airbyte assets:
+
+            .. code-block:: python
+
+                from dagster_airbyte import AirbyteWorkspaceComponent
+                import dagster as dg
+
+                class CustomAirbyteWorkspaceComponent(AirbyteWorkspaceComponent):
+                    def get_asset_spec(self, props):
+                        base_spec = super().get_asset_spec(props)
+                        return base_spec.replace_attributes(
+                            metadata={
+                                **base_spec.metadata,
+                                "data_source": "airbyte",
+                                "connection_id": props.connection_id
+                            }
+                        )
+        """
         return self._base_translator.get_asset_spec(props)
 
+    @public
     def execute(
         self, context: dg.AssetExecutionContext, airbyte: BaseAirbyteWorkspace
     ) -> Iterable[Union[dg.AssetMaterialization, dg.MaterializeResult]]:
+        """Executes an Airbyte sync for the selected connection.
+
+        This method can be overridden in a subclass to customize the sync execution behavior,
+        such as adding custom logging or handling sync results differently.
+
+        Args:
+            context: The asset execution context provided by Dagster
+            airbyte: The BaseAirbyteWorkspace resource used to trigger and monitor syncs
+
+        Yields:
+            AssetMaterialization or MaterializeResult events from the Airbyte sync
+
+        Example:
+            Override this method to add custom logging during sync execution:
+
+            .. code-block:: python
+
+                from dagster_airbyte import AirbyteWorkspaceComponent
+                import dagster as dg
+
+                class CustomAirbyteWorkspaceComponent(AirbyteWorkspaceComponent):
+                    def execute(self, context, airbyte):
+                        context.log.info(f"Starting Airbyte sync for connection")
+                        yield from super().execute(context, airbyte)
+                        context.log.info("Airbyte sync completed successfully")
+        """
         yield from airbyte.sync_and_poll(context=context)
 
     def _load_asset_specs(self, state: AirbyteWorkspaceData) -> Sequence[dg.AssetSpec]:

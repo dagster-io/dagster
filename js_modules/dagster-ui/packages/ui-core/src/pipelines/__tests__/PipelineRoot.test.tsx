@@ -39,6 +39,12 @@ jest.mock('../../app/analytics', () => ({
 // This file must be mocked because Jest can't handle `import.meta.url`.
 jest.mock('../../graph/asyncGraphLayout', () => ({}));
 
+// Mock useJobPermissions to control job-specific permissions in tests
+const mockUseJobPermissions = jest.fn();
+jest.mock('../../app/useJobPermissions', () => ({
+  useJobPermissions: (...args: any[]) => mockUseJobPermissions(...args),
+}));
+
 const REPO_NAME = 'foo';
 const REPO_LOCATION = 'bar';
 
@@ -48,6 +54,10 @@ describe('PipelineRoot', () => {
   const path = `/locations/${repoAddressAsURLString(
     repoAddress,
   )}/pipelines/${pipelineName}:default`;
+
+  beforeEach(() => {
+    mockUseJobPermissions.mockClear();
+  });
 
   it('renders overview by default', async () => {
     render(
@@ -63,15 +73,16 @@ describe('PipelineRoot', () => {
   });
 
   it('renders playground route', async () => {
-    const locationPermissions = {
-      [REPO_LOCATION]: {
-        canLaunchPipelineExecution: {enabled: true, disabledReason: ''},
-      },
-    };
+    // Mock job-specific permissions to return true
+    mockUseJobPermissions.mockReturnValue({
+      hasLaunchExecutionPermission: true,
+      hasLaunchReexecutionPermission: true,
+      loading: false,
+    });
 
     render(
       <RecoilRoot>
-        <TestPermissionsProvider locationOverrides={locationPermissions}>
+        <TestPermissionsProvider>
           <MemoryRouter initialEntries={[`${path}/playground`]}>
             <PipelineRoot repoAddress={repoAddress} />
           </MemoryRouter>
@@ -84,15 +95,16 @@ describe('PipelineRoot', () => {
   });
 
   it('redirects to disambiguation if no launch permission', async () => {
-    const locationPermissions = {
-      [REPO_LOCATION]: {
-        canLaunchPipelineExecution: {enabled: false, disabledReason: 'no can do'},
-      },
-    };
+    // Mock job-specific permissions to return false
+    mockUseJobPermissions.mockReturnValue({
+      hasLaunchExecutionPermission: false,
+      hasLaunchReexecutionPermission: false,
+      loading: false,
+    });
 
     render(
       <RecoilRoot>
-        <TestPermissionsProvider locationOverrides={locationPermissions}>
+        <TestPermissionsProvider>
           <MemoryRouter initialEntries={[`${path}/playground`]}>
             <PipelineRoot repoAddress={repoAddress} />
           </MemoryRouter>

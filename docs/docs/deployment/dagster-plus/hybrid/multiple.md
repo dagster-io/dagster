@@ -12,7 +12,7 @@ Each Dagster+ full deployment (e.g., `prod`) needs to have at least one agent ru
 
 - For redundancy and high availability
 - When you need to run agents in completely separate infrastructure environments or AWS accounts, with separate compute resources, volumes, and networks
-- To dedicate specific agents for [branch deployments](/deployment/dagster-plus/ci-cd/branch-deployments)
+- To dedicate specific agents for [branch deployments](/deployment/dagster-plus/deploying-code/branch-deployments)
 
 ## Considerations
 
@@ -214,10 +214,10 @@ dagsterCloud:
 
 #### In Amazon ECS
 
-Modify your ECS Cloud Formation template to add the following configuration to the `config.yaml` passed to the agent:
+Modify your ECS Cloud Formation template to add the following configuration to the `dagster.yaml` file passed to the agent (the ECS agent configuration reference can be found [here](/deployment/dagster-plus/hybrid/amazon-ecs/configuration-reference#per-deployment-configuration)):
 
 ```yaml
-# config.yaml
+# dagster.yaml
 agent_queues:
   # Continue to handle requests for code locations that aren't
   # assigned to a specific agent queue

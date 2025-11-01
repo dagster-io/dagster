@@ -99,7 +99,7 @@ You can pass an instance of the custom <PyObject section="libraries" module="dag
 
 ### Fetching column-level metadata for Fivetran assets
 
-Dagster allows you to emit column-level metadata, like [column schema](/guides/build/assets/metadata-and-tags/index.md#standard-metadata-types) and [column lineage](/guides/build/assets/metadata-and-tags/index.md#column-lineage), as [materialization metadata](/guides/build/assets/metadata-and-tags/index.md#runtime-metadata).
+Dagster allows you to emit column-level metadata, like [column schema](/guides/build/assets/metadata-and-tags#standard-metadata-types) and [column lineage](/guides/build/assets/metadata-and-tags#column-lineage), as [materialization metadata](/guides/build/assets/metadata-and-tags#runtime-metadata).
 
 With this metadata, you can view documentation in Dagster for all columns in your Fivetran connector tables.
 

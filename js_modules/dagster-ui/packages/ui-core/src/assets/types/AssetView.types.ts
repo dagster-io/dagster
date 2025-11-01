@@ -664,6 +664,8 @@ export type AssetViewDefinitionQuery = {
                   id: string;
                   selectorId: string;
                   status: Types.InstigationStatus;
+                  hasStartPermission: boolean;
+                  hasStopPermission: boolean;
                 };
               }
             | {
@@ -676,6 +678,8 @@ export type AssetViewDefinitionQuery = {
                   id: string;
                   selectorId: string;
                   status: Types.InstigationStatus;
+                  hasStartPermission: boolean;
+                  hasStopPermission: boolean;
                   typeSpecificData:
                     | {__typename: 'ScheduleData'}
                     | {__typename: 'SensorData'; lastCursor: string | null}
@@ -17136,6 +17140,8 @@ export type AssetViewDefinitionNodeFragment = {
           id: string;
           selectorId: string;
           status: Types.InstigationStatus;
+          hasStartPermission: boolean;
+          hasStopPermission: boolean;
         };
       }
     | {
@@ -17148,6 +17154,8 @@ export type AssetViewDefinitionNodeFragment = {
           id: string;
           selectorId: string;
           status: Types.InstigationStatus;
+          hasStartPermission: boolean;
+          hasStopPermission: boolean;
           typeSpecificData:
             | {__typename: 'ScheduleData'}
             | {__typename: 'SensorData'; lastCursor: string | null}
@@ -32754,4 +32762,4 @@ export type AssetViewDefinitionNodeFragment = {
     | null;
 };
 
-export const AssetViewDefinitionQueryVersion = 'acbaff586d33b171138603f48f01ea6045470c41c6c7ef1afc716f159f6a446f';
+export const AssetViewDefinitionQueryVersion = '085912b81c1d063190109b0133df9a51f8f3c98952df345ebf1871676d983d10';

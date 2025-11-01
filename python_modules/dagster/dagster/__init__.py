@@ -153,6 +153,7 @@ from dagster._core.definitions.asset_sensor_definition import (
 from dagster._core.definitions.assets.definition.asset_dep import AssetDep as AssetDep
 from dagster._core.definitions.assets.definition.asset_spec import (
     AssetSpec as AssetSpec,
+    apply_freshness_policy as apply_freshness_policy,
     map_asset_specs as map_asset_specs,
 )
 from dagster._core.definitions.assets.definition.assets_definition import (
@@ -243,6 +244,7 @@ from dagster._core.definitions.events import (
     DynamicOutput as DynamicOutput,
     ExpectationResult as ExpectationResult,
     Failure as Failure,
+    HookExecutionResult as HookExecutionResult,
     Output as Output,
     RetryRequested as RetryRequested,
     TypeCheck as TypeCheck,
@@ -256,6 +258,7 @@ from dagster._core.definitions.executor_definition import (
     multiple_process_executor_requirements as multiple_process_executor_requirements,
     multiprocess_executor as multiprocess_executor,
 )
+from dagster._core.definitions.freshness import FreshnessPolicy as FreshnessPolicy
 from dagster._core.definitions.freshness_policy import (
     LegacyFreshnessPolicy as LegacyFreshnessPolicy,
 )
@@ -345,6 +348,9 @@ from dagster._core.definitions.output import (
     GraphOut as GraphOut,
     Out as Out,
     OutputMapping as OutputMapping,
+)
+from dagster._core.definitions.partitions.context import (
+    partition_loading_context as partition_loading_context,
 )
 from dagster._core.definitions.partitions.definition import (
     DailyPartitionsDefinition as DailyPartitionsDefinition,
@@ -582,6 +588,7 @@ from dagster._core.storage.dagster_run import (
     RunRecord as RunRecord,
     RunsFilter as RunsFilter,
 )
+from dagster._core.storage.defs_state import UPathDefsStateStorage as UPathDefsStateStorage
 from dagster._core.storage.file_manager import (
     FileHandle as FileHandle,
     LocalFileHandle as LocalFileHandle,
@@ -656,6 +663,9 @@ from dagster.components.component.component import (
     ComponentTypeSpec as ComponentTypeSpec,
 )
 from dagster.components.component.component_loader import component_instance as component_instance
+from dagster.components.component.state_backed_component import (
+    StateBackedComponent as StateBackedComponent,
+)
 from dagster.components.component.template_vars import template_var as template_var
 from dagster.components.component_scaffolding import scaffold_component as scaffold_component
 from dagster.components.components import (
@@ -750,7 +760,6 @@ _DEPRECATED_RENAMED: Final[Mapping[str, tuple[Callable, str]]] = {
 _DEPRECATED_WITH_ERROR: Final[Mapping[str, str]] = {
     ##### EXAMPLE
     # "Foo": "Use Bar instead.",
-    "FreshnessPolicy": "FreshnessPolicy was renamed to LegacyFreshnessPolicy in 1.11.0. For more information, please refer to the section 'Migrating to 1.11.0' in the migration guide (MIGRATION.md)."
 }
 
 

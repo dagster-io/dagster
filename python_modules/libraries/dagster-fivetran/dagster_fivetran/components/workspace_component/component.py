@@ -82,6 +82,23 @@ class FivetranAccountComponent(StateBackedComponent, dg.Model, dg.Resolvable):
     """Loads Fivetran connectors from a given Fivetran instance as Dagster assets.
     Materializing these assets will trigger a sync of the Fivetran connector, enabling
     you to schedule Fivetran syncs using Dagster.
+
+    Example:
+
+        .. code-block:: yaml
+
+            # defs.yaml
+
+            type: dagster_fivetran.FivetranAccountComponent
+            attributes:
+              workspace:
+                account_id: your_account_id
+                api_key: "{{ env.FIVETRAN_API_KEY }}"
+                api_secret: "{{ env.FIVETRAN_API_SECRET }}"
+              connector_selector:
+                by_name:
+                  - my_postgres_connector
+                  - my_snowflake_connector
     """
 
     workspace: Annotated[
@@ -129,12 +146,72 @@ class FivetranAccountComponent(StateBackedComponent, dg.Model, dg.Resolvable):
         default_key = f"{self.__class__.__name__}[{self.workspace_resource.account_id}]"
         return DefsStateConfig.from_args(self.defs_state, default_key=default_key)
 
+    @public
     def get_asset_spec(self, props: FivetranConnectorTableProps) -> dg.AssetSpec:
+        """Generates an AssetSpec for a given Fivetran connector table.
+
+        This method can be overridden in a subclass to customize how Fivetran connector tables
+        are converted to Dagster asset specs. By default, it delegates to the configured
+        DagsterFivetranTranslator.
+
+        Args:
+            props: The FivetranConnectorTableProps containing information about the connector
+                and destination table being synced
+
+        Returns:
+            An AssetSpec that represents the Fivetran connector table as a Dagster asset
+
+        Example:
+            Override this method to add custom tags based on connector properties:
+
+            .. code-block:: python
+
+                from dagster_fivetran import FivetranAccountComponent
+                import dagster as dg
+
+                class CustomFivetranAccountComponent(FivetranAccountComponent):
+                    def get_asset_spec(self, props):
+                        base_spec = super().get_asset_spec(props)
+                        return base_spec.replace_attributes(
+                            tags={
+                                **base_spec.tags,
+                                "connector_type": props.connector_type,
+                                "destination": props.destination_name
+                            }
+                        )
+        """
         return self._base_translator.get_asset_spec(props)
 
+    @public
     def execute(
         self, context: dg.AssetExecutionContext, fivetran: FivetranWorkspace
     ) -> Iterable[Union[dg.AssetMaterialization, dg.MaterializeResult]]:
+        """Executes a Fivetran sync for the selected connector.
+
+        This method can be overridden in a subclass to customize the sync execution behavior,
+        such as adding custom logging or handling sync results differently.
+
+        Args:
+            context: The asset execution context provided by Dagster
+            fivetran: The FivetranWorkspace resource used to trigger and monitor syncs
+
+        Yields:
+            AssetMaterialization or MaterializeResult events from the Fivetran sync
+
+        Example:
+            Override this method to add custom logging during sync execution:
+
+            .. code-block:: python
+
+                from dagster_fivetran import FivetranAccountComponent
+                import dagster as dg
+
+                class CustomFivetranAccountComponent(FivetranAccountComponent):
+                    def execute(self, context, fivetran):
+                        context.log.info("Starting Fivetran sync")
+                        yield from super().execute(context, fivetran)
+                        context.log.info("Fivetran sync completed successfully")
+        """
         yield from fivetran.sync_and_poll(context=context)
 
     def _load_asset_specs(self, state: FivetranWorkspaceData) -> Sequence[dg.AssetSpec]:

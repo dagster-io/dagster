@@ -1,5 +1,97 @@
 # Changelog
 
+## 1.12.0 (core) / 0.28.0 (libraries)
+
+## Major changes since 1.11.0 (core) / 0.27.0 (libraries)
+
+### **UI**
+
+- **Refreshed UI:** The UI has been redesigned and streamlined to make it easier to find common utilities quickly. Navigation elements have been moved from a header to a collapsible sidebar to help highlight important workflows and provide more visual space throughout the product.
+
+### Components
+
+- **Components GA:** The Components framework and the `dg` CLI are now marked as GA (previously Release Candidate). The APIs are fully supported throughout all parts of the product and remain the recommended defaults for new Dagster projects.
+- **Standardized Integrations:** Integration components have been updated to have `execute()` and `get_asset_spec()` methods that can be overridden by subclasses, making it easier and more consistent to customize your components.
+- **New Components:**
+  - [SigmaComponent](https://docs.dagster.io/integrations/libraries/sigma)
+  - [LookerComponent](https://docs.dagster.io/integrations/libraries/looker)
+  - [TableauComponent](https://docs.dagster.io/integrations/libraries/tableau)
+  - [OmniComponent](https://docs.dagster.io/integrations/libraries/omni)
+- **State-Backed Components:** Added a new `StateBackedComponent` abstract base class that enables components to persist and manage state separately from their YAML / Python configuration. This is particularly useful for integration components that need to fetch external data. State can be managed locally, in versioned storage, or via code server snapshots. Many integration components (`AirbyteWorkspaceComponent`, `FivetranAccountComponent`, `PowerBIWorkspaceComponent`, `AirflowInstanceComponent`, and `DbtProjectComponent`) now extend `StateBackedComponent` to provide better control over state management. You can check out the docs [here](https://docs.dagster.io/guides/build/components/state-backed-components)!
+
+### Simplified Deployment
+
+- `dg scaffold build-artifacts` scaffolds Docker and configuration files needed to build and deploy your Dagster project to Dagster Cloud, with support for multiple container registries (ECR, DockerHub, GHCR, ACR, GCR).
+- `dg scaffold github-actions` generates a complete GitHub Actions CI/CD workflow for deploying to Dagster Cloud, with auto-detection of Serverless vs Hybrid agents and guided setup for required secrets.
+
+### **Core Orchestration**
+
+- **FreshnessPolicies GA:** The new [FreshnessPolicy](https://docs.dagster.io/guides/observe/asset-freshness-policies) API introduced in 1.10.0 has stabilized and is now marked as GA (previously Preview). These supersede the `LegacyFreshnessPolicy` API (formerly `FreshnessPolicy`, deprecated in 1.10.0), as well as freshness checks.
+  - `FreshnessPolicy` and `apply_freshness_policy` are now exported from the top-level `dagster` module (instead of `dagster.preview.freshness` ).
+  - The `build_.*_freshness_checks` methods have been marked as `superseded` . Their functionality will remain unchanged, but we recommend using `FreshnessPolicy` s for new use cases.
+  - The `FreshnessDaemon` now runs by default, rather than needing to be explicitly enabled via `dagster.yaml` settings. To turn it off, set:
+    ```yaml
+    freshness:
+      enabled: false
+    ```
+- **Configurable Backfills:** Run config can now be supplied when launching a backfill, allowing you to specify configuration that will be applied uniformly to all runs.
+- **Time-based partition exclusions:** All subclasses of `TimeWindowPartitionsDefinition` now support an `exclusions` parameter, which allows you to exclude specific dates/times or recurring schedules from your partition set. This is useful for implementing custom calendars that exclude weekends, holidays, or maintenance windows. Exclusions can be specified as cron strings (e.g., `"0 0 * * 6"` for Saturdays) or datetime objects for specific dates.
+- **Execution Dependency Options:** All `Executor`s have been updated to accept an optional `step_dependency_config` parameter with a `require_upstream_step_success` flag. When set to `False` via `{"step_dependency_config": {"require_upstream_step_success": False}}`, downstream steps can start as soon as their required upstream outputs are available, rather than waiting for the entire upstream step to complete successfully. This is particularly useful for large multi-assets where downstream assets only depend on a subset of upstream outputs.
+
+### Support & Docs
+
+- We launched a new [Support Center](https://support.dagster.io/) with help articles on Dagster+ Hybrid and Serverless troubleshooting, and answers to customer questions previously answered by our support team.
+- In our [docs](https://docs.dagster.io/):
+  - We reorganized the [Examples section](https://docs.dagster.io/examples) for easier navigation, and added new full pipeline examples on using Dagster with [DSpy](https://docs.dagster.io/examples/dspy) and [PyTorch](https://docs.dagster.io/examples/ml), as well as targeted mini examples that showcase best practices for:
+    - [implementing dynamic fanout patterns](https://docs.dagster.io/examples/mini-examples/dynamic-fanout)
+    - [using Dagster dynamic outputs for parallel processing](https://docs.dagster.io/examples/mini-examples/dynamic-vs-parallel)
+    - [caching resources](https://docs.dagster.io/examples/mini-examples/resource-caching)
+    - [sharing code across projects](https://docs.dagster.io/examples/mini-examples/shared-module)
+  - We added new guides to help you:
+    - [optimize and troubleshoot your Dagster+ Hybrid deployment](https://docs.dagster.io/deployment/troubleshooting/hybrid-optimizing-troubleshooting)
+    - [understand where and why your Dagster code is hanging or running slow](https://docs.dagster.io/deployment/troubleshooting/py-spy-guide)
+    - [resolve sensor timeout issues](https://docs.dagster.io/deployment/troubleshooting/sensor-timeouts)
+  - We added links to Dagster University, our popular Python Primer blog post series, Dagster Deep Dives, customer case studies, Dagster Open Platform, and sales demo example pipelines so you can access all the resources you need to learn about Dagster in one place.
+
+## Changes since 1.11.16 (core) / 0.27.16 (libraries)
+
+### New
+
+- In the Dagster helm chart, images can now be specified by digest (Thanks, [@pmartincalvo](https://github.com/pmartincalvo)!)
+- The `MultiprocessExecutor`, `DockerExecutor`, and `K8sJobExecutor` now retry according to their configured retry policy when the step fails during resource initialization.
+- [dagster-aws] Added an optional `key_prefix` parameter to `PipesS3ContextInjector` (Thanks, [@elipinska](https://github.com/elipinska)!)
+- [dagster-azure] Added a new `PipesAzureMLClient`.
+- [dagster-pipes] Added support for `AzureBlobStorage`.
+- [dagster-tableau] Added a new `TableauComponent`
+- [dagster-looker] Added a `LookerComponent`
+- [dagster-sigma] Added a new `SigmaComponent`.
+- [dagster-dbt] The `DagsterDbtTranslator` no longer has a `get_freshness_policy` method, nor does it automatically parse the legacy / deprecated `LegacyFreshnessPolicy` objects from dbt model configuration.
+- [dagster-sling] The `DagsterSlingTranslator` no longer has a `get_freshness_policy` method, nor does it automatically parse the legacy / deprecated `LegacyFreshnessPolicy` objects from sling configuration.
+
+### Bugfixes
+
+- Asset jobs that are unable to resolve their asset selection (for example, due to targeting an empty set of asset keys) will now raise a clearer exception at definition load time explaining which job failed to resolve its asset selection.
+- Fixed an issue where automatic run retries of runs that only targeted asset checks would sometimes fail with a `DagsterInvalidConfigError`.
+- [ui] Fixed issue causing sensor descriptions to not be displayed in the automation list.
+- [dagster-dbt] Fixed a bug causing `enable_code_references` to result in errors for dbt assets.
+
+### Documentation
+
+- Corrected several typos and inconsistencies in the helm chart documentation (Thanks, [@piggybox](https://github.com/piggybox)!)
+
+## 1.11.16 (core) / 0.27.16 (libraries)
+
+### New
+
+- The proxy GRPC server heartbeat TTL can now be configured with the DAGSTER_GRPC_PROXY_HEARTBEAT_TTL_SECONDS env var (default remains 30 seconds).
+
+### Bugfixes
+
+- Fixed an issue introduced in dagster 1.11.15 where code locations that previously loaded would sometimes fail to load with a `gRPC Error code: RESOURCE_EXHAUSTED` error.
+- Fixed an issue where defining a repository using a dictionary of job definitions with a key that did not match the name of the job would work when running dagster locally but not when using Dagster+.
+- [components] Fixed a bug that caused errors when using the `DbtProjectComponent`, `FivetranAccountComponent`, and similar state-based components in k8s deployments due to a missing `StateStorage` object in context.
+- [dagster-omni] Added a dependency on `python-dateutil` to `dagster-omni`. (Thanks, [@bollwyvl](https://github.com/bollwyvl)!)
+
 ## 1.11.15 (core) / 0.27.15 (libraries)
 
 ### New
@@ -19,6 +111,7 @@
 - [ui] Fix top nav rendering for Plus users.
 - [dagster-celery] Fix Celery executor ignoring pools for ops. (Thanks, [@kkanter-asml](https://github.com/kkanter-asml)!)
 - [dagster-dbt] Fixed issue that made custom template vars unavailable when specifying them for the `cli_args:` field of the `DbtProjectComponent`.
+- [dagster-cloud-cli] Fixed an issue where deploying multiple serverless code locations or code locations with a custom project directory would sometimes fail with an "The dagster package dependency was expected but not found." error.
 
 ### Documentation
 

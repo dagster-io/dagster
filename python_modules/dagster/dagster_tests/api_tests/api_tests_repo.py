@@ -109,6 +109,15 @@ def bar_job():
     fail_subset(one())
 
 
+@dg.job(name="bar")
+def other_bar_job():
+    @dg.op
+    def hello():
+        pass
+
+    hello()
+
+
 @dg.schedule(job_name="baz", cron_schedule="* * * * *")
 def partitioned_run_request_schedule():
     return dg.RunRequest(partition_key="a")
@@ -215,6 +224,6 @@ def bar_repo():
     }
 
 
-@dg.repository  # pyright: ignore[reportArgumentType]
+@dg.repository
 def other_repo():
-    return {"jobs": {"other_foo": define_other_foo_job}}
+    return {"jobs": {"other_foo": define_other_foo_job, "bar": other_bar_job}}

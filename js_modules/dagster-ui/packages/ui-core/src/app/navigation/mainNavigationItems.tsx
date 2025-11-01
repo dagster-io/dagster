@@ -53,7 +53,7 @@ export const getTopGroups = (config: NavigationGroupConfig): NavigationGroup[] =
               icon={<Icon name="timeline" />}
               label="Overview"
               href="/overview"
-              isActive={(_, currentLocation) => currentLocation.pathname === '/overview'}
+              isActive={(_, currentLocation) => currentLocation.pathname.startsWith('/overview')}
             />
           ),
         },

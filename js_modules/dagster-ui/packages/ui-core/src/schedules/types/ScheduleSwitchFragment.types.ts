@@ -13,5 +13,7 @@ export type ScheduleSwitchFragment = {
     id: string;
     selectorId: string;
     status: Types.InstigationStatus;
+    hasStartPermission: boolean;
+    hasStopPermission: boolean;
   };
 };

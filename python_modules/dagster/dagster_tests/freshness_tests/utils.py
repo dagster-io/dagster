@@ -64,7 +64,7 @@ def create_target_from_fn_and_local_scope(
         file_contents = f"""
 ## Preamble
 import dagster as dg
-from dagster._core.definitions.freshness import InternalFreshnessPolicy
+from dagster._core.definitions.freshness import FreshnessPolicy
 import datetime
 
 ## Automatically generated from function closure variables

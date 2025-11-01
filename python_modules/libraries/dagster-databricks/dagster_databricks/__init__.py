@@ -10,6 +10,9 @@ This package provides:
 
 from dagster_shared.libraries import DagsterLibraryRegistry
 
+from dagster_databricks.components.databricks_asset_bundle.component import (
+    DatabricksAssetBundleComponent as DatabricksAssetBundleComponent,
+)
 from dagster_databricks.databricks import (
     DatabricksClient as DatabricksClient,
     DatabricksError as DatabricksError,

@@ -94,8 +94,13 @@ export const ObserveAutomationSensorRow = forwardRef(
 
     const tick = sensorData?.sensorState.ticks[0];
 
-    const sensorType = sensorData?.sensorType;
-    const sensorInfo = sensorType ? SENSOR_TYPE_META[sensorType] : null;
+    const sensorDescription = useMemo(() => {
+      if (sensorData?.description) {
+        return sensorData.description;
+      }
+      const sensorType = sensorData?.sensorType;
+      return sensorType ? SENSOR_TYPE_META[sensorType].description : null;
+    }, [sensorData]);
 
     const right = () => {
       if (sensorQueryResult.loading && !sensorQueryResult.data) {
@@ -167,9 +172,9 @@ export const ObserveAutomationSensorRow = forwardRef(
             <Box flex={{direction: 'column', gap: 4}}>
               <Box flex={{direction: 'row', gap: 12, alignItems: 'center'}}>
                 {name}
-                {sensorInfo?.description ? (
+                {sensorDescription ? (
                   <Tooltip
-                    content={<div style={{width: 320}}>{sensorInfo.description}</div>}
+                    content={<div style={{maxWidth: 320}}>{sensorDescription}</div>}
                     placement="top"
                   >
                     <Icon name="info" color={Colors.textLight()} />

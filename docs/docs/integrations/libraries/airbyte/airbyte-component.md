@@ -12,6 +12,12 @@ partnerlink: https://airbyte.com/tutorials/orchestrate-data-ingestion-and-transf
 
 The [dagster-airbyte](/api/libraries/dagster-airbyte) library provides an `AirbyteWorkspaceComponent` which can be used to easily represent Airbyte connections as assets in Dagster.
 
+:::info
+
+`AirbyteWorkspaceComponent` is a [state-backed component](/guides/build/components/state-backed-components), which fetches and caches Airbyte workspace metadata. For information on managing component state, see [Configuring state-backed components](/guides/build/components/state-backed-components/configuring-state-backed-components).
+
+:::
+
 ## 1. Prepare a Dagster project
 
 To begin, you'll need a Dagster project. You can use an [existing components-ready project](/guides/build/projects/moving-to-components/migrating-project) or create a new one:

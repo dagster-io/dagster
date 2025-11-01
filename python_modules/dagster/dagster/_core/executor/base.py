@@ -48,7 +48,38 @@ class Executor(ABC):
     def step_dependency_config(self) -> StepDependencyConfig:
         return StepDependencyConfig.default()
 
-    def get_failure_or_retry_event_after_crash(
+    def get_step_event_or_retry_event(
+        self,
+        step_context: "IStepContext",
+        err_info: SerializableErrorInfo,
+        known_state: "KnownExecutionState",
+        original_event: "DagsterEvent",
+    ):
+        from dagster._core.events import DagsterEvent
+
+        retry_policy = step_context.op_retry_policy
+        retry_state = known_state.get_retry_state()
+        previous_attempt_count = retry_state.get_attempt_count(step_context.step.key)
+        should_retry = (
+            retry_policy
+            and not step_context.retry_mode.disabled
+            and previous_attempt_count < retry_policy.max_retries
+        )
+
+        if should_retry:
+            return DagsterEvent.step_retry_event(
+                step_context,
+                StepRetryData(
+                    error=err_info,
+                    seconds_to_wait=check.not_none(retry_policy).calculate_delay(
+                        previous_attempt_count + 1
+                    ),
+                ),
+            )
+        else:
+            return original_event
+
+    def get_failure_or_retry_event_after_error(
         self,
         step_context: "IStepContext",
         err_info: SerializableErrorInfo,
