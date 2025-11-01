@@ -3,6 +3,8 @@ from typing import AbstractSet, Any, Callable, Optional, Union, overload  # noqa
 
 import dagster._check as check
 from dagster._annotations import beta, beta_param, hidden_param, public
+from dagster._core.decorator_utils import get_function_params
+from dagster._core.definitions.result import ObserveResult
 from dagster._core.definitions.asset_checks.asset_check_spec import AssetCheckSpec
 from dagster._core.definitions.assets.definition.asset_spec import AssetExecutionType, AssetSpec
 from dagster._core.definitions.assets.definition.assets_definition import AssetsDefinition
@@ -17,15 +19,35 @@ from dagster._core.definitions.decorators.decorator_assets_definition_builder im
     DecoratorAssetsDefinitionBuilderArgs,
     create_check_specs_by_output_name,
 )
-from dagster._core.definitions.events import CoercibleToAssetKey, CoercibleToAssetKeyPrefix
+from dagster._core.definitions.decorators.op_decorator import _Op
+from dagster._core.definitions.events import (
+    CoercibleToAssetKey,
+    CoercibleToAssetKeyPrefix,
+    Output,
+    AssetObservation,
+)
 from dagster._core.definitions.freshness_policy import LegacyFreshnessPolicy
 from dagster._core.definitions.metadata import RawMetadataMapping
 from dagster._core.definitions.partitions.definition import PartitionsDefinition
 from dagster._core.definitions.resource_annotation import get_resource_args
 from dagster._core.definitions.resource_definition import ResourceDefinition
-from dagster._core.definitions.source_asset import SourceAsset, SourceAssetObserveFunction
+from dagster._core.definitions.source_asset import (
+    SourceAsset,
+    SourceAssetObserveFunction,
+    SYSTEM_METADATA_KEY_SOURCE_ASSET_OBSERVATION,
+)
+from dagster._core.storage.tags import COMPUTE_KIND_TAG
 from dagster._utils.tags import normalize_tags
 from dagster._utils.warnings import disable_dagster_warnings
+from dagster._core.definitions.data_version import (
+    DATA_VERSION_TAG,
+    DataVersion,
+    DataVersionsByPartition,
+)
+from dagster._core.errors import (
+    DagsterInvalidObservationError,
+    DagsterInvariantViolationError,
+)
 
 
 @overload
@@ -227,6 +249,106 @@ class _ObservableSourceAsset:
                 tags=self.tags,
             )
 
+def wrap_multi_source_asset_observe_fn_in_op_compute_fn(
+    fn: Callable[..., Any],
+    asset_specs: Sequence[AssetSpec],
+) -> Callable[..., Any]:
+    from dagster._core.definitions.decorators.op_decorator import (
+        DecoratedOpFunction,
+        is_context_provided,
+    )
+    from dagster._core.execution.context.compute import OpExecutionContext
+
+    check.not_none(fn, "Must be an observable source asset")
+    assert fn  # for type checker
+
+    observe_fn = fn
+
+    observe_fn_has_context = is_context_provided(get_function_params(observe_fn))
+
+    def fn(context: OpExecutionContext):
+        resource_kwarg_keys = [param.name for param in get_resource_args(observe_fn)]
+        resource_kwargs = {
+            key: context.resources.original_resource_dict.get(key) for key in resource_kwarg_keys
+        }
+        observe_fn_return_values = (
+            observe_fn(context, **resource_kwargs)
+            if observe_fn_has_context
+            else observe_fn(**resource_kwargs)
+        )
+        for observe_fn_return_value in observe_fn_return_values:
+
+            if isinstance(observe_fn_return_value, ObserveResult):
+                data_version = observe_fn_return_value.data_version
+                metadata = observe_fn_return_value.metadata
+                extra_tags = observe_fn_return_value.tags or {}
+                asset_key = observe_fn_return_value.asset_key
+                asset_spec = next(spec for spec in asset_specs if spec.key == asset_key)
+
+                if not asset_spec:
+                    raise DagsterInvariantViolationError(
+                        f"Asset key {asset_key.to_user_string()} not found in AssetsDefinition"
+                    )
+
+            else:
+                raise DagsterInvalidObservationError(
+                    f"Observe function for multi asset must yield ObserveResults but returned a value of type"
+                    f" {type(observe_fn_return_value)}"
+                )
+
+            if isinstance(data_version, DataVersion):
+                if asset_spec.partitions_def is not None:
+                    raise DagsterInvalidObservationError(
+                        f"{asset_key} is partitioned. Returning `{data_version.__class__}` not supported"
+                        " for partitioned assets. Return `DataVersionsByPartition` instead."
+                    )
+
+                tags = {
+                    **({DATA_VERSION_TAG: data_version.value} if data_version is not None else {}),
+                    **extra_tags,
+                }
+
+                context.log_event(
+                    AssetObservation(
+                        asset_key=asset_key,
+                        tags=tags,
+                        metadata=metadata,
+                    )
+                )
+
+            elif isinstance(data_version, DataVersionsByPartition):
+                if asset_spec.partitions_def is None:
+                    raise DagsterInvalidObservationError(
+                        f"{asset_key} is not partitioned, so its observe function should return"
+                        " a DataVersion, not a DataVersionsByPartition"
+                    )
+
+                for (
+                    partition_key,
+                    partition_data_version,
+                ) in data_version.data_versions_by_partition.items():
+                    context.log_event(
+                        AssetObservation(
+                            asset_key=asset_key,
+                            tags={DATA_VERSION_TAG: partition_data_version.value},
+                            partition=partition_key,
+                        )
+                    )
+            else:
+                raise DagsterInvalidObservationError(
+                    f"Observe function for {asset_key} must return a DataVersion, ObserveResult or"
+                    " DataVersionsByPartition, but returned a value of type"
+                    f" {type(observe_fn_return_value)}"
+                )
+
+            yield Output(
+                value=None,
+                output_name=asset_key.to_python_identifier(),
+                metadata={SYSTEM_METADATA_KEY_SOURCE_ASSET_OBSERVATION: True}
+            )
+
+
+    return fn
 
 @beta_param(param="resource_defs")
 @public
@@ -317,7 +439,7 @@ def multi_observable_source_asset(
             op_name=name or fn.__name__,
             asset_in_map={},
             passed_args=args,
-            fn=fn,
+            fn=wrap_multi_source_asset_observe_fn_in_op_compute_fn(fn, specs),
         )
 
         with disable_dagster_warnings():
