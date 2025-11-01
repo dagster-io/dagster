@@ -2,6 +2,7 @@ import shutil
 import tempfile
 from collections.abc import Iterator
 from pathlib import Path
+from typing import Optional
 from unittest.mock import ANY, MagicMock, patch
 
 import dagster as dg
@@ -255,3 +256,36 @@ def test_remote_dbt_project_with_token(dbt_project_dir: Path) -> None:
 
             # fetch should have been called
             mock_clone.assert_called_once_with(repo_url_with_token, ANY, depth=1)
+
+
+@pytest.mark.parametrize("project_path", [None, "."])
+def test_scaffold_component_with_git_url_params(
+    dbt_project_dir: Path, project_path: Optional[str]
+) -> None:
+    """Test that the scaffolder creates a loadable component when invoked with git_url params."""
+    repo_url = "https://github.com/fake/repo_scaffold.git"
+
+    with (
+        instance_for_test(),
+        create_defs_folder_sandbox() as sandbox,
+        patch("dagster_dbt.dbt_project_manager.Repo.clone_from") as mock_clone,
+        environ({"DAGSTER_IS_DEV_CLI": "1"}),
+    ):
+        mock_clone.side_effect = mock_git_clone(dbt_project_dir)
+
+        # Invoke scaffolder with git_url params (no defs_yaml_contents to use scaffolder output)
+        defs_path = sandbox.scaffold_component(
+            component_cls=DbtProjectComponent,
+            scaffold_params={"git_url": repo_url, "project_path": project_path},
+            defs_path="remote_dbt_scaffold",
+        )
+
+        # Verify the component can be loaded without error
+        with (
+            scoped_definitions_load_context(),
+            sandbox.load_component_and_build_defs(defs_path=defs_path) as (component, defs),
+        ):
+            assert isinstance(component, DbtProjectComponent)
+            assert isinstance(component.project, RemoteGitDbtProjectManager)
+            assert component.project.repo_url == repo_url
+            # Component instantiated successfully - no error means the scaffolder created valid YAML
