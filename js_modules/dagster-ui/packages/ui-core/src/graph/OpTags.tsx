@@ -1319,8 +1319,8 @@ export const KNOWN_TAGS: Record<KnownTagType, KnownTag> = {
     content: 'Doris',
   },
   dremio: {
-      icon: dremio,
-      content: 'Dremio',
+    icon: dremio,
+    content: 'Dremio',
   },
   druid: {
     icon: druid,
