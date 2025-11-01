@@ -3166,7 +3166,6 @@ type PartitionBackfill implements RunsFeedEntry {
   partitionNames: [String!]
   isValidSerialization: Boolean!
   numPartitions: Int
-  numCancelable: Int!
   fromFailure: Boolean!
   reexecutionSteps: [String!]
   partitionSetName: String
