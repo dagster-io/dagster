@@ -278,7 +278,7 @@ def test_with_asset_checks() -> None:
         an_asset, resources={"inprocess_client": InProcessPipesClient()}
     )
     assert called["yes"]
-    assert result.success
+    assert result.success_with_warnings
 
 
 def test_wrong_asset_check_name() -> None:
