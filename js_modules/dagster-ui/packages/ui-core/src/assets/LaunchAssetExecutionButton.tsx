@@ -47,12 +47,7 @@ import {showCustomAlert} from '../app/CustomAlertProvider';
 import {useConfirmation} from '../app/CustomConfirmationProvider';
 import {IExecutionSession} from '../app/ExecutionSessionStorage';
 import {DEFAULT_DISABLED_REASON} from '../app/Permissions';
-import {
-  displayNameForAssetKey,
-  isHiddenAssetGroupJob,
-  sortAssetKeys,
-  tokenForAssetKey,
-} from '../asset-graph/Utils';
+import {displayNameForAssetKey, sortAssetKeys, tokenForAssetKey} from '../asset-graph/Utils';
 import {PipelineSelector} from '../graphql/types';
 import {AssetLaunchpad} from '../launchpad/LaunchpadRoot';
 import {LaunchPipelineExecutionMutationVariables} from '../runs/types/RunUtils.types';
@@ -612,16 +607,10 @@ async function stateForLaunchingAssets(
     };
   }
 
-  // Note: If a partition definition is present and we're launching a user-defined job,
-  // we assume that any required config will be provided by a PartitionedConfig function
-  // attached to the job. Otherwise backfills won't work and you'll know to add one!
-  const configAssumedPresent = partitionDefinition && !isHiddenAssetGroupJob(jobName);
   const configRequired = assets.some((a) => a.configField?.isRequired);
   let needLaunchpad = false;
 
-  if (configAssumedPresent) {
-    needLaunchpad = false;
-  } else if (configRequired) {
+  if (configRequired) {
     needLaunchpad = true;
   } else {
     const requiredResourceKeys = assets.flatMap((a) =>
@@ -643,6 +632,17 @@ async function stateForLaunchingAssets(
     }
   }
 
+  // Partitioned assets always use the backfill flow. You can access the
+  // launchpad from the backfill dialog.
+  if (partitionDefinition) {
+    return {
+      type: 'partitions',
+      assets,
+      target: {type: 'job', jobName, assetKeys: assets.map(asAssetKeyInput)},
+      upstreamAssetKeys: getUpstreamAssetKeys(assets),
+      repoAddress,
+    };
+  }
   if (needLaunchpad || forceLaunchpad) {
     const assetOpNames = assets.flatMap((a) => a.opNames || []);
     return {
@@ -666,15 +666,6 @@ async function stateForLaunchingAssets(
           ? {type: 'asset-job-partition', partitionName: null, tags: []}
           : undefined,
       },
-    };
-  }
-  if (partitionDefinition) {
-    return {
-      type: 'partitions',
-      assets,
-      target: {type: 'job', jobName, assetKeys: assets.map(asAssetKeyInput)},
-      upstreamAssetKeys: getUpstreamAssetKeys(assets),
-      repoAddress,
     };
   }
   return {

@@ -31,6 +31,7 @@ import {
   LaunchAssetLoaderResourceMyAssetJobMock,
   MULTI_ASSET_OUT_1,
   MULTI_ASSET_OUT_2,
+  PARTITIONED_ASSET_WITH_REQUIRED_CONFIG,
   PartitionHealthAssetMocks,
   UNPARTITIONED_ASSET,
   UNPARTITIONED_ASSET_OTHER_REPO,
@@ -324,6 +325,18 @@ describe('LaunchAssetExecutionButton', () => {
       renderButton({scope: {all: [ASSET_DAILY]}});
       await clickMaterializeButton();
       await screen.findByTestId('choose-partitions-dialog');
+    });
+
+    it('should show the partition dialog even if asset has required config', async () => {
+      // Regression test for #32043: partitioned assets with config should use backfill flow, not launchpad
+      renderButton({
+        scope: {all: [PARTITIONED_ASSET_WITH_REQUIRED_CONFIG]},
+        preferredJobName: undefined,
+      });
+      await clickMaterializeButton();
+      await screen.findByTestId('choose-partitions-dialog');
+      // Should NOT show launchpad
+      expect(screen.queryByText('Launchpad (configure assets)')).not.toBeInTheDocument();
     });
 
     it('should launch single runs using the job in context if specified', async () => {
