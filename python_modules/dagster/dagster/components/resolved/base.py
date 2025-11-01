@@ -115,14 +115,10 @@ class Resolvable:
 
     @classmethod
     def model(cls) -> type[BaseModel]:
-        print("------------ENTERED MODEL(CLS)/ Calling derive_model_type ----------------------")
         return derive_model_type(cls)
 
     @classmethod
     def resolve_from_model(cls, context: "ResolutionContext", model: BaseModel):
-        print(
-            "------------ENTERED resolce_from_model/ Calling resolve_fields ----------------------"
-        )
         return cls(**resolve_fields(model, cls, context))
 
     @classmethod
@@ -143,7 +139,6 @@ class Resolvable:
         else:  # yaml parsed as None
             model = model_cls()
 
-        print("------------ENTERED RESOLVE FROM YAML ----------------------")
 
         context = ResolutionContext.default(
             parsed_and_src_tree.source_position_tree if parsed_and_src_tree else None
@@ -158,7 +153,6 @@ class Resolvable:
     def resolve_from_dict(cls, dictionary: dict[str, Any]):
         # Convert dictionary to YAML string
         # default_flow_style=False makes it use block style instead of inline
-        print("---------------------------ENTERED RESOLVE FROM DICT ----------------------")
         yaml_string = yaml.dump(
             dictionary,
             default_flow_style=False,
@@ -178,7 +172,6 @@ def derive_model_type(
 ) -> type[BaseModel]:
     if target_type not in _DERIVED_MODEL_REGISTRY:
         # PRINT STATEMENT ADDED FOR CLARITY DELETE LATER
-        print("_-_-__-___-______-INSIDE DERIVE_MODEL_TYPE-____--______---____")
         model_name = f"{target_type.__name__}Model"
 
         model_fields: dict[
@@ -194,8 +187,7 @@ def derive_model_type(
             if annotation_info.field_info:
                 field_infos.append(annotation_info.field_info)
 
-            #Prefer a factory in Present (from pydantic FieldINfor of from Annotation info)
-            #This makes it so now dataclasses can have default_factory as well
+            #Prefer a default_factory present (from pydantic field_info or from Annotation info (for dataclasses))
             factory = ((annotation_info.field_info.default_factory if annotation_info.field_info else None)
                     or annotation_info.default_factory)
 
@@ -299,7 +291,6 @@ class AnnotationInfo:
 def _get_annotations(
     resolved_type: type[Resolvable],
 ) -> dict[str, AnnotationInfo]:
-    print("----------------GET ANNOTATIONS HAS BEEN ENTERED--------------------")
     annotations: dict[str, AnnotationInfo] = {}
     init_kwargs = _get_init_kwargs(resolved_type)
     if is_dataclass(resolved_type):
@@ -429,20 +420,6 @@ def resolve_fields(
             continue
 
         out[field_name] = resolver.execute(context=context, model=model, field_name=field_name)
-
-    """
-    for field_name, resolver in field_resolvers.items():
-        model_field_name = resolver.model_field_name or field_name
-
-
-    out = {
-        field_name: resolver.execute(context=context, model=model, field_name=field_name)
-        for field_name, resolver in field_resolvers.items()
-        # filter out unset fields to trigger defaults
-        if (resolver.model_field_name or field_name) in model.model_dump(exclude_unset=True)
-        and getattr(model, resolver.model_field_name or field_name) != _Unset
-    }
-    """
     return {alias_name_by_field_name[k]: v for k, v in out.items()}
 
 

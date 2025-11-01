@@ -1,7 +1,7 @@
 from collections.abc import Sequence
 from dataclasses import dataclass, field
 from enum import Enum
-from typing import Annotated, Literal, NamedTuple, Optional, Union
+from typing import Annotated, Literal, NamedTuple, Optional, Union, Any
 
 import dagster as dg
 import pytest
@@ -268,6 +268,9 @@ def test_component_docs():
     assert json_schema["$defs"]["RangeTest"]["properties"]["type"]["description"]
     assert json_schema["$defs"]["SumTest"]["properties"]["type"]["description"]
 
+    json_schema = model_cls.model_json_schema()
+    assert json_schema["$defs"]["RangeTest"]["properties"]["type"]["description"]
+    assert json_schema["$defs"]["SumTest"]["properties"]["type"]["description"]
 
 def test_nested_not_resolvable():
     @dataclass
@@ -342,7 +345,8 @@ bar: bar
 """)
     assert w.foo == "cool"
 
-def test_dataclass_default_factory_dict():
+def test_default_factory_dict():
+    #Test for default_factory in dataclass
     @dataclass
     class MyThing(dg.Resolvable):
         items: dict = field(default_factory=dict)
@@ -360,6 +364,18 @@ items:
 """
     )
     assert t2.items == {"a": 1}
+
+    # Test for default_factory in pydantic model
+    class DefaultFactoryDictTestComponent(dg.Component, dg.Model, dg.Resolvable):
+        config: dict[str, Any] = Field(default_factory=dict)
+
+        def build_defs(self, context):
+            return dg.Definitions()
+
+    model_cls = DefaultFactoryDictTestComponent.get_model_cls()
+    assert model_cls
+    instance = DefaultFactoryDictTestComponent.resolve_from_yaml("")
+    assert instance.config == {}
 
 
 def test_scope():
