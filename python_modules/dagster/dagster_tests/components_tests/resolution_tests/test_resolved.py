@@ -271,6 +271,7 @@ def test_component_docs():
     assert json_schema["$defs"]["RangeTest"]["properties"]["type"]["description"]
     assert json_schema["$defs"]["SumTest"]["properties"]["type"]["description"]
 
+
 def test_nested_not_resolvable():
     @dataclass
     class Child:
@@ -344,8 +345,9 @@ bar: bar
 """)
     assert w.foo == "cool"
 
+
 def test_default_factory_dict():
-    #Test for default_factory in dataclass
+    # Test for default_factory in dataclass
     @dataclass
     class MyThing(dg.Resolvable):
         items: dict = field(default_factory=dict)

@@ -4,7 +4,18 @@ from dataclasses import MISSING, fields, is_dataclass
 from enum import Enum, auto
 from functools import partial
 from types import UnionType
-from typing import Annotated, Any, Callable, Final, Literal, Optional, TypeVar, Union, get_args, get_origin
+from typing import (
+    Annotated,
+    Any,
+    Callable,
+    Final,
+    Literal,
+    Optional,
+    TypeVar,
+    Union,
+    get_args,
+    get_origin,
+)
 
 import yaml
 from dagster_shared.record import get_record_annotations, get_record_defaults, is_record, record
@@ -134,7 +145,6 @@ class Resolvable:
         else:  # yaml parsed as None
             model = model_cls()
 
-
         context = ResolutionContext.default(
             parsed_and_src_tree.source_position_tree if parsed_and_src_tree else None
         )
@@ -182,9 +192,10 @@ def derive_model_type(
             if annotation_info.field_info:
                 field_infos.append(annotation_info.field_info)
 
-            #Prefer a default_factory present (from pydantic field_info or from Annotation info (for dataclasses))
-            factory = ((annotation_info.field_info.default_factory if annotation_info.field_info else None)
-                    or annotation_info.default_factory)
+            # Prefer a default_factory present (from pydantic field_info or from Annotation info (for dataclasses))
+            factory = (
+                annotation_info.field_info.default_factory if annotation_info.field_info else None
+            ) or annotation_info.default_factory
 
             if annotation_info.has_default:
                 # if the annotation has a serializable default
@@ -295,10 +306,10 @@ def _get_annotations(
             factory = None if f.default_factory is MISSING else f.default_factory
             annotations[f.name] = AnnotationInfo(
                 type=f.type,
-                default= default_value,
+                default=default_value,
                 has_default=has_default,
                 field_info=None,
-                default_factory= factory,
+                default_factory=factory,
             )
         return annotations
     elif safe_is_subclass(resolved_type, BaseModel):
@@ -309,7 +320,7 @@ def _get_annotations(
                 default=field_info.default,
                 has_default=has_default,
                 field_info=field_info,
-                default_factory= field_info.default_factory,
+                default_factory=field_info.default_factory,
             )
         return annotations
     elif is_record(resolved_type):
@@ -376,7 +387,6 @@ def resolve_fields(
     context: "ResolutionContext",
 ) -> Mapping[str, Any]:
     """Returns a mapping of field names to resolved values for those fields."""
-
     alias_name_by_field_name = {
         field_name: (
             annotation_info.field_info.alias
@@ -394,8 +404,8 @@ def resolve_fields(
         fname
         for fname, info in _get_annotations(resolved_cls).items()
         if (
-            (info.field_info is not None and info.field_info.default_factory is not None) or
-            (getattr(info, "default_factory",None) is not None)
+            (info.field_info is not None and info.field_info.default_factory is not None)
+            or (getattr(info, "default_factory", None) is not None)
         )
     }
 
@@ -556,10 +566,11 @@ def _wrap(ttype, path: Sequence[_TypeContainer]):
             check.assert_never(container)
     return result_type
 
-def _zero_arg_callable(fn:Any) -> bool:
+
+def _zero_arg_callable(fn: Any) -> bool:
     """True if fn had no required positional param (Pydantic default_factory must be zero-arg)."""
     if not callable(fn):
-        return  False
+        return False
     try:
         sig = inspect.signature(fn)
         for p in sig.parameters.values():
@@ -568,14 +579,14 @@ def _zero_arg_callable(fn:Any) -> bool:
                 return True
             if p.default is inspect.Parameter.empty and p.kind in (
                 inspect.Parameter.POSITIONAL_ONLY,
-                inspect.Parameter.POSITIONAL_OR_KEYWORD):
-                #a required postional param exists => NOT OK
+                inspect.Parameter.POSITIONAL_OR_KEYWORD,
+            ):
+                # a required postional param exists => NOT OK
                 return False
         return True
     except Exception:
-        #if instrospection fails, allow it (same behavior as before but guarded)
+        # if instrospection fails, allow it (same behavior as before but guarded)
         return True
-
 
 
 def _resolve_at_path(
