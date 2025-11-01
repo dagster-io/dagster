@@ -28,6 +28,7 @@ from dagster._core.definitions.declarative_automation.serialized_objects import 
     get_serializable_candidate_subset,
     get_serializable_true_subset,
 )
+from dagster._core.definitions.freshness import FreshnessState
 from dagster._core.definitions.partitions.subset import (
     AllPartitionsSubset,
     TimeWindowPartitionsSubset,
@@ -648,6 +649,36 @@ class AutomationCondition(ABC, Generic[T_EntityKey]):
             f"Invalid cron schedule: {cron_schedule}",
         )
         return CronTickPassedCondition(cron_schedule=cron_schedule, cron_timezone=cron_timezone)
+
+    @public
+    @staticmethod
+    def freshness_passed() -> "BuiltinAutomationCondition[AssetKey]":
+        """Returns an AutomationCondition that is true if the target's freshness is PASS."""
+        from dagster._core.definitions.declarative_automation.operands import (
+            FreshnessResultCondition,
+        )
+
+        return FreshnessResultCondition(state=FreshnessState.PASS).with_label("freshness_passed")
+
+    @public
+    @staticmethod
+    def freshness_warned() -> "BuiltinAutomationCondition[AssetKey]":
+        """Returns an AutomationCondition that is true if the target's freshness is WARN."""
+        from dagster._core.definitions.declarative_automation.operands import (
+            FreshnessResultCondition,
+        )
+
+        return FreshnessResultCondition(state=FreshnessState.WARN).with_label("freshness_warned")
+
+    @public
+    @staticmethod
+    def freshness_failed() -> "BuiltinAutomationCondition[AssetKey]":
+        """Returns an AutomationCondition that is true if the target's freshness is FAIL."""
+        from dagster._core.definitions.declarative_automation.operands import (
+            FreshnessResultCondition,
+        )
+
+        return FreshnessResultCondition(state=FreshnessState.FAIL).with_label("freshness_failed")
 
     @public
     @staticmethod
