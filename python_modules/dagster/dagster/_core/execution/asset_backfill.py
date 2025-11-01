@@ -1715,18 +1715,12 @@ def _should_backfill_atomic_asset_subset_unit(
         if entity_subset_to_filter.is_empty:
             break
 
-        parent_subset, required_but_nonexistent_subset = (
+        parent_subset, _ = (
             asset_graph_view.compute_parent_subset_and_required_but_nonexistent_subset(
                 parent_key,
                 entity_subset_to_filter,
             )
         )
-
-        if not required_but_nonexistent_subset.is_empty:
-            raise DagsterInvariantViolationError(
-                f"Asset partition subset {entity_subset_to_filter}"
-                f" depends on non-existent partitions {required_but_nonexistent_subset}"
-            )
 
         parent_materialized_subset = asset_graph_view.get_entity_subset_from_asset_graph_subset(
             materialized_subset, parent_key
