@@ -1,7 +1,7 @@
 ---
-description: Learn how to build and structure your project in Dagster. 
+description: Learn how to build Dagster projects, turn them into code locations that can be deployed to the cloud, and manage multiple projects with workspaces. 
 sidebar_position: 10
-title: Projects and workspace
+title: Projects and workspaces
 canonicalUrl: "/guides/build/projects"
 slug: "/guides/build/projects"
 ---
@@ -29,13 +29,11 @@ my-project/
 └── uv.lock
 ```
 
-While Dagster is flexible about how you organize your code, it provides an opinionated starting point with the [`create-dagster` CLI](/api/clis/create-dagster). For more information on creating Dagster projects from the CLI, see [Creating a new Dagster project](/guides/build/projects/creating-a-new-project).
+While Dagster is flexible about how you organize your code, it provides an opinionated starting point with the [`create-dagster` CLI](/api/clis/create-dagster). For more information on creating Dagster projects from the CLI, see [Creating Dagster projects](/guides/build/projects/creating-dagster-projects).
 
-## Code location
+To make your Dagster project deployable to Dagster+, you will need to create additional configuration files. For more information, see [Deploying Dagster projects](/guides/build/projects/deploying-dagster-projects).
 
-A [code location](/deployment/code-locations) is a Dagster project that can be loaded and accessed by Dagster tools, such as the UI, CLI, and Dagster+. A code location must contain a module with an instance of [`Definitions`](/api/dagster/definitions#dagster.Definitions) in a top-level variable and a Python environment that can load that module. Dagster projects created with the [`create-dagster` CLI](/api/clis/create-dagster) are also code locations. Whenever an asset runs in Dagster, it executes within the context of its code location, both the specific environment and project from which it originates.
-
-![Code locations](/images/guides/deploy/code-locations/code-locations.png)
+A single deployment of Dagster can contain multiple projects organized into workspaces.
 
 ## Workspace
 
@@ -46,4 +44,4 @@ A workspace allows you to manage and orchestrate multiple Dagster projects toget
 - You want to deploy multiple projects in a coordinated way.
 
 
-As with projects, Dagster provides an opinionated starting point for workspaces with the [`create-dagster` CLI](/api/clis/create-dagster). For more information on creating Dagster workspaces from the CLI, see [Managing multiple projects with workspaces](/guides/build/projects/multiple-projects).
+As with projects, Dagster provides an opinionated starting point for workspaces with the [`create-dagster` CLI](/api/clis/create-dagster). To learn how to create a Dagster workspaces from the CLI, see [Creating workspaces to manage multiple projects](/guides/build/projects/workspaces/managing-multiple-projects).

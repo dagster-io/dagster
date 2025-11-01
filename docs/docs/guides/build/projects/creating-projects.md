@@ -1,10 +1,10 @@
 ---
-title: "Creating a new Dagster project"
-description: dg allows you to create a special type of Python package, called a project, that defines a Dagster code location.
+title: Creating Dagster projects
+description: dg allows you to create a Dagster project, which is a special type of Python package accessible to the Dagster webserver and UI.
 sidebar_position: 100
 ---
 
-The easiest way to start building a Dagster project is by using the [`create-dagster` CLI](/api/clis/create-dagster). This CLI tool allows you to create a special type of Python package, called a _project_, that defines a [Dagster code location](/deployment/code-locations/managing-code-locations-with-definitions).
+The easiest way to start building a Dagster project is by using the [`create-dagster` CLI](/api/clis/create-dagster). This CLI tool allows you to create a special type of Python package accessible to the Dagster webserver and UI.
 
 import ProjectCreationPrereqs from '@site/docs/partials/\_ProjectCreationPrereqs.md';
 
@@ -124,7 +124,7 @@ Your new Dagster project should have the following structure:
 
 :::info
 
-The `create-dagster project` command creates a directory with a standard Python package structure with some additions. For more information on the files and directories in a Dagster project, see the [Dagster project file reference](/guides/build/projects/dagster-project-file-reference).
+The `create-dagster project` command creates a directory with a standard Python package structure with some additions. For more information on the files and directories in a typical Dagster project, see the [Dagster project file and directory reference](/guides/build/projects/project-structure/dagster-project-file-reference).
 
 :::
 
@@ -142,12 +142,19 @@ dg dev
 
 To see your assets, navigate to [http://localhost:3000](http://localhost:3000).
 
-## Step 4: Continue development
+:::info
+
+See [Running Dagster locally](/deployment/oss/deployment-options/running-dagster-locally) for more information on configuring and running your local Dagster instance, including creating a persistent instance and detecting when you're running locally to selectively run schedules or sensors depending on environment.
+
+:::
+
+## Step 4: Continue local development
 
 - [Add new Python dependencies](#add-new-python-dependencies)
 - [Add integrations](#add-integrations)
 - [Use environment variables and secrets](#use-environment-variables-and-secrets)
 - [Add and run unit tests](#add-and-run-unit-tests)
+- [Create custom components](#create-custom-components)
 
 ### Add new Python dependencies
 
@@ -178,10 +185,10 @@ For more information on testing, see the following docs:
 * [Testing component definitions](/guides/build/components/building-pipelines-with-components/testing-component-definitions) contains testing best practices for definitions scaffolded existing components.
 * [Testing your component](/guides/build/components/creating-new-components/testing-your-component) has best practices for testing custom components.
 
-## Next steps
+### Create custom components
 
-{/* TODO make this visible once the dev to prod guide is updated: Once your project is ready to move to production, check out our recommendations for [transitioning data pipelines from development to production](/guides/operate/dev-to-prod). */}
+If built-in Dagster components and integrations don't meet your needs, you can [create custom components](/guides/build/components/creating-new-components) to share with your team.
 
-* Add [integrations](/integrations/libraries) to your project
-* Create your own [Dagster Components](/guides/build/components/creating-new-components) to share with your team
-* Deploy your project to [Dagster+](/deployment/dagster-plus) or [your own infrastructure](/deployment/oss)
+## Step 5: Deploy your project to the cloud (Optional)
+
+If you have a cloud deployment of Dagster, you can deploy your project by adding a configuration file at the root, and optionally configuring CI/CD for continuous deployment. For more information, see [Deploying Dagster projects](/guides/build/projects/deploying-dagster-projects).

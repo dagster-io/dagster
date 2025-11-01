@@ -10,7 +10,7 @@ I/O managers in Dagster allow you to keep the code for data processing separate 
 
 In many Dagster pipelines, assets can be broken down as the following steps:
 
-1. Reading data a some data store into memory
+1. Reading a data store into memory
 2. Applying in-memory transform
 3. Writing the transformed data to a data store
 
