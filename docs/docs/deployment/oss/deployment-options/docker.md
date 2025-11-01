@@ -49,7 +49,7 @@ Additionally, the following files should be in the same directory as the Docker 
 
 Each code location typically has its own Docker image, and that image is also used for runs launched for that code location.
 
-To build a Docker image for a code location, use a Dockerfile like the following, with a name like `Dockerfile_code_location_1`:
+To build a Docker image for a code location, use a Dockerfile like the following, with a name like `Dockerfile_user_code`:
 
 ```dockerfile
 FROM python:3.10-slim
@@ -65,6 +65,8 @@ COPY directory/with/your/code/ /opt/dagster/app
 
 # Run dagster code server on port 4000
 EXPOSE 4000
+
+HEALTHCHECK --timeout=1s --start-period=3s --interval=3s --retries=20 CMD ["dagster", "api", "grpc-health-check", "-p", "4000"]
 
 # CMD allows this to be overridden from run launchers or executors to execute runs and steps
 CMD ["dagster", "code-server", "start", "-h", "0.0.0.0", "-p", "4000", "-f", "definitions.py"]
@@ -150,7 +152,7 @@ services:
       docker_example_postgresql:
         condition: service_healthy
       docker_example_user_code:
-        condition: service_started
+        condition: service_healthy
 
   # This service runs the dagster-daemon process, which is responsible for taking runs
   # off of the queue and launching them, as well as creating runs from schedules or sensors.
