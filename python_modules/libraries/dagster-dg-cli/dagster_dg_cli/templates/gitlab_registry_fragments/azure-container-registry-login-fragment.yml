@@ -1,0 +1,3 @@
+    # Azure Container Registry login
+    - az login --service-principal -u $AZURE_CLIENT_ID -p $AZURE_CLIENT_SECRET --tenant $AZURE_TENANT_ID
+    - az acr login --name TEMPLATE_IMAGE_REGISTRY

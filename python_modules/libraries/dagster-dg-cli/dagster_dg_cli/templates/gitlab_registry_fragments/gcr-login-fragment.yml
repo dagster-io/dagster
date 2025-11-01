@@ -1,0 +1,2 @@
+    # Google Container Registry login
+    - echo "$GCR_JSON_KEY" | docker login -u _json_key --password-stdin https://gcr.io
