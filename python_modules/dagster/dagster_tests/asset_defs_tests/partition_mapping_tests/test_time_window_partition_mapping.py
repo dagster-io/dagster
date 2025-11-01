@@ -5,7 +5,12 @@ from unittest.mock import MagicMock
 
 import dagster as dg
 import pytest
-from dagster import TimeWindowPartitionMapping, TimeWindowPartitionsDefinition
+from dagster import (
+    DailyPartitionsDefinition,
+    LatestOverlappingTimeWindowPartitionMapping,
+    TimeWindowPartitionMapping,
+    TimeWindowPartitionsDefinition,
+)
 from dagster._core.definitions.partitions.context import partition_loading_context
 from dagster._core.definitions.partitions.subset import (
     AllPartitionsSubset,
@@ -1009,4 +1014,306 @@ def test_get_downstream_partitions_for_all_partitions_subset() -> None:
     assert result.get_partition_keys() == upstream_partitions_def.get_partition_keys_in_range(
         # don't include 05-05 through 05-09
         dg.PartitionKeyRange("2021-05-10", "2021-05-30")
+    )
+
+
+@pytest.fixture
+def daily_partition_def() -> DailyPartitionsDefinition:
+    """Daily partitions starting 2025-01-01."""
+    return DailyPartitionsDefinition(start_date="2025-01-01")
+
+
+@pytest.fixture
+def every_other_day_partition_def() -> TimeWindowPartitionsDefinition:
+    """Every-other-day partitions starting 2025-01-01."""
+    return TimeWindowPartitionsDefinition(
+        start="2025-01-01",
+        fmt="%Y-%m-%d",
+        cron_schedule="0 0 */2 * *",
+    )
+
+
+@pytest.fixture
+def partition_mapping() -> LatestOverlappingTimeWindowPartitionMapping:
+    """Instance of LatestOverlappingTimeWindowPartitionsMapping."""
+    return LatestOverlappingTimeWindowPartitionMapping()
+
+
+@pytest.fixture
+def current_time() -> datetime:
+    """Fixed current time for testing."""
+    return datetime(2025, 1, 10)
+
+
+def test_latest_overlapping_works_like_identity_when_no_overlap(
+    partition_mapping: LatestOverlappingTimeWindowPartitionMapping,
+    daily_partition_def: DailyPartitionsDefinition,
+    current_time: datetime,
+):
+    """Test that LatestOverlappingTimeWindowPartitionMapping works like IdentityPartitionMapping when there is no overlap."""
+    downstream_keys = ["2025-01-01", "2025-01-02", "2025-01-03"]
+    downstream_subset = daily_partition_def.subset_with_partition_keys(downstream_keys)
+    result = partition_mapping.get_upstream_mapped_partitions_result_for_partitions(
+        downstream_partitions_subset=downstream_subset,
+        downstream_partitions_def=daily_partition_def,
+        upstream_partitions_def=daily_partition_def,
+        current_time=current_time,
+    )
+    assert result.partitions_subset.get_partition_keys() == downstream_keys
+    assert result.required_but_nonexistent_subset.get_partition_keys() == set()
+
+
+def test_example_1_exact_matches(
+    partition_mapping: LatestOverlappingTimeWindowPartitionMapping,
+    every_other_day_partition_def: TimeWindowPartitionsDefinition,
+    daily_partition_def: DailyPartitionsDefinition,
+    current_time: datetime,
+):
+    """Test Example 1: Every-other-day downstream → Daily upstream.
+
+    When downstream partitions exist in upstream, they should map 1:1.
+    """
+    # Setup downstream partitions (every-other-day)
+    downstream_keys = ["2025-01-01", "2025-01-03", "2025-01-05"]
+    downstream_subset = every_other_day_partition_def.subset_with_partition_keys(downstream_keys)
+
+    # Map to upstream (daily)
+    result = partition_mapping.get_upstream_mapped_partitions_result_for_partitions(
+        downstream_partitions_subset=downstream_subset,
+        downstream_partitions_def=every_other_day_partition_def,
+        upstream_partitions_def=daily_partition_def,
+        current_time=current_time,
+    )
+
+    # Verify mappings
+    mapped_upstream = sorted(result.partitions_subset.get_partition_keys())
+    expected_upstream = ["2025-01-01", "2025-01-03", "2025-01-05"]
+
+    assert mapped_upstream == expected_upstream, (
+        f"Expected exact 1:1 mapping. Got {mapped_upstream}, expected {expected_upstream}"
+    )
+
+    # Verify no missing partitions
+    missing = list(result.required_but_nonexistent_subset.get_partition_keys())
+    assert missing == [], f"Should have no missing partitions, got {missing}"
+
+
+def test_example_2_latest_before(
+    partition_mapping: LatestOverlappingTimeWindowPartitionMapping,
+    daily_partition_def: DailyPartitionsDefinition,
+    every_other_day_partition_def: TimeWindowPartitionsDefinition,
+    current_time: datetime,
+):
+    """Test Example 2: Daily downstream → Every-other-day upstream.
+
+    Each downstream partition should map to the latest upstream partition <= that date.
+    """
+    # Setup downstream partitions (daily)
+    downstream_keys = ["2025-01-01", "2025-01-02", "2025-01-03", "2025-01-04", "2025-01-05"]
+    downstream_subset = daily_partition_def.subset_with_partition_keys(downstream_keys)
+
+    # Map to upstream (every-other-day)
+    result = partition_mapping.get_upstream_mapped_partitions_result_for_partitions(
+        downstream_partitions_subset=downstream_subset,
+        downstream_partitions_def=daily_partition_def,
+        upstream_partitions_def=every_other_day_partition_def,
+        current_time=current_time,
+    )
+
+    # Verify mappings
+    # All 5 downstream keys should map to 3 upstream keys:
+    # 2025-01-01 → 2025-01-01
+    # 2025-01-02 → 2025-01-01 (latest before)
+    # 2025-01-03 → 2025-01-03
+    # 2025-01-04 → 2025-01-03 (latest before)
+    # 2025-01-05 → 2025-01-05
+
+    mapped_upstream = sorted(result.partitions_subset.get_partition_keys())
+    expected_upstream = ["2025-01-01", "2025-01-03", "2025-01-05"]
+
+    assert mapped_upstream == expected_upstream, (
+        f"Expected latest-before mapping. Got {mapped_upstream}, expected {expected_upstream}"
+    )
+
+    # Verify no missing partitions
+    missing = list(result.required_but_nonexistent_subset.get_partition_keys())
+    assert missing == [], f"Should have no missing partitions, got {missing}"
+
+
+def test_individual_partition_mappings(
+    partition_mapping: LatestOverlappingTimeWindowPartitionMapping,
+    daily_partition_def: DailyPartitionsDefinition,
+    every_other_day_partition_def: TimeWindowPartitionsDefinition,
+    current_time: datetime,
+):
+    """Test each individual mapping from Example 2."""
+    test_cases = [
+        ("2025-01-01", "2025-01-01"),  # Exact match
+        ("2025-01-02", "2025-01-01"),  # Latest before
+        ("2025-01-03", "2025-01-03"),  # Exact match
+        ("2025-01-04", "2025-01-03"),  # Latest before
+        ("2025-01-05", "2025-01-05"),  # Exact match
+    ]
+
+    for downstream_key, expected_upstream_key in test_cases:
+        downstream_subset = daily_partition_def.subset_with_partition_keys([downstream_key])
+
+        result = partition_mapping.get_upstream_mapped_partitions_result_for_partitions(
+            downstream_partitions_subset=downstream_subset,
+            downstream_partitions_def=daily_partition_def,
+            upstream_partitions_def=every_other_day_partition_def,
+            current_time=current_time,
+        )
+
+        mapped_upstream = list(result.partitions_subset.get_partition_keys())
+
+        assert mapped_upstream == [expected_upstream_key], (
+            f"For downstream {downstream_key}, expected upstream {expected_upstream_key}, "
+            f"got {mapped_upstream}"
+        )
+
+
+def test_missing_upstream_partitions(
+    partition_mapping: LatestOverlappingTimeWindowPartitionMapping,
+    daily_partition_def: DailyPartitionsDefinition,
+    current_time: datetime,
+):
+    """Test when downstream needs partitions that don't exist in upstream."""
+    # Upstream starts at 2025-01-03 (missing 2025-01-01 and 2025-01-02)
+    upstream_later_start = TimeWindowPartitionsDefinition(
+        start="2025-01-03",
+        fmt="%Y-%m-%d",
+        cron_schedule="0 0 */2 * *",  # Every-other-day: 2025-01-03, 2025-01-05, ...
+    )
+
+    # Try to map downstream 2025-01-01 (no upstream partition before this)
+    downstream_subset = daily_partition_def.subset_with_partition_keys(["2025-01-01"])
+
+    result = partition_mapping.get_upstream_mapped_partitions_result_for_partitions(
+        downstream_partitions_subset=downstream_subset,
+        downstream_partitions_def=daily_partition_def,
+        upstream_partitions_def=upstream_later_start,
+        current_time=current_time,
+    )
+
+    # Should have no valid upstream partitions
+    found = list(result.partitions_subset.get_partition_keys())
+    assert found == [], f"Should find no valid upstream, got {found}"
+
+    # Should track missing partition
+    missing = result.required_but_nonexistent_subset.get_partition_keys()
+    assert "2025-01-01" in missing, f"Should mark 2025-01-01 as missing, got {missing}"
+
+
+def test_reverse_mapping_every_other_to_daily(
+    partition_mapping: LatestOverlappingTimeWindowPartitionMapping,
+    every_other_day_partition_def: TimeWindowPartitionsDefinition,
+    daily_partition_def: DailyPartitionsDefinition,
+    current_time: datetime,
+):
+    """Test reverse mapping (Example 2 reverse): Every-other-day upstream → Daily downstream.
+
+    When upstream partition 2025-01-01 changes, downstream 2025-01-01 and 2025-01-02 are affected.
+    """
+    # Upstream changed: 2025-01-01 and 2025-01-03
+    upstream_subset = every_other_day_partition_def.subset_with_partition_keys(
+        ["2025-01-01", "2025-01-03"]
+    )
+
+    # Get affected downstream
+    affected_downstream = partition_mapping.get_downstream_partitions_for_partitions(
+        upstream_partitions_subset=upstream_subset,
+        upstream_partitions_def=every_other_day_partition_def,
+        downstream_partitions_def=daily_partition_def,
+        current_time=current_time,
+    )
+    affected_keys = sorted(affected_downstream.get_partition_keys())
+
+    # Expected:
+    # - 2025-01-01 affects [2025-01-01, 2025-01-02] (within its 2-day window)
+    # - 2025-01-03 affects [2025-01-03, 2025-01-04] (within its 2-day window)
+    expected_affected = ["2025-01-01", "2025-01-02", "2025-01-03", "2025-01-04"]
+
+    assert affected_keys == expected_affected, f"Expected {expected_affected}, got {affected_keys}"
+
+
+def test_reverse_mapping_daily_to_every_other(
+    partition_mapping: LatestOverlappingTimeWindowPartitionMapping,
+    daily_partition_def: DailyPartitionsDefinition,
+    every_other_day_partition_def: TimeWindowPartitionsDefinition,
+    current_time: datetime,
+):
+    """Test reverse mapping (Example 1 reverse): Daily upstream → Every-other-day downstream.
+
+    When upstream partition 2025-01-01 changes, only downstream 2025-01-01 is affected.
+    """
+    # Upstream changed: 2025-01-01
+    upstream_subset = daily_partition_def.subset_with_partition_keys(["2025-01-01"])
+
+    # Get affected downstream
+    affected_downstream = partition_mapping.get_downstream_partitions_for_partitions(
+        upstream_partitions_subset=upstream_subset,
+        upstream_partitions_def=daily_partition_def,
+        downstream_partitions_def=every_other_day_partition_def,
+        current_time=current_time,
+    )
+
+    affected_keys = sorted(affected_downstream.get_partition_keys())
+
+    # Daily 2025-01-01 should only affect every-other-day 2025-01-01
+    expected_affected = ["2025-01-01"]
+
+    assert affected_keys == expected_affected, f"Expected {expected_affected}, got {affected_keys}"
+
+
+def test_multiple_upstream_changes_affect_multiple_downstream(
+    partition_mapping: LatestOverlappingTimeWindowPartitionMapping,
+    daily_partition_def: DailyPartitionsDefinition,
+    every_other_day_partition_def: TimeWindowPartitionsDefinition,
+    current_time: datetime,
+):
+    """Test that multiple upstream partitions correctly map to their affected downstream partitions."""
+    # Upstream changed: Multiple daily partitions
+    upstream_subset = daily_partition_def.subset_with_partition_keys(
+        ["2025-01-01", "2025-01-03", "2025-01-05"]
+    )
+
+    # Get affected downstream (every-other-day)
+    affected_downstream = partition_mapping.get_downstream_partitions_for_partitions(
+        upstream_partitions_subset=upstream_subset,
+        upstream_partitions_def=daily_partition_def,
+        downstream_partitions_def=every_other_day_partition_def,
+        current_time=current_time,
+    )
+
+    affected_keys = sorted(affected_downstream.get_partition_keys())
+
+    # Each daily partition that matches an every-other-day partition affects that partition
+    expected_affected = ["2025-01-01", "2025-01-03", "2025-01-05"]
+
+    assert affected_keys == expected_affected, f"Expected {expected_affected}, got {affected_keys}"
+
+
+def test_edge_case_first_partition(
+    partition_mapping: LatestOverlappingTimeWindowPartitionMapping,
+    daily_partition_def: DailyPartitionsDefinition,
+    every_other_day_partition_def: TimeWindowPartitionsDefinition,
+):
+    """Test mapping for the very first partition."""
+    current_time = datetime(2025, 1, 2)
+
+    # Downstream: 2025-01-01 (daily, first partition)
+    downstream_subset = daily_partition_def.subset_with_partition_keys(["2025-01-01"])
+
+    result = partition_mapping.get_upstream_mapped_partitions_result_for_partitions(
+        downstream_partitions_subset=downstream_subset,
+        downstream_partitions_def=daily_partition_def,
+        upstream_partitions_def=every_other_day_partition_def,
+        current_time=current_time,
+    )
+
+    # Should map to first upstream partition
+    mapped_upstream = list(result.partitions_subset.get_partition_keys())
+    assert mapped_upstream == ["2025-01-01"], (
+        f"First partition should map to first upstream, got {mapped_upstream}"
     )

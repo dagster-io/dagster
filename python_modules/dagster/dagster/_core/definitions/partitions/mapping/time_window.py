@@ -14,6 +14,7 @@ from dagster._core.definitions.partitions.mapping.partition_mapping import (
     UpstreamPartitionsResult,
 )
 from dagster._core.definitions.partitions.subset.all import AllPartitionsSubset
+from dagster._core.definitions.partitions.subset.default import DefaultPartitionsSubset
 from dagster._core.definitions.partitions.subset.partitions_subset import PartitionsSubset
 from dagster._core.definitions.partitions.subset.time_window import TimeWindowPartitionsSubset
 from dagster._core.definitions.partitions.utils.time_window import TimeWindow
@@ -567,3 +568,157 @@ def _offsetted_datetime(
             result = next_window.end
 
     return result
+
+
+@whitelist_for_serdes
+class LatestOverlappingTimeWindowPartitionMapping(TimeWindowPartitionMapping):
+    """Maps downstream partitions to the latest available upstream partition up to and including the downstream partition.
+
+    This mapping is useful when downstream assets run less frequently than upstream assets
+    (e.g., every-other-day downstream depending on daily upstream), and you want each
+    downstream partition to use a single upstream value rather than a dict of all overlapping values.
+
+    Example 1: Less frequent downstream than upstream
+    ===================================================
+    Downstream (every-other-day): 2025-01-01, 2025-01-03, 2025-01-05
+    Upstream (daily): 2025-01-01, 2025-01-02, 2025-01-03, 2025-01-04, 2025-01-05, ...
+
+    Mapping (Downstream → Upstream):
+    - 2025-01-01 → 2025-01-01 (exact match)
+    - 2025-01-03 → 2025-01-03 (exact match)
+    - 2025-01-05 → 2025-01-05 (exact match)
+
+    Example 2: More frequent downstream than upstream
+    ==================================================
+    Downstream (daily): 2025-01-01, 2025-01-02, 2025-01-03, 2025-01-04, 2025-01-05
+    Upstream (every-other-day): 2025-01-01, 2025-01-03, 2025-01-05
+
+    Mapping (Downstream → Upstream):
+    - 2025-01-01 → 2025-01-01 (exact match)
+    - 2025-01-02 → 2025-01-01 (latest before)
+    - 2025-01-03 → 2025-01-03 (exact match)
+    - 2025-01-04 → 2025-01-03 (latest before)
+    - 2025-01-05 → 2025-01-05 (exact match)
+
+    Usage:
+    ======
+    @asset(
+        partitions_def=every_other_day_partition_def,
+        automation_condition=AutomationCondition.eager() & ~AutomationCondition.any_deps_missing(),
+        ins={
+            "daily_build": AssetIn(
+                key="daily_upstream_asset",
+                partition_mapping=LatestOverlappingTimeWindowPartitionMapping(),
+            )
+        },
+    )
+    def correlation_asset(context, daily_build):
+        # daily_build is a single value (not a dict), using the latest daily partition
+        ...
+
+    Note: It's recommended to use this with the automation condition
+    `AutomationCondition.eager() & ~AutomationCondition.any_deps_missing()`
+    to ensure upstream partitions exist before attempting materialization (especially useful for backfills).
+    """
+
+    @property
+    def description(self) -> str:
+        return "Maps a downstream partition to the latest upstream partition with a date <= the downstream partition date."
+
+    def get_upstream_mapped_partitions_result_for_partitions(
+        self,
+        downstream_partitions_subset,
+        downstream_partitions_def,
+        upstream_partitions_def,
+        current_time=None,
+        dynamic_partitions_store=None,
+    ):
+        """Map downstream partitions to the latest upstream partition <= each downstream date.
+
+        Returns:
+            UpstreamPartitionsResult with:
+            - partitions_subset: Upstream partitions that exist and should be used
+            - required_but_nonexistent_subset: Downstream keys that need upstream partitions which don't exist
+        """
+        upstream_partitions_def = self._validated_input_partitions_def(
+            "upstream_partitions_def", upstream_partitions_def
+        )
+        downstream_partitions_def = self._validated_input_partitions_def(
+            "downstream_partitions_def", downstream_partitions_def
+        )
+        downstream_partitions_subset = self._validated_input_partitions_subset(
+            "downstream_partitions_subset", downstream_partitions_subset
+        )
+
+        downstream_keys = downstream_partitions_subset.get_partition_keys()
+
+        found_upstream_partitions = set()
+        missing_upstream_partitions = set()
+
+        for downstream_key in downstream_keys:
+            if upstream_partitions_def.has_partition_key(downstream_key):
+                found_upstream_partitions.add(downstream_key)
+                continue
+
+            downstream_start_time = downstream_partitions_def.start_time_for_partition_key(
+                downstream_key
+            )
+
+            # get_partition_key_for_timestamp returns the partition containing this timestamp
+            # Uses cron generator, so may return keys before upstream definition starts
+            upstream_key = upstream_partitions_def.get_partition_key_for_timestamp(
+                downstream_start_time.timestamp(), end_closed=False
+            )
+
+            if upstream_partitions_def.has_partition_key(upstream_key):
+                found_upstream_partitions.add(upstream_key)
+            else:
+                missing_upstream_partitions.add(downstream_key)
+
+        return UpstreamPartitionsResult(
+            partitions_subset=upstream_partitions_def.subset_with_partition_keys(
+                found_upstream_partitions
+            ),
+            # missing upstream partition might not be included in the upstream_partitions_def, include them anyway
+            required_but_nonexistent_subset=DefaultPartitionsSubset(missing_upstream_partitions),
+        )
+
+    def get_downstream_partitions_for_partitions(
+        self,
+        upstream_partitions_subset,
+        upstream_partitions_def,
+        downstream_partitions_def,
+        current_time=None,
+        dynamic_partitions_store=None,
+    ):
+        """Map upstream partitions to affected downstream partitions (reverse mapping).
+
+        For each upstream partition, finds all downstream partitions whose time window
+        overlaps with or is covered by the upstream partition's time window.
+
+        This is used for dependency tracking and staleness detection.
+        """
+        upstream_partitions_def = self._validated_input_partitions_def(
+            "upstream_partitions_def", upstream_partitions_def
+        )
+        downstream_partitions_def = self._validated_input_partitions_def(
+            "downstream_partitions_def", downstream_partitions_def
+        )
+        upstream_partitions_subset = self._validated_input_partitions_subset(
+            "upstream_partitions_subset", upstream_partitions_subset
+        )
+
+        upstream_keys = upstream_partitions_subset.get_partition_keys()
+        upstream_time_windows = upstream_partitions_def.time_windows_for_partition_keys(
+            frozenset(upstream_keys)
+        )
+
+        found_downstream_partitions = set()
+
+        for upstream_time_window in upstream_time_windows:
+            downstream_keys_in_window = downstream_partitions_def.get_partition_keys_in_time_window(
+                upstream_time_window
+            )
+            found_downstream_partitions.update(downstream_keys_in_window)
+
+        return downstream_partitions_def.subset_with_partition_keys(found_downstream_partitions)
