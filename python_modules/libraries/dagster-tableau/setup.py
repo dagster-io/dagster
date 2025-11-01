@@ -30,6 +30,7 @@ setup(
         "Programming Language :: Python :: 3.11",
         "Programming Language :: Python :: 3.12",
         "Programming Language :: Python :: 3.13",
+        "Programming Language :: Python :: 3.14",
         "License :: OSI Approved :: Apache Software License",
         "Operating System :: OS Independent",
     ],
@@ -41,6 +42,6 @@ setup(
         "tableauserverclient>=0.32",
     ],
     include_package_data=True,
-    python_requires=">=3.9,<3.14",
+    python_requires=">=3.9,<3.15",
     zip_safe=False,
 )
