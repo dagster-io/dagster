@@ -120,6 +120,7 @@ def scaffold_project(
         project_excludes = [
             ".gitignore",
             "README.md.jinja",
+            "dagster_cloud.yml.jinja",
         ]
 
     scaffold_subtree(
