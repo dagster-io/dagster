@@ -276,6 +276,10 @@ class MariaDBResource(ConfigurableResource):
             "database": self.database,
             **self.additional_parameters,
         })
+        
+    def _drop_none_values(self, d: dict) -> dict:
+        """Remove None values from dictionary."""
+        return {k: v for k, v in d.items() if v is not None}
 
     @contextmanager
     def get_raw_connection(self):
