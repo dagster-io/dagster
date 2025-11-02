@@ -82,9 +82,11 @@ def enable_parallel_query_execution(
         enabled: Whether to enable parallel execution
     """
     try:
-        query = f"SET SESSION sql_log_bin=0; SET GLOBAL innodb_parallel_read_threads={64 if enabled else 1}"
-        # Note: These are session-specific settings
-        connection.execute(text(f"SET SESSION max_parallel_tables={10 if enabled else 1}"))
+
+        # Note: These are session-specific settings except for innodb_parallel_read_threads which is global
+        query = f"SET SESSION sql_log_bin=0; SET GLOBAL innodb_parallel_read_threads={64 if enabled else 1}; SET SESSION max_parallel_tables={10 if enabled else 1}"
+        connection.execute(text(query))
+
         connection.commit()
     except SQLAlchemyError:
         # Not all MariaDB servers support parallel execution
