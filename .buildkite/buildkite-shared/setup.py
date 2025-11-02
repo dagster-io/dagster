@@ -11,11 +11,14 @@ setup(
     classifiers=[
         "Programming Language :: Python :: 3.9",
         "Programming Language :: Python :: 3.10",
+        "Programming Language :: Python :: 3.11",
+        "Programming Language :: Python :: 3.12",
         "License :: OSI Approved :: Apache Software License",
         "Operating System :: OS Independent",
     ],
     packages=find_packages(exclude=["test"]),
     install_requires=[
         "typing_extensions>=4.2",
+        "setuptools",  # Required for setuptools.sandbox import in python_packages.py
     ],
 )
