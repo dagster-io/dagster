@@ -6,7 +6,13 @@ A Dagster integration for MariaDB that provides first-class support for MariaDB 
 
 - **MariaDBResource**: Configurable resource for MariaDB database connections using SQLAlchemy
 - **MariaDBPandasIOManager**: I/O manager for seamless read/write of Pandas DataFrames to MariaDB
+- **Storage Engine Support**: Leverage InnoDB, Aria, MyRocks, ColumnStore, and Spider engines
+- **Parallel Query Execution**: Enable parallel queries for better performance
+- **Galera Cluster Support**: Work with multi-master replication clusters
 - **OpenFlights ETL Example**: Complete example pipeline demonstrating real-world usage
+
+**Quick Start**: See [QUICK_REFERENCE.md](QUICK_REFERENCE.md) for common patterns  
+**Detailed Guide**: See [ADVANCED_FEATURES.md](ADVANCED_FEATURES.md) for comprehensive documentation
 
 ## Installation
 
