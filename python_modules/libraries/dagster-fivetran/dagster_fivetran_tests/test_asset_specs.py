@@ -50,6 +50,20 @@ def test_fetch_fivetran_workspace_data(
     assert len(actual_workspace_data.destinations_by_id) == 1
 
 
+def test_fetch_fivetran_workspace_data_with_threadpool(
+    fetch_workspace_data_api_mocks: responses.RequestsMock,
+) -> None:
+    resource = FivetranWorkspace(
+        account_id=TEST_ACCOUNT_ID, api_key=TEST_API_KEY, api_secret=TEST_API_SECRET
+    )
+
+    with environ({"DAGSTER_FIVETRAN_FETCH_WORKSPACE_DATA_MAX_THREADPOOL_WORKERS": "4"}):
+        actual_workspace_data = resource.get_or_fetch_workspace_data()
+
+    assert len(actual_workspace_data.connectors_by_id) == 1
+    assert len(actual_workspace_data.destinations_by_id) == 1
+
+
 @pytest.mark.parametrize(
     "attribute, value, expected_result_before_selection, expected_result_after_selection",
     [
