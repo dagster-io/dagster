@@ -1,4 +1,4 @@
-from dagster_shared.libraries import DagsterLibraryRegistry
+from dagster._core.libraries import DagsterLibraryRegistry
 
 from dagster_mariadb.resource import MariaDBResource
 from dagster_mariadb.io_manager import MariaDBPandasIOManager, mariadb_pandas_io_manager
