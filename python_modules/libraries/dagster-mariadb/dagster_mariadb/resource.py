@@ -278,6 +278,22 @@ class MariaDBResource(ConfigurableResource):
         })
 
     @contextmanager
+    def get_raw_connection(self):
+        """Get a raw PyMySQL connection with automatic cleanup.
+        
+        Yields:
+            A PyMySQL Connection object.
+        """
+        conn = get_pymysql_connection_from_string(self._get_connection_string())
+        try:
+            yield conn
+        finally:
+            try:
+                conn.close()
+            except Exception:
+                pass
+
+    @contextmanager
     def get_connection_flexible(
         self,
         use_pymysql: bool = False
