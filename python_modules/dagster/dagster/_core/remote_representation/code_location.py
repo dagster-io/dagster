@@ -1,9 +1,10 @@
 import sys
 import threading
 from abc import abstractmethod
+from collections import defaultdict
 from collections.abc import Mapping, Sequence
 from contextlib import AbstractContextManager
-from functools import cached_property
+from functools import cached_property, partial
 from typing import TYPE_CHECKING, Any, Callable, Optional, Union, cast
 
 from dagster_shared.libraries import DagsterLibraryRegistry
@@ -739,7 +740,8 @@ class GrpcServerCodeLocation(CodeLocation):
 
             self._container_context = list_repositories_response.container_context
 
-            self._job_snaps = {}
+            self._job_snaps_by_name = defaultdict(dict)
+            self._job_snaps_by_snapshot_id = {}
 
             self.remote_repositories = {}
 
@@ -755,21 +757,25 @@ class GrpcServerCodeLocation(CodeLocation):
                         code_location=self,
                     ),
                     auto_materialize_use_sensors=instance.auto_materialize_use_sensors,
-                    ref_to_data_fn=self._job_ref_to_snap,
+                    ref_to_data_fn=partial(self._job_ref_to_snap, repo_name),
                 )
                 for job_snap in job_snaps.values():
-                    self._job_snaps[job_snap.snapshot_id] = job_snap
+                    self._job_snaps_by_name[repo_name][job_snap.name] = job_snap
+                    self._job_snaps_by_snapshot_id[job_snap.snapshot_id] = job_snap
 
         except:
             self.cleanup()
             raise
 
-    def _job_ref_to_snap(self, job_ref: "JobRefSnap") -> "JobDataSnap":
+    def _job_ref_to_snap(self, repository_name: str, job_ref: "JobRefSnap") -> "JobDataSnap":
         from dagster._core.remote_representation.external_data import JobDataSnap
 
-        snapshot = self._job_snaps[job_ref.snapshot_id]
+        # key by name to ensure that we are resilient to snapshot ID instability
+        snapshot = self._job_snaps_by_name[repository_name][job_ref.name]
         parent_snapshot = (
-            self._job_snaps[job_ref.parent_snapshot_id] if job_ref.parent_snapshot_id else None
+            self._job_snaps_by_snapshot_id.get(job_ref.parent_snapshot_id)
+            if job_ref.parent_snapshot_id
+            else None
         )
         return JobDataSnap(
             name=job_ref.name,

@@ -57,6 +57,7 @@ class LocationState(BaseModel, extra=Extra.forbid):
     defs_state_info: Optional[DefsStateInfo] = None
     status_url: Optional[str]  # link to cicd run url when building and dagster cloud url when done
     history: list[StatusChange] = []
+    project_dir: Optional[str] = None
 
     def add_status_change(self, status: LocationStatus, log: str):
         self.history.append(
