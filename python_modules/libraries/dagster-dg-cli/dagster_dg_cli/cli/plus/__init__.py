@@ -10,7 +10,6 @@ from dagster_dg_cli.cli.plus.pull import plus_pull_group
 @click.group(
     name="plus",
     cls=DgClickGroup,
-    unlaunched=True,
     commands={
         "create": plus_create_group,
         "login": login_command,
