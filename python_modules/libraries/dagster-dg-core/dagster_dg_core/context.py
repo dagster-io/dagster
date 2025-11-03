@@ -300,13 +300,33 @@ class DgContext:
             raise DgError("`project_name` is only available in a Dagster project context")
         return self.root_path.name
 
+    def get_project_venv_path(self) -> Path:
+        """Get the virtual environment path for the current project."""
+        if not self.is_project:
+            raise DgError("`get_project_venv_path` is only available in a Dagster project context")
+
+        if self.is_in_workspace:
+            for spec in self.project_specs:
+                project_path = self.workspace_root_path / spec.path
+                if project_path.resolve() == self.root_path.resolve():
+                    if spec.venv:
+                        if spec.venv.is_absolute():
+                            return spec.venv
+                        else:
+                            return self.workspace_root_path / spec.venv
+                    break
+
+        # default to .venv in project root
+        return self.root_path / ".venv"
+
     @property
     def project_python_executable(self) -> Path:
         if not self.is_project:
             raise DgError(
                 "`project_python_executable` is only available in a Dagster project context"
             )
-        return self.root_path / get_venv_executable(Path(".venv"))
+        venv_path = self.get_project_venv_path()
+        return venv_path / get_venv_executable(Path("."))
 
     @cached_property
     def build_config_path(self) -> Path:
@@ -610,7 +630,7 @@ def _validate_project_venv_activated(context: DgContext) -> None:
             "`_validate_project_venv_activated` is only available in a Dagster project context"
         )
     activated_venv = get_activated_venv()
-    project_venv = context.root_path / ".venv"
+    project_venv = context.get_project_venv_path()
     if project_venv.exists() and (
         not activated_venv or project_venv.resolve() != activated_venv.resolve()
     ):

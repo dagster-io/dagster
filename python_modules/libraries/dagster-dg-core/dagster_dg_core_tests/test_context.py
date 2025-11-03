@@ -600,3 +600,123 @@ def test_get_used_env_vars():
     assert get_used_env_vars({}) == set()
     assert get_used_env_vars([]) == set()
     assert get_used_env_vars("") == set()
+
+
+def test_configurable_venv_path_in_workspace():
+    """Test that projects in a workspace can specify custom venv paths."""
+    with ProxyRunner.test() as runner, isolated_example_workspace(runner, project_name="foo-bar"):
+        # Create a shared venv at workspace root
+        workspace_venv = Path.cwd() / ".venv"
+        subprocess.check_output(["uv", "venv", str(workspace_venv)])
+        install_editable_dagster_packages_to_venv(
+            workspace_venv, ["dagster", "dagster-pipes", "libraries/dagster-shared"]
+        )
+
+        # Configure the project to use the workspace-level venv
+        with modify_dg_toml_config_as_dict(Path("dg.toml")) as toml_dict:
+            toml_dict["workspace"]["projects"][0]["venv"] = ".venv"
+
+        # Create context for the project
+        project_path = Path.cwd() / "projects" / "foo-bar"
+        context = DgContext.for_project_environment(project_path, {})
+
+        # Verify the project uses the workspace venv
+        expected_venv = workspace_venv
+        assert context.get_project_venv_path() == expected_venv
+
+        # Verify project_python_executable uses the correct venv
+        expected_executable = expected_venv / (
+            "Scripts/python.exe" if is_windows() else "bin/python"
+        )
+        assert context.project_python_executable == expected_executable
+
+
+def test_configurable_venv_path_absolute():
+    """Test that projects can use absolute venv paths."""
+    with (
+        ProxyRunner.test() as runner,
+        isolated_example_workspace(runner, project_name="foo-bar"),
+        tempfile.TemporaryDirectory() as tmpdir,
+    ):
+        # Create a venv in a completely different location
+        external_venv = Path(tmpdir) / "external_venv"
+        subprocess.check_output(["uv", "venv", str(external_venv)])
+        install_editable_dagster_packages_to_venv(
+            external_venv, ["dagster", "dagster-pipes", "libraries/dagster-shared"]
+        )
+
+        # Configure the project to use the absolute venv path
+        with modify_dg_toml_config_as_dict(Path("dg.toml")) as toml_dict:
+            toml_dict["workspace"]["projects"][0]["venv"] = str(external_venv)
+
+        # Create context for the project
+        project_path = Path.cwd() / "projects" / "foo-bar"
+        context = DgContext.for_project_environment(project_path, {})
+
+        # Verify the project uses the external venv
+        assert context.get_project_venv_path() == external_venv
+
+
+def test_default_venv_path_when_not_configured():
+    """Test that projects default to .venv in project root when not configured."""
+    with ProxyRunner.test() as runner, isolated_example_workspace(runner, project_name="foo-bar"):
+        project_path = Path.cwd() / "projects" / "foo-bar"
+
+        # Create a venv in the project directory
+        with pushd(project_path):
+            subprocess.check_output(["uv", "venv"])
+            install_editable_dagster_packages_to_venv(
+                Path(".venv"), ["dagster", "dagster-pipes", "libraries/dagster-shared"]
+            )
+
+        context = DgContext.for_project_environment(project_path, {})
+
+        # Should default to project_path / .venv
+        expected_venv = project_path / ".venv"
+        assert context.get_project_venv_path() == expected_venv
+
+
+def test_venv_path_supports_uv_workspace_pattern():
+    """Test the use case from the GitHub issue with shared venv for multiple projects."""
+    with (
+        ProxyRunner.test() as runner,
+        isolated_example_workspace(runner, project_name="project-one"),
+    ):
+        # Create a shared venv
+        shared_venv = Path.cwd() / ".venv"
+        subprocess.check_output(["uv", "venv", str(shared_venv)])
+        install_editable_dagster_packages_to_venv(
+            shared_venv, ["dagster", "dagster-pipes", "libraries/dagster-shared"]
+        )
+
+        # Add a second project to the workspace config manually
+        project2_path = Path.cwd() / "projects" / "project-two"
+        project2_path.mkdir(parents=True, exist_ok=True)
+        (project2_path / "pyproject.toml").write_text(
+            textwrap.dedent("""
+                [tool.dg]
+                directory_type = "project"
+
+                [tool.dg.project]
+                root_module = "project_two"
+            """)
+        )
+        (project2_path / "project_two").mkdir(exist_ok=True)
+
+        with modify_dg_toml_config_as_dict(Path("dg.toml")) as toml_dict:
+            # Workspace already has one project, add second
+            if "projects" not in toml_dict.get("workspace", {}):
+                toml_dict["workspace"]["projects"] = []
+            toml_dict["workspace"]["projects"].append({"path": "projects/project-two"})
+            # Configure both projects to use the shared venv
+            for project_spec in toml_dict["workspace"]["projects"]:
+                project_spec["venv"] = ".venv"
+
+        # Verify first project uses shared venv
+        project1_path = Path.cwd() / "projects" / "project-one"
+        context1 = DgContext.for_project_environment(project1_path, {})
+        assert context1.get_project_venv_path() == shared_venv
+
+        # Verify second project uses shared venv
+        context2 = DgContext.for_project_environment(project2_path, {})
+        assert context2.get_project_venv_path() == shared_venv

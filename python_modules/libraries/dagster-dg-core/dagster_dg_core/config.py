@@ -407,16 +407,19 @@ class DgRawWorkspaceConfig(TypedDict, total=False):
 @dataclass
 class DgWorkspaceProjectSpec:
     path: Path
+    venv: Optional[Path] = None
 
     @classmethod
     def from_raw(cls, raw: "DgRawWorkspaceProjectSpec") -> Self:
         return cls(
             path=Path(raw["path"]),
+            venv=Path(raw["venv"]) if "venv" in raw else None,
         )
 
 
 class DgRawWorkspaceProjectSpec(TypedDict, total=False):
     path: Required[str]
+    venv: str
 
 
 @dataclass
