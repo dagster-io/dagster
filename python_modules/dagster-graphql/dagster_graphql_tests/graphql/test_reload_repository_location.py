@@ -306,7 +306,12 @@ class TestReloadRepositoriesOutOfProcess(OutOfProcessTestSuite):
 
                 new_repo_data = RepositorySnap.from_def(new_repo)
 
-                remote_repository_mock.return_value = {"new_repo": new_repo_data}
+                remote_repository_mock.return_value = {
+                    "new_repo": (
+                        new_repo_data,
+                        {},
+                    )
+                }
 
                 cli_command_mock.return_value = ListRepositoriesResponse(
                     repository_symbols=[],

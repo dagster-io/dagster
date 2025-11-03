@@ -847,7 +847,7 @@ def test_multi_asset_check() -> None:
         == 1
     )
 
-    with pytest.raises(dg.DagsterInvalidSubsetError):
+    with pytest.raises(dg.DagsterInvalidDefinitionError):
         execute_assets_and_checks(
             asset_checks=[checks],
             instance=instance,

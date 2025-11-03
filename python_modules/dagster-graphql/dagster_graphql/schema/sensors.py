@@ -24,6 +24,7 @@ from dagster_graphql.implementation.loader import RepositoryScopedBatchLoader
 from dagster_graphql.implementation.utils import (
     assert_permission_for_sensor,
     capture_error,
+    has_permission_for_definition,
     require_permission_check,
 )
 from dagster_graphql.schema.asset_selections import GrapheneAssetSelection
@@ -80,6 +81,7 @@ class GrapheneSensor(graphene.ObjectType):
     targets = graphene.List(graphene.NonNull(GrapheneTarget))
     defaultStatus = graphene.NonNull(GrapheneInstigationStatus)
     canReset = graphene.NonNull(graphene.Boolean)
+    hasCursorUpdatePermissions = graphene.NonNull(graphene.Boolean)
     sensorState = graphene.NonNull(GrapheneInstigationState)
     minIntervalSeconds = graphene.NonNull(graphene.Int)
     description = graphene.String()
@@ -143,6 +145,11 @@ class GrapheneSensor(graphene.ObjectType):
     def resolve_canReset(self, _graphene_info: ResolveInfo):
         return bool(
             self._stored_state and self._stored_state.status != InstigatorStatus.DECLARED_IN_CODE
+        )
+
+    def resolve_hasCursorUpdatePermissions(self, graphene_info: ResolveInfo) -> bool:
+        return has_permission_for_definition(
+            graphene_info, Permissions.UPDATE_SENSOR_CURSOR, self._remote_sensor
         )
 
     def resolve_sensorState(self, _graphene_info: ResolveInfo):

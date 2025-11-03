@@ -2,6 +2,68 @@
 
 When new releases include breaking changes or deprecations, this document explains how to upgrade your projects.
 
+## Upgrading to 1.12.0
+
+### Breaking changes
+
+- `FreshnessPolicy` and `apply_freshness_policy` are now exported from the top-level `dagster` module. If you have imports of the form:
+
+```python
+from dagster.preview.freshness import FreshnessPolicy, apply_freshness_policy
+```
+
+these should be replaced with:
+
+```python
+from dagster import FreshnessPolicy, apply_freshness_policy
+```
+
+or:
+
+```python
+import dagster as dg
+
+dg.FreshnessPolicy(...)
+dg.apply_freshness_policy(...)
+```
+
+- The `FreshnessDaemon` that is responsible for evaluating `FreshnessPolicy`s now runs by default. If you would like to disable it, set the following configuration in your `dagster.yaml` file:
+
+```yaml
+freshness:
+  enabled: false
+```
+
+- If you have written a custom `Executor` subclass, you will need to update it to handle resource initialization failures. Resource initialization failures previously always caused runs to fail. With 1.12.0, executors that execute steps in dedicated processes can recover from resource initialization failures using step retries. Executors are responsible for coordinating resource initialization failures - they must now explicitly mark such failures to fail the step and encompassing run. All built-in executors provided by the dagster package and libraries now manage this failure-handling. Custom executor implementations that do not specially handle resource initialization failures may result in runs that stay in 'started' status without being explicitly marked as failed.
+
+```python
+
+class MyCustomExecutor(Executor):
+    @public
+    def execute(
+        self, plan_context: PlanOrchestrationContext, execution_plan: ExecutionPlan
+    ) -> Iterator[DagsterEvent]:
+        with ActiveExecution(...) as active_execution:
+            ...
+            # core executor implementation of event handling
+            yield event
+            active_execution.handle_event(event)
+            ...
+
+            # As of 1.12.0, custom executors must handle resource initialization events either as a
+            # step failure or as a retry event here, since retries are managed by the executor
+            if event.is_resource_init_failure:
+                failure_or_retry_event = self.get_failure_or_retry_event_after_error(
+                    step_context,
+                    event.engine_event_data.error,
+                    active_execution.get_known_state(),
+                )
+                yield failure_or_retry_event
+                active_execution.handle_event(failure_or_retry_event)
+
+            ...
+```
+
 ## Upgrading to 1.11.0
 
 ### Breaking changes

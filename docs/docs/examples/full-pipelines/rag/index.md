@@ -23,15 +23,12 @@ In this example, you'll build a pipeline with Dagster that:
 - Stores the data in a vector database
 - Retrieves relevant information to answer ad hoc questions
 
-<details>
-  <summary>Prerequisites</summary>
+## Prerequisites
 
 To follow the steps in this guide, you'll need:
 
 - Basic Python knowledge
 - Python 3.9+ installed on your system. Refer to the [Installation guide](/getting-started/installation) for information.
-
-</details>
 
 ## Step 1: Set up your Dagster environment
 

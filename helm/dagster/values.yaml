@@ -18,6 +18,12 @@ global:
   # to false below.
   celeryConfigSecretName: "dagster-celery-config-secret"
 
+  # The name of the ConfigMap containing the Dagster instance configuration (dagster.yaml).
+  # This is used by the dagster-user-deployments subchart when includeInstance is set to true.
+  # By default, this will be computed as "<release-name>-instance". Only set this if you are
+  # using a custom fullnameOverride or deploying with a non-standard release name.
+  dagsterInstanceConfigMap: ""
+
 nameOverride: ""
 fullnameOverride: ""
 rbacEnabled: true

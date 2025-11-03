@@ -1,20 +1,14 @@
-import {Box, Button, Colors, Dialog, DialogFooter, Icon, IconName} from '@dagster-io/ui-components';
+import {Box, Colors, Icon, IconName} from '@dagster-io/ui-components';
 import dayjs from 'dayjs';
 import isEqual from 'lodash/isEqual';
-// eslint-disable-next-line no-restricted-imports
-import momentTZ from 'moment-timezone';
-import {useContext, useEffect, useMemo, useState} from 'react';
-import styled from 'styled-components';
+import {useContext, useMemo} from 'react';
 
 import {FilterObject, FilterTag, FilterTagHighlightedText} from './useFilter';
 import {TimeContext} from '../../app/time/TimeContext';
 import {browserTimezone} from '../../app/time/browserTimezone';
 import {useUpdatingRef} from '../../hooks/useUpdatingRef';
-import {lazy} from '../../util/lazy';
-
-const DateRangePicker = lazy(() => import('./DateRangePickerWrapper'));
-
 import '../../util/dayjsExtensions';
+import {DateRangeDialog} from '../DateRangeDialog';
 
 export type TimeRangeState = [number | null, number | null];
 
@@ -136,9 +130,11 @@ export function useTimeRangeFilter({
       }) => {
         if (value === 'CUSTOM') {
           const closeFn = createPortal(
-            <CustomTimeRangeFilterDialog
-              filter={filterObjRef.current}
-              close={() => {
+            <DateRangeDialog
+              isOpen
+              onCancel={() => closeFn()}
+              onApply={(value) => {
+                filterObjRef.current.setState(value);
                 closeFn();
               }}
             />,
@@ -280,120 +276,3 @@ export function ActiveFilterState({
     />
   );
 }
-
-export function CustomTimeRangeFilterDialog({
-  filter,
-  close,
-}: {
-  filter: TimeRangeFilter;
-  close: () => void;
-}) {
-  const {
-    timezone: [_timezone],
-  } = useContext(TimeContext);
-  const targetTimezone = _timezone === 'Automatic' ? browserTimezone() : _timezone;
-
-  useEffect(() => {
-    const originalDefaultTimezone = momentTZ.tz.guess();
-    momentTZ.tz.setDefault(targetTimezone);
-    return () => {
-      momentTZ.tz.setDefault(originalDefaultTimezone);
-    };
-  }, [targetTimezone]);
-
-  const [startDate, setStartDate] = useState<moment.Moment | null>(null);
-  const [endDate, setEndDate] = useState<moment.Moment | null>(null);
-  const [focusedInput, setFocusedInput] = useState<'startDate' | 'endDate'>('startDate');
-
-  const [isOpen, setIsOpen] = useState(true);
-
-  return (
-    <Dialog isOpen={isOpen} title="Select a date range" onClosed={close} style={{width: '652px'}}>
-      <Container>
-        <Box flex={{direction: 'row', gap: 8}} padding={16}>
-          <DateRangePicker
-            minimumNights={0}
-            onDatesChange={({startDate, endDate}) => {
-              setStartDate(startDate ? startDate.clone().startOf('day') : null);
-              setEndDate(endDate ? endDate.clone().endOf('day') : null);
-            }}
-            onFocusChange={(focusedInput) => {
-              if (focusedInput) {
-                setFocusedInput(focusedInput);
-              }
-            }}
-            startDate={startDate}
-            endDate={endDate}
-            startDateId="start"
-            endDateId="end"
-            focusedInput={focusedInput}
-            withPortal={false}
-            keepOpenOnDateSelect
-            isOutsideRange={() => false}
-          />
-        </Box>
-      </Container>
-      <DialogFooter topBorder>
-        <Button
-          onClick={() => {
-            setIsOpen(false);
-          }}
-        >
-          Cancel
-        </Button>
-        <Button
-          intent="primary"
-          disabled={!startDate || !endDate}
-          onClick={() => {
-            // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-            filter.setState([startDate!.valueOf(), endDate!.valueOf()]);
-            setIsOpen(false);
-          }}
-        >
-          Apply
-        </Button>
-      </DialogFooter>
-    </Dialog>
-  );
-}
-
-const Container = styled.div`
-  height: 430px;
-
-  /* Hide the default date picker for Chrome, Edge, and Safari */
-  input[type='date']::-webkit-calendar-picker-indicator {
-    display: none;
-  }
-
-  /* Hide the default date picker for Firefox */
-  input[type='date']::-moz-calendar-picker-indicator {
-    display: none;
-  }
-
-  /* Hide the default date picker for Internet Explorer */
-  input[type='date']::-ms-calendar-picker-indicator {
-    display: none;
-  }
-
-  .DayPickerKeyboardShortcuts_show {
-    display: none;
-  }
-
-  .CalendarDay__hovered_span,
-  .CalendarDay__hovered_span:hover,
-  .CalendarDay__selected_span,
-  .CalendarDay__selected_span:hover {
-    background: ${Colors.backgroundBlue()};
-    color: ${Colors.textBlue()};
-    border: 1px solid #e4e7e7;
-  }
-  .CalendarDay__selected,
-  .CalendarDay__selected:active,
-  .CalendarDay__selected:hover {
-    background: ${Colors.backgroundBlueHover()};
-    border: 1px solid #e4e7e7;
-  }
-  .DateInput_input__focused {
-    border-color: ${Colors.borderDefault()};
-  }
-`;

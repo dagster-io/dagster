@@ -30,11 +30,12 @@ from dagster._core.launcher.base import (
     WorkerStatus,
 )
 from dagster._core.storage.dagster_run import DagsterRun
-from dagster._core.storage.tags import RUN_WORKER_ID_TAG
+from dagster._core.storage.tags import HIDDEN_TAG_PREFIX, RUN_WORKER_ID_TAG
 from dagster._grpc.types import ExecuteRunArgs
 from dagster._serdes import ConfigurableClass
 from dagster._serdes.config_class import ConfigurableClassData
 from dagster._utils.backoff import backoff
+from dagster._utils.tags import get_boolean_tag_value
 from typing_extensions import Self
 
 from dagster_aws.ecs.container_context import (
@@ -855,6 +856,28 @@ class EcsRunLauncher(RunLauncher[T_DagsterInstance], ConfigurableClass):
             task.get("stoppedReason", "")
         )
 
+    def _add_eni_id_tags(self, run: DagsterRun, task: dict[str, Any]):
+        attachments = task.get("attachments", [])
+        eni_ids = {}
+        eni_count = 0
+        for attachment in attachments:
+            if attachment.get("type") == "ElasticNetworkInterface":
+                details = {d["name"]: d["value"] for d in attachment.get("details", [])}
+
+                if "networkInterfaceId" in details:
+                    if eni_count == 0:
+                        eni_ids[f"{HIDDEN_TAG_PREFIX}eni_id"] = details["networkInterfaceId"]
+                    else:
+                        eni_ids[f"{HIDDEN_TAG_PREFIX}eni_id_{eni_count}"] = details[
+                            "networkInterfaceId"
+                        ]
+                    eni_count += 1
+        self._instance.add_run_tags(run.run_id, eni_ids)
+        if eni_count > 0:
+            logging.info(f"Added {eni_count} ENI ID tags for run {run.run_id}: {eni_ids}")
+        else:
+            logging.warning(f"No ENI IDs found for run {run.run_id}")
+
     def check_run_worker_health(self, run: DagsterRun):
         run_worker_id = run.tags.get(RUN_WORKER_ID_TAG)
 
@@ -869,6 +892,14 @@ class EcsRunLauncher(RunLauncher[T_DagsterInstance], ConfigurableClass):
             return CheckRunHealthResult(WorkerStatus.UNKNOWN, "", run_worker_id=run_worker_id)
 
         t = tasks[0]
+
+        if get_boolean_tag_value(os.getenv("DAGSTER_AWS_ENI_TAGGING_ENABLED")) and not run.tags.get(
+            f"{HIDDEN_TAG_PREFIX}eni_id"
+        ):
+            try:
+                self._add_eni_id_tags(run, t)
+            except Exception:
+                logging.exception(f"Error adding ENI ID tags for run {run.run_id}")
 
         if t.get("lastStatus") in RUNNING_STATUSES:
             return CheckRunHealthResult(WorkerStatus.RUNNING, run_worker_id=run_worker_id)

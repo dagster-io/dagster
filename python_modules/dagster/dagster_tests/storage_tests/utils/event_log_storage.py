@@ -1263,6 +1263,17 @@ class TestEventLogStorage:
         assert record.event_log_entry.dagster_event
         assert record.event_log_entry.dagster_event.asset_key == asset_key
 
+        # asset key filter on run success returns empty list
+        assert (
+            storage.get_event_records(
+                dg.EventRecordsFilter(
+                    event_type=DagsterEventType.RUN_SUCCESS,
+                    asset_key=dg.AssetKey(["hello"]),
+                ),
+            )
+            == []
+        )
+
         # new API
         result = storage.fetch_materializations(asset_key, limit=100)
         assert isinstance(result, dg.EventRecordsResult)

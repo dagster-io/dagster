@@ -604,13 +604,13 @@ class InstanceRef(
 
         from dagster._core.storage.defs_state.base import DefsStateStorage
         from dagster._core.storage.defs_state.blob_storage_state_storage import (
-            BlobStorageStateStorage,
+            UPathDefsStateStorage,
         )
 
         return (
             self.defs_state_storage_data.rehydrate(as_type=DefsStateStorage)
             if self.defs_state_storage_data
-            else BlobStorageStateStorage(
+            else UPathDefsStateStorage(
                 UPath(_defs_state_directory(self.local_artifact_storage.base_dir))
             )
         )

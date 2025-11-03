@@ -361,6 +361,7 @@ import storage_kind from '../icon-svgs/storage_kind.svg';
 import subtract from '../icon-svgs/subtract.svg';
 import success from '../icon-svgs/success.svg';
 import successful_trend from '../icon-svgs/successful_trend.svg';
+import summarize from '../icon-svgs/summarize.svg';
 import sun from '../icon-svgs/sun.svg';
 import support from '../icon-svgs/support.svg';
 import sync from '../icon-svgs/sync.svg';
@@ -781,6 +782,7 @@ export const Icons = {
   subtract,
   success,
   successful_trend,
+  summarize,
   sun,
   support,
   sync,

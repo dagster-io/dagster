@@ -1,5 +1,6 @@
 import {Dialog, DialogHeader} from '@dagster-io/ui-components';
 import {CodeMirrorInDialogStyle} from '@dagster-io/ui-components/editor';
+import {useMemo} from 'react';
 import {Redirect, useParams} from 'react-router-dom';
 
 import {useQuery} from '../apollo-client';
@@ -9,10 +10,11 @@ import {LaunchpadSessionError} from './LaunchpadSessionError';
 import {LaunchpadSessionLoading} from './LaunchpadSessionLoading';
 import {LaunchpadTransientSessionContainer} from './LaunchpadTransientSessionContainer';
 import {IExecutionSession} from '../app/ExecutionSessionStorage';
-import {usePermissionsForLocation} from '../app/Permissions';
+import {useJobPermissions} from '../app/useJobPermissions';
 import {__ASSET_JOB_PREFIX} from '../asset-graph/Utils';
 import {asAssetKeyInput} from '../assets/asInput';
 import {useBlockTraceUntilTrue} from '../performance/TraceContext';
+import {explorerPathFromString} from '../pipelines/PipelinePathUtils';
 import {RepoAddress} from '../workspace/types';
 import {LaunchpadRootQuery, LaunchpadRootQueryVariables} from './types/LaunchpadAllowedRoot.types';
 import {AssetKey} from '../graphql/types';
@@ -150,17 +152,29 @@ export const BackfillLaunchpad = ({
 export const JobOrAssetLaunchpad = (props: {repoAddress: RepoAddress}) => {
   const {repoAddress} = props;
   const {pipelinePath, repoPath} = useParams<{repoPath: string; pipelinePath: string}>();
-  const {
-    permissions: {canLaunchPipelineExecution},
-    loading,
-  } = usePermissionsForLocation(repoAddress.location);
+
+  const explorerPath = explorerPathFromString(pipelinePath);
+  const {pipelineName} = explorerPath;
+  const pipelineSelector = useMemo(
+    () => ({
+      pipelineName,
+      repositoryName: repoAddress.name,
+      repositoryLocationName: repoAddress.location,
+    }),
+    [pipelineName, repoAddress.name, repoAddress.location],
+  );
+
+  const {hasLaunchExecutionPermission, loading} = useJobPermissions(
+    pipelineSelector,
+    repoAddress.location,
+  );
   useBlockTraceUntilTrue('Permissions', !loading);
 
   if (loading) {
     return null;
   }
 
-  if (!canLaunchPipelineExecution) {
+  if (!hasLaunchExecutionPermission) {
     return <Redirect to={`/locations/${repoPath}/pipeline_or_job/${pipelinePath}`} />;
   }
 

@@ -99,6 +99,17 @@ spec:
                 optional: true
             {{- end }}
           resources: {{ $deployment.resources | toYaml | nindent 12 }}
+          volumeMounts:
+        {{- if $.Values.includeInstance }}
+            - name: dagster-instance
+              mountPath: "{{ $.Values.global.dagsterHome | default $.Values.dagsterHome }}/dagster.yaml"
+              subPath: dagster.yaml
+        {{- end }}
+        {{- if $deployment.volumeMounts }}
+          {{- range $volumeMount := $deployment.volumeMounts }}
+            - {{- $volumeMount | toYaml | nindent 14 }}
+          {{- end }}
+        {{- end }}
         # Only disable readiness if explicitly set to false
         {{- if not $deployment.readinessProbe }}
           readinessProbe:
@@ -179,24 +190,23 @@ spec:
           {{- end }}
         {{- end }}
         {{- end }}
-        {{- if $deployment.volumeMounts }}
-          volumeMounts:
-          {{- range $volumeMount := $deployment.volumeMounts }}
-            - {{- $volumeMount | toYaml | nindent 14 }}
-          {{- end }}
-        {{- end }}
         {{- if $deployment.sidecarContainers }}
         {{- toYaml $deployment.sidecarContainers | nindent 8 }}
         {{- end }}
       nodeSelector: {{ $deployment.nodeSelector | toYaml | nindent 8 }}
       affinity: {{ $deployment.affinity | toYaml | nindent 8 }}
       tolerations: {{- $deployment.tolerations | toYaml | nindent 8 }}
-      {{- if $deployment.volumes }}
       volumes:
+        {{- if $.Values.includeInstance }}
+        - name: dagster-instance
+          configMap:
+            name: {{ $.Values.global.dagsterInstanceConfigMap | default (printf "%s-instance" $.Release.Name) }}
+        {{- end }}
+        {{- if $deployment.volumes }}
         {{- range $volume := $deployment.volumes }}
         - {{- $volume | toYaml | nindent 10 }}
         {{- end }}
-      {{- end }}
+        {{- end }}
       {{- if $deployment.schedulerName }}
       schedulerName: {{ $deployment.schedulerName }}
       {{- end }}

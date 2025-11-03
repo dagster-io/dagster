@@ -39,7 +39,7 @@ Dagster's dbt integration enables automatically attaching column schema metadata
 
 ## Attaching row count
 
-Row count metadata can be attached to Dagster assets as [runtime metadata](index.md#runtime-metadata) to provide additional context about the number of rows in a materialized table. This will be highlighted in the Dagster UI. For example:
+Row count metadata can be attached to Dagster assets as [runtime metadata](/guides/build/assets/metadata-and-tags#runtime-metadata) to provide additional context about the number of rows in a materialized table. This will be highlighted in the Dagster UI. For example:
 
 ![Row count for an asset in the Dagster UI](/images/guides/build/assets/metadata-tags/metadata-row-count.png)
 

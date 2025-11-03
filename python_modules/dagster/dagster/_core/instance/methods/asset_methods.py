@@ -454,7 +454,7 @@ class AssetMethods:
 
     def internal_asset_freshness_enabled(self) -> bool:
         """Check if internal asset freshness is enabled - moved from AssetMixin.internal_asset_freshness_enabled()."""
-        return os.getenv("DAGSTER_ASSET_FRESHNESS_ENABLED", "").lower() == "true"
+        return os.getenv("DAGSTER_ASSET_FRESHNESS_ENABLED", "").lower() != "false"
 
     def streamline_read_asset_health_supported(self, streamline_name: StreamlineName) -> bool:
         """Check if streamline read asset health is supported - moved from AssetMixin.streamline_read_asset_health_supported()."""

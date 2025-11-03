@@ -12,7 +12,6 @@ from dagster import (
     AssetSpec,
     Config,
     JsonMetadataValue,
-    LegacyFreshnessPolicy,
     file_relative_path,
 )
 from dagster._core.definitions.materialize import materialize
@@ -209,12 +208,6 @@ def test_base_with_meta_config_translator():
         AssetKey(["target", "departments"]): "group_2",
     }
 
-    assert my_sling_assets.legacy_freshness_policies_by_key == {
-        AssetKey(["target", "departments"]): LegacyFreshnessPolicy(
-            maximum_lag_minutes=0.0, cron_schedule="5 4 * * *", cron_schedule_timezone="UTC"
-        )
-    }
-
     assert (
         AssetKey(["target", "public", "transactions"])
         in my_sling_assets.auto_materialize_policies_by_key
@@ -275,9 +268,6 @@ def test_base_with_custom_tags_translator_legacy() -> None:
 
         def get_group_name(self, stream_definition):
             return super().get_group_name(stream_definition)
-
-        def get_freshness_policy(self, stream_definition):
-            return super().get_freshness_policy(stream_definition)
 
         def get_auto_materialize_policy(self, stream_definition):
             return super().get_auto_materialize_policy(stream_definition)

@@ -71,6 +71,7 @@ class AutomationTickEvaluationContext:
             cursor=cursor,
             evaluation_time=evaluation_time,
             logger=logger,
+            evaluation_id=self._evaluation_id,
         )
         self._materialize_run_tags = materialize_run_tags
         self._observe_run_tags = observe_run_tags

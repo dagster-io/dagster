@@ -67,8 +67,6 @@
     "invariant": "^2.2.4",
     "lodash": "^4.17.15",
     "lru-cache": "^6.0.0",
-    "moment": "^2.29.4",
-    "moment-timezone": "^0.5.42",
     "qs": "^6.14.0",
     "react-chartjs-2": "^5.1.0",
     "react-is": "^18.3.1",

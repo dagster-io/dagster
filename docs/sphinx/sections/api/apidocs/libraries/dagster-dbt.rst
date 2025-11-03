@@ -16,6 +16,7 @@ DbtProjectComponent
 *******************
 
 .. autoclass:: DbtProjectComponent
+    :members:
 
 To use the dbt component, see the `dbt component integration guide <https://docs.dagster.io/integrations/libraries/dbt>`_.
 

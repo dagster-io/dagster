@@ -1,10 +1,9 @@
 import itertools
 import json
-import shutil
 from collections.abc import Iterator, Mapping
 from contextlib import contextmanager
 from contextvars import ContextVar
-from dataclasses import dataclass, field
+from dataclasses import dataclass, field, replace
 from functools import cached_property
 from pathlib import Path
 from typing import Annotated, Any, Literal, Optional, Union
@@ -40,6 +39,12 @@ from dagster_dbt.dagster_dbt_translator import (
 from dagster_dbt.dbt_manifest import validate_manifest
 from dagster_dbt.dbt_manifest_asset_selection import DbtManifestAssetSelection
 from dagster_dbt.dbt_project import DbtProject
+from dagster_dbt.dbt_project_manager import (
+    DbtProjectArgsManager,
+    DbtProjectManager,
+    NoopDbtProjectManager,
+    RemoteGitDbtProjectManager,
+)
 from dagster_dbt.utils import ASSET_RESOURCE_TYPES
 
 
@@ -63,29 +68,18 @@ class DbtProjectArgs(dg.Resolvable):
     state_path: Optional[str] = None
 
 
-def resolve_dbt_project(context: ResolutionContext, model) -> DbtProject:
-    if isinstance(model, str):
-        return DbtProject(
-            context.resolve_source_relative_path(
-                context.resolve_value(model, as_type=str),
-            )
-        )
+def resolve_dbt_project(context: ResolutionContext, model) -> DbtProjectManager:
+    if isinstance(model, RemoteGitDbtProjectManager.model()):
+        return RemoteGitDbtProjectManager.resolve_from_model(context, model)
 
-    args = DbtProjectArgs.resolve_from_model(context, model)
-
-    kwargs = {}  # use optionally splatted kwargs to avoid redefining default value
-    if args.target_path:
-        kwargs["target_path"] = args.target_path
-
-    return DbtProject(
-        project_dir=context.resolve_source_relative_path(args.project_dir),
-        target=args.target,
-        profiles_dir=args.profiles_dir,
-        state_path=args.state_path,
-        packaged_project_dir=args.packaged_project_dir,
-        profile=args.profile,
-        **kwargs,
+    args = (
+        DbtProjectArgs(project_dir=context.resolve_value(model, as_type=str))
+        if isinstance(model, str)
+        else DbtProjectArgs.resolve_from_model(context, model)
     )
+    # resolve the project_dir relative to where this component is defined
+    args = replace(args, project_dir=context.resolve_source_relative_path(args.project_dir))
+    return DbtProjectArgsManager(args)
 
 
 DbtMetadataAddons: TypeAlias = Literal["column_metadata", "row_count"]
@@ -113,13 +107,25 @@ class DbtProjectComponent(StateBackedComponent, dg.Resolvable):
 
     Scaffold a DbtProjectComponent definition by running `dg scaffold defs dagster_dbt.DbtProjectComponent --project-path path/to/your/existing/dbt_project`
     in the Dagster project directory.
+
+    Example:
+
+        .. code-block:: yaml
+
+            # defs.yaml
+
+            type: dagster_dbt.DbtProjectComponent
+            attributes:
+              project: "{{ project_root }}/path/to/dbt_project"
+              cli_args:
+                - build
     """
 
     project: Annotated[
-        DbtProject,
+        Union[DbtProject, DbtProjectManager],
         Resolver(
             resolve_dbt_project,
-            model_field_type=Union[str, DbtProjectArgs.model()],
+            model_field_type=Union[str, DbtProjectArgs.model(), RemoteGitDbtProjectManager.model()],
             description="The path to the dbt project or a mapping defining a DbtProject",
             examples=[
                 "{{ project_root }}/path/to/dbt_project",
@@ -212,8 +218,8 @@ class DbtProjectComponent(StateBackedComponent, dg.Resolvable):
     @property
     def defs_state_config(self) -> DefsStateConfig:
         return DefsStateConfig(
-            key=f"{self.__class__.__name__}[{self.project.name}]",
-            type=DefsStateManagementType.LOCAL_FILESYSTEM,
+            key=f"{self.__class__.__name__}[{self._project_manager.defs_state_discriminator}]",
+            management_type=DefsStateManagementType.LOCAL_FILESYSTEM,
             refresh_if_dev=self.prepare_if_dev,
         )
 
@@ -225,9 +231,66 @@ class DbtProjectComponent(StateBackedComponent, dg.Resolvable):
     def _base_translator(self) -> "DagsterDbtTranslator":
         return DagsterDbtTranslator(self.translation_settings)
 
+    def get_resource_props(self, manifest: Mapping[str, Any], unique_id: str) -> Mapping[str, Any]:
+        """Given a parsed manifest and a dbt unique_id, returns the dictionary of properties
+        for the corresponding dbt resource (e.g. model, seed, snapshot, source) as defined
+        in your dbt project. This can be used as a convenience method when overriding the
+        `get_asset_spec` method.
+
+        Args:
+            manifest (Mapping[str, Any]): The parsed manifest of the dbt project.
+            unique_id (str): The unique_id of the dbt resource.
+
+        Returns:
+            Mapping[str, Any]: The dictionary of properties for the corresponding dbt resource.
+
+        Examples:
+            .. code-block:: python
+
+                class CustomDbtProjectComponent(DbtProjectComponent):
+
+                    def get_asset_spec(self, manifest: Mapping[str, Any], unique_id: str, project: Optional[DbtProject]) -> dg.AssetSpec:
+                        base_spec = super().get_asset_spec(manifest, unique_id, project)
+                        resource_props = self.get_resource_props(manifest, unique_id)
+                        if resource_props["meta"].get("use_custom_group"):
+                            return base_spec.replace_attributes(group_name="custom_group")
+                        else:
+                            return base_spec
+        """
+        return get_node(manifest, unique_id)
+
+    @public
     def get_asset_spec(
         self, manifest: Mapping[str, Any], unique_id: str, project: Optional[DbtProject]
     ) -> dg.AssetSpec:
+        """Generates an AssetSpec for a given dbt node.
+
+        This method can be overridden in a subclass to customize how dbt nodes are converted
+        to Dagster asset specs. By default, it delegates to the configured DagsterDbtTranslator.
+
+        Args:
+            manifest: The dbt manifest dictionary containing information about all dbt nodes
+            unique_id: The unique identifier for the dbt node (e.g., "model.my_project.my_model")
+            project: The DbtProject object, if available
+
+        Returns:
+            An AssetSpec that represents the dbt node as a Dagster asset
+
+        Example:
+            Override this method to add custom tags to all dbt models:
+
+            .. code-block:: python
+
+                from dagster_dbt import DbtProjectComponent
+                import dagster as dg
+
+                class CustomDbtProjectComponent(DbtProjectComponent):
+                    def get_asset_spec(self, manifest, unique_id, project):
+                        base_spec = super().get_asset_spec(manifest, unique_id, project)
+                        return base_spec.replace_attributes(
+                            tags={**base_spec.tags, "custom_tag": "my_value"}
+                        )
+        """
         return self._base_translator.get_asset_spec(manifest, unique_id, project)
 
     def get_asset_check_spec(
@@ -240,37 +303,40 @@ class DbtProjectComponent(StateBackedComponent, dg.Resolvable):
         return self._base_translator.get_asset_check_spec(asset_spec, manifest, unique_id, project)
 
     @cached_property
-    def cli_resource(self):
-        return DbtCliResource(self.project)
+    def _project_manager(self) -> DbtProjectManager:
+        if isinstance(self.project, DbtProject):
+            return NoopDbtProjectManager(self.project)
+        else:
+            return self.project
+
+    @cached_property
+    def dbt_project(self) -> DbtProject:
+        return self._project_manager.get_project(None)
 
     def get_asset_selection(
         self, select: str, exclude: str = DBT_DEFAULT_EXCLUDE
     ) -> DbtManifestAssetSelection:
         return DbtManifestAssetSelection.build(
-            manifest=self.project.manifest_path,
+            manifest=self.dbt_project.manifest_path,
             dagster_dbt_translator=self.translator,
             select=select,
             exclude=exclude,
         )
 
     def write_state_to_path(self, state_path: Path) -> None:
-        # compile the manifest
-        self.project.preparer.prepare(self.project)
-        # move the manifest to the correct path
-        shutil.copyfile(self.project.manifest_path, state_path)
+        self._project_manager.prepare(state_path)
 
     def build_defs_from_state(
         self, context: dg.ComponentLoadContext, state_path: Optional[Path]
     ) -> dg.Definitions:
-        if state_path is not None:
-            shutil.copyfile(state_path, self.project.manifest_path)
+        project = self._project_manager.get_project(state_path)
 
         res_ctx = context.resolution_context
 
         @dbt_assets(
-            manifest=self.project.manifest_path,
-            project=self.project,
-            name=self.op.name if self.op else self.project.name,
+            manifest=project.manifest_path,
+            project=project,
+            name=self.op.name if self.op else project.name,
             op_tags=self.op.tags if self.op else None,
             dagster_dbt_translator=self.translator,
             select=self.select,
@@ -279,7 +345,7 @@ class DbtProjectComponent(StateBackedComponent, dg.Resolvable):
         )
         def _fn(context: dg.AssetExecutionContext):
             with _set_resolution_context(res_ctx):
-                yield from self.execute(context=context, dbt=self.cli_resource)
+                yield from self.execute(context=context, dbt=DbtCliResource(project))
 
         return dg.Definitions(assets=[_fn])
 
@@ -336,12 +402,39 @@ class DbtProjectComponent(StateBackedComponent, dg.Resolvable):
             iterator = iterator.fetch_row_counts()
         return iterator
 
+    @public
     def execute(self, context: dg.AssetExecutionContext, dbt: DbtCliResource) -> Iterator:
+        """Executes the dbt command for the selected assets.
+
+        This method can be overridden in a subclass to customize the execution behavior,
+        such as adding custom logging, modifying CLI arguments, or handling events differently.
+
+        Args:
+            context: The asset execution context provided by Dagster
+            dbt: The DbtCliResource used to execute dbt commands
+
+        Yields:
+            Events from the dbt CLI execution (e.g., AssetMaterialization, AssetObservation)
+
+        Example:
+            Override this method to add custom logging before and after execution:
+
+            .. code-block:: python
+
+                from dagster_dbt import DbtProjectComponent
+                import dagster as dg
+
+                class CustomDbtProjectComponent(DbtProjectComponent):
+                    def execute(self, context, dbt):
+                        context.log.info("Starting custom dbt execution")
+                        yield from super().execute(context, dbt)
+                        context.log.info("Completed custom dbt execution")
+        """
         yield from self._get_dbt_event_iterator(context, dbt)
 
     @cached_property
     def _validated_manifest(self):
-        return validate_manifest(self.project.manifest_path)
+        return validate_manifest(self.dbt_project.manifest_path)
 
     @cached_property
     def _validated_translator(self):
@@ -364,7 +457,7 @@ class DbtProjectComponent(StateBackedComponent, dg.Resolvable):
         return dagster_dbt_translator.get_asset_spec(
             manifest,
             next(iter(matching_model_ids)),
-            self.project,
+            self.dbt_project,
         ).key
 
 
@@ -396,4 +489,4 @@ def get_projects_from_dbt_component(components: Path) -> list[DbtProject]:
         of_type=DbtProjectComponent
     )
 
-    return [component.project for component in project_components]
+    return [component.dbt_project for component in project_components]

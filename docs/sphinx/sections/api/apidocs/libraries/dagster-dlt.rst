@@ -13,6 +13,7 @@ Component
 *********
 
 .. autoclass:: DltLoadCollectionComponent
+    :members:
 
 To use the dlt component, see the `dlt component integration guide <https://docs.dagster.io/integrations/libraries/dlt>`_.
 

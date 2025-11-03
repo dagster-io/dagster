@@ -1,3 +1,5 @@
+import re
+import traceback
 from datetime import date, datetime
 from typing import Optional
 
@@ -29,6 +31,7 @@ from dagster._core.test_utils import (
     raise_exception_on_warnings,
 )
 from dagster._time import create_datetime, parse_time_string
+from dagster_shared.error import SerializableErrorInfo
 
 
 @pytest.fixture(autouse=True)
@@ -508,9 +511,18 @@ def test_multi_asset_with_different_partitions_defs():
 
     with pytest.raises(
         dg.DagsterInvalidDefinitionError,
-        match="Selected assets must have the same partitions definitions, but the selected assets ",
-    ):
+    ) as exc_info:
         dg.materialize(assets=[my_assets], partition_key="b")
+
+    tb_exc = traceback.TracebackException.from_exception(exc_info.value)
+    error_info = SerializableErrorInfo.from_traceback(tb_exc)
+
+    assert (
+        re.compile(
+            "Selected assets must have the same partitions definitions, but the selected assets "
+        ).search(str(error_info))
+        is not None
+    )
 
 
 def test_multi_asset_with_differrent_partitions_def_and_top_level_group_name():

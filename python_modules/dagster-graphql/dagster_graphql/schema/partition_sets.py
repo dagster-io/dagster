@@ -12,6 +12,7 @@ from dagster._core.definitions.partitions.snap import (
     StaticPartitionsSnap,
     TimeWindowPartitionsSnap,
 )
+from dagster._core.definitions.selector import JobSelector
 from dagster._core.errors import DagsterUserCodeProcessError
 from dagster._core.remote_representation.external import RemoteJob, RemotePartitionSet
 from dagster._core.remote_representation.external_data import (
@@ -20,6 +21,7 @@ from dagster._core.remote_representation.external_data import (
 )
 from dagster._core.storage.dagster_run import RunsFilter
 from dagster._core.storage.tags import PARTITION_NAME_TAG, PARTITION_SET_TAG
+from dagster._core.workspace.permissions import Permissions
 from dagster._utils.merger import merge_dicts
 
 from dagster_graphql.implementation.fetch_partition_sets import (
@@ -31,7 +33,7 @@ from dagster_graphql.implementation.fetch_partition_sets import (
     get_partitions,
 )
 from dagster_graphql.implementation.fetch_runs import get_runs
-from dagster_graphql.implementation.utils import capture_error
+from dagster_graphql.implementation.utils import capture_error, has_permission_for_job
 from dagster_graphql.schema.backfill import GraphenePartitionBackfill
 from dagster_graphql.schema.entity_key import GrapheneAssetKey
 from dagster_graphql.schema.errors import (
@@ -341,6 +343,8 @@ class GraphenePartitionSet(graphene.ObjectType):
     partitionStatusesOrError = graphene.NonNull(GraphenePartitionStatusesOrError)
     partitionRuns = non_null_list(GraphenePartitionRun)
     repositoryOrigin = graphene.NonNull(GrapheneRepositoryOrigin)
+    hasLaunchBackfillPermission = graphene.NonNull(graphene.Boolean)
+    hasCancelBackfillPermission = graphene.NonNull(graphene.Boolean)
     backfills = graphene.Field(
         non_null_list(GraphenePartitionBackfill),
         cursor=graphene.String(),
@@ -427,6 +431,28 @@ class GraphenePartitionSet(graphene.ObjectType):
     def resolve_repositoryOrigin(self, _):
         origin = self._remote_partition_set.get_remote_origin().repository_origin
         return GrapheneRepositoryOrigin(origin)
+
+    def resolve_hasLaunchBackfillPermission(self, graphene_info: ResolveInfo) -> bool:
+        return has_permission_for_job(
+            graphene_info,
+            Permissions.LAUNCH_PARTITION_BACKFILL,
+            JobSelector(
+                location_name=self._remote_partition_set.repository_handle.location_name,
+                repository_name=self._remote_partition_set.repository_handle.repository_name,
+                job_name=self._remote_partition_set.job_name,
+            ),
+        )
+
+    def resolve_hasCancelBackfillPermission(self, graphene_info: ResolveInfo) -> bool:
+        return has_permission_for_job(
+            graphene_info,
+            Permissions.CANCEL_PARTITION_BACKFILL,
+            JobSelector(
+                location_name=self._remote_partition_set.repository_handle.location_name,
+                repository_name=self._remote_partition_set.repository_handle.repository_name,
+                job_name=self._remote_partition_set.job_name,
+            ),
+        )
 
     def resolve_backfills(
         self,

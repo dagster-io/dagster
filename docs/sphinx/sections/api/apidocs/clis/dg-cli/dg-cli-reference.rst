@@ -1,3 +1,4 @@
+======
 dg CLI
 ======
 
@@ -28,8 +29,12 @@ dg CLI
     :nested:
 
 
-dg scaffold example
-^^^^^^^^^^^^^^^^^^^
+--------
+Examples
+--------
+
+dg scaffold defs
+================
 
 **Note:** Before scaffolding definitions with ``dg``, you must `create a project <https://docs.dagster.io/guides/build/projects/creating-a-new-project>`_ with the `create-dagster CLI <https://docs.dagster.io/api/clis/create-dagster>`_ and activate its virtual environment.
 
@@ -103,3 +108,39 @@ To confirm that the new asset now appears in the list of definitions, run `dg li
     │         │ │ my_asset │ my_group │      │       │ Asset that greets you. │ │
     │         │ └──────────┴──────────┴──────┴───────┴────────────────────────┘ │
     └─────────┴─────────────────────────────────────────────────────────────────┘
+
+dg scaffold build-artifacts
+===========================
+
+**Note:** Before scaffolding build artifacts with ``dg``, you must `create a Dagster project <https://docs.dagster.io/guides/build/projects/creating-a-new-project>`_ with the `create-dagster CLI <https://docs.dagster.io/api/clis/create-dagster>`_ and activate its virtual environment.
+
+If you have a `Dagster+ Hybrid <https://docs.dagster.io/deployment/dagster-plus/hybrid>`_ deployment, you can use ``dg scaffold build-artifacts`` to scaffold a deployment configuration file (``build.yaml``) and a Dockerfile for your Dagster project:
+
+.. code-block:: bash
+
+    dg scaffold build-artifacts
+    Scaffolding build artifacts for my-project...
+    Project build config created at /.../my-project/build.yaml.
+    Dockerfile created at /.../my-project/Dockerfile.
+
+dg scaffold github-actions
+==========================
+
+**Note:** Before scaffolding GitHub Actions with ``dg``, you must `create a Dagster project <https://docs.dagster.io/guides/build/projects/creating-a-new-project>`_ with the `create-dagster CLI <https://docs.dagster.io/api/clis/create-dagster>`_ and activate its virtual environment.
+You will also need to place the project under version control, which you can do by running ``git init`` in the project root directory.
+
+You can use the ``dg scaffold github-actions`` command to scaffold a GitHub CI/CD workflow YAML file in a ``.github/workflows`` directory:
+
+.. code-block:: bash
+
+    dg scaffold github-actions
+    Dagster Plus organization name: ExampleCo
+    Default deployment name [prod]: 
+    Deployment agent type:  (serverless, hybrid): serverless
+    Using serverless workflow template.
+
+    GitHub Actions workflow created successfully. Commit and push your changes in order to deploy to Dagster Plus.
+
+    You will need to set up the following secrets in your GitHub repository using
+    the GitHub UI or CLI (https://cli.github.com/):
+    dg plus create ci-api-token --description 'Used in my-project GitHub Actions' | gh secret set DAGSTER_CLOUD_API_TOKEN

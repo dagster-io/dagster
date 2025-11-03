@@ -1,0 +1,3 @@
+dg scaffold defs dagster_omni.OmniComponent omni_ingest
+
+Creating defs at /.../my-project/src/my_project/defs/omni_ingest.

@@ -35,7 +35,7 @@ from dagster._core.definitions.backfill_policy import BackfillPolicy
 from dagster._core.definitions.declarative_automation.automation_condition import (
     AutomationCondition,
 )
-from dagster._core.definitions.freshness import InternalFreshnessPolicy
+from dagster._core.definitions.freshness import FreshnessPolicy
 from dagster._core.definitions.freshness_policy import LegacyFreshnessPolicy
 from dagster._core.definitions.metadata import ArbitraryMetadataMapping
 from dagster._core.definitions.partitions.definition import PartitionsDefinition
@@ -123,7 +123,7 @@ class RemoteAssetNode(BaseAssetNode, ABC):
         return self.resolve_to_singular_repo_scoped_node().asset_node_snap.legacy_freshness_policy
 
     @property
-    def freshness_policy(self) -> Optional[InternalFreshnessPolicy]:
+    def freshness_policy(self) -> Optional[FreshnessPolicy]:
         return self.resolve_to_singular_repo_scoped_node().asset_node_snap.freshness_policy
 
     @property

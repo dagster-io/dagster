@@ -46,7 +46,7 @@ def test_scheduler_instance():
         ) as controller:
             daemons = controller.daemons
 
-            assert len(daemons) == 5
+            assert len(daemons) == 6
 
             assert any(isinstance(daemon, SchedulerDaemon) for daemon in daemons)
 
@@ -66,7 +66,7 @@ def test_run_coordinator_instance():
         ) as controller:
             daemons = controller.daemons
 
-            assert len(daemons) == 5
+            assert len(daemons) == 6
             assert any(isinstance(daemon, QueuedRunCoordinatorDaemon) for daemon in daemons)
 
 

@@ -173,7 +173,7 @@ Copy and paste the following to the bottom of `dagster_lambda_pipes.py`:
 
 <CodeExample path="docs_snippets/docs_snippets/guides/dagster/dagster_pipes/lambda/resources.py" title="src/<project_name>/defs/resources.py" />
 
-Sometimes, you may want to transition data pipelines between development and production environments without minimal code changes. To do so, you can use the [Resources](/guides/build/external-resources) system to vary the Pipes clients based on different deployments. For example, you can specify different configured `boto3` clients. Or, you may handle the switch by swapping underlying AWS environment variables between deployments. For more info, check out detailed guides in [Transitioning Data Pipelines from Development to Production](/guides/operate/dev-to-prod) and [Testing against production with Dagster+ Branch Deployments](/deployment/dagster-plus/ci-cd/branch-deployments/testing).
+Sometimes, you may want to transition data pipelines between development and production environments without minimal code changes. To do so, you can use the [Resources](/guides/build/external-resources) system to vary the Pipes clients based on different deployments. For example, you can specify different configured `boto3` clients. Or, you may handle the switch by swapping underlying AWS environment variables between deployments. For more info, check out detailed guides in [Transitioning data pipelines from development to production](/guides/operate/dev-to-prod) and [Testing against production data with Dagster+ branch deployments](/deployment/dagster-plus/deploying-code/branch-deployments/testing-against-prod-data).
 
 ## Step 3: Invoke the AWS Lambda function from the Dagster UI
 

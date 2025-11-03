@@ -70,6 +70,7 @@ from dagster_graphql.implementation.fetch_assets import (
 from dagster_graphql.implementation.fetch_partition_subsets import (
     regenerate_and_check_partition_subsets,
 )
+from dagster_graphql.implementation.utils import has_permission_for_definition
 from dagster_graphql.schema import external
 from dagster_graphql.schema.asset_checks import (
     AssetChecksOrErrorUnion,
@@ -325,6 +326,7 @@ class GrapheneAssetNode(graphene.ObjectType):
     )
     type = graphene.Field(GrapheneDagsterType)
     hasMaterializePermission = graphene.NonNull(graphene.Boolean)
+    hasWipePermission = graphene.NonNull(graphene.Boolean)
     hasReportRunlessAssetEventPermission = graphene.NonNull(graphene.Boolean)
 
     # the acutal checks are listed in the assetChecksOrError resolver. We use this boolean
@@ -565,16 +567,24 @@ class GrapheneAssetNode(graphene.ObjectType):
         self,
         graphene_info: ResolveInfo,
     ) -> bool:
-        return graphene_info.context.has_permission_for_selector(
-            Permissions.LAUNCH_PIPELINE_EXECUTION, self._asset_node_snap.asset_key
+        return has_permission_for_definition(
+            graphene_info, Permissions.LAUNCH_PIPELINE_EXECUTION, self._remote_node
+        )
+
+    def resolve_hasWipePermission(
+        self,
+        graphene_info: ResolveInfo,
+    ) -> bool:
+        return has_permission_for_definition(
+            graphene_info, Permissions.WIPE_ASSETS, self._remote_node
         )
 
     def resolve_hasReportRunlessAssetEventPermission(
         self,
         graphene_info: ResolveInfo,
     ) -> bool:
-        return graphene_info.context.has_permission_for_location(
-            Permissions.REPORT_RUNLESS_ASSET_EVENTS, self._repository_selector.location_name
+        return has_permission_for_definition(
+            graphene_info, Permissions.REPORT_RUNLESS_ASSET_EVENTS, self._remote_node
         )
 
     def resolve_assetMaterializationUsedData(

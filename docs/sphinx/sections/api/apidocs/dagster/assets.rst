@@ -89,6 +89,17 @@ Refer to the `Asset observation <https://docs.dagster.io/guides/build/assets/met
 
 .. autoclass:: AssetObservation
 
+Freshness policies
+------------------
+
+Freshness policies allow you to define freshness expectations for your assets and track their freshness state over time.
+
+.. autoclass:: FreshnessPolicy
+
+.. automethod:: FreshnessPolicy.time_window
+
+.. automethod:: FreshnessPolicy.cron
+
 Declarative Automation
 ---------------------------------------
 

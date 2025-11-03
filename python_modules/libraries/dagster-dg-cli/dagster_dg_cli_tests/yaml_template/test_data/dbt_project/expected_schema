@@ -2,13 +2,23 @@
 type: dagster_dbt.DbtProjectComponent  # Required
 attributes:  # Optional: Attributes details
   project:  # Required: The path to the dbt project or a mapping defining a DbtProject
-    project_dir: <string>  # Required: 
-    target_path: <string>  # Optional: 
-    profiles_dir: <string>  # Optional: 
-    profile: <string>  # Optional: 
-    target: <string>  # Optional: 
-    packaged_project_dir: <string>  # Optional: 
-    state_path: <string>  # Optional: 
+    # Choose one of the following types:
+    # Option 1 - DbtProjectArgsModel:
+    # project_dir: <string>  # Optional: 
+    # target_path: <string>  # Optional: 
+    # profiles_dir: <string>  # Optional: 
+    # profile: <string>  # Optional: 
+    # target: <string>  # Optional: 
+    # packaged_project_dir: <string>  # Optional: 
+    # state_path: <string>  # Optional: 
+    #
+    # Option 2 - RemoteGitDbtProjectManagerModel:
+    # repo_url: <string>  # Optional: 
+    # repo_relative_path: <string>  # Optional: The relative path to the dbt project within the repository.
+    # token: <string>  # Optional: Token for authenticating to the provided repository.
+    # profile: <string>  # Optional: The profile to use for the dbt project.
+    # target: <string>  # Optional: The target to use for the dbt project.
+    #
   cli_args: <one of: array of item, string>  # Optional: Arguments to pass to the dbt CLI when executing. Defaults to `['build']`.
   include_metadata: <one of: array of string, string>  # Optional: Optionally include additional metadata in materializations generated while executing your dbt models
   op:  # Optional: Op related arguments to set on the generated @dbt_assets

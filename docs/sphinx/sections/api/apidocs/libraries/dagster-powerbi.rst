@@ -12,6 +12,7 @@ Component
 *********
 
 .. autoclass:: PowerBIWorkspaceComponent
+    :members:
 
 To use the Power BI component, see the `Power BI component integration guide <https://docs.dagster.io/integrations/libraries/powerbi>`_.
 

@@ -22,7 +22,36 @@ if TYPE_CHECKING:
 @public
 class IdentityPartitionMapping(PartitionMapping, NamedTuple("_IdentityPartitionMapping", [])):
     """Expects that the upstream and downstream assets are partitioned in the same way, and maps
-    partitions in the downstream asset to the same partition in the upstream asset.
+    partitions in the downstream asset to the same partition key in the upstream asset.
+
+    .. code-block:: python
+
+        import dagster as dg
+
+        daily_partitions_def = dg.DailyPartitionsDefinition(start_date="2025-01-01")
+
+        alternating_daily_partitions_def = dg.TimeWindowPartitionsDefinition(
+            start="2025-01-01",
+            fmt="%Y-%m-%d",
+            cron_schedule="0 0 */2 * *",
+        )
+
+
+        @dg.asset(partitions_def=daily_partitions_def)
+        def asset_upstream(context: dg.AssetExecutionContext): ...
+
+
+        # Downstream asset will map to the upstream when it is the same day
+        @dg.asset(
+            partitions_def=alternating_daily_partitions_def,
+            deps=[
+                dg.AssetDep(
+                    asset=asset_upstream, partition_mapping=dg.IdentityPartitionMapping()
+                )
+            ],
+        )
+        def asset_downstream(context: dg.AssetExecutionContext): ...
+
     """
 
     def validate_partition_mapping(

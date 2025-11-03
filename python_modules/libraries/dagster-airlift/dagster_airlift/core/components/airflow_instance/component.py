@@ -208,6 +208,31 @@ ResolvedAirflowAuthBackend: TypeAlias = Annotated[
 @scaffold_with(AirflowInstanceScaffolder)
 @dataclass
 class AirflowInstanceComponent(StateBackedComponent, Resolvable):
+    """Loads Airflow DAGs and tasks from an Airflow instance as Dagster assets.
+
+    This component connects to an Airflow instance, retrieves metadata about DAGs and tasks,
+    and creates corresponding Dagster assets. It supports mapping Airflow tasks to existing
+    Dagster assets or creating new assets to represent Airflow workflows.
+
+    Example:
+
+        .. code-block:: yaml
+
+            # defs.yaml
+
+            type: dagster_airlift.core.AirflowInstanceComponent
+            attributes:
+              name: my_airflow_instance
+              auth:
+                type: basic_auth
+                webserver_url: "{{ env.AIRFLOW_WEBSERVER_URL }}"
+                username: "{{ env.AIRFLOW_USERNAME }}"
+                password: "{{ env.AIRFLOW_PASSWORD }}"
+              filter:
+                dag_id_ilike: "analytics_%"
+                retrieve_datasets: true
+    """
+
     auth: ResolvedAirflowAuthBackend
     name: str
     filter: Optional[ResolvedAirflowFilter] = None

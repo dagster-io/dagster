@@ -4,7 +4,7 @@ import warnings
 from collections.abc import Iterable, Mapping, Sequence
 from datetime import datetime
 from functools import cached_property, update_wrapper
-from typing import TYPE_CHECKING, AbstractSet, Any, Optional, Union, cast  # noqa: UP035
+from typing import TYPE_CHECKING, AbstractSet, Any, Optional, Union, cast  # noqa: UP035,
 
 import dagster._check as check
 from dagster._annotations import beta_param, deprecated, public
@@ -210,9 +210,6 @@ class JobDefinition(IHasInternalInit):
             self._was_provided_resources
         )
 
-        self._config_mapping = None
-        self._partitioned_config = None
-        self._run_config = None
         self._run_config_schema = None
         self._original_config_argument = config
 
@@ -396,9 +393,7 @@ class JobDefinition(IHasInternalInit):
 
         A partitioned config defines a way to map partition keys to run config for the job.
         """
-        if self.has_unresolved_configs:
-            self._resolve_configs()
-        return self._partitioned_config
+        return self._resolve_configs()[0]
 
     @public
     @property
@@ -407,9 +402,7 @@ class JobDefinition(IHasInternalInit):
 
         A config mapping defines a way to map a top-level config schema to run config for the job.
         """
-        if self.has_unresolved_configs:
-            self._resolve_configs()
-        return self._config_mapping
+        return self._resolve_configs()[1]
 
     @public
     @property
@@ -439,9 +432,7 @@ class JobDefinition(IHasInternalInit):
 
     @property
     def run_config(self) -> Optional[Mapping[str, Any]]:
-        if self.has_unresolved_configs:
-            self._resolve_configs()
-        return self._run_config
+        return self._resolve_configs()[2]
 
     @property
     def run_config_schema(self) -> "RunConfigSchema":
@@ -486,25 +477,24 @@ class JobDefinition(IHasInternalInit):
     def op_retry_policy(self) -> Optional[RetryPolicy]:
         return self._op_retry_policy
 
-    @property
-    def has_unresolved_configs(self) -> bool:
-        return (
-            self._partitioned_config is None
-            and self._run_config is None
-            and self._config_mapping is None
-        )
-
     @cached_method
-    def _resolve_configs(self) -> None:
+    def _resolve_configs(
+        self,
+    ) -> tuple[Optional[PartitionedConfig], Optional[ConfigMapping], Optional[Mapping[str, Any]]]:
         config = self._original_config_argument
         partition_def = self._original_partitions_def_argument
+
+        partitioned_config = None
+        config_mapping = None
+        run_config = None
+
         if partition_def:
-            self._partitioned_config = PartitionedConfig.from_flexible_config(config, partition_def)
+            partitioned_config = PartitionedConfig.from_flexible_config(config, partition_def)
         else:
             if isinstance(config, ConfigMapping):
-                self._config_mapping = config
+                config_mapping = config
             elif isinstance(config, PartitionedConfig):
-                self._partitioned_config = config
+                partitioned_config = config
                 if self.asset_layer:
                     for asset_key in self._asset_layer.selected_asset_keys:
                         asset_partitions_def = self._asset_layer.get(asset_key).partitions_def
@@ -516,10 +506,10 @@ class JobDefinition(IHasInternalInit):
                         )
 
             elif isinstance(config, dict):
-                self._run_config = config
+                run_config = config
                 # Using config mapping here is a trick to make it so that the preset will be used even
                 # when no config is supplied for the job.
-                self._config_mapping = _config_mapping_with_default_value(
+                config_mapping = _config_mapping_with_default_value(
                     get_run_config_schema_for_job(
                         self._graph_def,
                         self.resource_defs,
@@ -536,6 +526,8 @@ class JobDefinition(IHasInternalInit):
                     "config param must be a ConfigMapping, a PartitionedConfig, or a dictionary,"
                     f" but is an object of type {type(config)}"
                 )
+
+        return partitioned_config, config_mapping, run_config
 
     def node_def_named(self, name: str) -> NodeDefinition:
         check.str_param(name, "name")
@@ -885,15 +877,15 @@ class JobDefinition(IHasInternalInit):
         self, partition_key: str, selected_asset_keys: Optional[Iterable[AssetKey]]
     ) -> Mapping[str, str]:
         """Gets tags for the given partition key."""
-        if self._partitioned_config is not None:
-            return self._partitioned_config.get_tags_for_partition_key(partition_key, self.name)
+        if self.partitioned_config is not None:
+            return self.partitioned_config.get_tags_for_partition_key(partition_key, self.name)
 
         partitions_def = self._get_partitions_def(selected_asset_keys)
         return partitions_def.get_tags_for_partition_key(partition_key)
 
     def get_run_config_for_partition_key(self, partition_key: str) -> Mapping[str, Any]:
-        if self._partitioned_config:
-            return self._partitioned_config.get_run_config_for_partition_key(partition_key)
+        if self.partitioned_config:
+            return self.partitioned_config.get_run_config_for_partition_key(partition_key)
         else:
             return {}
 

@@ -230,7 +230,7 @@ This section is only applicable to Dagster+.
 
 :::
 
-You can determine the current deployment type ([branch deployment](/deployment/dagster-plus/ci-cd/branch-deployments) or [full deployment](/deployment/dagster-plus/full-deployments)) at runtime with the `DAGSTER_CLOUD_IS_BRANCH_DEPLOYMENT` environment variable. Using this information, you can write code that executes differently when in a branch deployment or a full deployment.
+You can determine the current deployment type ([branch deployment](/deployment/dagster-plus/deploying-code/branch-deployments) or [full deployment](/deployment/dagster-plus/deploying-code/full-deployments)) at runtime with the `DAGSTER_CLOUD_IS_BRANCH_DEPLOYMENT` environment variable. Using this information, you can write code that executes differently when in a branch deployment or a full deployment.
 
 ```python
 

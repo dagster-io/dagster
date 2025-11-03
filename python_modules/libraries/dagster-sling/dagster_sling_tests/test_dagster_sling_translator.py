@@ -1,5 +1,5 @@
 import pytest
-from dagster import AssetKey, AutoMaterializePolicy, JsonMetadataValue, LegacyFreshnessPolicy
+from dagster import AssetKey, AutoMaterializePolicy, JsonMetadataValue
 from dagster_sling.dagster_sling_translator import DagsterSlingTranslator
 
 
@@ -116,24 +116,6 @@ def test_metadata_from_get_asset_spec(stream, expected):
 def test_group_name_from_get_asset_spec(stream, expected):
     translator = DagsterSlingTranslator()
     assert translator.get_asset_spec(stream).group_name == expected
-
-
-@pytest.mark.parametrize(
-    "stream,expected",
-    [
-        ({"name": "foo"}, None),
-        (
-            {
-                "name": "foo",
-                "config": {"meta": {"dagster": {"freshness_policy": {"maximum_lag_minutes": 5}}}},
-            },
-            LegacyFreshnessPolicy(maximum_lag_minutes=5),
-        ),
-    ],
-)
-def test_freshness_policy_from_get_asset_spec(stream, expected):
-    translator = DagsterSlingTranslator()
-    assert translator.get_asset_spec(stream).legacy_freshness_policy == expected
 
 
 @pytest.mark.parametrize(

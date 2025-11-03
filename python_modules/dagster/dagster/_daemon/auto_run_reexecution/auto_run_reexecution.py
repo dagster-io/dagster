@@ -171,6 +171,11 @@ def retry_run(
             asset_selection=(
                 None if failed_run.asset_selection is None else list(failed_run.asset_selection)
             ),
+            asset_check_selection=(
+                None
+                if failed_run.asset_check_selection is None
+                else list(failed_run.asset_check_selection)
+            ),
         )
     )
 

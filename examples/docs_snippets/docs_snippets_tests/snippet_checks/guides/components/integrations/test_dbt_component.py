@@ -87,7 +87,7 @@ def test_components_docs_dbt_project(
                   outputs:
                     dev:
                       type: duckdb
-                      path: tutorial.duckdb
+                      path: ~/tutorial.duckdb
                       threads: 24
                 """
             ),

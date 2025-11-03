@@ -629,6 +629,7 @@ def test_get_required_daemon_types():
             SchedulerDaemon.daemon_type(),
             QueuedRunCoordinatorDaemon.daemon_type(),
             AssetDaemon.daemon_type(),
+            FreshnessDaemon.daemon_type(),
         ]
 
     with dg.instance_for_test(
@@ -638,7 +639,6 @@ def test_get_required_daemon_types():
                 "class": "TestRunLauncher",
             },
             "run_monitoring": {"enabled": True},
-            "freshness": {"enabled": True},
         }
     ) as instance:
         assert instance.get_required_daemon_types() == [
@@ -662,6 +662,7 @@ def test_get_required_daemon_types():
             BackfillDaemon.daemon_type(),
             SchedulerDaemon.daemon_type(),
             QueuedRunCoordinatorDaemon.daemon_type(),
+            FreshnessDaemon.daemon_type(),
         ]
 
 

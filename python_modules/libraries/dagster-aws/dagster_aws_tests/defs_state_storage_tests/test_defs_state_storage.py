@@ -2,7 +2,7 @@ import fsspec
 import pytest
 import s3fs
 from dagster._core.instance_for_test import instance_for_test
-from dagster._core.storage.defs_state.blob_storage_state_storage import BlobStorageStateStorage
+from dagster._core.storage.defs_state.blob_storage_state_storage import UPathDefsStateStorage
 from dagster._core.test_utils import ensure_dagster_tests_import
 from dagster_shared import check
 from moto.moto_server.threaded_moto_server import ThreadedMotoServer
@@ -42,7 +42,7 @@ class TestS3UPathDefsStateStorage(TestDefsStateStorage):
             overrides={
                 "defs_state_storage": {
                     "module": "dagster._core.storage.defs_state.blob_storage_state_storage",
-                    "class": "BlobStorageStateStorage",
+                    "class": "UPathDefsStateStorage",
                     "config": {
                         "base_path": f"s3://{mock_s3_bucket.name}/foo",
                         "storage_options": _MOCK_STORAGE_OPTIONS,
@@ -50,7 +50,7 @@ class TestS3UPathDefsStateStorage(TestDefsStateStorage):
                 }
             }
         ) as instance:
-            state_storage = check.inst(instance.defs_state_storage, BlobStorageStateStorage)
+            state_storage = check.inst(instance.defs_state_storage, UPathDefsStateStorage)
 
             # Check that we have an S3 filesystem
             assert state_storage.base_path.fs.__class__.__name__ == "S3FileSystem"

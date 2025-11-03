@@ -78,3 +78,8 @@ Partitioned Config
 .. autofunction:: weekly_partitioned_config
 
 .. autofunction:: monthly_partitioned_config
+
+Partition Loading Context
+-------------------------
+
+.. autofunction:: partition_loading_context

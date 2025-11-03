@@ -38,8 +38,8 @@ class CodeVersionChangedCondition(BuiltinAutomationCondition[AssetKey]):
         return AutomationResult(context, true_subset, cursor=current_code_version)
 
 
-@record
 @whitelist_for_serdes
+@record
 class InitialEvaluationCondition(BuiltinAutomationCondition):
     """Condition to determine if this is the initial evaluation of a given AutomationCondition with a particular PartitionsDefinition."""
 

@@ -114,7 +114,7 @@ def test_component_load_with_defs_state(
             component_cls=FivetranAccountComponent,
             defs_yaml_contents=deep_merge_dicts(
                 BASIC_FIVETRAN_COMPONENT_BODY,
-                {"attributes": {"defs_state": {"type": defs_state_type}}},
+                {"attributes": {"defs_state": {"management_type": defs_state_type}}},
             ),
         )
         with (
@@ -123,7 +123,7 @@ def test_component_load_with_defs_state(
             # first load, nothing there
             assert len(defs.resolve_asset_graph().get_all_asset_keys()) == 0
             assert isinstance(component, FivetranAccountComponent)
-            asyncio.run(component.refresh_state())
+            asyncio.run(component.refresh_state(sandbox.project_root))
 
         with (
             scoped_definitions_load_context(),

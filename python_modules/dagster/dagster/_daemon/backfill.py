@@ -13,7 +13,11 @@ from dagster_shared.error import DagsterError
 import dagster._check as check
 from dagster._core.definitions.instigation_logger import InstigationLogger
 from dagster._core.definitions.partitions.context import partition_loading_context
-from dagster._core.errors import DagsterCodeLocationLoadError, DagsterUserCodeUnreachableError
+from dagster._core.errors import (
+    DagsterCodeLocationLoadError,
+    DagsterRunAlreadyExists,
+    DagsterUserCodeUnreachableError,
+)
 from dagster._core.execution.asset_backfill import execute_asset_backfill_iteration
 from dagster._core.execution.backfill import (
     BULK_ACTION_TERMINAL_STATUSES,
@@ -145,8 +149,10 @@ def execute_backfill_iteration(
 
 
 def _is_retryable_asset_backfill_error(e: Exception):
-    # Retry on issues reaching or loading user code
-    if isinstance(e, (DagsterUserCodeUnreachableError, DagsterCodeLocationLoadError)):
+    # Retry on issues reaching or loading user code, or transient race conditions submitting runs.
+    if isinstance(
+        e, (DagsterUserCodeUnreachableError, DagsterCodeLocationLoadError, DagsterRunAlreadyExists)
+    ):
         return True
 
     # Framework errors and check errors are assumed to be invariants that are not

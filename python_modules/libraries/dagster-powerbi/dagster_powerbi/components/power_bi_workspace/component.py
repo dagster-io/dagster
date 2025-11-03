@@ -172,7 +172,24 @@ def _resolve_powerbi_workspace(context: ResolutionContext, model: BaseModel) -> 
 @public
 @dataclass
 class PowerBIWorkspaceComponent(StateBackedComponent, Resolvable):
-    """Pulls in the contents of a PowerBI workspace into Dagster assets."""
+    """Pulls in the contents of a PowerBI workspace into Dagster assets.
+
+    Example:
+
+        .. code-block:: yaml
+
+            # defs.yaml
+
+            type: dagster_powerbi.PowerBIWorkspaceComponent
+            attributes:
+              workspace:
+                credentials:
+                  client_id: "{{ env.POWERBI_CLIENT_ID }}"
+                  client_secret: "{{ env.POWERBI_CLIENT_SECRET }}"
+                  tenant_id: "{{ env.POWERBI_TENANT_ID }}"
+                workspace_id: your-workspace-id
+              enable_semantic_model_refresh: true
+    """
 
     workspace: Annotated[
         Any,
@@ -203,7 +220,40 @@ class PowerBIWorkspaceComponent(StateBackedComponent, Resolvable):
     def _base_translator(self) -> DagsterPowerBITranslator:
         return DagsterPowerBITranslator()
 
+    @public
     def get_asset_spec(self, data: PowerBITranslatorData) -> AssetSpec:
+        """Generates an AssetSpec for a given Power BI content item.
+
+        This method can be overridden in a subclass to customize how Power BI content
+        (reports, dashboards, semantic models, datasets) are converted to Dagster asset specs.
+        By default, it delegates to the configured DagsterPowerBITranslator.
+
+        Args:
+            data: The PowerBITranslatorData containing information about the Power BI content
+                item and workspace
+
+        Returns:
+            An AssetSpec that represents the Power BI content as a Dagster asset
+
+        Example:
+            Override this method to add custom metadata based on content properties:
+
+            .. code-block:: python
+
+                from dagster_powerbi import PowerBIWorkspaceComponent
+                from dagster import AssetSpec
+
+                class CustomPowerBIWorkspaceComponent(PowerBIWorkspaceComponent):
+                    def get_asset_spec(self, data):
+                        base_spec = super().get_asset_spec(data)
+                        return base_spec.replace_attributes(
+                            metadata={
+                                **base_spec.metadata,
+                                "workspace_name": data.workspace_data.properties.get("name"),
+                                "content_type": data.content_type
+                            }
+                        )
+        """
         return self._base_translator.get_asset_spec(data)
 
     @cached_property

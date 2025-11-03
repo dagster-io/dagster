@@ -2,32 +2,45 @@ import os
 import sys
 from contextlib import contextmanager
 
-from dagster import job, op, repository
+import dagster as dg
 from dagster._core.remote_origin import ManagedGrpcPythonEnvCodeLocationOrigin
 from dagster._core.remote_representation.handle import JobHandle
 from dagster._core.types.loadable_target_origin import LoadableTargetOrigin
 from dagster._core.workspace.load_target import PythonFileTarget
 
 
-@op
+@dg.op
 def do_something():
     pass
 
 
-@op
+@dg.op
 def do_something_else():
     pass
 
 
-@job
+@dg.job
 def foo():
     do_something()
     do_something_else()
 
 
-@repository
+class MyConfig(dg.Config):
+    my_field: str
+
+
+@dg.asset
+def my_asset(config: MyConfig) -> None: ...
+
+
+@dg.asset_check(asset=my_asset)
+def my_failing_check() -> dg.AssetCheckResult:
+    raise Exception("FAILS")
+
+
+@dg.repository
 def bar_repo():
-    return [foo]
+    return [foo, my_asset, my_failing_check]
 
 
 @contextmanager

@@ -548,6 +548,7 @@ export type AssetNode = {
   hasAssetChecks: Scalars['Boolean']['output'];
   hasMaterializePermission: Scalars['Boolean']['output'];
   hasReportRunlessAssetEventPermission: Scalars['Boolean']['output'];
+  hasWipePermission: Scalars['Boolean']['output'];
   id: Scalars['ID']['output'];
   internalFreshnessPolicy: Maybe<InternalFreshnessPolicy>;
   isAutoCreatedStub: Scalars['Boolean']['output'];
@@ -2370,6 +2371,8 @@ export type Job = IPipelineSnapshot &
     description: Maybe<Scalars['String']['output']>;
     externalJobSource: Maybe<Scalars['String']['output']>;
     graphName: Scalars['String']['output'];
+    hasLaunchExecutionPermission: Scalars['Boolean']['output'];
+    hasLaunchReexecutionPermission: Scalars['Boolean']['output'];
     id: Scalars['ID']['output'];
     isAssetJob: Scalars['Boolean']['output'];
     isJob: Scalars['Boolean']['output'];
@@ -3572,6 +3575,8 @@ export type PartitionRunConfigOrError = PartitionRunConfig | PythonError;
 export type PartitionSet = {
   __typename: 'PartitionSet';
   backfills: Array<PartitionBackfill>;
+  hasCancelBackfillPermission: Scalars['Boolean']['output'];
+  hasLaunchBackfillPermission: Scalars['Boolean']['output'];
   id: Scalars['ID']['output'];
   mode: Scalars['String']['output'];
   name: Scalars['String']['output'];
@@ -3731,6 +3736,8 @@ export type Pipeline = IPipelineSnapshot &
     description: Maybe<Scalars['String']['output']>;
     externalJobSource: Maybe<Scalars['String']['output']>;
     graphName: Scalars['String']['output'];
+    hasLaunchExecutionPermission: Scalars['Boolean']['output'];
+    hasLaunchReexecutionPermission: Scalars['Boolean']['output'];
     id: Scalars['ID']['output'];
     isAssetJob: Scalars['Boolean']['output'];
     isJob: Scalars['Boolean']['output'];
@@ -5436,6 +5443,7 @@ export type Sensor = {
   canReset: Scalars['Boolean']['output'];
   defaultStatus: InstigationStatus;
   description: Maybe<Scalars['String']['output']>;
+  hasCursorUpdatePermissions: Scalars['Boolean']['output'];
   id: Scalars['ID']['output'];
   jobOriginId: Scalars['String']['output'];
   metadata: SensorMetadata;
@@ -7288,6 +7296,10 @@ export const buildAssetNode = (
       overrides && overrides.hasOwnProperty('hasReportRunlessAssetEventPermission')
         ? overrides.hasReportRunlessAssetEventPermission!
         : false,
+    hasWipePermission:
+      overrides && overrides.hasOwnProperty('hasWipePermission')
+        ? overrides.hasWipePermission!
+        : true,
     id:
       overrides && overrides.hasOwnProperty('id')
         ? overrides.id!
@@ -10202,6 +10214,14 @@ export const buildJob = (
         : 'suscipit',
     graphName:
       overrides && overrides.hasOwnProperty('graphName') ? overrides.graphName! : 'eveniet',
+    hasLaunchExecutionPermission:
+      overrides && overrides.hasOwnProperty('hasLaunchExecutionPermission')
+        ? overrides.hasLaunchExecutionPermission!
+        : true,
+    hasLaunchReexecutionPermission:
+      overrides && overrides.hasOwnProperty('hasLaunchReexecutionPermission')
+        ? overrides.hasLaunchReexecutionPermission!
+        : true,
     id:
       overrides && overrides.hasOwnProperty('id')
         ? overrides.id!
@@ -12147,6 +12167,14 @@ export const buildPartitionSet = (
   return {
     __typename: 'PartitionSet',
     backfills: overrides && overrides.hasOwnProperty('backfills') ? overrides.backfills! : [],
+    hasCancelBackfillPermission:
+      overrides && overrides.hasOwnProperty('hasCancelBackfillPermission')
+        ? overrides.hasCancelBackfillPermission!
+        : true,
+    hasLaunchBackfillPermission:
+      overrides && overrides.hasOwnProperty('hasLaunchBackfillPermission')
+        ? overrides.hasLaunchBackfillPermission!
+        : true,
     id:
       overrides && overrides.hasOwnProperty('id')
         ? overrides.id!
@@ -12512,6 +12540,14 @@ export const buildPipeline = (
         ? overrides.externalJobSource!
         : 'quis',
     graphName: overrides && overrides.hasOwnProperty('graphName') ? overrides.graphName! : 'eius',
+    hasLaunchExecutionPermission:
+      overrides && overrides.hasOwnProperty('hasLaunchExecutionPermission')
+        ? overrides.hasLaunchExecutionPermission!
+        : false,
+    hasLaunchReexecutionPermission:
+      overrides && overrides.hasOwnProperty('hasLaunchReexecutionPermission')
+        ? overrides.hasLaunchReexecutionPermission!
+        : true,
     id:
       overrides && overrides.hasOwnProperty('id')
         ? overrides.id!
@@ -15267,6 +15303,10 @@ export const buildSensor = (
         : InstigationStatus.RUNNING,
     description:
       overrides && overrides.hasOwnProperty('description') ? overrides.description! : 'sapiente',
+    hasCursorUpdatePermissions:
+      overrides && overrides.hasOwnProperty('hasCursorUpdatePermissions')
+        ? overrides.hasCursorUpdatePermissions!
+        : false,
     id:
       overrides && overrides.hasOwnProperty('id')
         ? overrides.id!

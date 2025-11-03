@@ -7,10 +7,13 @@ Components
 Building custom Components
 **************************
 
+.. autodecorator:: template_var
+    
 .. autoclass:: Component
     :members:
 
-.. autodecorator:: template_var
+.. autoclass:: StateBackedComponent
+    :members:
 
 .. autoclass:: Resolvable
     :members:

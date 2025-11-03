@@ -77,7 +77,7 @@ def trigger_sub_pipelines(context: dg.OpExecutionContext, input_records: list[di
         yield dg.DynamicOutput(record, mapping_key=record["id"])
 
 
-# Option A
+# start_option_a
 @dg.op
 def sub_pipeline_process_record_option_a(
     context: dg.OpExecutionContext, record: dict[str, Any]
@@ -120,7 +120,10 @@ def sub_pipeline_process_record_option_a(
     }
 
 
-# Option B
+# end_option_a
+
+
+# start_option_b
 @dg.op
 def sub_pipeline_process_record_option_b(
     context: dg.OpExecutionContext, record: dict[str, Any]
@@ -168,6 +171,9 @@ def sub_pipeline_process_record_option_b(
     }
 
 
+# end_option_b
+
+
 @dg.op
 def collect_sub_pipeline_results(
     context: dg.OpExecutionContext, sub_pipeline_results: list[dict[str, Any]]
@@ -199,6 +205,7 @@ def collect_sub_pipeline_results(
 # =============================================================================
 
 
+# start_graph_backed_asset
 @dg.graph_asset
 def main_pipeline_results(input_records: list[dict[str, Any]]) -> list[dict[str, Any]]:
     """COMPLETE MAIN PIPELINE.
@@ -248,3 +255,6 @@ def final_report(main_pipeline_results: list[dict[str, Any]]) -> dict[str, Any]:
         "report_generated_at": "2025-08-25T10:00:00Z",
         "pipeline_status": "completed_successfully",
     }
+
+
+# end_graph_backed_asset

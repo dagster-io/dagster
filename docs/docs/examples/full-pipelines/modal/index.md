@@ -20,15 +20,12 @@ In this example, you'll build a pipeline with Dagster that:
 - Transcribes them using the power of GPUs
 - Notifies you with a summary
 
-<details>
-  <summary>Prerequisites</summary>
+## Prerequisites
 
 To follow the steps in this guide, you'll need:
 
 - Basic Python knowledge
 - Python 3.9+ installed on your system. For more information, see the [Installation guide](/getting-started/installation).
-
-</details>
 
 ## Step 1: Set up your Dagster environment
 

@@ -32,8 +32,8 @@ The first approach uses dynamic fanout to create parallel sub-pipelines for each
   path="docs_projects/project_mini/src/project_mini/defs/dynamic_fanout/dynamic_fanout.py"
   language="python"
   title="src/project_mini/defs/dynamic_fanout/dynamic_fanout.py"
-  startAfter="# Option A"
-  endBefore="# Option B"
+  startAfter="start_option_a"
+  endBefore="end_option_a"
 />
 
 This approach creates a sub-pipeline for each input record:
@@ -55,8 +55,8 @@ The second approach adds a second layer of parallelization by processing units w
   path="docs_projects/project_mini/src/project_mini/defs/dynamic_fanout/dynamic_fanout.py"
   language="python"
   title="src/project_mini/defs/dynamic_fanout/dynamic_fanout.py"
-  startAfter="# Option B"
-  endBefore="@dg.op"
+  startAfter="start_option_b"
+  endBefore="end_option_b"
 />
 
 This enhanced approach provides two layers of parallelization:
@@ -78,8 +78,8 @@ The complete pipeline uses a [graph-backed asset](/guides/build/assets/graph-bac
   path="docs_projects/project_mini/src/project_mini/defs/dynamic_fanout/dynamic_fanout.py"
   language="python"
   title="src/project_mini/defs/dynamic_fanout/dynamic_fanout.py"
-  startAfter="@dg.graph_asset"
-  endBefore="@dg.asset"
+  startAfter="start_graph_backed_asset"
+  endBefore="end_graph_backed_asset"
 />
 
 Key features of this implementation:

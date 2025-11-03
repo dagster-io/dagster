@@ -20,7 +20,7 @@ from dagster import (
     SourceAsset,
     _check as check,
 )
-from dagster._annotations import beta, deprecated_param
+from dagster._annotations import beta, hidden_param, only_allow_hidden_params_in_kwargs
 from dagster._core.definitions import AssetsDefinition, multi_asset
 from dagster._core.definitions.assets.definition.cacheable_assets_definition import (
     AssetsDefinitionCacheableData,
@@ -253,7 +253,14 @@ def _build_airbyte_assets_from_metadata(
     return _assets
 
 
-@deprecated_param(param="legacy_freshness_policy", breaking_version="1.12.0")
+@hidden_param(
+    param="legacy_freshness_policy",
+    breaking_version="1.13.0",
+)
+@hidden_param(
+    param="auto_materialize_policy",
+    breaking_version="1.10.0",
+)
 def build_airbyte_assets(
     connection_id: str,
     destination_tables: Sequence[str],
@@ -265,9 +272,8 @@ def build_airbyte_assets(
     deps: Optional[Iterable[Union[CoercibleToAssetKey, AssetsDefinition, SourceAsset]]] = None,
     upstream_assets: Optional[set[AssetKey]] = None,
     schema_by_table_name: Optional[Mapping[str, TableSchema]] = None,
-    legacy_freshness_policy: Optional[LegacyFreshnessPolicy] = None,
     stream_to_asset_map: Optional[Mapping[str, str]] = None,
-    auto_materialize_policy: Optional[AutoMaterializePolicy] = None,
+    **kwargs,
 ) -> Sequence[AssetsDefinition]:
     """Builds a set of assets representing the tables created by an Airbyte sync operation.
 
@@ -287,11 +293,13 @@ def build_airbyte_assets(
         deps (Optional[Sequence[Union[AssetsDefinition, SourceAsset, str, AssetKey]]]):
             A list of assets to add as sources.
         upstream_assets (Optional[Set[AssetKey]]): Deprecated, use deps instead. A list of assets to add as sources.
-        legacy_freshness_policy (Optional[LegacyFreshnessPolicy]): A legacy freshness policy to apply to the assets
         stream_to_asset_map (Optional[Mapping[str, str]]): A mapping of an Airbyte stream name to a Dagster asset.
             This allows the use of the "prefix" setting in Airbyte with special characters that aren't valid asset names.
-        auto_materialize_policy (Optional[AutoMaterializePolicy]): An auto materialization policy to apply to the assets.
     """
+    only_allow_hidden_params_in_kwargs(build_airbyte_assets, kwargs)
+    legacy_freshness_policy = kwargs.get("legacy_freshness_policy")
+    auto_materialize_policy = kwargs.get("auto_materialize_policy")
+
     if upstream_assets is not None and deps is not None:
         raise DagsterInvalidDefinitionError(
             "Cannot specify both deps and upstream_assets to build_airbyte_assets. Use only deps"

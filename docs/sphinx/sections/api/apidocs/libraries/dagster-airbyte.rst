@@ -8,6 +8,13 @@ For more information on getting started, see the `Airbyte integration guide <htt
 .. currentmodule:: dagster_airbyte
 
 
+*********
+Component
+*********
+
+.. autoclass:: AirbyteWorkspaceComponent
+    :members:
+
 Assets (Airbyte API)
 ====================
 

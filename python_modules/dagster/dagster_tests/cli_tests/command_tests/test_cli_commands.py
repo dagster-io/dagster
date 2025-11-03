@@ -76,7 +76,7 @@ qux_job = qux.to_job(
 )
 
 
-@dg.job(executor_def=in_process_executor)
+@dg.job(executor_def=in_process_executor, name="quux")
 def quux_job():
     do_something_op()
 

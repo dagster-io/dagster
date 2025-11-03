@@ -60,7 +60,7 @@ from dagster._core.definitions.dependency import (
     OpNode,
 )
 from dagster._core.definitions.events import AssetKey
-from dagster._core.definitions.freshness import InternalFreshnessPolicy
+from dagster._core.definitions.freshness import FreshnessPolicy
 from dagster._core.definitions.freshness_policy import LegacyFreshnessPolicy
 from dagster._core.definitions.metadata import (
     MetadataFieldSerializer,
@@ -223,6 +223,7 @@ class JobRefSnap:
     active_presets: Sequence["PresetSnap"]
     parent_snapshot_id: Optional[str]
     preview_tags: Optional[Mapping[str, str]] = None
+    owners: Optional[Sequence[str]] = None
 
     @classmethod
     def from_job_def(cls, job_def: JobDefinition) -> Self:
@@ -234,6 +235,7 @@ class JobRefSnap:
             parent_snapshot_id=None,
             active_presets=active_presets_from_job_def(job_def),
             preview_tags=get_preview_tags(job_def),
+            owners=job_def.owners,
         )
 
     def get_preview_tags(self) -> Mapping[str, str]:
@@ -991,7 +993,7 @@ class AssetNodeSnap(IHaveNew):
     tags: Optional[Mapping[str, str]]
     group_name: str
     legacy_freshness_policy: Optional[LegacyFreshnessPolicy]
-    freshness_policy: Optional[InternalFreshnessPolicy]
+    freshness_policy: Optional[FreshnessPolicy]
     is_source: bool
     is_observable: bool
     # If a set of assets can't be materialized independently from each other, they will all
@@ -1026,7 +1028,7 @@ class AssetNodeSnap(IHaveNew):
         tags: Optional[Mapping[str, str]] = None,
         group_name: Optional[str] = None,
         legacy_freshness_policy: Optional[LegacyFreshnessPolicy] = None,
-        freshness_policy: Optional[InternalFreshnessPolicy] = None,
+        freshness_policy: Optional[FreshnessPolicy] = None,
         is_source: Optional[bool] = None,
         is_observable: bool = False,
         execution_set_identifier: Optional[str] = None,
@@ -1104,8 +1106,7 @@ class AssetNodeSnap(IHaveNew):
             # the default here for backcompat.
             group_name=group_name or DEFAULT_GROUP_NAME,
             legacy_freshness_policy=legacy_freshness_policy,
-            freshness_policy=freshness_policy
-            or InternalFreshnessPolicy.from_asset_spec_metadata(metadata),
+            freshness_policy=freshness_policy or FreshnessPolicy.from_asset_spec_metadata(metadata),
             is_source=is_source,
             is_observable=is_observable,
             execution_set_identifier=execution_set_identifier,

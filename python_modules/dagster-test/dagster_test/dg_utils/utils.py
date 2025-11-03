@@ -661,7 +661,7 @@ class ProxyRunner:
     def invoke_create_dagster(self, *args: str, **invoke_kwargs: Any) -> Result:
         return self._invoke_on_cli(create_dagster_cli, *args, **invoke_kwargs)
 
-    def _invoke_on_cli(self, cli: click.BaseCommand, *args: str, **invoke_kwargs: Any) -> Result:
+    def _invoke_on_cli(self, cli, *args: str, **invoke_kwargs: Any) -> Result:
         # We need to find the right spot to inject global options. For the `dg scaffold`
         # command, we need to inject the global options before the final subcommand. For everything
         # else they can be appended at the end of the options.

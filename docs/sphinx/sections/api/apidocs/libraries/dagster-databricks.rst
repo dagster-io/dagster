@@ -17,6 +17,13 @@ access storage.
 
 .. currentmodule:: dagster_databricks
 
+*********
+Component
+*********
+
+.. autoclass:: DatabricksAssetBundleComponent
+    :members:
+
 APIs
 ----
 

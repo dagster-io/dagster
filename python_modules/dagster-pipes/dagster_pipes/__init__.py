@@ -1341,6 +1341,82 @@ class PipesGCSMessageWriterChannel(PipesBlobStoreMessageWriterChannel):
 
 
 # ########################
+# ##### IO - AzureBlobStorage
+# ########################
+
+
+class PipesAzureBlobStorageContextLoader(PipesContextLoader):
+    """Context loader that reads context from a JSON file on AzureBlobStorage.
+
+    Args:
+        client (Any): An azure.storage.blob.BlobServiceClient object.
+    """
+
+    def __init__(self, client: Any):
+        self._client = client
+
+    @contextmanager
+    def load_context(self, params: PipesParams) -> Iterator[PipesContextData]:
+        bucket = _assert_env_param_type(params, "bucket", str, self.__class__)
+        key = _assert_env_param_type(params, "key", str, self.__class__)
+        with self._client.get_blob_client(bucket, key) as blob_client:
+            obj = blob_client.download_blob().readall()
+        yield json.loads(obj.decode("utf-8"))
+
+
+class PipesAzureBlobStorageMessageWriter(PipesBlobStoreMessageWriter):
+    """Message writer that writes messages by periodically writing message chunks to an
+        AzureBlobStorage container.
+
+    Args:
+        client (Any): An azure.storage.blob.BlobServiceClient object.
+        interval (float): interval in seconds between upload chunk uploads.
+    """
+
+    def __init__(self, client: Any, *, interval: float = 10):
+        super().__init__(interval=interval)
+        self._client = client
+
+    def make_channel(
+        self,
+        params: PipesParams,
+    ) -> "PipesAzureBlobStorageMessageWriterChannel":
+        bucket = _assert_env_param_type(params, "bucket", str, self.__class__)
+        key_prefix = _assert_opt_env_param_type(params, "key_prefix", str, self.__class__)
+        return PipesAzureBlobStorageMessageWriterChannel(
+            client=self._client,
+            bucket=bucket,
+            key_prefix=key_prefix,
+            interval=self.interval,
+        )
+
+
+class PipesAzureBlobStorageMessageWriterChannel(PipesBlobStoreMessageWriterChannel):
+    """Message writer channel for writing messages by periodically writing message chunks to an
+        AzureBlobStorage container.
+
+    Args:
+        client (Any): An azure.storage.blob.BlobServiceClient object.
+        bucket (str): The name of the AzureBlobStorage container to write to.
+        key_prefix (Optional[str]): An optional prefix to use for the keys of written blobs.
+        interval (float): interval in seconds between upload chunk uploads
+    """
+
+    def __init__(
+        self, client: Any, bucket: str, key_prefix: Optional[str], *, interval: float = 10
+    ):
+        super().__init__(interval=interval)
+        self._client = client
+        self._bucket = bucket
+        self._key_prefix = key_prefix
+
+    def upload_messages_chunk(self, payload: IO, index: int) -> None:
+        key = f"{self._key_prefix}/{index}.json" if self._key_prefix else f"{index}.json"
+        with self._client.get_blob_client(self._bucket, key) as blob_client:
+            blob_client.upload_blob(payload.read())
+
+
+# ########################
 # ##### IO - DBFS
 # ########################
 

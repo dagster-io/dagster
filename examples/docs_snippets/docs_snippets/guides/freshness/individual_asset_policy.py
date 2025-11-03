@@ -1,7 +1,6 @@
 from datetime import timedelta
 
-from dagster import AssetSpec, asset
-from dagster.preview.freshness import FreshnessPolicy
+from dagster import AssetSpec, FreshnessPolicy, asset
 
 policy = FreshnessPolicy.time_window(fail_window=timedelta(hours=24))
 

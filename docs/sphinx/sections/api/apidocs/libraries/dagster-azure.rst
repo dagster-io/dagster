@@ -28,8 +28,6 @@ I/O Manager
 .. autoconfigurable::  dagster_azure.adls2.ADLS2PickleIOManager
   :annotation: IOManagerDefinition
 
-
-
 File Manager
 ^^^^^^^^^^^^
 
@@ -38,6 +36,16 @@ File Manager
 
 .. autoclass:: dagster_azure.adls2.ADLS2FileHandle
   :members:
+
+
+Pipes
+^^^^^
+
+.. autoclass:: dagster_azure.pipes.PipesAzureBlobStorageContextInjector
+
+.. autoclass:: dagster_azure.pipes.PipesAzureBlobStorageMessageReader
+
+.. autoclass:: dagster_azure.pipes.clients.PipesAzureMLClient
 
 
 Legacy

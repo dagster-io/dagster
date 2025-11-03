@@ -1,7 +1,7 @@
 from datetime import timedelta
 
 import dagster as dg
-from dagster._core.definitions.freshness import InternalFreshnessPolicy
+from dagster._core.definitions.freshness import FreshnessPolicy
 from dagster._time import get_current_timestamp
 
 
@@ -154,7 +154,7 @@ def observable_source_asset_random_execution_error(context):
 
 
 @dg.asset(
-    freshness_policy=InternalFreshnessPolicy.time_window(
+    freshness_policy=FreshnessPolicy.time_window(
         fail_window=timedelta(minutes=5), warn_window=timedelta(minutes=1)
     )
 )

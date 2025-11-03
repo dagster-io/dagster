@@ -517,6 +517,7 @@ def init_impl(
             ),
             build_output=None,
             status_url=status_url,
+            project_dir=project_dir,
         )
         location_state.add_status_change(state.LocationStatus.pending, "initialized")
         state_store.save(location_state)
@@ -728,6 +729,7 @@ def build_impl(
         ui.print(f"- {name}")
 
     for name, location_state in locations.items():
+        project_dir = location_state.project_dir
         try:
             configured_build_directory = (
                 location_state.build.build_config.directory
@@ -749,6 +751,9 @@ def build_impl(
                 location_build_dir = build_directory
             else:
                 location_build_dir = "."
+
+            if project_dir and not os.path.isabs(location_build_dir):
+                location_build_dir = str(pathlib.Path(project_dir) / location_build_dir)
 
             url = location_state.url
             api_token = get_user_token() or ""

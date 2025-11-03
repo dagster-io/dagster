@@ -3,5 +3,5 @@ jaffle_shop:
   outputs:
     dev:
       type: duckdb
-      path: tutorial.duckdb
+      path: ~/tutorial.duckdb
       threads: 24

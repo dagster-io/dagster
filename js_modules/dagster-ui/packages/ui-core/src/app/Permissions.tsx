@@ -55,7 +55,7 @@ export type PermissionsFromJSON = {
   edit_workspace?: PermissionResult;
 };
 
-export const DEFAULT_DISABLED_REASON = 'Disabled by your administrator';
+export const DEFAULT_DISABLED_REASON = 'Insufficient permissions';
 
 const DEFAULT_PERMISSIONS = {
   enabled: false,

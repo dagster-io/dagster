@@ -67,7 +67,7 @@ Windows / Azure users may need to enable the environment variable `PYTHONLEGACYW
 
 ## Configuring loggers
 
-Loggers can be configured when you run a job. For example, to filter all messages below `ERROR` out of the colored console logger, add the following lines to your `config.yaml`:
+Loggers can be configured when you run a job. For example, to filter all messages below `ERROR` out of the colored console logger for a job, add the following lines to the run config in the launchpad or `RunRequest`:
 
 <CodeExample path="docs_snippets/docs_snippets/concepts/logging/config.yaml" />
 

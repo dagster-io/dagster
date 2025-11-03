@@ -8,6 +8,12 @@ The `dagster-cloud` CLI is a command-line toolkit designed to work with Dagster+
 
 In this guide, we'll cover how to install and configure the `dagster-cloud` CLI, get help, and use some helpful environment variables and CLI options.
 
+:::note
+
+The `dagster-cloud` CLI requires Python 3.9 through 3.13 and a recent version of Docker.
+
+:::
+
 ## Installing the CLI
 
 The Dagster+ Agent library is available in PyPi. To install, run:

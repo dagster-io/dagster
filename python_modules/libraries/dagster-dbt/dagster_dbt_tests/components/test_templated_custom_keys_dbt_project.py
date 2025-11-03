@@ -2,6 +2,7 @@ import shutil
 import tempfile
 from collections.abc import Iterator
 from pathlib import Path
+from unittest.mock import patch
 
 import pytest
 from dagster import AssetKey
@@ -48,7 +49,16 @@ JAFFLE_SHOP_KEYS_WITH_PREFIX = {
 
 @pytest.fixture(autouse=True)
 def _setup() -> Iterator:
-    with instance_for_test() as instance, scoped_definitions_load_context():
+    with (
+        instance_for_test() as instance,
+        scoped_definitions_load_context(),
+        # this file doesn't use `create_defs_folder_sandbox` so we need to mock out the local_state_dir
+        tempfile.TemporaryDirectory() as temp_dir,
+        patch(
+            "dagster.components.utils.project_paths.get_local_defs_state_dir",
+            return_value=Path(temp_dir),
+        ),
+    ):
         yield instance
 
 

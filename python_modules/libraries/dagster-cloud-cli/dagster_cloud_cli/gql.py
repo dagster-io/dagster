@@ -845,3 +845,74 @@ def delete_branch_deployment(client: DagsterCloudGraphQLClient, deployment: str)
         raise Exception(f"Unable to delete deployment: {result}")
 
     return result["data"]["deleteDeployment"]["deploymentId"]
+
+
+SET_ATLAN_INTEGRATION_SETTINGS_MUTATION = """
+    mutation CliSetAtlanIntegrationSettings($atlanIntegrationSettings: AtlanIntegrationSettingsInput!) {
+        setAtlanIntegrationSettings(atlanIntegrationSettings: $atlanIntegrationSettings) {
+            __typename
+            ... on SetAtlanIntegrationSettingsSuccess {
+                organization
+                success
+            }
+            ...on UnauthorizedError {
+                message
+            }
+            ... on PythonError {
+                message
+                stack
+            }
+        }
+    }
+"""
+
+
+DELETE_ATLAN_INTEGRATION_SETTINGS_MUTATION = """
+    mutation CliDeleteAtlanIntegrationSettings() {
+        deleteAtlanIntegrationSettings() {
+            __typename
+            ...on DeleteAtlanIntegrationSuccess {
+                organization
+                success
+            }
+            ...on UnauthorizedError {
+                message
+            }
+            ... on PythonError {
+                message
+                stack
+            }
+        }
+    }
+"""
+
+
+def set_atlan_integration_settings(
+    client: DagsterCloudGraphQLClient,
+    token: str,
+    domain: str,
+) -> None:
+    result = client.execute(
+        SET_ATLAN_INTEGRATION_SETTINGS_MUTATION,
+        variable_values={"atlanIntegrationSettings": {"token": token, "domain": domain}},
+    )
+
+    if (
+        result["data"]["setAtlanIntegrationSettings"]["__typename"]
+        != "SetAtlanIntegrationSettingsSuccess"
+    ):
+        raise Exception(f"Unable to set Atlan integration settings: {result}")
+
+
+def delete_atlan_integration_settings(
+    client: DagsterCloudGraphQLClient,
+) -> None:
+    result = client.execute(
+        DELETE_ATLAN_INTEGRATION_SETTINGS_MUTATION,
+    )
+
+    if (
+        result["data"]["deleteAtlanIntegrationSettings"]["__typename"]
+        != "DeleteAtlanIntegrationSuccess"
+    ):
+        raise Exception(f"Unable to delete Atlan integration settings: {result}")

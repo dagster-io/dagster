@@ -214,8 +214,12 @@ EXCLUDE_MISSING_PUBLIC = {
     "dagster_aws.ssm.ParameterStoreTag",
     "dagster_azure.adls2.ADLS2FileHandle",
     "dagster_azure.blob.AzureBlobComputeLogManager",
+    "dagster_azure.pipes.PipesAzureBlobStorageContextInjector",
+    "dagster_azure.pipes.PipesAzureBlobStorageMessageReader",
+    "dagster_azure.pipes.clients.PipesAzureMLClient",
     "dagster_census.CensusOutput",
     "dagster_census.CensusResource",
+    "dagster_databricks.DatabricksAssetBundleComponent",
     "dagster_databricks.DatabricksClient",
     "dagster_databricks.DatabricksError",
     "dagster_databricks.PipesDatabricksClient",
@@ -330,6 +334,9 @@ EXCLUDE_MISSING_PUBLIC = {
     "dagster_pipes.PipesGCSContextLoader",
     "dagster_pipes.PipesGCSMessageWriter",
     "dagster_pipes.PipesGCSMessageWriterChannel",
+    "dagster_pipes.PipesAzureBlobStorageContextLoader",
+    "dagster_pipes.PipesAzureBlobStorageMessageWriter",
+    "dagster_pipes.PipesAzureBlobStorageMessageWriterChannel",
     "dagster_pipes.PipesMappingParamsLoader",
     "dagster_pipes.PipesMessageWriter",
     "dagster_pipes.PipesMessageWriterChannel",
@@ -415,7 +422,7 @@ EXCLUDE_MISSING_PUBLIC = {
     "dagster.components.testing.utils.DefsFolderSandbox",
     "dagster.components.testing.utils.create_defs_folder_sandbox",
 }
-# Total: 298 symbols
+# Total: 305 symbols
 
 # Modules to exclude from @public scanning
 EXCLUDE_MODULES_FROM_PUBLIC_SCAN = set()

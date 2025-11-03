@@ -147,6 +147,7 @@ def evaluate_automation_conditions(
         emit_backfills=False,
         logger=logging.getLogger("dagster.automation_condition_tester"),
         cursor=cursor,
+        evaluation_id=cursor.evaluation_id,
     )
     results, requested_subsets = evaluator.evaluate()
     with partition_loading_context(

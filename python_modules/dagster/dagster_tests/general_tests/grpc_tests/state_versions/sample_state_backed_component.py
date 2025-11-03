@@ -25,7 +25,7 @@ class SampleStateBackedComponent(StateBackedComponent, dg.Model, dg.Resolvable):
     def defs_state_config(self) -> DefsStateConfig:
         return DefsStateConfig(
             key=self.__class__.__name__,
-            type=DefsStateManagementType.VERSIONED_STATE_STORAGE,
+            management_type=DefsStateManagementType.VERSIONED_STATE_STORAGE,
             refresh_if_dev=True,
         )
 

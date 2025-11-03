@@ -1,3 +1,24 @@
+# 1.3.0 (October 27, 2025)
+
+- Migrate back to styled-components v5
+- Add "none" intent to `Alert`
+- Allow `ButtonGroup` buttons to be disabled
+- Fix color of disabled `Checkbox`
+- Replace `react-dates` with `react-day-picker`
+- Allow a "close" button to be shown in `Dialog` header
+- Add `ListItem`, `HoverButton`, and `HorizontalControls`
+- Add some new icons
+- Refactor `MiddleTruncate`
+- Fix disabled `Radio` button styles
+- Update `Skeleton` styles
+- Fixes for `SplitPanelContainer`
+- Allow disabling tags in `TagSelector`
+- Update some `Text` styles
+- Fix text input styles for disabled inputs
+- Use new `Toaster` based on `sonner` library
+- Add some more colors
+- Add theme color sets for colorblind themes
+
 # 1.2.1 (December 5, 2024)
 
 - Split CodeMirror-based components out of main index export

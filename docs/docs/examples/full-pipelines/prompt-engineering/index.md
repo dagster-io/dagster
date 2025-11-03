@@ -16,15 +16,12 @@ In this example, you'll build a pipeline with Dagster that:
 - Generates prompts to use with [Anthropic](https://www.anthropic.com)
 - Validates outputs of AI models and passes outputs across assets
 
-<details>
-  <summary>Prerequisites</summary>
+## Prerequisites
 
 To follow the steps in this guide, you'll need:
 
 - Basic Python knowledge
 - Python 3.9+ installed on your system. For more information, see the [Installation guide](/getting-started/installation).
-
-</details>
 
 ## Step 1: Set up your Dagster environment
 

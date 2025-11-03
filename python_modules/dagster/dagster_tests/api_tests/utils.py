@@ -31,7 +31,7 @@ def get_bar_workspace(instance: DagsterInstance) -> Iterator[WorkspaceRequestCon
 def get_workspace(
     instance: DagsterInstance,
     python_file: str,
-    attribute: str,
+    attribute: Optional[str],
     location_name: str,
 ) -> Iterator[WorkspaceRequestContext]:
     with WorkspaceProcessContext(

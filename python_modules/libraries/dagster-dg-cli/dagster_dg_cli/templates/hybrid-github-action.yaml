@@ -47,6 +47,27 @@ jobs:
           # the base deployment for the branch deployment.
           deployment: "TEMPLATE_DEFAULT_DEPLOYMENT_NAME"
 
+      # Ensure the correct Python version is installed
+      - name: Set up Python ${{ env.PYTHON_VERSION }} for target
+        id: setup-python-version
+        if: steps.prerun.outputs.result != 'skip'
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+
+      - name: Install uv
+        if: steps.prerun.outputs.result != 'skip'
+        run: ${{ steps.setup-python-version.outputs.python-path }} -m pip install uv
+        shell: bash
+
+      # Refresh state for any StateBackedComponents in the project
+      - name: Refresh defs state
+        if: steps.prerun.outputs.result != 'skip'
+        run: |
+          cd ${{ env.DAGSTER_PROJECT_DIR }}
+          ${{ steps.setup-python-version.outputs.python-path }} -m uv run dg plus deploy refresh-defs-state
+        shell: bash
+
       # Any value can be used as the docker image tag. It is recommended to use a unique value
       # for each build so that multiple builds do not overwrite each other.
       - name: Generate docker image tag

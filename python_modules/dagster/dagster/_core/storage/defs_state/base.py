@@ -1,3 +1,4 @@
+import re
 from abc import ABC, abstractmethod
 from contextlib import contextmanager
 from contextvars import ContextVar
@@ -96,6 +97,9 @@ class DefsStateStorage(ABC, MayHaveInstanceWeakref[T_DagsterInstance]):
             version (str): The version of the state to persist.
         """
         raise NotImplementedError()
+
+    def _sanitize_key(self, key: str) -> str:
+        return re.sub(r"[^A-Za-z0-9._-]", "__", key)
 
     def _get_version_key(self, key: str) -> str:
         """Returns a storage key under which the latest version of a given key's state is stored."""
