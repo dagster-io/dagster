@@ -13,7 +13,7 @@ from dagster_dg_cli.cli.api.client import create_dg_api_graphql_client
 from dagster_dg_cli.cli.api.formatters import format_deployment, format_deployments
 
 
-@click.command(name="list", cls=DgClickCommand, unlaunched=True)
+@click.command(name="list", cls=DgClickCommand)
 @click.option(
     "--json",
     "output_json",
@@ -49,7 +49,7 @@ def list_deployments_command(
         raise click.ClickException(f"Failed to list deployments: {e}")
 
 
-@click.command(name="get", cls=DgClickCommand, unlaunched=True)
+@click.command(name="get", cls=DgClickCommand)
 @click.argument("name", required=True)
 @click.option(
     "--json",
@@ -99,7 +99,6 @@ def get_deployment_command(
 @click.group(
     name="deployment",
     cls=DgClickGroup,
-    unlaunched=True,
     commands={
         "list": list_deployments_command,
         "get": get_deployment_command,

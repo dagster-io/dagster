@@ -13,7 +13,7 @@ from dagster_dg_cli.cli.api.client import create_dg_api_graphql_client
 from dagster_dg_cli.cli.api.formatters import format_secret, format_secrets
 
 
-@click.command(name="list", cls=DgClickCommand, unlaunched=True)
+@click.command(name="list", cls=DgClickCommand)
 @click.option(
     "--location",
     help="Filter secrets by code location name",
@@ -71,7 +71,7 @@ def list_secrets_command(
         raise click.ClickException(f"Failed to list secrets: {e}")
 
 
-@click.command(name="get", cls=DgClickCommand, unlaunched=True)
+@click.command(name="get", cls=DgClickCommand)
 @click.argument("secret_name")
 @click.option(
     "--location",
@@ -138,7 +138,6 @@ def get_secret_command(
 @click.group(
     name="secret",
     cls=DgClickGroup,
-    unlaunched=True,
     commands={
         "list": list_secrets_command,
         "get": get_secret_command,
