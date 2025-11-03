@@ -92,6 +92,7 @@ class ExecutableComponent(Component, Resolvable, Model, ABC):
                 pool=self.op_spec.pool,
                 config_schema=self.config_fields,
             )
+            @self.op_spec.apply_config_schema
             def _assets_def(context: AssetExecutionContext, **kwargs):
                 return to_iterable(
                     self.invoke_execute_fn(context, component_load_context=component_load_context),
@@ -110,6 +111,7 @@ class ExecutableComponent(Component, Resolvable, Model, ABC):
                 pool=self.op_spec.pool,
                 config_schema=self.config_fields,
             )
+            @self.op_spec.apply_config_schema
             def _asset_check_def(context: AssetCheckExecutionContext, **kwargs):
                 return to_iterable(
                     self.invoke_execute_fn(context, component_load_context=component_load_context),
