@@ -91,7 +91,7 @@ locations:
 A `code_source` key must contain either a `module_name`, `package_name`, or `file_name` parameter that specifies where to find the definitions in the Dagster project.
 
 <Tabs>
-<TabItem value="Single Dagster proejct">
+<TabItem value="Single Dagster project">
 
 ```yaml
 # dagster_cloud.yaml

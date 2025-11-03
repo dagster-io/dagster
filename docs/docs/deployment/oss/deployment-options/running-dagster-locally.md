@@ -79,4 +79,4 @@ if os.getenv("DAGSTER_IS_DEV_CLI"):
 - The ability to configure zero downtime continuous deployment of your code
 - The ability to set up your Dagster daemon to automatically restart if it crashes
 
-For mores information about deploying Dagster in production, see the [Dagster Open Source deployment options documentation](/deployment/oss/deployment-options) or the [Dagster+ deployment documentation](/deployment/dagster-plus).
+For more information about deploying Dagster in production, see the [Dagster Open Source deployment options documentation](/deployment/oss/deployment-options) or the [Dagster+ deployment documentation](/deployment/dagster-plus).
