@@ -52,7 +52,7 @@ class CensusResource(ConfigurableResource):
     request_max_retries: int = pydantic.Field(
         default=3,
         description=(
-            "The maximum number of times requests to the Airbyte API should be retried "
+            "The maximum number of times requests to the Census API should be retried "
             "before failing."
         ),
     )
@@ -62,7 +62,7 @@ class CensusResource(ConfigurableResource):
     )
     request_timeout: int = pydantic.Field(
         default=15,
-        description="Time (in seconds) after which the requests to Airbyte are declared timed out.",
+        description="Time (in seconds) after which the requests to Census are declared timed out.",
     )
 
     @property

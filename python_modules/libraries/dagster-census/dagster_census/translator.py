@@ -21,7 +21,7 @@ class CensusSyncTableProps(NamedTuple):
 @whitelist_for_serdes
 @record
 class CensusSync:
-    """Represents a Fivetran sync, based on data as returned from the API."""
+    """Represents a Census sync, based on data as returned from the API."""
 
     id: int
     name: str
@@ -82,7 +82,7 @@ class CensusMetadataSet(NamespacedMetadataSet):
 
     @classmethod
     def namespace(cls) -> str:
-        return "dagster-airbyte"
+        return "dagster-census"
 
 
 class DagsterCensusTranslator:
