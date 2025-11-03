@@ -498,27 +498,43 @@ class GrapheneAsset(graphene.ObjectType):
     async def resolve_latestFailedToMaterializeTimestamp(
         self, graphene_info: ResolveInfo
     ) -> Optional[float]:
-        record = await AssetRecord.gen(graphene_info.context, self._asset_key)
-        latest_failed_to_materialize_event = (
-            record.asset_entry.last_failed_to_materialize_entry if record else None
+        materialization_state = (
+            graphene_info.context.instance.get_asset_materialization_health_state_for_assets(
+                self._asset_key
+            ).get(self._asset_key)
         )
-        return (
-            latest_failed_to_materialize_event.timestamp
-            * 1000  # FE prefers timestamp in milliseconds
-            if latest_failed_to_materialize_event
-            else None
-        )
+        if materialization_state is not None:
+            ts = materialization_state.latest_failed_to_materialize_timestamp
+        else:
+            record = await AssetRecord.gen(graphene_info.context, self._asset_key)
+            latest_failed_to_materialize_event = (
+                record.asset_entry.last_failed_to_materialize_entry if record else None
+            )
+            ts = (
+                latest_failed_to_materialize_event.timestamp
+                if latest_failed_to_materialize_event
+                else None
+            )
+
+        return ts * 1000 if ts else None  # FE prefers timestamp in milliseconds
 
     def resolve_freshnessStatusChangedTimestamp(
         self, graphene_info: ResolveInfo
     ) -> Optional[float]:
-        freshness_state_record = graphene_info.context.instance.get_freshness_state_records(
-            [self._asset_key]
-        ).get(self._asset_key)
-        if freshness_state_record is not None:
-            return (
-                freshness_state_record.updated_at.timestamp() * 1000
-            )  # FE prefers timestamp in milliseconds
+        freshness_state = (
+            graphene_info.context.instance.get_asset_freshness_health_state_for_assets(
+                self._asset_key
+            ).get(self._asset_key)
+        )
+        if freshness_state is not None:
+            ts = freshness_state.updated_timestamp
+        else:
+            freshness_state_record = graphene_info.context.instance.get_freshness_state_records(
+                [self._asset_key]
+            ).get(self._asset_key)
+            ts = freshness_state_record.updated_at.timestamp() if freshness_state_record else None
+
+        return ts * 1000 if ts else None  # FE prefers timestamp in milliseconds
 
 
 class GrapheneEventConnection(graphene.ObjectType):
