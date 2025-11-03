@@ -74,7 +74,7 @@ def format_schedule(schedule: "DgApiSchedule", as_json: bool) -> str:
     return "\n".join(lines)
 
 
-@click.command(name="list", cls=DgClickCommand, unlaunched=True)
+@click.command(name="list", cls=DgClickCommand)
 @click.option(
     "--status",
     type=click.Choice(["RUNNING", "STOPPED"]),
@@ -136,7 +136,7 @@ def list_schedules_command(
             raise click.ClickException(f"Failed to list schedules: {e}")
 
 
-@click.command(name="get", cls=DgClickCommand, unlaunched=True)
+@click.command(name="get", cls=DgClickCommand)
 @click.argument("schedule_name", type=str)
 @click.option(
     "--json",
@@ -183,7 +183,6 @@ def get_schedule_command(
 @click.group(
     name="schedule",
     cls=DgClickGroup,
-    unlaunched=True,
     commands={
         "list": list_schedules_command,
         "get": get_schedule_command,
