@@ -44,7 +44,7 @@ def list_secrets_command(
     """List secrets in the organization.
 
     By default, secret values are not shown for security reasons.
-    Use 'dg api secret get <name> --show-value' to view specific values.
+    Use 'dg api secret get NAME --show-value' to view specific values.
     """
     config = DagsterPlusCliConfig.create_for_organization(
         organization=organization,
