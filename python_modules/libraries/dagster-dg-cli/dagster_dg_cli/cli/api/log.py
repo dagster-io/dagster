@@ -95,7 +95,7 @@ def format_logs_json(events, run_id: str) -> str:
     )
 
 
-@click.command(name="get", cls=DgClickCommand, unlaunched=True)
+@click.command(name="get", cls=DgClickCommand)
 @click.argument("run_id", type=str)
 @click.option(
     "--level",
@@ -183,7 +183,6 @@ def get_logs_command(
 @click.group(
     name="log",
     cls=DgClickGroup,
-    unlaunched=True,
     commands={
         "get": get_logs_command,
     },

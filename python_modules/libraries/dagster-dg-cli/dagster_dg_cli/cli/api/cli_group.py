@@ -16,7 +16,6 @@ from dagster_dg_cli.cli.api.sensor import sensor_group
 @click.group(
     name="api",
     cls=DgClickGroup,
-    unlaunched=True,
     commands={
         "agent": agent_group,
         "asset": asset_group,

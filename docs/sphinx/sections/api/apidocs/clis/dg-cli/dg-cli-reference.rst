@@ -20,6 +20,10 @@ dg CLI
     :prog: dg list
     :nested: full
 
+.. click:: dagster_dg_cli.cli.api.cli_group:api_group
+    :prog: dg api
+    :nested: full
+
 .. click:: dagster_dg_cli.cli.plus:plus_group
     :prog: dg plus
     :nested: full
