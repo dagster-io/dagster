@@ -160,6 +160,7 @@ class DefsFolderSandbox:
         with self.build_component_tree() as tree:
             yield tree.build_defs()
 
+    @public
     @contextmanager
     def load_component_and_build_defs(
         self, defs_path: Path
@@ -190,6 +191,7 @@ class DefsFolderSandbox:
             defs = tree.build_defs(defs_path)
             yield component, defs
 
+    @public
     def scaffold_component(
         self,
         component_cls: Any,
