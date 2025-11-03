@@ -6,7 +6,7 @@ title: Organizing your Dagster project
 
 :::info
 
-To learn how to create a new Dagster project with a default structure, see [Creating Dagster projects](/guides/build/projects/creating-dagster-projects).
+To learn how to create a new Dagster project with a default structure, see [Creating Dagster projects](/guides/build/projects/creating-projects).
 
 :::
 

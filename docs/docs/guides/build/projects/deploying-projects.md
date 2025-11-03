@@ -20,7 +20,7 @@ Fore more information about local development, including how to configure your l
 
 Follow the steps in the [OSS deployment docs](/deployment/oss/deployment-options) to set up a production OSS deployment. You will need to add your project code to the Docker container used in the deployment.
 
-To deploy more than one Dagster project, create a [workspace](/guides/build/projects/managing-multiple-projects) to contain the projects and add a `dg.toml` file to the root of the workspace. This file tells Dagster where to find your code and how to load it.
+To deploy more than one Dagster project, create a [workspace](/guides/build/projects/workspaces/creating-workspaces) to contain the projects and add a `dg.toml` file to the root of the workspace. This file tells Dagster where to find your code and how to load it.
 
 ## Dagster+ deployment
 
@@ -33,7 +33,7 @@ To deploy to Dagster+:
 
 Get started with [Dagster+ Serverless](/deployment/dagster-plus/getting-started), if you haven't already. You will be guided through the process of creating a project that contains a GitHub workflow file, which is used to configure continuous deployment of your project from a GitHub repo.
 
-If you are deploying another project to an existing Dagster+ Serverless deployment, you will need to create the CI/CD configuration file yourself. For more information, see the [Dagster+ Serverless CI/CD guide](/deployment/deploying-code/ci-cd-in-serverless).
+If you are deploying another project to an existing Dagster+ Serverless deployment, you will need to create the CI/CD configuration file yourself. For more information, see the [Dagster+ Serverless CI/CD guide](/deployment/dagster-plus/deploying-code/ci-cd/ci-cd-in-serverless).
 
 TK - workspace for multiple projects?
 

@@ -29,9 +29,9 @@ my-project/
 └── uv.lock
 ```
 
-While Dagster is flexible about how you organize your code, it provides an opinionated starting point with the [`create-dagster` CLI](/api/clis/create-dagster). For more information on creating Dagster projects from the CLI, see [Creating Dagster projects](/guides/build/projects/creating-dagster-projects).
+While Dagster is flexible about how you organize your code, it provides an opinionated starting point with the [`create-dagster` CLI](/api/clis/create-dagster). For more information on creating Dagster projects from the CLI, see [Creating Dagster projects](/guides/build/projects/creating-projects).
 
-To make your Dagster project deployable to Dagster+, you will need to create additional configuration files. For more information, see [Deploying Dagster projects](/guides/build/projects/deploying-dagster-projects).
+To make your Dagster project deployable to Dagster+, you will need to create additional configuration files. For more information, see [Deploying Dagster projects](/guides/build/projects/deploying-projects).
 
 A single deployment of Dagster can contain multiple projects organized into workspaces.
 
@@ -44,4 +44,4 @@ A workspace allows you to manage and orchestrate multiple Dagster projects toget
 - You want to deploy multiple projects in a coordinated way.
 
 
-As with projects, Dagster provides an opinionated starting point for workspaces with the [`create-dagster` CLI](/api/clis/create-dagster). To learn how to create a Dagster workspaces from the CLI, see [Creating workspaces to manage multiple projects](/guides/build/projects/workspaces/managing-multiple-projects).
+As with projects, Dagster provides an opinionated starting point for workspaces with the [`create-dagster` CLI](/api/clis/create-dagster). To learn how to create a Dagster workspaces from the CLI, see [Creating workspaces to manage multiple projects](/guides/build/projects/workspaces/creating-workspaces).

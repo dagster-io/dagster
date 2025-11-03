@@ -8,7 +8,7 @@ slug: "/guides/build/components/building-pipelines-with-components"
 
 :::note
 
-To create a components-ready project, follow the steps in "[Creating a Dagster project](/guides/build/projects/creating-dagster-projects)".
+To create a components-ready project, follow the steps in "[Creating a Dagster project](/guides/build/projects/creating-projects)".
 
 :::
 

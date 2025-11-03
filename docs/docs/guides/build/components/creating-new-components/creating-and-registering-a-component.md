@@ -10,7 +10,7 @@ In most cases, components map to a specific technology. For example, you might c
 
 :::info Prerequisites
 
-Before creating and registering custom components, you will need to [create a components-ready project](/guides/build/projects/creating-dagster-projects).
+Before creating and registering custom components, you will need to [create a components-ready project](/guides/build/projects/creating-projects).
 
 :::
 

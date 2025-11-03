@@ -163,7 +163,7 @@ For more information, see the [Handling secrets](#handling-secrets) and [Per-env
 
 :::note
 
-The example code in this section follows the structure of a Dagster project created with the [`create-dagster CLI](/api/clis/create-dagster). To create a Dagster project with this structure, see [Creating Dagster projects](/guides/build/projects/creating-dagster-projects).
+The example code in this section follows the structure of a Dagster project created with the [`create-dagster CLI](/api/clis/create-dagster). To create a Dagster project with this structure, see [Creating Dagster projects](/guides/build/projects/creating-projects).
 
 :::
 

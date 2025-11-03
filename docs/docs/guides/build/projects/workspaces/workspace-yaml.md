@@ -6,7 +6,7 @@ title: workspace.yaml reference (Dagster OSS)
 
 :::note
 
-If you are just getting started with Dagster OSS, use a [workspace](/guides/build/projects/managing-multiple-projects) with a `dg.toml` configuration file instead of a `workspace.yaml` file. If you have an older setup with a workspace.yaml file, we recommend [migrating to a workspace](/guides/build/projects/migrating-workspace-yaml) with a `dg.toml` file.
+If you are just getting started with Dagster OSS, use a [workspace](/guides/build/projects/workspaces/creating-workspaces) with a `dg.toml` configuration file instead of a `workspace.yaml` file. If you have an older setup with a workspace.yaml file, we recommend [migrating to a workspace](/guides/build/projects/workspaces/migrating-workspace-yaml) with a `dg.toml` file.
 
 :::
 

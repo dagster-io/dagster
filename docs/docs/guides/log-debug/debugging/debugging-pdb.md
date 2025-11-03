@@ -10,7 +10,7 @@ This can be useful when debugging assets with complex transformations or assets 
 
 :::note Prerequisites
 
-To follow the steps in this guide, you'll need to [create a Dagster project](/guides/build/projects/creating-dagster-projects) with the [`create-dagster` CLI](/api/clis/create-dagster).
+To follow the steps in this guide, you'll need to [create a Dagster project](/guides/build/projects/creating-projects) with the [`create-dagster` CLI](/api/clis/create-dagster).
 
 :::
 

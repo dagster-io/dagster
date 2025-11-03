@@ -23,7 +23,7 @@ definitions.
 Let's look at a simple example using the <PyObject module="dagster" section="components" object="DefsFolderComponent" />. `DefsFolderComponent`
 simply loads all definitions from a specified folder.
 
-Starting from a [blank project](/guides/build/projects/creating-dagster-projects), let's scaffold a `DefsFolderComponent` called
+Starting from a [blank project](/guides/build/projects/creating-projects), let's scaffold a `DefsFolderComponent` called
 `my_assets`:
 
 <CliInvocationExample path="docs_snippets/docs_snippets/guides/components/post-processing-components/generated/1-dg-scaffold-defs-my-assets.txt" />

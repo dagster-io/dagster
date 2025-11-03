@@ -34,7 +34,7 @@ This guide is an extension of the [Transitioning data pipelines from development
 To complete the steps in this guide, you'll need:
 
 - A Dagster+ account
-- An empty Dagster project created with the `dagster-create project` CLI. For more information, see [Creating Dagster projects](/guides/build/projects/creating-dagster-projects).
+- An empty Dagster project created with the `dagster-create project` CLI. For more information, see [Creating Dagster projects](/guides/build/projects/creating-projects).
 - An existing [branch deployments setup](/deployment/dagster-plus/deploying-code/branch-deployments/setting-up-branch-deployments) in the project that uses GitHub actions or GitLab CI/CD. Your setup should contain the following files:
   - Either a GitHub actions workflow file (e.g. `.github/workflows/dagster-plus-deploy.yml` (Serverless) or `dagster-cloud-deploy.yml` (Hybrid)) or a GitLab CI/CD file (e.g. `.gitlab-ci.yml`)
   - A Dockerfile that installs your Dagster project

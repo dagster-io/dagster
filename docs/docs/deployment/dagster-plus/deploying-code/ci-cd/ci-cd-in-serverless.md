@@ -49,7 +49,7 @@ If you don't want to use our automated GitHub/GitLab process, you can use the [`
 1. First, create a new project by doing one of the following:
 
    - Cloning the [Serverless quickstart example](https://github.com/dagster-io/dagster/tree/master/examples/quickstart_etl)
-   - [Using the `create-dagster project` command](/guides/build/projects/creating-dagster-projects). **Note:** If you create your project from the command line, you will need to add `dagster-cloud` as a dependency in your `pyproject.toml` file and add a `dagster-plus-deploy.yml` workflow file to the `.github/workflows` directory. See the [Serverless quickstart example repo](https://github.com/dagster-io/dagster-cloud-serverless-quickstart) for examples of both.
+   - [Using the `create-dagster project` command](/guides/build/projects/creating-projects). **Note:** If you create your project from the command line, you will need to add `dagster-cloud` as a dependency in your `pyproject.toml` file and add a `dagster-plus-deploy.yml` workflow file to the `.github/workflows` directory. See the [Serverless quickstart example repo](https://github.com/dagster-io/dagster-cloud-serverless-quickstart) for examples of both.
 
 2. Next, install the [`dagster-cloud` CLI](/api/clis/dagster-cloud-cli/installing-and-configuring) and use the `configure` command to authenticate it to your Dagster+ organization:
 

@@ -15,7 +15,7 @@ In this guide, we'll walk you through how to run Dagster on your local machine u
 
 ## Prerequisites
 
-Before starting local development, you need to create a Dagster project that the Dagster instance can locate and run. For more information, see [Creating Dagster projects](/guides/build/projects/creating-dagster-projects).
+Before starting local development, you need to create a Dagster project that the Dagster instance can locate and run. For more information, see [Creating Dagster projects](/guides/build/projects/creating-projects).
 
 Once you have created a Dagster project, you can change to the project root directory and run `dg dev` to start the Dagster UI and Dagster daemon:
 

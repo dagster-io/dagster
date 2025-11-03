@@ -124,7 +124,7 @@ Your new Dagster project should have the following structure:
 
 :::info
 
-The `create-dagster project` command creates a directory with a standard Python package structure with some additions. For more information on the files and directories in a typical Dagster project, see the [Dagster project file and directory reference](/guides/build/projects/project-structure/dagster-project-file-reference).
+The `create-dagster project` command creates a directory with a standard Python package structure with some additions. For more information on the files and directories in a typical Dagster project, see the [Dagster project file and directory reference](/guides/build/projects/project-structure/project-overview).
 
 :::
 
@@ -191,4 +191,4 @@ If built-in Dagster components and integrations don't meet your needs, you can [
 
 ## Step 5: Deploy your project to the cloud (Optional)
 
-If you have a cloud deployment of Dagster, you can deploy your project by adding a configuration file at the root, and optionally configuring CI/CD for continuous deployment. For more information, see [Deploying Dagster projects](/guides/build/projects/deploying-dagster-projects).
+If you have a cloud deployment of Dagster, you can deploy your project by adding a configuration file at the root, and optionally configuring CI/CD for continuous deployment. For more information, see [Deploying Dagster projects](/guides/build/projects/deploying-projects).

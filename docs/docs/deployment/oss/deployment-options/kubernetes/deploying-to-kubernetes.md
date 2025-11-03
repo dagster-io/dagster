@@ -123,7 +123,7 @@ To deploy your project, you'll need to set the following options:
 
 - `dagster-user-deployments.deployments.name`, which should be a unique name for your deployment
 - `dagster-user-deployments.deployments.image.repository` and `dagster-user-deployments.deployments.image.tag`, which should be set to match the Docker image from Step 1
-- `dagster-user-deployments.deployments.dagsterApiGrpcArgs`, which should be set to the arguments you would pass to `dagster api grpc` to [run a gRPC server for your project](/guides/build/projects/project-structure/deployment-configuration/workspace-yaml#grpc-server).
+- `dagster-user-deployments.deployments.dagsterApiGrpcArgs`, which should be set to the arguments you would pass to `dagster api grpc` to [run a gRPC server for your project](/guides/build/projects/workspaces/workspace-yaml#grpc-server).
 
 If you are following this guide on your local machine, you will also need to set `pullPolicy: IfNotPresent`. This will use the local version of the image built in Step 1. However, in production use cases when your Docker images are pushed to image registries, this value should remain `pullPolicy: Always`.
 

@@ -6,7 +6,7 @@ description: Manage multiple isolated Dagster projects by creating a workspace d
 
 :::note
 
-If you're just getting started, we recommend [creating a single project](/guides/build/projects/creating-dagster-projects) instead of a workspace with multiple projects.
+If you're just getting started, we recommend [creating a single project](/guides/build/projects/creating-projects) instead of a workspace with multiple projects.
 
 :::
 
