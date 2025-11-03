@@ -676,6 +676,45 @@ def test_default_venv_path_when_not_configured():
         assert context.get_project_venv_path() == expected_venv
 
 
+def test_venv_path_break_on_first_match():
+    """Test that the loop exits after finding the first matching project, even without venv configured.
+
+    This verifies that if a project is found without a venv config, we don't continue checking other specs that might incorrectly match.
+    """
+    with (
+        ProxyRunner.test() as runner,
+        isolated_example_workspace(runner, project_name="project-one"),
+    ):
+        project_path = Path.cwd() / "projects" / "project-one"
+
+        # Add a duplicate/malformed entry that would match if we didn't break properly
+        with modify_dg_toml_config_as_dict(Path("dg.toml")) as toml_dict:
+            # First entry has no venv (should stop here and use default)
+            # Add a second entry for the same project with a different venv
+            # This should never be reached due to the break
+            toml_dict["workspace"]["projects"].append(
+                {
+                    "path": "projects/project-one",  # Same path
+                    "venv": "/should/not/be/used",  # This should be ignored
+                }
+            )
+
+        # Create venv in project directory
+        with pushd(project_path):
+            subprocess.check_output(["uv", "venv"])
+            install_editable_dagster_packages_to_venv(
+                Path(".venv"), ["dagster", "dagster-pipes", "libraries/dagster-shared"]
+            )
+
+        context = DgContext.for_project_environment(project_path, {})
+
+        # Should use default .venv from first match, NOT the second entry's venv
+        expected_venv = project_path / ".venv"
+        assert context.get_project_venv_path() == expected_venv
+        # Explicitly verify we're NOT using the second entry's path
+        assert context.get_project_venv_path() != Path("/should/not/be/used")
+
+
 def test_venv_path_supports_uv_workspace_pattern():
     """Test the use case from the GitHub issue with shared venv for multiple projects."""
     with (

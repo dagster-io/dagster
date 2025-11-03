@@ -314,9 +314,9 @@ class DgContext:
                             return spec.venv
                         else:
                             return self.workspace_root_path / spec.venv
-                    break
+                    break  # Exit loop once we find the matching project
 
-        # default to .venv in project root
+        # Default to .venv in project root
         return self.root_path / ".venv"
 
     @property
