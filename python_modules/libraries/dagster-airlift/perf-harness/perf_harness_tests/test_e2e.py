@@ -1,6 +1,6 @@
 import os
+from collections.abc import Callable
 from datetime import timedelta
-from typing import Callable
 
 import pytest
 from dagster import AssetKey, DagsterInstance

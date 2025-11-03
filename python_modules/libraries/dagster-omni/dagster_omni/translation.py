@@ -1,4 +1,4 @@
-from typing import Annotated, Optional, Union
+from typing import Annotated, Optional, TypeAlias, Union
 
 import dateutil
 from dagster._core.definitions.assets.definition.asset_spec import AssetSpec
@@ -14,7 +14,7 @@ from dagster.components.resolved.core_models import AssetSpecKeyUpdateKwargs, As
 from dagster.components.utils import TranslatorResolvingInfo
 from dagster.components.utils.translation import TranslationFn, TranslationFnResolver
 from dagster_shared.record import record
-from typing_extensions import Self, TypeAlias
+from typing_extensions import Self
 
 from dagster_omni.objects import OmniDocument, OmniQuery, OmniWorkspaceData
 from dagster_omni.workspace import OmniWorkspace

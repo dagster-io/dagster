@@ -1,7 +1,13 @@
 from collections.abc import Iterator, Mapping
-from typing import TYPE_CHECKING, AbstractSet, Any, Callable, Optional, cast  # noqa: UP035
-
-from typing_extensions import TypeAlias
+from typing import (  # noqa: UP035
+    TYPE_CHECKING,
+    AbstractSet,
+    Any,
+    Callable,
+    Optional,
+    TypeAlias,
+    cast,
+)
 
 import dagster._check as check
 from dagster._annotations import PublicAttr, beta_param, deprecated, deprecated_param, public

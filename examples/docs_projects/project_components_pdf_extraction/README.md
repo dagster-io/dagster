@@ -15,7 +15,7 @@ A Dagster component for extracting and validating text from PDF documents using 
 
 ## Prerequisites
 
-- Python 3.9 or higher
+- Python 3.10 or higher
 - Tesseract OCR installed on your system
 - OpenAI API key for validation features
 - Poppler (for PDF to image conversion)

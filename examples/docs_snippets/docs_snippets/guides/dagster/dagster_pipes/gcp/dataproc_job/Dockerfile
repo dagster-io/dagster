@@ -7,8 +7,8 @@ WORKDIR /build
 ENV VIRTUAL_ENV=/build/.venv
 ENV PATH="$VIRTUAL_ENV/bin:$PATH"
 
-ARG PYTHON_TAG=3.9.16-slim
-RUN uv python install --python-preference only-managed 3.9.16 && uv python pin 3.9.16
+ARG PYTHON_TAG=3.12.12-slim
+RUN uv python install --python-preference only-managed 3.12.12 && uv python pin 3.12.12
 RUN uv venv .venv
 
 RUN --mount=type=cache,target=/root/.cache/uv \

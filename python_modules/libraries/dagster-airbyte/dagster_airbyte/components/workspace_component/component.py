@@ -1,8 +1,8 @@
 from collections import defaultdict
-from collections.abc import Iterable, Sequence
+from collections.abc import Callable, Iterable, Sequence
 from functools import cached_property
 from pathlib import Path
-from typing import Annotated, Callable, Optional, Union
+from typing import Annotated, Optional, Union
 
 import dagster as dg
 import pydantic

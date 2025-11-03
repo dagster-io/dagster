@@ -1,9 +1,9 @@
 import logging
 import re
 import time
-from collections.abc import Iterator
+from collections.abc import Callable, Iterator
 from contextlib import contextmanager
-from typing import Callable, Optional, TypeVar, Union, cast
+from typing import Optional, TypeAlias, TypeVar, Union, cast
 from urllib.parse import (
     quote_plus as urlquote,
     urlparse,
@@ -19,7 +19,6 @@ from dagster._core.storage.config import MySqlStorageConfig
 from dagster._core.storage.sql import get_alembic_config
 from mysql.connector.pooling import PooledMySQLConnection
 from sqlalchemy.engine import Connection
-from typing_extensions import TypeAlias
 
 T = TypeVar("T")
 

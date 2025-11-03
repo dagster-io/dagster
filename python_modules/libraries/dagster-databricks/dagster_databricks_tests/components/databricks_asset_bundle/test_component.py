@@ -1,6 +1,6 @@
 import os
-from collections.abc import Mapping
-from typing import Any, Callable, Optional, Union
+from collections.abc import Callable, Mapping
+from typing import Any, Optional, Union
 
 import pytest
 from dagster import AssetDep, AssetKey, AssetsDefinition, BackfillPolicy

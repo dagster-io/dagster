@@ -11,9 +11,7 @@ from collections.abc import Generator, Mapping
 from contextlib import AbstractContextManager, ExitStack
 from enum import Enum
 from threading import Event
-from typing import Any, Generic, Optional, TypeVar, Union
-
-from typing_extensions import TypeAlias
+from typing import Any, Generic, Optional, TypeAlias, TypeVar, Union
 
 from dagster import (
     DagsterInstance,

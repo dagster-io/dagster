@@ -1,5 +1,6 @@
 import os
-from typing import Callable, Optional, Union
+from collections.abc import Callable
+from typing import Optional, Union
 
 from buildkite_shared.git import ChangedFiles
 from buildkite_shared.python_version import AvailablePythonVersion

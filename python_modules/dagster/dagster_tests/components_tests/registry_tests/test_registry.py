@@ -4,10 +4,10 @@ import re
 import subprocess
 import tempfile
 import textwrap
-from collections.abc import Iterator, Sequence
+from collections.abc import Callable, Iterator, Sequence
 from contextlib import contextmanager
 from pathlib import Path
-from typing import Callable, Optional
+from typing import Optional
 
 import dagster as dg
 import pytest

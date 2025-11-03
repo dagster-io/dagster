@@ -23,13 +23,12 @@ setup(
     license="Apache-2.0",
     packages=find_packages(exclude=["dagstermill_tests*"]),
     classifiers=[
-        "Programming Language :: Python :: 3.9",
         "Programming Language :: Python :: 3.10",
         "Programming Language :: Python :: 3.11",
         "License :: OSI Approved :: Apache Software License",
         "Operating System :: OS Independent",
     ],
-    python_requires=">=3.9,<3.14",
+    python_requires=">=3.10,<3.14",
     install_requires=[
         f"dagster{pin}",
         # ipykernel 5.4.0 and 5.4.1 broke papermill

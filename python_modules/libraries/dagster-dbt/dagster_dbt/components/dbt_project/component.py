@@ -6,7 +6,7 @@ from contextvars import ContextVar
 from dataclasses import dataclass, field, replace
 from functools import cached_property
 from pathlib import Path
-from typing import Annotated, Any, Literal, Optional, Union
+from typing import Annotated, Any, Literal, Optional, TypeAlias, Union
 
 import dagster as dg
 from dagster._annotations import public
@@ -25,7 +25,6 @@ from dagster.components.utils.translation import (
 )
 from dagster_shared import check
 from dagster_shared.serdes.objects.models.defs_state_info import DefsStateManagementType
-from typing_extensions import TypeAlias
 
 from dagster_dbt.asset_decorator import dbt_assets
 from dagster_dbt.asset_utils import DBT_DEFAULT_EXCLUDE, DBT_DEFAULT_SELECT, get_node

@@ -4,10 +4,10 @@ import logging
 import sys
 import time
 from abc import abstractmethod
-from collections.abc import Iterator, Mapping, Sequence
+from collections.abc import Callable, Iterator, Mapping, Sequence
 from contextlib import contextmanager
 from datetime import datetime, timedelta
-from typing import Any, Callable, ClassVar, Optional, Union, cast
+from typing import Any, ClassVar, Optional, Union, cast
 from urllib.parse import parse_qsl, urlparse
 
 import requests

@@ -2,10 +2,10 @@ import sys
 import threading
 from abc import abstractmethod
 from collections import defaultdict
-from collections.abc import Mapping, Sequence
+from collections.abc import Callable, Mapping, Sequence
 from contextlib import AbstractContextManager
 from functools import cached_property, partial
-from typing import TYPE_CHECKING, Any, Callable, Optional, Union, cast
+from typing import TYPE_CHECKING, Any, Optional, Union, cast
 
 from dagster_shared.libraries import DagsterLibraryRegistry
 from dagster_shared.serdes.objects.models.defs_state_info import DefsStateInfo

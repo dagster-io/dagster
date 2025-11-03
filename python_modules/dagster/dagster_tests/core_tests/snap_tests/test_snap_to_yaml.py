@@ -1,6 +1,7 @@
 import os
 import sys
-from typing import TYPE_CHECKING, Any, Callable, Optional
+from collections.abc import Callable
+from typing import TYPE_CHECKING, Any, Optional
 
 import dagster as dg
 import pytest

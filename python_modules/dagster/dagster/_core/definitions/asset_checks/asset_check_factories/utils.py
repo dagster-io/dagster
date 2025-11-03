@@ -1,6 +1,6 @@
 import datetime
-from collections.abc import Iterator, Mapping, Sequence
-from typing import Callable, Optional, Union
+from collections.abc import Callable, Iterator, Mapping, Sequence
+from typing import Optional, Union
 
 from dagster import _check as check
 from dagster._core.definitions.asset_checks.asset_check_result import AssetCheckResult

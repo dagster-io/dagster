@@ -1,8 +1,8 @@
 import warnings
-from collections.abc import Iterator
+from collections.abc import Callable, Iterator
 from contextlib import contextmanager
 from contextvars import ContextVar
-from typing import Callable, Optional, TypeVar
+from typing import Optional, TypeVar
 
 from dagster_shared import check
 

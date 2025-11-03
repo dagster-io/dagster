@@ -1,8 +1,8 @@
 from abc import ABC, abstractmethod
-from collections.abc import Mapping, Sequence
+from collections.abc import Callable, Mapping, Sequence
 from datetime import datetime
 from os import PathLike
-from typing import Any, Callable, Generic, Optional, Union
+from typing import Any, Generic, Optional, Union
 
 import dagster_shared.seven as seven
 from dagster_shared.record import IHaveNew, LegacyNamedTupleMixin, record, record_custom

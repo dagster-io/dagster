@@ -1,4 +1,5 @@
-from typing import Any, Callable, Optional
+from collections.abc import Callable
+from typing import Any, Optional
 
 from dagster import AssetsDefinition, multi_asset
 from dagster._annotations import beta, beta_param

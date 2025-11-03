@@ -22,7 +22,7 @@ In this tutorial, you'll build a full ETL pipeline with Dagster that:
 
 To follow the steps in this guide, you'll need:
 
-- Python 3.9+ and [`uv`](https://docs.astral.sh/uv) installed. For more information, see the [Installation guide](/getting-started/installation).
+- Python 3.10+ and [`uv`](https://docs.astral.sh/uv) installed. For more information, see the [Installation guide](/getting-started/installation).
 - Familiarity with Python and SQL.
 - A basic understanding of data pipelines and the extract, transform, and load (ETL) process.
 

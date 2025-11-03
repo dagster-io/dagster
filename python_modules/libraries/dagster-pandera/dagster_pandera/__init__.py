@@ -38,6 +38,8 @@ if TYPE_CHECKING:
     except ImportError:
         pass
 
+from typing import TypeAlias
+
 import dagster._check as check
 import pandera.errors as pa_errors
 from dagster import (
@@ -52,7 +54,6 @@ from dagster import (
 from dagster._annotations import beta
 from dagster._core.definitions.metadata import MetadataValue
 from dagster_shared.libraries import DagsterLibraryRegistry
-from typing_extensions import TypeAlias
 
 from dagster_pandera.version import __version__
 

@@ -1,6 +1,7 @@
 import time
+from collections.abc import Callable
 from datetime import datetime
-from typing import TYPE_CHECKING, Callable, Optional, cast
+from typing import TYPE_CHECKING, Optional, cast
 
 import dagster as dg
 import pytest

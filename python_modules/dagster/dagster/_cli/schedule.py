@@ -1,8 +1,8 @@
 import glob
 import os
-from collections.abc import Iterator
+from collections.abc import Callable, Iterator
 from contextlib import contextmanager
-from typing import Callable, Optional
+from typing import Optional
 
 import click
 from dagster_shared.cli import workspace_options

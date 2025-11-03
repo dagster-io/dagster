@@ -1,10 +1,9 @@
 import importlib
-from collections.abc import Iterable
+from collections.abc import Callable, Iterable
 from functools import cached_property
-from typing import Annotated, Any, Callable, Literal, Optional, Union
+from typing import Annotated, Any, Literal, Optional, TypeAlias, Union
 
 from dagster_shared import check
-from typing_extensions import TypeAlias
 
 from dagster._config.field import Field
 from dagster._config.pythonic_config.config import Config

@@ -11,14 +11,14 @@ from asyncio import (
     iscoroutinefunction,
 )
 from collections import namedtuple
-from collections.abc import Coroutine, Iterable, Iterator, MutableMapping
+from collections.abc import Callable, Coroutine, Iterable, Iterator, MutableMapping
 from functools import partial
-from typing import Any, Callable, Generic, Optional, TypeVar, Union
+from typing import Any, Generic, Optional, TypeVar, Union
 
 if sys.version_info >= (3, 10):
     from typing import TypeGuard
 else:
-    from typing_extensions import TypeGuard
+    from typing import TypeGuard
 
 __version__ = "0.4.0"
 

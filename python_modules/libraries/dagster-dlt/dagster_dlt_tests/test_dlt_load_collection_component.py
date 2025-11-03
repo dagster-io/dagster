@@ -4,10 +4,10 @@ import copy
 import inspect
 import subprocess
 import textwrap
-from collections.abc import Iterator, Mapping
+from collections.abc import Callable, Iterator, Mapping
 from contextlib import contextmanager
 from pathlib import Path
-from typing import TYPE_CHECKING, Any, Callable, Optional, cast
+from typing import TYPE_CHECKING, Any, Optional, cast
 
 import pytest
 from dagster import AssetKey

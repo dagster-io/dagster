@@ -10,12 +10,12 @@ import threading
 import time
 import uuid
 import warnings
-from collections.abc import Iterable, Iterator, Mapping, Sequence
+from collections.abc import Callable, Iterable, Iterator, Mapping, Sequence
 from contextlib import ExitStack
 from functools import update_wrapper
 from threading import Event as ThreadingEventType
 from time import sleep
-from typing import TYPE_CHECKING, Any, Callable, Optional, TypedDict, cast
+from typing import TYPE_CHECKING, Any, Optional, TypedDict, cast
 
 import dagster_shared.seven as seven
 import grpc

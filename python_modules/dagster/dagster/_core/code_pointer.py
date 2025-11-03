@@ -3,10 +3,10 @@ import inspect
 import os
 import sys
 from abc import ABC, abstractmethod
-from collections.abc import Sequence
+from collections.abc import Callable, Sequence
 from pathlib import Path
 from types import ModuleType
-from typing import Callable, Optional, Union, cast
+from typing import Optional, Union, cast
 
 from dagster_shared.record import IHaveNew, LegacyNamedTupleMixin, record, record_custom
 from dagster_shared.seven import get_import_error_message, import_module_from_path

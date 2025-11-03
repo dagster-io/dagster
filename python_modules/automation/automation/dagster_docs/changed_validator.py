@@ -2,8 +2,9 @@
 
 import importlib.util
 import inspect
+from collections.abc import Callable
 from pathlib import Path
-from typing import Callable, Union
+from typing import Union
 
 import click
 from dagster._record import IHaveNew, record, record_custom

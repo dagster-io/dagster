@@ -1,9 +1,7 @@
 import inspect
-from collections.abc import AsyncIterator, Awaitable, Iterator, Mapping, Sequence
+from collections.abc import AsyncIterator, Awaitable, Callable, Iterator, Mapping, Sequence
 from functools import wraps
-from typing import TYPE_CHECKING, Any, Callable, Optional, Union, cast
-
-from typing_extensions import get_args
+from typing import TYPE_CHECKING, Any, Optional, Union, cast, get_args
 
 from dagster._config.pythonic_config import Config
 from dagster._core.definitions import (

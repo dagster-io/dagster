@@ -13,10 +13,10 @@ from collections.abc import Iterator, Mapping, Sequence
 from contextlib import contextmanager
 from functools import reduce
 from itertools import groupby
-from typing import Final, Optional, cast
+from typing import Final, Literal, Optional, cast
 
 import tomli
-from typing_extensions import Literal, NotRequired, TypedDict
+from typing_extensions import NotRequired, TypedDict
 
 parser = argparse.ArgumentParser(
     prog="run-pyright",

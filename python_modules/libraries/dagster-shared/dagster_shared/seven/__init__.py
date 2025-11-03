@@ -11,9 +11,7 @@ from collections.abc import Sequence
 from importlib.machinery import ModuleSpec
 from pathlib import Path
 from types import ModuleType
-from typing import Any, Callable, List, Optional, Type, Union  # noqa: F401, UP035
-
-from typing_extensions import TypeGuard
+from typing import Any, Callable, List, Optional, Type, TypeGuard, Union  # noqa: F401, UP035
 
 import dagster_shared.seven.json as json  # noqa: F401
 from dagster_shared.seven.json import (

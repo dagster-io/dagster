@@ -1,11 +1,11 @@
 import inspect
 import os
 import textwrap
-from collections.abc import Iterator
+from collections.abc import Callable, Iterator
 from contextlib import contextmanager
 from pathlib import Path
 from tempfile import NamedTemporaryFile
-from typing import Any, Callable
+from typing import Any
 
 from dagster._core.definitions.asset_key import AssetKey
 from dagster._core.instance_for_test import instance_for_test
