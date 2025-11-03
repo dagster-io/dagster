@@ -1,4 +1,4 @@
-import {Body, Box} from '@dagster-io/ui-components';
+import {Body, Box, Popover, Tag} from '@dagster-io/ui-components';
 import React, {useMemo} from 'react';
 
 import {insitigatorsByType} from '../AssetNodeInstigatorTag';
@@ -69,7 +69,35 @@ export const AutomationDetailsSection = ({
       label: 'Freshness policy',
       children: assetNode ? (
         assetNode?.freshnessPolicy && (
-          <Body>{freshnessPolicyDescription(assetNode.freshnessPolicy)}</Body>
+          <Box flex={{direction: 'column', gap: 12}}>
+            <Popover
+              placement="top"
+              interactionKind="hover"
+              content={
+                <Body>
+                  <Box padding={{vertical: 12, horizontal: 16}} style={{maxWidth: '300px'}}>
+                    This is a legacy freshness policy, and will not appear in observability
+                    features.{' '}
+                    <a
+                      href="https://docs.dagster.io/guides/observe/asset-freshness-policies"
+                      target="_blank"
+                      rel="noreferrer"
+                    >
+                      Learn how to upgrade
+                    </a>{' '}
+                    to use the new freshness policy API.
+                  </Box>
+                </Body>
+              }
+            >
+              <Tag intent="warning" icon="freshness">
+                Legacy freshness policy
+              </Tag>
+            </Popover>
+            <div>
+              <Body>{freshnessPolicyDescription(assetNode.freshnessPolicy)}</Body>
+            </div>
+          </Box>
         )
       ) : (
         <SectionSkeleton />
