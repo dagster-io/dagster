@@ -109,7 +109,7 @@ def collect_requirements(code_directory, python_interpreter: str) -> tuple[list[
 
     if not any(os.path.exists(os.path.join(code_directory, file)) for file in required_files):
         raise Exception(
-            f"Could not find a setup.py, requirements.txt, or pyproject.toml in build directory{os.path.abspath(code_directory)}."
+            f"Could not find a setup.py, requirements.txt, or pyproject.toml in build directory {os.path.abspath(code_directory)}."
         )
 
     # traverse all local packages and return the list of local packages and other requirements
