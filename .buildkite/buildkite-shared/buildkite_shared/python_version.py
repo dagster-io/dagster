@@ -14,8 +14,8 @@ class AvailablePythonVersion(Enum):
 
     @classmethod
     def get_all(cls) -> list["AvailablePythonVersion"]:
-        # omitting 3.10 and 3.11 for now to stay below buildkit limits
-        return [cls["V3_9"], cls["V3_12"], cls["V3_13"]]
+        # omitting 3.9 and 3.11 for now to stay below buildkite limits
+        return [cls["V3_10"], cls["V3_12"], cls["V3_13"]]
 
     @classmethod
     def get_default(cls) -> "AvailablePythonVersion":
