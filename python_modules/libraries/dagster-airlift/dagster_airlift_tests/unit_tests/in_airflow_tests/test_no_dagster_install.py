@@ -85,6 +85,8 @@ def test_in_airflow_package_implicit_requirements(temp_venv: Path):
             "apache-airflow",
             # https://github.com/apache/airflow/discussions/57769#discussioncomment-14861217
             "fastapi<0.118",
+            # https://github.com/apache/airflow/issues/57419
+            "structlog<25.5.0",
         ],
         check=True,
         capture_output=True,
