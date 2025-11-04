@@ -78,7 +78,14 @@ def test_in_airflow_package_implicit_requirements(temp_venv: Path):
 
     # Install Airflow
     airflow_install_result = subprocess.run(
-        [*uv_entrypoint, "pip", "install", "apache-airflow"],
+        [
+            *uv_entrypoint,
+            "pip",
+            "install",
+            "apache-airflow",
+            # https://github.com/apache/airflow/discussions/57769#discussioncomment-14861217
+            "fastapi<0.118",
+        ],
         check=True,
         capture_output=True,
         text=True,
