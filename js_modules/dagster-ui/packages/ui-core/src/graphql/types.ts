@@ -2400,6 +2400,7 @@ export type Job = IPipelineSnapshot &
     >;
     modes: Array<Mode>;
     name: Scalars['String']['output'];
+    nodeNames: Array<Scalars['String']['output']>;
     owners: Array<DefinitionOwner>;
     parentSnapshotId: Maybe<Scalars['String']['output']>;
     partition: Maybe<PartitionTagsAndConfig>;
@@ -3765,6 +3766,7 @@ export type Pipeline = IPipelineSnapshot &
     >;
     modes: Array<Mode>;
     name: Scalars['String']['output'];
+    nodeNames: Array<Scalars['String']['output']>;
     owners: Array<DefinitionOwner>;
     parentSnapshotId: Maybe<Scalars['String']['output']>;
     partition: Maybe<PartitionTagsAndConfig>;
@@ -10232,6 +10234,7 @@ export const buildJob = (
       overrides && overrides.hasOwnProperty('metadataEntries') ? overrides.metadataEntries! : [],
     modes: overrides && overrides.hasOwnProperty('modes') ? overrides.modes! : [],
     name: overrides && overrides.hasOwnProperty('name') ? overrides.name! : 'rerum',
+    nodeNames: overrides && overrides.hasOwnProperty('nodeNames') ? overrides.nodeNames! : [],
     owners: overrides && overrides.hasOwnProperty('owners') ? overrides.owners! : [],
     parentSnapshotId:
       overrides && overrides.hasOwnProperty('parentSnapshotId')
@@ -12558,6 +12561,7 @@ export const buildPipeline = (
       overrides && overrides.hasOwnProperty('metadataEntries') ? overrides.metadataEntries! : [],
     modes: overrides && overrides.hasOwnProperty('modes') ? overrides.modes! : [],
     name: overrides && overrides.hasOwnProperty('name') ? overrides.name! : 'veritatis',
+    nodeNames: overrides && overrides.hasOwnProperty('nodeNames') ? overrides.nodeNames! : [],
     owners: overrides && overrides.hasOwnProperty('owners') ? overrides.owners! : [],
     parentSnapshotId:
       overrides && overrides.hasOwnProperty('parentSnapshotId')

@@ -1200,6 +1200,7 @@ class GraphenePipeline(GrapheneIPipelineSnapshotMixin, graphene.ObjectType):
     )
     hasLaunchExecutionPermission = graphene.NonNull(graphene.Boolean)
     hasLaunchReexecutionPermission = graphene.NonNull(graphene.Boolean)
+    nodeNames = non_null_list(graphene.String)
 
     class Meta:  # pyright: ignore[reportIncompatibleVariableOverride]
         interfaces = (GrapheneSolidContainer, GrapheneIPipelineSnapshot)
@@ -1219,6 +1220,9 @@ class GraphenePipeline(GrapheneIPipelineSnapshotMixin, graphene.ObjectType):
 
     def get_represented_job(self) -> RepresentedJob:
         return self._remote_job
+
+    def resolve_nodeNames(self, _graphene_info: ResolveInfo):
+        return self._remote_job.node_names
 
     def resolve_presets(self, _graphene_info: ResolveInfo):
         return [

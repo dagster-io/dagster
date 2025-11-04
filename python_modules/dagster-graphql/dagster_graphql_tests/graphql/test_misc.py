@@ -163,6 +163,7 @@ def test_pipeline_or_error_by_name(graphql_context: WorkspaceRequestContext):
         pipelineOrError(params: $selector) {
             ... on Pipeline {
                 name
+                nodeNames
             }
         }
     }""",
@@ -172,6 +173,7 @@ def test_pipeline_or_error_by_name(graphql_context: WorkspaceRequestContext):
     assert not result.errors
     assert result.data
     assert result.data["pipelineOrError"]["name"] == "csv_hello_world_two"
+    assert result.data["pipelineOrError"]["nodeNames"] == ["sum_op"]
 
 
 def test_pipeline_or_error_by_name_not_found(graphql_context: WorkspaceRequestContext):
