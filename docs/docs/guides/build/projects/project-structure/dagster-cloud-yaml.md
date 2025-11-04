@@ -1,5 +1,5 @@
 ---
-description: The dagster_cloud.yaml file defines multiple Dagster projects for Dagster+ deployments.
+description: The dagster_cloud.yaml file defines the location of Dagster projects for Dagster+ Hybrid deployments, along with environment variables and secrets.
 sidebar_position: 1000
 tags: [dagster-plus-feature]
 title: dagster_cloud.yaml reference (Dagster+)
@@ -9,7 +9,7 @@ import DagsterPlus from '@site/docs/partials/\_DagsterPlus.md';
 
 <DagsterPlus />
 
-`dagster_cloud.yaml` is used to define the location of Dagster projects for Dagster+ so they can be discovered by CI/CD processes. For [Hybrid deployments](/deployment/dagster-plus/hybrid), `dagster_cloud.yaml` can also be used to manage environment variables and secrets.
+`dagster_cloud.yaml` is used to define the location of Dagster projects for Dagster+ Hybrid so they can be discovered by CI/CD processes. It can also be used to manage environment variables and secrets.
 
 ## File location
 
