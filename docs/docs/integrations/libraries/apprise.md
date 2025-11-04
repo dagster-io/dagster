@@ -11,6 +11,11 @@ sidebar_custom_props:
 partnerlink: https://github.com/caronc/apprise
 ---
 
+import CommunityIntegration from '@site/docs/partials/\_CommunityIntegration.md';
+
+<CommunityIntegration />
+
+
 <p>{frontMatter.description}</p>
 
 ## Installation

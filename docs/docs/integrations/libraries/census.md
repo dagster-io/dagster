@@ -11,6 +11,10 @@ sidebar_custom_props:
 partnerlink: https://www.getcensus.com/
 ---
 
+import CommunityIntegration from '@site/docs/partials/\_CommunityIntegration.md';
+
+<CommunityIntegration />
+
 <p>{frontMatter.description}</p>
 
 ## Installation

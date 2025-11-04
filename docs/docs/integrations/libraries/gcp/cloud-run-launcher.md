@@ -11,6 +11,10 @@ sidebar_custom_props:
 partnerlink:
 ---
 
+import CommunityIntegration from '@site/docs/partials/\_CommunityIntegration.md';
+
+<CommunityIntegration />
+
 <p>{frontMatter.description}</p>
 
 It currently includes the following integrations:
