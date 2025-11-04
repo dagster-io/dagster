@@ -6,7 +6,7 @@ sidebar_position: 200
 
 ## Local deployment
 
-When run locally, Dagster can load a project directly without additional configuration:
+When run locally, Dagster can load a [project](/guides/build/projects/creating-projects) without additional configuration:
 
 ```shell
 dg dev
@@ -14,26 +14,28 @@ dg dev
 
 This command loads the definitions in the project in the current Python environment.
 
-Fore more information about local development, including how to configure your local instance, see [Running Dagster locally](/deployment/oss/deployment-options/running-dagster-locally).
+For more information about local development, including how to configure your local instance, see [Running Dagster locally](/deployment/oss/deployment-options/running-dagster-locally).
 
-## Open source deployment
+:::tip Creating a workspace to manage multiple projects
+
+To deploy more than one Dagster project, use the `dagster-create workspace` command to [create a workspace](/guides/build/projects/workspaces/creating-workspaces) to contain the projects.
+
+:::
+
+## Production deployment
+
+### Open source production deployment
 
 Follow the steps in the [OSS deployment docs](/deployment/oss/deployment-options) to set up a production OSS deployment. You will need to add your project code to the Docker container used in the deployment.
 
-To deploy more than one Dagster project, create a [workspace](/guides/build/projects/workspaces/creating-workspaces) to contain the projects and add a `dg.toml` file to the root of the workspace. This file tells Dagster where to find your code and how to load it.
-
-## Dagster+ deployment
-
-To deploy to Dagster+:
-
-[Get started with Dagster+ Serverless or Hybrid](/deployment/dagster-plus/getting-started), if you haven't already.
+### Dagster+ production deployment
 
 <Tabs>
 <TabItem value="serverless" label="Serverless">
 
-Get started with [Dagster+ Serverless](/deployment/dagster-plus/getting-started), if you haven't already. You will be guided through the process of creating a project that contains a GitHub workflow file, which is used to configure continuous deployment of your project from a GitHub repo.
+Get started with [Dagster+ Serverless](/deployment/dagster-plus/getting-started), if you haven't already. You will be guided through the process of creating a project that contains a CI/CD workflow file, which is used to configure continuous deployment of your project.
 
-If you are deploying another project to an existing Dagster+ Serverless deployment, you will need to create the CI/CD configuration file yourself. For more information, see the [Dagster+ Serverless CI/CD guide](/deployment/dagster-plus/deploying-code/ci-cd/ci-cd-in-serverless).
+If you are deploying another project to an existing Dagster+ Serverless deployment, you will need to create the CI/CD workflow file yourself. For more information, see the [Dagster+ Serverless CI/CD guide](/deployment/dagster-plus/deploying-code/ci-cd/ci-cd-in-serverless).
 
 TK - workspace for multiple projects?
 
@@ -46,6 +48,7 @@ TK - workspace for multiple projects?
    - Perform a one-time deployment with the [`dagster-cloud` CLI](/api/clis/dagster-cloud-cli).
    - [Configure CI/CD](/deployment/dagster-plus/deploying-code/ci-cd/ci-cd-in-hybrid) for continuous deployment.
 
+TK - what about dagster_cloud.yaml?
 TK - workspace for multiple projects?
 
 </TabItem>
