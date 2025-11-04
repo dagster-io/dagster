@@ -36,6 +36,8 @@ AIRFLOW_REQUIREMENTS = [
     "flask-session<0.6.0",
     # https://github.com/apache/airflow/issues/35234
     "connexion<3.0.0",
+    # https://github.com/apache/airflow/discussions/57769#discussioncomment-14861217
+    "fastapi<0.118",
 ]
 
 CLI_REQUIREMENTS = ["click", "structlog"]
