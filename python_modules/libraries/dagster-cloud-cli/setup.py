@@ -61,6 +61,7 @@ setup(
             "pytest-mock==3.14.0",
             "buildkite-test-collector",
             "flaky",
+            "pex>=2.1.132,<2.60.0",
         ],
     },
 )
