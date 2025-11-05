@@ -19,7 +19,7 @@ class CensusComponentScaffolder(Scaffolder[CensusScaffolderParams]):
         scaffold_component(
             request,
             {
-                "census_resource": {
+                "workspace": {
                     "api_key": request.params.api_key,
                 }
             },
