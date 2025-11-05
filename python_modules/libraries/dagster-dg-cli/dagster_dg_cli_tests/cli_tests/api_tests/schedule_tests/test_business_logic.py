@@ -195,7 +195,7 @@ class TestFormatSchedules:
                 pipeline_name="daily_pipeline",
                 description="Runs daily at midnight",
                 execution_timezone="UTC",
-                repository_origin="main_location@main_repo",
+                code_location_origin="main_location@main_repo",
                 next_tick_timestamp=1705311000.0,  # 2024-01-15T10:30:00Z
             ),
             DgApiSchedule(
@@ -206,7 +206,7 @@ class TestFormatSchedules:
                 pipeline_name="hourly_pipeline",
                 description="Runs every hour",
                 execution_timezone="America/New_York",
-                repository_origin="main_location@main_repo",
+                code_location_origin="main_location@main_repo",
                 next_tick_timestamp=None,
             ),
             DgApiSchedule(
@@ -217,7 +217,7 @@ class TestFormatSchedules:
                 pipeline_name="quick_job",
                 description=None,
                 execution_timezone=None,
-                repository_origin=None,
+                code_location_origin=None,
                 next_tick_timestamp=None,
             ),
         ]
@@ -237,7 +237,7 @@ class TestFormatSchedules:
             pipeline_name="critical_pipeline",
             description="Critical production schedule",
             execution_timezone="UTC",
-            repository_origin="prod_location@prod_repo",
+            code_location_origin="prod_location@prod_repo",
             next_tick_timestamp=1705311900.0,  # 2024-01-15T10:45:00Z
         )
 
@@ -308,7 +308,7 @@ class TestFormatSchedules:
             pipeline_name="minimal_pipeline",
             description=None,
             execution_timezone=None,
-            repository_origin=None,
+            code_location_origin=None,
             next_tick_timestamp=None,
         )
         with fixed_timezone("UTC"):
@@ -326,7 +326,7 @@ class TestFormatSchedules:
             pipeline_name="minimal_pipeline",
             description=None,
             execution_timezone=None,
-            repository_origin=None,
+            code_location_origin=None,
             next_tick_timestamp=None,
         )
         result = format_schedule(schedule, as_json=True)
@@ -352,7 +352,7 @@ class TestScheduleDataProcessing:
             pipeline_name="comprehensive_pipeline",
             description="Comprehensive test schedule with all fields",
             execution_timezone="America/Los_Angeles",
-            repository_origin="test_location@test_repo",
+            code_location_origin="test_location@test_repo",
             next_tick_timestamp=1705311000.0,
         )
 
@@ -378,7 +378,7 @@ class TestScheduleDataProcessing:
             pipeline_name="sparse_pipeline",
             description=None,
             execution_timezone=None,
-            repository_origin=None,
+            code_location_origin=None,
             next_tick_timestamp=None,
         )
 
@@ -389,7 +389,7 @@ class TestScheduleDataProcessing:
         assert schedule.pipeline_name == "sparse_pipeline"
         assert schedule.description is None
         assert schedule.execution_timezone is None
-        assert schedule.repository_origin is None
+        assert schedule.code_location_origin is None
         assert schedule.next_tick_timestamp is None
 
     def test_schedule_list_creation(self):

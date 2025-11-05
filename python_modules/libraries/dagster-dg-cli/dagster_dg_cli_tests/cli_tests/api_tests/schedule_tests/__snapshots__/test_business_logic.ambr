@@ -113,7 +113,7 @@
   DgApiScheduleList(items=[], total=0)
 # ---
 # name: TestProcessScheduleResponses.test_process_repositories_response_success[0]
-  DgApiScheduleList(items=[DgApiSchedule(id='schedule1-id', name='daily_job', status=<DgApiScheduleStatus.RUNNING: 'RUNNING'>, cron_schedule='0 0 * * *', pipeline_name='daily_pipeline', description='Runs daily at midnight', execution_timezone='UTC', repository_origin='main_location@main_repo', next_tick_timestamp=None), DgApiSchedule(id='schedule2-id', name='weekly_job', status=<DgApiScheduleStatus.STOPPED: 'STOPPED'>, cron_schedule='0 0 * * 0', pipeline_name='weekly_pipeline', description='Runs weekly on Sunday', execution_timezone=None, repository_origin='main_location@main_repo', next_tick_timestamp=None), DgApiSchedule(id='schedule3-id', name='hourly_job', status=<DgApiScheduleStatus.RUNNING: 'RUNNING'>, cron_schedule='0 * * * *', pipeline_name='hourly_pipeline', description=None, execution_timezone='America/Chicago', repository_origin='secondary_location@secondary_repo', next_tick_timestamp=None)], total=3)
+  DgApiScheduleList(items=[DgApiSchedule(id='schedule1-id', name='daily_job', status=<DgApiScheduleStatus.RUNNING: 'RUNNING'>, cron_schedule='0 0 * * *', pipeline_name='daily_pipeline', description='Runs daily at midnight', execution_timezone='UTC', code_location_origin='main_location@main_repo', next_tick_timestamp=None), DgApiSchedule(id='schedule2-id', name='weekly_job', status=<DgApiScheduleStatus.STOPPED: 'STOPPED'>, cron_schedule='0 0 * * 0', pipeline_name='weekly_pipeline', description='Runs weekly on Sunday', execution_timezone=None, code_location_origin='main_location@main_repo', next_tick_timestamp=None), DgApiSchedule(id='schedule3-id', name='hourly_job', status=<DgApiScheduleStatus.RUNNING: 'RUNNING'>, cron_schedule='0 * * * *', pipeline_name='hourly_pipeline', description=None, execution_timezone='America/Chicago', code_location_origin='secondary_location@secondary_repo', next_tick_timestamp=None)], total=3)
 # ---
 # name: TestProcessScheduleResponses.test_process_schedule_response_not_found_error[0]
   dict({
@@ -121,7 +121,7 @@
   })
 # ---
 # name: TestProcessScheduleResponses.test_process_schedule_response_success[0]
-  DgApiSchedule(id='single-schedule-id', name='critical_job', status=<DgApiScheduleStatus.RUNNING: 'RUNNING'>, cron_schedule='0 0 * * *', pipeline_name='critical_pipeline', description='Critical production schedule', execution_timezone='UTC', repository_origin=None, next_tick_timestamp=None)
+  DgApiSchedule(id='single-schedule-id', name='critical_job', status=<DgApiScheduleStatus.RUNNING: 'RUNNING'>, cron_schedule='0 0 * * *', pipeline_name='critical_pipeline', description='Critical production schedule', execution_timezone='UTC', code_location_origin=None, next_tick_timestamp=None)
 # ---
 # name: TestProcessScheduleResponses.test_process_schedules_response_empty[0]
   DgApiScheduleList(items=[], total=0)
@@ -137,10 +137,11 @@
   })
 # ---
 # name: TestProcessScheduleResponses.test_process_schedules_response_success[0]
-  DgApiScheduleList(items=[DgApiSchedule(id='schedule1-id', name='daily_job', status=<DgApiScheduleStatus.RUNNING: 'RUNNING'>, cron_schedule='0 0 * * *', pipeline_name='daily_pipeline', description='Runs daily at midnight', execution_timezone='UTC', repository_origin=None, next_tick_timestamp=None), DgApiSchedule(id='schedule2-id', name='hourly_job', status=<DgApiScheduleStatus.STOPPED: 'STOPPED'>, cron_schedule='0 * * * *', pipeline_name='hourly_pipeline', description='Runs every hour', execution_timezone='America/New_York', repository_origin=None, next_tick_timestamp=None)], total=2)
+  DgApiScheduleList(items=[DgApiSchedule(id='schedule1-id', name='daily_job', status=<DgApiScheduleStatus.RUNNING: 'RUNNING'>, cron_schedule='0 0 * * *', pipeline_name='daily_pipeline', description='Runs daily at midnight', execution_timezone='UTC', code_location_origin=None, next_tick_timestamp=None), DgApiSchedule(id='schedule2-id', name='hourly_job', status=<DgApiScheduleStatus.STOPPED: 'STOPPED'>, cron_schedule='0 * * * *', pipeline_name='hourly_pipeline', description='Runs every hour', execution_timezone='America/New_York', code_location_origin=None, next_tick_timestamp=None)], total=2)
 # ---
 # name: TestScheduleDataProcessing.test_schedule_creation_with_all_fields[0]
   dict({
+    'code_location_origin': 'test_location@test_repo',
     'cron_schedule': '0 0 * * *',
     'description': 'Comprehensive test schedule with all fields',
     'execution_timezone': 'America/Los_Angeles',
@@ -148,13 +149,13 @@
     'name': 'comprehensive_schedule',
     'next_tick_timestamp': 1705311000.0,
     'pipeline_name': 'comprehensive_pipeline',
-    'repository_origin': 'test_location@test_repo',
     'status': 'RUNNING',
   })
 # ---
 # name: TestScheduleDataProcessing.test_schedule_cron_patterns[0]
   list([
     dict({
+      'code_location_origin': None,
       'cron_schedule': '0 0 * * *',
       'description': None,
       'execution_timezone': None,
@@ -162,10 +163,10 @@
       'name': 'daily_schedule',
       'next_tick_timestamp': None,
       'pipeline_name': 'daily_pipeline',
-      'repository_origin': None,
       'status': 'RUNNING',
     }),
     dict({
+      'code_location_origin': None,
       'cron_schedule': '0 * * * *',
       'description': None,
       'execution_timezone': None,
@@ -173,10 +174,10 @@
       'name': 'hourly_schedule',
       'next_tick_timestamp': None,
       'pipeline_name': 'hourly_pipeline',
-      'repository_origin': None,
       'status': 'RUNNING',
     }),
     dict({
+      'code_location_origin': None,
       'cron_schedule': '*/15 * * * *',
       'description': None,
       'execution_timezone': None,
@@ -184,10 +185,10 @@
       'name': 'frequent_schedule',
       'next_tick_timestamp': None,
       'pipeline_name': 'frequent_pipeline',
-      'repository_origin': None,
       'status': 'RUNNING',
     }),
     dict({
+      'code_location_origin': None,
       'cron_schedule': '0 9 * * 1',
       'description': None,
       'execution_timezone': None,
@@ -195,10 +196,10 @@
       'name': 'weekly_schedule',
       'next_tick_timestamp': None,
       'pipeline_name': 'weekly_pipeline',
-      'repository_origin': None,
       'status': 'RUNNING',
     }),
     dict({
+      'code_location_origin': None,
       'cron_schedule': '0 0 1 * *',
       'description': None,
       'execution_timezone': None,
@@ -206,7 +207,6 @@
       'name': 'monthly_schedule',
       'next_tick_timestamp': None,
       'pipeline_name': 'monthly_pipeline',
-      'repository_origin': None,
       'status': 'RUNNING',
     }),
   ])
@@ -214,6 +214,7 @@
 # name: TestScheduleDataProcessing.test_schedule_timestamp_handling[0]
   list([
     dict({
+      'code_location_origin': None,
       'cron_schedule': '0 0 * * *',
       'description': None,
       'execution_timezone': None,
@@ -221,10 +222,10 @@
       'name': 'normal_timestamp',
       'next_tick_timestamp': 1705311000.0,
       'pipeline_name': 'normal_pipeline',
-      'repository_origin': None,
       'status': 'RUNNING',
     }),
     dict({
+      'code_location_origin': None,
       'cron_schedule': '0 12 * * *',
       'description': None,
       'execution_timezone': None,
@@ -232,10 +233,10 @@
       'name': 'no_timestamp',
       'next_tick_timestamp': None,
       'pipeline_name': 'no_pipeline',
-      'repository_origin': None,
       'status': 'STOPPED',
     }),
     dict({
+      'code_location_origin': None,
       'cron_schedule': '0 18 * * *',
       'description': None,
       'execution_timezone': None,
@@ -243,7 +244,6 @@
       'name': 'future_timestamp',
       'next_tick_timestamp': 2000000000.0,
       'pipeline_name': 'future_pipeline',
-      'repository_origin': None,
       'status': 'RUNNING',
     }),
   ])

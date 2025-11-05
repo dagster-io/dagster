@@ -116,7 +116,9 @@ def process_repositories_response(graphql_response: dict[str, Any]) -> "DgApiSch
     for repo in repositories_data:
         repo_name = repo.get("name", "")
         location_name = repo.get("location", {}).get("name", "")
-        repository_origin = f"{location_name}@{repo_name}" if location_name and repo_name else None
+        code_location_origin = (
+            f"{location_name}@{repo_name}" if location_name and repo_name else None
+        )
 
         for s in repo.get("schedules", []):
             schedule_state = s.get("scheduleState", {})
@@ -130,7 +132,7 @@ def process_repositories_response(graphql_response: dict[str, Any]) -> "DgApiSch
                 pipeline_name=s.get("pipelineName", ""),
                 description=s.get("description"),
                 execution_timezone=s.get("executionTimezone"),
-                repository_origin=repository_origin,
+                code_location_origin=code_location_origin,
                 next_tick_timestamp=None,
             )
             schedules.append(schedule)
@@ -180,7 +182,7 @@ def process_schedules_response(graphql_response: dict[str, Any]) -> "DgApiSchedu
             pipeline_name=s.get("pipelineName", ""),
             description=s.get("description"),
             execution_timezone=s.get("executionTimezone"),
-            repository_origin=None,
+            code_location_origin=None,
             next_tick_timestamp=None,
         )
         schedules.append(schedule)
@@ -222,7 +224,7 @@ def process_schedule_response(graphql_response: dict[str, Any]) -> "DgApiSchedul
         pipeline_name=schedule_result.get("pipelineName", ""),
         description=schedule_result.get("description"),
         execution_timezone=schedule_result.get("executionTimezone"),
-        repository_origin=None,
+        code_location_origin=None,
         next_tick_timestamp=None,
     )
 
@@ -275,7 +277,7 @@ def get_schedule_via_graphql(
 
 
 def get_schedule_by_name_via_graphql(client: IGraphQLClient, schedule_name: str) -> "DgApiSchedule":
-    """Get schedule by name, searching across all repositories."""
+    """Get schedule by name, searching across all code locations."""
     result = client.execute(LIST_REPOSITORIES_QUERY)
     all_schedules = process_repositories_response(result)
 
@@ -287,9 +289,11 @@ def get_schedule_by_name_via_graphql(client: IGraphQLClient, schedule_name: str)
         raise Exception(f"Schedule not found: {schedule_name}")
 
     if len(matching_schedules) > 1:
-        repo_origins = [schedule.repository_origin or "unknown" for schedule in matching_schedules]
+        code_location_origins = [
+            schedule.code_location_origin or "unknown" for schedule in matching_schedules
+        ]
         raise Exception(
-            f"Multiple schedules found with name '{schedule_name}' in repositories: {', '.join(repo_origins)}"
+            f"Multiple schedules found with name '{schedule_name}' in code locations: {', '.join(code_location_origins)}"
         )
 
     return matching_schedules[0]

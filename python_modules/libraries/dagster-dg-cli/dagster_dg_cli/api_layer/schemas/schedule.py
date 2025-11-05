@@ -23,7 +23,7 @@ class DgApiSchedule(BaseModel):
     pipeline_name: str
     description: Optional[str] = None
     execution_timezone: Optional[str] = None
-    repository_origin: Optional[str] = None
+    code_location_origin: Optional[str] = None
     next_tick_timestamp: Optional[float] = None  # Unix timestamp
 
     class Config:

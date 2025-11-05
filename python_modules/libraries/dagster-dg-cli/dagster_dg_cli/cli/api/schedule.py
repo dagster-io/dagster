@@ -21,7 +21,7 @@ def format_schedules(schedules: "DgApiScheduleList", as_json: bool) -> str:
     if as_json:
         schedules_dict = schedules.model_dump()
         for schedule in schedules_dict["items"]:
-            schedule.pop("repository_origin", None)
+            schedule.pop("code_location_origin", None)
             schedule.pop("id", None)
         return json.dumps(schedules_dict, indent=2)
 
@@ -52,7 +52,7 @@ def format_schedule(schedule: "DgApiSchedule", as_json: bool) -> str:
     """Format single schedule for output."""
     if as_json:
         schedule_dict = schedule.model_dump()
-        schedule_dict.pop("repository_origin", None)
+        schedule_dict.pop("code_location_origin", None)
         schedule_dict.pop("id", None)
         return json.dumps(schedule_dict, indent=2)
 
