@@ -37,7 +37,7 @@ class CensusSyncSelectorByName(dg.Resolvable, dg.Model):
 
 class CensusSyncSelectorById(dg.Resolvable, dg.Model):
     by_id: Annotated[
-        Sequence[int],
+        Sequence[Union[int, str]],  # Allow strings for use-cases like '{{ env.ENV_VAR }}'
         pydantic.Field(..., description="A list of sync IDs to include in the collection."),
     ]
 
@@ -47,12 +47,14 @@ def resolve_sync_selector(
 ) -> Optional[Callable[[CensusSync], bool]]:
     if isinstance(model, str):
         model = context.resolve_value(model)
-    if isinstance(model, CensusSyncSelectorByName):
-        return lambda sync: sync.name in model.by_name
-    elif isinstance(model, CensusSyncSelectorById):
-        return lambda sync: sync.id in model.by_id
+    if isinstance(model, CensusSyncSelectorByName.model()):
+        resolved = resolve_fields(model, CensusSyncSelectorByName.model(), context)
+        return lambda sync: sync.name in resolved["by_name"]
+    elif isinstance(model, CensusSyncSelectorById.model()):
+        resolved = resolve_fields(model, CensusSyncSelectorById.model(), context)
+        return lambda sync: sync.id in resolved["by_id"]
     else:
-        check.failed(f"Unknown connection target type: {type(model)}")
+        check.failed(f"Unknown sync target type: {type(model)}")
 
 
 @dataclass
