@@ -1,9 +1,9 @@
+import sys
 from typing import Annotated
 
-import typer
 from typer import Argument, Typer
 
-from dagster_cloud_cli import gql
+from dagster_cloud_cli import gql, ui
 from dagster_cloud_cli.config_utils import dagster_cloud_options
 
 app = Typer(help="Customize your Atlan integration.")
@@ -28,8 +28,15 @@ def set_atlan_settings_command(
     url: str,
 ):
     """Upload your Atlan settings to enable the Dagster<>Atlan integration in Dagster Cloud."""
-    with gql.graphql_client_from_url(url, api_token) as client:
-        gql.set_atlan_integration_settings(client, token=atlan_token, domain=atlan_domain)
+    try:
+        with gql.graphql_client_from_url(url, api_token) as client:
+            organization, _ = gql.set_atlan_integration_settings(
+                client, token=atlan_token, domain=atlan_domain
+            )
+        ui.print(f"Atlan settings successfully set for organization: {organization}")
+    except Exception as e:
+        ui.print(f"Failed to set Atlan settings. Exception: {e}")
+        sys.exit(1)
 
 
 @app.command(name="delete-settings")
@@ -39,8 +46,13 @@ def delete_atlan_settings_command(
     url: str,
 ):
     """Delete your Atlan settings to disable the Dagster<>Atlan integration in Dagster Cloud."""
-    with gql.graphql_client_from_url(url, api_token) as client:
-        gql.delete_atlan_integration_settings(client)
+    try:
+        with gql.graphql_client_from_url(url, api_token) as client:
+            organization, _ = gql.delete_atlan_integration_settings(client)
+        ui.print(f"Atlan settings successfully deleted for organization: {organization}")
+    except Exception as e:
+        ui.print(f"Failed to delete Atlan settings. Exception: {e}")
+        sys.exit(1)
 
 
 @app.command(name="get-settings")
@@ -52,8 +64,8 @@ def get_atlan_settings_command(
     """Get your current Atlan settings from Dagster Cloud."""
     with gql.graphql_client_from_url(url, api_token) as client:
         settings = gql.get_atlan_integration_settings(client)
-        typer.echo(f"Token: {settings['token']}")
-        typer.echo(f"Domain: {settings['domain']}")
+        ui.print(f"Token: {settings['token']}")
+        ui.print(f"Domain: {settings['domain']}")
 
 
 @app.command(name="preflight-check")
@@ -66,8 +78,8 @@ def preflight_check_command(
     with gql.graphql_client_from_url(url, api_token) as client:
         result = gql.atlan_integration_preflight_check(client)
         if result["success"]:
-            typer.echo("Preflight check passed successfully!")
+            ui.print("Preflight check passed successfully!")
         else:
-            typer.echo("Preflight check failed:")
-            typer.echo(f"  Error code: {result['error_code']}")
-            typer.echo(f"  Error message: {result['error_message']}")
+            ui.print("Preflight check failed:")
+            ui.print(f"  Error code: {result['error_code']}")
+            ui.print(f"  Error message: {result['error_message']}")
