@@ -1,7 +1,7 @@
-from typing import Any, Literal, cast
+from typing import Any, Literal, cast, get_args, get_origin
 
 from dagster_shared.dagster_model.pydantic_compat_layer import model_fields
-from typing_extensions import TypeVar, get_args, get_origin
+from typing_extensions import TypeVar
 
 from dagster import _check as check
 from dagster._core.definitions.metadata.metadata_set import NamespacedKVSet

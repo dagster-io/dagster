@@ -1,9 +1,9 @@
 import os
-from collections.abc import Iterable, Mapping, Sequence
+from collections.abc import Callable, Iterable, Mapping, Sequence
 from dataclasses import dataclass
 from glob import glob
 from pathlib import Path
-from typing import Callable, Optional, Union
+from typing import Optional, TypeAlias, Union
 
 from buildkite_shared.packages import skip_reason
 from buildkite_shared.python_version import AvailablePythonVersion
@@ -30,7 +30,6 @@ from dagster_buildkite.utils import (
     skip_if_not_dagster_dbt_cloud_commit,
     skip_if_not_dagster_dbt_commit,
 )
-from typing_extensions import TypeAlias
 
 _CORE_PACKAGES = [
     "python_modules/dagster",
@@ -505,9 +504,6 @@ EXAMPLE_PACKAGES_WITH_CUSTOM_CONFIG: list[PackageSpec] = [
     ),
     PackageSpec(
         "examples/with_great_expectations",
-        unsupported_python_versions=[
-            AvailablePythonVersion.V3_9,
-        ],
     ),
     PackageSpec(
         "examples/with_pyspark",
@@ -789,9 +785,6 @@ LIBRARY_PACKAGES_WITH_CUSTOM_CONFIG: list[PackageSpec] = [
         "python_modules/libraries/dagster-dg-cli",
         name="dagster-dg-cli-mcp",
         pytest_tox_factors=[ToxFactor("mcp")],
-        unsupported_python_versions=[
-            AvailablePythonVersion.V3_9,
-        ],
         always_run_if=has_dg_or_component_integration_changes,
     ),
     PackageSpec(
@@ -816,10 +809,6 @@ LIBRARY_PACKAGES_WITH_CUSTOM_CONFIG: list[PackageSpec] = [
     PackageSpec(
         "python_modules/libraries/dagster-dask",
         env_vars=["AWS_SECRET_ACCESS_KEY", "AWS_ACCESS_KEY_ID", "AWS_DEFAULT_REGION"],
-        unsupported_python_versions=[
-            # dask
-            AvailablePythonVersion.V3_9,
-        ],
     ),
     PackageSpec(
         "python_modules/libraries/dagster-databricks",
@@ -899,9 +888,6 @@ LIBRARY_PACKAGES_WITH_CUSTOM_CONFIG: list[PackageSpec] = [
     ),
     PackageSpec(
         "python_modules/libraries/dagster-ge",
-        unsupported_python_versions=[
-            AvailablePythonVersion.V3_9,
-        ],
     ),
     PackageSpec(
         "python_modules/libraries/dagster-k8s",

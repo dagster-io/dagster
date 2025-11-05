@@ -1,9 +1,9 @@
 import dataclasses
 import itertools
-from collections.abc import Sequence
+from collections.abc import Callable, Sequence
 from concurrent.futures import ThreadPoolExecutor
 from dataclasses import dataclass, field
-from typing import Any, Callable, NamedTuple, Optional, cast
+from typing import Any, NamedTuple, Optional, cast
 from unittest import mock
 
 import dagster as dg

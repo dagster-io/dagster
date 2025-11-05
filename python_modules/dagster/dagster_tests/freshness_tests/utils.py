@@ -2,10 +2,9 @@ import enum
 import inspect
 import os
 import tempfile
-from collections.abc import Generator
+from collections.abc import Callable, Generator
 from contextlib import contextmanager
 from pathlib import Path
-from typing import Callable
 
 from dagster._core.workspace.load_target import PythonFileTarget
 

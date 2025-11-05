@@ -1,7 +1,5 @@
-from collections.abc import Iterator, Mapping
-from typing import Callable, NamedTuple, NoReturn, cast
-
-from typing_extensions import TypeAlias
+from collections.abc import Callable, Iterator, Mapping
+from typing import NamedTuple, NoReturn, TypeAlias, cast
 
 import dagster._check as check
 from dagster._config import EvaluateValueResult, process_config

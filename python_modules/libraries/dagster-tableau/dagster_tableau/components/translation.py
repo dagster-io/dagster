@@ -1,6 +1,6 @@
 """Translation utilities for Tableau components."""
 
-from typing import Annotated, Optional, Union
+from typing import Annotated, Optional, TypeAlias, Union
 
 from dagster._core.definitions.assets.definition.asset_spec import AssetSpec
 from dagster.components import Resolvable, Resolver
@@ -15,7 +15,6 @@ from dagster.components.utils.translation import (
     create_component_translator_cls,
 )
 from dagster_shared.record import record
-from typing_extensions import TypeAlias
 
 from dagster_tableau.translator import (
     DagsterTableauTranslator,

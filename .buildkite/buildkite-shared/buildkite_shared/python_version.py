@@ -6,7 +6,6 @@ from buildkite_shared.environment import is_release_branch, safe_getenv
 
 class AvailablePythonVersion(Enum):
     # Ordering is important here, because some steps will take the highest/lowest available version.
-    V3_9 = "3.9"
     V3_10 = "3.10"
     V3_11 = "3.11"
     V3_12 = "3.12"
@@ -14,7 +13,7 @@ class AvailablePythonVersion(Enum):
 
     @classmethod
     def get_all(cls) -> list["AvailablePythonVersion"]:
-        # omitting 3.9 and 3.11 for now to stay below buildkite limits
+        # omitting 3.11 for now to stay below buildkite limits
         return [cls["V3_10"], cls["V3_12"], cls["V3_13"]]
 
     @classmethod

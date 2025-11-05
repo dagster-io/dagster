@@ -1,7 +1,7 @@
 from dataclasses import dataclass, field
 from functools import cached_property
 from pathlib import Path
-from typing import Annotated, Optional, Union
+from typing import Annotated, Optional, TypeAlias, Union
 
 import dagster as dg
 from dagster._annotations import beta, public
@@ -25,7 +25,6 @@ from dagster.components.utils.translation import (
 )
 from dagster_shared.record import record
 from pydantic import Field
-from typing_extensions import TypeAlias
 
 from dagster_sigma.resource import SigmaFilter, SigmaOrganization
 from dagster_sigma.translator import (

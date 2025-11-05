@@ -1,5 +1,6 @@
 import logging
-from typing import Any, Callable, Optional
+from collections.abc import Callable
+from typing import Any, Optional
 
 from airflow import DAG
 from airflow.models import BaseOperator

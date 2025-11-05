@@ -1,9 +1,9 @@
 import os
 from abc import ABC, abstractmethod
-from collections.abc import Generator, Iterator, Sequence
+from collections.abc import Callable, Generator, Iterator, Sequence
 from contextlib import contextmanager
 from enum import Enum
-from typing import IO, Callable, Final, NamedTuple, Optional
+from typing import IO, Final, NamedTuple, Optional
 
 from typing_extensions import Self
 

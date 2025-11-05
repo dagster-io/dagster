@@ -2,7 +2,7 @@ import os
 import subprocess
 import sys
 from pathlib import Path
-from typing import Literal, Optional, get_args
+from typing import Literal, Optional, TypeAlias, get_args
 
 import create_dagster.version_check
 import dagster_shared.check as check
@@ -25,7 +25,6 @@ from dagster_test.dg_utils.utils import (
     clear_module_from_cache,
     isolated_example_workspace,
 )
-from typing_extensions import TypeAlias
 
 # ########################
 # ##### WORKSPACE

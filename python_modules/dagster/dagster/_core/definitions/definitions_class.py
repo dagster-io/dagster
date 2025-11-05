@@ -1,11 +1,11 @@
 import warnings
 from collections import defaultdict
-from collections.abc import Iterable, Mapping, Sequence
-from typing import TYPE_CHECKING, Annotated, Any, Callable, NamedTuple, Optional, Union
+from collections.abc import Callable, Iterable, Mapping, Sequence
+from typing import TYPE_CHECKING, Annotated, Any, NamedTuple, Optional, TypeAlias, Union
 
 from dagster_shared.record import ImportFrom
 from dagster_shared.utils.cached_method import get_cached_method_cache
-from typing_extensions import Self, TypeAlias
+from typing_extensions import Self
 
 import dagster._check as check
 from dagster._annotations import deprecated, preview, public

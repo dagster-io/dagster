@@ -1,5 +1,5 @@
-from collections.abc import Iterator, Mapping, Sequence
-from typing import Any, Callable, Optional, Union
+from collections.abc import Callable, Iterator, Mapping, Sequence
+from typing import Any, Optional, Union
 
 import dateutil
 from dagster import (

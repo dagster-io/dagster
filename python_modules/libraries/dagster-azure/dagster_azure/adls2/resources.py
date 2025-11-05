@@ -1,4 +1,4 @@
-from typing import Any, Union
+from typing import Any, Literal, Union
 
 from azure.identity import DefaultAzureCredential
 from azure.storage.filedatalake import DataLakeLeaseClient
@@ -15,7 +15,6 @@ from dagster._core.definitions.resource_definition import dagster_maintained_res
 from dagster._utils.cached_method import cached_method
 from dagster._utils.merger import merge_dicts
 from pydantic import Field
-from typing_extensions import Literal
 
 from dagster_azure.adls2.file_manager import ADLS2FileManager
 from dagster_azure.adls2.io_manager import InitResourceContext

@@ -5,8 +5,8 @@ import os
 import sys
 import threading
 import zlib
-from collections.abc import Iterator, Mapping, Sequence
-from typing import Any, Callable, Optional, cast
+from collections.abc import Callable, Iterator, Mapping, Sequence
+from typing import Any, Optional, cast
 
 import click
 import dagster_shared.seven as seven

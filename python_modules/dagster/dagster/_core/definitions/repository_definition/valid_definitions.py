@@ -1,7 +1,5 @@
 from collections.abc import Sequence
-from typing import TYPE_CHECKING, TypeVar, Union
-
-from typing_extensions import TypeAlias
+from typing import TYPE_CHECKING, TypeAlias, TypeVar, Union
 
 from dagster._core.definitions.graph_definition import GraphDefinition
 from dagster._core.definitions.job_definition import JobDefinition

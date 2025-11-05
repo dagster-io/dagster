@@ -1,5 +1,5 @@
-from collections.abc import Iterable, Mapping, Sequence
-from typing import Any, Callable, Optional, Union, cast
+from collections.abc import Callable, Iterable, Mapping, Sequence
+from typing import Any, Optional, Union, cast
 
 import dagster._check as check
 from dagster import AssetKey

@@ -6,9 +6,9 @@ import logging
 import queue
 import threading
 from collections import deque
-from collections.abc import Generator, Iterator, Mapping
+from collections.abc import Callable, Generator, Iterator, Mapping
 from dataclasses import dataclass, field
-from typing import Any, Callable
+from typing import Any
 
 _default_logger = logging.getLogger(__name__)
 

@@ -11,12 +11,22 @@ import textwrap
 from collections.abc import Iterator, Mapping, Sequence
 from fnmatch import fnmatch
 from pathlib import Path
-from typing import TYPE_CHECKING, Any, Literal, Optional, TextIO, TypeVar, Union, overload
+from typing import (
+    TYPE_CHECKING,
+    Any,
+    Literal,
+    Optional,
+    TextIO,
+    TypeAlias,
+    TypeVar,
+    Union,
+    overload,
+)
 
 import click
 from click_aliases import ClickAliasedGroup
 from dagster_shared.utils import environ
-from typing_extensions import Never, TypeAlias
+from typing_extensions import Never
 
 from dagster_dg_core.error import DgError
 

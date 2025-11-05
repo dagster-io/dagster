@@ -4,11 +4,10 @@ import re
 from abc import ABC, abstractmethod
 from collections.abc import Iterable, Sequence
 from functools import reduce
-from typing import AbstractSet, Optional, Union, cast  # noqa: UP035
+from typing import AbstractSet, Optional, TypeAlias, TypeGuard, Union, cast  # noqa: UP035
 
 from dagster_shared.error import DagsterError
 from dagster_shared.serdes import whitelist_for_serdes
-from typing_extensions import TypeAlias, TypeGuard
 
 import dagster._check as check
 from dagster._annotations import beta_param, deprecated, public

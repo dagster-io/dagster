@@ -1,8 +1,7 @@
-from collections.abc import Mapping, Sequence
-from typing import Annotated, Any, Callable, Literal, Optional, Union
+from collections.abc import Callable, Mapping, Sequence
+from typing import Annotated, Any, Literal, Optional, TypeAlias, Union
 
 from dagster_shared.record import record
-from typing_extensions import TypeAlias
 
 import dagster._check as check
 from dagster._core.definitions.asset_checks.asset_check_spec import AssetCheckSpec

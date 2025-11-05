@@ -23,7 +23,6 @@ setup(
     description="Package for performing ETL/ELT tasks with dlt in Dagster.",
     url="https://github.com/dagster-io/dagster/tree/master/python_modules/libraries/dagster-dlt",
     classifiers=[
-        "Programming Language :: Python :: 3.9",
         "Programming Language :: Python :: 3.10",
         "Programming Language :: Python :: 3.11",
         "Programming Language :: Python :: 3.12",
@@ -33,7 +32,7 @@ setup(
     ],
     packages=find_packages(exclude=["dagster_dlt_tests*"]),
     include_package_data=True,
-    python_requires=">=3.9,<3.14",
+    python_requires=">=3.10,<3.14",
     install_requires=[f"dagster{pin}", "dlt>=0.4"],
     zip_safe=False,
     extras_require={"test": ["duckdb", "dagster-dg-cli"]},

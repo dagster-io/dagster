@@ -2,7 +2,7 @@ from collections.abc import Iterator, Mapping, Sequence
 from dataclasses import dataclass, field
 from functools import cached_property
 from pathlib import Path
-from typing import Annotated, Any, Literal, Optional, Union
+from typing import Annotated, Any, Literal, Optional, TypeAlias, Union
 
 from dagster import Resolvable, Resolver
 from dagster._annotations import public
@@ -28,7 +28,6 @@ from dagster.components.utils.translation import (
 )
 from dagster_shared.utils.warnings import deprecation_warning
 from pydantic import BaseModel, ConfigDict, Field
-from typing_extensions import TypeAlias
 
 from dagster_sling.asset_decorator import sling_assets
 from dagster_sling.components.sling_replication_collection.scaffolder import (

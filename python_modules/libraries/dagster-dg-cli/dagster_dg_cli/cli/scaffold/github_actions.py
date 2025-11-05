@@ -1,7 +1,8 @@
 import subprocess
 import textwrap
+from collections.abc import Callable
 from pathlib import Path
-from typing import Callable, NamedTuple, Optional, cast
+from typing import NamedTuple, Optional, cast
 
 import click
 from dagster_dg_core.config import DgRawCliConfig, normalize_cli_config

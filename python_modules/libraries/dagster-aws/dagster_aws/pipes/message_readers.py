@@ -4,11 +4,11 @@ import os
 import random
 import string
 import sys
-from collections.abc import Generator, Iterator, Sequence
+from collections.abc import Callable, Generator, Iterator, Sequence
 from contextlib import contextmanager
 from datetime import datetime
 from threading import Event, Thread
-from typing import IO, TYPE_CHECKING, Any, Callable, Optional, cast
+from typing import IO, TYPE_CHECKING, Any, Optional, cast
 
 import boto3
 import dagster._check as check

@@ -5,9 +5,9 @@ import os
 import platform
 import sys
 import uuid
-from collections.abc import Mapping
+from collections.abc import Callable, Mapping
 from logging.handlers import RotatingFileHandler
-from typing import Callable, NamedTuple, Optional
+from typing import NamedTuple, Optional
 
 import click
 

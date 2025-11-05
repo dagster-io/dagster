@@ -3,7 +3,7 @@ name = "project_llm_fine_tune"
 version = "0.0.1"
 description = "Project LLM Fine Tune"
 readme = "README.md"
-requires-python = ">=3.9"
+requires-python = ">=3.10"
 dependencies = [
     "dagster",
     "dagster-openai",

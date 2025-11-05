@@ -106,7 +106,7 @@ def test_basic_sensor_definition() -> None:
             dg.SensorDefinition(
                 name="a_sensor",
                 target=my_asset,
-                evaluation_fn=lambda _: ...,
+                evaluation_fn=lambda _: None,
             )
         ]
     )

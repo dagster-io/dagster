@@ -1,8 +1,8 @@
 import datetime
 import sys
-from collections.abc import Mapping
+from collections.abc import Callable, Mapping
 from functools import wraps
-from typing import Any, Callable, Optional, TypeVar, Union, overload
+from typing import Any, Optional, TypeVar, Union, overload
 
 import click
 from dagster_shared.telemetry import (

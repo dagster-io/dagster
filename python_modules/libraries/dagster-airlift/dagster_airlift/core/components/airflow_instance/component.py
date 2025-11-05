@@ -1,7 +1,7 @@
 from collections.abc import Iterator, Sequence
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import Annotated, Any, Literal, Optional, Union
+from typing import Annotated, Any, Literal, Optional, TypeAlias, Union
 
 from dagster import ComponentLoadContext, Resolvable
 from dagster._core.definitions.asset_key import AssetKey
@@ -25,7 +25,6 @@ from dagster.components.utils.defs_state import (
 )
 from dagster_shared.serdes.serdes import deserialize_value, serialize_value
 from pydantic import BaseModel
-from typing_extensions import TypeAlias
 
 import dagster_airlift.core as dg_airlift_core
 from dagster_airlift.core.airflow_instance import AirflowAuthBackend

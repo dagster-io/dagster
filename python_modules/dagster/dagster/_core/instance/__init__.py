@@ -1,8 +1,6 @@
 # Import and re-export commonly used symbols for backwards compatibility
 from collections.abc import Mapping
-from typing import Any
-
-from typing_extensions import TypeAlias
+from typing import Any, TypeAlias
 
 from dagster._core.instance.instance import DagsterInstance as DagsterInstance
 from dagster._core.instance.ref import InstanceRef as InstanceRef

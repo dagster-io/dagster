@@ -1,4 +1,5 @@
-from typing import TYPE_CHECKING, Any, Callable, Optional, Union, cast, overload
+from collections.abc import Callable
+from typing import TYPE_CHECKING, Any, Optional, Union, cast, overload
 
 import dagster._check as check
 from dagster._annotations import public

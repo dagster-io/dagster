@@ -1,8 +1,7 @@
 import inspect
-from typing import Any, Optional, TypeVar
+from typing import Any, Optional, TypeAlias, TypeVar
 
 from dagster_shared import check
-from typing_extensions import TypeAlias
 
 # For the time being, `Annotatable` is set to `Any` even though it should be set to `Decoratable` to
 # avoid choking the type checker. Choking happens because of a niche scenario where
