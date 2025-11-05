@@ -47,38 +47,33 @@ def build_source_pex(
 
 
 def _build_local_package(local_dir: str, build_dir: str, python_interpreter: str):
-    curdir = os.curdir
-    os.chdir(local_dir)
-    try:
-        if os.path.exists("setup.py"):
-            ui.print(f"Building package at {local_dir!r} using {python_interpreter} setup.py build")
-            command = [
-                python_interpreter,
-                "setup.py",
-                "build",
-                "--build-lib",
-                build_dir,
-            ]
-            subprocess.run(command, check=True)
-        elif os.path.exists("pyproject.toml"):
-            ui.print(f"Building package at {local_dir!r} using {python_interpreter} -m pip install")
-            # Use pip install with --target to build and install the package to the build directory
-            # This handles pyproject.toml files properly using modern Python build standards
-            command = [
-                python_interpreter,
-                "-m",
-                "pip",
-                "install",
-                "--target",
-                build_dir,
-                "--no-deps",  # Don't install dependencies, just the package itself
-                ".",
-            ]
-            subprocess.run(command, check=True)
-        else:
-            ui.warn(f"No setup.py or pyproject.toml found in {local_dir!r} - will not build.")
-    finally:
-        os.chdir(curdir)
+    if os.path.exists(os.path.join(local_dir, "setup.py")):
+        ui.print(f"Building package at {local_dir!r} using {python_interpreter} setup.py build")
+        command = [
+            python_interpreter,
+            "setup.py",
+            "build",
+            "--build-lib",
+            build_dir,
+        ]
+        subprocess.run(command, check=True, cwd=local_dir)
+    elif os.path.exists(os.path.join(local_dir, "pyproject.toml")):
+        ui.print(f"Building package at {local_dir!r} using {python_interpreter} -m pip install")
+        # Use pip install with --target to build and install the package to the build directory
+        # This handles pyproject.toml files properly using modern Python build standards
+        command = [
+            python_interpreter,
+            "-m",
+            "pip",
+            "install",
+            "--target",
+            build_dir,
+            "--no-deps",  # Don't install dependencies, just the package itself
+            ".",
+        ]
+        subprocess.run(command, check=True, cwd=local_dir)
+    else:
+        ui.warn(f"No setup.py or pyproject.toml found in {local_dir!r} - will not build.")
 
 
 def build_pex_using_setup_py(
