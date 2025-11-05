@@ -1,4 +1,5 @@
 import datetime
+import textwrap
 from collections.abc import Sequence
 from dataclasses import dataclass
 from typing import Optional
@@ -6,7 +7,7 @@ from typing import Optional
 import dagster as dg
 from dagster._core.definitions.freshness import FreshnessPolicy, TimeWindowFreshnessPolicy
 from dagster.components.resolved.context import ResolutionContext
-from dagster.components.resolved.core_models import AssetSpecKwargs, resolve_asset_spec
+from dagster.components.resolved.core_models import AssetSpecKwargs, OpSpec, resolve_asset_spec
 
 
 def test_asset_spec():
@@ -198,3 +199,52 @@ def test_resolved_asset_spec() -> None:
     )
 
     assert some_object.specs == [dg.AssetSpec(key="asset1"), dg.AssetSpec(key="asset2")]
+
+
+def test_op_spec():
+    """Test resolving an OpSpec, focusing on config_schema resolution."""
+    kitchen_sink_op_spec = OpSpec.resolve_from_yaml(
+        textwrap.dedent(
+            """
+            name: kitchen_sink_op
+            tags:
+              env: prod
+              team: data
+            description: A comprehensive test op
+            pool: my_pool
+            backfill_policy:
+              type: single_run
+            config_schema:
+              value:
+                type: int
+              items:
+                type: list[str]
+                default: ["default"]
+              enabled:
+                type: bool
+                default: true
+            """
+        )
+    )
+
+    assert kitchen_sink_op_spec.name == "kitchen_sink_op"
+    assert kitchen_sink_op_spec.tags == {"env": "prod", "team": "data"}
+    assert kitchen_sink_op_spec.description == "A comprehensive test op"
+    assert kitchen_sink_op_spec.pool == "my_pool"
+    assert kitchen_sink_op_spec.backfill_policy == dg.BackfillPolicy.single_run()
+
+    # config schema
+    assert kitchen_sink_op_spec.config_schema is not None
+    assert issubclass(kitchen_sink_op_spec.config_schema, dg.Config)
+
+    kitchen_config = kitchen_sink_op_spec.config_schema(value=999)
+    assert kitchen_config.value == 999
+    assert kitchen_config.items == ["default"]
+    assert kitchen_config.enabled is True
+
+    kitchen_config_custom = kitchen_sink_op_spec.config_schema(
+        value=123, items=["custom"], enabled=False
+    )
+    assert kitchen_config_custom.value == 123
+    assert kitchen_config_custom.items == ["custom"]
+    assert kitchen_config_custom.enabled is False

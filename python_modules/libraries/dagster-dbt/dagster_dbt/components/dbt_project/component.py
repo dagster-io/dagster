@@ -332,17 +332,19 @@ class DbtProjectComponent(StateBackedComponent, dg.Resolvable):
         project = self._project_manager.get_project(state_path)
 
         res_ctx = context.resolution_context
+        op = self.op or OpSpec(name=project.name)
 
         @dbt_assets(
             manifest=project.manifest_path,
             project=project,
-            name=self.op.name if self.op else project.name,
-            op_tags=self.op.tags if self.op else None,
+            name=op.name,
+            op_tags=op.tags,
             dagster_dbt_translator=self.translator,
             select=self.select,
             exclude=self.exclude,
-            backfill_policy=self.op.backfill_policy if self.op else None,
+            backfill_policy=op.backfill_policy,
         )
+        @op.apply_config_schema
         def _fn(context: dg.AssetExecutionContext):
             with _set_resolution_context(res_ctx):
                 yield from self.execute(context=context, dbt=DbtCliResource(project))

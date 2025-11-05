@@ -257,18 +257,20 @@ class DatabricksAssetBundleComponent(Component, Resolvable):
 
         databricks_assets = []
         for task_key, asset_specs in self.asset_specs_by_task_key.items():
+            op = self.op or OpSpec(
+                name=f"databricks_{task_key}_multi_asset_{component_defs_path_as_python_str}"
+            )
 
             @multi_asset(
-                name=self.op.name
-                if self.op and self.op.name
-                else f"databricks_{task_key}_multi_asset_{component_defs_path_as_python_str}",
+                name=op.name,
                 specs=asset_specs,
                 can_subset=False,
-                op_tags=self.op.tags if self.op else None,
-                description=self.op.description if self.op else None,
-                pool=self.op.pool if self.op else None,
-                backfill_policy=self.op.backfill_policy if self.op else None,
+                op_tags=op.tags,
+                description=op.description,
+                pool=op.pool,
+                backfill_policy=op.backfill_policy,
             )
+            @op.apply_config_schema
             def _databricks_task_multi_asset(
                 context: AssetExecutionContext,
                 databricks: DatabricksWorkspace,

@@ -182,16 +182,17 @@ class SlingReplicationCollectionComponent(Component, Resolvable):
     def build_asset(
         self, context: ComponentLoadContext, replication_spec_model: SlingReplicationSpecModel
     ) -> AssetsDefinition:
-        op_spec = replication_spec_model.op or OpSpec()
+        op_spec = replication_spec_model.op or OpSpec(name=Path(replication_spec_model.path).stem)
         translator = SlingComponentTranslator(self, replication_spec_model, context.path)
 
         @sling_assets(
-            name=op_spec.name or Path(replication_spec_model.path).stem,
+            name=op_spec.name,
             op_tags=op_spec.tags,
             replication_config=context.path / replication_spec_model.path,
             dagster_sling_translator=translator,
             backfill_policy=op_spec.backfill_policy,
         )
+        @op_spec.apply_config_schema
         def _asset(context: AssetExecutionContext):
             yield from self.execute(
                 context=context,

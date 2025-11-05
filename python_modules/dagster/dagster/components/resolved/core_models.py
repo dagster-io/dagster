@@ -1,10 +1,14 @@
+import inspect
 from collections.abc import Mapping, Sequence
+from functools import wraps
 from typing import Annotated, Any, Callable, Literal, Optional, Union
 
 from dagster_shared.record import record
+from pydantic import create_model
 from typing_extensions import TypeAlias
 
 import dagster._check as check
+from dagster._config.pythonic_config.config import Config
 from dagster._core.definitions.asset_checks.asset_check_spec import AssetCheckSpec
 from dagster._core.definitions.asset_key import AssetKey, CoercibleToAssetKeyPrefix
 from dagster._core.definitions.assets.definition.asset_spec import AssetSpec
@@ -146,6 +150,63 @@ def resolve_backfill_policy(
     raise ValueError(f"Invalid backfill policy: {backfill_policy}")
 
 
+class ConfigFieldModel(Model):
+    type: str
+    default: Optional[Any] = None
+
+    def for_field_dict(self) -> Union[str, tuple[str, Any]]:
+        if self.model_dump(exclude_unset=True).get("default") is not None:
+            return (self.type, self.default)
+        else:
+            return self.type
+
+
+def resolve_config_schema(
+    context: ResolutionContext, model: dict[str, ConfigFieldModel]
+) -> type[Config]:
+    fields: Any = {k: v.for_field_dict() for k, v in model.items()}
+    base_model = create_model("_ConfigBaseModel", **fields)
+    return type("_Config", (Config, base_model), {})
+
+
+def add_config_arg(config_schema: Optional[type[Config]]) -> Callable[..., Any]:
+    if config_schema is None:
+        return lambda fn: fn
+
+    def decorator(fn: Callable[..., Any]) -> Callable[..., Any]:
+        sig = inspect.signature(fn)
+        params = list(sig.parameters.values())
+
+        # Find the insertion point: before *args if present, else before **kwargs
+        insert_at = next(
+            (
+                i
+                for i, p in enumerate(params)
+                if p.kind in (inspect.Parameter.VAR_POSITIONAL, inspect.Parameter.VAR_KEYWORD)
+            ),
+            len(params),
+        )
+
+        # Create a positional-or-keyword parameter
+        config_param = inspect.Parameter(
+            "config", inspect.Parameter.POSITIONAL_OR_KEYWORD, annotation=config_schema
+        )
+
+        # Insert at the correct place
+        new_params = params[:insert_at] + [config_param] + params[insert_at:]
+        new_sig = sig.replace(parameters=new_params)
+
+        @wraps(fn)
+        def _fn(*args, config: config_schema, **kwargs):
+            return fn(*args, **kwargs)
+
+        _fn.__signature__ = new_sig  # type: ignore[attr-defined]
+        _fn.__annotations__ = {**fn.__annotations__, "config": config_schema}
+        return _fn
+
+    return decorator
+
+
 class OpSpec(Model, Resolvable):
     name: Optional[str] = None
     tags: Optional[dict[str, Any]] = None
@@ -158,10 +219,19 @@ class OpSpec(Model, Resolvable):
             model_field_type=Union[SingleRunBackfillPolicyModel, MultiRunBackfillPolicyModel],
         ),
     ] = None
+    config_schema: Annotated[
+        Optional[type[Config]],
+        Resolver(
+            resolve_config_schema,
+            model_field_type=Mapping[str, ConfigFieldModel],
+            examples=[
+                {"foo": {"type": "int"}, "bar": {"type": "list[str]", "default": ["a", "b"]}}
+            ],
+        ),
+    ] = None
 
-
-def _expect_injected(context, val):
-    return check.opt_inst_param(val, "val", AutomationCondition)
+    def apply_config_schema(self, fn: Callable[..., Any]) -> Callable[..., Any]:
+        return add_config_arg(self.config_schema)(fn)
 
 
 ResolvedAssetKey: TypeAlias = Annotated[

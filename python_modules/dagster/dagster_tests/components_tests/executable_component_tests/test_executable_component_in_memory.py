@@ -248,6 +248,26 @@ def test_asset_with_config() -> None:
     )
 
 
+def test_asset_with_config_in_spec() -> None:
+    class MyConfig(dg.Config):
+        foo: str
+
+    def execute_fn(context) -> dg.MaterializeResult:
+        return dg.MaterializeResult(metadata={"foo": context.op_execution_context.op_config["foo"]})
+
+    component = dg.FunctionComponent(
+        execution=FunctionSpec(name="op_name", fn=execute_fn, config_schema=MyConfig),
+        assets=[dg.AssetSpec(key="asset")],
+    )
+
+    defs = component.build_defs(ComponentTree.for_test().load_context)
+    assert defs.get_assets_def("asset").op.config_schema
+
+    assert_singular_component(
+        component, run_config={"ops": {"op_name": {"config": {"foo": "bar"}}}}
+    )
+
+
 def test_asset_check_with_config() -> None:
     class MyConfig(dg.Config):
         foo: str
