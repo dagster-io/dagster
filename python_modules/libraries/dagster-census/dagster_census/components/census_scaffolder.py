@@ -20,7 +20,7 @@ class CensusComponentScaffolder(Scaffolder[CensusScaffolderParams]):
             request,
             {
                 "workspace": {
-                    "api_key": request.params.api_key,
+                    "api_key": "{{ env.CENSUS_API_KEY }}",
                 }
             },
         )

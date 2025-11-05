@@ -5,4 +5,4 @@ attributes:
     api_key: "{{ env.CENSUS_API_KEY }}"
   sync_selector:
     by_name:
-      - my_first_sync
+      - census_sync_1
