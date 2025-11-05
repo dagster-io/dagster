@@ -10,7 +10,7 @@ from dagster._core.definitions.definitions_class import Definitions
 from dagster._utils.env import environ
 from dagster._utils.test.definitions import scoped_definitions_load_context
 from dagster.components.testing.utils import create_defs_folder_sandbox
-from dagster_census.components.census_component import CensusComponent
+from dagster_census import CensusComponent
 from dagster_shared.merger import deep_merge_dicts
 
 # Test constants
@@ -114,13 +114,23 @@ def setup_census_component(
             ),
         ):
             assert isinstance(component, CensusComponent)
+            asyncio.run(component.refresh_state(sandbox.project_root))
+
+        with (
+            scoped_definitions_load_context(),
+            sandbox.load_component_and_build_defs(defs_path=defs_path) as (
+                component,
+                defs,
+            ),
+        ):
+            assert isinstance(component, CensusComponent)
             yield component, defs
 
 
 BASIC_CENSUS_COMPONENT_BODY = {
     "type": "dagster_census.CensusComponent",
     "attributes": {
-        "census_resource": {
+        "workspace": {
             "api_key": "{{ env.CENSUS_API_KEY }}",
         },
     },
@@ -159,63 +169,19 @@ def test_basic_component_load(
             }
         ),
         setup_census_component(
-            defs_yaml_contents=BASIC_CENSUS_COMPONENT_BODY,
+            defs_yaml_contents=deep_merge_dicts(
+                BASIC_CENSUS_COMPONENT_BODY,
+                {"attributes": {"defs_state": {"management_type": "LOCAL_FILESYSTEM"}}},
+            ),
         ) as (
             component,
             defs,
         ),
     ):
         assert defs.resolve_asset_graph().get_all_asset_keys() == {
-            AssetKey("census_" + TEST_SYNC_NAME_1),
-            AssetKey("census_" + TEST_SYNC_NAME_2),
+            AssetKey(TEST_SYNC_NAME_1),
+            AssetKey(TEST_SYNC_NAME_2),
         }
-
-
-@pytest.mark.parametrize(
-    "defs_state_type",
-    ["LOCAL_FILESYSTEM"],
-)
-def test_component_load_with_defs_state(
-    fetch_workspace_data_api_mocks: responses.RequestsMock,
-    defs_state_type: str,
-) -> None:
-    """Test component loading with defs state management.
-
-    This test verifies that:
-    1. On first load, no assets are present (state hasn't been fetched yet)
-    2. After calling refresh_state, the component fetches Census workspace data
-    3. On second load, assets are present (loaded from state)
-    """
-    with (
-        environ(
-            {
-                "CENSUS_API_KEY": TEST_API_KEY,
-            }
-        ),
-        create_defs_folder_sandbox() as sandbox,
-    ):
-        defs_path = sandbox.scaffold_component(
-            component_cls=CensusComponent,
-            defs_yaml_contents=deep_merge_dicts(
-                BASIC_CENSUS_COMPONENT_BODY,
-                {"attributes": {"defs_state": {"management_type": defs_state_type}}},
-            ),
-        )
-        with (
-            scoped_definitions_load_context(),
-            sandbox.load_component_and_build_defs(defs_path=defs_path) as (component, defs),
-        ):
-            # first load, nothing there
-            assert len(defs.resolve_asset_graph().get_all_asset_keys()) == 0
-            assert isinstance(component, CensusComponent)
-            asyncio.run(component.refresh_state(sandbox.project_root))
-
-        with (
-            scoped_definitions_load_context(),
-            sandbox.load_component_and_build_defs(defs_path=defs_path) as (component, defs),
-        ):
-            # second load, should now have assets
-            assert len(defs.resolve_asset_graph().get_all_asset_keys()) == 2
 
 
 @pytest.mark.parametrize(
