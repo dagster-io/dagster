@@ -868,8 +868,8 @@ SET_ATLAN_INTEGRATION_SETTINGS_MUTATION = """
 
 
 DELETE_ATLAN_INTEGRATION_SETTINGS_MUTATION = """
-    mutation CliDeleteAtlanIntegrationSettings() {
-        deleteAtlanIntegrationSettings() {
+    mutation CliDeleteAtlanIntegrationSettings {
+        deleteAtlanIntegrationSettings {
             __typename
             ...on DeleteAtlanIntegrationSuccess {
                 organization
