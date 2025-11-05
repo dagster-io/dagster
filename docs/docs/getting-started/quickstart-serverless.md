@@ -44,7 +44,12 @@ If you will be using `uv` as your package manager, follow the steps below to ins
          ```shell
          cd <project-directory>
          ```
-      2. Activate the virtual environment:
+      2. Install required dependencies in the virtual environment:
+
+         ```shell
+         uv sync
+         ```
+      3. Activate the virtual environment:
 
          <Tabs>
             <TabItem value="macos" label="MacOS/Unix">
@@ -58,12 +63,6 @@ If you will be using `uv` as your package manager, follow the steps below to ins
                ```
             </TabItem>
          </Tabs>
-
-      3. Install required dependencies in the virtual environment:
-
-         ```shell
-         uv sync
-         ```
 
    </TabItem>
 
