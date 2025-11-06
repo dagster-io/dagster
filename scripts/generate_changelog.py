@@ -856,12 +856,8 @@ def _interactive_changelog_generation(new_version: str, prev_version: str) -> st
 
                         elif action == "o":
                             # Open PR link in browser
-                            subprocess.Popen(
-                                [
-                                    "xdg-open" if sys.platform == "linux" else "open",
-                                    commit.pr_url,
-                                ]
-                            )
+                            import webbrowser
+                            webbrowser.open(commit.pr_url)
 
                         elif action == "t":
                             # Toggle thanks
