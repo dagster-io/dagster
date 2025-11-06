@@ -54,7 +54,6 @@ setup(
         "https://github.com/dagster-io/dagster/tree/master/python_modules/libraries/dagster-airlift"
     ),
     classifiers=[
-        "Programming Language :: Python :: 3.9",
         "Programming Language :: Python :: 3.10",
         "Programming Language :: Python :: 3.11",
         "Programming Language :: Python :: 3.12",

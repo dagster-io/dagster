@@ -1,6 +1,6 @@
-from collections.abc import Mapping, Sequence
+from collections.abc import Callable, Mapping, Sequence
 from functools import update_wrapper
-from typing import Any, Callable, Optional, Union, overload
+from typing import Any, Optional, Union, overload
 
 import dagster._check as check
 from dagster._annotations import public

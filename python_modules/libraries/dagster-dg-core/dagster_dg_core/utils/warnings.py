@@ -1,9 +1,8 @@
 import textwrap
 from collections.abc import Sequence
-from typing import Literal, Optional
+from typing import Literal, Optional, TypeAlias
 
 import click
-from typing_extensions import TypeAlias
 
 from dagster_dg_core.utils import format_multiline_str
 

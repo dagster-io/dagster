@@ -1,9 +1,9 @@
 import json
 import shlex
 from argparse import ArgumentParser, Namespace
-from collections.abc import Mapping, Sequence
+from collections.abc import Callable, Mapping, Sequence
 from contextlib import suppress
-from typing import Any, Callable, Optional, Union, cast
+from typing import Any, Optional, Union, cast
 
 import dagster._check as check
 from dagster import (

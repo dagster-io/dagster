@@ -1,7 +1,7 @@
 from dataclasses import dataclass, field
 from functools import cached_property
 from pathlib import Path
-from typing import Annotated, Any, Optional, Union
+from typing import Annotated, Any, Optional, TypeAlias, Union
 
 import dagster as dg
 from dagster._annotations import public
@@ -30,7 +30,6 @@ from dagster_shared import check
 from dagster_shared.record import record
 from dagster_shared.serdes.serdes import deserialize_value
 from pydantic import BaseModel
-from typing_extensions import TypeAlias
 
 from dagster_powerbi.resource import PowerBIServicePrincipal, PowerBIToken, PowerBIWorkspace
 from dagster_powerbi.translator import (

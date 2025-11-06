@@ -1,5 +1,5 @@
-from collections.abc import Mapping
-from typing import Callable, NamedTuple, Optional, Union
+from collections.abc import Callable, Mapping
+from typing import NamedTuple, Optional, Union
 
 from dagster_shared.serdes import deserialize_value, serialize_value, whitelist_for_serdes
 

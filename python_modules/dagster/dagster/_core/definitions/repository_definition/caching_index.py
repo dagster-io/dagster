@@ -1,5 +1,5 @@
-from collections.abc import Mapping, Sequence
-from typing import Callable, Generic, Optional, Union, cast
+from collections.abc import Callable, Mapping, Sequence
+from typing import Generic, Optional, Union, cast
 
 import dagster._check as check
 from dagster._core.definitions.repository_definition.valid_definitions import (

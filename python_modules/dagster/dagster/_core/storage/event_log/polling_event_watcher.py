@@ -1,6 +1,7 @@
 import os
 import threading
-from typing import TYPE_CHECKING, Callable, NamedTuple, Optional
+from collections.abc import Callable
+from typing import TYPE_CHECKING, NamedTuple, Optional
 
 import dagster._check as check
 from dagster._core.events.log import EventLogEntry

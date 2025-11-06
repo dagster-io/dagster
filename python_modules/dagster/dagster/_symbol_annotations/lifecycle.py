@@ -1,8 +1,8 @@
 import inspect
-from collections.abc import Mapping
+from collections.abc import Callable, Mapping
 from dataclasses import dataclass
 from functools import partial
-from typing import Any, Callable, Final, Optional, Union, overload
+from typing import Any, Final, Optional, Union, overload
 
 from dagster import _check as check
 from dagster._core.decorator_utils import (

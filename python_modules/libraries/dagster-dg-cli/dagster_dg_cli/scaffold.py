@@ -2,7 +2,7 @@ import json
 import textwrap
 from collections.abc import Mapping
 from pathlib import Path
-from typing import Any, Literal, Optional
+from typing import Any, Literal, Optional, TypeAlias
 
 import click
 import dagster_shared.check as check
@@ -11,7 +11,6 @@ from dagster_dg_core.utils import snakecase
 from dagster_shared.scaffold import scaffold_subtree
 from dagster_shared.serdes.objects.package_entry import EnvRegistryKey
 from dagster_shared.seven import match_module_pattern
-from typing_extensions import TypeAlias
 
 ScaffoldFormatOptions: TypeAlias = Literal["yaml", "python"]
 

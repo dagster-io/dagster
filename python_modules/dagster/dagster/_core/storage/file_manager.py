@@ -5,9 +5,7 @@ import uuid
 from abc import ABC, abstractmethod
 from collections.abc import Iterator
 from contextlib import contextmanager
-from typing import BinaryIO, ContextManager, Optional, TextIO, Union  # noqa: UP035
-
-from typing_extensions import TypeAlias
+from typing import BinaryIO, ContextManager, Optional, TextIO, TypeAlias, Union  # noqa: UP035
 
 import dagster._check as check
 from dagster._annotations import public

@@ -5,7 +5,7 @@ from dataclasses import dataclass, field
 from datetime import datetime
 from functools import cached_property
 from queue import Queue
-from typing import TYPE_CHECKING, Any, Literal, Optional, TypedDict, Union, cast
+from typing import TYPE_CHECKING, Any, Literal, Optional, TypeAlias, TypedDict, Union, cast
 
 from dagster_pipes import (
     DAGSTER_PIPES_CONTEXT_ENV_VAR,
@@ -22,7 +22,6 @@ from dagster_pipes import (
     _env_var_to_cli_argument,
     encode_param,
 )
-from typing_extensions import TypeAlias
 
 import dagster._check as check
 from dagster import DagsterEvent

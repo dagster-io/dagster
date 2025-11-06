@@ -25,11 +25,11 @@ def test_is_closed_python_optional_type() -> None:
 
 @pytest.mark.skipif(sys.version_info < (3, 10), reason="requires python3.10")
 def test_is_closed_python_optional_type_310_types() -> None:
-    assert is_closed_python_optional_type(str | None)  # type: ignore
-    assert is_closed_python_optional_type(int | None)  # type: ignore
+    assert is_closed_python_optional_type(str | None)
+    assert is_closed_python_optional_type(int | None)
 
-    assert is_closed_python_optional_type(None | str)  # type: ignore
-    assert is_closed_python_optional_type(None | int)  # type: ignore
+    assert is_closed_python_optional_type(None | str)
+    assert is_closed_python_optional_type(None | int)
 
-    assert not is_closed_python_optional_type(str | int)  # type: ignore
-    assert not is_closed_python_optional_type(str | int | None)  # type: ignore
+    assert not is_closed_python_optional_type(str | int)
+    assert not is_closed_python_optional_type(str | int | None)

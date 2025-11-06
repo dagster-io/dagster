@@ -1,7 +1,5 @@
 from collections.abc import Mapping, Sequence
-from typing import Any, Optional, Union, cast, overload
-
-from typing_extensions import Literal
+from typing import Any, Literal, Optional, Union, cast, overload
 
 from dagster._core.asset_graph_view.asset_graph_view import AssetGraphView, TemporalContext
 from dagster._core.definitions.asset_selection import CoercibleToAssetSelection

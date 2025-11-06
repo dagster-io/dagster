@@ -1,7 +1,7 @@
 from collections.abc import Sequence
-from typing import NamedTuple, Optional, Union
+from typing import NamedTuple, Optional, TypeAlias, Union
 
-from typing_extensions import Self, TypeAlias
+from typing_extensions import Self
 
 import dagster._check as check
 from dagster._core.definitions.asset_selection import (

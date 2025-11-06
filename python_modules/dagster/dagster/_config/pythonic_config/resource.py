@@ -9,15 +9,18 @@ from typing import (  # noqa: UP035
     Generic,
     NamedTuple,
     Optional,
+    TypeAlias,
+    TypeGuard,
     TypeVar,
     Union,
     cast,
+    get_args,
+    get_origin,
 )
 
 from dagster_shared.dagster_model.pydantic_compat_layer import model_fields
 from dagster_shared.error import DagsterError
 from pydantic import BaseModel
-from typing_extensions import TypeAlias, TypeGuard, get_args, get_origin
 
 import dagster._check as check
 from dagster._annotations import deprecated, public

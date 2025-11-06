@@ -1,6 +1,6 @@
-from collections.abc import Iterable, Mapping
+from collections.abc import Callable, Iterable, Mapping
 from dataclasses import dataclass
-from typing import Any, Callable, Optional
+from typing import Any, Optional
 
 from dagster import AssetKey, AssetSpec, AutoMaterializePolicy, MetadataValue
 from dagster._annotations import public, superseded

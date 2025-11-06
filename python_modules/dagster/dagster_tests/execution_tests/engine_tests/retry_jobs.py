@@ -1,8 +1,9 @@
 import os
 import pickle
 import re
+from collections.abc import Callable
 from tempfile import TemporaryDirectory
-from typing import Any, Callable
+from typing import Any
 
 import dagster as dg
 from dagster import ExecutorDefinition, ReexecutionOptions

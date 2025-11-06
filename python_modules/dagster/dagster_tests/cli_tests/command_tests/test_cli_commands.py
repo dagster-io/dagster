@@ -3,7 +3,7 @@ import string
 import sys
 import tempfile
 from contextlib import contextmanager
-from typing import Any, ContextManager, Iterator, NoReturn, Optional  # noqa: UP035
+from typing import Any, ContextManager, Iterator, NoReturn, Optional, TypeAlias  # noqa: UP035
 from unittest import mock
 
 import dagster as dg
@@ -24,7 +24,6 @@ from dagster._core.types.loadable_target_origin import LoadableTargetOrigin
 from dagster._grpc.server import GrpcServerProcess
 from dagster._utils.merger import merge_dicts
 from dagster.version import __version__
-from typing_extensions import TypeAlias
 
 ParsedCliArgs: TypeAlias = dict[str, Any]
 

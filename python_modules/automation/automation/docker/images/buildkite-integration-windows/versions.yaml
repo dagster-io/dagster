@@ -1,3 +1,0 @@
-"3.9":
-  docker_args:
-    BASE_IMAGE: python:3.9-windowsservercore-1809

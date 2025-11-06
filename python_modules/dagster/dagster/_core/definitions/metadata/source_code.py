@@ -1,13 +1,12 @@
 import inspect
 import os
 from abc import ABC, abstractmethod
-from collections.abc import Sequence
+from collections.abc import Callable, Sequence
 from dataclasses import dataclass
 from pathlib import Path
-from typing import TYPE_CHECKING, Any, Callable, Optional, Union
+from typing import TYPE_CHECKING, Any, Literal, Optional, TypeAlias, Union
 
 from dagster_shared.dagster_model import DagsterModel
-from typing_extensions import Literal, TypeAlias
 
 import dagster._check as check
 from dagster._annotations import beta, public

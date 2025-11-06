@@ -1,10 +1,11 @@
 from abc import abstractmethod
+from collections.abc import Callable
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Any, Callable, Generic, Literal, Optional, Union
+from typing import Any, Generic, Literal, Optional, TypeAlias, Union
 
 from pydantic import BaseModel
-from typing_extensions import TypeAlias, TypeVar
+from typing_extensions import TypeVar
 
 from dagster import _check as check
 from dagster._annotations import public

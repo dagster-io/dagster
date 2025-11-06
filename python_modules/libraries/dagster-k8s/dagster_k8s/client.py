@@ -2,8 +2,9 @@ import logging
 import os
 import sys
 import time
+from collections.abc import Callable
 from enum import Enum
-from typing import Any, Callable, Optional, TypeVar
+from typing import Any, Optional, TypeVar
 
 import kubernetes.client
 import kubernetes.client.rest

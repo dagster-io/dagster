@@ -66,7 +66,6 @@ setup(
         "Environment :: Web Environment",
         "Intended Audience :: Developers",
         "Intended Audience :: System Administrators",
-        "Programming Language :: Python :: 3.9",
         "Programming Language :: Python :: 3.10",
         "Programming Language :: Python :: 3.11",
         "Programming Language :: Python :: 3.12",
@@ -78,7 +77,7 @@ setup(
     ],
     packages=find_packages(exclude=["dagster_tests*"]),
     include_package_data=True,
-    python_requires=">=3.9,<3.14",
+    python_requires=">=3.10,<3.14",
     install_requires=[
         # cli
         "click>=5.0,<9.0",

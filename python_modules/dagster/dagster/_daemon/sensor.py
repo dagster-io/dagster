@@ -4,11 +4,11 @@ import logging
 import sys
 import threading
 from collections import defaultdict
-from collections.abc import Sequence
+from collections.abc import Callable, Sequence
 from concurrent.futures import Future, ThreadPoolExecutor
 from contextlib import AbstractContextManager
 from types import TracebackType
-from typing import TYPE_CHECKING, Callable, NamedTuple, Optional, Union, cast
+from typing import TYPE_CHECKING, NamedTuple, Optional, Union, cast
 
 import dagster_shared.seven as seven
 from dagster_shared.error import DagsterError

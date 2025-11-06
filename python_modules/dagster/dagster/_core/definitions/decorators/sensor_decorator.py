@@ -1,8 +1,8 @@
 import collections.abc
 import inspect
-from collections.abc import Mapping, Sequence
+from collections.abc import Callable, Mapping, Sequence
 from functools import update_wrapper
-from typing import TYPE_CHECKING, Any, Callable, Optional, Union
+from typing import TYPE_CHECKING, Any, Optional, Union
 
 import dagster._check as check
 from dagster._annotations import beta_param, public

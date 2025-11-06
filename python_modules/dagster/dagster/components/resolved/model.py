@@ -2,22 +2,17 @@ import functools
 import sys
 import textwrap
 import traceback
-from collections.abc import Sequence
+from collections.abc import Callable, Sequence
 from dataclasses import dataclass
 from itertools import chain
-from typing import TYPE_CHECKING, Annotated, Any, Callable, Optional, TypeVar, Union
+from types import UnionType
+from typing import TYPE_CHECKING, Annotated, Any, Optional, TypeVar, Union
 
 from pydantic import BaseModel, ConfigDict
 
 from dagster import _check as check
 from dagster._annotations import public
 from dagster.components.resolved.errors import ResolutionException
-
-try:
-    # this type only exists in python 3.10+
-    from types import UnionType  # type: ignore
-except ImportError:
-    UnionType = Union
 
 if TYPE_CHECKING:
     from dagster.components.resolved.context import ResolutionContext
@@ -126,7 +121,7 @@ class Resolver:
         fn: Union[ParentFn, AttrWithContextFn, Callable[["ResolutionContext", Any], Any]],
         *,
         model_field_name: Optional[str] = None,
-        model_field_type: Optional[type] = None,
+        model_field_type: Optional[type | UnionType] = None,
         description: Optional[str] = None,
         examples: Optional[list[Any]] = None,
         inject_before_resolve: bool = True,
@@ -176,14 +171,14 @@ class Resolver:
         field_types = tuple(r.model_field_type or t for t, r in arg_resolver_pairs)
         return Resolver(
             fn=functools.partial(resolve_union, [r for _, r in arg_resolver_pairs]),
-            model_field_type=Union[field_types],  # type: ignore
+            model_field_type=Union[field_types],  # pyright: ignore[reportInvalidTypeArguments]
         )
 
     @staticmethod
     def default(
         *,
         model_field_name: Optional[str] = None,
-        model_field_type: Optional[type] = None,
+        model_field_type: Optional[type | UnionType] = None,
         description: Optional[str] = None,
         examples: Optional[list[Any]] = None,
     ):

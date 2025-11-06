@@ -1,4 +1,4 @@
-from typing import List, Tuple, Type, TypeVar  # noqa: F401, UP035
+from typing import List, Literal, Tuple, Type, TypeAlias, TypeVar  # noqa: F401, UP035
 
 import docutils.nodes as nodes
 from dagster._annotations import (
@@ -26,7 +26,6 @@ from sphinx.ext.autodoc import (
     Options as AutodocOptions,
 )
 from sphinx.util import logging
-from typing_extensions import Literal, TypeAlias
 
 from dagster_sphinx.configurable import ConfigurableDocumenter
 from dagster_sphinx.docstring_flags import (

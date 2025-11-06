@@ -5,10 +5,10 @@ import random
 import sys
 import threading
 from collections import defaultdict
-from collections.abc import Generator, Mapping, Sequence
+from collections.abc import Callable, Generator, Mapping, Sequence
 from concurrent.futures import Future, ThreadPoolExecutor
 from contextlib import AbstractContextManager, ExitStack
-from typing import TYPE_CHECKING, Callable, NamedTuple, Optional, Union, cast
+from typing import TYPE_CHECKING, NamedTuple, Optional, Union, cast
 
 from typing_extensions import Self
 

@@ -2,8 +2,8 @@
 import os
 import sys
 import traceback
-from collections.abc import Sequence
-from typing import Any, Callable, NamedTuple, Optional
+from collections.abc import Callable, Sequence
+from typing import Any, NamedTuple, Optional
 
 from typing_extensions import Self
 

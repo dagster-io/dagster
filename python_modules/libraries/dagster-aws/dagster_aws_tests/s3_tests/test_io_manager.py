@@ -1,5 +1,6 @@
 import pickle
-from typing import Any, Callable
+from collections.abc import Callable
+from typing import Any
 
 import pytest
 from dagster import (

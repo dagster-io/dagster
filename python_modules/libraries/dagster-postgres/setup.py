@@ -23,7 +23,6 @@ setup(
     description="A Dagster integration for postgres",
     url="https://github.com/dagster-io/dagster/tree/master/python_modules/libraries/dagster-postgres",
     classifiers=[
-        "Programming Language :: Python :: 3.9",
         "Programming Language :: Python :: 3.10",
         "Programming Language :: Python :: 3.11",
         "Programming Language :: Python :: 3.12",
@@ -38,7 +37,7 @@ setup(
         ]
     },
     include_package_data=True,
-    python_requires=">=3.9,<3.14",
+    python_requires=">=3.10,<3.14",
     install_requires=[f"dagster{pin}", "psycopg2-binary"],
     zip_safe=False,
 )

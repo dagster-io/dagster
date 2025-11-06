@@ -1,8 +1,17 @@
 import inspect
 from collections.abc import Iterator, Mapping, Sequence, Set
-from typing import TYPE_CHECKING, AbstractSet, Any, Callable, Optional, Union, cast  # noqa: UP035
-
-from typing_extensions import TypeAlias, get_args, get_origin
+from typing import (  # noqa: UP035
+    TYPE_CHECKING,
+    AbstractSet,
+    Any,
+    Callable,
+    Optional,
+    TypeAlias,
+    Union,
+    cast,
+    get_args,
+    get_origin,
+)
 
 import dagster._check as check
 from dagster._annotations import deprecated, deprecated_param, public

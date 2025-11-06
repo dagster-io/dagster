@@ -1,6 +1,6 @@
 from collections import defaultdict
 from collections.abc import Mapping, Sequence
-from typing import TYPE_CHECKING, Any, NamedTuple, Optional, cast
+from typing import TYPE_CHECKING, Any, NamedTuple, Optional, TypeAlias, cast
 
 from dagster_shared.serdes.serdes import (
     FieldSerializer,
@@ -9,7 +9,6 @@ from dagster_shared.serdes.serdes import (
     WhitelistMap,
     pack_value,
 )
-from typing_extensions import TypeAlias
 
 import dagster._check as check
 from dagster._core.errors import (

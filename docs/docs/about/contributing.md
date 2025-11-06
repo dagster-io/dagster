@@ -30,7 +30,7 @@ You can develop for Dagster using macOS, Linux, or Windows. If using Windows, yo
    source .venv/bin/activate
    ```
 
-   Dagster supports Python 3.9 through 3.12.
+   Dagster supports Python 3.10 through 3.12.
 
 4. Ensure that you have a supported version of [node](https://nodejs.org/en/download) (20.X and above) by running `node -v`, and that you have [yarn](https://yarnpkg.com/lang/en) installed. Once you have node installed, you can use `npm` to install yarn.
 

@@ -1317,6 +1317,7 @@ type Pipeline implements SolidContainer & IPipelineSnapshot {
   partition(partitionName: String!, selectedAssetKeys: [AssetKeyInput!]): PartitionTagsAndConfig
   hasLaunchExecutionPermission: Boolean!
   hasLaunchReexecutionPermission: Boolean!
+  nodeNames: [String!]!
 }
 
 type PartitionTagsAndConfig {
@@ -2444,6 +2445,7 @@ type Job implements SolidContainer & IPipelineSnapshot {
   partition(partitionName: String!, selectedAssetKeys: [AssetKeyInput!]): PartitionTagsAndConfig
   hasLaunchExecutionPermission: Boolean!
   hasLaunchReexecutionPermission: Boolean!
+  nodeNames: [String!]!
 }
 
 enum SensorType {

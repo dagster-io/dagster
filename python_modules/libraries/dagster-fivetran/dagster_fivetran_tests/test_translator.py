@@ -1,4 +1,4 @@
-from typing import Callable
+from collections.abc import Callable
 
 import responses
 from dagster._config.field_utils import EnvVar

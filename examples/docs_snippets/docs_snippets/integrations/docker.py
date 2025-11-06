@@ -7,7 +7,7 @@ import dagster as dg
 def docker_pipes_asset(
     context: dg.AssetExecutionContext, docker_pipes_client: PipesDockerClient
 ):
-    docker_image = "python:3.9-slim"
+    docker_image = "python:3.12-slim"
     return docker_pipes_client.run(
         image=docker_image,
         command=[

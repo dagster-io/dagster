@@ -1,4 +1,5 @@
-from typing import Any, Callable, Optional, Union, cast, overload
+from collections.abc import Callable
+from typing import Any, Optional, Union, cast, overload
 
 import dagster._check as check
 from dagster._config import UserConfigSchema
