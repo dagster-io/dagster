@@ -31,6 +31,7 @@ class CensusResource(ConfigurableResource):
     **Examples:**
 
     .. code-block:: python
+
         import dagster as dg
         from dagster_census import CensusResource
 

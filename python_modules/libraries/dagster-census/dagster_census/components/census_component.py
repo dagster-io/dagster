@@ -46,7 +46,9 @@ def resolve_sync_selector(
     context: dg.ResolutionContext, model
 ) -> Optional[Callable[[CensusSync], bool]]:
     if isinstance(model, str):
-        model = context.resolve_value(model)
+        resolved = context.resolve_value(model)
+        resolved = check.callable_param(resolved, "unknown")  # pyright: ignore[reportArgumentType]
+        return resolved
     if isinstance(model, CensusSyncSelectorByName.model()):
         resolved = resolve_fields(model, CensusSyncSelectorByName.model(), context)
         return lambda sync: sync.name in resolved["by_name"]
