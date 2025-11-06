@@ -4,19 +4,15 @@ sidebar_position: 40
 title: Asset sensors
 ---
 
-:::note
-
-If you are just getting started with pipeline automation, we recommend using [declarative automation](/guides/automate/declarative-automation) instead of asset sensors. This guide will remain in place for those with existing asset sensors.
-
-:::
-
-import ScaffoldAsset from '@site/docs/partials/\_ScaffoldAsset.md';
-
-<ScaffoldAsset />
-
-Asset sensors in Dagster allow you to monitor asset materializations and trigger downstream computations or notifications based on those events.
+Asset sensors in Dagster allow you to monitor asset materializations and trigger downstream computations or notifications (e.g. launch a job imperatively or send a Slack message) based on those events. 
 
 This guide covers the most common use cases for asset sensors, such as defining cross-job and cross-code location dependencies.
+
+:::info Asset sensors vs declarative automation
+
+For situations where you are automating exceution of assets only, we recommend using [declarative automation](/guides/automate/declarative-automation) instead. Declarative automation also allows you to define cross-code location dependencies.
+
+:::
 
 ## Getting started
 
