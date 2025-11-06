@@ -1,7 +1,6 @@
 import os
 import re
 import readline
-import subprocess
 import sys
 import termios
 import tty
@@ -225,6 +224,14 @@ def _get_libraries_version(new_version: str) -> str:
 
 
 def _get_repo_name(git_dir: str) -> str:
+    if (
+        "DAGSTER_GIT_REPO_DIR" not in os.environ
+        or "DAGSTER_INTERNAL_GIT_REPO_DIR" not in os.environ
+    ):
+        raise ValueError(
+            "Required environment variables DAGSTER_GIT_REPO_DIR and/or DAGSTER_INTERNAL_GIT_REPO_DIR not set"
+        )
+
     if git_dir.startswith(os.environ["DAGSTER_GIT_REPO_DIR"]):
         return "dagster"
     elif git_dir.startswith(os.environ["DAGSTER_INTERNAL_GIT_REPO_DIR"]):
@@ -857,6 +864,7 @@ def _interactive_changelog_generation(new_version: str, prev_version: str) -> st
                         elif action == "o":
                             # Open PR link in browser
                             import webbrowser
+
                             webbrowser.open(commit.pr_url)
 
                         elif action == "t":
