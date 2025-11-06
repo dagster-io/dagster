@@ -1198,6 +1198,57 @@ def test_dst_transition_has_partition_key(
     assert partitions_def.has_partition_key(partition_key) == expected
 
 
+def test_add_dst_transition_partition_to_subset():
+    partitions_def = dg.HourlyPartitionsDefinition(
+        start_date="2025-11-02-00:00", end_date="2025-11-03-00:00", timezone="US/Pacific"
+    )
+
+    first_window = partitions_def.get_first_partition_window()
+    assert first_window
+    second_window = partitions_def.get_next_partition_window(first_window.end)
+    assert second_window
+    third_window = partitions_def.get_next_partition_window(second_window.end)
+    assert third_window
+
+    starting_subset = TimeWindowPartitionsSubset(
+        partitions_def,
+        num_partitions=None,
+        included_time_windows=[
+            first_window,
+            third_window,
+        ],
+    )
+
+    assert set(starting_subset.get_partition_keys()) == {
+        "2025-11-02-00:00",
+        "2025-11-02-01:00-0800",
+    }
+
+    middle_subset = TimeWindowPartitionsSubset(
+        partitions_def,
+        num_partitions=None,
+        included_time_windows=[
+            second_window,
+        ],
+    )
+
+    assert set(middle_subset.get_partition_keys()) == {
+        "2025-11-02-01:00",
+    }
+
+    union_subset = starting_subset | middle_subset
+
+    assert isinstance(union_subset, TimeWindowPartitionsSubset)
+
+    assert len(union_subset.included_time_windows) == 1
+
+    assert set(union_subset.get_partition_keys()) == {
+        "2025-11-02-00:00",
+        "2025-11-02-01:00-0800",
+        "2025-11-02-01:00",
+    }
+
+
 def test_dst_transition_hourly_partitions() -> None:
     partitions_def = dg.HourlyPartitionsDefinition(
         start_date="2020-10-31-23:00", end_date="2020-11-01-5:00", timezone="US/Pacific"
