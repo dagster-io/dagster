@@ -15,7 +15,6 @@ import CommunityIntegration from '@site/docs/partials/\_CommunityIntegration.md'
 
 <CommunityIntegration />
 
-
 <p>{frontMatter.description}</p>
 
 ## Installation
