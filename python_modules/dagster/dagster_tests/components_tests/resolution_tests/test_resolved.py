@@ -347,7 +347,7 @@ bar: bar
     assert w.foo == "cool"
 
 
-def test_default_factory_dict():
+def test_default_factory():
     # Test for default_factory in dataclass
     @dataclass
     class MyThing(dg.Resolvable):
@@ -378,6 +378,83 @@ items:
     assert model_cls
     instance = DefaultFactoryDictTestComponent.resolve_from_yaml("")
     assert instance.config == {}
+
+    class DefaultFactoryListTestComponent(dg.Component, dg.Model, dg.Resolvable):
+        config: list[str] = Field(default_factory=list)
+
+        def build_defs(self, context):
+            return dg.Definitions()
+
+    model_cls = DefaultFactoryListTestComponent.get_model_cls()
+    assert model_cls
+    instance = DefaultFactoryListTestComponent.resolve_from_yaml("")
+    assert instance.config == []
+
+    class DefaultFactoryTupleTestComponent(dg.Component, dg.Model, dg.Resolvable):
+        config: tuple[str, ...] = Field(default_factory=tuple)
+
+        def build_defs(self, context):
+            return dg.Definitions()
+
+    model_cls = DefaultFactoryTupleTestComponent.get_model_cls()
+    assert model_cls
+    instance = DefaultFactoryTupleTestComponent.resolve_from_yaml("")
+    assert instance.config == ()
+
+    class DefaultFacotoryIntTestComponent(dg.Component, dg.Model, dg.Resolvable):
+        config: int = Field(default_factory=lambda: 42)
+
+        def build_defs(self, context):
+            return dg.Definitions()
+
+    model_cls = DefaultFacotoryIntTestComponent.get_model_cls()
+    assert model_cls
+    instance = DefaultFacotoryIntTestComponent.resolve_from_yaml("")
+    assert instance.config == 42
+
+    class DefaultFactoryFloatTestComponent(dg.Component, dg.Model, dg.Resolvable):
+        config: float = Field(default_factory=lambda: 3.14)
+
+        def build_defs(self, context):
+            return dg.Definitions()
+
+    model_cls = DefaultFactoryFloatTestComponent.get_model_cls()
+    assert model_cls
+    instance = DefaultFactoryFloatTestComponent.resolve_from_yaml("")
+    assert instance.config == 3.14
+
+    class DefaultFactoryBoolTestComponent(dg.Component, dg.Model, dg.Resolvable):
+        config: bool = Field(default_factory=lambda: True)
+
+        def build_defs(self, context):
+            return dg.Definitions()
+
+    model_cls = DefaultFactoryBoolTestComponent.get_model_cls()
+    assert model_cls
+    instance = DefaultFactoryBoolTestComponent.resolve_from_yaml("")
+    assert instance.config is True
+
+    class DefaultFactoryStringTestComponent(dg.Component, dg.Model, dg.Resolvable):
+        config: str = Field(default_factory=lambda: "default")
+
+        def build_defs(self, context):
+            return dg.Definitions()
+
+    model_cls = DefaultFactoryStringTestComponent.get_model_cls()
+    assert model_cls
+    instance = DefaultFactoryStringTestComponent.resolve_from_yaml("")
+    assert instance.config == "default"
+
+    class DefaultFactoryAnyTestComponent(dg.Component, dg.Model, dg.Resolvable):
+        config: Any = Field(default_factory=lambda: {"key": "value"})
+
+        def build_defs(self, context):
+            return dg.Definitions()
+
+    model_cls = DefaultFactoryAnyTestComponent.get_model_cls()
+    assert model_cls
+    instance = DefaultFactoryAnyTestComponent.resolve_from_yaml("")
+    assert instance.config == {"key": "value"}
 
 
 def test_scope():
