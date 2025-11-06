@@ -13,6 +13,22 @@ from dagster._core.definitions.partitions.partition_key_range import PartitionKe
 T_str = TypeVar("T_str", bound=str, default=str, covariant=True)
 
 
+def union_subsets(partitions_subsets: Sequence["PartitionsSubset"]) -> "PartitionsSubset":
+    if not partitions_subsets:
+        return PartitionsSubset.create_empty_subset()
+
+    from dagster._core.definitions.partitions.subset import TimeWindowPartitionsSubset
+
+    if all(isinstance(subset, TimeWindowPartitionsSubset) for subset in partitions_subsets):
+        return TimeWindowPartitionsSubset.union_subsets(partitions_subsets)
+
+    result = partitions_subsets[0]
+    for i in range(1, len(partitions_subsets)):
+        result = result | partitions_subsets[i]
+
+    return result
+
+
 class PartitionsSubset(ABC, Generic[T_str]):
     """Represents a subset of the partitions within a PartitionsDefinition."""
 
@@ -43,6 +59,13 @@ class PartitionsSubset(ABC, Generic[T_str]):
         return self.with_partition_keys(
             partitions_def.get_partition_keys_in_range(partition_key_range)
         )
+
+    def multi_union(self, others: Sequence["PartitionsSubset"]) -> "PartitionsSubset":
+        result = self
+        for other in others:
+            result = result | other
+
+        return result
 
     def __or__(self, other: "PartitionsSubset") -> "PartitionsSubset":
         from dagster._core.definitions.partitions.subset.all import AllPartitionsSubset
