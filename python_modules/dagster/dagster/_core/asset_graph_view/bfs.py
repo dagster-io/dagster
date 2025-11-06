@@ -152,9 +152,9 @@ class ToposortedPriorityQueue:
         # (i.e. asset key).
 
         # the minimum item in a heap is always at index 0
-        min_item = self._heap[0]
+        min_item = heappop(self._heap)
+        result = min_item.asset_graph_subset
 
-        result = AssetGraphSubset.create_empty_subset()
         # Collect all items with the same minimum sort key (asset key)
         while self._heap and self._heap[0].sort_key == min_item.sort_key:
             heap_value = heappop(self._heap)
