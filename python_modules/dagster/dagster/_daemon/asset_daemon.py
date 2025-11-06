@@ -644,6 +644,8 @@ class AssetDaemon(DagsterDaemon):
 
         result = {}
 
+        initial_cursor = asset_daemon_cursor_to_instigator_serialized_cursor(pre_sensor_cursor)
+
         for sensor, repo in sensors_and_repos:
             new_auto_materialize_state = InstigatorState(
                 sensor.get_remote_origin(),
@@ -655,7 +657,7 @@ class AssetDaemon(DagsterDaemon):
                 ),
                 SensorInstigatorData(
                     min_interval=sensor.min_interval_seconds,
-                    cursor=asset_daemon_cursor_to_instigator_serialized_cursor(pre_sensor_cursor),
+                    cursor=initial_cursor,
                     last_sensor_start_timestamp=get_current_timestamp(),
                     sensor_type=sensor.sensor_type,
                 ),
