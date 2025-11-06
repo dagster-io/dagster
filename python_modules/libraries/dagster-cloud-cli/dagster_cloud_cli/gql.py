@@ -887,6 +887,55 @@ DELETE_ATLAN_INTEGRATION_SETTINGS_MUTATION = """
 """
 
 
+GET_ATLAN_INTEGRATION_SETTINGS_QUERY = """
+    query CliGetAtlanIntegrationSettings {
+        atlanIntegrationSettings {
+            __typename
+            ... on AtlanIntegrationSettings {
+                token
+                domain
+            }
+            ... on AtlanIntegrationSettingsUnset {
+                __typename
+            }
+            ... on UnauthorizedError {
+                message
+            }
+            ... on PythonError {
+                message
+                stack
+            }
+        }
+    }
+"""
+
+
+ATLAN_INTEGRATION_PREFLIGHT_CHECK_QUERY = """
+    query CliAtlanIntegrationPreflightCheck {
+        atlanIntegrationPreflightCheck {
+            __typename
+            ... on AtlanIntegrationPreflightCheckSuccess {
+                __typename
+            }
+            ... on AtlanIntegrationPreflightCheckFailure {
+                errorCode
+                errorMessage
+            }
+            ... on AtlanIntegrationSettingsUnset {
+                __typename
+            }
+            ... on UnauthorizedError {
+                message
+            }
+            ... on PythonError {
+                message
+                stack
+            }
+        }
+    }
+"""
+
+
 def set_atlan_integration_settings(
     client: DagsterCloudGraphQLClient,
     token: str,
@@ -916,3 +965,48 @@ def delete_atlan_integration_settings(
         != "DeleteAtlanIntegrationSuccess"
     ):
         raise Exception(f"Unable to delete Atlan integration settings: {result}")
+
+
+def get_atlan_integration_settings(
+    client: DagsterCloudGraphQLClient,
+) -> dict:
+    result = client.execute(
+        GET_ATLAN_INTEGRATION_SETTINGS_QUERY,
+    )
+
+    settings_data = result["data"]["atlanIntegrationSettings"]
+    typename = settings_data["__typename"]
+
+    if typename == "AtlanIntegrationSettingsUnset":
+        raise Exception("No Atlan integration settings configured")
+    elif typename in ("UnauthorizedError", "PythonError"):
+        raise Exception(f"Unable to get Atlan integration settings: {result}")
+
+    return {
+        "token": settings_data["token"],
+        "domain": settings_data["domain"],
+    }
+
+
+def atlan_integration_preflight_check(
+    client: DagsterCloudGraphQLClient,
+) -> dict:
+    result = client.execute(
+        ATLAN_INTEGRATION_PREFLIGHT_CHECK_QUERY,
+    )
+
+    check_data = result["data"]["atlanIntegrationPreflightCheck"]
+    typename = check_data["__typename"]
+
+    if typename == "AtlanIntegrationPreflightCheckSuccess":
+        return {"success": True}
+    elif typename == "AtlanIntegrationPreflightCheckFailure":
+        return {
+            "success": False,
+            "error_code": check_data["errorCode"],
+            "error_message": check_data["errorMessage"],
+        }
+    elif typename == "AtlanIntegrationSettingsUnset":
+        raise Exception("No Atlan integration settings configured")
+    else:
+        raise Exception(f"Unable to perform Atlan integration preflight check: {result}")

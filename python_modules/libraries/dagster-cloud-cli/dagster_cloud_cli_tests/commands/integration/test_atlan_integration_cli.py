@@ -50,3 +50,86 @@ def test_dagster_cloud_atlan_integration_delete_settings(empty_config, monkeypat
     )
     assert not result.exit_code
     delete_atlan_integration_settings.assert_called_once()
+
+
+def test_dagster_cloud_atlan_integration_get_settings(empty_config, monkeypatch, mocker) -> None:
+    """Tests Atlan get-settings CLI."""
+    get_atlan_integration_settings = mocker.patch(
+        "dagster_cloud_cli.gql.get_atlan_integration_settings",
+        return_value={"token": FAKE_TOKEN, "domain": FAKE_DOMAIN},
+    )
+
+    env = {
+        "DAGSTER_CLOUD_API_TOKEN": "fake-token",
+        "DAGSTER_CLOUD_ORGANIZATION": "fake-organization",
+        "DAGSTER_CLOUD_DEPLOYMENT": "fake-deployment",
+    }
+
+    runner = CliRunner()
+    result = runner.invoke(
+        app,
+        ["integration", "atlan", "get-settings", "--url", "fake-url"],
+        env=env,
+    )
+    assert not result.exit_code
+    get_atlan_integration_settings.assert_called_once()
+    assert FAKE_TOKEN in result.output
+    assert FAKE_DOMAIN in result.output
+
+
+def test_dagster_cloud_atlan_integration_preflight_check_success(
+    empty_config, monkeypatch, mocker
+) -> None:
+    """Tests Atlan preflight-check CLI with success."""
+    atlan_integration_preflight_check = mocker.patch(
+        "dagster_cloud_cli.gql.atlan_integration_preflight_check",
+        return_value={"success": True},
+    )
+
+    env = {
+        "DAGSTER_CLOUD_API_TOKEN": "fake-token",
+        "DAGSTER_CLOUD_ORGANIZATION": "fake-organization",
+        "DAGSTER_CLOUD_DEPLOYMENT": "fake-deployment",
+    }
+
+    runner = CliRunner()
+    result = runner.invoke(
+        app,
+        ["integration", "atlan", "preflight-check", "--url", "fake-url"],
+        env=env,
+    )
+    assert not result.exit_code
+    atlan_integration_preflight_check.assert_called_once()
+    assert "passed successfully" in result.output
+
+
+def test_dagster_cloud_atlan_integration_preflight_check_failure(
+    empty_config, monkeypatch, mocker
+) -> None:
+    """Tests Atlan preflight-check CLI with failure."""
+    atlan_integration_preflight_check = mocker.patch(
+        "dagster_cloud_cli.gql.atlan_integration_preflight_check",
+        return_value={
+            "success": False,
+            "error_code": "TEST_ERROR",
+            "error_message": "Test error message",
+        },
+    )
+
+    env = {
+        "DAGSTER_CLOUD_API_TOKEN": "fake-token",
+        "DAGSTER_CLOUD_ORGANIZATION": "fake-organization",
+        "DAGSTER_CLOUD_DEPLOYMENT": "fake-deployment",
+    }
+
+    runner = CliRunner()
+    result = runner.invoke(
+        app,
+        ["integration", "atlan", "preflight-check", "--url", "fake-url"],
+        env=env,
+    )
+    assert not result.exit_code
+    atlan_integration_preflight_check.assert_called_once()
+    assert "failed" in result.output
+    assert "TEST_ERROR" in result.output
+    assert "Test error message" in result.output
