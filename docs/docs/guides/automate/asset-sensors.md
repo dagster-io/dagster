@@ -4,25 +4,27 @@ sidebar_position: 40
 title: Asset sensors
 ---
 
+:::note
+
+If you are just getting started with pipeline automation, we recommend using [declarative automation](/guides/automate/declarative-automation) instead of asset sensors. This guide will remain in place for those with existing asset sensors.
+
+:::
+
 import ScaffoldAsset from '@site/docs/partials/\_ScaffoldAsset.md';
 
 <ScaffoldAsset />
 
-Asset sensors in Dagster provide a powerful mechanism for monitoring asset materializations and triggering downstream computations or notifications based on those events.
+Asset sensors in Dagster allow you to monitor asset materializations and trigger downstream computations or notifications based on those events.
 
 This guide covers the most common use cases for asset sensors, such as defining cross-job and cross-code location dependencies.
 
-:::note
-
-This documentation assumes familiarity with [assets](/guides/build/assets) and [jobs](/guides/build/jobs).
-
-:::
-
 ## Getting started
 
-Asset sensors monitor an asset for new materialization events and target a job when a new materialization occurs.
+To get started, you can use the <PyObject module="dagster" section="schedules-sensors" object="asset_sensor" decorator /> decorator to create an asset sensor where the decorated function is used as the asset sensor's evaluation function.
 
-Typically, asset sensors return a `RunRequest` when a new job is to be triggered. However, they may provide a `SkipReason` if the asset materialization doesn't trigger a job.
+Asset sensors monitor an asset for new materialization events and target a [job](/guides/build/jobs) when a new materialization occurs.
+
+Typically, asset sensors return a <PyObject module="dagster" section="schedules-sensors" object="RunRequest" /> when a new job is to be triggered. However, they may provide a <PyObject module="dagster" section="schedules-sensors" object="SkipReason" /> if the asset materialization doesn't trigger a job.
 
 For example, you may wish to monitor an asset that's materialized daily, but don't want to trigger jobs on holidays.
 
