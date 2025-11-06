@@ -889,21 +889,23 @@ DELETE_ATLAN_INTEGRATION_SETTINGS_MUTATION = """
 
 GET_ATLAN_INTEGRATION_SETTINGS_QUERY = """
     query CliGetAtlanIntegrationSettings {
-        atlanIntegrationSettings {
-            __typename
-            ... on AtlanIntegrationSettings {
-                token
-                domain
-            }
-            ... on AtlanIntegrationSettingsUnset {
+        atlanIntegration {
+            atlanIntegrationSettingsOrError {
                 __typename
-            }
-            ... on UnauthorizedError {
-                message
-            }
-            ... on PythonError {
-                message
-                stack
+                ... on AtlanIntegrationSettings {
+                    token
+                    domain
+                }
+                ... on AtlanIntegrationSettingsUnset {
+                    __typename
+                }
+                ... on UnauthorizedError {
+                    message
+                }
+                ... on PythonError {
+                    message
+                    stack
+                }
             }
         }
     }
@@ -912,24 +914,27 @@ GET_ATLAN_INTEGRATION_SETTINGS_QUERY = """
 
 ATLAN_INTEGRATION_PREFLIGHT_CHECK_QUERY = """
     query CliAtlanIntegrationPreflightCheck {
-        atlanIntegrationPreflightCheck {
-            __typename
-            ... on AtlanIntegrationPreflightCheckSuccess {
+        atlanIntegration {
+            atlanIntegrationPreflightCheckOrError {
                 __typename
-            }
-            ... on AtlanIntegrationPreflightCheckFailure {
-                errorCode
-                errorMessage
-            }
-            ... on AtlanIntegrationSettingsUnset {
-                __typename
-            }
-            ... on UnauthorizedError {
-                message
-            }
-            ... on PythonError {
-                message
-                stack
+                ... on AtlanIntegrationPreflightCheckSuccess {
+                    __typename
+                    success
+                }
+                ... on AtlanIntegrationPreflightCheckFailure {
+                    errorCode
+                    errorMessage
+                }
+                ... on AtlanIntegrationSettingsUnset {
+                    __typename
+                }
+                ... on UnauthorizedError {
+                    message
+                }
+                ... on PythonError {
+                    message
+                    stack
+                }
             }
         }
     }
@@ -974,7 +979,7 @@ def get_atlan_integration_settings(
         GET_ATLAN_INTEGRATION_SETTINGS_QUERY,
     )
 
-    settings_data = result["data"]["atlanIntegrationSettings"]
+    settings_data = result["data"]["atlanIntegration"]["atlanIntegrationSettingsOrError"]
     typename = settings_data["__typename"]
 
     if typename == "AtlanIntegrationSettingsUnset":
@@ -995,7 +1000,7 @@ def atlan_integration_preflight_check(
         ATLAN_INTEGRATION_PREFLIGHT_CHECK_QUERY,
     )
 
-    check_data = result["data"]["atlanIntegrationPreflightCheck"]
+    check_data = result["data"]["atlanIntegration"]["atlanIntegrationPreflightCheckOrError"]
     typename = check_data["__typename"]
 
     if typename == "AtlanIntegrationPreflightCheckSuccess":
