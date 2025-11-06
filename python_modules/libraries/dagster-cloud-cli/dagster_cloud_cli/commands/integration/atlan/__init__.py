@@ -1,5 +1,6 @@
 from typing import Annotated
 
+import typer
 from typer import Argument, Typer
 
 from dagster_cloud_cli import gql
@@ -40,3 +41,33 @@ def delete_atlan_settings_command(
     """Delete your Atlan settings to disable the Dagster<>Atlan integration in Dagster Cloud."""
     with gql.graphql_client_from_url(url, api_token) as client:
         gql.delete_atlan_integration_settings(client)
+
+
+@app.command(name="get-settings")
+@dagster_cloud_options(allow_empty=True, requires_url=True)
+def get_atlan_settings_command(
+    api_token: str,
+    url: str,
+):
+    """Get your current Atlan settings from Dagster Cloud."""
+    with gql.graphql_client_from_url(url, api_token) as client:
+        settings = gql.get_atlan_integration_settings(client)
+        typer.echo(f"Token: {settings['token']}")
+        typer.echo(f"Domain: {settings['domain']}")
+
+
+@app.command(name="preflight-check")
+@dagster_cloud_options(allow_empty=True, requires_url=True)
+def preflight_check_command(
+    api_token: str,
+    url: str,
+):
+    """Run a preflight check on your Atlan integration settings."""
+    with gql.graphql_client_from_url(url, api_token) as client:
+        result = gql.atlan_integration_preflight_check(client)
+        if result["success"]:
+            typer.echo("Preflight check passed successfully!")
+        else:
+            typer.echo("Preflight check failed:")
+            typer.echo(f"  Error code: {result['error_code']}")
+            typer.echo(f"  Error message: {result['error_message']}")
