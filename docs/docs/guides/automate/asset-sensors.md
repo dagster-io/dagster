@@ -10,7 +10,7 @@ This guide covers the most common use cases for asset sensors, such as defining 
 
 :::info Asset sensors vs declarative automation
 
-For situations where you are automating exceution of assets only, we recommend using [declarative automation](/guides/automate/declarative-automation) instead. Declarative automation also allows you to define cross-code location dependencies.
+For situations where you are automating execution of assets only, we recommend using [declarative automation](/guides/automate/declarative-automation) instead. Declarative automation also allows you to define cross-code location dependencies.
 
 :::
 
