@@ -31,8 +31,8 @@ def set_atlan_settings_command(
     """Upload your Atlan settings to enable the Dagster<>Atlan integration in Dagster Cloud."""
     if not validators.domain(atlan_domain):
         ui.print(
-            f"Invalid domain. "
-            f"Please provide the domain of youf Altan tenant using the following format: your-organization.atlan.com."
+            "Invalid domain. "
+            "Please provide the domain of youf Altan tenant using the following format: your-organization.atlan.com."
         )
         sys.exit(1)
 
