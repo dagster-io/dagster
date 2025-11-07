@@ -1,8 +1,8 @@
 from collections import defaultdict
-from collections.abc import Iterable, Mapping, Sequence
+from collections.abc import Callable, Iterable, Mapping, Sequence
 from functools import cached_property, reduce
 from types import ModuleType
-from typing import Any, Callable, Optional, Union, cast, get_args
+from typing import Any, Optional, Union, cast, get_args
 
 from dagster._core.definitions.asset_checks.asset_checks_definition import (
     AssetChecksDefinition,

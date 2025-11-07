@@ -1,7 +1,15 @@
 from collections.abc import Sequence
-from typing import Any, ForwardRef, Literal, NamedTuple, TypeVar, Union, get_args, get_origin
-
-from typing_extensions import TypeGuard
+from typing import (
+    Any,
+    ForwardRef,
+    Literal,
+    NamedTuple,
+    TypeGuard,
+    TypeVar,
+    Union,
+    get_args,
+    get_origin,
+)
 
 T = TypeVar("T", bound=Any)
 

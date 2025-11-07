@@ -1,10 +1,11 @@
 import json
 import os
 import textwrap
+from collections.abc import Callable
 from contextlib import ExitStack
 from enum import Enum
 from pathlib import Path
-from typing import Any, Callable, Optional
+from typing import Any, Optional
 
 import pytest
 import responses

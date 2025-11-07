@@ -1,9 +1,9 @@
 import asyncio
-from collections.abc import Hashable, Mapping
+from collections.abc import Callable, Hashable, Mapping
 from functools import wraps
-from typing import Any, Callable, TypeVar, cast
+from typing import Any, Concatenate, TypeVar, cast
 
-from typing_extensions import Concatenate, ParamSpec
+from typing_extensions import ParamSpec
 
 from dagster_shared.seven import get_arg_names
 

@@ -1,4 +1,4 @@
-from typing import Callable
+from collections.abc import Callable
 
 from dagster_shared.merger import deep_merge_dicts
 

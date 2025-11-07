@@ -1,8 +1,7 @@
 import logging
 import time
 from collections import defaultdict
-from collections.abc import Mapping, Sequence
-from typing import Callable
+from collections.abc import Callable, Mapping, Sequence
 
 import dagster as dg
 from dagster._core.definitions.node_definition import NodeDefinition

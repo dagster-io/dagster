@@ -66,7 +66,7 @@ def format_sensor(sensor: "DgApiSensor", as_json: bool) -> str:
     return "\n".join(lines)
 
 
-@click.command(name="list", cls=DgClickCommand, unlaunched=True)
+@click.command(name="list", cls=DgClickCommand)
 @click.option(
     "--status",
     type=click.Choice(["RUNNING", "STOPPED", "PAUSED"]),
@@ -123,7 +123,7 @@ def list_sensors_command(
             raise click.ClickException(f"Failed to list sensors: {e}")
 
 
-@click.command(name="get", cls=DgClickCommand, unlaunched=True)
+@click.command(name="get", cls=DgClickCommand)
 @click.argument("sensor_name", type=str)
 @click.option(
     "--json",
@@ -170,7 +170,6 @@ def get_sensor_command(
 @click.group(
     name="sensor",
     cls=DgClickGroup,
-    unlaunched=True,
     commands={
         "list": list_sensors_command,
         "get": get_sensor_command,

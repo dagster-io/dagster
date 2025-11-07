@@ -8,9 +8,7 @@ from collections.abc import Iterator
 from multiprocessing import Queue
 from multiprocessing.context import BaseContext as MultiprocessingBaseContext
 from multiprocessing.process import BaseProcess
-from typing import TYPE_CHECKING, NamedTuple, Optional, Union
-
-from typing_extensions import Literal
+from typing import TYPE_CHECKING, Literal, NamedTuple, Optional, Union
 
 import dagster._check as check
 from dagster._core.errors import DagsterExecutionInterruptedError

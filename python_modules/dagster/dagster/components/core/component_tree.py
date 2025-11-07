@@ -1,9 +1,10 @@
 import importlib
+from collections.abc import Callable
 from contextlib import contextmanager
 from functools import cached_property
 from pathlib import Path
 from types import ModuleType
-from typing import Any, Callable, Optional, Union, overload
+from typing import Any, Optional, Union, overload
 from unittest import mock
 
 from dagster_shared import check

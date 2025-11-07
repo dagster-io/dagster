@@ -1,4 +1,7 @@
+import os
 import sys
+import tempfile
+from contextlib import contextmanager
 from pathlib import Path
 from unittest.mock import patch
 
@@ -13,6 +16,16 @@ from packaging import version
 def temp_dir(tmp_path):
     """Pytest fixture for temporary directory."""
     return str(tmp_path)
+
+
+@contextmanager
+def new_cwd(path: str):
+    old = os.getcwd()
+    try:
+        os.chdir(path)
+        yield
+    finally:
+        os.chdir(old)
 
 
 def test_get_pyproject_toml_deps_pep_621_format(temp_dir):
@@ -533,3 +546,105 @@ setup(
     assert any("dagster" in dep for dep in deps2_lines), (
         f"Location 2 missing dagster: {deps2_lines}"
     )
+
+
+def test_get_pyproject_deps_requirements_multi_location_scenario() -> None:
+    """Test scenario that mimics multi-location build with nested packages.
+
+    This test simulates building multiple locations sequentially, which was
+    causing the second location to fail with empty dependencies due to the
+    cwd bug in get_setup_py_deps.
+    """
+    # Use the current Python version for the test
+    python_version = version.Version(f"{sys.version_info.major}.{sys.version_info.minor}")
+
+    with tempfile.TemporaryDirectory() as tmp_path:
+        with new_cwd(tmp_path):
+            # Create two locations with identical nested package structure
+            location1_dir = Path("./location1")
+            location1_dir.mkdir()
+            location1_pkg = location1_dir / "location1"
+            location1_pkg.mkdir()
+            (location1_pkg / "__init__.py").write_text(
+                "from dagster import Definitions; defs = Definitions()"
+            )
+
+            location2_dir = Path("./location2")
+            location2_dir.mkdir()
+            location2_pkg = location2_dir / "location2"
+            location2_pkg.mkdir()
+            (location2_pkg / "__init__.py").write_text(
+                "from dagster import Definitions; defs = Definitions()"
+            )
+
+            pyproject_content = """
+        [project]
+        name = "location1"
+        requires-python = ">=3.9,<3.14"
+        version = "0.1.0"
+        dependencies = [
+            "dagster>=1.0.0",
+            "dagster-cloud>=1.0.0",
+        ]
+
+        [build-system]
+        requires = ["hatchling"]
+        build-backend = "hatchling.build"
+        """
+
+            (location1_dir / "pyproject.toml").write_text(pyproject_content)
+            (location2_dir / "pyproject.toml").write_text(
+                pyproject_content.replace("location1", "location2")
+            )
+
+            # Get deps for first location
+            local_packages1, deps_requirements1 = deps.get_deps_requirements(
+                str(location1_dir), python_version
+            )
+
+            source.build_source_pex(
+                str(location1_dir),
+                [],
+                "/tmp/",
+                python_version,
+            )
+
+            # Get deps for second location - this should NOT fail with empty dependencies
+            local_packages2, deps_requirements2 = deps.get_deps_requirements(
+                str(location2_dir), python_version
+            )
+
+            source.build_source_pex(
+                str(location2_dir),
+                [],
+                "/tmp/",
+                python_version,
+            )
+
+            # Both should have found dependencies
+            deps1_lines = [
+                line.strip()
+                for line in deps_requirements1.requirements_txt.strip().split("\n")
+                if line.strip()
+            ]
+            deps2_lines = [
+                line.strip()
+                for line in deps_requirements2.requirements_txt.strip().split("\n")
+                if line.strip()
+            ]
+
+            # Both should have found dagster dependencies
+            assert len(deps1_lines) >= 2, (
+                f"Location 1 should have at least 2 deps, got {deps1_lines}"
+            )
+            assert len(deps2_lines) >= 2, (
+                f"Location 2 should have at least 2 deps, got {deps2_lines}"
+            )
+
+            # Both should contain dagster
+            assert any("dagster" in dep for dep in deps1_lines), (
+                f"Location 1 missing dagster: {deps1_lines}"
+            )
+            assert any("dagster" in dep for dep in deps2_lines), (
+                f"Location 2 missing dagster: {deps2_lines}"
+            )

@@ -5,9 +5,9 @@ import random
 import string
 import subprocess
 import textwrap
-from collections.abc import Iterator
+from collections.abc import Callable, Iterator
 from contextlib import contextmanager
-from typing import Any, Callable, Optional
+from typing import Any, Optional
 
 import dagster._check as check
 import pytest

@@ -1,8 +1,8 @@
 import inspect
 import json
 from collections import OrderedDict, defaultdict
-from collections.abc import Iterable, Iterator, Mapping, Sequence
-from typing import TYPE_CHECKING, Callable, NamedTuple, Optional, Union, cast
+from collections.abc import Callable, Iterable, Iterator, Mapping, Sequence
+from typing import TYPE_CHECKING, NamedTuple, Optional, Union, cast
 
 import dagster._check as check
 from dagster._annotations import deprecated_param, public, superseded

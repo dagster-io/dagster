@@ -16,7 +16,7 @@ from dataclasses import dataclass
 from io import StringIO
 from pathlib import Path
 from types import TracebackType
-from typing import Any, Literal, Optional, TextIO, Union
+from typing import Any, Literal, Optional, TextIO, TypeAlias, Union
 
 import click
 import psutil
@@ -45,7 +45,7 @@ from dagster_dg_core.utils import (
 )
 from dagster_shared.utils import environ
 from packaging.version import Version
-from typing_extensions import Self, TypeAlias
+from typing_extensions import Self
 
 STANDARD_TEST_COMPONENT_MODULE = "dagster_test.components"
 

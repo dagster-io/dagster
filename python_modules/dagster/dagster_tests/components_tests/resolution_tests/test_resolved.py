@@ -10,7 +10,6 @@ from dagster.components.resolved.errors import ResolutionException
 from dagster.components.resolved.model import Resolver
 from dagster_shared.record import record
 from pydantic import BaseModel, ConfigDict, Field, ValidationError
-from typing_extensions import TypeAlias
 
 
 def test_basic():

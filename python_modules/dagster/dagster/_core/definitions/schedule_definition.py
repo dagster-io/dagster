@@ -1,13 +1,11 @@
 import copy
 import logging
 import warnings
-from collections.abc import Iterator, Mapping, Sequence
+from collections.abc import Callable, Iterator, Mapping, Sequence
 from contextlib import ExitStack
 from datetime import datetime
 from enum import Enum
-from typing import TYPE_CHECKING, Any, Callable, NamedTuple, Optional, TypeVar, Union, cast
-
-from typing_extensions import TypeAlias
+from typing import TYPE_CHECKING, Any, NamedTuple, Optional, TypeAlias, TypeVar, Union, cast
 
 import dagster._check as check
 from dagster._annotations import beta_param, deprecated, deprecated_param, public

@@ -868,8 +868,8 @@ SET_ATLAN_INTEGRATION_SETTINGS_MUTATION = """
 
 
 DELETE_ATLAN_INTEGRATION_SETTINGS_MUTATION = """
-    mutation CliDeleteAtlanIntegrationSettings() {
-        deleteAtlanIntegrationSettings() {
+    mutation CliDeleteAtlanIntegrationSettings {
+        deleteAtlanIntegrationSettings {
             __typename
             ...on DeleteAtlanIntegrationSuccess {
                 organization
@@ -887,11 +887,65 @@ DELETE_ATLAN_INTEGRATION_SETTINGS_MUTATION = """
 """
 
 
+GET_ATLAN_INTEGRATION_SETTINGS_QUERY = """
+    query CliGetAtlanIntegrationSettings {
+        atlanIntegration {
+            atlanIntegrationSettingsOrError {
+                __typename
+                ... on AtlanIntegrationSettings {
+                    token
+                    domain
+                }
+                ... on AtlanIntegrationSettingsUnset {
+                    __typename
+                }
+                ... on UnauthorizedError {
+                    message
+                }
+                ... on PythonError {
+                    message
+                    stack
+                }
+            }
+        }
+    }
+"""
+
+
+ATLAN_INTEGRATION_PREFLIGHT_CHECK_QUERY = """
+    query CliAtlanIntegrationPreflightCheck {
+        atlanIntegration {
+            atlanIntegrationPreflightCheckOrError {
+                __typename
+                ... on AtlanIntegrationPreflightCheckSuccess {
+                    __typename
+                    success
+                }
+                ... on AtlanIntegrationPreflightCheckFailure {
+                    errorCode
+                    errorMessage
+                }
+                ... on AtlanIntegrationSettingsUnset {
+                    __typename
+                }
+                ... on UnauthorizedError {
+                    message
+                }
+                ... on PythonError {
+                    message
+                    stack
+                }
+            }
+        }
+    }
+"""
+
+
 def set_atlan_integration_settings(
     client: DagsterCloudGraphQLClient,
     token: str,
     domain: str,
-) -> None:
+) -> tuple[str, bool]:
     result = client.execute(
         SET_ATLAN_INTEGRATION_SETTINGS_MUTATION,
         variable_values={"atlanIntegrationSettings": {"token": token, "domain": domain}},
@@ -903,10 +957,14 @@ def set_atlan_integration_settings(
     ):
         raise Exception(f"Unable to set Atlan integration settings: {result}")
 
+    return result["data"]["etAtlanIntegrationSettings"]["organization"], result["data"][
+        "etAtlanIntegrationSettings"
+    ]["success"]
+
 
 def delete_atlan_integration_settings(
     client: DagsterCloudGraphQLClient,
-) -> None:
+) -> tuple[str, bool]:
     result = client.execute(
         DELETE_ATLAN_INTEGRATION_SETTINGS_MUTATION,
     )
@@ -916,3 +974,52 @@ def delete_atlan_integration_settings(
         != "DeleteAtlanIntegrationSuccess"
     ):
         raise Exception(f"Unable to delete Atlan integration settings: {result}")
+
+    return result["data"]["deleteAtlanIntegrationSettings"]["organization"], result["data"][
+        "deleteAtlanIntegrationSettings"
+    ]["success"]
+
+
+def get_atlan_integration_settings(
+    client: DagsterCloudGraphQLClient,
+) -> dict:
+    result = client.execute(
+        GET_ATLAN_INTEGRATION_SETTINGS_QUERY,
+    )
+
+    settings_data = result["data"]["atlanIntegration"]["atlanIntegrationSettingsOrError"]
+    typename = settings_data["__typename"]
+
+    if typename == "AtlanIntegrationSettingsUnset":
+        raise Exception("No Atlan integration settings configured")
+    elif typename in ("UnauthorizedError", "PythonError"):
+        raise Exception(f"Unable to get Atlan integration settings: {result}")
+
+    return {
+        "token": settings_data["token"],
+        "domain": settings_data["domain"],
+    }
+
+
+def atlan_integration_preflight_check(
+    client: DagsterCloudGraphQLClient,
+) -> dict:
+    result = client.execute(
+        ATLAN_INTEGRATION_PREFLIGHT_CHECK_QUERY,
+    )
+
+    check_data = result["data"]["atlanIntegration"]["atlanIntegrationPreflightCheckOrError"]
+    typename = check_data["__typename"]
+
+    if typename == "AtlanIntegrationPreflightCheckSuccess":
+        return {"success": True}
+    elif typename == "AtlanIntegrationPreflightCheckFailure":
+        return {
+            "success": False,
+            "error_code": check_data["errorCode"],
+            "error_message": check_data["errorMessage"],
+        }
+    elif typename == "AtlanIntegrationSettingsUnset":
+        raise Exception("No Atlan integration settings configured")
+    else:
+        raise Exception(f"Unable to perform Atlan integration preflight check: {result}")

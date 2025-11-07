@@ -1,6 +1,6 @@
-from collections.abc import Mapping, Sequence
+from collections.abc import Callable, Mapping, Sequence
 from enum import Enum
-from typing import Any, Callable, Literal, Optional
+from typing import Any, Literal, Optional, TypeAlias
 
 from dagster import _check as check
 from dagster._core.definitions.asset_key import AssetKey
@@ -11,7 +11,6 @@ from dagster._record import record
 from dagster._serdes import whitelist_for_serdes
 from dagster._utils.cached_method import cached_method
 from dagster._utils.names import clean_name_lower_with_dots
-from typing_extensions import TypeAlias
 
 TABLEAU_PREFIX = "tableau/"
 

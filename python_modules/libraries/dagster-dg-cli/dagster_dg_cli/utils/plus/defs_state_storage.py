@@ -105,7 +105,7 @@ class DagsterPlusCliDefsStateStorage(DefsStateStorage[T_DagsterInstance]):
     def get_latest_defs_state_info(self) -> Optional[DefsStateInfo]:
         res = self._execute_query(GET_LATEST_DEFS_STATE_INFO_QUERY)
         latest_info = res["latestDefsStateInfo"]
-        return DefsStateInfo.from_graphql(latest_info)
+        return DefsStateInfo.from_graphql(latest_info) if latest_info else None
 
     def set_latest_version(self, key: str, version: str) -> None:
         result = self._execute_query(

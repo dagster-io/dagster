@@ -1,6 +1,6 @@
-from collections.abc import Iterable, Mapping
+from collections.abc import Callable, Iterable, Mapping
 from copy import deepcopy
-from typing import Any, Callable, Optional
+from typing import Any, Optional
 
 from dagster import (
     AssetsDefinition,

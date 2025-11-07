@@ -44,6 +44,7 @@
 | `docker`              | <img src="/images/guides/build/assets/metadata-tags/kinds/icons/tool-docker-color.svg" width={20} height={20} />                         |
 | `doris`               | <img src="/images/guides/build/assets/metadata-tags/kinds/icons/tool-doris-color.svg" width={20} height={20} />                          |
 | `doubao`              | <img src="/images/guides/build/assets/metadata-tags/kinds/icons/tool-doubao-color.svg" width={20} height={20} />                         |
+| `dremio`              | <img src="/images/guides/build/assets/metadata-tags/kinds/icons/tool-dremio-color.svg" width={20} height={20} />                         |
 | `druid`               | <img src="/images/guides/build/assets/metadata-tags/kinds/icons/tool-druid-color.svg" width={20} height={20} />                          |
 | `dspy`                | <img src="/images/guides/build/assets/metadata-tags/kinds/icons/tool-dspy-color.svg" width={20} height={20} />                           |
 | `duckdb`              | <img src="/images/guides/build/assets/metadata-tags/kinds/icons/tool-duckdb-color.svg" width={20} height={20} />                         |

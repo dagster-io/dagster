@@ -25,7 +25,6 @@ setup(
         "https://github.com/dagster-io/dagster/tree/master/python_modules/libraries/dagster-msteams"
     ),
     classifiers=[
-        "Programming Language :: Python :: 3.9",
         "Programming Language :: Python :: 3.10",
         "Programming Language :: Python :: 3.11",
         "Programming Language :: Python :: 3.12",
@@ -35,7 +34,7 @@ setup(
     ],
     packages=find_packages(exclude=["dagster_msteams_tests*"]),
     include_package_data=True,
-    python_requires=">=3.9,<3.14",
+    python_requires=">=3.10,<3.14",
     install_requires=[
         f"dagster{pin}",
         "requests>=2,<3",

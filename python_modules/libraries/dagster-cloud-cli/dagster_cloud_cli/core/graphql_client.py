@@ -1,10 +1,10 @@
 import logging
 import re
 import time
-from collections.abc import Mapping
+from collections.abc import Callable, Mapping
 from contextlib import contextmanager
 from email.utils import mktime_tz, parsedate_tz
-from typing import Any, Callable, Optional
+from typing import Any, Optional
 
 import requests
 from dagster_shared import check

@@ -1,8 +1,9 @@
 import logging
 import uuid
 from collections import defaultdict
+from collections.abc import Callable
 from contextlib import contextmanager
-from typing import Any, Callable, Optional
+from typing import Any, Optional
 
 import sqlalchemy as db
 from sqlalchemy.pool import NullPool

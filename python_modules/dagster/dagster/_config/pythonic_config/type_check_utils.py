@@ -1,7 +1,8 @@
-from typing import Any, Literal, Union
-
-from typing_extensions import (
+from typing import (
+    Any,
+    Literal,
     Literal as ExtLiteral,
+    Union,
     get_origin,
 )
 

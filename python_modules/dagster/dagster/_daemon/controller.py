@@ -4,10 +4,10 @@ import sys
 import threading
 import time
 import uuid
-from collections.abc import Iterable, Iterator, Mapping, Sequence
+from collections.abc import Callable, Iterable, Iterator, Mapping, Sequence
 from contextlib import AbstractContextManager, ExitStack, contextmanager
 from types import TracebackType
-from typing import Callable, Optional
+from typing import Optional
 
 from typing_extensions import Self
 

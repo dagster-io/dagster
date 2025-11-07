@@ -1,7 +1,7 @@
 import inspect
-from collections.abc import Sequence
+from collections.abc import Callable, Sequence
 from types import ModuleType
-from typing import Callable, NamedTuple, Optional, Union
+from typing import NamedTuple, Optional, Union
 
 from dagster import DagsterInvariantViolationError, GraphDefinition, RepositoryDefinition
 from dagster._core.code_pointer import load_python_file, load_python_module

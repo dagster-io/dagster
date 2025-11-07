@@ -4,8 +4,8 @@ import pickle
 import sys
 import tempfile
 import uuid
-from collections.abc import Iterable, Mapping, Sequence
-from typing import Any, Callable, Optional, Union, cast
+from collections.abc import Callable, Iterable, Mapping, Sequence
+from typing import Any, Optional, Union, cast
 
 import nbformat
 import papermill

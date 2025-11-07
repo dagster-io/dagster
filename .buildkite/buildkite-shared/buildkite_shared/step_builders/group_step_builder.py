@@ -1,4 +1,4 @@
-from typing import Optional, Union
+from typing import Optional, TypeAlias, Union
 
 from buildkite_shared.step_builders.command_step_builder import (
     BuildkiteQueue,
@@ -6,7 +6,7 @@ from buildkite_shared.step_builders.command_step_builder import (
 )
 from buildkite_shared.step_builders.trigger_step_builder import TriggerStepConfiguration
 from buildkite_shared.step_builders.wait_step_builder import WaitStepConfiguration
-from typing_extensions import TypeAlias, TypedDict
+from typing_extensions import TypedDict
 
 GroupLeafStepConfiguration: TypeAlias = Union[
     CommandStepConfiguration, TriggerStepConfiguration, WaitStepConfiguration

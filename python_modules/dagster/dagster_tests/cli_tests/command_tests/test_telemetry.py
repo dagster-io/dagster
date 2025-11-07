@@ -3,7 +3,7 @@ import os
 import tempfile
 from collections.abc import Iterator
 from difflib import SequenceMatcher
-from typing import Any
+from typing import Any, TypeAlias
 from unittest import mock
 
 import dagster as dg
@@ -37,7 +37,6 @@ from dagster_shared.telemetry import (
     get_telemetry_logger,
 )
 from dagster_test.utils.data_factory import remote_repository
-from typing_extensions import TypeAlias
 
 EXPECTED_KEYS = set(
     [

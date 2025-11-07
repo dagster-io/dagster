@@ -1,6 +1,6 @@
-from collections.abc import Iterator
+from collections.abc import Callable, Iterator
 from contextlib import contextmanager
-from typing import Callable, Optional, Union
+from typing import Optional, Union
 
 import dagster as dg
 from dagster._annotations import public

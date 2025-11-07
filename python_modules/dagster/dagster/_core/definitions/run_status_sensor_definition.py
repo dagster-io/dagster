@@ -1,14 +1,13 @@
 import functools
 import logging
 import os
-from collections.abc import Iterator, Mapping, Sequence
+from collections.abc import Callable, Iterator, Mapping, Sequence
 from contextlib import ExitStack
-from typing import TYPE_CHECKING, Any, Callable, NamedTuple, Optional, Union, cast, overload
+from typing import TYPE_CHECKING, Any, NamedTuple, Optional, TypeAlias, Union, cast, overload
 
 from dagster_shared.serdes import deserialize_value
 from dagster_shared.serdes.errors import DeserializationError
 from dagster_shared.seven import JSONDecodeError
-from typing_extensions import TypeAlias
 
 import dagster._check as check
 from dagster._annotations import beta_param, deprecated_param, public

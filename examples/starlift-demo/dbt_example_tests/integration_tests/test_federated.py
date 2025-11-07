@@ -1,8 +1,8 @@
 import os
 import subprocess
-from collections.abc import Generator, Mapping
+from collections.abc import Callable, Generator, Mapping
 from datetime import timedelta
-from typing import Any, Callable
+from typing import Any
 
 import pytest
 from dagster import AssetKey, AssetsDefinition, DagsterInstance, materialize

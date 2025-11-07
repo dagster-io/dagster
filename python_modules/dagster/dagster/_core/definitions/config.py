@@ -1,7 +1,5 @@
-from collections.abc import Mapping
-from typing import Any, Callable, NamedTuple, Optional, Union, cast
-
-from typing_extensions import TypeAlias
+from collections.abc import Callable, Mapping
+from typing import Any, NamedTuple, Optional, TypeAlias, Union, cast
 
 import dagster._check as check
 from dagster._annotations import public

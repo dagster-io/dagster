@@ -1,8 +1,8 @@
 import tempfile
-from collections.abc import Iterator, Mapping
+from collections.abc import Callable, Iterator, Mapping
 from contextlib import contextmanager
 from pathlib import Path
-from typing import Any, Callable, Optional
+from typing import Any, Optional
 
 import dagster as dg
 from dagster._core.definitions.assets.definition.asset_spec import AssetSpec
