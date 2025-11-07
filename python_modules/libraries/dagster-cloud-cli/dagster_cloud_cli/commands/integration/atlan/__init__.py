@@ -32,7 +32,7 @@ def set_atlan_settings_command(
     if not validators.domain(atlan_domain):
         ui.print(
             "Invalid domain. "
-            "Please provide the domain of youf Altan tenant using the following format: your-organization.atlan.com."
+            "Please provide the domain of your Altan tenant using the following format: your-organization.atlan.com."
         )
         sys.exit(1)
 
