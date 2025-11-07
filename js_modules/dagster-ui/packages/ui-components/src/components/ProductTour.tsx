@@ -1,5 +1,3 @@
-// eslint-disable-next-line no-restricted-imports
-import {Placement} from '@blueprintjs/popover2';
 import * as React from 'react';
 import styled, {CSSProperties} from 'styled-components';
 
@@ -76,7 +74,7 @@ export const ProductTour = ({
     <Popover
       popoverClassName="bp5-dark"
       isOpen={canShow}
-      placement={position as Placement}
+      placement={position}
       modifiers={{
         arrow: {enabled: true},
         preventOverflow: {enabled: true},

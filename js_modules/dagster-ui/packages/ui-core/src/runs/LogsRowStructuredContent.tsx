@@ -1,6 +1,4 @@
-// eslint-disable-next-line no-restricted-imports
-import {Intent} from '@blueprintjs/core';
-import {Box, Colors, Tag} from '@dagster-io/ui-components';
+import {Box, Colors, Intent, Tag} from '@dagster-io/ui-components';
 import qs from 'qs';
 import * as React from 'react';
 import {Link, useLocation} from 'react-router-dom';
@@ -278,7 +276,6 @@ export const LogsRowStructuredContent = ({node, metadata}: IStructuredContentPro
 const DefaultContent = ({
   message,
   eventType,
-  eventColor,
   eventIntent,
   children,
 }: {
@@ -292,24 +289,7 @@ const DefaultContent = ({
   return (
     <>
       <EventTypeColumn>
-        {eventType && (
-          <Tag
-            intent={eventIntent}
-            style={
-              eventColor
-                ? {
-                    fontSize: '12px',
-                    color: 'black',
-                    background: eventColor,
-                  }
-                : {
-                    fontSize: '12px',
-                  }
-            }
-          >
-            {eventTypeToDisplayType(eventType)}
-          </Tag>
-        )}
+        {eventType && <Tag intent={eventIntent}>{eventTypeToDisplayType(eventType)}</Tag>}
       </EventTypeColumn>
       <Box padding={{horizontal: 12}} style={{flex: 1}}>
         {message}
@@ -380,9 +360,7 @@ const FailureContent = ({
   return (
     <>
       <EventTypeColumn>
-        <Tag minimal intent="danger">
-          {eventTypeToDisplayType(eventType)}
-        </Tag>
+        <Tag intent="danger">{eventTypeToDisplayType(eventType)}</Tag>
       </EventTypeColumn>
       <Box padding={{horizontal: 12}} style={{flex: 1}}>
         {contextMessage}
@@ -446,9 +424,7 @@ const StepUpForRetryContent = ({
   return (
     <>
       <EventTypeColumn>
-        <Tag minimal intent="warning">
-          {eventTypeToDisplayType(DagsterEventType.STEP_UP_FOR_RETRY)}
-        </Tag>
+        <Tag intent="warning">{eventTypeToDisplayType(DagsterEventType.STEP_UP_FOR_RETRY)}</Tag>
       </EventTypeColumn>
       <Box padding={{horizontal: 12}} style={{flex: 1}}>
         {contextMessage}
@@ -479,11 +455,7 @@ const AssetCheckEvaluationContent = ({
   });
 
   return (
-    <DefaultContent
-      message=""
-      eventType={eventType}
-      eventIntent={success ? Intent.SUCCESS : Intent.DANGER}
-    >
+    <DefaultContent message="" eventType={eventType} eventIntent={success ? 'success' : 'danger'}>
       <div>
         <div style={{color: success ? 'inherit' : Colors.textRed()}}>
           Check <MetadataEntryLink to={checkLink}>{checkName}</MetadataEntryLink>

@@ -20,6 +20,7 @@ export * from './components/Group';
 export * from './components/HorizontalControls';
 export * from './components/HoverButton';
 export * from './components/Icon';
+export * from './components/Intent';
 export * from './components/ifPlural';
 export * from './components/ListItem';
 export * from './components/MainContent';

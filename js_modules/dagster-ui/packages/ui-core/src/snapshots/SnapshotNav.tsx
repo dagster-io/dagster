@@ -43,11 +43,7 @@ export const SnapshotNav = (props: SnapshotNavProps) => {
 
   const tag = () => {
     if (loading) {
-      return (
-        <Tag intent="none" minimal>
-          ...
-        </Tag>
-      );
+      return <Tag intent="none">...</Tag>;
     }
 
     if (
@@ -56,18 +52,10 @@ export const SnapshotNav = (props: SnapshotNavProps) => {
         data?.pipelineSnapshotOrError.__typename === 'PipelineSnapshot' &&
         data?.pipelineSnapshotOrError?.parentSnapshotId !== currentSnapshotID)
     ) {
-      return (
-        <Tag intent="warning" minimal>
-          Snapshot
-        </Tag>
-      );
+      return <Tag intent="warning">Snapshot</Tag>;
     }
 
-    return (
-      <Tag intent="success" minimal>
-        Current
-      </Tag>
-    );
+    return <Tag intent="success">Current</Tag>;
   };
 
   const tabs = [
