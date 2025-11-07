@@ -29,20 +29,20 @@ def set_atlan_settings_command(
     url: str,
 ):
     """Upload your Atlan settings to enable the Dagster<>Atlan integration in Dagster Cloud."""
+    if not validators.domain(atlan_domain):
+        ui.print(
+            f"Invalid domain. "
+            f"Please provide the domain of youf Altan tenant using the following format: your-organization.atlan.com."
+        )
+        sys.exit(1)
+
     try:
-        validators.domain(atlan_domain)
         with gql.graphql_client_from_url(url, api_token) as client:
             organization, _ = gql.set_atlan_integration_settings(
                 client, token=atlan_token, domain=atlan_domain
             )
         ui.print(f"Atlan settings successfully set for organization: {organization}")
-    except validators.ValidationError as e:
-        ui.print(
-            f"Invalid domain. "
-            f"Please provide the domain of youf Altan tenant using the following format: your-organization.atlan.com. "
-            f"Validation error: {e}"
-        )
-        sys.exit(1)
+
     except Exception as e:
         ui.print(f"Failed to set Atlan settings. Exception: {e}")
         sys.exit(1)

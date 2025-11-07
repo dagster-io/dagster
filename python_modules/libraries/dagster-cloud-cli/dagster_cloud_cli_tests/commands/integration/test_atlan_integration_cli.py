@@ -67,7 +67,7 @@ def test_dagster_cloud_atlan_integration_set_settings_domain_validation_error(
 
     validate_domain = mocker.patch(
         "dagster_cloud_cli.commands.integration.atlan.validators.domain",
-        side_effect=validators.ValidationError(
+        return_value=validators.ValidationError(
             function=validators.domain, arg_dict={"value": invalid_domain}
         ),
     )
