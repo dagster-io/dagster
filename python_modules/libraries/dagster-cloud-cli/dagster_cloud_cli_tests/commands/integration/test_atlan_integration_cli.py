@@ -3,7 +3,7 @@ from dagster_cloud_cli.entrypoint import app
 from typer.testing import CliRunner
 
 FAKE_TOKEN = "fake_token"
-FAKE_DOMAIN = "fake_domain"
+FAKE_DOMAIN = "fake_domain.com"
 
 
 def test_dagster_cloud_atlan_integration_set_settings(empty_config, monkeypatch, mocker) -> None:
