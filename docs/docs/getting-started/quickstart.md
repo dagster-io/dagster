@@ -276,7 +276,7 @@ To deploy to OSS production, see the [OSS deployment docs](/deployment/oss). If 
 <TabItem value="hybrid" label="Dagster+ Hybrid">
 
 1. Set up a [Hybrid deployment](/deployment/dagster-plus/hybrid), if you haven't already.
-2. In the root directory of your project, run [`dg scaffold build-artifacts`](/api/clis/dg-cli/dg-cli-reference#dg-scaffold-build-artifacts) to create a `build.yaml` deployment configuration file and a Dockerfile.
+2. In the root directory of your project, run [`dg scaffold build-artifacts`](/api/clis/dg-cli/dg-cli-reference#dg-scaffold) to create a `build.yaml` deployment configuration file and a Dockerfile.
 3. To deploy to the cloud, you can either:
    - Perform a one-time deployment with the [`dagster-cloud` CLI](/api/clis/dagster-cloud-cli)
    - [Set up CI/CD](/deployment/dagster-plus/deploying-code/ci-cd/ci-cd-in-hybrid) for continuous deployment.
