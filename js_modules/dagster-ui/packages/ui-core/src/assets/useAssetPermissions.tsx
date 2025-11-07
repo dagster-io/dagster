@@ -15,7 +15,7 @@ export const useAssetPermissions = (assetKey: AssetKeyInput, locationName: strin
   const {data, loading} = useQuery<AssetPermissionsQuery, AssetPermissionsQueryVariables>(
     ASSET_PERMISSIONS_QUERY,
     {
-      variables: {assetKey},
+      variables: {assetKey: {path: assetKey.path}},
     },
   );
 
