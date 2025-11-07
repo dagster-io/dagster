@@ -8,6 +8,7 @@ from dagster_shared.serdes.serdes import (
     get_storage_name as get_storage_name,
     pack_value as pack_value,
     serialize_value as serialize_value,
+    serialize_value_with_dedup as serialize_value_with_dedup,
     unpack_value as unpack_value,
     whitelist_for_serdes as whitelist_for_serdes,
 )

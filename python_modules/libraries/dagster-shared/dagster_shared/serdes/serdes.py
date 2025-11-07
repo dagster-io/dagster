@@ -19,7 +19,7 @@ from abc import ABC, abstractmethod
 from collections.abc import Iterable, Iterator, Mapping, Sequence
 from dataclasses import is_dataclass
 from enum import Enum
-from functools import cached_property, partial
+from functools import cached_property
 from inspect import Parameter, signature
 from typing import (  # noqa: UP035
     TYPE_CHECKING,
@@ -843,6 +843,50 @@ def serialize_value(
     return seven.json.dumps(serializable_value, **json_kwargs)
 
 
+def serialize_value_with_dedup(
+    val: PackableValue,
+    whitelist_map: WhitelistMap = _WHITELIST_MAP,
+    **json_kwargs: Any,
+) -> str:
+    """Serialize an object to a JSON string with automatic deduplication.
+
+    Detects repeated whitelisted objects by content hash and deduplicates them.
+    First occurrence is serialized in-place, subsequent occurrences become references
+    to a deduplication table.
+
+    Args:
+        val: The value to serialize
+        whitelist_map: The whitelist map to use for serialization
+        **json_kwargs: Additional arguments to pass to json.dumps
+
+    Returns:
+        JSON string with deduplication metadata if duplicates were found
+    """
+    dedup_table: dict[str, JsonSerializableValue] = {}
+    seen_hashes: dict[str, int] = {}
+
+    serializable_value = _transform_for_serialization_with_dedup(
+        val,
+        whitelist_map=whitelist_map,
+        object_handler=_wrap_object,
+        descent_path=_root(val),
+        dedup_table=dedup_table,
+        seen_hashes=seen_hashes,
+    )
+
+    # If we found duplicates, wrap result with dedup metadata
+    if dedup_table:
+        result: JsonSerializableValue = {
+            "__deduplication__": True,
+            "value": serializable_value,
+            "__dedup_table__": dedup_table,
+        }
+    else:
+        result = serializable_value
+
+    return seven.json.dumps(result, **json_kwargs)
+
+
 @overload
 def pack_value(
     val: T_Scalar,
@@ -1041,6 +1085,273 @@ def _transform_for_serialization(
     raise SerializationError(f"Unhandled value type {tval}")
 
 
+def _transform_for_serialization_with_dedup(
+    val: PackableValue,
+    whitelist_map: WhitelistMap,
+    object_handler: Callable[[SerializableObject, WhitelistMap, str], JsonSerializableValue],
+    descent_path: str,
+    dedup_table: dict[str, JsonSerializableValue],
+    seen_hashes: dict[str, int],
+) -> JsonSerializableValue:
+    """Transform for serialization with deduplication tracking.
+
+    Similar to _transform_for_serialization but tracks repeated whitelisted objects
+    by content hash. First occurrence is serialized normally, subsequent occurrences
+    become references to a deduplication table.
+    """
+    # Import here to avoid circular dependency
+    from dagster_shared.serdes.utils import hash_str
+
+    # Check if this is a whitelisted object that should be deduplicated
+    if is_whitelisted_for_serdes_object(val, whitelist_map):
+        # First pack the object WITHOUT recursion to get a "shallow" pack
+        # We need to compute the hash before recursive transformation
+        klass_name = val.__class__.__name__
+        serializer = whitelist_map.object_serializers[klass_name]
+
+        # Pack this object's structure (with nested objects also packed) to compute hash
+        # Use normal packing for hash computation
+        try:
+            content_hash = hash_str(str(hash(val)))
+        except Exception:
+            content_hash = hash_str(str(id(val)))
+
+        # First time seeing this hash - serialize normally with dedup tracking
+        if content_hash not in seen_hashes:
+            seen_hashes[content_hash] = 1
+            # Pack the object using dedup-aware transformation for nested values
+            return _pack_object_with_dedup(
+                cast("SerializableObject", val),
+                whitelist_map,
+                descent_path,
+                dedup_table,
+                seen_hashes,
+            )
+
+        # Second+ time - add to dedup table (if not already there) and return reference
+        if content_hash not in dedup_table:
+            dedup_table[content_hash] = _pack_object_with_dedup(
+                cast("SerializableObject", val),
+                whitelist_map,
+                descent_path,
+                dedup_table,
+                seen_hashes,
+            )
+
+        seen_hashes[content_hash] += 1
+        return {"__dedup_ref__": content_hash}
+
+    # For non-whitelisted objects, use same logic as _transform_for_serialization
+    # but recurse with dedup tracking
+    tval = type(val)
+    if tval in (int, float, str, bool) or val is None:
+        return val  # type: ignore # 2 hot 4 cast()
+    if tval is list:
+        return [
+            _transform_for_serialization_with_dedup(
+                item,
+                whitelist_map,
+                object_handler,
+                f"{descent_path}[{idx}]",
+                dedup_table,
+                seen_hashes,
+            )
+            for idx, item in enumerate(cast("list", val))
+        ]
+    if tval is dict:
+        return {
+            key: _transform_for_serialization_with_dedup(
+                value,
+                whitelist_map,
+                object_handler,
+                f"{descent_path}.{key}",
+                dedup_table,
+                seen_hashes,
+            )
+            for key, value in cast("dict", val).items()
+        }
+    if tval is SerializableNonScalarKeyMapping:
+        return {
+            "__mapping_items__": [
+                [
+                    _transform_for_serialization_with_dedup(
+                        k,
+                        whitelist_map,
+                        object_handler,
+                        f"{descent_path}.{k}",
+                        dedup_table,
+                        seen_hashes,
+                    ),
+                    _transform_for_serialization_with_dedup(
+                        v,
+                        whitelist_map,
+                        object_handler,
+                        f"{descent_path}.{k}",
+                        dedup_table,
+                        seen_hashes,
+                    ),
+                ]
+                for k, v in cast("dict", val).items()
+            ]
+        }
+
+    if isinstance(val, Enum):
+        klass_name = val.__class__.__name__
+        if klass_name not in whitelist_map.enum_serializers:
+            raise SerializationError(
+                "Can only serialize whitelisted Enums, received"
+                f" {klass_name}.\nDescent path: {descent_path}",
+            )
+        enum_serializer = whitelist_map.enum_serializers[klass_name]
+        return {"__enum__": enum_serializer.pack(val, whitelist_map, descent_path)}
+
+    if isinstance(val, set):
+        set_path = descent_path + "{}"
+        return {
+            "__set__": [
+                _transform_for_serialization_with_dedup(
+                    item,
+                    whitelist_map,
+                    object_handler,
+                    set_path,
+                    dedup_table,
+                    seen_hashes,
+                )
+                for item in sorted(list(val), key=str)
+            ]
+        }
+    if isinstance(val, frozenset):
+        frz_set_path = descent_path + "{}"
+        return {
+            "__frozenset__": [
+                _transform_for_serialization_with_dedup(
+                    item,
+                    whitelist_map,
+                    object_handler,
+                    frz_set_path,
+                    dedup_table,
+                    seen_hashes,
+                )
+                for item in sorted(list(val), key=str)
+            ]
+        }
+
+    # custom string subclasses
+    if isinstance(val, str):
+        return val
+
+    # handle more expensive and uncommon abc instance checks last
+    if isinstance(val, collections.abc.Mapping):
+        return {
+            key: _transform_for_serialization_with_dedup(
+                value,
+                whitelist_map,
+                object_handler,
+                f"{descent_path}.{key}",
+                dedup_table,
+                seen_hashes,
+            )
+            for key, value in val.items()
+        }
+    if isinstance(val, collections.abc.Sequence):
+        return [
+            _transform_for_serialization_with_dedup(
+                item,
+                whitelist_map,
+                object_handler,
+                f"{descent_path}[{idx}]",
+                dedup_table,
+                seen_hashes,
+            )
+            for idx, item in enumerate(val)
+        ]
+
+    raise SerializationError(f"Unhandled value type {tval}")
+
+
+def _pack_items_for_hash(
+    serializer: "ObjectSerializer",
+    value: Any,
+    whitelist_map: WhitelistMap,
+    descent_path: str,
+) -> Iterator[tuple[str, JsonSerializableValue]]:
+    """Pack items for hash computation (standard packing, no dedup)."""
+    yield "__class__", serializer.get_storage_name()
+    for key, inner_value in serializer.object_as_mapping(serializer.before_pack(value)).items():
+        storage_key = serializer.storage_field_names.get(key, key)
+        custom = serializer.field_serializers.get(key)
+        if custom:
+            field_value = custom.pack(
+                inner_value,
+                whitelist_map=whitelist_map,
+                descent_path=f"{descent_path}.{key}",
+            )
+        else:
+            field_value = inner_value
+
+        if (key in serializer.skip_when_empty_fields and field_value in EMPTY_VALUES_TO_SKIP) or (
+            key in serializer.skip_when_none_fields and field_value is None
+        ):
+            continue
+
+        yield (
+            storage_key,
+            _transform_for_serialization(
+                field_value,
+                whitelist_map=whitelist_map,
+                object_handler=_pack_object,
+                descent_path=f"{descent_path}.{key}",
+            ),
+        )
+    for key, default in serializer.old_fields.items():
+        yield key, default
+
+
+def _pack_object_with_dedup(
+    obj: SerializableObject,
+    whitelist_map: WhitelistMap,
+    descent_path: str,
+    dedup_table: dict[str, JsonSerializableValue],
+    seen_hashes: dict[str, int],
+) -> Mapping[str, JsonSerializableValue]:
+    """Pack an object with deduplication-aware transformation of nested values."""
+    klass_name = obj.__class__.__name__
+    serializer = whitelist_map.object_serializers[klass_name]
+
+    result = {"__class__": serializer.get_storage_name()}
+
+    for key, inner_value in serializer.object_as_mapping(serializer.before_pack(obj)).items():
+        storage_key = serializer.storage_field_names.get(key, key)
+        custom = serializer.field_serializers.get(key)
+        if custom:
+            field_value = custom.pack(
+                inner_value,
+                whitelist_map=whitelist_map,
+                descent_path=f"{descent_path}.{key}",
+            )
+        else:
+            field_value = inner_value
+
+        if (key in serializer.skip_when_empty_fields and field_value in EMPTY_VALUES_TO_SKIP) or (
+            key in serializer.skip_when_none_fields and field_value is None
+        ):
+            continue
+
+        result[storage_key] = _transform_for_serialization_with_dedup(
+            field_value,
+            whitelist_map=whitelist_map,
+            object_handler=_pack_object,
+            descent_path=f"{descent_path}.{key}",
+            dedup_table=dedup_table,
+            seen_hashes=seen_hashes,
+        )
+
+    # Add old fields
+    result.update(serializer.old_fields)
+
+    return result
+
+
 def _pack_object(
     obj: SerializableObject, whitelist_map: WhitelistMap, descent_path: str
 ) -> Mapping[str, JsonSerializableValue]:
@@ -1178,19 +1489,29 @@ def deserialize_values(
     ] = None,
     whitelist_map: WhitelistMap = _WHITELIST_MAP,
 ) -> Sequence[Union[PackableValue, T_PackableValue, Union[T_PackableValue, U_PackableValue]]]:
-    """Deserialize a collection of values without having to repeatedly exit/enter the deserializing context."""
+    """Deserialize a collection of values without having to repeatedly exit/enter the deserializing context.
+
+    Automatically detects and handles deduplicated serialization format.
+    """
     with (
         disable_dagster_warnings(),
         check.EvalContext.contextual_namespace(whitelist_map.object_type_map),
     ):
         unpacked_values = []
         for val in vals:
-            context = UnpackContext()
-            unpacked_value = seven.json.loads(
-                val,
-                object_hook=partial(_unpack_object, whitelist_map=whitelist_map, context=context),
-            )
-            unpacked_value = context.finalize_unpack(unpacked_value)
+            # First parse to check if this uses deduplication
+            parsed = seven.json.loads(val)
+
+            # Check for deduplication marker
+            if isinstance(parsed, dict) and parsed.get("__deduplication__"):
+                # Handle deduplicated format
+                unpacked_value = _deserialize_value_with_dedup(parsed, whitelist_map)
+            else:
+                # Normal deserialization path
+                context = UnpackContext()
+                unpacked_value = _unpack_value(parsed, whitelist_map, context)
+                unpacked_value = context.finalize_unpack(unpacked_value)
+
             is_match = (
                 match_type(unpacked_value, as_type)  # type: ignore
                 if as_type is not None
@@ -1209,6 +1530,84 @@ class UnknownSerdesValue:
     def __init__(self, message: str, value: Mapping[str, UnpackedValue]):
         self.message = message
         self.value = value
+
+
+class _DeduplicationUnpackContext(UnpackContext):
+    """Extended unpack context that handles deduplication table lookups."""
+
+    def __init__(self, dedup_table: Mapping[str, JsonSerializableValue]):
+        super().__init__()
+        self.dedup_table = dedup_table
+        # Cache for unpacked objects to avoid redundant unpacking
+        self.unpacked_cache: dict[str, PackableValue] = {}
+
+
+def _deserialize_value_with_dedup(
+    parsed: Mapping[str, Any],
+    whitelist_map: WhitelistMap,
+) -> PackableValue:
+    """Deserialize a value that was serialized with deduplication.
+
+    Args:
+        parsed: The parsed JSON dict with __deduplication__ marker
+        whitelist_map: The whitelist map for deserialization
+
+    Returns:
+        The deserialized value with all references resolved
+    """
+    # Extract the dedup table
+    dedup_table = parsed.get("__dedup_table__", {})
+    value_data = parsed["value"]
+
+    # Create dedup context
+    context = _DeduplicationUnpackContext(dedup_table)
+
+    # Unpack the value with dedup resolution
+    unpacked_value = _unpack_value_with_dedup(value_data, whitelist_map, context)
+
+    return context.finalize_unpack(unpacked_value)
+
+
+def _unpack_value_with_dedup(
+    val: JsonSerializableValue,
+    whitelist_map: WhitelistMap,
+    context: _DeduplicationUnpackContext,
+) -> UnpackedValue:
+    """Unpack a value with deduplication reference resolution.
+
+    Similar to _unpack_value but handles __dedup_ref__ markers.
+    """
+    if isinstance(val, list):
+        return [_unpack_value_with_dedup(item, whitelist_map, context) for item in val]
+
+    if isinstance(val, dict):
+        # Check for dedup reference
+        if "__dedup_ref__" in val:
+            content_hash = val["__dedup_ref__"]
+
+            # Check cache first
+            if content_hash in context.unpacked_cache:
+                return context.unpacked_cache[content_hash]
+
+            # Look up in dedup table
+            if content_hash not in context.dedup_table:
+                raise DeserializationError(
+                    f"Dedup reference {content_hash} not found in dedup table"
+                )
+
+            # Unpack from table and cache
+            table_value = context.dedup_table[content_hash]
+            unpacked = _unpack_value_with_dedup(table_value, whitelist_map, context)
+            context.unpacked_cache[content_hash] = unpacked  # type: ignore
+            return unpacked
+
+        # Otherwise unpack as normal object (handles __class__, __enum__, etc.)
+        unpacked_vals = {
+            k: _unpack_value_with_dedup(v, whitelist_map, context) for k, v in val.items()
+        }
+        return _unpack_object(unpacked_vals, whitelist_map, context)
+
+    return val
 
 
 def _unpack_object(val: dict, whitelist_map: WhitelistMap, context: UnpackContext) -> UnpackedValue:
