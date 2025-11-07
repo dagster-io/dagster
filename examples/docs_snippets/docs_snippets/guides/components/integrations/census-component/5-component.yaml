@@ -1,0 +1,5 @@
+type: dagster_census.CensusComponent
+
+attributes:
+  workspace:
+    api_key: '{{ env.CENSUS_API_KEY }}'
