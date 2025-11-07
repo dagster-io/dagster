@@ -578,19 +578,21 @@ def _zero_arg_callable(fn: Any) -> bool:
         return False
     try:
         sig = inspect.signature(fn)
-        has_required = False
+        # If any parameter (positional or keyword-only) is required (no default),
+        # then the callable is not a zero-arg callable.
         for p in sig.parameters.values():
+            if p.kind in (inspect.Parameter.VAR_POSITIONAL, inspect.Parameter.VAR_KEYWORD):
+                # *args/**kwargs don't introduce required positional params by themselves
+                continue
             if p.default is inspect.Parameter.empty and p.kind in (
                 inspect.Parameter.POSITIONAL_ONLY,
                 inspect.Parameter.POSITIONAL_OR_KEYWORD,
                 inspect.Parameter.KEYWORD_ONLY,
             ):
-                has_required = True
-                break
-        return not has_required
+                return False
         return True
     except Exception:
-        # if instrospection fails, allow it (same behavior as before but guarded)
+        # If introspection fails, be permissive (matches previous behavior).
         return True
 
 
