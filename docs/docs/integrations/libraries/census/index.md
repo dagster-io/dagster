@@ -13,6 +13,10 @@ canonicalUrl: '/integrations/libraries/census'
 slug: '/integrations/libraries/census'
 ---
 
+import CommunityIntegration from '@site/docs/partials/\_CommunityIntegration.md';
+
+<CommunityIntegration />
+
 The [`dagster-census` library](/api/libraries/dagster-census) provides a `CensusComponent` which can be used to easily represent Census syncs as assets in Dagster.
 
 :::info

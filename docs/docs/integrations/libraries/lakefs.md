@@ -11,6 +11,10 @@ sidebar_custom_props:
 partnerlink: https://lakefs.io/
 ---
 
+import CommunityIntegration from '@site/docs/partials/\_CommunityIntegration.md';
+
+<CommunityIntegration />
+
 <p>{frontMatter.description}</p>
 
 With lakeFS and Dagster integration, you can ensure that data flowing through your Dagster jobs is easily reproducible. lakeFS provides a consistent view of your data across different versions, allowing you to troubleshoot pipeline runs and ensure consistent results.

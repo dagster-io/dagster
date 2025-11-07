@@ -11,6 +11,10 @@ sidebar_custom_props:
 partnerlink: https://hex.tech/
 ---
 
+import CommunityIntegration from '@site/docs/partials/\_CommunityIntegration.md';
+
+<CommunityIntegration />
+
 <p>{frontMatter.description}</p>
 
 For more information, see the [Dagster Community Integrations GitHub repository](https://github.com/dagster-io/community-integrations/tree/main/libraries/dagster-hex).

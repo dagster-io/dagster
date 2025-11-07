@@ -10,6 +10,10 @@ sidebar_custom_props:
   community: true
 ---
 
+import CommunityIntegration from '@site/docs/partials/\_CommunityIntegration.md';
+
+<CommunityIntegration />
+
 <p>{frontMatter.description}</p>
 
 For more information, see the [dagster-dingtalk GitHub repository](https://github.com/sqkkyzx/dagster-dingtalk).

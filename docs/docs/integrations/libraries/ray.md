@@ -11,6 +11,10 @@ sidebar_custom_props:
 partnerlink: https://danielgafni.github.io/dagster-ray/latest
 ---
 
+import CommunityIntegration from '@site/docs/partials/\_CommunityIntegration.md';
+
+<CommunityIntegration />
+
 <p>{frontMatter.description}</p>
 
 `dagster-ray` enables working with distributed Ray compute from Dagster pipelines, combining Dagster's excellent orchestration capabilities and Ray's distributed computing power together.

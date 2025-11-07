@@ -11,6 +11,10 @@ sidebar_custom_props:
 partnerlink: https://www.getcensus.com/
 ---
 
+import CommunityIntegration from '@site/docs/partials/\_CommunityIntegration.md';
+
+<CommunityIntegration />
+
 :::note
 
 If you are just getting started with the Census integration, we recommend using the new [Census component](/integrations/libraries/census).

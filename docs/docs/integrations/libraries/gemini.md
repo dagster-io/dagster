@@ -11,6 +11,10 @@ sidebar_custom_props:
 partnerlink: https://ai.google.dev/docs
 ---
 
+import CommunityIntegration from '@site/docs/partials/\_CommunityIntegration.md';
+
+<CommunityIntegration />
+
 <p>{frontMatter.description}</p>
 
 When paired with Dagster assets, the resource automatically logs Gemini usage metadata in asset metadata.
