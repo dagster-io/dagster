@@ -945,7 +945,7 @@ def set_atlan_integration_settings(
     client: DagsterCloudGraphQLClient,
     token: str,
     domain: str,
-) -> None:
+) -> tuple[str, bool]:
     result = client.execute(
         SET_ATLAN_INTEGRATION_SETTINGS_MUTATION,
         variable_values={"atlanIntegrationSettings": {"token": token, "domain": domain}},
@@ -957,10 +957,14 @@ def set_atlan_integration_settings(
     ):
         raise Exception(f"Unable to set Atlan integration settings: {result}")
 
+    return result["data"]["etAtlanIntegrationSettings"]["organization"], result["data"][
+        "etAtlanIntegrationSettings"
+    ]["success"]
+
 
 def delete_atlan_integration_settings(
     client: DagsterCloudGraphQLClient,
-) -> None:
+) -> tuple[str, bool]:
     result = client.execute(
         DELETE_ATLAN_INTEGRATION_SETTINGS_MUTATION,
     )
@@ -970,6 +974,10 @@ def delete_atlan_integration_settings(
         != "DeleteAtlanIntegrationSuccess"
     ):
         raise Exception(f"Unable to delete Atlan integration settings: {result}")
+
+    return result["data"]["deleteAtlanIntegrationSettings"]["organization"], result["data"][
+        "deleteAtlanIntegrationSettings"
+    ]["success"]
 
 
 def get_atlan_integration_settings(
