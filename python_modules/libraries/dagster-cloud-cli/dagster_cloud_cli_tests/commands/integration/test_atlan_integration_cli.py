@@ -65,6 +65,13 @@ def test_dagster_cloud_atlan_integration_set_settings_domain_validation_error(
     """Tests domain validation error in Atlan set-settings CLI."""
     invalid_domain = f"https://{FAKE_DOMAIN}"
 
+    validate_domain = mocker.patch(
+        "dagster_cloud_cli.commands.integration.atlan.validators.domain",
+        side_effect=validators.ValidationError(
+            function=validators.domain, arg_dict={"value": invalid_domain}
+        ),
+    )
+
     set_atlan_integration_settings = mocker.patch(
         "dagster_cloud_cli.gql.set_atlan_integration_settings",
         side_effect=validators.ValidationError(
@@ -85,10 +92,10 @@ def test_dagster_cloud_atlan_integration_set_settings_domain_validation_error(
         env=env,
     )
     assert result.exit_code
-    set_atlan_integration_settings.assert_called_once()
-    _, kwargs = set_atlan_integration_settings.call_args_list[0]
-    assert kwargs["token"] == FAKE_TOKEN
-    assert kwargs["domain"] == invalid_domain
+    validate_domain.assert_called_once()
+    args, _ = validate_domain.call_args_list[0]
+    assert args[0] == invalid_domain
+    set_atlan_integration_settings.assert_not_called()
 
 
 def test_dagster_cloud_atlan_integration_delete_settings(empty_config, monkeypatch, mocker) -> None:

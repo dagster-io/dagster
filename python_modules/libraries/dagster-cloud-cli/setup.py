@@ -45,7 +45,7 @@ setup(
         "Jinja2",
         "setuptools",
         'tomli>=1.1.0;python_version<"3.11"',
-        "validators,"
+        "validators",
     ],
     include_package_data=True,
     zip_safe=False,
