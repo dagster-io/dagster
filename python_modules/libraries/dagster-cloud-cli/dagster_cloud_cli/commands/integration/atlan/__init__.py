@@ -30,8 +30,7 @@ def set_atlan_settings_command(
 ):
     """Upload your Atlan settings to enable the Dagster<>Atlan integration in Dagster Cloud."""
     try:
-        result = validators.domain(atlan_domain)
-        print(result)
+        validators.domain(atlan_domain)
         with gql.graphql_client_from_url(url, api_token) as client:
             organization, _ = gql.set_atlan_integration_settings(
                 client, token=atlan_token, domain=atlan_domain
