@@ -1,3 +1,4 @@
+import validators
 from dagster_cloud_cli.entrypoint import app
 from typer.testing import CliRunner
 
@@ -56,6 +57,38 @@ def test_dagster_cloud_atlan_integration_set_settings_exception(
     _, kwargs = set_atlan_integration_settings.call_args_list[0]
     assert kwargs["token"] == FAKE_TOKEN
     assert kwargs["domain"] == FAKE_DOMAIN
+
+
+def test_dagster_cloud_atlan_integration_set_settings_domain_validation_error(
+    empty_config, monkeypatch, mocker
+) -> None:
+    """Tests domain validation error in Atlan set-settings CLI."""
+    invalid_domain = f"https://{FAKE_DOMAIN}"
+
+    set_atlan_integration_settings = mocker.patch(
+        "dagster_cloud_cli.gql.set_atlan_integration_settings",
+        side_effect=validators.ValidationError(
+            function=validators.domain, arg_dict={"value": invalid_domain}
+        ),
+    )
+
+    env = {
+        "DAGSTER_CLOUD_API_TOKEN": "fake-token",
+        "DAGSTER_CLOUD_ORGANIZATION": "fake-organization",
+        "DAGSTER_CLOUD_DEPLOYMENT": "fake-deployment",
+    }
+
+    runner = CliRunner()
+    result = runner.invoke(
+        app,
+        ["integration", "atlan", "set-settings", FAKE_TOKEN, invalid_domain, "--url", "fake-url"],
+        env=env,
+    )
+    assert result.exit_code
+    set_atlan_integration_settings.assert_called_once()
+    _, kwargs = set_atlan_integration_settings.call_args_list[0]
+    assert kwargs["token"] == FAKE_TOKEN
+    assert kwargs["domain"] == invalid_domain
 
 
 def test_dagster_cloud_atlan_integration_delete_settings(empty_config, monkeypatch, mocker) -> None:

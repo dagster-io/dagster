@@ -1,6 +1,7 @@
 import sys
 from typing import Annotated
 
+import validators
 from typer import Argument, Typer
 
 from dagster_cloud_cli import gql, ui
@@ -21,7 +22,7 @@ def set_atlan_settings_command(
     atlan_domain: Annotated[
         str,
         Argument(
-            help="The domain of your Atlan tenant. Eg. https://your-organization.atlan.com.",
+            help="The domain of your Atlan tenant. Eg. your-organization.atlan.com.",
         ),
     ],
     api_token: str,
@@ -29,11 +30,19 @@ def set_atlan_settings_command(
 ):
     """Upload your Atlan settings to enable the Dagster<>Atlan integration in Dagster Cloud."""
     try:
+        validators.domain(atlan_domain)
         with gql.graphql_client_from_url(url, api_token) as client:
             organization, _ = gql.set_atlan_integration_settings(
                 client, token=atlan_token, domain=atlan_domain
             )
         ui.print(f"Atlan settings successfully set for organization: {organization}")
+    except validators.ValidationError as e:
+        ui.print(
+            f"Invalid domain. "
+            f"Please provide the domain of you Altan tenant using the following format: your-organization.atlan.com. "
+            f"Validation error: {e}"
+        )
+        sys.exit(1)
     except Exception as e:
         ui.print(f"Failed to set Atlan settings. Exception: {e}")
         sys.exit(1)
