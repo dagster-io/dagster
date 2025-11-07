@@ -407,8 +407,12 @@ def _create_commit_display(
     # GitHub username info
     if should_thank:
         pr_author = commit.github_pr_author_username
-        table.add_row("GitHub PR author:", f"@{pr_author}")
-        table.add_row("Thanks:", "[green]YES[/green]")
+        if pr_author:
+            table.add_row("GitHub PR author:", f"@{pr_author}")
+            table.add_row("Thanks:", "[green]YES[/green]")
+        else:
+            table.add_row("GitHub:", "[dim]Could not parse[/dim]")
+            table.add_row("Thanks:", "[yellow]YES (username unavailable)[/yellow]")
     else:
         table.add_row("GitHub:", "[dim]Will load if Thanks is toggled[/dim]")
         table.add_row("Thanks:", "[red]NO[/red]")
