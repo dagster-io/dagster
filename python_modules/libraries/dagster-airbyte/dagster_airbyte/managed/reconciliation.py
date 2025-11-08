@@ -39,7 +39,7 @@ from dagster_airbyte.managed.types import (
     InitializedAirbyteDestination,
     InitializedAirbyteSource,
 )
-from dagster_airbyte.resources import AirbyteResource
+from dagster_airbyte.legacy_resources import AirbyteResource
 from dagster_airbyte.utils import clean_name, is_basic_normalization_operation
 
 
