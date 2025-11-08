@@ -19,6 +19,7 @@ from dagster_airbyte.translator import (
     AirbyteMetadataSet,
     DagsterAirbyteTranslator,
 )
+from responses import matchers
 
 from dagster_airbyte_tests.beta.conftest import (
     SAMPLE_ANOTHER_WORKSPACE_RESPOMSE,
@@ -133,17 +134,23 @@ def test_cached_load_spec_multiple_resources(
     )
     fetch_workspace_data_api_mocks.add(
         method=responses.GET,
-        url=f"{rest_api_url}/connections?workspaceIds={TEST_ANOTHER_WORKSPACE_ID}",
+        url=f"{rest_api_url}/connections",
         json=get_sample_connections(),
         status=200,
-        match_querystring=True,
+        match=[
+            matchers.query_param_matcher({"limit": 5, "workspaceIds": TEST_ANOTHER_WORKSPACE_ID})
+        ],
     )
     fetch_workspace_data_api_mocks.add(
         method=responses.GET,
-        url=f"{rest_api_url}/connections?workspaceIds={TEST_ANOTHER_WORKSPACE_ID}&limit=5&offset=10",
+        url=f"{rest_api_url}/connections",
         json=get_sample_connections_next_page(),
         status=200,
-        match_querystring=True,
+        match=[
+            matchers.query_param_matcher(
+                {"limit": 5, "offset": 10, "workspaceIds": TEST_ANOTHER_WORKSPACE_ID}
+            )
+        ],
     )
 
     # load asset specs with a resource

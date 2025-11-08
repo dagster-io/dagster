@@ -1,5 +1,6 @@
 import base64
 from collections.abc import Iterator, Mapping
+from datetime import datetime
 from typing import Any, Union
 from unittest.mock import patch
 
@@ -14,6 +15,7 @@ from dagster_airbyte.resources import (
 )
 from dagster_airbyte.translator import AirbyteConnectionTableProps, AirbyteJobStatusType
 from dagster_airbyte.types import AirbyteOutput
+from responses import matchers
 
 TEST_WORKSPACE_ID = "some_workspace_id"
 TEST_CLIENT_ID = "some_client_id"
@@ -207,12 +209,12 @@ SAMPLE_DESTINATION_DETAILS = {
 
 # Taken from Airbyte REST API documentation
 # https://reference.airbyte.com/reference/getjob
-def get_job_details_sample(status: str) -> Mapping[str, Any]:
+def get_job_details_sample(status: AirbyteJobStatusType | str) -> Mapping[str, Any]:
     return {
         "jobId": TEST_JOB_ID,
-        "status": status,
+        "status": status.value if isinstance(status, AirbyteJobStatusType) else status,
         "jobType": "sync",
-        "startTime": "2023-03-25T01:30:50Z",
+        "startTime": datetime.now().date().isoformat(),
         "connectionId": TEST_CONNECTION_ID,
     }
 
@@ -282,17 +284,21 @@ def fetch_workspace_data_api_mocks_fixture(
     )
     base_api_mocks.add(
         method=responses.GET,
-        url=f"{rest_api_url}/connections?workspaceIds={TEST_WORKSPACE_ID}",
+        url=f"{rest_api_url}/connections",
         json=get_sample_connections(),
         status=200,
-        match_querystring=True,
+        match=[matchers.query_param_matcher({"limit": 5, "workspaceIds": TEST_WORKSPACE_ID})],
     )
     base_api_mocks.add(
         method=responses.GET,
-        url=f"{rest_api_url}/connections?workspaceIds={TEST_WORKSPACE_ID}&limit=5&offset=10",
+        url=f"{rest_api_url}/connections",
         json=get_sample_connections_next_page(),
         status=200,
-        match_querystring=True,
+        match=[
+            matchers.query_param_matcher(
+                {"limit": 5, "offset": 10, "workspaceIds": TEST_WORKSPACE_ID}
+            )
+        ],
     )
     base_api_mocks.add(
         method=responses.POST,
@@ -348,6 +354,9 @@ def resource(
             workspace_id=TEST_WORKSPACE_ID,
             client_id=TEST_CLIENT_ID,
             client_secret=TEST_CLIENT_SECRET,
+            max_items_per_page=5,
+            poll_interval=0,
+            cancel_on_termination=False,
         )
     else:
         return AirbyteWorkspace(
@@ -356,6 +365,9 @@ def resource(
             workspace_id=TEST_WORKSPACE_ID,
             client_id=TEST_CLIENT_ID,
             client_secret=TEST_CLIENT_SECRET,
+            max_items_per_page=5,
+            poll_interval=0,
+            cancel_on_termination=False,
         )
 
 
@@ -372,6 +384,9 @@ def another_resource(
             workspace_id=TEST_ANOTHER_WORKSPACE_ID,
             client_id=TEST_CLIENT_ID,
             client_secret=TEST_CLIENT_SECRET,
+            max_items_per_page=5,
+            poll_interval=0,
+            cancel_on_termination=False,
         )
     else:
         return AirbyteWorkspace(
@@ -380,6 +395,9 @@ def another_resource(
             workspace_id=TEST_ANOTHER_WORKSPACE_ID,
             client_id=TEST_CLIENT_ID,
             client_secret=TEST_CLIENT_SECRET,
+            max_items_per_page=5,
+            poll_interval=0,
+            cancel_on_termination=False,
         )
 
 

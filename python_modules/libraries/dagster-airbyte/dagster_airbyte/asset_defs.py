@@ -20,7 +20,7 @@ from dagster import (
     SourceAsset,
     _check as check,
 )
-from dagster._annotations import beta, hidden_param, only_allow_hidden_params_in_kwargs
+from dagster._annotations import beta, hidden_param, only_allow_hidden_params_in_kwargs, superseded
 from dagster._core.definitions import AssetsDefinition, multi_asset
 from dagster._core.definitions.assets.definition.cacheable_assets_definition import (
     AssetsDefinitionCacheableData,
@@ -34,14 +34,12 @@ from dagster._core.execution.context.init import build_init_resource_context
 from dagster._utils.merger import merge_dicts
 
 from dagster_airbyte.asset_decorator import airbyte_assets
-from dagster_airbyte.resources import (
+from dagster_airbyte.legacy_resources import (
     AirbyteCloudResource,
-    AirbyteCloudWorkspace,
     AirbyteResource,
-    AirbyteWorkspace,
     BaseAirbyteResource,
-    BaseAirbyteWorkspace,
 )
+from dagster_airbyte.resources import AirbyteCloudWorkspace, AirbyteWorkspace, BaseAirbyteWorkspace
 from dagster_airbyte.translator import (
     AirbyteConnection,
     AirbyteMetadataSet,
@@ -911,6 +909,11 @@ class AirbyteYAMLCacheableAssetsDefinition(AirbyteCoreCacheableAssetsDefinition)
         return output_connections
 
 
+@superseded(
+    additional_warn_text=(
+        "If you are using Airbyte 1.6.0 or higher, please see the migration guide: https://docs.dagster.io/integrations/libraries/airbyte/migration-guide"
+    )
+)
 def load_assets_from_airbyte_instance(
     airbyte: Union[AirbyteResource, ResourceDefinition],
     workspace_id: Optional[str] = None,
