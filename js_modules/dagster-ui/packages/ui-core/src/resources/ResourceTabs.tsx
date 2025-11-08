@@ -38,9 +38,7 @@ export const ResourceTabs = (props: {
           title={
             <Box flex={{gap: 4, alignItems: 'center'}}>
               Uses
-              <Tag intent="none" minimal={true}>
-                {numUses}
-              </Tag>
+              <Tag intent="none">{numUses}</Tag>
             </Box>
           }
           to={workspacePathFromAddress(repoAddress, `/resources/${resourceName}/uses`)}
