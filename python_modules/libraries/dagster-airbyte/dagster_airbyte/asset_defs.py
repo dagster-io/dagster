@@ -35,13 +35,11 @@ from dagster._utils.merger import merge_dicts
 
 from dagster_airbyte.asset_decorator import airbyte_assets
 from dagster_airbyte.resources import (
-    AirbyteCloudResource,
     AirbyteCloudWorkspace,
-    AirbyteResource,
     AirbyteWorkspace,
-    BaseAirbyteResource,
     BaseAirbyteWorkspace,
 )
+from dagster_airbyte.legacy_resources import BaseAirbyteResource, AirbyteResource, AirbyteCloudResource
 from dagster_airbyte.translator import (
     AirbyteConnection,
     AirbyteMetadataSet,
@@ -261,7 +259,6 @@ def _build_airbyte_assets_from_metadata(
     param="auto_materialize_policy",
     breaking_version="1.10.0",
 )
-@deprecated_param(param="legacy_freshness_policy", breaking_version="1.12.0")
 def build_airbyte_assets(
     connection_id: str,
     destination_tables: Sequence[str],

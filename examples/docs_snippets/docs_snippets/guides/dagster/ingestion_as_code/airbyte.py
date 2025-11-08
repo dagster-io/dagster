@@ -3,7 +3,8 @@
 
 def scope_define_reconciler():
     # start_define_reconciler
-    from dagster_airbyte import AirbyteManagedElementReconciler, airbyte_resource
+    from dagster_airbyte import AirbyteManagedElementReconciler
+    from dagster_airbyte import airbyte_resource
 
     airbyte_instance = airbyte_resource.configured(
         {
@@ -64,7 +65,8 @@ def scope_define_reconciler():
     # end_new_reconciler_delete
 
     # start_load_assets
-    from dagster_airbyte import load_assets_from_connections, airbyte_resource
+    from dagster_airbyte import load_assets_from_connections
+    from dagster_airbyte import airbyte_resource
 
     airbyte_instance = airbyte_resource.configured(
         {
