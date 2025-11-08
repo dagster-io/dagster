@@ -1,12 +1,9 @@
-import hashlib
-import json
 import logging
-import sys
 import time
 from collections.abc import Callable, Iterator, Mapping, Sequence
 from contextlib import contextmanager
 from datetime import datetime, timedelta
-from typing import Any, ClassVar, Optional, Union, cast
+from typing import Any, ClassVar, Optional, Union
 from urllib.parse import parse_qsl, urlparse
 
 import requests
@@ -24,8 +21,6 @@ from dagster import (
 from dagster._annotations import superseded
 from dagster._core.definitions.definitions_load_context import StateBackedDefinitionsLoader
 from dagster._symbol_annotations import beta, public
-from dagster._utils.merger import deep_merge_dicts
-from dagster_airbyte.legacy_resources import BaseAirbyteResource, AirbyteResourceState
 from dagster_shared.dagster_model import DagsterModel
 from dagster_shared.record import record
 from dagster_shared.utils.cached_method import cached_method
@@ -113,6 +108,40 @@ class AirbyteClient(DagsterModel):
         ...,
         description="Time (in seconds) after which the requests to Airbyte are declared timed out.",
     )
+    max_items_per_page: int = Field(
+        default=100,
+        description=(
+            "The maximum number of items per page. "
+            "Used for paginated resources like connections, destinations, etc. "
+        ),
+    )
+    poll_interval: float = Field(
+        default=DEFAULT_POLL_INTERVAL_SECONDS,
+        description="The time (in seconds) that will be waited between successive polls.",
+    )
+    poll_timeout: Optional[float] = Field(
+        default=None,
+        description=(
+            "The maximum time that will wait before this operation is timed "
+            "out. By default, this will never time out."
+        ),
+    )
+    cancel_on_termination: bool = Field(
+        default=True,
+        description=(
+            "Whether to cancel a sync in Airbyte if the Dagster runner is terminated. "
+            "This may be useful to disable if using Airbyte sources that cannot be cancelled and "
+            "resumed easily, or if your Dagster deployment may experience runner interruptions "
+            "that do not impact your Airbyte deployment."
+        ),
+    )
+    poll_previous_running_sync: bool = Field(
+        default=False,
+        description=(
+            "If set to True, Dagster will check for previous running sync for the same connection "
+            "and begin polling it instead of starting a new sync."
+        ),
+    )
 
     _access_token_value: Optional[str] = PrivateAttr(default=None)
     _access_token_timestamp: Optional[float] = PrivateAttr(default=None)
@@ -146,11 +175,11 @@ class AirbyteClient(DagsterModel):
         return get_dagster_logger()
 
     @property
-    def all_additional_request_params(self) -> Mapping[str, Any]:
-        return {**self.authorization_request_params, **self.user_agent_request_params}
+    def all_additional_request_headers(self) -> Mapping[str, Any]:
+        return {**self.authorization_request_headers, **self.user_agent_request_headers}
 
     @property
-    def authorization_request_params(self) -> Mapping[str, Any]:
+    def authorization_request_headers(self) -> Mapping[str, Any]:
         # Make sure the access token is refreshed before using it when calling the API.
         if not (self.client_id and self.client_secret):
             return {}
@@ -162,7 +191,7 @@ class AirbyteClient(DagsterModel):
         }
 
     @property
-    def user_agent_request_params(self) -> Mapping[str, Any]:
+    def user_agent_request_headers(self) -> Mapping[str, Any]:
         return {
             "User-Agent": "dagster",
         }
@@ -177,7 +206,7 @@ class AirbyteClient(DagsterModel):
                     "client_secret": self.client_secret,
                 },
                 # Must not pass the bearer access token when refreshing it.
-                include_additional_request_params=False,
+                include_additional_request_headers=False,
             )
         )
         self._access_token_value = str(response["access_token"])
@@ -191,12 +220,12 @@ class AirbyteClient(DagsterModel):
             <= (datetime.now() - timedelta(seconds=AIRBYTE_REFRESH_TIMEDELTA_SECONDS)).timestamp()
         )
 
-    def _get_session(self, include_additional_request_params: bool) -> requests.Session:
+    def _get_session(self, include_additional_request_headers: bool) -> requests.Session:
         headers = {"accept": "application/json"}
-        if include_additional_request_params:
+        if include_additional_request_headers:
             headers = {
                 **headers,
-                **self.all_additional_request_params,
+                **self.all_additional_request_headers,
             }
         session = requests.Session()
         session.headers.update(headers)
@@ -212,14 +241,14 @@ class AirbyteClient(DagsterModel):
         url: str,
         data: Optional[Mapping[str, Any]] = None,
         params: Optional[Mapping[str, Any]] = None,
-        include_additional_request_params: bool = True,
+        include_additional_request_headers: bool = True,
     ) -> Mapping[str, Any]:
         """Execute a single HTTP request with retry logic."""
         num_retries = 0
         while True:
             try:
                 session = self._get_session(
-                    include_additional_request_params=include_additional_request_params
+                    include_additional_request_headers=include_additional_request_headers
                 )
                 response = session.request(
                     method=method, url=url, json=data, params=params, timeout=self.request_timeout
@@ -249,13 +278,14 @@ class AirbyteClient(DagsterModel):
     ) -> Sequence[Mapping[str, Any]]:
         """Execute paginated requests and yield all items."""
         result_data = []
+        params = {"limit": self.max_items_per_page, **params}
         while True:
             response = self._single_request(
                 method=method,
                 url=url,
                 data=data,
                 params=params,
-                include_additional_request_params=include_additional_request_params,
+                include_additional_request_headers=include_additional_request_params,
             )
 
             # Handle different response structures
@@ -285,6 +315,23 @@ class AirbyteClient(DagsterModel):
             url=f"{self.rest_api_base_url}/connections",
             params={"workspaceIds": self.workspace_id},
         )
+
+    def get_jobs_for_connection(
+        self, connection_id: str, created_after: datetime | None = None
+    ) -> Sequence[AirbyteJob]:
+        """Fetches all jobs for a specific connection of an Airbyte workspace from the Airbyte REST API."""
+        params = {"workspaceIds": self.workspace_id, "connectionId": connection_id}
+        if created_after:
+            params["createdAtStart"] = created_after.strftime("%Y-%m-%dT%H:%M:%SZ")
+
+        return [
+            AirbyteJob.from_job_details(job_details=job_details)
+            for job_details in self._paginated_request(
+                method="GET",
+                url=f"{self.rest_api_base_url}/jobs",
+                params=params,
+            )
+        ]
 
     def get_connection_details(self, connection_id) -> Mapping[str, Any]:
         """Fetches details about a given connection from the Airbyte Configuration API.
@@ -328,50 +375,65 @@ class AirbyteClient(DagsterModel):
             url=f"{self.rest_api_base_url}/jobs/{job_id}",
         )
 
-    def sync_and_poll(
-        self,
-        connection_id: str,
-        poll_interval: Optional[float] = None,
-        poll_timeout: Optional[float] = None,
-        cancel_on_termination: bool = True,
-    ) -> AirbyteOutput:
+    def sync_and_poll(self, connection_id: str) -> AirbyteOutput:
         """Initializes a sync operation for the given connection, and polls until it completes.
 
         Args:
             connection_id (str): The Airbyte Connection ID. You can retrieve this value from the
                 "Connection" tab of a given connection in the Airbyte UI.
-            poll_interval (float): The time (in seconds) that will be waited between successive polls.
-            poll_timeout (float): The maximum time that will wait before this operation is timed
-                out. By default, this will never time out.
-            cancel_on_termination (bool): Whether to cancel a sync in Airbyte if the Dagster runner is terminated.
-                This may be useful to disable if using Airbyte sources that cannot be cancelled and
-                resumed easily, or if your Dagster deployment may experience runner interruptions
-                that do not impact your Airbyte deployment.
 
         Returns:
             :py:class:`~AirbyteOutput`:
                 Details of the sync job.
         """
         connection_details = self.get_connection_details(connection_id)
-        start_job_details = self.start_sync_job(connection_id)
-        job = AirbyteJob.from_job_details(job_details=start_job_details)
 
-        self._log.info(f"Job {job.id} initialized for connection_id={connection_id}.")
+        existing_jobs = [
+            job
+            for job in self.get_jobs_for_connection(
+                connection_id=connection_id,
+                created_after=datetime.now() - timedelta(days=2),
+            )
+            if job.status
+            in (
+                AirbyteJobStatusType.RUNNING,
+                AirbyteJobStatusType.PENDING,
+                AirbyteJobStatusType.INCOMPLETE,
+            )
+        ]
+
+        if not existing_jobs:
+            start_job_details = self.start_sync_job(connection_id)
+            job = AirbyteJob.from_job_details(job_details=start_job_details)
+            self._log.info(f"Job {job.id} initialized for connection_id={connection_id}.")
+        else:
+            if self.poll_previous_running_sync:
+                if len(existing_jobs) == 1:
+                    job = existing_jobs[0]
+                    self._log.info(
+                        f"Job {job.id} already running for connection_id={connection_id}. Resume polling."
+                    )
+                else:
+                    raise Failure(f"Found multiple running jobs for connection_id={connection_id}.")
+            else:
+                raise Failure(f"Found sync job for connection_id={connection_id} already running.")
+
         poll_start = datetime.now()
-        poll_interval = (
-            poll_interval if poll_interval is not None else DEFAULT_POLL_INTERVAL_SECONDS
-        )
+
         try:
             while True:
-                if poll_timeout and datetime.now() > poll_start + timedelta(seconds=poll_timeout):
+                if self.poll_timeout and datetime.now() > poll_start + timedelta(
+                    seconds=self.poll_timeout
+                ):
                     raise Failure(
                         f"Timeout: Airbyte job {job.id} is not ready after the timeout"
-                        f" {poll_timeout} seconds"
+                        f" {self.poll_timeout} seconds"
                     )
 
-                time.sleep(poll_interval)
+                time.sleep(self.poll_interval)
                 # We return these job details in the AirbyteOutput when the job succeeds
                 poll_job_details = self.get_job_details(job.id)
+                self._log.debug(poll_job_details)
                 job = AirbyteJob.from_job_details(job_details=poll_job_details)
                 if job.status in (
                     AirbyteJobStatusType.RUNNING,
@@ -392,7 +454,7 @@ class AirbyteClient(DagsterModel):
         finally:
             # if Airbyte sync has not completed, make sure to cancel it so that it doesn't outlive
             # the python process
-            if cancel_on_termination and job.status not in (
+            if self.cancel_on_termination and job.status not in (
                 AirbyteJobStatusType.SUCCEEDED,
                 AirbyteJobStatusType.ERROR,
                 AirbyteJobStatusType.CANCELLED,
@@ -424,6 +486,41 @@ class BaseAirbyteWorkspace(ConfigurableResource):
         default=15,
         description="Time (in seconds) after which the requests to Airbyte are declared timed out.",
     )
+    max_items_per_page: int = Field(
+        default=100,
+        description=(
+            "The maximum number of items per page. "
+            "Used for paginated resources like connections, destinations, etc. "
+        ),
+    )
+    poll_interval: float = Field(
+        default=DEFAULT_POLL_INTERVAL_SECONDS,
+        description="The time (in seconds) that will be waited between successive polls.",
+    )
+    poll_timeout: Optional[float] = Field(
+        default=None,
+        description=(
+            "The maximum time that will wait before this operation is timed "
+            "out. By default, this will never time out."
+        ),
+    )
+    cancel_on_termination: bool = Field(
+        default=True,
+        description=(
+            "Whether to cancel a sync in Airbyte if the Dagster runner is terminated. "
+            "This may be useful to disable if using Airbyte sources that cannot be cancelled and "
+            "resumed easily, or if your Dagster deployment may experience runner interruptions "
+            "that do not impact your Airbyte deployment."
+        ),
+    )
+    poll_previous_running_sync: bool = Field(
+        default=False,
+        description=(
+            "If set to True, Dagster will check for previous running sync for the same connection "
+            "and begin polling it instead of starting a new sync."
+        ),
+    )
+
     _client: AirbyteClient = PrivateAttr(default=None)  # type: ignore
 
     @cached_method
@@ -723,6 +820,11 @@ class AirbyteWorkspace(BaseAirbyteWorkspace):
             request_max_retries=self.request_max_retries,
             request_retry_delay=self.request_retry_delay,
             request_timeout=self.request_timeout,
+            max_items_per_page=self.max_items_per_page,
+            poll_interval=self.poll_interval,
+            poll_timeout=self.poll_timeout,
+            cancel_on_termination=self.cancel_on_termination,
+            poll_previous_running_sync=self.poll_previous_running_sync,
         )
 
 
@@ -770,6 +872,11 @@ class AirbyteCloudWorkspace(BaseAirbyteWorkspace):
             request_max_retries=self.request_max_retries,
             request_retry_delay=self.request_retry_delay,
             request_timeout=self.request_timeout,
+            max_items_per_page=self.max_items_per_page,
+            poll_interval=self.poll_interval,
+            poll_timeout=self.poll_timeout,
+            cancel_on_termination=self.cancel_on_termination,
+            poll_previous_running_sync=self.poll_previous_running_sync,
         )
 
 

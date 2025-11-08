@@ -28,6 +28,7 @@ from dagster_airbyte.asset_defs import (
     AirbyteConnectionMetadata,
     AirbyteInstanceCacheableAssetsDefinition,
 )
+from dagster_airbyte.legacy_resources import AirbyteResource
 from dagster_airbyte.managed.types import (
     MANAGED_ELEMENTS_DEPRECATION_MSG,
     AirbyteConnection,
@@ -39,7 +40,6 @@ from dagster_airbyte.managed.types import (
     InitializedAirbyteDestination,
     InitializedAirbyteSource,
 )
-from dagster_airbyte.legacy_resources import AirbyteResource
 from dagster_airbyte.utils import clean_name, is_basic_normalization_operation
 
 
