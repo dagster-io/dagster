@@ -911,8 +911,7 @@ class AirbyteYAMLCacheableAssetsDefinition(AirbyteCoreCacheableAssetsDefinition)
 
 @superseded(
     additional_warn_text=(
-        "Using `load_assets_from_airbyte_instance` with legacy resources is no longer best practice. "
-        "Use `build_airbyte_assets_definitions` with `AirbyteWorkspace` instead."
+        "If you are using Airbyte 1.6.0 or higher, please see the migration guide: https://docs.dagster.io/integrations/libraries/airbyte/migration-guide"
     )
 )
 def load_assets_from_airbyte_instance(

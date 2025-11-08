@@ -248,8 +248,7 @@ class BaseAirbyteResource(ConfigurableResource):
 
 @superseded(
     additional_warn_text=(
-        "Using `AirbyteResource` with `build_airbyte_assets` is no longer best practice. "
-        "Use `AirbyteWorkspace` with `build_airbyte_assets_definitions` instead."
+        "If you are using Airbyte 1.6.0 or higher, please see the migration guide: https://docs.dagster.io/integrations/libraries/airbyte/migration-guide"
     )
 )
 class AirbyteResource(BaseAirbyteResource):
@@ -318,7 +317,7 @@ class AirbyteResource(BaseAirbyteResource):
         return (
             ("https://" if self.use_https else "http://")
             + (f"{self.host}:{self.port}" if self.port else self.host)
-            + "/api/public/v1"
+            + "/api/v1"
         )
 
     @property
@@ -632,8 +631,7 @@ class AirbyteResource(BaseAirbyteResource):
 
 @superseded(
     additional_warn_text=(
-        "Using `AirbyteCloudResource` with `build_airbyte_assets`is no longer best practice. "
-        "Use `AirbyteCloudWorkspace` with `build_airbyte_assets_definitions` instead."
+        "If you are using Airbyte 1.6.0 or higher, please see the migration guide: https://docs.dagster.io/integrations/libraries/airbyte/migration-guide"
     )
 )
 class AirbyteCloudResource(BaseAirbyteResource):
@@ -759,7 +757,11 @@ class AirbyteCloudResource(BaseAirbyteResource):
         )
 
 
-@superseded(additional_warn_text=("Use `AirbyteCloudWorkspace` instead."))
+@superseded(
+    additional_warn_text=(
+        "If you are using Airbyte 1.6.0 or higher, please see the migration guide: https://docs.dagster.io/integrations/libraries/airbyte/migration-guide"
+    )
+)
 @dagster_maintained_resource
 @resource(config_schema=infer_schema_from_config_class(AirbyteCloudResource))
 def airbyte_cloud_resource(context) -> AirbyteCloudResource:
@@ -773,8 +775,7 @@ def airbyte_cloud_resource(context) -> AirbyteCloudResource:
 
 @superseded(
     additional_warn_text=(
-        "Using `airbyte_resource` with `build_airbyte_assets` is no longer best practice. "
-        "Use `AirbyteWorkspace` with `build_airbyte_assets_definitions` instead."
+        "If you are using Airbyte 1.6.0 or higher, please see the migration guide: https://docs.dagster.io/integrations/libraries/airbyte/migration-guide"
     )
 )
 @dagster_maintained_resource
