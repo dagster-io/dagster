@@ -94,7 +94,7 @@ def test_load_from_instance(
 
         return TestIOManager()
 
-    base_url = "http://some_host:8000/api/public/v1"
+    base_url = "http://some_host:8000/api/v1"
     responses.add(
         method=responses.POST,
         url=base_url + "/workspaces/list",

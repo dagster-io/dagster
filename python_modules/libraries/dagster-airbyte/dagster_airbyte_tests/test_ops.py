@@ -24,7 +24,7 @@ DEFAULT_CONNECTION_ID = "02087b3c-2037-4db9-ae7b-4a8e45dc20b1"
 def test_airbyte_sync_op(forward_logs, additional_request_params, use_auth):
     ab_host = "some_host"
     ab_port = "8000"
-    ab_url = f"http://{ab_host}:{ab_port}/api/public/v1"
+    ab_url = f"http://{ab_host}:{ab_port}/api/v1"
     ab_resource = airbyte_resource.configured(
         {
             "host": ab_host,
