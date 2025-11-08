@@ -20,7 +20,7 @@ from dagster import (
     SourceAsset,
     _check as check,
 )
-from dagster._annotations import beta, hidden_param, only_allow_hidden_params_in_kwargs, deprecated_param, superseded
+from dagster._annotations import beta, hidden_param, only_allow_hidden_params_in_kwargs, superseded
 from dagster._core.definitions import AssetsDefinition, multi_asset
 from dagster._core.definitions.assets.definition.cacheable_assets_definition import (
     AssetsDefinitionCacheableData,
@@ -34,12 +34,12 @@ from dagster._core.execution.context.init import build_init_resource_context
 from dagster._utils.merger import merge_dicts
 
 from dagster_airbyte.asset_decorator import airbyte_assets
-from dagster_airbyte.resources import (
-    AirbyteCloudWorkspace,
-    AirbyteWorkspace,
-    BaseAirbyteWorkspace,
+from dagster_airbyte.legacy_resources import (
+    AirbyteCloudResource,
+    AirbyteResource,
+    BaseAirbyteResource,
 )
-from dagster_airbyte.legacy_resources import BaseAirbyteResource, AirbyteResource, AirbyteCloudResource
+from dagster_airbyte.resources import AirbyteCloudWorkspace, AirbyteWorkspace, BaseAirbyteWorkspace
 from dagster_airbyte.translator import (
     AirbyteConnection,
     AirbyteMetadataSet,

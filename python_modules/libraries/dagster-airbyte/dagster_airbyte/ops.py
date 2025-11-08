@@ -5,8 +5,8 @@ from dagster import Config, In, Nothing, Out, Output, op
 from dagster._core.storage.tags import COMPUTE_KIND_TAG
 from pydantic import Field
 
-from dagster_airbyte.resources import DEFAULT_POLL_INTERVAL_SECONDS
 from dagster_airbyte.legacy_resources import BaseAirbyteResource
+from dagster_airbyte.resources import DEFAULT_POLL_INTERVAL_SECONDS
 from dagster_airbyte.types import AirbyteOutput
 from dagster_airbyte.utils import _get_attempt, generate_materializations
 

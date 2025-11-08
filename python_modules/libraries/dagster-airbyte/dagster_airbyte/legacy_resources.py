@@ -4,28 +4,37 @@ import logging
 import sys
 import time
 from abc import abstractmethod
+from collections.abc import Mapping
 from contextlib import contextmanager
 from datetime import datetime, timedelta
-from typing import Mapping, Any, Optional, cast
+from typing import Any, Optional, cast
 
 import requests
-from pydantic import Field, PrivateAttr
-from requests import RequestException
-
-from dagster import ConfigurableResource, get_dagster_logger, Failure, InitResourceContext, _check as check, resource
+from dagster import (
+    ConfigurableResource,
+    Failure,
+    InitResourceContext,
+    _check as check,
+    get_dagster_logger,
+    resource,
+)
 from dagster._config.pythonic_config import infer_schema_from_config_class
 from dagster._core.definitions.resource_definition import dagster_maintained_resource
 from dagster._symbol_annotations import superseded
-from dagster_airbyte.translator import AirbyteJobStatusType
-from dagster_airbyte.types import AirbyteOutput
 from dagster_shared.merger import deep_merge_dicts
 from dagster_shared.utils.cached_method import cached_method
+from pydantic import Field, PrivateAttr
+from requests import RequestException
+
+from dagster_airbyte.translator import AirbyteJobStatusType
+from dagster_airbyte.types import AirbyteOutput
 
 DEFAULT_POLL_INTERVAL_SECONDS = 10
 
 # The access token expire every 3 minutes in Airbyte Cloud.
 # Refresh is needed after 2.5 minutes to avoid the "token expired" error message.
 AIRBYTE_REFRESH_TIMEDELTA_SECONDS = 150
+
 
 class AirbyteResourceState:
     def __init__(self) -> None:
@@ -245,6 +254,7 @@ class BaseAirbyteResource(ConfigurableResource):
                 self.cancel_job(job_id)
 
         return AirbyteOutput(job_details=job_details, connection_details=connection_details)
+
 
 @superseded(
     additional_warn_text=(
