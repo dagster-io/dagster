@@ -18,7 +18,12 @@ from typing import (
 )
 
 import yaml
-from dagster_shared.record import get_record_annotations, get_record_defaults, is_record, record
+from dagster_shared.record import (
+    get_record_annotations,
+    get_record_defaults,
+    is_record,
+    record,
+)
 from dagster_shared.utils import safe_is_subclass
 from dagster_shared.yaml_utils import try_parse_yaml_with_source_position
 from pydantic import BaseModel, PydanticSchemaGenerationError, create_model
@@ -30,6 +35,13 @@ from dagster._utils.pydantic_yaml import _parse_and_populate_model_with_annotate
 from dagster.components.resolved.context import ResolutionContext
 from dagster.components.resolved.errors import ResolutionException
 from dagster.components.resolved.model import Model, Resolver
+
+
+try:
+    # this type only exists in python 3.10+
+    from types import UnionType  # type: ignore
+except ImportError:
+    UnionType = Union
 
 
 class _TypeContainer(Enum):
@@ -194,7 +206,9 @@ def derive_model_type(
 
             # Prefer a default_factory present (from pydantic field_info or from Annotation info (for dataclasses))
             factory = (
-                annotation_info.field_info.default_factory if annotation_info.field_info else None
+                annotation_info.field_info.default_factory
+                if annotation_info.field_info
+                else None
             ) or annotation_info.default_factory
 
             if annotation_info.has_default:
@@ -206,7 +220,8 @@ def derive_model_type(
 
                 default_value = (
                     annotation_info.default
-                    if type(annotation_info.default) in {int, float, str, bool, type(None)}
+                    if type(annotation_info.default)
+                    in {int, float, str, bool, type(None)}
                     else _Unset
                 )
                 # We want the derived Pydantic model to materialize a value even if the user omits the field
@@ -246,7 +261,9 @@ def derive_model_type(
                 **model_fields,
             )
         except PydanticSchemaGenerationError as e:
-            raise ResolutionException(f"Unable to derive Model for {target_type}") from e
+            raise ResolutionException(
+                f"Unable to derive Model for {target_type}"
+            ) from e
 
     return _DERIVED_MODEL_REGISTRY[target_type]
 
@@ -275,14 +292,18 @@ def _is_implicitly_resolved_type(annotation):
     ):
         return True
 
-    if origin is Literal and all(_is_implicitly_resolved_type(type(arg)) for arg in args):
+    if origin is Literal and all(
+        _is_implicitly_resolved_type(type(arg)) for arg in args
+    ):
         return True
 
     return False
 
 
 def _is_resolvable_type(annotation):
-    return _is_implicitly_resolved_type(annotation) or safe_is_subclass(annotation, Resolvable)
+    return _is_implicitly_resolved_type(annotation) or safe_is_subclass(
+        annotation, Resolvable
+    )
 
 
 @record
@@ -404,7 +425,10 @@ def resolve_fields(
         fname
         for fname, info in _get_annotations(resolved_cls).items()
         if (
-            (info.field_info is not None and info.field_info.default_factory is not None)
+            (
+                info.field_info is not None
+                and info.field_info.default_factory is not None
+            )
             or (getattr(info, "default_factory", None) is not None)
         )
     }
@@ -416,7 +440,9 @@ def resolve_fields(
         model_field_name = resolver.model_field_name or field_name
 
         # include if explicity set Or it had a default_factory
-        should_include = (model_field_name in dumped) or (field_name in fields_with_factory)
+        should_include = (model_field_name in dumped) or (
+            field_name in fields_with_factory
+        )
         if not should_include:
             continue
 
@@ -424,7 +450,9 @@ def resolve_fields(
         if value == _Unset:
             continue
 
-        out[field_name] = resolver.execute(context=context, model=model, field_name=field_name)
+        out[field_name] = resolver.execute(
+            context=context, model=model, field_name=field_name
+        )
     return {alias_name_by_field_name[k]: v for k, v in out.items()}
 
 
@@ -576,7 +604,10 @@ def _zero_arg_callable(fn: Any) -> bool:
         # If any parameter (positional or keyword-only) is required (no default),
         # then the callable is not a zero-arg callable.
         for p in sig.parameters.values():
-            if p.kind in (inspect.Parameter.VAR_POSITIONAL, inspect.Parameter.VAR_KEYWORD):
+            if p.kind in (
+                inspect.Parameter.VAR_POSITIONAL,
+                inspect.Parameter.VAR_KEYWORD,
+            ):
                 # *args/**kwargs don't introduce required positional params by themselves
                 continue
             if p.default is inspect.Parameter.empty and p.kind in (
@@ -603,7 +634,11 @@ def _resolve_at_path(
     container = container_path[0]
     inner_path = container_path[1:]
     if container is _TypeContainer.OPTIONAL:
-        return _resolve_at_path(context, value, inner_path, resolver) if value is not None else None
+        return (
+            _resolve_at_path(context, value, inner_path, resolver)
+            if value is not None
+            else None
+        )
     elif container is _TypeContainer.SEQUENCE:
         return [
             _resolve_at_path(context.at_path(idx), i, inner_path, resolver)
