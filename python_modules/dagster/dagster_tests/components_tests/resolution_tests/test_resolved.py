@@ -1,6 +1,7 @@
 from collections.abc import Sequence
 from dataclasses import dataclass, field
 from enum import Enum
+
 from typing import Annotated, Any, Literal, NamedTuple, Optional, Union
 
 import dagster as dg
@@ -10,6 +11,12 @@ from dagster.components.resolved.errors import ResolutionException
 from dagster.components.resolved.model import Resolver
 from dagster_shared.record import record
 from pydantic import BaseModel, ConfigDict, Field, ValidationError
+
+
+try:
+    from typing import TypeAlias
+except Exception:
+    from typing_extensions import TypeAlias
 
 
 def test_basic():
@@ -601,7 +608,9 @@ def test_plain_named_tuple():
         thing: OuterWrapper
 
     # or indirectly
-    with pytest.raises(ResolutionException, match="Wrapper includes incompatible field\n  nt:"):
+    with pytest.raises(
+        ResolutionException, match="Wrapper includes incompatible field\n  nt:"
+    ):
         Outer.model()
 
 
@@ -637,7 +646,9 @@ class Foo:
     name: str
 
 
-ResolvedFoo: TypeAlias = Annotated[Foo, dg.Resolver(lambda _, v: Foo(name=v), model_field_type=str)]
+ResolvedFoo: TypeAlias = Annotated[
+    Foo, dg.Resolver(lambda _, v: Foo(name=v), model_field_type=str)
+]
 
 
 def test_containers():
@@ -738,4 +749,6 @@ def test_dicts():
         thing: dict[int, Inner]
 
     with pytest.raises(ResolutionException, match="dict key type must be str"):
-        BadHasDict.resolve_from_dict({"thing": {"a": {"name": "a", "value": {"key": "a"}}}})
+        BadHasDict.resolve_from_dict(
+            {"thing": {"a": {"name": "a", "value": {"key": "a"}}}}
+        )
