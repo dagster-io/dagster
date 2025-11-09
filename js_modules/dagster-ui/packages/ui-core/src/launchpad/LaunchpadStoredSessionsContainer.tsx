@@ -1,5 +1,8 @@
+import {useMemo} from 'react';
+
 import LaunchpadSession from './LaunchpadSession';
 import {LaunchpadTabs} from './LaunchpadTabs';
+import {filterDefaultYamlOptionalResources} from './configFiltering';
 import {LaunchpadType} from './types';
 import {
   LaunchpadSessionPartitionSetsFragment,
@@ -31,10 +34,19 @@ export const LaunchpadStoredSessionsContainer = (props: Props) => {
     props;
 
   const {flagDisableAutoLoadDefaults} = useFeatureFlags();
+
+  const initialConfigYaml = useMemo(
+    () =>
+      rootDefaultYaml && runConfigSchema
+        ? filterDefaultYamlOptionalResources(rootDefaultYaml, runConfigSchema)
+        : rootDefaultYaml,
+    [rootDefaultYaml, runConfigSchema],
+  );
+
   const initialDataForMode = useInitialDataForMode(
     pipeline,
     partitionSets,
-    rootDefaultYaml,
+    initialConfigYaml,
     !flagDisableAutoLoadDefaults,
   );
   const [data, onSave] = useExecutionSessionStorage(repoAddress, pipeline.name, initialDataForMode);
