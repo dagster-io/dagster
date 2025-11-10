@@ -2,11 +2,11 @@ import {
   Box,
   Colors,
   Icon,
+  Intent,
   Popover,
   Spinner,
   Subtitle2,
   Tag,
-  TagIntent,
 } from '@dagster-io/ui-components';
 import countBy from 'lodash/countBy';
 import * as React from 'react';
@@ -33,7 +33,7 @@ type AssetCheckIconType =
 const AssetCheckIconsOrdered: {
   type: AssetCheckIconType;
   content: React.ReactNode;
-  intent: TagIntent;
+  intent: Intent;
 }[] = [
   {
     type: AssetCheckExecutionResolvedStatus.IN_PROGRESS,

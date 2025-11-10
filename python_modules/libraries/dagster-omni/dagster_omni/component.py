@@ -4,7 +4,7 @@ from pathlib import Path
 from typing import Optional
 
 import dagster as dg
-from dagster._annotations import preview
+from dagster._annotations import preview, public
 from dagster._core.errors import DagsterInvalidDefinitionError
 from dagster.components.component.state_backed_component import StateBackedComponent
 from dagster.components.utils.defs_state import (
@@ -96,10 +96,45 @@ class OmniComponent(StateBackedComponent, dg.Model, dg.Resolvable):
             return dg.AssetSpec(key=dg.AssetKey([data.obj.query_config.table]))
         return None
 
+    @public
     def get_asset_spec(
         self, context: dg.ComponentLoadContext, data: OmniTranslatorData
     ) -> Optional[dg.AssetSpec]:
-        """Core function for converting an Omni document into an AssetSpec object."""
+        """Generates an AssetSpec for a given Omni document.
+
+        This method can be overridden in a subclass to customize how Omni documents
+        (workbooks, queries) are converted to Dagster asset specs. By default, it applies
+        any configured translation function to the base asset spec.
+
+        Args:
+            context: The component load context provided by Dagster
+            data: The OmniTranslatorData containing information about the Omni document
+
+        Returns:
+            An AssetSpec that represents the Omni document as a Dagster asset, or None
+            if the document should not be represented as an asset
+
+        Example:
+            Override this method to add custom metadata based on document properties:
+
+            .. code-block:: python
+
+                from dagster_omni import OmniComponent
+                import dagster as dg
+
+                class CustomOmniComponent(OmniComponent):
+                    def get_asset_spec(self, context, data):
+                        base_spec = super().get_asset_spec(context, data)
+                        if base_spec:
+                            return base_spec.replace_attributes(
+                                metadata={
+                                    **base_spec.metadata,
+                                    "omni_type": type(data.obj).__name__,
+                                    "workspace": data.workspace_data.workspace_id
+                                }
+                            )
+                        return None
+        """
         base_asset_spec = self._get_default_omni_spec(context, data, self.workspace)
         if self.translation and base_asset_spec:
             return self.translation(base_asset_spec, data)

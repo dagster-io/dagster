@@ -589,6 +589,8 @@ class MdxTranslator(SphinxTranslator):
     depart_sidebar = depart_topic
 
     def visit_rubric(self, node: Element) -> None:
+        # Add blank line before rubrics to separate sections (e.g., between Returns and Examples)
+        self.add_text(self.nl)
         self.new_state(0)
 
     def depart_rubric(self, node: Element) -> None:

@@ -4,12 +4,11 @@ import logging.config
 import sys
 import traceback
 import warnings
-from collections.abc import Mapping, Sequence
-from typing import TYPE_CHECKING, Any, Callable, NamedTuple, Optional, Union
+from collections.abc import Callable, Mapping, Sequence
+from typing import TYPE_CHECKING, Any, NamedTuple, Optional, TypeAlias, Union
 
 import coloredlogs
 import dagster_shared.seven as seven
-from typing_extensions import TypeAlias
 
 import dagster._check as check
 from dagster._annotations import deprecated, public

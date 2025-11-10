@@ -1,5 +1,3 @@
-// eslint-disable-next-line no-restricted-imports
-import {Intent} from '@blueprintjs/core';
 import {
   Box,
   Button,
@@ -9,6 +7,7 @@ import {
   Colors,
   FontFamily,
   Icon,
+  Intent,
   SplitPanelContainer,
   Tag,
   Tooltip,
@@ -39,7 +38,9 @@ function isValidationError(e: ValidationErrorOrNode): e is ValidationError {
   return e && typeof e === 'object' && '__typename' in e ? true : false;
 }
 
-const stateToHint: {[key: string]: {title: string; intent: Intent}} = {
+type State = 'invalid' | 'missing' | 'present' | 'none';
+
+const stateToHint: Record<State, {title: string; intent: Intent}> = {
   invalid: {
     title: `You need to fix this configuration section.`,
     intent: 'danger',
@@ -383,25 +384,18 @@ export const RunPreview = (props: RunPreviewProps) => {
                 ? 'present'
                 : 'none';
 
+        const hint = stateToHint[state];
         return (
-          <Tooltip
-            position="bottom"
-            // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-            content={stateToHint[state]!.title}
-            // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-            intent={stateToHint[state]!.intent}
-            key={item.name}
-          >
-            <Tag
-              key={item.name}
-              // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-              intent={stateToHint[state]!.intent}
-              onClick={() => {
-                const first = pathErrors.find(isValidationError);
-                onHighlightPath(first ? errorStackToYamlPath(first.stack.entries) : path);
-              }}
-            >
-              {item.name}
+          <Tooltip position="bottom" content={hint.title} intent={hint.intent} key={item.name}>
+            <Tag key={item.name} intent={hint.intent}>
+              <ButtonLink
+                onClick={() => {
+                  const first = pathErrors.find(isValidationError);
+                  onHighlightPath(first ? errorStackToYamlPath(first.stack.entries) : path);
+                }}
+              >
+                {item.name}
+              </ButtonLink>
             </Tag>
           </Tooltip>
         );

@@ -1,16 +1,18 @@
 import importlib
 import inspect
 import json
+import os
 import secrets
 import shutil
 import string
 import sys
 import textwrap
+from collections.abc import Callable
 from pathlib import Path
-from typing import Callable
 
 import yaml
 from dagster_shared import check
+from dagster_shared.utils import environ
 
 from dagster.components.component_scaffolding import scaffold_object
 from dagster.components.core.component_tree import ComponentTree
@@ -256,6 +258,28 @@ class DefsFolderSandbox:
                 shutil.copy2(temp_path, defs_path)
             shutil.rmtree(temp_dir)
 
+    @contextmanager
+    def activate_venv_for_project(self) -> Iterator[None]:
+        """Activates the project's venv and ensures the src directory is in sys.path."""
+        injected_path = str(self.project_root / "src")
+        try:
+            sys.path.insert(1, injected_path)
+            venv_path = (self.project_root / ".venv").absolute()
+            with environ(
+                {
+                    "VIRTUAL_ENV": str(venv_path),
+                    "PATH": os.pathsep.join(
+                        [
+                            str(venv_path / ("Scripts" if sys.platform == "win32" else "bin")),
+                            os.getenv("PATH", ""),
+                        ]
+                    ),
+                }
+            ):
+                yield
+        finally:
+            sys.path.remove(injected_path)
+
 
 @contextmanager
 def create_defs_folder_sandbox(
@@ -322,8 +346,11 @@ def create_defs_folder_sandbox(
         dg_toml_path = project_root / "dg.toml"
         dg_toml_path.write_text(
             textwrap.dedent(f"""
+                directory_type = "project"
+                
                 [project]
                 root_module = "{project_name}"
+                registry_modules = ["dagster_dbt"]
             """)
         )
 

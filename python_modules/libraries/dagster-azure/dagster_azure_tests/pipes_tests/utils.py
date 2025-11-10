@@ -1,11 +1,11 @@
 import inspect
 import shutil
 import textwrap
-from collections.abc import Iterator
+from collections.abc import Callable, Iterator
 from contextlib import contextmanager
 from pathlib import Path
 from tempfile import NamedTemporaryFile
-from typing import Any, Callable
+from typing import Any
 
 _PYTHON_EXECUTABLE = shutil.which("python") or "python"
 

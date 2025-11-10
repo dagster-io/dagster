@@ -94,7 +94,8 @@ def scope_airbyte_cloud_manual_config():
     # start_airbyte_cloud_manual_config
     import dagster as dg
 
-    from dagster_airbyte import build_airbyte_assets, AirbyteCloudResource
+    from dagster_airbyte import build_airbyte_assets
+    from dagster_airbyte import AirbyteCloudResource
 
     airbyte_instance = AirbyteCloudResource(
         client_id=dg.EnvVar("AIRBYTE_CLIENT_ID"),
@@ -211,8 +212,8 @@ def scope_add_downstream_assets_cloud():
 
         from dagster_airbyte import (
             build_airbyte_assets,
-            AirbyteCloudResource,
         )
+        from dagster_airbyte import AirbyteCloudResource
         from dagster_snowflake_pandas import SnowflakePandasIOManager
         import pandas as pd
 
@@ -260,8 +261,8 @@ def scope_add_downstream_assets_cloud_with_deps():
 
         from dagster_airbyte import (
             build_airbyte_assets,
-            AirbyteCloudResource,
         )
+        from dagster_airbyte import AirbyteCloudResource
         from dagster_snowflake import SnowflakeResource
 
         airbyte_instance = AirbyteCloudResource(
@@ -341,7 +342,8 @@ def scope_schedule_assets():
 
 def scope_schedule_assets_cloud():
     # start_schedule_assets_cloud
-    from dagster_airbyte import AirbyteCloudResource, build_airbyte_assets
+    from dagster_airbyte import build_airbyte_assets
+    from dagster_airbyte import AirbyteCloudResource
 
     import dagster as dg
 

@@ -1,5 +1,4 @@
 import json
-import socket
 import warnings
 from collections.abc import Mapping
 from typing import Any
@@ -122,7 +121,7 @@ def get_pypi_package_data(pkg_name: str, timeout: float = 5.0) -> dict[str, Any]
                     f"Error: Received status code {response.status} for {pkg_name}"
                 )
             return json.load(response)
-    except (HTTPError, URLError, socket.timeout) as e:
+    except (TimeoutError, HTTPError, URLError) as e:
         raise DagsterPyPiAccessError(f"Network error while checking {pkg_name}: {e}")
     except json.JSONDecodeError as e:
         raise DagsterPyPiAccessError(f"Invalid JSON response for {pkg_name}: {e}")

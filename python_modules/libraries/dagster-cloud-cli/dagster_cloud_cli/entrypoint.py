@@ -4,9 +4,9 @@ import importlib.util
 import json
 import logging
 import time
-from collections.abc import Mapping
+from collections.abc import Callable, Mapping
 from enum import Enum
-from typing import Callable, Optional
+from typing import Optional
 
 import typer
 from typer.models import CommandInfo
@@ -18,6 +18,7 @@ from dagster_cloud_cli.commands.config import (
     app_configure as configure_app,
 )
 from dagster_cloud_cli.commands.deployment import app as deployment_app
+from dagster_cloud_cli.commands.integration import app as integration_app
 from dagster_cloud_cli.commands.job import app as job_app
 from dagster_cloud_cli.commands.organization import (
     app as organization_app,
@@ -198,6 +199,7 @@ app.add_typer(run_app, name="run", no_args_is_help=True, hidden=True)
 app.add_typer(serverless_app, name="serverless", no_args_is_help=True)
 app.add_typer(pex_app, name="pex", hidden=True, no_args_is_help=True)
 app.add_typer(ci_app, name="ci", no_args_is_help=True)
+app.add_typer(integration_app, name="integration", no_args_is_help=True)
 
 # Deprecated in favor of organization
 app.add_typer(legacy_settings_app, name="settings", hidden=True)

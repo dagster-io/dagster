@@ -1,5 +1,3 @@
-// eslint-disable-next-line no-restricted-imports
-import {Intent} from '@blueprintjs/core';
 import {useState} from 'react';
 
 import {Colors} from '../Color';
@@ -44,7 +42,7 @@ export const Sizes = () => {
           }
         }}
       >
-        <MultiSlider.Handle value={value} type="full" intentAfter={Intent.PRIMARY} />
+        <MultiSlider.Handle value={value} type="full" intentAfter="primary" />
       </MultiSlider>
 
       <MultiSlider
@@ -63,8 +61,8 @@ export const Sizes = () => {
           }
         }}
       >
-        <MultiSlider.Handle value={minValue} type="full" intentAfter={Intent.PRIMARY} />
-        <MultiSlider.Handle value={value} type="full" intentBefore={Intent.PRIMARY} />
+        <MultiSlider.Handle value={minValue} type="full" intentAfter="primary" />
+        <MultiSlider.Handle value={value} type="full" intentBefore="primary" />
       </MultiSlider>
     </Group>
   );

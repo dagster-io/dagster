@@ -1,7 +1,6 @@
 ---
 title: Installing Dagster
 description: Learn how to install Dagster and create projects with the dg CLI.
-sidebar_position: 20
 sidebar_label: Installation
 ---
 
@@ -9,7 +8,7 @@ import InstallUv from '@site/docs/partials/\_InstallUv.md';
 
 :::note
 
-To follow the steps in this guide, you'll need to install [Python 3.9](https://www.python.org/downloads/) or higher. **Python 3.13 is recommended**.
+To follow the steps in this guide, you'll need to install [Python 3.10](https://www.python.org/downloads/) or higher. **Python 3.13 is recommended**.
 
 :::
 

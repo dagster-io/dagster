@@ -2,8 +2,8 @@
 import contextlib
 import os
 import shutil
-from collections.abc import Iterator
-from typing import Callable, Optional
+from collections.abc import Callable, Iterator
+from typing import Optional
 
 import dagster._check as check
 

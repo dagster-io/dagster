@@ -1,9 +1,7 @@
 import hashlib
 from abc import ABC, abstractmethod
 from collections.abc import Iterator, Sequence
-from typing import TYPE_CHECKING, AbstractSet, Optional, Union, cast  # noqa: UP035
-
-from typing_extensions import TypeAlias
+from typing import TYPE_CHECKING, AbstractSet, Optional, TypeAlias, Union, cast  # noqa: UP035
 
 import dagster._check as check
 from dagster._core.definitions import InputDefinition, JobDefinition, NodeHandle

@@ -1,10 +1,8 @@
 import os
 import sys
-from collections.abc import Mapping
+from collections.abc import Callable, Mapping
 from pathlib import Path
-from typing import Any, Callable, Final, Optional
-
-from typing_extensions import Literal, TypeAlias
+from typing import Any, Final, Literal, Optional, TypeAlias
 
 
 def is_windows() -> bool:

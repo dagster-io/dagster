@@ -23,7 +23,7 @@ In this example, you'll build an AI system that solves [NYT Connections puzzles]
 To follow the steps in this guide, you'll need:
 
 - Basic Python knowledge
-- Python 3.9+ installed on your system. Refer to the [Installation guide](/getting-started/installation) for information.
+- Python 3.10+ installed on your system. Refer to the [Installation guide](/getting-started/installation) for information.
 - Understanding of language models and AI pipelines
 - Basic knowledge of the NYT Connections puzzle format
 

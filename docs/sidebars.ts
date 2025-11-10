@@ -8,6 +8,7 @@ const sidebars: SidebarsConfig = {
       items: [
         'intro',
         'getting-started/quickstart',
+        'getting-started/quickstart-serverless',
         'getting-started/installation',
         'getting-started/concepts',
         {
@@ -317,7 +318,12 @@ const sidebars: SidebarsConfig = {
           type: 'category',
           label: 'dg cli',
           collapsed: true,
-          items: ['api/clis/dg-cli/dg-cli-reference', 'api/clis/dg-cli/dg-cli-configuration'],
+          items: [
+            'api/clis/dg-cli/dg-cli-reference',
+            'api/clis/dg-cli/dg-plus',
+            'api/clis/dg-cli/dg-api',
+            'api/clis/dg-cli/dg-cli-configuration',
+          ],
         },
         'api/clis/cli',
         {

@@ -3,16 +3,10 @@ order to do metaprogramming and reflection on the built-in typing module.
 """
 
 import typing
-
-from typing_extensions import get_args, get_origin
+from types import UnionType
+from typing import get_args, get_origin
 
 import dagster._check as check
-
-try:
-    # this type only exists in python 3.10+
-    from types import UnionType  # type: ignore
-except ImportError:
-    UnionType = typing.Union
 
 
 def is_closed_python_optional_type(annotation) -> bool:
@@ -141,7 +135,7 @@ def is_typing_type(ttype):
     )
 
 
-def flatten_unions(ttype: type) -> typing.AbstractSet[type]:
+def flatten_unions(ttype: type | UnionType) -> typing.AbstractSet[type]:
     """Accepts a type that may be a Union of other types, and returns those other types.
     In addition to explicit Union annotations, works for Optional, which is represented as
     Union[T, None] under the covers.
@@ -151,9 +145,9 @@ def flatten_unions(ttype: type) -> typing.AbstractSet[type]:
     return set(_flatten_unions_inner(ttype))
 
 
-def _flatten_unions_inner(ttype: type) -> typing.Iterable[type]:
+def _flatten_unions_inner(ttype: type | UnionType) -> typing.Iterable[type]:
     if get_origin(ttype) is typing.Union:
         for arg in get_args(ttype):
             yield from flatten_unions(arg)
     else:
-        yield ttype
+        yield ttype  # pyright: ignore[reportReturnType]

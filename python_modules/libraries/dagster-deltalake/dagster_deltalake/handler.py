@@ -1,6 +1,6 @@
 from abc import abstractmethod
 from collections.abc import Iterable, Sequence
-from typing import TYPE_CHECKING, Any, Generic, Optional, TypeVar, Union, cast
+from typing import TYPE_CHECKING, Any, Generic, Optional, TypeAlias, TypeVar, Union, cast
 
 import pyarrow as pa
 import pyarrow.compute as pc
@@ -14,7 +14,6 @@ from deltalake.schema import (
     Schema,
 )
 from deltalake.table import FilterLiteralType
-from typing_extensions import TypeAlias
 
 try:
     from pyarrow.parquet import filters_to_expression  # pyarrow >= 10.0.0
@@ -212,7 +211,7 @@ def partition_dimensions_to_dnf(
                 )
                 parts.append(filter_)
             elif field.type.type == "string":
-                parts.append(_value_dnf(partition_dimension, field.type.type, str_values))
+                parts.append(_value_dnf(partition_dimension, field.type.type, str_values=True))
             else:
                 raise ValueError(f"Unsupported partition type {field.type.type}")
         else:

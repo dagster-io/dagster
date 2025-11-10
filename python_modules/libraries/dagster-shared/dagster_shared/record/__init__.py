@@ -3,9 +3,9 @@ import os
 import sys
 from abc import ABC
 from collections import namedtuple
-from collections.abc import Iterator, Mapping
+from collections.abc import Callable, Iterator, Mapping
 from functools import partial
-from typing import TYPE_CHECKING, Any, Callable, NamedTuple, Optional, TypeVar, Union, overload
+from typing import TYPE_CHECKING, Any, NamedTuple, Optional, TypeVar, Union, overload
 
 from typing_extensions import Self, dataclass_transform
 

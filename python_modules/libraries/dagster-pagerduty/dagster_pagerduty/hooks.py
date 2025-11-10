@@ -1,4 +1,5 @@
-from typing import Callable, Optional
+from collections.abc import Callable
+from typing import Optional
 
 from dagster._annotations import deprecated_param
 from dagster._core.definitions import failure_hook

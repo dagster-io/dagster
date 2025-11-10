@@ -46,7 +46,7 @@ locations:
 
 @contextmanager
 def with_dagster_yaml(text):
-    pwd = os.curdir
+    pwd = os.getcwd()
     try:
         with tempfile.TemporaryDirectory() as tmpdir:
             os.mkdir(os.path.join(tmpdir, "subdir"))
@@ -132,6 +132,7 @@ def test_ci_init_local_branch_deployment(monkeypatch, mocker, empty_config) -> N
                 "history": [{"log": "initialized", "status": "pending", "timestamp": "-"}],
                 "status_url": "http://github/run-url",
                 "defs_state_info": None,
+                "project_dir": f"{project_dir}",
             }
 
 
@@ -188,6 +189,7 @@ def test_ci_init(monkeypatch, mocker, empty_config) -> None:
                 "history": [{"log": "initialized", "status": "pending", "timestamp": "-"}],
                 "status_url": "http://github/run-url",
                 "defs_state_info": None,
+                "project_dir": f"{project_dir}",
             }
 
             location_auto = locations[3]
@@ -240,28 +242,33 @@ def deployment_name(request):
 
 
 @pytest.fixture
-def initialized_runner(deployment_name, monkeypatch):
+def project_dir():
+    with tempfile.TemporaryDirectory():
+        with with_dagster_yaml(DAGSTER_CLOUD_YAML) as the_project_dir:
+            yield the_project_dir
+
+
+@pytest.fixture
+def initialized_runner(deployment_name, monkeypatch, project_dir):
     monkeypatch.setenv("DAGSTER_CLOUD_ORGANIZATION", "some-org")
     monkeypatch.setenv("DAGSTER_CLOUD_API_TOKEN", "some-org:some-token")
-    with tempfile.TemporaryDirectory():
-        with with_dagster_yaml(DAGSTER_CLOUD_YAML) as project_dir:
-            statedir = os.path.join(project_dir, "tmp")
-            monkeypatch.setenv("DAGSTER_BUILD_STATEDIR", statedir)
+    statedir = os.path.join(project_dir, "tmp")
+    monkeypatch.setenv("DAGSTER_BUILD_STATEDIR", statedir)
 
-            runner = CliRunner()
+    runner = CliRunner()
 
-            result = runner.invoke(
-                app,
-                [
-                    "ci",
-                    "init",
-                    f"--project-dir={project_dir}",
-                    f"--deployment={deployment_name}",
-                    "--commit-hash=hash-4354",
-                ],
-            )
-            assert not result.exit_code, result.output
-            yield runner
+    result = runner.invoke(
+        app,
+        [
+            "ci",
+            "init",
+            f"--project-dir={project_dir}",
+            f"--deployment={deployment_name}",
+            "--commit-hash=hash-4354",
+        ],
+    )
+    assert not result.exit_code, result.output
+    yield runner
 
 
 @pytest.fixture
@@ -316,7 +323,7 @@ def test_ci_selection(initialized_runner: CliRunner) -> None:
 
 
 def test_ci_build_docker(
-    mocker, monkeypatch, deployment_name: str, initialized_runner: CliRunner
+    mocker, monkeypatch, deployment_name: str, initialized_runner: CliRunner, project_dir: str
 ) -> None:
     assert len(get_locations(initialized_runner)) == 4
 
@@ -339,7 +346,7 @@ def test_ci_build_docker(
 
     (b_build_dir, b_tag, b_registry_info), b_kwargs = build_image.call_args_list[0]
     (b_upload_tag, b_upload_registry_info), _ = upload_image.call_args_list[0]
-    assert b_build_dir == "."
+    assert b_build_dir == project_dir
     assert b_tag.startswith(f"{deployment_name}-b")
     assert b_registry_info["registry_url"] == "example.com/image-registry"
     assert b_kwargs["base_image"] == "python:3.11-slim"
@@ -349,7 +356,7 @@ def test_ci_build_docker(
 
     (c_build_dir, c_tag, c_registry_info), b_kwargs = build_image.call_args_list[1]
     assert c_tag.startswith(f"{deployment_name}-c")
-    assert c_build_dir == "subdir"
+    assert c_build_dir == os.path.join(project_dir, "subdir")
 
     # test overriding some defaults
     build_image.reset_mock()
@@ -367,7 +374,7 @@ def test_ci_build_docker(
     assert not result.exit_code, result.output
 
     (b_build_dir, b_tag, b_registry_info), b_kwargs = build_image.call_args_list[0]
-    assert b_build_dir == "."
+    assert b_build_dir == project_dir
     assert b_registry_info["registry_url"] == "example.com/image-registry"
     assert b_kwargs["base_image"] == "custom-base-image"
     assert b_kwargs["env_vars"] == ["A=1", "B=2"]

@@ -28,7 +28,7 @@ If you’d like to learn about the full set of Dagster features and how they int
 
 To follow the steps in this tutorial, you'll need:
 
-- Python 3.9+ and a Python package manager. For more information, see the [Installation guide](/getting-started/installation).
+- Python 3.10+ and a Python package manager. For more information, see the [Installation guide](/getting-started/installation).
 - Familiarity with Python and SQL.
 - A basic understanding of data pipelines.
 

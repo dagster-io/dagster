@@ -39,7 +39,7 @@ export const errorDisplay = (status: InstigationStatus, runningScheduleCount: nu
         </Box>
       }
     >
-      <Tag fill interactive intent="danger">
+      <Tag interactive intent="danger">
         Error
       </Tag>
     </Popover>

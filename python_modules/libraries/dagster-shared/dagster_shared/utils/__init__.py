@@ -4,9 +4,7 @@ import random
 import socket
 from collections.abc import Iterator, Mapping
 from types import GenericAlias
-from typing import TypeVar
-
-from typing_extensions import TypeGuard
+from typing import TypeGuard, TypeVar
 
 T = TypeVar("T")
 

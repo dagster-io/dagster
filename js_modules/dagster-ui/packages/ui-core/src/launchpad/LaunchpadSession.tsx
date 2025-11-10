@@ -389,7 +389,14 @@ const LaunchpadSession = (props: LaunchpadSessionProps) => {
         query: PREVIEW_CONFIG_QUERY,
         variables: {
           runConfigData: configYamlOrEmpty,
-          pipeline: pipelineSelector,
+          // for backfills (which have onSaveConfig set), asset checks are not explicitly
+          // selected, so we pass in null to align with the backfill daemon implementation
+          pipeline: props.onSaveConfig
+            ? {
+                ...pipelineSelector,
+                assetCheckSelection: null,
+              }
+            : pipelineSelector,
           mode: currentSession.mode || 'default',
         },
       });
@@ -418,6 +425,7 @@ const LaunchpadSession = (props: LaunchpadSessionProps) => {
       rootDefaultYaml,
       state.previewLoading,
       state.previewDefaultsToExpand,
+      props.onSaveConfig,
     ],
   );
 

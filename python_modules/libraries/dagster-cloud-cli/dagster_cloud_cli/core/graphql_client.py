@@ -1,15 +1,16 @@
 import logging
 import re
 import time
-from collections.abc import Mapping
+from collections.abc import Callable, Mapping
 from contextlib import contextmanager
 from email.utils import mktime_tz, parsedate_tz
-from typing import Any, Callable, Optional
+from typing import Any, Optional
 
 import requests
 from dagster_shared import check
 from requests.adapters import HTTPAdapter
 from requests.exceptions import (
+    ChunkedEncodingError,
     ConnectionError as RequestsConnectionError,
     HTTPError,
     ReadTimeout as RequestsReadTimeout,
@@ -148,17 +149,17 @@ def _retry_loop(
     while True:
         try:
             return execute_retry()
-        except (HTTPError, RequestsConnectionError, RequestsReadTimeout) as e:
+        except (HTTPError, RequestsConnectionError, RequestsReadTimeout, ChunkedEncodingError) as e:
             retryable_error = False
             if isinstance(e, HTTPError):
                 retryable_error = e.response.status_code in RETRY_STATUS_CODES
                 error_msg = e.response.status_code
                 requested_sleep_time = _get_retry_after_sleep_time(e.response.headers)
-            elif isinstance(e, RequestsReadTimeout):
-                retryable_error = retry_on_read_timeout
+            elif isinstance(e, RequestsConnectionError):
+                retryable_error = True
                 error_msg = str(e)
             else:
-                retryable_error = True
+                retryable_error = retry_on_read_timeout
                 error_msg = str(e)
 
             error_msg_set.add(error_msg)

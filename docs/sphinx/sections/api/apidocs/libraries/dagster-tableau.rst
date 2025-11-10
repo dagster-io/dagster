@@ -13,6 +13,7 @@ Component
 *********
 
 .. autoclass:: TableauComponent
+    :members:
 
 To use the Tableau component, see the `Tableau component integration guide <https://docs.dagster.io/integrations/libraries/tableau>`_.
 

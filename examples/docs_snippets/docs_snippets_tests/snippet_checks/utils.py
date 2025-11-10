@@ -6,14 +6,13 @@ import shutil
 import string
 import subprocess
 import textwrap
-from collections.abc import Iterator, Sequence
+from collections.abc import Callable, Iterator, Sequence
 from contextlib import contextmanager
 from pathlib import Path
 from tempfile import TemporaryDirectory
-from typing import TYPE_CHECKING, Callable, Literal, Optional, Union
+from typing import TYPE_CHECKING, Literal, Optional, TypeAlias, Union
 
 import pexpect
-from typing_extensions import TypeAlias
 
 from dagster._utils import pushd
 from dagster._utils.env import environ

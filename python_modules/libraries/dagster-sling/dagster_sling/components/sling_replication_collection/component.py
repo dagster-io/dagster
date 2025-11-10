@@ -2,7 +2,7 @@ from collections.abc import Iterator, Mapping, Sequence
 from dataclasses import dataclass, field
 from functools import cached_property
 from pathlib import Path
-from typing import Annotated, Any, Literal, Optional, Union
+from typing import Annotated, Any, Literal, Optional, TypeAlias, Union
 
 from dagster import Resolvable, Resolver
 from dagster._annotations import public
@@ -28,7 +28,6 @@ from dagster.components.utils.translation import (
 )
 from dagster_shared.utils.warnings import deprecation_warning
 from pydantic import BaseModel, ConfigDict, Field
-from typing_extensions import TypeAlias
 
 from dagster_sling.asset_decorator import sling_assets
 from dagster_sling.components.sling_replication_collection.scaffolder import (
@@ -143,7 +142,40 @@ class SlingReplicationCollectionComponent(Component, Resolvable):
     def _base_translator(self) -> DagsterSlingTranslator:
         return DagsterSlingTranslator()
 
+    @public
     def get_asset_spec(self, stream_definition: Mapping[str, Any]) -> AssetSpec:
+        """Generates an AssetSpec for a given Sling stream definition.
+
+        This method can be overridden in a subclass to customize how Sling stream definitions
+        are converted to Dagster asset specs. By default, it delegates to the configured
+        DagsterSlingTranslator.
+
+        Args:
+            stream_definition: A dictionary representing a single stream from the Sling
+                replication config, containing source and target information
+
+        Returns:
+            An AssetSpec that represents the Sling stream as a Dagster asset
+
+        Example:
+            Override this method to add custom metadata based on stream properties:
+
+            .. code-block:: python
+
+                from dagster_sling import SlingReplicationCollectionComponent
+                from dagster import AssetSpec
+
+                class CustomSlingComponent(SlingReplicationCollectionComponent):
+                    def get_asset_spec(self, stream_definition):
+                        base_spec = super().get_asset_spec(stream_definition)
+                        return base_spec.replace_attributes(
+                            metadata={
+                                **base_spec.metadata,
+                                "source": stream_definition.get("source"),
+                                "target": stream_definition.get("target")
+                            }
+                        )
+        """
         return self._base_translator.get_asset_spec(stream_definition)
 
     def build_asset(
@@ -168,12 +200,41 @@ class SlingReplicationCollectionComponent(Component, Resolvable):
 
         return _asset
 
+    @public
     def execute(
         self,
         context: AssetExecutionContext,
         sling: SlingResource,
         replication_spec_model: SlingReplicationSpecModel,
     ) -> Iterator[Union[AssetMaterialization, MaterializeResult]]:
+        """Executes a Sling replication for the selected streams.
+
+        This method can be overridden in a subclass to customize the replication execution
+        behavior, such as adding custom logging, modifying metadata collection, or handling
+        results differently.
+
+        Args:
+            context: The asset execution context provided by Dagster
+            sling: The SlingResource used to execute the replication
+            replication_spec_model: The model containing replication configuration and metadata options
+
+        Yields:
+            AssetMaterialization or MaterializeResult events from the Sling replication
+
+        Example:
+            Override this method to add custom logging during replication:
+
+            .. code-block:: python
+
+                from dagster_sling import SlingReplicationCollectionComponent
+                from dagster import AssetExecutionContext
+
+                class CustomSlingComponent(SlingReplicationCollectionComponent):
+                    def execute(self, context, sling, replication_spec_model):
+                        context.log.info("Starting Sling replication")
+                        yield from super().execute(context, sling, replication_spec_model)
+                        context.log.info("Sling replication completed")
+        """
         iterator = sling.replicate(context=context)
         if "column_metadata" in replication_spec_model.include_metadata:
             iterator = iterator.fetch_column_metadata()

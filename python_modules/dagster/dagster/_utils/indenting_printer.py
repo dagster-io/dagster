@@ -1,8 +1,8 @@
-from collections.abc import Iterator
+from collections.abc import Callable, Iterator
 from contextlib import contextmanager
 from io import StringIO
 from textwrap import TextWrapper
-from typing import Any, Callable, Optional
+from typing import Any, Optional
 
 from typing_extensions import Self
 

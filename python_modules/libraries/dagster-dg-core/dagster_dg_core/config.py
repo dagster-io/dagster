@@ -10,7 +10,9 @@ from typing import (
     Any,
     Literal,
     Optional,
+    TypeAlias,
     TypedDict,
+    TypeGuard,
     TypeVar,
     Union,
     cast,
@@ -33,7 +35,7 @@ from dagster_shared.utils.config import (
     does_dg_config_file_exist,
     get_dg_config_path,
 )
-from typing_extensions import Never, NotRequired, Required, Self, TypeAlias, TypeGuard
+from typing_extensions import Never, NotRequired, Required, Self
 
 from dagster_dg_core.error import DgError, DgValidationError
 from dagster_dg_core.utils import (

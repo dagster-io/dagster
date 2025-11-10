@@ -10,12 +10,11 @@ from typing import (  # noqa: UP035
     NamedTuple,
     NoReturn,
     Optional,
+    TypeAlias,
     TypeVar,
     Union,
     cast,
 )
-
-from typing_extensions import TypeAlias
 
 import dagster._check as check
 from dagster._annotations import public

@@ -25,10 +25,10 @@ setup(
         "https://github.com/dagster-io/dagster/tree/master/python_modules/libraries/dagster-cloud-cli"
     ),
     classifiers=[
-        "Programming Language :: Python :: 3.9",
         "Programming Language :: Python :: 3.10",
         "Programming Language :: Python :: 3.11",
         "Programming Language :: Python :: 3.12",
+        "Programming Language :: Python :: 3.13",
         "License :: OSI Approved :: Apache Software License",
         "Operating System :: OS Independent",
     ],
@@ -45,6 +45,7 @@ setup(
         "Jinja2",
         "setuptools",
         'tomli>=1.1.0;python_version<"3.11"',
+        "validators",
     ],
     include_package_data=True,
     zip_safe=False,
@@ -61,6 +62,7 @@ setup(
             "pytest-mock==3.14.0",
             "buildkite-test-collector",
             "flaky",
+            "pex>=2.1.132,<2.60.0",
         ],
     },
 )

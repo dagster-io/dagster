@@ -2,13 +2,12 @@ import functools
 import inspect
 import logging
 from collections import defaultdict
-from collections.abc import Iterable, Iterator, Mapping, Sequence
+from collections.abc import Callable, Iterable, Iterator, Mapping, Sequence
 from contextlib import ExitStack
 from enum import Enum
-from typing import TYPE_CHECKING, Any, Callable, Optional, TypeVar, Union, cast
+from typing import TYPE_CHECKING, Any, Optional, TypeAlias, TypeVar, Union, cast
 
 from dagster_shared.record import IHaveNew, record_custom
-from typing_extensions import TypeAlias
 
 import dagster._check as check
 from dagster._annotations import beta_param, deprecated, deprecated_param, public

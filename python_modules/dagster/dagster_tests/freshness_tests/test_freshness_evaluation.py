@@ -1,7 +1,7 @@
 import datetime
-from collections.abc import Generator, Iterator
+from collections.abc import Callable, Generator, Iterator
 from contextlib import contextmanager
-from typing import Callable, cast
+from typing import cast
 
 import dagster as dg
 import pytest

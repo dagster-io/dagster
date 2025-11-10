@@ -14,7 +14,7 @@ from dagster import (
     ResolvedAssetSpec,
     multi_asset,
 )
-from dagster._annotations import preview
+from dagster._annotations import preview, public
 from dagster._core.definitions.definitions_class import Definitions
 from dagster.components.component.component import Component
 from dagster.components.core.context import ComponentLoadContext
@@ -189,7 +189,39 @@ class DatabricksAssetBundleComponent(Component, Resolvable):
 
         return {**missing_asset_specs_by_task_key, **updated_provided_asset_specs}
 
+    @public
     def get_asset_spec(self, task: DatabricksBaseTask) -> AssetSpec:
+        """Generates an AssetSpec for a given Databricks task.
+
+        This method can be overridden in a subclass to customize how Databricks Asset Bundle
+        tasks are converted to Dagster asset specs. By default, it creates an asset spec with
+        metadata about the task type, configuration, and dependencies.
+
+        Args:
+            task: The DatabricksBaseTask containing information about the Databricks job task
+
+        Returns:
+            An AssetSpec that represents the Databricks task as a Dagster asset
+
+        Example:
+            Override this method to add custom tags or modify the asset key:
+
+            .. code-block:: python
+
+                from dagster_databricks import DatabricksAssetBundleComponent
+                from dagster import AssetSpec
+
+                class CustomDatabricksAssetBundleComponent(DatabricksAssetBundleComponent):
+                    def get_asset_spec(self, task):
+                        base_spec = super().get_asset_spec(task)
+                        return base_spec.replace_attributes(
+                            tags={
+                                **base_spec.tags,
+                                "job_name": task.job_name,
+                                "environment": "production"
+                            }
+                        )
+        """
         return AssetSpec(
             key=snake_case(task.task_key),
             description=f"{task.task_key} task from {task.job_name} job",

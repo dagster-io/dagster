@@ -1,6 +1,6 @@
-from collections.abc import Iterable, Iterator, Mapping, Sequence
+from collections.abc import Callable, Iterable, Iterator, Mapping, Sequence
 from functools import update_wrapper
-from typing import TYPE_CHECKING, Callable, Optional, TypeVar, Union, overload
+from typing import TYPE_CHECKING, Optional, TypeVar, Union, overload
 
 import dagster._check as check
 from dagster._core.decorator_utils import get_function_params

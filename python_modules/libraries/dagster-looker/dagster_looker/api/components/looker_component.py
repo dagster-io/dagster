@@ -129,7 +129,40 @@ class LookerComponent(StateBackedComponent, Resolvable):
     def _base_translator(self) -> DagsterLookerApiTranslator:
         return DagsterLookerApiTranslator()
 
+    @public
     def get_asset_spec(self, looker_structure: LookerApiTranslatorStructureData) -> AssetSpec:
+        """Generates an AssetSpec for a given Looker content item.
+
+        This method can be overridden in a subclass to customize how Looker content
+        (dashboards, looks, explores) are converted to Dagster asset specs. By default,
+        it delegates to the configured DagsterLookerApiTranslator.
+
+        Args:
+            looker_structure: The LookerApiTranslatorStructureData containing information
+                about the Looker content item and instance
+
+        Returns:
+            An AssetSpec that represents the Looker content as a Dagster asset
+
+        Example:
+            Override this method to add custom tags based on content properties:
+
+            .. code-block:: python
+
+                from dagster_looker import LookerComponent
+                from dagster import AssetSpec
+
+                class CustomLookerComponent(LookerComponent):
+                    def get_asset_spec(self, looker_structure):
+                        base_spec = super().get_asset_spec(looker_structure)
+                        return base_spec.replace_attributes(
+                            tags={
+                                **base_spec.tags,
+                                "looker_type": looker_structure.structure_data.structure_type,
+                                "folder": looker_structure.structure_data.data.get("folder", {}).get("name")
+                            }
+                        )
+        """
         return self._base_translator.get_asset_spec(looker_structure)
 
     def _load_asset_specs(self, state: LookerInstanceData) -> list[AssetSpec]:

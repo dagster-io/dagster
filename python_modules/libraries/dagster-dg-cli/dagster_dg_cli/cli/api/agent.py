@@ -13,7 +13,7 @@ from dagster_dg_cli.cli.api.client import create_dg_api_graphql_client
 from dagster_dg_cli.cli.api.formatters import format_agent, format_agents
 
 
-@click.command(name="list", cls=DgClickCommand, unlaunched=True)
+@click.command(name="list", cls=DgClickCommand)
 @click.option(
     "--json",
     "output_json",
@@ -49,7 +49,7 @@ def list_agents_command(
         raise click.ClickException(f"Failed to list agents: {e}")
 
 
-@click.command(name="get", cls=DgClickCommand, unlaunched=True)
+@click.command(name="get", cls=DgClickCommand)
 @click.argument("agent_id", type=str)
 @click.option(
     "--json",
@@ -102,7 +102,6 @@ def get_agent_command(
 @click.group(
     name="agent",
     cls=DgClickGroup,
-    unlaunched=True,
     commands={
         "list": list_agents_command,
         "get": get_agent_command,

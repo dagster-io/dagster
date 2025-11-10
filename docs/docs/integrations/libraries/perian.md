@@ -11,6 +11,10 @@ sidebar_custom_props:
 partnerlink:
 ---
 
+import CommunityIntegration from '@site/docs/partials/\_CommunityIntegration.md';
+
+<CommunityIntegration />
+
 <p>{frontMatter.description}</p>
 
 For more information, please visit the [dagster-perian GitHub repository](https://github.com/Perian-io/dagster-perian) and the [PERIAN documentation](https://perian.io/docs).

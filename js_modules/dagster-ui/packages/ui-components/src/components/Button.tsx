@@ -1,15 +1,11 @@
-// eslint-disable-next-line no-restricted-imports
-import {Button as BlueprintButton} from '@blueprintjs/core';
 import * as React from 'react';
 import styled from 'styled-components';
 
 import {BaseButton, BaseButtonProps, CommonButtonProps} from './BaseButton';
 import {Colors} from './Color';
+import {Intent} from './Intent';
 import {Spinner} from './Spinner';
 import {StyledButton, StyledButtonText} from './StyledButton';
-
-type BlueprintIntent = React.ComponentProps<typeof BlueprintButton>['intent'];
-type BlueprintOutlined = React.ComponentProps<typeof BlueprintButton>['outlined'];
 
 // Outlined buttons
 
@@ -17,7 +13,7 @@ export const outlinedIntentToFillColor = () => {
   return 'transparent';
 };
 
-export const outlinedIntentToFillColorHover = (intent: BlueprintIntent) => {
+export const outlinedIntentToFillColorHover = (intent?: Intent) => {
   switch (intent) {
     case 'danger':
       return Colors.backgroundRed();
@@ -32,7 +28,7 @@ export const outlinedIntentToFillColorHover = (intent: BlueprintIntent) => {
   }
 };
 
-export const outlinedIntentToStrokeColor = (intent: BlueprintIntent) => {
+export const outlinedIntentToStrokeColor = (intent?: Intent) => {
   switch (intent) {
     case 'danger':
       return Colors.accentRed();
@@ -48,7 +44,7 @@ export const outlinedIntentToStrokeColor = (intent: BlueprintIntent) => {
   }
 };
 
-export const outlinedIntentToStrokeColorHover = (intent: BlueprintIntent) => {
+export const outlinedIntentToStrokeColorHover = (intent?: Intent) => {
   switch (intent) {
     case 'danger':
       return Colors.accentRedHover();
@@ -64,7 +60,7 @@ export const outlinedIntentToStrokeColorHover = (intent: BlueprintIntent) => {
   }
 };
 
-export const outlinedIntentToTextColor = (intent: BlueprintIntent) => {
+export const outlinedIntentToTextColor = (intent?: Intent) => {
   switch (intent) {
     case 'danger':
       return Colors.accentRed();
@@ -79,7 +75,7 @@ export const outlinedIntentToTextColor = (intent: BlueprintIntent) => {
   }
 };
 
-export const outlinedIntentToIconColor = (intent: BlueprintIntent) => {
+export const outlinedIntentToIconColor = (intent?: Intent) => {
   switch (intent) {
     case 'danger':
       return Colors.accentRed();
@@ -94,7 +90,7 @@ export const outlinedIntentToIconColor = (intent: BlueprintIntent) => {
   }
 };
 
-export const outlinedIntentToSpinnerColor = (intent: BlueprintIntent) => {
+export const outlinedIntentToSpinnerColor = (intent?: Intent) => {
   switch (intent) {
     case 'primary':
       return Colors.borderDefault();
@@ -113,14 +109,14 @@ export const outlinedIntentToSpinnerColor = (intent: BlueprintIntent) => {
 
 // Filled buttons
 
-export const intentToStrokeColor = (intent: BlueprintIntent) => {
+export const intentToStrokeColor = (intent?: Intent) => {
   if (intent === undefined) {
     return Colors.borderDefault();
   }
   return 'transparent';
 };
 
-export const intentToFillColor = (intent: BlueprintIntent) => {
+export const intentToFillColor = (intent?: Intent) => {
   switch (intent) {
     case 'primary':
       return Colors.accentPrimary();
@@ -136,7 +132,7 @@ export const intentToFillColor = (intent: BlueprintIntent) => {
   }
 };
 
-export const intentToFillColorHover = (intent: BlueprintIntent) => {
+export const intentToFillColorHover = (intent?: Intent) => {
   switch (intent) {
     case 'primary':
       return Colors.accentPrimaryHover();
@@ -152,7 +148,7 @@ export const intentToFillColorHover = (intent: BlueprintIntent) => {
   }
 };
 
-export const intentToTextAndIconColor = (intent: BlueprintIntent) => {
+export const intentToTextAndIconColor = (intent?: Intent) => {
   if (!intent || intent === 'none') {
     return Colors.accentPrimary();
   }
@@ -162,7 +158,7 @@ export const intentToTextAndIconColor = (intent: BlueprintIntent) => {
   return Colors.alwaysWhite();
 };
 
-export const buildColorSet = (config: {intent?: BlueprintIntent; outlined: BlueprintOutlined}) => {
+export const buildColorSet = (config: {intent?: Intent; outlined?: boolean}) => {
   const {intent, outlined} = config;
   const fillColor = outlined ? outlinedIntentToFillColor() : intentToFillColor(intent);
   const fillColorHover = outlined
@@ -186,8 +182,8 @@ export const buildColorSet = (config: {intent?: BlueprintIntent; outlined: Bluep
 };
 
 type ButtonProps = BaseButtonProps & {
-  intent?: BlueprintIntent;
-  outlined?: BlueprintOutlined;
+  intent?: Intent;
+  outlined?: boolean;
 };
 
 export const Button = React.forwardRef(
@@ -252,8 +248,8 @@ export const JoinedButtons = styled.div`
 
 export type ExternalAnchorButtonProps = CommonButtonProps &
   React.ComponentPropsWithRef<'a'> & {
-    intent?: BlueprintIntent;
-    outlined?: BlueprintOutlined;
+    intent?: Intent;
+    outlined?: boolean;
   };
 
 export const ExternalAnchorButton = React.forwardRef(

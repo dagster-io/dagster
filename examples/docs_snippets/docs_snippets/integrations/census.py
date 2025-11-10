@@ -4,11 +4,11 @@ import dagster as dg
 
 
 @dg.asset
-def census_source(census: CensusResource):
-    census.get_source(source_id=1)
+def census_sync(census: CensusResource):
+    census.trigger_sync_and_poll(sync_id=12345)
 
 
 defs = dg.Definitions(
-    assets=[census_source],
+    assets=[census_sync],
     resources={"census": CensusResource(api_key=dg.EnvVar("CENSUS_API_KEY"))},
 )

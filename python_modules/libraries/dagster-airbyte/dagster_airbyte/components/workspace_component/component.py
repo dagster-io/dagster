@@ -1,8 +1,8 @@
 from collections import defaultdict
-from collections.abc import Iterable, Sequence
+from collections.abc import Callable, Iterable, Sequence
 from functools import cached_property
 from pathlib import Path
-from typing import Annotated, Callable, Optional, Union
+from typing import Annotated, Optional, Union
 
 import dagster as dg
 import pydantic
@@ -28,7 +28,12 @@ from dagster_shared.serdes.serdes import deserialize_value
 from dagster_airbyte.components.workspace_component.scaffolder import (
     AirbyteWorkspaceComponentScaffolder,
 )
-from dagster_airbyte.resources import AirbyteCloudWorkspace, AirbyteWorkspace, BaseAirbyteWorkspace
+from dagster_airbyte.resources import (
+    DEFAULT_POLL_INTERVAL_SECONDS,
+    AirbyteCloudWorkspace,
+    AirbyteWorkspace,
+    BaseAirbyteWorkspace,
+)
 from dagster_airbyte.translator import (
     AirbyteConnection,
     AirbyteConnectionTableProps,
@@ -62,6 +67,55 @@ class BaseAirbyteWorkspaceModel(dg.Model, dg.Resolvable):
         pydantic.Field(
             default=15,
             description="Time (in seconds) after which the requests to Airbyte are declared timed out.",
+        ),
+    ]
+    max_items_per_page: Annotated[
+        int,
+        pydantic.Field(
+            default=100,
+            description=(
+                "The maximum number of items per page. "
+                "Used for paginated resources like connections, destinations, etc. "
+            ),
+        ),
+    ]
+    poll_interval: Annotated[
+        float,
+        pydantic.Field(
+            default=DEFAULT_POLL_INTERVAL_SECONDS,
+            description="The time (in seconds) that will be waited between successive polls.",
+        ),
+    ]
+    poll_timeout: Annotated[
+        Optional[float],
+        pydantic.Field(
+            default=None,
+            description=(
+                "The maximum time that will wait before this operation is timed "
+                "out. By default, this will never time out."
+            ),
+        ),
+    ]
+    cancel_on_termination: Annotated[
+        bool,
+        pydantic.Field(
+            default=True,
+            description=(
+                "Whether to cancel a sync in Airbyte if the Dagster runner is terminated. "
+                "This may be useful to disable if using Airbyte sources that cannot be cancelled and "
+                "resumed easily, or if your Dagster deployment may experience runner interruptions "
+                "that do not impact your Airbyte deployment."
+            ),
+        ),
+    ]
+    poll_previous_running_sync: Annotated[
+        bool,
+        pydantic.Field(
+            default=False,
+            description=(
+                "If set to True, Dagster will check for previous running sync for the same connection "
+                "and begin polling it instead of starting a new sync."
+            ),
         ),
     ]
 
@@ -241,12 +295,72 @@ class AirbyteWorkspaceComponent(StateBackedComponent, dg.Model, dg.Resolvable):
     def _base_translator(self) -> DagsterAirbyteTranslator:
         return DagsterAirbyteTranslator()
 
+    @public
     def get_asset_spec(self, props: AirbyteConnectionTableProps) -> dg.AssetSpec:
+        """Generates an AssetSpec for a given Airbyte connection table.
+
+        This method can be overridden in a subclass to customize how Airbyte connection tables
+        are converted to Dagster asset specs. By default, it delegates to the configured
+        DagsterAirbyteTranslator.
+
+        Args:
+            props: The AirbyteConnectionTableProps containing information about the connection
+                and table/stream being synced
+
+        Returns:
+            An AssetSpec that represents the Airbyte connection table as a Dagster asset
+
+        Example:
+            Override this method to add custom metadata to all Airbyte assets:
+
+            .. code-block:: python
+
+                from dagster_airbyte import AirbyteWorkspaceComponent
+                import dagster as dg
+
+                class CustomAirbyteWorkspaceComponent(AirbyteWorkspaceComponent):
+                    def get_asset_spec(self, props):
+                        base_spec = super().get_asset_spec(props)
+                        return base_spec.replace_attributes(
+                            metadata={
+                                **base_spec.metadata,
+                                "data_source": "airbyte",
+                                "connection_id": props.connection_id
+                            }
+                        )
+        """
         return self._base_translator.get_asset_spec(props)
 
+    @public
     def execute(
         self, context: dg.AssetExecutionContext, airbyte: BaseAirbyteWorkspace
     ) -> Iterable[Union[dg.AssetMaterialization, dg.MaterializeResult]]:
+        """Executes an Airbyte sync for the selected connection.
+
+        This method can be overridden in a subclass to customize the sync execution behavior,
+        such as adding custom logging or handling sync results differently.
+
+        Args:
+            context: The asset execution context provided by Dagster
+            airbyte: The BaseAirbyteWorkspace resource used to trigger and monitor syncs
+
+        Yields:
+            AssetMaterialization or MaterializeResult events from the Airbyte sync
+
+        Example:
+            Override this method to add custom logging during sync execution:
+
+            .. code-block:: python
+
+                from dagster_airbyte import AirbyteWorkspaceComponent
+                import dagster as dg
+
+                class CustomAirbyteWorkspaceComponent(AirbyteWorkspaceComponent):
+                    def execute(self, context, airbyte):
+                        context.log.info(f"Starting Airbyte sync for connection")
+                        yield from super().execute(context, airbyte)
+                        context.log.info("Airbyte sync completed successfully")
+        """
         yield from airbyte.sync_and_poll(context=context)
 
     def _load_asset_specs(self, state: AirbyteWorkspaceData) -> Sequence[dg.AssetSpec]:

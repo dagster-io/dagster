@@ -3,6 +3,7 @@ from collections.abc import Mapping, Sequence
 from dataclasses import MISSING, fields, is_dataclass
 from enum import Enum, auto
 from functools import partial
+from types import UnionType
 from typing import Annotated, Any, Final, Literal, Optional, TypeVar, Union, get_args, get_origin
 
 import yaml
@@ -18,12 +19,6 @@ from dagster._utils.pydantic_yaml import _parse_and_populate_model_with_annotate
 from dagster.components.resolved.context import ResolutionContext
 from dagster.components.resolved.errors import ResolutionException
 from dagster.components.resolved.model import Model, Resolver
-
-try:
-    # this type only exists in python 3.10+
-    from types import UnionType  # type: ignore
-except ImportError:
-    UnionType = Union
 
 
 class _TypeContainer(Enum):

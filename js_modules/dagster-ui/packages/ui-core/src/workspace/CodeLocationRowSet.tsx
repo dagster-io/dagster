@@ -121,28 +121,18 @@ export const LocationStatus = (props: {
   });
 
   if (locationStatus?.loadStatus === 'LOADING') {
-    return (
-      <Tag minimal intent="primary">
-        Updating…
-      </Tag>
-    );
+    return <Tag intent="primary">Updating…</Tag>;
   }
 
   if (locationOrError?.versionKey !== locationStatus?.versionKey) {
-    return (
-      <Tag minimal intent="primary">
-        Loading…
-      </Tag>
-    );
+    return <Tag intent="primary">Loading…</Tag>;
   }
 
   if (locationStatus && locationOrError?.locationOrLoadError?.__typename === 'PythonError') {
     return (
       <>
         <Box flex={{alignItems: 'center', gap: 12}}>
-          <Tag minimal intent="danger">
-            Failed
-          </Tag>
+          <Tag intent="danger">Failed</Tag>
           <ButtonLink onClick={() => setShowDialog(true)}>
             <span style={{fontSize: '12px'}}>View error</span>
           </ButtonLink>
@@ -159,11 +149,7 @@ export const LocationStatus = (props: {
     );
   }
 
-  return (
-    <Tag minimal intent="success">
-      Loaded
-    </Tag>
-  );
+  return <Tag intent="success">Loaded</Tag>;
 };
 
 export const ReloadButton = ({location}: {location: string}) => {

@@ -19,9 +19,6 @@
 - Type hints required for all Python code
 - **ALWAYS use builtin types for annotations**: `dict`, `list`, `set`, `tuple` instead of `typing.Dict`, `typing.List`, `typing.Set`, `typing.Tuple`
 - **NEVER import or use** `typing.Dict`, `typing.List`, `typing.Set`, `typing.Tuple` - use built-in types instead (available in Python 3.9+)
-- **Union Types**: **MUST use `Union[X, Y]`** from typing module (Python 3.9 compatibility) - **NEVER use `X | Y` syntax**
-- **Optional Types**: **MUST use `Optional[X]`** from typing module (Python 3.9 compatibility) - **NEVER use `X | None` syntax**
-- **CRITICAL**: The `X | Y` and `X | None` union syntax requires Python 3.10+ and is **FORBIDDEN** in this codebase
 - All Python code must pass `pyright` type checking with zero errors
 
 ## Import Organization
@@ -473,9 +470,8 @@ def my_command():
 
 ## Project Compatibility
 
-- **Code must be compatible with Python 3.9 and later**
-- **Use Python 3.9+ features** where appropriate (built-in generics like `list[str]`, `dict[str, Any]`, etc.)
-- **CRITICAL**: The `|` union syntax (`X | Y`, `X | None`) requires Python 3.10+ and is **NOT SUPPORTED** - always use `Union[X, Y]` and `Optional[X]` from the typing module for Python 3.9 compatibility
+- **Code must be compatible with Python 3.10 and later**
+- **Use Python 3.10+ features** where appropriate (built-in generics like `list[str]`, `dict[str, Any]`, etc.)
 
 ## Documentation Style
 

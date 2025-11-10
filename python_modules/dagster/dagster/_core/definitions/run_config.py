@@ -5,12 +5,11 @@ from typing import (  # noqa: UP035
     Any,
     NamedTuple,
     Optional,
+    TypeAlias,
     TypeVar,
     Union,
     cast,
 )
-
-from typing_extensions import TypeAlias
 
 from dagster._annotations import public
 from dagster._config import ALL_CONFIG_BUILTINS, ConfigType, Field, Permissive, Selector, Shape

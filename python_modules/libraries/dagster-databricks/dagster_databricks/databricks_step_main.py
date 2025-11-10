@@ -17,11 +17,12 @@ import tempfile
 import time
 import traceback
 import zipfile
+from collections.abc import Callable
 from contextlib import redirect_stderr, redirect_stdout
 from io import StringIO
 from queue import Empty, Queue
 from threading import Thread
-from typing import Any, Callable, Optional
+from typing import Any, Optional
 
 from dagster._core.execution.plan.external_step import (
     PICKLED_EVENTS_FILE_NAME,

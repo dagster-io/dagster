@@ -1,11 +1,14 @@
 import hashlib
 import os
+import shutil
+import tempfile
 import textwrap
 from collections import defaultdict
 from collections.abc import Iterable, Mapping, Sequence
 from pathlib import Path
 from typing import TYPE_CHECKING, AbstractSet, Annotated, Any, Final, Optional, Union  # noqa: UP035
 
+import yaml
 from dagster import (
     AssetCheckKey,
     AssetCheckSpec,
@@ -32,6 +35,7 @@ from dagster._core.definitions.metadata import TableMetadataSet
 from dagster._core.errors import DagsterInvalidPropertyError
 from dagster._core.types.dagster_type import Nothing
 from dagster._record import ImportFrom, record
+from dagster_shared.record import replace
 
 from dagster_dbt.dbt_project import DbtProject
 from dagster_dbt.metadata_set import DbtMetadataSet
@@ -54,6 +58,10 @@ DBT_DEFAULT_SELECTOR = ""
 
 DBT_INDIRECT_SELECTION_ENV: Final[str] = "DBT_INDIRECT_SELECTION"
 DBT_EMPTY_INDIRECT_SELECTION: Final[str] = "empty"
+
+# Threshold for switching to selector file to avoid CLI argument length limits
+# https://github.com/dagster-io/dagster/issues/16997
+_SELECTION_ARGS_THRESHOLD: Final[int] = 200
 
 DUPLICATE_ASSET_KEY_ERROR_MESSAGE = (
     "The following dbt resources are configured with identical Dagster asset keys."
@@ -443,6 +451,10 @@ def get_updated_cli_invocation_params_for_context(
             [assets_def]
         )
 
+        # Get project_dir from dbt_project if available
+        project_dir = Path(dbt_project.project_dir) if dbt_project else None
+        target_project = dbt_project
+
         selection_args, indirect_selection_override = get_subset_selection_for_context(
             context=context,
             manifest=manifest,
@@ -452,17 +464,49 @@ def get_updated_cli_invocation_params_for_context(
             dagster_dbt_translator=dagster_dbt_translator,
             current_dbt_indirect_selection_env=indirect_selection,
         )
+        if (
+            selection_args[0] == "--select"
+            and project_dir
+            and len(resources := selection_args[1].split(" ")) > _SELECTION_ARGS_THRESHOLD
+        ):
+            temp_project_dir = tempfile.mkdtemp()
+            shutil.copytree(project_dir, temp_project_dir, dirs_exist_ok=True)
+            selectors_path = Path(temp_project_dir) / "selectors.yml"
+
+            # Delete any existing selectors, we need to create our own
+            if selectors_path.exists():
+                selectors_path.unlink()
+
+            selector_name = f"dagster_run_{context.run_id}"
+            temp_selectors = {
+                "selectors": [
+                    {
+                        "name": selector_name,
+                        "definition": {"union": list(resources)},
+                    }
+                ]
+            }
+            selectors_path.write_text(yaml.safe_dump(temp_selectors))
+            logger.info(
+                f"DBT selection of {len(resources)} resources exceeds threshold of {_SELECTION_ARGS_THRESHOLD}. "
+                "This may exceed system argument length limits. "
+                f"Executing materialization against temporary copy of DBT project at {temp_project_dir} with ephemeral selector."
+            )
+            selection_args = ["--selector", selector_name]
+            target_project = replace(dbt_project, project_dir=temp_project_dir)
 
         indirect_selection = (
             indirect_selection_override if indirect_selection_override else indirect_selection
         )
+    else:
+        target_project = dbt_project
 
     return DbtCliInvocationPartialParams(
         manifest=manifest,
         dagster_dbt_translator=dagster_dbt_translator,
         selection_args=selection_args,
         indirect_selection=indirect_selection,
-        dbt_project=dbt_project,
+        dbt_project=target_project,
     )
 
 

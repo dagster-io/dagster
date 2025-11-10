@@ -244,6 +244,7 @@ from dagster._core.definitions.events import (
     DynamicOutput as DynamicOutput,
     ExpectationResult as ExpectationResult,
     Failure as Failure,
+    HookExecutionResult as HookExecutionResult,
     Output as Output,
     RetryRequested as RetryRequested,
     TypeCheck as TypeCheck,

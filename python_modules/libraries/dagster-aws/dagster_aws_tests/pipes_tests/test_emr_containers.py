@@ -21,7 +21,7 @@ def emr_containers_client(moto_server) -> "EMRContainersClient":
     return boto3.client("emr-containers", region_name="us-east-1", endpoint_url=_MOTO_SERVER_URL)
 
 
-@pytest_cases.fixture  # pyright: ignore
+@pytest_cases.fixture
 @pytest_cases.parametrize(pipes_params_bootstrap_method=["args", "env"])
 def pipes_emr_containers_client(
     emr_containers_client, s3_client, pipes_params_bootstrap_method

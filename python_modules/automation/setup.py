@@ -9,8 +9,7 @@ setup(
     description="Tools for infrastructure automation",
     url="https://github.com/dagster-io/dagster/tree/master/python_modules/automation",
     classifiers=[
-        "Programming Language :: Python :: 3.9",
-        "Programming Language :: Python :: 3.10",
+        "Programming Language :: Python :: 3.12",
         "License :: OSI Approved :: Apache Software License",
         "Operating System :: OS Independent",
     ],
@@ -32,7 +31,7 @@ setup(
         "virtualenv>=20.27.0",
         "urllib3",
         "watchdog",
-        "deepeval!=3.6.5",
+        "deepeval!=3.6.5,!=3.6.8,!=3.6.9",
     ],
     extras_require={
         "buildkite": [

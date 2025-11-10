@@ -13,6 +13,10 @@ canonicalUrl: '/integrations/libraries/iceberg'
 slug: '/integrations/libraries/iceberg'
 ---
 
+import CommunityIntegration from '@site/docs/partials/\_CommunityIntegration.md';
+
+<CommunityIntegration />
+
 import Preview from '@site/docs/partials/\_Preview.md';
 
 <Preview />

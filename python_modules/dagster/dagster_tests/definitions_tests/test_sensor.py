@@ -79,7 +79,7 @@ def test_coerce_graph_def_to_job():
         foo()
 
     with pytest.warns(DeprecationWarning, match="Passing GraphDefinition"):
-        my_sensor = dg.SensorDefinition(job=bar, evaluation_fn=lambda _: ...)
+        my_sensor = dg.SensorDefinition(job=bar, evaluation_fn=lambda _: None)
 
     assert isinstance(my_sensor.job, dg.JobDefinition)
     assert my_sensor.job.name == "bar"

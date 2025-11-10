@@ -1,4 +1,5 @@
 from collections.abc import Mapping, Sequence
+from types import EllipsisType
 from typing import Any, Optional, Union
 
 import dagster._check as check
@@ -236,7 +237,7 @@ class AssetOut:
         key: AssetKey,
         deps: Sequence[AssetDep],
         additional_tags: Mapping[str, str] = {},
-        partitions_def: Optional[PartitionsDefinition] = ...,
+        partitions_def: Optional[PartitionsDefinition] | EllipsisType = ...,
     ) -> AssetSpec:
         return self._spec.replace_attributes(
             key=key,

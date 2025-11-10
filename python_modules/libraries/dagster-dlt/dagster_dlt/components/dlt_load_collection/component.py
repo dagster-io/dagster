@@ -1,8 +1,8 @@
 import importlib
-from collections.abc import Iterator, Sequence
+from collections.abc import Callable, Iterator, Sequence
 from dataclasses import dataclass
 from functools import cached_property
-from typing import TYPE_CHECKING, Annotated, Callable, Optional
+from typing import TYPE_CHECKING, Annotated, Optional
 
 import dagster as dg
 from dagster import AssetKey, AssetSpec, Component, ComponentLoadContext, Resolvable, Resolver
@@ -86,7 +86,40 @@ class DltLoadCollectionComponent(Component, Resolvable):
     def _base_translator(self) -> DagsterDltTranslator:
         return DagsterDltTranslator()
 
+    @public
     def get_asset_spec(self, data: DltResourceTranslatorData) -> AssetSpec:
+        """Generates an AssetSpec for a given dlt resource.
+
+        This method can be overridden in a subclass to customize how dlt resources are
+        converted to Dagster asset specs. By default, it delegates to the configured
+        DagsterDltTranslator.
+
+        Args:
+            data: The DltResourceTranslatorData containing information about the dlt source
+                and resource being loaded
+
+        Returns:
+            An AssetSpec that represents the dlt resource as a Dagster asset
+
+        Example:
+            Override this method to add custom tags based on resource properties:
+
+            .. code-block:: python
+
+                from dagster_dlt import DltLoadCollectionComponent
+                from dagster import AssetSpec
+
+                class CustomDltLoadCollectionComponent(DltLoadCollectionComponent):
+                    def get_asset_spec(self, data):
+                        base_spec = super().get_asset_spec(data)
+                        return base_spec.replace_attributes(
+                            tags={
+                                **base_spec.tags,
+                                "source": data.source_name,
+                                "resource": data.resource_name
+                            }
+                        )
+        """
         return self._base_translator.get_asset_spec(data)
 
     def build_defs(self, context: ComponentLoadContext) -> dg.Definitions:
@@ -107,10 +140,36 @@ class DltLoadCollectionComponent(Component, Resolvable):
 
         return dg.Definitions(assets=output)
 
+    @public
     def execute(
         self, context: AssetExecutionContext, dlt_pipeline_resource: "DagsterDltResource"
     ) -> Iterator:
-        """Runs the dlt pipeline. Override this method to customize the execution logic."""
+        """Executes the dlt pipeline for the selected resources.
+
+        This method can be overridden in a subclass to customize the pipeline execution behavior,
+        such as adding custom logging, validation, or error handling.
+
+        Args:
+            context: The asset execution context provided by Dagster
+            dlt_pipeline_resource: The DagsterDltResource used to run the dlt pipeline
+
+        Yields:
+            Events from the dlt pipeline execution (e.g., AssetMaterialization, MaterializeResult)
+
+        Example:
+            Override this method to add custom logging during pipeline execution:
+
+            .. code-block:: python
+
+                from dagster_dlt import DltLoadCollectionComponent
+                from dagster import AssetExecutionContext
+
+                class CustomDltLoadCollectionComponent(DltLoadCollectionComponent):
+                    def execute(self, context, dlt_pipeline_resource):
+                        context.log.info("Starting dlt pipeline execution")
+                        yield from super().execute(context, dlt_pipeline_resource)
+                        context.log.info("dlt pipeline execution completed")
+        """
         yield from dlt_pipeline_resource.run(context=context)
 
 

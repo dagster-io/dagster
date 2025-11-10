@@ -1,4 +1,4 @@
-from typing import Callable
+from collections.abc import Callable
 
 import dagster._check as check
 import graphene

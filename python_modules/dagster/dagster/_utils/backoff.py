@@ -1,7 +1,7 @@
 import asyncio
 import time
-from collections.abc import Awaitable, Iterator, Mapping, Sequence
-from typing import Callable, Optional, TypeVar
+from collections.abc import Awaitable, Callable, Iterator, Mapping, Sequence
+from typing import Optional, TypeVar
 
 import dagster._check as check
 

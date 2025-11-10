@@ -1,8 +1,8 @@
 from collections import defaultdict
-from collections.abc import Iterable, Sequence
+from collections.abc import Callable, Iterable, Sequence
 from functools import cached_property
 from pathlib import Path
-from typing import Annotated, Callable, Optional, Union
+from typing import Annotated, Optional, Union
 
 import dagster as dg
 import pydantic
@@ -146,12 +146,72 @@ class FivetranAccountComponent(StateBackedComponent, dg.Model, dg.Resolvable):
         default_key = f"{self.__class__.__name__}[{self.workspace_resource.account_id}]"
         return DefsStateConfig.from_args(self.defs_state, default_key=default_key)
 
+    @public
     def get_asset_spec(self, props: FivetranConnectorTableProps) -> dg.AssetSpec:
+        """Generates an AssetSpec for a given Fivetran connector table.
+
+        This method can be overridden in a subclass to customize how Fivetran connector tables
+        are converted to Dagster asset specs. By default, it delegates to the configured
+        DagsterFivetranTranslator.
+
+        Args:
+            props: The FivetranConnectorTableProps containing information about the connector
+                and destination table being synced
+
+        Returns:
+            An AssetSpec that represents the Fivetran connector table as a Dagster asset
+
+        Example:
+            Override this method to add custom tags based on connector properties:
+
+            .. code-block:: python
+
+                from dagster_fivetran import FivetranAccountComponent
+                import dagster as dg
+
+                class CustomFivetranAccountComponent(FivetranAccountComponent):
+                    def get_asset_spec(self, props):
+                        base_spec = super().get_asset_spec(props)
+                        return base_spec.replace_attributes(
+                            tags={
+                                **base_spec.tags,
+                                "connector_type": props.connector_type,
+                                "destination": props.destination_name
+                            }
+                        )
+        """
         return self._base_translator.get_asset_spec(props)
 
+    @public
     def execute(
         self, context: dg.AssetExecutionContext, fivetran: FivetranWorkspace
     ) -> Iterable[Union[dg.AssetMaterialization, dg.MaterializeResult]]:
+        """Executes a Fivetran sync for the selected connector.
+
+        This method can be overridden in a subclass to customize the sync execution behavior,
+        such as adding custom logging or handling sync results differently.
+
+        Args:
+            context: The asset execution context provided by Dagster
+            fivetran: The FivetranWorkspace resource used to trigger and monitor syncs
+
+        Yields:
+            AssetMaterialization or MaterializeResult events from the Fivetran sync
+
+        Example:
+            Override this method to add custom logging during sync execution:
+
+            .. code-block:: python
+
+                from dagster_fivetran import FivetranAccountComponent
+                import dagster as dg
+
+                class CustomFivetranAccountComponent(FivetranAccountComponent):
+                    def execute(self, context, fivetran):
+                        context.log.info("Starting Fivetran sync")
+                        yield from super().execute(context, fivetran)
+                        context.log.info("Fivetran sync completed successfully")
+        """
         yield from fivetran.sync_and_poll(context=context)
 
     def _load_asset_specs(self, state: FivetranWorkspaceData) -> Sequence[dg.AssetSpec]:
