@@ -1,0 +1,11 @@
+type: dagster_dbt.DbtProjectComponent
+
+attributes:
+  project: '{{ project_root }}/dbt'
+  select: "resource_type:snapshot,path:snapshots/sales/*"
+
+post_processing:
+  assets:
+    - target: "*"
+      attributes:
+        pool: "sales-snapshots"
