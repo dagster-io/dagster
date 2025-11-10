@@ -11,6 +11,10 @@ sidebar_custom_props:
 partnerlink: https://hightouch.com/
 ---
 
+import CommunityIntegration from '@site/docs/partials/\_CommunityIntegration.md';
+
+<CommunityIntegration />
+
 <p>{frontMatter.description}</p>
 
 This native integration helps your team more effectively orchestrate the last mile of data analytics—bringing that data from the warehouse back into the SaaS tools your business teams live in. With the `dagster-hightouch` integration, Hightouch users have more granular and sophisticated control over when data gets activated.

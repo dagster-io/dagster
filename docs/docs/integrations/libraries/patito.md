@@ -11,6 +11,10 @@ sidebar_custom_props:
 partnerlink: https://github.com/JakobGM/patito
 ---
 
+import CommunityIntegration from '@site/docs/partials/\_CommunityIntegration.md';
+
+<CommunityIntegration />
+
 <p>{frontMatter.description}</p>
 
 For more information on how to use Dagster with Polars, see [dagster-polars documentation](/integrations/libraries/polars).

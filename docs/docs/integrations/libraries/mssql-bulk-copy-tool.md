@@ -8,7 +8,12 @@ pypi: https://pypi.org/project/dagster-mssql-bcp/
 sidebar_custom_props:
   logo: images/integrations/mssql.png
 partnerlink:
+community: true
 ---
+
+import CommunityIntegration from '@site/docs/partials/\_CommunityIntegration.md';
+
+<CommunityIntegration />
 
 <p>{frontMatter.description}</p>
 

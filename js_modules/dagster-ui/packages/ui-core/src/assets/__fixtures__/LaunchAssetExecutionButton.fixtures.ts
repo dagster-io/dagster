@@ -212,16 +212,6 @@ export const ASSET_DAILY = buildAssetNode({
   }),
 });
 
-export const PARTITIONED_ASSET_WITH_REQUIRED_CONFIG = buildAssetNode({
-  ...ASSET_DAILY,
-  id: 'test.py.repo.["partitioned_asset_with_required_config"]',
-  opNames: ['partitioned_asset_with_required_config'],
-  assetKey: buildAssetKey({
-    path: ['partitioned_asset_with_required_config'],
-  }),
-  configField: {...BASE_CONFIG_TYPE_FIELD, isRequired: true},
-});
-
 export const ASSET_WEEKLY = buildAssetNode({
   __typename: 'AssetNode',
   id: 'test.py.repo.["asset_weekly"]',
@@ -373,36 +363,6 @@ export const ASSET_DAILY_PARTITION_KEYS_MISSING = without(
     generateDailyTimePartitions(new Date(r.startTime * 1000 - 1), new Date(r.endTime * 1000 - 1)),
   ),
 );
-
-export const PartitionHealthPartitionedAssetWithRequiredConfigMock: MockedResponse<PartitionHealthQuery> =
-  {
-    request: {
-      query: PARTITION_HEALTH_QUERY,
-      variables: {
-        assetKey: {
-          path: ['partitioned_asset_with_required_config'],
-        },
-      },
-    },
-    result: {
-      data: {
-        __typename: 'Query',
-        assetNodeOrError: buildAssetNode({
-          id: 'test.py.repo.["partitioned_asset_with_required_config"]',
-          partitionKeysByDimension: [
-            buildDimensionPartitionKeys({
-              name: 'default',
-              partitionKeys: ASSET_DAILY_PARTITION_KEYS,
-              type: PartitionDefinitionType.TIME_WINDOW,
-            }),
-          ],
-          assetPartitionStatuses: buildTimePartitionStatuses({
-            ranges: PartitionHealthAssetDailyMaterializedRanges,
-          }),
-        }),
-      },
-    },
-  };
 
 export const PartitionHealthAssetWeeklyMock: MockedResponse<PartitionHealthQuery> = {
   request: {
@@ -651,7 +611,6 @@ export const LOADER_RESULTS = [
   ASSET_WEEKLY_ROOT,
   UNPARTITIONED_ASSET,
   UNPARTITIONED_ASSET_WITH_REQUIRED_CONFIG,
-  PARTITIONED_ASSET_WITH_REQUIRED_CONFIG,
   UNPARTITIONED_ASSET_OTHER_REPO,
   MULTI_ASSET_OUT_1,
   MULTI_ASSET_OUT_2,
@@ -662,7 +621,6 @@ export const PartitionHealthAssetMocks = [
   PartitionHealthAssetWeeklyRootMock,
   PartitionHealthAssetWeeklyMock,
   PartitionHealthAssetDailyMock,
-  PartitionHealthPartitionedAssetWithRequiredConfigMock,
 ];
 
 export function buildLaunchAssetLoaderMock(

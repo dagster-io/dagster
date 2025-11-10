@@ -1,8 +1,5 @@
-from unittest.mock import MagicMock
-
 import responses
-from dagster import build_init_resource_context
-from dagster_census import CensusOutput, CensusResource, census_resource
+from dagster_census import CensusOutput, CensusResource
 
 from dagster_census_tests.utils import (
     get_destination_data,
@@ -57,21 +54,6 @@ def test_get_sync_run():
         assert census.get_sync_run(sync_run_id="94")  # pyright: ignore[reportArgumentType]
 
 
-def test_poll_sync_run():
-    mock_logger = MagicMock()
-    census = CensusResource(api_key="foo", log=mock_logger)
-    with responses.RequestsMock() as rsps:
-        rsps.add(
-            rsps.GET,
-            "https://app.getcensus.com/api/v1/sync_runs/94",
-            json=get_sync_run_data(),
-        )
-        assert census.poll_sync_run(sync_run_id="94", poll_interval=0)  # pyright: ignore[reportArgumentType]
-        mock_logger.info.assert_called_with(
-            "View sync details here: https://app.getcensus.com/syncs_runs/94."
-        )
-
-
 def test_trigger_sync():
     census = CensusResource(api_key="foo")
     with responses.RequestsMock() as rsps:
@@ -120,13 +102,7 @@ def test_trigger_sync_and_poll():
 
 
 def test_resource_init():
-    cen_resource = census_resource(
-        build_init_resource_context(
-            config={
-                "api_key": "foo",
-            }
-        )
-    )
+    cen_resource = CensusResource(api_key="foo")
 
     assert type(cen_resource) is CensusResource
     assert cen_resource.api_base_url == "https://app.getcensus.com/api/v1"

@@ -11,6 +11,10 @@ sidebar_custom_props:
 partnerlink: https://wandb.ai/
 ---
 
+import CommunityIntegration from '@site/docs/partials/\_CommunityIntegration.md';
+
+<CommunityIntegration />
+
 <p>{frontMatter.description}</p>
 
 The integration with W&B makes it easy within Dagster to:

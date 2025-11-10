@@ -5,7 +5,7 @@ import uuid
 import warnings
 from collections import namedtuple
 from collections.abc import Mapping, Sequence
-from typing import Any, Optional
+from typing import TYPE_CHECKING, Any, Optional
 
 import boto3
 from botocore.exceptions import ClientError
@@ -82,6 +82,9 @@ TAGS_TO_EXCLUDE_FROM_PROPAGATION = {"dagster/op_selection", "dagster/solid_selec
 DEFAULT_REGISTER_TASK_DEFINITION_RETRIES = 5
 DEFAULT_RUN_TASK_RETRIES = 5
 
+if TYPE_CHECKING:
+    from botocore.config import Config
+
 
 class EcsRunLauncher(RunLauncher[T_DagsterInstance], ConfigurableClass):
     """RunLauncher that starts a task in ECS for each Dagster job run.
@@ -120,10 +123,13 @@ class EcsRunLauncher(RunLauncher[T_DagsterInstance], ConfigurableClass):
         task_definition_prefix: str = "run",
     ):
         self._inst_data = inst_data
-        self.ecs = boto3.client("ecs")
+
+        boto_client_config = self.get_boto_client_config()
+
+        self.ecs = boto3.client("ecs", config=boto_client_config)
         self.ec2 = boto3.resource("ec2")
-        self.secrets_manager = boto3.client("secretsmanager")
-        self.logs = boto3.client("logs")
+        self.secrets_manager = boto3.client("secretsmanager", config=boto_client_config)
+        self.logs = boto3.client("logs", config=boto_client_config)
 
         self._task_definition_prefix = task_definition_prefix
 
@@ -236,6 +242,9 @@ class EcsRunLauncher(RunLauncher[T_DagsterInstance], ConfigurableClass):
 
         self._current_task_metadata = None
         self._current_task = None
+
+    def get_boto_client_config(self) -> Optional["Config"]:
+        return None
 
     @property
     def inst_data(self):

@@ -1,4 +1,5 @@
 from collections.abc import Mapping, Sequence
+from datetime import datetime
 from enum import Enum
 from typing import Any, Optional
 
@@ -138,6 +139,13 @@ class AirbyteJob:
 
     id: int
     status: str
+    type: str
+    connection_id: str | None = None
+    start_time: datetime | None = None
+    last_updated_at: datetime | None = None
+    duration: str | None = None
+    bytes_synced: int | None = None
+    rows_synced: int | None = None
 
     @classmethod
     def from_job_details(
@@ -147,6 +155,17 @@ class AirbyteJob:
         return cls(
             id=job_details["jobId"],
             status=job_details["status"],
+            type=job_details["jobType"],
+            connection_id=job_details.get("connectionId"),
+            start_time=datetime.fromisoformat(job_details["startTime"])
+            if "startTime" in job_details
+            else None,
+            last_updated_at=datetime.fromisoformat(job_details["lastUpdatedAt"])
+            if "lastUpdatedAt" in job_details
+            else None,
+            duration=job_details.get("duration"),
+            bytes_synced=job_details.get("bytesScanned"),
+            rows_synced=job_details.get("rowsSynced"),
         )
 
 

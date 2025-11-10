@@ -457,15 +457,26 @@ class TimeWindowPartitionsSubset(
             [*self.included_time_windows, *other.included_time_windows],
             key=lambda tw: tw.start_timestamp,
         )
+
         result_windows = [input_time_windows[0]] if len(input_time_windows) > 0 else []
+
         for window in input_time_windows[1:]:
             latest_window = result_windows[-1]
             if window.start_timestamp <= latest_window.end_timestamp:
                 # merge this window with the latest window
-                result_windows[-1] = PersistedTimeWindow.from_public_time_window(
-                    TimeWindow(latest_window.start, max(latest_window.end, window.end)),
-                    self.partitions_def.timezone,
+                merged_window_end = (
+                    latest_window.end_timestamp_with_timezone
+                    if latest_window.end_timestamp >= window.end_timestamp
+                    else window.end_timestamp_with_timezone
                 )
+
+                merged_window = PersistedTimeWindow(
+                    latest_window.start_timestamp_with_timezone,
+                    merged_window_end,
+                )
+
+                # merge this window with the latest window
+                result_windows[-1] = merged_window
             else:
                 result_windows.append(window)
 
