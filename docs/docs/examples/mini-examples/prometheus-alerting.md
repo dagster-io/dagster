@@ -25,7 +25,7 @@ Prometheus monitoring addresses these issues by:
 - Enabling historical analysis of pipeline performance
 - Supporting custom business metrics alongside technical metrics
 
-## Solution 1: Basic Prometheus setup
+### Solution 1: Prometheus resource setup
 
 The first step is configuring a Prometheus resource that connects to your Prometheus push gateway. This provides the foundation for all monitoring functionality.
 
@@ -45,7 +45,7 @@ Key configuration parameters:
 - **`scrape_timeout`**: Maximum time to wait for metric collection
 - **`evaluation_interval`**: How often alerting rules are evaluated
 
-## Solution 2: Basic asset monitoring
+### Solution 2: Asset monitoring
 
 Once the resource is configured, you can create assets that push basic metrics to Prometheus using the built-in functionality.
 
@@ -69,7 +69,7 @@ This basic approach automatically sends default metrics to Prometheus, including
 | Success/failure         | ✓                       | Not needed           |
 | Custom business metrics | ✗                       | Required             |
 
-## Solution 3: Custom metrics and monitoring
+### Solution 3: Custom metrics and monitoring
 
 For more detailed monitoring, you can define custom Prometheus metrics that track specific aspects of your data pipeline, such as row counts, data quality scores, or processing times.
 
@@ -87,8 +87,6 @@ This setup defines four custom metrics:
 2. **Counter**: `my_asset_success_total` - tracks successful executions
 3. **Counter**: `my_asset_failure_total` - tracks failed executions
 4. **Histogram**: `my_asset_duration_seconds` - tracks execution time distribution
-
-### Using custom metrics in assets
 
 <CodeExample
   path="docs_projects/project_mini/src/project_mini/defs/prometheus_alerting/promoetheus_assets.py"
@@ -112,7 +110,7 @@ This pattern provides comprehensive monitoring:
 | Success/failure rates   | Basic       | Granular counters    |
 | Custom business metrics | ✗           | ✓ (configurable)     |
 
-## Solution 4: Advanced failure monitoring with hooks
+### Solution 4: Failure monitoring with hooks
 
 For comprehensive failure monitoring, you can use Dagster hooks to automatically capture and report detailed failure information to Prometheus, including asset metadata and ownership information.
 
@@ -123,8 +121,6 @@ For comprehensive failure monitoring, you can use Dagster hooks to automatically
   startAfter="start_failure_hook_factory"
   endBefore="end_failure_hook_factory"
 />
-
-### Hook implementation details
 
 The failure hook implementation captures comprehensive failure context:
 
@@ -143,8 +139,6 @@ Key features of the failure hook:
 3. **Custom registry**: Creates isolated metrics to avoid conflicts
 4. **Comprehensive logging**: Provides detailed failure information
 
-### Prometheus metrics creation
-
 The hook creates labeled metrics for detailed failure tracking:
 
 <CodeExample
@@ -160,8 +154,6 @@ These metrics enable sophisticated alerting rules:
 - **`dagster_asset_failures_total`**: Counter with labels for asset name, owner, and job
 - **`dagster_asset_last_failure_timestamp`**: Gauge showing when each asset last failed
 
-### Gateway integration
-
 The hook safely pushes metrics to the Prometheus gateway:
 
 <CodeExample
@@ -172,8 +164,6 @@ The hook safely pushes metrics to the Prometheus gateway:
   endBefore="end_push_to_gateway"
 />
 
-### Using the failure hook
-
 <CodeExample
   path="docs_projects/project_mini/src/project_mini/defs/prometheus_alerting/promoetheus_failure_hook.py"
   language="python"
@@ -183,22 +173,3 @@ The hook safely pushes metrics to the Prometheus gateway:
 />
 
 The hook is attached to assets using the `op_tags` parameter with the `dagster/failure_hook` key.
-
-## Monitoring strategy comparison
-
-| Approach               | Setup Complexity | Monitoring Depth              | Alerting Capabilities |
-| ---------------------- | ---------------- | ----------------------------- | --------------------- |
-| Basic asset monitoring | Low              | Basic execution status        | Limited               |
-| Custom metrics         | Medium           | Detailed performance data     | Good                  |
-| Failure hooks          | High             | Comprehensive failure context | Excellent             |
-| Combined approach      | High             | Full pipeline observability   | Best-in-class         |
-
-### Best practices
-
-1. **Start simple**: Begin with basic monitoring and gradually add custom metrics
-2. **Use labels wisely**: Include relevant metadata (owner, environment, asset type) in metric labels
-3. **Monitor business metrics**: Track data quality, row counts, and other domain-specific KPIs
-4. **Set up alerting rules**: Configure Prometheus alerts for failures, performance degradation, and data anomalies
-5. **Test your monitoring**: Intentionally cause failures to verify that alerts work correctly
-
-The combination of custom metrics and failure hooks provides comprehensive monitoring that scales with your data platform needs.

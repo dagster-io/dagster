@@ -38,7 +38,7 @@ def create_prometheus_failure_hook(
                     asset_owner = (
                         owner_metadata.value if hasattr(owner_metadata, "value") else owner_metadata
                     )
-                    context.log.info(f"[HOOK] ✓ Found owner from metadata: {asset_owner}")
+                    context.log.info(f"[HOOK] Found owner from metadata: {asset_owner}")
             else:
                 context.log.info(f"[HOOK] No previous materialization found for {asset_key_str}")
         except Exception as e:

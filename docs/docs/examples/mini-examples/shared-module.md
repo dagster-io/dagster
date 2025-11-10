@@ -9,7 +9,7 @@ sidebar_custom_props:
 
 In this example, we'll explore strategies for sharing code across Dagster [code locations](/deployment/code-locations). This is useful when you have utility functions, factories, or helpers that are used in multiple places and you want to avoid duplication.
 
-### Problem: Sharing modules across code locations
+## Problem: Sharing modules across code locations
 
 Imagine you’ve implemented a factory function that generates assets. This function is needed in multiple code locations, but you don’t want to re-implement it in every repo.
 
