@@ -52,7 +52,7 @@ def test_remote_dbt_project_dev_mode_calls_fetch(dbt_project_dir: Path) -> None:
     with (
         instance_for_test(),
         create_defs_folder_sandbox() as sandbox,
-        patch("dagster_dbt.dbt_project_manager.Repo.clone_from") as mock_clone,
+        patch("git.Repo.clone_from") as mock_clone,
         environ({"DAGSTER_IS_DEV_CLI": "1"}),
     ):
         mock_clone.side_effect = mock_git_clone(dbt_project_dir)
@@ -102,7 +102,7 @@ def test_remote_dbt_project_reconstruction_mode_no_fetch(dbt_project_dir: Path) 
     with (
         instance_for_test(),
         create_defs_folder_sandbox() as sandbox,
-        patch("dagster_dbt.dbt_project_manager.Repo.clone_from") as mock_clone,
+        patch("git.Repo.clone_from") as mock_clone,
     ):
         mock_clone.side_effect = mock_git_clone(dbt_project_dir)
 
@@ -179,7 +179,7 @@ def test_remote_dbt_project_with_profile_and_repo_relative_path(
     with (
         instance_for_test(),
         create_defs_folder_sandbox() as sandbox,
-        patch("dagster_dbt.dbt_project_manager.Repo.clone_from") as mock_clone,
+        patch("git.Repo.clone_from") as mock_clone,
         environ({"DAGSTER_IS_DEV_CLI": "1"}),
     ):
         mock_clone.side_effect = mock_git_clone(dbt_project_dir)
@@ -222,7 +222,7 @@ def test_remote_dbt_project_with_token(dbt_project_dir: Path) -> None:
     with (
         instance_for_test(),
         create_defs_folder_sandbox() as sandbox,
-        patch("dagster_dbt.dbt_project_manager.Repo.clone_from") as mock_clone,
+        patch("git.Repo.clone_from") as mock_clone,
         environ({"DAGSTER_IS_DEV_CLI": "1"}),
     ):
         mock_clone.side_effect = mock_git_clone(dbt_project_dir)
@@ -268,7 +268,7 @@ def test_scaffold_component_with_git_url_params(
     with (
         instance_for_test(),
         create_defs_folder_sandbox() as sandbox,
-        patch("dagster_dbt.dbt_project_manager.Repo.clone_from") as mock_clone,
+        patch("git.Repo.clone_from") as mock_clone,
         environ({"DAGSTER_IS_DEV_CLI": "1"}),
     ):
         mock_clone.side_effect = mock_git_clone(dbt_project_dir)
