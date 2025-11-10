@@ -256,7 +256,7 @@ def test_dagster_cloud_atlan_integration_delete_settings_exception(
         "multiple user deployments enabled, subchart disabled",
     ],
 )
-def test_dagster_cloud_atlan_integration_delete_settings_exception_gql_resul(
+def test_dagster_cloud_atlan_integration_delete_settings_exception_gql_result(
     empty_config, monkeypatch, mocker, error_value
 ) -> None:
     """Tests Atlan delete-settings CLI and GraphQL result."""
