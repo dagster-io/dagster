@@ -17,6 +17,7 @@ import {
 import uniq from 'lodash/uniq';
 import * as React from 'react';
 import {Link} from 'react-router-dom';
+import {AISummaryForRunMenuItem} from 'shared/runs/AISummaryForRunMenuItem.oss';
 import {RunMetricsDialog} from 'shared/runs/RunMetricsDialog.oss';
 import styled from 'styled-components';
 
@@ -122,6 +123,7 @@ export const RunActionsMenu = React.memo(({run, onAddTag, anchorLabel}: Props) =
         <Popover
           content={
             <Menu>
+              <AISummaryForRunMenuItem runId={run.id} />
               <MenuItem
                 tagName="button"
                 style={{minWidth: 200}}
