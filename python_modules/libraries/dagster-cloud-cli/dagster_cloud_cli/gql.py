@@ -957,8 +957,8 @@ def set_atlan_integration_settings(
     ):
         raise Exception(f"Unable to set Atlan integration settings: {result}")
 
-    return result["data"]["etAtlanIntegrationSettings"]["organization"], result["data"][
-        "etAtlanIntegrationSettings"
+    return result["data"]["setAtlanIntegrationSettings"]["organization"], result["data"][
+        "setAtlanIntegrationSettings"
     ]["success"]
 
 
