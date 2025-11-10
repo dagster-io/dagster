@@ -29,7 +29,9 @@ Pod evictions can occur due to:
 
 - Node running out of memory
 - Node scale-down operations
-- Resource limit constraints to mitigate these issues, consider requesting more resources during pod creation and implementing appropriate timeout configurations.
+- Resource limit constraints
+
+To mitigate these issues, consider requesting more resources during pod creation and implementing appropriate timeout configurations.
 
 ## Next steps
 
