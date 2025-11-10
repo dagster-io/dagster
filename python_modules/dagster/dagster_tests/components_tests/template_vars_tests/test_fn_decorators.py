@@ -1,4 +1,4 @@
-from typing import Callable
+from collections.abc import Callable
 
 import dagster as dg
 from dagster.components.component.template_vars import is_template_var

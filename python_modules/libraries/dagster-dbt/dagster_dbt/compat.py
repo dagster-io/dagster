@@ -1,9 +1,8 @@
 import logging
 from enum import Enum
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING, Any, TypeAlias
 
 from packaging import version
-from typing_extensions import TypeAlias
 
 # it's unclear exactly which dbt import adds a handler to the root logger, but something certainly does!
 # on this line, we keep track of the set of handlers that are on the root logger BEFORE any dbt imports

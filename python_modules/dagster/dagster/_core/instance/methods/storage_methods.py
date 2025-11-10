@@ -1,7 +1,7 @@
 """Storage methods for DagsterInstance."""
 
-from collections.abc import Mapping
-from typing import TYPE_CHECKING, Any, Callable, Optional
+from collections.abc import Callable, Mapping
+from typing import TYPE_CHECKING, Any, Optional
 
 from dagster._core.types.pagination import PaginatedResults
 from dagster._utils import traced

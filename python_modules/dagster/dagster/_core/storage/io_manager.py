@@ -6,12 +6,12 @@ from typing import (  # noqa: UP035
     Any,
     Callable,
     Optional,
+    TypeAlias,
+    TypeGuard,
     Union,
     cast,
     overload,
 )
-
-from typing_extensions import TypeAlias, TypeGuard
 
 import dagster._check as check
 from dagster._annotations import public

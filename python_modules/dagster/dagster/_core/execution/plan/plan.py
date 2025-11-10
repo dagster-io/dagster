@@ -1,6 +1,6 @@
 from collections import defaultdict
-from collections.abc import Mapping, Sequence
-from typing import TYPE_CHECKING, Any, Callable, NamedTuple, Optional, Union, cast
+from collections.abc import Callable, Mapping, Sequence
+from typing import TYPE_CHECKING, Any, NamedTuple, Optional, Union, cast
 
 import dagster._check as check
 from dagster._core.definitions import (

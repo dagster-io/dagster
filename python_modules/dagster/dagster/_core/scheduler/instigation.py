@@ -1,10 +1,9 @@
 from collections.abc import Iterable, Mapping, Sequence
 from dataclasses import dataclass
 from enum import Enum
-from typing import AbstractSet, Any, Generic, NamedTuple, Optional, Union  # noqa: UP035
+from typing import AbstractSet, Any, Generic, NamedTuple, Optional, TypeAlias, Union  # noqa: UP035
 
 from dagster_shared.serdes import EnumSerializer, deserialize_value, whitelist_for_serdes
-from typing_extensions import TypeAlias
 
 import dagster._check as check
 from dagster._core.definitions import RunRequest

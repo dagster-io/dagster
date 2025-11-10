@@ -5,7 +5,7 @@ import {Colors} from './Color';
 import {IconWrapper} from './Icon';
 import {SpinnerWrapper} from './Spinner';
 
-interface Props {
+export interface BaseTagProps {
   fillColor?: string;
   textColor?: string;
   icon?: React.ReactNode;
@@ -28,7 +28,7 @@ const BaseTagTooltipStyle: React.CSSProperties = {
   left: -13,
 };
 
-export const BaseTag = (props: Props) => {
+export const BaseTag = (props: BaseTagProps) => {
   const {
     fillColor = Colors.backgroundDefault(),
     textColor = Colors.textDefault(),

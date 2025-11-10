@@ -5,10 +5,9 @@ import sys
 import traceback
 import uuid
 from types import TracebackType
-from typing import Optional, Union
+from typing import Optional, TypeAlias, Union
 
 from dagster_shared.error import SerializableErrorInfo
-from typing_extensions import TypeAlias
 
 import dagster._check as check
 from dagster._core.errors import DagsterUserCodeExecutionError

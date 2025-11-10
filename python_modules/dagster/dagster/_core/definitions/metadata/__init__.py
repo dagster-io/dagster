@@ -1,7 +1,17 @@
 import os
 from collections.abc import Mapping, Sequence
 from datetime import datetime
-from typing import Any, Dict, Generic, List, NamedTuple, Optional, Union, cast  # noqa: F401, UP035
+from typing import (  # noqa: F401, UP035
+    Any,
+    Dict,
+    Generic,
+    List,
+    NamedTuple,
+    Optional,
+    TypeAlias,
+    Union,
+    cast,
+)
 
 from dagster_shared.serdes.serdes import (
     FieldSerializer,
@@ -10,7 +20,7 @@ from dagster_shared.serdes.serdes import (
     WhitelistMap,
     pack_value,
 )
-from typing_extensions import TypeAlias, TypeVar
+from typing_extensions import TypeVar
 
 import dagster._check as check
 from dagster._annotations import PublicAttr, deprecated, deprecated_param, public

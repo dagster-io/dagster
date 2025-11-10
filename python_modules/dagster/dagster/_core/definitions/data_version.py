@@ -1,8 +1,8 @@
 import functools
-from collections.abc import Iterator, Mapping, Sequence
+from collections.abc import Callable, Iterator, Mapping, Sequence
 from enum import Enum
 from hashlib import sha256
-from typing import TYPE_CHECKING, Callable, Final, NamedTuple, Optional, Union
+from typing import TYPE_CHECKING, Final, NamedTuple, Optional, Union
 
 from dagster import _check as check
 from dagster._annotations import beta, deprecated

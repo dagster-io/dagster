@@ -21,7 +21,7 @@ To follow the steps in this guide, you will need to:
 
 - Sign up for a [Dagster+ Serverless](https://dagster.plus/signup) account and create a Dagster project
 - Clone your Dagster project to your local machine
-- Ensure you have Python 3.9+ installed
+- Ensure you have Python 3.10+ installed
 
 ## Step 1: Install `uv` (Recommended)
 
@@ -44,7 +44,12 @@ If you will be using `uv` as your package manager, follow the steps below to ins
          ```shell
          cd <project-directory>
          ```
-      2. Activate the virtual environment:
+      2. Install required dependencies in the virtual environment:
+
+         ```shell
+         uv sync
+         ```
+      3. Activate the virtual environment:
 
          <Tabs>
             <TabItem value="macos" label="MacOS/Unix">
@@ -58,12 +63,6 @@ If you will be using `uv` as your package manager, follow the steps below to ins
                ```
             </TabItem>
          </Tabs>
-
-      3. Install required dependencies in the virtual environment:
-
-         ```shell
-         uv sync
-         ```
 
    </TabItem>
 

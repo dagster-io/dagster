@@ -23,7 +23,6 @@ setup(
     description="Package for ssh Dagster framework components.",
     url="https://github.com/dagster-io/dagster/tree/master/python_modules/libraries/dagster-ssh",
     classifiers=[
-        "Programming Language :: Python :: 3.9",
         "Programming Language :: Python :: 3.10",
         "Programming Language :: Python :: 3.11",
         "Programming Language :: Python :: 3.12",
@@ -33,7 +32,7 @@ setup(
     ],
     packages=find_packages(exclude=["dagster_ssh_tests*"]),
     include_package_data=True,
-    python_requires=">=3.9,<3.14",
+    python_requires=">=3.10,<3.14",
     install_requires=[f"dagster{pin}", "sshtunnel", "paramiko"],
     extras_require={"test": ["cryptography==2.6.1", "pytest-sftpserver==1.2.0"]},
     zip_safe=False,

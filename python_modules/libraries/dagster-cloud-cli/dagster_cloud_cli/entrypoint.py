@@ -4,9 +4,9 @@ import importlib.util
 import json
 import logging
 import time
-from collections.abc import Mapping
+from collections.abc import Callable, Mapping
 from enum import Enum
-from typing import Callable, Optional
+from typing import Optional
 
 import typer
 from typer.models import CommandInfo

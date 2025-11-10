@@ -3,13 +3,11 @@ import os
 import re
 import string
 import textwrap
-from collections.abc import Iterator
+from collections.abc import Callable, Iterator
 from contextlib import contextmanager
 from pathlib import Path
 from tempfile import TemporaryDirectory
-from typing import Callable, Literal
-
-from typing_extensions import TypeAlias
+from typing import Literal, TypeAlias
 
 from dagster._utils import pushd
 from dagster._utils.env import environ

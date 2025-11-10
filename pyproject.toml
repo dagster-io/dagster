@@ -49,7 +49,7 @@ venvPath = "pyright/master"
 
 # Minimum version of Python on which code must run. This determines the standard library stubs used by
 # pyright.
-pythonVersion = "3.9"
+pythonVersion = "3.10"
 
 
 # Disable reading type annotations from libraries that are not explicitly marked as typed (i.e. that
@@ -111,7 +111,7 @@ addopts = "-ra"
 
 [tool.ruff]
 
-target-version = "py39"
+target-version = "py310"
 
 # *.py, *.ipy are included by default
 extend-include = ["*.ipynb"]
@@ -194,6 +194,13 @@ ignore = [
   # (assorted perf rules) We have a lot of violations, enable when autofix is available
   "PERF401", # (manual-list-comprehension)
   "PERF402", # (manual-list-copy)
+
+  # (pyupgrade) Keep using Union[] and Optional[] syntax to avoid excessive changes
+  # during Python 3.10 migration. Can be enabled later for gradual adoption of PEP 604.
+  "UP007",  # (non-pep604-annotation) Use X | Y for Union types
+  "UP036",  # (outdated-version-block) Version blocks that are now always true for Python 3.10+
+  "UP038",  # (non-pep604-isinstance) Use X | Y in isinstance/issubclass instead of (X, Y)
+  "UP045",  # (non-pep604-annotation) Use X | None for Optional types
 ]
 
 # By default, ruff only uses all "E" (pycodestyle) and "F" (pyflakes) rules.

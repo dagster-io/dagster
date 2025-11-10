@@ -4,6 +4,7 @@ from dagster._core.definitions.declarative_automation.operands.operands import (
     CodeVersionChangedCondition as CodeVersionChangedCondition,
     CronTickPassedCondition as CronTickPassedCondition,
     ExecutionFailedAutomationCondition as ExecutionFailedAutomationCondition,
+    FreshnessResultCondition as FreshnessResultCondition,
     InitialEvaluationCondition as InitialEvaluationCondition,
     InLatestTimeWindowCondition as InLatestTimeWindowCondition,
     MissingAutomationCondition as MissingAutomationCondition,

@@ -9,7 +9,6 @@ from urllib.parse import quote, urlparse, urlunparse
 from dagster._core.errors import DagsterInvalidDefinitionError
 from dagster.components.resolved.base import Resolvable
 from dagster.components.resolved.model import Resolver
-from git import Repo
 
 from dagster_dbt.dbt_project import DbtProject
 
@@ -151,6 +150,9 @@ class RemoteGitDbtProjectManager(DbtProjectManager, Resolvable):
             return urlunparse(parts._replace(netloc=f"{token}@{parts.netloc}"))
 
     def sync(self, state_path: Path) -> None:
+        # defer git import to avoid side-effects on import
+        from git import Repo
+
         Repo.clone_from(self._get_clone_url(), self._local_project_dir(state_path), depth=1)
         project = self.get_project(state_path)
         project.preparer.prepare(project)

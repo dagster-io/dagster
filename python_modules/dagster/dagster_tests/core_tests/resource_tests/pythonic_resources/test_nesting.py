@@ -2,7 +2,8 @@ import contextlib
 import enum
 import json
 from abc import ABC, abstractmethod
-from typing import Any, Callable, Optional
+from collections.abc import Callable
+from typing import Any, Optional
 
 import dagster as dg
 import pytest

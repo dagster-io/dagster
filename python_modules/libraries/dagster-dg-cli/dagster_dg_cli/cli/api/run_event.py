@@ -60,7 +60,7 @@ def format_run_events_json(events, run_id: str) -> str:
     )
 
 
-@click.command(name="get", cls=DgClickCommand, unlaunched=True)
+@click.command(name="get", cls=DgClickCommand)
 @click.argument("run_id", type=str)
 @click.option(
     "--type",
@@ -129,7 +129,6 @@ def get_run_events_command(
 @click.group(
     name="run-events",
     cls=DgClickGroup,
-    unlaunched=True,
     commands={
         "get": get_run_events_command,
     },

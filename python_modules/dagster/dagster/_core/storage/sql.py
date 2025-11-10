@@ -1,6 +1,6 @@
 import threading
 from functools import lru_cache
-from typing import Any, Optional, Union
+from typing import Any, Optional, TypeAlias, Union
 
 import sqlalchemy as db
 from alembic.command import downgrade, stamp, upgrade
@@ -10,7 +10,6 @@ from alembic.runtime.migration import MigrationContext
 from alembic.script import ScriptDirectory
 from sqlalchemy.engine import Connection
 from sqlalchemy.ext.compiler import compiles
-from typing_extensions import TypeAlias
 
 from dagster._utils import file_relative_path
 

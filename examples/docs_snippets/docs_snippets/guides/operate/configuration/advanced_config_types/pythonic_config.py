@@ -181,7 +181,7 @@ def union_schema_config() -> None:
     import dagster as dg
     from pydantic import Field
     from typing import Union
-    from typing_extensions import Literal
+    from typing import Literal
 
     class Cat(dg.Config):
         pet_type: Literal["cat"] = "cat"
@@ -388,7 +388,8 @@ def validated_schema_config() -> None:
 
 def required_config() -> None:
     # start_required_config
-    from typing import Optional, Callable
+    from typing import Optional
+    from collections.abc import Callable
     import dagster as dg
     from pydantic import Field
 

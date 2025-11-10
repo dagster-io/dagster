@@ -1,5 +1,5 @@
-from collections.abc import Mapping, Sequence
-from typing import Callable, Optional
+from collections.abc import Callable, Mapping, Sequence
+from typing import Optional
 
 import dagster._check as check
 from dagster._annotations import deprecated_param, public

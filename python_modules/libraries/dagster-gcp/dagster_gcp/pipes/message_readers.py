@@ -3,9 +3,9 @@ import os
 import random
 import string
 import sys
-from collections.abc import Iterator, Sequence
+from collections.abc import Callable, Iterator, Sequence
 from contextlib import contextmanager
-from typing import IO, Callable, Optional
+from typing import IO, Optional
 
 import dagster._check as check
 from dagster._core.pipes.client import PipesParams

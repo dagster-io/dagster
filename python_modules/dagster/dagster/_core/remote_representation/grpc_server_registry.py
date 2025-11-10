@@ -1,10 +1,9 @@
 import sys
 import threading
 from contextlib import AbstractContextManager
-from typing import TYPE_CHECKING, Any, NamedTuple, Optional, Union, cast
+from typing import TYPE_CHECKING, Any, NamedTuple, Optional, TypeGuard, Union, cast
 
 from dagster_shared.serdes.objects.models.defs_state_info import DefsStateInfo
-from typing_extensions import TypeGuard
 
 import dagster._check as check
 from dagster._core.errors import DagsterUserCodeProcessError, DagsterUserCodeUnreachableError

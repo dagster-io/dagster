@@ -1,8 +1,8 @@
 import datetime
 import time
-from collections.abc import Sequence
+from collections.abc import Callable, Sequence
 from pathlib import Path
-from typing import Any, Callable, Optional
+from typing import Any, Optional
 
 from dagster_shared.scaffold import DEFAULT_FILE_EXCLUDE_PATTERNS
 from watchdog.events import FileSystemEvent, FileSystemEventHandler

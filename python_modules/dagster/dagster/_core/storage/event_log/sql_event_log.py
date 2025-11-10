@@ -13,6 +13,7 @@ from typing import (  # noqa: UP035
     ContextManager,
     NamedTuple,
     Optional,
+    TypeAlias,
     Union,
     cast,
 )
@@ -23,7 +24,6 @@ import sqlalchemy.exc as db_exc
 from dagster_shared.serdes import deserialize_values
 from dagster_shared.serdes.errors import DeserializationError
 from sqlalchemy.engine import Connection
-from typing_extensions import TypeAlias
 
 import dagster._check as check
 from dagster._core.assets import AssetDetails

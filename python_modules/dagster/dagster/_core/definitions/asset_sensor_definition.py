@@ -1,6 +1,6 @@
 import inspect
-from collections.abc import Mapping, Sequence
-from typing import Any, Callable, NamedTuple, Optional
+from collections.abc import Callable, Mapping, Sequence
+from typing import Any, NamedTuple, Optional
 
 import dagster._check as check
 from dagster._annotations import public

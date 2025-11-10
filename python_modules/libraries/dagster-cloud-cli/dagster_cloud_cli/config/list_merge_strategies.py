@@ -1,4 +1,5 @@
-from typing import Any, Callable
+from collections.abc import Callable
+from typing import Any
 
 from dagster_shared import check
 from dagster_shared.utils.hash import hash_collection

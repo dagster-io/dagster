@@ -1,5 +1,33 @@
 # Changelog
 
+## 1.12.1 (core) / 0.28.1 (libraries)
+
+### New
+
+- Migrate SqlComponent to Pydantic v2 model_config pattern (Thanks, [@LPauzies](https://github.com/LPauzies)!)
+- Make `dg api` commands visible in `dg --help` output.
+- Make `dg plus` commands visible in the `dg --help` output.
+- Add Dremio kind icon. (Thanks, [@maxfirman](https://github.com/maxfirman)!)
+- The github actions scaffolded by `dg scaffold github-actions` now include commands to refresh state for `StateBackedComponents`.
+- Run worker health check will now tag runs with their associated ENI ids.
+- [ui] In asset sidebar, clearly indicate when a freshness policy is a legacy policy.
+- [ui] Cost metrics are now shown on the asset catalog insights page.
+- [dagster] New AutomationConditions for checking asset freshness - `dg.AutomationCondition.freshness_passed()`, `dg.AutomationCondition.freshness_warned()` and `dg.AutomationCondition.freshness_failed()`. (Thanks, [@stevenayers](https://github.com/stevenayers)!)
+
+### Bugfixes
+
+- [ui] Fix a sporadic race condition when loading jobs in the Dagster UI.
+- [ui] Fixed an issue where deploying multiple serverless code locations simultaneously would sometimes fail with a "the dagster package dependency was expected but not found" error.
+- [ui] Fixed a bug that would cause errors when attempting to supply config to a backfill that targeted assets with checks.
+- [ui] Fixed an issue introduced in dagster 1.11.16 where repositories using custom RepositoryData subclasses would sometimes raise an error when viewing jobs in the Dagster UI.
+- [ui] Fix sensor descriptions in the automation list.
+- [dagster-dask] Fixed an issue where Dask parquet filters configured in YAML would fail with `ValueError: too many values to unpack (expected 3)` when using Dask version 2022.4.2. (Thanks, [@kudryk](https://github.com/kudryk)!)
+- [dagster-dbt] Fixed an issue where dagster-dbt runs targeting large numbers of models could cause the underlying `dbt` CLI invocation to fail from too many arguments.
+
+### Dagster Plus
+
+- [ui] The insights view in the Observe UI now allows you to specify a custom date range.
+
 ## 1.12.0 (core) / 0.28.0 (libraries)
 
 ## Major changes since 1.11.0 (core) / 0.27.0 (libraries)

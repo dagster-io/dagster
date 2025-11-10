@@ -1,8 +1,8 @@
 import asyncio
 import copy
-from collections.abc import Iterator, Mapping
+from collections.abc import Callable, Iterator, Mapping
 from contextlib import contextmanager
-from typing import Any, Callable, Optional
+from typing import Any, Optional
 
 import pytest
 import responses

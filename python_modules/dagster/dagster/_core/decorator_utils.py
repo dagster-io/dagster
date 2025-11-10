@@ -8,15 +8,18 @@ from typing import (  # noqa: UP035
     TYPE_CHECKING,
     Any,
     Callable,
+    Concatenate,
     ContextManager,
     Optional,
+    TypeAlias,
+    TypeGuard,
     TypeVar,
     Union,
     cast,
     get_type_hints as typing_get_type_hints,
 )
 
-from typing_extensions import Concatenate, ParamSpec, TypeAlias, TypeGuard
+from typing_extensions import ParamSpec
 
 import dagster._check as check
 from dagster._core.errors import DagsterInvalidDefinitionError

@@ -11,6 +11,10 @@ sidebar_custom_props:
 partnerlink: https://developer.hashicorp.com/nomad
 ---
 
+import CommunityIntegration from '@site/docs/partials/\_CommunityIntegration.md';
+
+<CommunityIntegration />
+
 <p>{frontMatter.description}</p>
 
 For more information, see the [dagster-nomad GitHub repository](https://github.com/PayLead/dagster-nomad).

@@ -1,6 +1,6 @@
-from typing import TypeVar, cast
+from typing import TypeVar, cast, get_origin
 
-from typing_extensions import NotRequired, get_origin, is_typeddict
+from typing_extensions import NotRequired, is_typeddict
 
 from dagster._utils.typing_api import is_closed_python_optional_type
 

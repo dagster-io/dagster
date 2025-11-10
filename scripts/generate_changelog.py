@@ -6,9 +6,11 @@ import termios
 import tty
 from collections import defaultdict
 from collections.abc import Iterator, Mapping, Sequence
+from dataclasses import dataclass, replace
+from functools import cached_property
 from pathlib import Path
 from time import sleep
-from typing import NamedTuple, Optional
+from typing import Optional
 
 import click
 import git
@@ -41,21 +43,82 @@ CATEGORY_ORDER = [
     "Dagster Plus",
 ]
 
+# Internal author names (use for internal contributors with varying or non-standard email)
+INTERNAL_AUTHOR_NAMES = [
+    "cmpadden",
+    "Joe Braha",
+    "Ben Gotow",
+    "Isaac Hellendag",
+    "Sean Mackesey",
+]
 
-class ParsedCommit(NamedTuple):
-    issue_link: str
+
+@dataclass
+class Author:
+    name: str
+    email: str
+
+    def __str__(self) -> str:
+        return f"{self.name} ({self.email})"
+
+    @property
+    def is_external(self) -> bool:
+        return (
+            not any(domain in self.email for domain in ["elementl.com", "dagsterlabs.com"])
+            and self.name not in INTERNAL_AUTHOR_NAMES
+        )
+
+
+@dataclass
+class ParsedCommit:
+    issue_number: str
+    is_community_contribution: bool
     changelog_category: str
-    raw_changelog_entry: Optional[str]
-    raw_title: str
-    author: str
-    author_email: str
+    changelog_entry: Optional[str]
+    title: str
+    authors: list[Author]
     repo_name: str
     prefix: Optional[str]  # Library prefix like [dagster-dbt], [ui], etc.
     ignore: bool
 
     @property
+    def pr_url(self) -> str:
+        return f"{GITHUB_URL}/{self.repo_name}/pull/{self.issue_number}"
+
+    @property
     def documented(self) -> bool:
-        return bool(self.raw_changelog_entry)
+        return bool(self.changelog_entry)
+
+    @property
+    def primary_author(self) -> Author:
+        # Get first external author if exists, else first author
+        # This way community PRs are always credited to the external contributor
+        return self.first_external_author or self.authors[0]
+
+    @cached_property
+    def first_external_author(self) -> Optional[Author]:
+        for author in self.authors:
+            if author.is_external:
+                return author
+        return None
+
+    @cached_property
+    def github_pr_author_username(self) -> Optional[str]:
+        """Extract GitHub username from commit author email, name, or PR webpage."""
+        # Check if email is a GitHub noreply email
+        if self.primary_author.email and "@users.noreply.github.com" in self.primary_author.email:
+            email_part = self.primary_author.email.split("@")[0]
+
+            # Handle numeric format (12345+username@users.noreply.github.com)
+            if "+" in email_part:
+                return email_part.split("+")[1]  # "username"
+
+            # Handle simple format (username@users.noreply.github.com)
+            return email_part
+
+        # Last resort: try to fetch from the PR webpage
+        # Extract the URL from the markdown link [#123](https://github.com/...)
+        return _fetch_github_username_from_pr(self.pr_url)
 
 
 def _clean_changelog_entry(text: str) -> str:
@@ -72,6 +135,9 @@ def _clean_changelog_entry(text: str) -> str:
         if text.startswith(prefix):
             text = text[len(prefix) :].strip()
             break
+
+    # Strip co-authored-by that is auto-inserted by Github at the end of commit messages
+    text = re.sub(r"Co-authored-by:.*", "", text)
 
     return text
 
@@ -144,40 +210,6 @@ def _fetch_github_username_from_pr(pr_url: str) -> Optional[str]:
     return None
 
 
-def _extract_github_username(commit: ParsedCommit) -> Optional[str]:
-    """Extract GitHub username from commit author email, name, or PR webpage."""
-    # Check if email is a GitHub noreply email
-    if "@users.noreply.github.com" in commit.author_email:
-        email_part = commit.author_email.split("@")[0]
-
-        # Handle numeric format (12345+username@users.noreply.github.com)
-        if "+" in email_part:
-            return email_part.split("+")[1]  # "username"
-
-        # Handle simple format (username@users.noreply.github.com)
-        return email_part
-
-    # Use author name as GitHub username if it looks like a reasonable username
-    # (no spaces, reasonable length)
-    author_name = commit.author
-    if " " not in author_name and 3 <= len(author_name) <= 39:  # GitHub username limits
-        return author_name
-
-    # Last resort: try to fetch from the PR webpage
-    if commit.issue_link:
-        # Extract the URL from the markdown link [#123](https://github.com/...)
-        url_match = re.search(r"\(([^)]+)\)", commit.issue_link)
-        if url_match:
-            pr_url = url_match.group(1)
-            # Check if it's a proper GitHub URL
-            if re.match(r"https?://(?:www\.)?github\.com/", pr_url):
-                username = _fetch_github_username_from_pr(pr_url)
-                if username:
-                    return username
-
-    return None
-
-
 def _get_previous_version(new_version: str) -> str:
     split = new_version.split(".")
     previous_patch = int(split[-1]) - 1
@@ -191,14 +223,30 @@ def _get_libraries_version(new_version: str) -> str:
     return ".".join(["0", str(new_minor), split[2]])
 
 
+def _get_repo_name(git_dir: str) -> str:
+    if (
+        "DAGSTER_GIT_REPO_DIR" not in os.environ
+        or "DAGSTER_INTERNAL_GIT_REPO_DIR" not in os.environ
+    ):
+        raise ValueError(
+            "Required environment variables DAGSTER_GIT_REPO_DIR and/or DAGSTER_INTERNAL_GIT_REPO_DIR not set"
+        )
+
+    if git_dir.startswith(os.environ["DAGSTER_GIT_REPO_DIR"]):
+        return "dagster"
+    elif git_dir.startswith(os.environ["DAGSTER_INTERNAL_GIT_REPO_DIR"]):
+        return "internal"
+    else:
+        raise ValueError("Could not determine repository name from git directory.")
+
+
 def _get_parsed_commit(commit: git.Commit) -> ParsedCommit:
     """Extracts a set of useful information from the raw commit message."""
-    title = str(commit.message).splitlines()[0]
+    title = str(commit.message).splitlines()[0].strip()
     # me avoiding regex -- titles are formatted as "Lorem ipsum ... (#12345)" so we can just search
     # for the last octothorpe and chop off the closing paren
-    repo_name = str(commit.repo.git_dir).split("/")[-2]
+    repo_name = _get_repo_name(str(commit.repo.git_dir))
     issue_number = title.split("#")[-1][:-1]
-    issue_link = f"[#{issue_number}]({GITHUB_URL}/{repo_name}/pull/{issue_number})"
 
     # find the first line that has `CHANGELOG` in the first few characters, then take the next
     # non-empty line
@@ -247,14 +295,22 @@ def _get_parsed_commit(commit: git.Commit) -> ParsedCommit:
         ):
             detected_prefix = "ui"
 
+    authors = [
+        Author(
+            name=str(author.name),
+            email=str(author.email),
+        )
+        for author in [commit.author, *commit.co_authors]
+    ]
+
     # Create the commit object first
     parsed_commit = ParsedCommit(
-        issue_link=issue_link,
+        issue_number=issue_number,
+        is_community_contribution=any(author.is_external for author in authors),
         changelog_category="New",  # Will be set by guessing logic
-        raw_changelog_entry=cleaned_entry,
-        raw_title=title,
-        author=str(commit.author.name),
-        author_email=str(commit.author.email),
+        changelog_entry=cleaned_entry,
+        title=title,
+        authors=authors,
         repo_name=repo_name,
         prefix=detected_prefix,
         ignore=ignore,
@@ -262,7 +318,7 @@ def _get_parsed_commit(commit: git.Commit) -> ParsedCommit:
 
     # Use guessing logic to determine category
     guessed_category = _guess_category(parsed_commit)
-    return parsed_commit._replace(changelog_category=guessed_category)
+    return replace(parsed_commit, changelog_category=guessed_category)
 
 
 def _get_documented_section(documented: Sequence[ParsedCommit]) -> str:
@@ -283,7 +339,7 @@ def _get_documented_section(documented: Sequence[ParsedCommit]) -> str:
 
         documented_text += f"\n\n### {category}\n"
         for commit in category_commits:
-            entry = commit.raw_changelog_entry or commit.raw_title
+            entry = commit.changelog_entry or commit.title
 
             # Add prefix if present
             if commit.prefix:
@@ -299,6 +355,11 @@ def _get_commits(
     for repo in repos:
         for commit in repo.iter_commits(rev=f"release-{prev_version}..release-{new_version}"):
             yield _get_parsed_commit(commit)
+
+
+def _colored(text: str, color: str) -> str:
+    """Helper to create Rich Text with color."""
+    return f"[{color}]{text}[/{color}]"
 
 
 def _create_commit_display(
@@ -328,34 +389,39 @@ def _create_commit_display(
     table.add_column("Value", style="white")
 
     # Add commit info
-    table.add_row("PR Link:", commit.issue_link)
-    table.add_row("Author:", f"{commit.author} ({commit.author_email})")
-    table.add_row("Title:", commit.raw_title)
+    table.add_row("PR Link:", commit.pr_url)
+    table.add_row(
+        "Community Contribution:",
+        _colored("YES", "green") if commit.is_community_contribution else _colored("NO", "red"),
+    )
+    table.add_row("Author:", "\n".join([str(author) for author in commit.authors]))
+    table.add_row("Title:", commit.title)
     table.add_row("Category:", f"[yellow]{commit.changelog_category}[/yellow]")
     table.add_row(
         "Prefix:", f"[cyan]{commit.prefix}[/cyan]" if commit.prefix else "[dim]None[/dim]"
     )
     # Show entry with special formatting for undocumented
-    entry_text = commit.raw_changelog_entry or "[red]<UNDOCUMENTED>[/red]"
+    entry_text = commit.changelog_entry or _colored("<UNDOCUMENTED>", "red")
     table.add_row("Entry:", entry_text)
 
     # GitHub username info
-    github_username = _extract_github_username(commit)
-    if github_username:
-        table.add_row("GitHub:", f"@{github_username}")
-        thanks_status = "[green]YES[/green]" if should_thank else "[red]NO[/red]"
-        table.add_row("Thanks:", thanks_status)
+    if should_thank:
+        pr_author = commit.github_pr_author_username
+        if pr_author:
+            table.add_row("GitHub PR author:", f"@{pr_author}")
+            table.add_row("Thanks:", "[green]YES[/green]")
+        else:
+            table.add_row("GitHub:", "[dim]Could not parse[/dim]")
+            table.add_row("Thanks:", "[yellow]YES (username unavailable)[/yellow]")
     else:
-        table.add_row("GitHub:", "[dim]Could not parse[/dim]")
-        table.add_row("Thanks:", "[dim]N/A[/dim]")
+        table.add_row("GitHub:", "[dim]Will load if Thanks is toggled[/dim]")
+        table.add_row("Thanks:", "[red]NO[/red]")
 
     # Determine main panel style based on discard state
     main_border_style = "yellow" if is_discarded else "blue"
 
     # Create proposed action panel - show what will actually happen
-    is_undocumented = (
-        not commit.raw_changelog_entry or commit.raw_changelog_entry == "<UNDOCUMENTED>"
-    )
+    is_undocumented = not commit.changelog_entry or commit.changelog_entry == "<UNDOCUMENTED>"
 
     if is_discarded:
         proposed_content = "[red]SKIP THIS COMMIT[/red]\n(Will not appear in changelog)"
@@ -368,7 +434,7 @@ def _create_commit_display(
     else:
         # Category will be shown in the content
 
-        proposed_entry = commit.raw_changelog_entry or commit.raw_title
+        proposed_entry = commit.changelog_entry or commit.title
         # Add prefix if present
         if commit.prefix:
             proposed_entry = f"[{commit.prefix}] {proposed_entry}"
@@ -378,10 +444,13 @@ def _create_commit_display(
         display_entry = proposed_entry
         if commit.prefix:
             display_entry = (
-                f"[cyan]\\[{commit.prefix}][/cyan] {commit.raw_changelog_entry or commit.raw_title}"
+                f"[cyan]\\[{commit.prefix}][/cyan] {commit.changelog_entry or commit.title}"
             )
-        if should_thank and github_username:
-            display_entry += f" [magenta](Thanks, \\[@{github_username}](https://github.com/{github_username})!)[/magenta]"
+        if should_thank:
+            username = commit.github_pr_author_username
+            display_entry += (
+                f" [magenta](Thanks, \\[@{username}](https://github.com/{username})!)[/magenta]"
+            )
 
         proposed_content = (
             f"[green]ADD TO CHANGELOG:[/green]\n\n{colored_category}\n\n- {display_entry}"
@@ -414,6 +483,8 @@ def _create_commit_display(
     controls.append(" Edit prefix  ")
     controls.append("[e]", style="bold green")
     controls.append(" Edit text  ")
+    controls.append("[o]", style="bold blue")
+    controls.append(" Open PR  ")
     controls.append("[t]", style="bold magenta")
     controls.append(" Toggle thanks  ")
     controls.append("[d]", style="bold red")
@@ -513,7 +584,7 @@ def _get_edited_prefix_interactive(current_prefix: Optional[str]) -> Optional[st
 
 def _guess_category(commit: ParsedCommit) -> str:
     """Simple category detection based on common keywords."""
-    text = (commit.raw_changelog_entry or commit.raw_title).lower()
+    text = (commit.changelog_entry or commit.title).lower()
 
     # Check for documentation keywords
     if any(word in text for word in ["doc", "guide", "tutorial"]):
@@ -535,7 +606,7 @@ def _guess_category(commit: ParsedCommit) -> str:
 def _interactive_changelog_generation(new_version: str, prev_version: str) -> str:
     """Single-pass interactive changelog generation with keyboard shortcuts."""
     # Collect all commits first
-    all_commits = []
+    all_commits: list[ParsedCommit] = []
     documented_internal = []
 
     internal_repo_name = str(INTERNAL_REPO.git_dir).split("/")[-2]
@@ -548,8 +619,11 @@ def _interactive_changelog_generation(new_version: str, prev_version: str) -> st
         else:
             # Only include undocumented commits from OSS repo (dagster), not internal
             if not commit.documented and commit.repo_name == "dagster":
-                updated_commit = commit._replace(
-                    changelog_category="Invalid", raw_changelog_entry="<UNDOCUMENTED>", ignore=False
+                updated_commit = replace(
+                    commit,
+                    changelog_category="Invalid",
+                    changelog_entry="<UNDOCUMENTED>",
+                    ignore=False,
                 )
                 all_commits.append(updated_commit)
             elif commit.documented:
@@ -576,12 +650,8 @@ def _interactive_changelog_generation(new_version: str, prev_version: str) -> st
         return "No commits to process."
 
     # Initial setup for first commit
-    github_username = _extract_github_username(current_commit)
-    is_external = not any(
-        domain in current_commit.author_email for domain in ["elementl.com", "dagsterlabs.com"]
-    )
-    should_thank = bool(github_username and is_external)
-    is_discarded = not current_commit.raw_changelog_entry
+    should_thank = current_commit.is_community_contribution
+    is_discarded = not current_commit.changelog_entry
     feedback_message = ""
 
     # Create initial display
@@ -597,12 +667,8 @@ def _interactive_changelog_generation(new_version: str, prev_version: str) -> st
                 commit = processed_commits[i - 1]  # Convert to 0-based index
 
                 # Setup commit state
-                github_username = _extract_github_username(commit)
-                is_external = not any(
-                    domain in commit.author_email for domain in ["elementl.com", "dagsterlabs.com"]
-                )
-                should_thank = bool(github_username and is_external)
-                is_discarded = not commit.raw_changelog_entry
+                should_thank = commit.is_community_contribution
+                is_discarded = not commit.changelog_entry
                 feedback_message = ""
 
                 # Update display for current commit
@@ -641,8 +707,8 @@ def _interactive_changelog_generation(new_version: str, prev_version: str) -> st
                         if action in ("a", "accept") or ord(action) in (13, 10):
                             # Check if commit is undocumented and not discarded
                             is_undocumented = (
-                                not commit.raw_changelog_entry
-                                or commit.raw_changelog_entry == "<UNDOCUMENTED>"
+                                not commit.changelog_entry
+                                or commit.changelog_entry == "<UNDOCUMENTED>"
                             )
                             if is_undocumented and not is_discarded:
                                 feedback_message = "❌ Cannot accept undocumented commit. Please add changelog entry first or discard it."
@@ -658,8 +724,8 @@ def _interactive_changelog_generation(new_version: str, prev_version: str) -> st
                                 # Continue loop to show same commit
                             elif not is_discarded:
                                 # Add to changelog
-                                final_commit = commit._replace(
-                                    ignore=not should_thank
+                                final_commit = replace(
+                                    commit, ignore=not should_thank
                                 )  # Use ignore field to track thanks
                                 final_commits.append(final_commit)
                                 feedback_message = "✅ Added to changelog"
@@ -695,7 +761,7 @@ def _interactive_changelog_generation(new_version: str, prev_version: str) -> st
                             is_internal = commit.repo_name == internal_repo_name
                             new_category = _cycle_category(commit.changelog_category, is_internal)
 
-                            commit = commit._replace(changelog_category=new_category, ignore=False)
+                            commit = replace(commit, changelog_category=new_category, ignore=False)
                             # Update the commit in the processed_commits list
                             processed_commits[i - 1] = commit
                             feedback_message = f"✅ Category cycled to {new_category}"
@@ -724,7 +790,7 @@ def _interactive_changelog_generation(new_version: str, prev_version: str) -> st
 
                             new_prefix = _get_edited_prefix_interactive(commit.prefix)
                             if new_prefix != commit.prefix:
-                                commit = commit._replace(prefix=new_prefix, ignore=False)
+                                commit = replace(commit, prefix=new_prefix, ignore=False)
                                 processed_commits[i - 1] = commit
                                 prefix_display = new_prefix or "(none)"
                                 feedback_message = f"✅ Prefix changed to {prefix_display}"
@@ -754,17 +820,13 @@ def _interactive_changelog_generation(new_version: str, prev_version: str) -> st
                             console.print(
                                 f"\n[bold cyan]Editing Entry for Commit {i}/{len(processed_commits)}[/bold cyan]"
                             )
-                            console.print(
-                                f"Current: {commit.raw_changelog_entry or commit.raw_title}"
-                            )
+                            console.print(f"Current: {commit.changelog_entry or commit.title}")
                             console.print()
 
                             new_entry = _get_edited_entry_interactive(
-                                commit.raw_changelog_entry or commit.raw_title
+                                commit.changelog_entry or commit.title
                             )
-                            if new_entry and new_entry != (
-                                commit.raw_changelog_entry or commit.raw_title
-                            ):
+                            if new_entry and new_entry != (commit.changelog_entry or commit.title):
                                 # Clean and extract prefix from new entry
                                 cleaned_entry = _clean_changelog_entry(new_entry)
                                 detected_prefix, cleaned_entry = _extract_prefix_from_text(
@@ -778,8 +840,9 @@ def _interactive_changelog_generation(new_version: str, prev_version: str) -> st
                                     else commit.prefix
                                 )
 
-                                commit = commit._replace(
-                                    raw_changelog_entry=cleaned_entry,
+                                commit = replace(
+                                    commit,
+                                    changelog_entry=cleaned_entry,
                                     prefix=final_prefix,
                                     ignore=False,
                                 )
@@ -801,6 +864,12 @@ def _interactive_changelog_generation(new_version: str, prev_version: str) -> st
                             )
                             live.update(display_panel)
                             live.refresh()
+
+                        elif action == "o":
+                            # Open PR link in browser
+                            import webbrowser
+
+                            webbrowser.open(commit.pr_url)
 
                         elif action == "t":
                             # Toggle thanks
@@ -935,7 +1004,7 @@ def _get_documented_section_with_thanks(documented: Sequence[ParsedCommit]) -> s
 
         documented_text += f"\n\n### {category}\n"
         for commit in category_commits:
-            entry = commit.raw_changelog_entry or commit.raw_title
+            entry = commit.changelog_entry or commit.title
 
             # Add prefix if present
             if commit.prefix:
@@ -943,7 +1012,7 @@ def _get_documented_section_with_thanks(documented: Sequence[ParsedCommit]) -> s
 
             # Add thanks directly to the commit message if user chose to thank
             if not commit.ignore:  # User chose to thank
-                github_username = _extract_github_username(commit)
+                github_username = commit.github_pr_author_username
                 if github_username:
                     entry += (
                         f" (Thanks, [@{github_username}](https://github.com/{github_username})!)"

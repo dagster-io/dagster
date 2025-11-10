@@ -428,7 +428,7 @@ class DbtCliResource(ConfigurableResource):
             adapter = get_adapter(config)
             manifest = ManifestLoader.load_macros(
                 config,
-                adapter.connections.set_query_header,  # type: ignore
+                adapter.connections.set_query_header,
                 base_macros_only=True,
             )
             adapter.set_macro_resolver(manifest)
@@ -627,8 +627,12 @@ class DbtCliResource(ConfigurableResource):
         dagster_dbt_translator = updated_params.dagster_dbt_translator
         selection_args = updated_params.selection_args
         indirect_selection = updated_params.indirect_selection
-
         target_path = target_path or self._get_unique_target_path(context=context)
+        project_dir = Path(
+            updated_params.dbt_project.project_dir
+            if updated_params.dbt_project
+            else self.project_dir
+        )
         env = {
             # Allow IO streaming when running in Windows.
             # Also, allow it to be overriden by the current environment.
@@ -659,7 +663,7 @@ class DbtCliResource(ConfigurableResource):
             **({"DBT_PROFILES_DIR": self.profiles_dir} if self.profiles_dir else {}),
             # The DBT_PROJECT_DIR environment variable is set to the path containing the dbt project
             # See https://docs.getdbt.com/reference/dbt_project.yml for more information.
-            **({"DBT_PROJECT_DIR": self.project_dir} if self.project_dir else {}),
+            "DBT_PROJECT_DIR": str(project_dir),
         }
 
         # set dbt indirect selection if needed to execute specific dbt tests due to asset check
@@ -683,14 +687,13 @@ class DbtCliResource(ConfigurableResource):
             *profile_args,
             *selection_args,
         ]
-        project_dir = Path(self.project_dir)
 
         if not target_path.is_absolute():
             target_path = project_dir.joinpath(target_path)
 
         # run dbt --version to get the dbt core version
         adapter: Optional[BaseAdapter] = None
-        with pushd(self.project_dir):
+        with pushd(str(project_dir)):
             # we do not need to initialize the adapter if we are using the fusion engine
             if self._cli_version.major < 2:
                 try:

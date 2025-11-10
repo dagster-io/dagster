@@ -1,5 +1,6 @@
 import inspect
-from typing import Callable, Generic, Optional, TypeVar, Union, cast
+from collections.abc import Callable
+from typing import Generic, Optional, TypeVar, Union, cast
 
 from dagster._annotations import public
 from dagster._core.definitions.definitions_class import Definitions

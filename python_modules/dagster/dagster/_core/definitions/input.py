@@ -1,7 +1,7 @@
 import inspect
-from collections.abc import Mapping
-from types import FunctionType
-from typing import TYPE_CHECKING, Any, Callable, NamedTuple, Optional, TypeVar, Union
+from collections.abc import Callable, Mapping
+from types import FunctionType, UnionType
+from typing import TYPE_CHECKING, Any, NamedTuple, Optional, TypeVar, Union
 
 from dagster_shared.error import DagsterError
 
@@ -456,7 +456,7 @@ class In(
 
     def __new__(
         cls,
-        dagster_type: Union[type, DagsterType] = NoValueSentinel,
+        dagster_type: Union[type, UnionType, DagsterType] = NoValueSentinel,
         description: Optional[str] = None,
         default_value: Any = NoValueSentinel,
         metadata: Optional[Mapping[str, RawMetadataValue]] = None,

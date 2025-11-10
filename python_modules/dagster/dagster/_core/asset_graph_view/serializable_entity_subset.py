@@ -1,7 +1,7 @@
 import operator
-from collections.abc import Sequence
+from collections.abc import Callable, Sequence
 from dataclasses import dataclass, replace
-from typing import Any, Callable, Generic, Optional, Union
+from typing import Any, Generic, Optional, Union
 
 from dagster_shared.serdes.serdes import DataclassSerializer, whitelist_for_serdes
 from typing_extensions import Self

@@ -46,7 +46,7 @@ locations:
 
 @contextmanager
 def with_dagster_yaml(text):
-    pwd = os.curdir
+    pwd = os.getcwd()
     try:
         with tempfile.TemporaryDirectory() as tmpdir:
             os.mkdir(os.path.join(tmpdir, "subdir"))

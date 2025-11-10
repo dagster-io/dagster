@@ -11,6 +11,10 @@ sidebar_custom_props:
 partnerlink: https://developmentseed.org/obstore/latest/
 ---
 
+import CommunityIntegration from '@site/docs/partials/\_CommunityIntegration.md';
+
+<CommunityIntegration />
+
 <p>{frontMatter.description}</p>
 
 ## S3ComputeLogManager

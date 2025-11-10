@@ -1,6 +1,6 @@
 from collections.abc import Iterable, Mapping
 from enum import Enum
-from typing import TYPE_CHECKING, Annotated, Any, Optional, Union
+from typing import TYPE_CHECKING, Annotated, Any, Optional, TypeAlias, Union
 
 from dagster_shared.record import (
     IHaveNew,
@@ -10,7 +10,6 @@ from dagster_shared.record import (
     replace,
 )
 from dagster_shared.serdes import whitelist_for_serdes
-from typing_extensions import TypeAlias
 
 from dagster._annotations import PublicAttr, public
 from dagster._core.definitions.asset_key import AssetCheckKey, AssetKey, CoercibleToAssetKey

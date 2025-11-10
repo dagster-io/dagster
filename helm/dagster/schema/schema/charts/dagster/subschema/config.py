@@ -1,7 +1,6 @@
-from typing import Union
+from typing import TypeAlias, Union
 
 from pydantic import BaseModel
-from typing_extensions import TypeAlias
 
 
 class Source(BaseModel, extra="forbid"):

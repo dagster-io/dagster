@@ -4,9 +4,7 @@ import threading
 from collections.abc import Iterator
 from contextlib import contextmanager
 from types import FrameType
-from typing import Any, Optional
-
-from typing_extensions import TypeAlias
+from typing import Any, Optional, TypeAlias
 
 # This should be improved later-- signal._HANDLER unfortunately is not defined in all Python
 # versions.

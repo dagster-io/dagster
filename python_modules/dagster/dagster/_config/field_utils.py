@@ -1,9 +1,7 @@
 import hashlib
 import os
 from collections.abc import Iterator, Mapping, Sequence
-from typing import TYPE_CHECKING, Any, Optional, Union
-
-from typing_extensions import TypeGuard
+from typing import TYPE_CHECKING, Any, Optional, TypeGuard, Union
 
 import dagster._check as check
 from dagster._annotations import public

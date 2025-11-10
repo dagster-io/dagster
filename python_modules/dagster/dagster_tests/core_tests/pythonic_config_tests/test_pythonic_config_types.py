@@ -1,6 +1,6 @@
 import enum
 from collections.abc import Mapping
-from typing import Any, Literal, Optional, Union
+from typing import Any, Literal, Optional, TypeAlias, Union
 
 import dagster as dg
 import pydantic
@@ -10,7 +10,6 @@ from dagster._config.config_type import ConfigTypeKind
 from dagster._config.pythonic_config.config import PermissiveConfig
 from dagster._config.type_printer import print_config_type_to_string
 from dagster._utils.cached_method import cached_method
-from typing_extensions import TypeAlias
 
 
 def test_default_config_class_non_permissive() -> None:

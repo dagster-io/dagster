@@ -1,12 +1,12 @@
 import collections.abc
 import sys
-from collections.abc import Iterable, Mapping
+from collections.abc import Callable, Iterable, Mapping
 from contextlib import contextmanager
 from contextvars import ContextVar
+from types import UnionType
 from typing import (
     Annotated,
     Any,
-    Callable,
     ForwardRef,
     Generic,
     Literal,
@@ -19,12 +19,6 @@ from typing import (
 )
 
 from dagster_shared.check.functions import CheckError, TypeOrTupleOfTypes, failed, invariant
-
-try:
-    # this type only exists in python 3.10+
-    from types import UnionType  # type: ignore
-except ImportError:
-    UnionType = Union
 
 NoneType = type(None)
 

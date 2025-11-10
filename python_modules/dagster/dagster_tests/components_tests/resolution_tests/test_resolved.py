@@ -1,7 +1,7 @@
 from collections.abc import Sequence
 from dataclasses import dataclass, field
 from enum import Enum
-from typing import Annotated, Literal, NamedTuple, Optional, Union
+from typing import Annotated, Literal, NamedTuple, Optional, TypeAlias, Union
 
 import dagster as dg
 import pytest
@@ -10,7 +10,6 @@ from dagster.components.resolved.errors import ResolutionException
 from dagster.components.resolved.model import Resolver
 from dagster_shared.record import record
 from pydantic import BaseModel, ConfigDict, Field, ValidationError
-from typing_extensions import TypeAlias
 
 
 def test_basic():

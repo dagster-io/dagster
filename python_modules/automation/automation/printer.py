@@ -1,7 +1,10 @@
 import os
 import sys
 from io import StringIO
-from typing import Any, Callable
+from typing import TYPE_CHECKING, Any
+
+if TYPE_CHECKING:
+    from collections.abc import Callable
 
 from dagster._utils.indenting_printer import IndentingPrinter
 

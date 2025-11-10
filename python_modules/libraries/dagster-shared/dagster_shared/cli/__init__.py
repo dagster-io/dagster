@@ -1,8 +1,8 @@
-from collections.abc import Sequence
-from typing import Any, Callable, Optional, TypeVar
+from collections.abc import Callable, Sequence
+from typing import Any, Optional, TypeAlias, TypeVar
 
 import click
-from typing_extensions import Self, TypeAlias
+from typing_extensions import Self
 
 from dagster_shared.record import as_dict, record
 

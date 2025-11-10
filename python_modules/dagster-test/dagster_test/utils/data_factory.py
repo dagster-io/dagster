@@ -1,10 +1,11 @@
 from collections.abc import (
+    Callable,
     Mapping,
     Sequence,
     Set as AbstractSet,
 )
 from datetime import datetime
-from typing import Callable, Optional, Union
+from typing import Optional, Union
 from uuid import uuid4
 
 from dagster import (

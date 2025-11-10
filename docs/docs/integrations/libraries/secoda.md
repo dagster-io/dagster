@@ -11,6 +11,10 @@ sidebar_custom_props:
 partnerlink: https://www.secoda.co/integrations/dagster
 ---
 
+import CommunityIntegration from '@site/docs/partials/\_CommunityIntegration.md';
+
+<CommunityIntegration />
+
 <p>{frontMatter.description}</p>
 
 See the [Secoda documentation](https://www.secoda.co/integrations/dagster) for more information.

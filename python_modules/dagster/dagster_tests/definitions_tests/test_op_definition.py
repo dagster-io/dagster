@@ -89,7 +89,7 @@ def test_multi_out_implicit_none():
 def test_pipe_union_optional():
     # union is not yet supported, but you can express optional as union of T and None
     @dg.op
-    def pipe_union(thing: str | None) -> str | None:  # type: ignore
+    def pipe_union(thing: str | None) -> str | None:
         return thing
 
     assert pipe_union

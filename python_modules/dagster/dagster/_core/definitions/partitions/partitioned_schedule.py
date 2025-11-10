@@ -1,5 +1,5 @@
-from collections.abc import Mapping
-from typing import Any, Callable, Optional, Union, cast
+from collections.abc import Callable, Mapping
+from typing import Any, Optional, Union, cast
 
 from dagster_shared.record import copy, record
 from typing_extensions import Self

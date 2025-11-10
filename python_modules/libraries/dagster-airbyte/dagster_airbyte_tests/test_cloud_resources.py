@@ -152,7 +152,7 @@ def test_refresh_access_token() -> None:
     test_time_first_call = datetime.datetime(2024, 1, 1, 0, 0, 0)
     test_time_before_expiration = datetime.datetime(2024, 1, 1, 0, 2, 0)
     test_time_after_expiration = datetime.datetime(2024, 1, 1, 0, 3, 0)
-    with mock.patch("dagster_airbyte.resources.datetime", wraps=datetime.datetime) as dt:
+    with mock.patch("dagster_airbyte.legacy_resources.datetime", wraps=datetime.datetime) as dt:
         # Test first call, must get the access token before calling the jobs api
         dt.now.return_value = test_time_first_call
         ab_resource.start_sync("some_connection")

@@ -15,7 +15,7 @@ from dagster_dg_cli.cli.api.formatters import format_asset, format_assets
 DG_API_MAX_ASSET_LIMIT: Final = 1000
 
 
-@click.command(name="list", cls=DgClickCommand, unlaunched=True)
+@click.command(name="list", cls=DgClickCommand)
 @click.option(
     "--limit",
     type=click.IntRange(1, DG_API_MAX_ASSET_LIMIT),
@@ -76,7 +76,7 @@ def list_assets_command(
         raise click.ClickException(f"Failed to list assets: {e}")
 
 
-@click.command(name="get", cls=DgClickCommand, unlaunched=True)
+@click.command(name="get", cls=DgClickCommand)
 @click.argument("asset_key", type=str)
 @click.option(
     "--view",
@@ -129,7 +129,6 @@ def get_asset_command(
 @click.group(
     name="asset",
     cls=DgClickGroup,
-    unlaunched=True,
     commands={
         "list": list_assets_command,
         "get": get_asset_command,
