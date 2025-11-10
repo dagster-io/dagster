@@ -15,28 +15,37 @@ This guide only applies to [Dagster+ Hybrid deployments](/deployment/dagster-plu
 
 You can configure CI/CD for your project using GitHub or a non-GitHub CI/CD provider.
 
-- If you use [GitHub](#github) as a CI/CD provider, you can use our GitHub Actions workflow to set up CI/CD for your project.
+- If you use [GitHub](#github) as a CI/CD provider, you can configure GitHub Actions with the `dg` CLI. 
 - If you use a [non-GitHub CI/CD provider](#non-github), you can configure CI/CD using the `dagster-cloud CLI`.
+
+:::info
+
+This guide assumes you have an existing Dagster project. For project creation steps, see [Creating Dagster projects](/guides/build/projects/creating-projects).
+
+:::
 
 ## GitHub
 
-To set up continuous integration using GitHub Actions, you can use the Dagster+ Hybrid quickstart template, which is a template with everything you need to get started using Hybrid deployment in Dagster+, or you can use your own code.
+### Step 1. Generate the GitHub workflow YAML file
 
-- **If using the template:** Clone the [template repository](https://github.com/dagster-io/dagster-cloud-hybrid-quickstart).
-- **If using your own code:** Copy the [GitHub workflow file](https://github.com/dagster-io/dagster-cloud-hybrid-quickstart/blob/main/.github/workflows/dagster-cloud-deploy.yml) from the template repository and add it to your repository.
+To set up continuous integration using GitHub Actions, you can use `dg plus deploy configure` to generate the GitHub workflow YAML file:
 
-### Configure the GitHub workflow YAML file
+```shell
+dg plus deploy configure --git-provider github
+```
+
+### Step 2. Configure the GitHub workflow YAML file
 
 The GitHub workflow deploys your code to Dagster+ using these steps:
 
-- **Initialize:** Your code is checked out and `dagster_cloud.yaml` file is validated.
+- **Initialize:** Your code is checked out and `build.yaml` file is validated. (**Note:** In older projects, this may be a `dagster_cloud.yaml` file.)
 - **Docker image push:** A Docker image is built from your code and uploaded to your container registry.
 - **Deploy to Dagster+** The code locations in Dagster+ are updated to use the new Docker image.
 
 To configure the workflow:
 
 1. In the repository, set the `DAGSTER_CLOUD_API_TOKEN` GitHub action secret to the Dagster+ agent token. See [Managing agent tokens in Dagster+](/deployment/dagster-plus/management/tokens/agent-tokens). For more information on GitHub Action Secrets, see the [GitHub documentation](https://docs.github.com/en/actions/security-guides/encrypted-secrets#creating-encrypted-secrets-for-a-repository).
-2. In your [`dagster-cloud-deploy.yml`](https://github.com/dagster-io/dagster-cloud-hybrid-quickstart/blob/main/.github/workflows/dagster-cloud-deploy.yml) workflow file, do the following:
+2. In your `dagster-cloud-deploy.yml` workflow file, do the following:
 
 - Set the `DAGSTER_CLOUD_ORGANIZATION` environment variable to your Dagster+ organization name.
 - Uncomment the step that is relevant to your Docker container registry. For example, if using DockerHub, uncomment the DockerHub step. Make sure you have set up the relevant secrets for building and uploading your Docker images.
@@ -59,12 +68,12 @@ If you are using a non-GitHub CI/CD provider, your system should use the `dagste
    ```
    dagster-cloud ci check --project-dir=.
    ```
-   This is an optional step but useful to validate the contents of your dagster_cloud.yaml and connection to Dagster+.
+   This is an optional step but useful to validate the contents of your `dagster_cloud.yaml` file and connection to Dagster+.
 3. Initialize the build session:
    ```
    dagster-cloud ci init --project-dir=.
    ```
-   This reads the dagster_cloud.yaml configuration and initializes the DAGSTER_BUILD_STATEDIR.
+   This reads the `dagster_cloud.yaml` configuration and initializes the DAGSTER_BUILD_STATEDIR.
 4. Build and upload Docker images for your code locations.
 
    The Docker image should contain a Python environment with `dagster`, `dagster-cloud`, and your code. For reference, see the [example Dockerfile](https://github.com/dagster-io/dagster-cloud-hybrid-quickstart/blob/main/Dockerfile) in our template repository. The example uses `pip install .` to install the code including the dependencies specified in [`setup.py`](https://github.com/dagster-io/dagster-cloud-hybrid-quickstart/blob/main/setup.py).
