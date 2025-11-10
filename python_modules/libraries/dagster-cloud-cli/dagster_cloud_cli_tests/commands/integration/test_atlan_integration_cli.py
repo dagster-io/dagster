@@ -1,6 +1,7 @@
 import validators
 from dagster_cloud_cli.entrypoint import app
 from typer.testing import CliRunner
+import pytest
 
 FAKE_TOKEN = "fake_token"
 FAKE_DOMAIN = "fake-domain.com"
@@ -32,6 +33,38 @@ def test_dagster_cloud_atlan_integration_set_settings(empty_config, monkeypatch,
     assert kwargs["domain"] == FAKE_DOMAIN
 
 
+def test_dagster_cloud_atlan_integration_set_settings_gql_result(
+    empty_config, monkeypatch, mocker
+) -> None:
+    """Tests Atlan set-settings CLI and GraphQL result."""
+    mocker.patch(
+        "dagster_cloud_cli.gql.DagsterCloudGraphQLClient.execute",
+        return_value={
+            "data": {
+                "setAtlanIntegrationSettings": {
+                    "__typename": "SetAtlanIntegrationSettingsSuccess",
+                    "organization": "fake-organization",
+                    "success": True,
+                }
+            }
+        },
+    )
+
+    env = {
+        "DAGSTER_CLOUD_API_TOKEN": "fake-token",
+        "DAGSTER_CLOUD_ORGANIZATION": "fake-organization",
+        "DAGSTER_CLOUD_DEPLOYMENT": "fake-deployment",
+    }
+
+    runner = CliRunner()
+    result = runner.invoke(
+        app,
+        ["integration", "atlan", "set-settings", FAKE_TOKEN, FAKE_DOMAIN, "--url", "fake-url"],
+        env=env,
+    )
+    assert not result.exit_code
+
+
 def test_dagster_cloud_atlan_integration_set_settings_exception(
     empty_config, monkeypatch, mocker
 ) -> None:
@@ -57,6 +90,47 @@ def test_dagster_cloud_atlan_integration_set_settings_exception(
     _, kwargs = set_atlan_integration_settings.call_args_list[0]
     assert kwargs["token"] == FAKE_TOKEN
     assert kwargs["domain"] == FAKE_DOMAIN
+
+
+@pytest.mark.parametrize(
+    "error_value",
+    [
+        "UnauthorizedError",
+        "PythonError"
+    ],
+    ids=[
+        "single user deployment enabled, subchart disabled",
+        "multiple user deployments enabled, subchart disabled",
+    ],
+)
+def test_dagster_cloud_atlan_integration_set_settings_exception_gql_result(
+        empty_config, monkeypatch, mocker, error_value
+) -> None:
+    """Tests exception in Atlan set-settings CLI and GraphQL result."""
+    mocker.patch(
+        "dagster_cloud_cli.gql.DagsterCloudGraphQLClient.execute",
+        return_value={
+            "data": {
+                "setAtlanIntegrationSettings": {
+                    "__typename": error_value,
+                }
+            }
+        },
+    )
+
+    env = {
+        "DAGSTER_CLOUD_API_TOKEN": "fake-token",
+        "DAGSTER_CLOUD_ORGANIZATION": "fake-organization",
+        "DAGSTER_CLOUD_DEPLOYMENT": "fake-deployment",
+    }
+
+    runner = CliRunner()
+    result = runner.invoke(
+        app,
+        ["integration", "atlan", "set-settings", FAKE_TOKEN, FAKE_DOMAIN, "--url", "fake-url"],
+        env=env,
+    )
+    assert result.exit_code
 
 
 def test_dagster_cloud_atlan_integration_set_settings_domain_validation_error(
@@ -119,6 +193,101 @@ def test_dagster_cloud_atlan_integration_delete_settings(empty_config, monkeypat
     )
     assert not result.exit_code
     delete_atlan_integration_settings.assert_called_once()
+
+
+def test_dagster_cloud_atlan_integration_delete_settings_gql_result(empty_config, monkeypatch, mocker) -> None:
+    """Tests Atlan delete-settings CLI and GraphQL result."""
+    mocker.patch(
+        "dagster_cloud_cli.gql.DagsterCloudGraphQLClient.execute",
+        return_value={
+            "data": {
+                "deleteAtlanIntegrationSettings": {
+                    "__typename": "DeleteAtlanIntegrationSuccess",
+                    "organization": "fake-organization",
+                    "success": True,
+                }
+            }
+        },
+    )
+
+    env = {
+        "DAGSTER_CLOUD_API_TOKEN": "fake-token",
+        "DAGSTER_CLOUD_ORGANIZATION": "fake-organization",
+        "DAGSTER_CLOUD_DEPLOYMENT": "fake-deployment",
+    }
+
+    runner = CliRunner()
+    result = runner.invoke(
+        app,
+        ["integration", "atlan", "delete-settings", "--url", "fake-url"],
+        env=env,
+    )
+    assert not result.exit_code
+
+
+def test_dagster_cloud_atlan_integration_delete_settings_exception(
+        empty_config, monkeypatch, mocker
+) -> None:
+    """Tests Atlan delete-settings CLI."""
+    delete_atlan_integration_settings = mocker.patch(
+        "dagster_cloud_cli.gql.delete_atlan_integration_settings", side_effect=Exception()
+    )
+
+    env = {
+        "DAGSTER_CLOUD_API_TOKEN": "fake-token",
+        "DAGSTER_CLOUD_ORGANIZATION": "fake-organization",
+        "DAGSTER_CLOUD_DEPLOYMENT": "fake-deployment",
+    }
+
+    runner = CliRunner()
+    result = runner.invoke(
+        app,
+        ["integration", "atlan", "delete-settings", "--url", "fake-url"],
+        env=env,
+    )
+    assert result.exit_code
+    delete_atlan_integration_settings.assert_called_once()
+
+
+@pytest.mark.parametrize(
+    "error_value",
+    [
+        "UnauthorizedError",
+        "PythonError"
+    ],
+    ids=[
+        "single user deployment enabled, subchart disabled",
+        "multiple user deployments enabled, subchart disabled",
+    ],
+)
+def test_dagster_cloud_atlan_integration_delete_settings_exception_gql_resul(
+        empty_config, monkeypatch, mocker, error_value
+) -> None:
+    """Tests Atlan delete-settings CLI and GraphQL result."""
+    mocker.patch(
+        "dagster_cloud_cli.gql.DagsterCloudGraphQLClient.execute",
+        return_value={
+            "data": {
+                "setAtlanIntegrationSettings": {
+                    "__typename": error_value,
+                }
+            }
+        },
+    )
+
+    env = {
+        "DAGSTER_CLOUD_API_TOKEN": "fake-token",
+        "DAGSTER_CLOUD_ORGANIZATION": "fake-organization",
+        "DAGSTER_CLOUD_DEPLOYMENT": "fake-deployment",
+    }
+
+    runner = CliRunner()
+    result = runner.invoke(
+        app,
+        ["integration", "atlan", "delete-settings", "--url", "fake-url"],
+        env=env,
+    )
+    assert result.exit_code
 
 
 def test_dagster_cloud_atlan_integration_get_settings(empty_config, monkeypatch, mocker) -> None:
@@ -203,26 +372,3 @@ def test_dagster_cloud_atlan_integration_preflight_check_failure(
     assert "TEST_ERROR" in result.output
     assert "Test error message" in result.output
 
-
-def test_dagster_cloud_atlan_integration_delete_settings_exception(
-    empty_config, monkeypatch, mocker
-) -> None:
-    """Tests Atlan delete-settings CLI."""
-    delete_atlan_integration_settings = mocker.patch(
-        "dagster_cloud_cli.gql.delete_atlan_integration_settings", side_effect=Exception()
-    )
-
-    env = {
-        "DAGSTER_CLOUD_API_TOKEN": "fake-token",
-        "DAGSTER_CLOUD_ORGANIZATION": "fake-organization",
-        "DAGSTER_CLOUD_DEPLOYMENT": "fake-deployment",
-    }
-
-    runner = CliRunner()
-    result = runner.invoke(
-        app,
-        ["integration", "atlan", "delete-settings", "--url", "fake-url"],
-        env=env,
-    )
-    assert result.exit_code
-    delete_atlan_integration_settings.assert_called_once()
