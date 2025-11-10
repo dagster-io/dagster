@@ -50,9 +50,9 @@ Key configuration parameters:
 Once the resource is configured, you can create assets that push basic metrics to Prometheus using the built-in functionality.
 
 <CodeExample
-  path="docs_projects/project_mini/src/project_mini/defs/prometheus_alerting/promoetheus_assets.py"
+  path="docs_projects/project_mini/src/project_mini/defs/prometheus_alerting/prometheus_assets.py"
   language="python"
-  title="src/project_mini/defs/prometheus_alerting/promoetheus_assets.py"
+  title="src/project_mini/defs/prometheus_alerting/prometheus_assets.py"
   startAfter="start_basic_prometheus_asset"
   endBefore="end_basic_prometheus_asset"
 />
@@ -74,9 +74,9 @@ This basic approach automatically sends default metrics to Prometheus, including
 For more detailed monitoring, you can define custom Prometheus metrics that track specific aspects of your data pipeline, such as row counts, data quality scores, or processing times.
 
 <CodeExample
-  path="docs_projects/project_mini/src/project_mini/defs/prometheus_alerting/promoetheus_assets.py"
+  path="docs_projects/project_mini/src/project_mini/defs/prometheus_alerting/prometheus_assets.py"
   language="python"
-  title="src/project_mini/defs/prometheus_alerting/promoetheus_assets.py"
+  title="src/project_mini/defs/prometheus_alerting/prometheus_assets.py"
   startAfter="start_custom_metrics_setup"
   endBefore="end_custom_metrics_setup"
 />
@@ -89,9 +89,9 @@ This setup defines four custom metrics:
 4. **Histogram**: `my_asset_duration_seconds` - tracks execution time distribution
 
 <CodeExample
-  path="docs_projects/project_mini/src/project_mini/defs/prometheus_alerting/promoetheus_assets.py"
+  path="docs_projects/project_mini/src/project_mini/defs/prometheus_alerting/prometheus_assets.py"
   language="python"
-  title="src/project_mini/defs/prometheus_alerting/promoetheus_assets.py"
+  title="src/project_mini/defs/prometheus_alerting/prometheus_assets.py"
   startAfter="start_custom_prometheus_asset"
   endBefore="end_custom_prometheus_asset"
 />
@@ -115,9 +115,9 @@ This pattern provides comprehensive monitoring:
 For comprehensive failure monitoring, you can use Dagster hooks to automatically capture and report detailed failure information to Prometheus, including asset metadata and ownership information.
 
 <CodeExample
-  path="docs_projects/project_mini/src/project_mini/defs/prometheus_alerting/promoetheus_failure_hook.py"
+  path="docs_projects/project_mini/src/project_mini/defs/prometheus_alerting/prometheus_failure_hook.py"
   language="python"
-  title="src/project_mini/defs/prometheus_alerting/promoetheus_failure_hook.py"
+  title="src/project_mini/defs/prometheus_alerting/prometheus_failure_hook.py"
   startAfter="start_failure_hook_factory"
   endBefore="end_failure_hook_factory"
 />
@@ -125,9 +125,9 @@ For comprehensive failure monitoring, you can use Dagster hooks to automatically
 The failure hook implementation captures comprehensive failure context:
 
 <CodeExample
-  path="docs_projects/project_mini/src/project_mini/defs/prometheus_alerting/promoetheus_failure_hook.py"
+  path="docs_projects/project_mini/src/project_mini/defs/prometheus_alerting/prometheus_failure_hook.py"
   language="python"
-  title="src/project_mini/defs/prometheus_alerting/promoetheus_failure_hook.py"
+  title="src/project_mini/defs/prometheus_alerting/prometheus_failure_hook.py"
   startAfter="start_failure_hook_implementation"
   endBefore="end_failure_hook_implementation"
 />
@@ -142,9 +142,9 @@ Key features of the failure hook:
 The hook creates labeled metrics for detailed failure tracking:
 
 <CodeExample
-  path="docs_projects/project_mini/src/project_mini/defs/prometheus_alerting/promoetheus_failure_hook.py"
+  path="docs_projects/project_mini/src/project_mini/defs/prometheus_alerting/prometheus_failure_hook.py"
   language="python"
-  title="src/project_mini/defs/prometheus_alerting/promoetheus_failure_hook.py"
+  title="src/project_mini/defs/prometheus_alerting/prometheus_failure_hook.py"
   startAfter="start_prometheus_metrics_creation"
   endBefore="end_prometheus_metrics_creation"
 />
@@ -157,17 +157,17 @@ These metrics enable sophisticated alerting rules:
 The hook safely pushes metrics to the Prometheus gateway:
 
 <CodeExample
-  path="docs_projects/project_mini/src/project_mini/defs/prometheus_alerting/promoetheus_failure_hook.py"
+  path="docs_projects/project_mini/src/project_mini/defs/prometheus_alerting/prometheus_failure_hook.py"
   language="python"
-  title="src/project_mini/defs/prometheus_alerting/promoetheus_failure_hook.py"
+  title="src/project_mini/defs/prometheus_alerting/prometheus_failure_hook.py"
   startAfter="start_push_to_gateway"
   endBefore="end_push_to_gateway"
 />
 
 <CodeExample
-  path="docs_projects/project_mini/src/project_mini/defs/prometheus_alerting/promoetheus_failure_hook.py"
+  path="docs_projects/project_mini/src/project_mini/defs/prometheus_alerting/prometheus_failure_hook.py"
   language="python"
-  title="src/project_mini/defs/prometheus_alerting/promoetheus_failure_hook.py"
+  title="src/project_mini/defs/prometheus_alerting/prometheus_failure_hook.py"
   startAfter="start_hook_usage_example"
   endBefore="end_hook_usage_example"
 />
