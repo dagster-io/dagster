@@ -1,7 +1,7 @@
+import pytest
 import validators
 from dagster_cloud_cli.entrypoint import app
 from typer.testing import CliRunner
-import pytest
 
 FAKE_TOKEN = "fake_token"
 FAKE_DOMAIN = "fake-domain.com"
@@ -94,17 +94,14 @@ def test_dagster_cloud_atlan_integration_set_settings_exception(
 
 @pytest.mark.parametrize(
     "error_value",
-    [
-        "UnauthorizedError",
-        "PythonError"
-    ],
+    ["UnauthorizedError", "PythonError"],
     ids=[
         "single user deployment enabled, subchart disabled",
         "multiple user deployments enabled, subchart disabled",
     ],
 )
 def test_dagster_cloud_atlan_integration_set_settings_exception_gql_result(
-        empty_config, monkeypatch, mocker, error_value
+    empty_config, monkeypatch, mocker, error_value
 ) -> None:
     """Tests exception in Atlan set-settings CLI and GraphQL result."""
     mocker.patch(
@@ -195,7 +192,9 @@ def test_dagster_cloud_atlan_integration_delete_settings(empty_config, monkeypat
     delete_atlan_integration_settings.assert_called_once()
 
 
-def test_dagster_cloud_atlan_integration_delete_settings_gql_result(empty_config, monkeypatch, mocker) -> None:
+def test_dagster_cloud_atlan_integration_delete_settings_gql_result(
+    empty_config, monkeypatch, mocker
+) -> None:
     """Tests Atlan delete-settings CLI and GraphQL result."""
     mocker.patch(
         "dagster_cloud_cli.gql.DagsterCloudGraphQLClient.execute",
@@ -226,7 +225,7 @@ def test_dagster_cloud_atlan_integration_delete_settings_gql_result(empty_config
 
 
 def test_dagster_cloud_atlan_integration_delete_settings_exception(
-        empty_config, monkeypatch, mocker
+    empty_config, monkeypatch, mocker
 ) -> None:
     """Tests Atlan delete-settings CLI."""
     delete_atlan_integration_settings = mocker.patch(
@@ -251,17 +250,14 @@ def test_dagster_cloud_atlan_integration_delete_settings_exception(
 
 @pytest.mark.parametrize(
     "error_value",
-    [
-        "UnauthorizedError",
-        "PythonError"
-    ],
+    ["UnauthorizedError", "PythonError"],
     ids=[
         "single user deployment enabled, subchart disabled",
         "multiple user deployments enabled, subchart disabled",
     ],
 )
 def test_dagster_cloud_atlan_integration_delete_settings_exception_gql_resul(
-        empty_config, monkeypatch, mocker, error_value
+    empty_config, monkeypatch, mocker, error_value
 ) -> None:
     """Tests Atlan delete-settings CLI and GraphQL result."""
     mocker.patch(
@@ -371,4 +367,3 @@ def test_dagster_cloud_atlan_integration_preflight_check_failure(
     assert "failed" in result.output
     assert "TEST_ERROR" in result.output
     assert "Test error message" in result.output
-
