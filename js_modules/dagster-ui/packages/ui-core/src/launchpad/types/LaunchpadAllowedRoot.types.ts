@@ -18,6 +18,7 @@ export type LaunchpadRootQuery = {
         id: string;
         isJob: boolean;
         isAssetJob: boolean;
+        nodeNames: Array<string>;
         name: string;
         modes: Array<{__typename: 'Mode'; id: string; name: string; description: string | null}>;
         presets: Array<{
@@ -167,6 +168,7 @@ export type LaunchpadSessionPipelineFragment = {
   id: string;
   isJob: boolean;
   isAssetJob: boolean;
+  nodeNames: Array<string>;
   name: string;
   modes: Array<{__typename: 'Mode'; id: string; name: string; description: string | null}>;
   presets: Array<{
@@ -285,4 +287,4 @@ export type LaunchpadSessionModeNotFoundFragment = {
   message: string;
 };
 
-export const LaunchpadRootQueryVersion = '527627287343c3a482b43445b66c55de58b667dadb36218161575caffbc78348';
+export const LaunchpadRootQueryVersion = 'e112792d378d703b308f66ef689e9379dddb8558e209aa2a3cb2675cc223d458';
