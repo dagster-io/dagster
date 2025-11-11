@@ -340,6 +340,7 @@ import sign_out from '../icon-svgs/sign_out.svg';
 import sinks from '../icon-svgs/sinks.svg';
 import slack from '../icon-svgs/slack.svg';
 import slack_color from '../icon-svgs/slack_color.svg';
+import smart_toy from '../icon-svgs/smart_toy.svg';
 import snapshot from '../icon-svgs/snapshot.svg';
 import sort_asc from '../icon-svgs/sort_asc.svg';
 import sort_by_alpha from '../icon-svgs/sort_by_alpha.svg';
@@ -762,6 +763,7 @@ export const Icons = {
   slack,
   slack_color,
   snapshot,
+  smart_toy,
   sort_by_alpha,
   sort_asc,
   sort_desc,
