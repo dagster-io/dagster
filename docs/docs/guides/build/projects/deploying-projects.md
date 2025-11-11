@@ -37,19 +37,16 @@ Get started with [Dagster+ Serverless](/deployment/dagster-plus/getting-started)
 
 If you are deploying another project to an existing Dagster+ Serverless deployment, you will need to create the CI/CD workflow file yourself. For more information, see the [Dagster+ Serverless CI/CD guide](/deployment/dagster-plus/deploying-code/ci-cd/ci-cd-in-serverless).
 
-TK - workspace for multiple projects?
-
 </TabItem>
 <TabItem value="hybrid" label="Hybrid">
 
-1. Get started with [Dagster+ Hybrid](/deployment/dagster-plus/getting-started), if you haven't already.
-2. In the root directory of your project, run [`dg scaffold build-artifacts`](/api/clis/dg-cli/dg-cli-reference#dg-scaffold-build-artifacts) to create a `build.yaml` deployment configuration file and a Dockerfile. You will need to update the `build.yaml` file with your Docker registry.
-2. To deploy to the cloud, you can either:
-   - Perform a one-time deployment with the [`dagster-cloud` CLI](/api/clis/dagster-cloud-cli).
-   - [Configure CI/CD](/deployment/dagster-plus/deploying-code/ci-cd/ci-cd-in-hybrid) for continuous deployment.
+TK - update link to `dg plus deploy configure`
 
-TK - what about dagster_cloud.yaml?
-TK - workspace for multiple projects?
+1. Get started with [Dagster+ Hybrid](/deployment/dagster-plus/getting-started), if you haven't already.
+2. In the root directory of your project, run [`dg plus deploy configure`](/api/clis/dg-cli/dg-plus#deploy) to create a `build.yaml` deployment configuration file and a Dockerfile. You will need to update the `build.yaml` file with your Docker registry.
+3. To deploy to the cloud, you can either:
+   - Perform a one-time deployment with the [`dg plus deploy`](/api/clis/dg-cli/dg-plus#deploy) command
+   - [Configure CI/CD](/deployment/dagster-plus/deploying-code/ci-cd/ci-cd-in-hybrid) for continuous deployment.
 
 </TabItem>
 </Tabs>
