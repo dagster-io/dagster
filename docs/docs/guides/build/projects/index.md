@@ -8,7 +8,7 @@ slug: "/guides/build/projects"
 
 Dagster uses several related terms to describe how your code is organized and deployed. While they may sound similar, each has a distinct meaning and purpose in the lifecycle of a Dagster deployment.
 
-## Project
+## Projects
 
 A **Dagster project** follows the general convention for a [Python project packaged for distribution](https://packaging.python.org/en/latest/tutorials/packaging-projects/): a structured collection of source files, libraries, and configuration used for a specific application. Additionally, Dagster projects contain [Dagster definitions](https://docs.dagster.io/api/dagster/definitions).
 
@@ -29,19 +29,22 @@ my-project/
 └── uv.lock
 ```
 
-While Dagster is flexible about how you organize your code, it provides an opinionated starting point with the [`create-dagster` CLI](/api/clis/create-dagster). For more information on creating Dagster projects from the CLI, see [Creating Dagster projects](/guides/build/projects/creating-projects).
+### Creating projects
+
+While Dagster is flexible about how you organize your code, we provide an opinionated starting point with the [`create-dagster` CLI](/api/clis/create-dagster). See [Creating Dagster projects](/guides/build/projects/creating-projects) to learn how to create Dagster projects from the CLI.
+
+### Deploying projects
 
 To make your Dagster project deployable to Dagster+, you will need to create additional configuration files. For more information, see [Deploying Dagster projects](/guides/build/projects/deploying-projects).
 
-A single deployment of Dagster can contain multiple projects organized into workspaces.
+## Workspaces
 
-## Workspace
-
-A workspace allows you to manage and orchestrate multiple Dagster projects together. This is useful when:
+Workspaces allow you to manage and orchestrate multiple Dagster projects together. This is useful when:
 
 - Different teams maintain separate Dagster projects.
 - Projects have distinct dependencies or environments.
 - You want to deploy multiple projects in a coordinated way.
 
+### Creating workspaces
 
-As with projects, Dagster provides an opinionated starting point for workspaces with the [`create-dagster` CLI](/api/clis/create-dagster). To learn how to create a Dagster workspaces from the CLI, see [Creating workspaces to manage multiple projects](/guides/build/projects/workspaces/creating-workspaces).
+As with projects, Dagster provides an opinionated starting point for workspaces with the [`create-dagster` CLI](/api/clis/create-dagster). See [Creating workspaces to manage multiple projects](/guides/build/projects/workspaces/creating-workspaces) to learn how to create Dagster workspaces from the CLI.
