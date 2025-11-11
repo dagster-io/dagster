@@ -1,7 +1,6 @@
 import {Menu, MenuDivider, MenuItem, Select} from '@dagster-io/ui-components';
-import * as React from 'react';
+import {ComponentProps, useMemo} from 'react';
 
-import {TimeContext} from './TimeContext';
 import {browserTimezone, browserTimezoneAbbreviation} from './browserTimezone';
 
 /**
@@ -18,8 +17,7 @@ const extractOffset = (targetDate: Date, timeZone: string) => {
     timeZoneName: 'longOffset',
   });
   const [_, gmtOffset] = formatted.split(', ');
-  // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-  const stripped = gmtOffset!.replace(/^GMT/, '').replace(/:/, '');
+  const stripped = (gmtOffset ?? '').replace(/^GMT/, '').replace(/:/, '');
 
   // Already GMT.
   if (stripped === '') {
@@ -44,8 +42,12 @@ const POPULAR_TIMEZONES = new Set([
   'America/Los_Angeles',
 ]);
 
-interface Props {
+interface TimezoneSelectProps {
+  timezone: string;
+  setTimezone: (timezone: string) => void;
   trigger: (timezone: string) => React.ReactNode;
+  includeAutomatic: boolean;
+  popoverProps?: ComponentProps<typeof Select>['popoverProps'];
 }
 
 /**
@@ -57,12 +59,14 @@ interface Props {
  * - Locale timezones: other timezones for the user's locale, if possible.
  * - Everything else
  */
-export const TimezoneSelect = ({trigger}: Props) => {
-  const {
-    timezone: [timezone, setTimezone],
-  } = React.useContext(TimeContext);
-
-  const allTimezoneItems = React.useMemo(() => {
+export const TimezoneSelect = ({
+  timezone,
+  setTimezone,
+  trigger,
+  includeAutomatic,
+  popoverProps,
+}: TimezoneSelectProps) => {
+  const allTimezoneItems = useMemo(() => {
     const date = new Date();
 
     let allTimezoneItems: {offsetLabel: string; offset: number; key: string}[] = [];
@@ -98,16 +102,20 @@ export const TimezoneSelect = ({trigger}: Props) => {
     );
 
     return [
-      {
-        key: 'Automatic',
-        offsetLabel: automaticOffsetLabel(),
-        offset: 0,
-      },
-      {
-        key: 'divider-1',
-        offsetLabel: '',
-        offset: 0,
-      },
+      ...(includeAutomatic
+        ? [
+            {
+              key: 'Automatic',
+              offsetLabel: automaticOffsetLabel(),
+              offset: 0,
+            },
+            {
+              key: 'divider-1',
+              offsetLabel: '',
+              offset: 0,
+            },
+          ]
+        : []),
       ...(explicitlyAddUTC
         ? [
             {
@@ -137,13 +145,15 @@ export const TimezoneSelect = ({trigger}: Props) => {
         (tz) => !POPULAR_TIMEZONES.has(tz.key) && !timezonesForLocaleSet.has(tz.key),
       ),
     ];
-  }, []);
+  }, [includeAutomatic]);
 
   return (
     <Select<(typeof allTimezoneItems)[0]>
-      popoverProps={{
-        position: 'bottom-right',
-      }}
+      popoverProps={
+        popoverProps ?? {
+          position: 'bottom-left',
+        }
+      }
       activeItem={allTimezoneItems.find((tz) => tz.key === timezone)}
       inputProps={{style: {width: '300px'}}}
       items={allTimezoneItems}

@@ -1,14 +1,15 @@
 import {Box, Button, Checkbox, Icon, Subheading, Tooltip} from '@dagster-io/ui-components';
-import React from 'react';
+import React, {useContext} from 'react';
 
 import {useStateWithStorage} from '../../hooks/useStateWithStorage';
 import {SHORTCUTS_STORAGE_KEY} from '../ShortcutHandler';
+import {useShowAssetsWithoutDefinitions} from './useShowAssetsWithoutDefinitions';
 import {HourCycleSelect} from '../time/HourCycleSelect';
 import {ThemeSelect} from '../time/ThemeSelect';
+import {TimeContext} from '../time/TimeContext';
 import {TimezoneSelect} from '../time/TimezoneSelect';
 import {automaticLabel} from '../time/browserTimezone';
 import {useThemeState} from '../useThemeState';
-import {useShowAssetsWithoutDefinitions} from './useShowAssetsWithoutDefinitions';
 
 export const UserPreferences = ({
   onChangeRequiresReload,
@@ -34,6 +35,9 @@ export const UserPreferences = ({
     }
   }, [shortcutsEnabled, theme, onChangeRequiresReload]);
 
+  const {
+    timezone: [timezone, setTimezone],
+  } = useContext(TimeContext);
   const trigger = React.useCallback(
     (timezone: string) => (
       <Button
@@ -63,7 +67,13 @@ export const UserPreferences = ({
       </Box>
       <Box flex={{justifyContent: 'space-between', alignItems: 'center'}}>
         <div>Timezone</div>
-        <TimezoneSelect trigger={trigger} />
+        <TimezoneSelect
+          timezone={timezone}
+          setTimezone={setTimezone}
+          includeAutomatic
+          trigger={trigger}
+          popoverProps={{position: 'bottom-right'}}
+        />
       </Box>
       <Box flex={{justifyContent: 'space-between', alignItems: 'center'}}>
         <div>Hour format</div>
