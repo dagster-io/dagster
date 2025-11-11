@@ -15,7 +15,7 @@ This guide only applies to [Dagster+ Hybrid deployments](/deployment/dagster-plu
 
 You can configure CI/CD for your project using GitHub or a non-GitHub CI/CD provider.
 
-- If you use [GitHub](#github) as a CI/CD provider, you can configure GitHub Actions with the `dg` CLI. 
+- If you use [GitHub](#github) as a CI/CD provider, you can configure GitHub Actions with the `dg` CLI.
 - If you use a [non-GitHub CI/CD provider](#non-github), you can configure CI/CD using the `dagster-cloud CLI`.
 
 :::info
