@@ -14,6 +14,9 @@ EXCLUDED_FILES = {
     f"{snippets_folder}/hashicorp.py",
     f"{snippets_folder}/meltano.py",
     f"{snippets_folder}/lakefs.py",
+    f"{snippets_folder}/salesforce.py",
+    f"{snippets_folder}/sftp.py",
+    f"{snippets_folder}/sharepoint.py",
     # FIXME: need to enable the following once we have a way to run their init/compile script in CI
     f"{snippets_folder}/dbt.py",
     f"{snippets_folder}/sdf.py",

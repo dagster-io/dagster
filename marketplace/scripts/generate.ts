@@ -100,10 +100,10 @@ async function main() {
 
     let content = String(file).trim();
 
-    // Remove partial imports, the app knows how to render <Beta /> and <Deprecated />
-    // and those are the only two partials used by integrations MDX
+    // Remove partial imports, the app knows how to render these partials
+    // These are all the partials currently used by integrations MDX
     content = content.replace(/import (.*?) from '@site\/docs(.*?);/, (full, group1) => {
-      if (!['Beta', 'Deprecated'].includes(group1)) {
+      if (!['Beta', 'Deprecated', 'CommunityIntegration', 'UseAirliftComponent', 'Preview'].includes(group1)) {
         throw new Error(`${fileName} imports a partial (${full}) not supported by the app.`);
       }
       return '';

@@ -33,13 +33,13 @@ interface Props {
   onSaveConfig?: (config: LaunchpadConfig) => void;
 }
 
-const filterDefaultYamlForSubselection = (defaultYaml: string, opNames: Set<string>): string => {
+const filterDefaultYamlForSubselection = (defaultYaml: string, nodeNames: Set<string>): string => {
   const parsedYaml = yaml.parse(defaultYaml);
 
   const opsConfig = parsedYaml['ops'];
-  if (opsConfig) {
+  if (opsConfig && nodeNames.size > 0) {
     const filteredOpKeys = Object.keys(opsConfig).filter((entry) => {
-      return opNames.has(entry);
+      return nodeNames.has(entry);
     });
     const filteredOpsConfig = Object.fromEntries(
       filteredOpKeys.map((key) => [key, opsConfig[key]]),
@@ -86,17 +86,17 @@ export const LaunchpadAllowedRoot = (props: Props) => {
       return undefined;
     }
 
+    if (!pipelineOrError || pipelineOrError.__typename !== 'Pipeline') {
+      return undefined;
+    }
+
     const rootDefaultYaml = runConfigSchemaOrError.rootDefaultYaml;
-    const opNameList = sessionPresets?.assetSelection
-      ? sessionPresets.assetSelection.map((entry) => entry.opNames ?? []).flat()
-      : [];
+    const nodeNameList = pipelineOrError?.nodeNames ?? [];
 
-    // to correctly handle graph assets, where the op name is 'graph_asset.inner_asset', split by "."
-    // and just consider the top level for filtering purposes..
-    const opNames = new Set(opNameList.map((entry) => entry.split('.')[0] ?? ''));
+    const nodeNames = new Set(nodeNameList);
 
-    return filterDefaultYamlForSubselection(rootDefaultYaml, opNames);
-  }, [runConfigSchemaOrError, sessionPresets]);
+    return filterDefaultYamlForSubselection(rootDefaultYaml, nodeNames);
+  }, [runConfigSchemaOrError, pipelineOrError]);
 
   if (!pipelineOrError || !partitionSetsOrError) {
     return <LaunchpadSessionLoading />;
@@ -252,6 +252,7 @@ export const PIPELINE_EXECUTION_ROOT_QUERY = gql`
     id
     isJob
     isAssetJob
+    nodeNames
     ...ConfigEditorGeneratorPipelineFragment
     modes {
       id

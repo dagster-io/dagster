@@ -264,7 +264,7 @@ def test_dagster_cloud_atlan_integration_delete_settings_exception_gql_result(
         "dagster_cloud_cli.gql.DagsterCloudGraphQLClient.execute",
         return_value={
             "data": {
-                "setAtlanIntegrationSettings": {
+                "deleteAtlanIntegrationSettings": {
                     "__typename": error_value,
                 }
             }
