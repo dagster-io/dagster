@@ -24,6 +24,6 @@ import Beta from '@site/docs/partials/\_Beta.md';
 
 <CodeExample path="docs_snippets/docs_snippets/integrations/ssh.py" language="python" />
 
-## About SSH SFTP
+## About SSH
 
 The **SSH protocol** allows for secure remote login with strong authentication to networked resources. It protects network connections with strong encryption. The Dagster library provides direct SSH and SFTP calls from within the execution of your pipelines.
