@@ -123,7 +123,7 @@ export const RunActionsMenu = React.memo(({run, onAddTag, anchorLabel}: Props) =
         <Popover
           content={
             <Menu>
-              <AISummaryForRunMenuItem runId={run.id} />
+              <AISummaryForRunMenuItem run={run} />
               <MenuItem
                 tagName="button"
                 style={{minWidth: 200}}
