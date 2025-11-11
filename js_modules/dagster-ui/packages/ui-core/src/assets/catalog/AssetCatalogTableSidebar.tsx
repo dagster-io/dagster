@@ -2,7 +2,8 @@ import invariant from 'invariant';
 import {useMemo} from 'react';
 
 import {tokenForAssetKey} from '../../asset-graph/Utils';
-import {HierarchicalSidebar, buildHierarchyFromPaths} from '../../ui/Sidebar/HierarchicalSidebar';
+import {HierarchicalSidebar} from '../../ui/Sidebar/HierarchicalSidebar';
+import {buildHierarchyFromPaths} from '../../ui/Sidebar/buildHierarchyFromPaths';
 import {HierarchyNode} from '../../ui/Sidebar/types';
 import {AssetTableFragment} from '../types/AssetTableFragment.types';
 

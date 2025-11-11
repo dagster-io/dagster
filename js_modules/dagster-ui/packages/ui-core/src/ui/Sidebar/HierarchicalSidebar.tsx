@@ -1,42 +1,13 @@
-import {Box, Container, IconName, Inner, Row, Skeleton} from '@dagster-io/ui-components';
+import {Box, Container, Inner, Row, Skeleton} from '@dagster-io/ui-components';
 import {useVirtualizer} from '@tanstack/react-virtual';
 import invariant from 'invariant';
 import * as React from 'react';
 
 import {HierarchicalNode} from './HierarchicalNode';
-import {HierarchyNode, TreeNode} from './types';
+import {HierarchyNode, RenderedNode} from './types';
 import {useQueryAndLocalStoragePersistedState} from '../../hooks/useQueryAndLocalStoragePersistedState';
 
 const COLLATOR = new Intl.Collator(navigator.language, {sensitivity: 'base', numeric: true});
-
-export function buildHierarchyFromPaths(paths: string[], includeFiles: boolean): HierarchyNode[] {
-  // Note: This is a clever use of reduce that traverses down, upserting
-  // nested objects for each layer of folders in the paths.
-  const tree: TreeNode = {};
-  paths.forEach((path) => {
-    path.split('/').reduce((node, segment) => {
-      node[segment] ||= {};
-      return node[segment];
-    }, tree);
-  });
-
-  const convert = (obj: TreeNode, prefix = ''): HierarchyNode[] =>
-    Object.entries(obj)
-      .map(([name, nodeValue]) => {
-        const path = prefix ? `${prefix}/${name}` : name;
-        if (Object.keys(nodeValue).length === 0) {
-          return {type: 'file' as const, name, path};
-        } else {
-          return {type: 'folder' as const, name, path, children: convert(nodeValue, path)};
-        }
-      })
-      .filter((t) => t.type === 'folder' || includeFiles)
-      .sort((a, b) =>
-        a.type !== b.type ? (a.type === 'folder' ? -1 : 1) : COLLATOR.compare(a.name, b.name),
-      );
-
-  return convert(tree);
-}
 
 export const HierarchicalSidebar = React.memo(
   ({
@@ -128,7 +99,6 @@ export const HierarchicalSidebar = React.memo(
       // Only scroll if the selected node changes
       // otherwise opening/closing nodes will cause us to scroll again because the index changes
       // if we toggle a node above the selected node
-      // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [indexOfLastSelectedNode, rowVirtualizer]);
 
     return (
