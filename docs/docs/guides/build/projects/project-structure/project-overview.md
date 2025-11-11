@@ -172,7 +172,7 @@ For local development, a workspace with multiple Dagster projects might look lik
   </TabItem>
 </Tabs>
 
-For more information on creating a Dagster workspace with multiple projects, see [Creating workspaces wto manage multiple projects](/guides/build/projects/workspaces/creating-workspaces).
+For more information on creating a Dagster workspace with multiple projects, see [Creating workspaces to manage multiple projects](/guides/build/projects/workspaces/creating-workspaces).
 
 </TabItem>
 </Tabs>
