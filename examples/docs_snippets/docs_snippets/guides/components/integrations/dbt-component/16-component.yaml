@@ -2,7 +2,7 @@ type: dagster.PythonScriptComponent
 
 attributes:
   execution:
-    path: my_script.py
+    path: export_customers.py
   assets:
     - key: customers_export
       deps:
