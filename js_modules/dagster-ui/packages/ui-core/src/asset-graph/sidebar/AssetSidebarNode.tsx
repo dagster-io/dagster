@@ -1,4 +1,4 @@
-import {Box, Colors, Icon, MiddleTruncate, UnstyledButton} from '@dagster-io/ui-components';
+import {Box, Colors, Icon, UnstyledButton} from '@dagster-io/ui-components';
 import * as React from 'react';
 import {observeEnabled} from 'shared/app/observeEnabled.oss';
 import styled from 'styled-components';
@@ -12,6 +12,8 @@ import {
 } from './util';
 import {AssetHealthSummary} from '../../assets/AssetHealthSummary';
 import {ExplorerPath} from '../../pipelines/PipelinePathUtils';
+import {FocusableLabelContainer, GrayOnHoverBox} from '../../ui/Sidebar/FocusableLabelContainer';
+import {SidebarDisclosureTriangle} from '../../ui/Sidebar/SidebarDisclosureTriangle';
 import {AssetGroup} from '../AssetGraphExplorer';
 import {AssetNodeMenuProps, useAssetNodeMenu} from '../AssetNodeMenu';
 import {useGroupNodeContextMenu} from '../CollapsedGroupNode';
@@ -52,27 +54,7 @@ export const AssetSidebarNode = (props: AssetSidebarNodeProps) => {
           onDoubleClick={(e) => !e.metaKey && toggleOpen()}
         >
           {showArrow ? (
-            <UnstyledButton
-              onClick={(e) => {
-                e.stopPropagation();
-                toggleOpen();
-              }}
-              onDoubleClick={(e) => {
-                e.stopPropagation();
-              }}
-              onKeyDown={(e) => {
-                if (e.code === 'Space') {
-                  // Prevent the default scrolling behavior
-                  e.preventDefault();
-                }
-              }}
-              style={{cursor: 'pointer', width: 18}}
-            >
-              <Icon
-                name="arrow_drop_down"
-                style={{transform: isOpen ? 'rotate(0deg)' : 'rotate(-90deg)'}}
-              />
-            </UnstyledButton>
+            <SidebarDisclosureTriangle isOpen={isOpen} toggleOpen={toggleOpen} />
           ) : level === 1 && isAssetNode ? (
             // Special case for when asset nodes are at the root (level = 1) due to their being only a single group.
             // In this case we don't need the spacer div to align nodes because  none of the nodes will be collapsible/un-collapsible.
@@ -188,43 +170,6 @@ const AssetSidebarLocationLabel = ({
   );
 };
 
-const FocusableLabelContainer = ({
-  isSelected,
-  isLastSelected,
-  icon,
-  text,
-}: {
-  isSelected: boolean;
-  isLastSelected: boolean;
-  icon: React.ReactNode;
-  text: string;
-}) => {
-  const ref = React.useRef<HTMLButtonElement | null>(null);
-  React.useLayoutEffect(() => {
-    // When we click on a node in the graph it also changes "isSelected" in the sidebar.
-    // We want to check if the focus is currently in the graph and if it is lets keep it there
-    // Otherwise it means the click happened in the sidebar in which case we should move focus to the element
-    // in the sidebar
-    if (ref.current && isLastSelected && !isElementInsideSVGViewport(document.activeElement)) {
-      ref.current.focus();
-    }
-  }, [isLastSelected]);
-
-  return (
-    <GrayOnHoverBox
-      ref={ref}
-      style={{
-        gridTemplateColumns: icon ? 'auto minmax(0, 1fr)' : 'minmax(0, 1fr)',
-        gridTemplateRows: 'minmax(0, 1fr)',
-        ...(isSelected ? {background: Colors.backgroundBlue()} : {}),
-      }}
-    >
-      {icon}
-      <MiddleTruncate text={text} />
-    </GrayOnHoverBox>
-  );
-};
-
 const BoxWrapper = ({level, children}: {level: number; children: React.ReactNode}) => {
   const wrapper = React.useMemo(() => {
     let sofar = children;
@@ -255,22 +200,6 @@ const ExpandMore = styled(UnstyledButton)`
   visibility: hidden;
 `;
 
-const GrayOnHoverBox = styled(UnstyledButton)`
-  border-radius: 8px;
-  user-select: none;
-  width: 100%;
-  display: grid;
-  flex-direction: row;
-  height: 32px;
-  align-items: center;
-  padding: 5px 8px;
-  justify-content: space-between;
-  gap: 6px;
-  flex-grow: 1;
-  flex-shrink: 1;
-  transition: background 100ms linear;
-`;
-
 export const ItemContainer = styled(Box)`
   height: 32px;
   position: relative;
@@ -287,7 +216,3 @@ export const ItemContainer = styled(Box)`
     }
   }
 `;
-
-function isElementInsideSVGViewport(element: Element | null) {
-  return !!element?.closest('[data-svg-viewport]');
-}
