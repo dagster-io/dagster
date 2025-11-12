@@ -254,7 +254,7 @@ export const SearchInput = styled.input`
   border: none;
   color: ${Colors.textDefault()};
   font-family: ${FontFamily.default};
-  font-size: 18px;
+  font-size: 16px;
   margin-left: 4px;
   outline: none;
   width: 100%;
