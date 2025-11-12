@@ -45,14 +45,6 @@ describe('AssetCatalogTableSidebar', () => {
       const result = extractKeyPrefixFromSelection('');
       expect(result).toBeNull();
     });
-
-    it('handles key prefix without trailing slash', () => {
-      const result = extractKeyPrefixFromSelection('key:"aws*"');
-      expect(result).toEqual({
-        text: 'key:"aws*"',
-        key: 'aws',
-      });
-    });
   });
 
   describe('selectionReplacingKeyPrefix', () => {

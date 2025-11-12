@@ -120,9 +120,11 @@ export const HierarchicalSidebar = React.memo(
                 nextIndex = indexOfLastSelectedNodeRef.current + (e.code === 'ArrowDown' ? 1 : -1);
                 indexOfLastSelectedNodeRef.current = nextIndex;
                 e.preventDefault();
-                const nextNode =
-                  // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-                  renderedNodes[(nextIndex + renderedNodes.length) % renderedNodes.length]!;
+                const nextNodeIdx = (nextIndex + renderedNodes.length) % renderedNodes.length;
+                const nextNode = renderedNodes[nextNodeIdx];
+                if (!nextNode) {
+                  return;
+                }
                 setSelectedPath(nextNode.path);
                 onSelectPath(e, nextNode.path);
               } else if (e.code === 'ArrowLeft' || e.code === 'ArrowRight') {
