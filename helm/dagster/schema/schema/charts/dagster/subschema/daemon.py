@@ -87,6 +87,7 @@ class RunRetries(BaseModel):
 class Daemon(BaseModel, extra="forbid"):
     enabled: bool
     image: kubernetes.Image
+    replicaCount: Optional[int] = None
     runCoordinator: RunCoordinator
     heartbeatTolerance: int
     env: Union[dict[str, str], list[kubernetes.EnvVar]]
@@ -111,6 +112,7 @@ class Daemon(BaseModel, extra="forbid"):
     schedules: Schedules
     backfills: Optional[Backfills] = None
     schedulerName: Optional[str] = None
+    logFormat: Optional[str] = None
     volumeMounts: Optional[list[kubernetes.VolumeMount]] = None
     volumes: Optional[list[kubernetes.Volume]] = None
     initContainerResources: Optional[kubernetes.Resources] = None
