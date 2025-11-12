@@ -51,9 +51,11 @@ dg list defs
 
 This will list all the assets in your project and allow you to see that the expected dbt assets are present.
 
-## 3. Migrating translators (Optional)
+## 3. Migrating custom translators (Optional)
 
-If you had defined a custom `DagsterDbtTranslator` for your dbt project, that logic can be moved into the `defs.yaml` that was generated from scaffolding the component. For example, the custom translator:
+If you had defined a custom `DagsterDbtTranslator` for your dbt project, the **recommended approach** is to create a custom subclass of `DbtProjectComponent` and override the `get_asset_spec` method. This provides more flexibility and type safety than YAML configuration.
+
+For example, the custom translator:
 
 <CodeExample
   path="docs_snippets/docs_snippets/integrations/dbt/pythonic/assets_translator.py"
@@ -63,27 +65,46 @@ If you had defined a custom `DagsterDbtTranslator` for your dbt project, that lo
   endBefore="end_custom_dagster_dbt_translator"
 />
 
-Can be applied to the `defs.yaml` in the following way:
+Can be migrated to a custom component by creating a new Python file:
 
 <CodeExample
-  path="docs_snippets/docs_snippets/guides/components/integrations/dbt-component/22-defs.yaml"
+  path="docs_snippets/docs_snippets/integrations/dbt/pythonic/custom_component_translator.py"
+  title="my_project/lib/custom_dbt_component.py"
+  language="python"
+  startAfter="start_custom_component_translator"
+  endBefore="end_custom_component_translator"
+/>
+
+Then reference this custom component in your `defs.yaml`:
+
+<CodeExample
+  path="docs_snippets/docs_snippets/integrations/dbt/pythonic/custom_component_translator_defs.yaml"
+  title="my_project/defs/dbt_ingest/defs.yaml"
+  language="yaml"
+/>
+
+This approach maps translator methods to component methods:
+
+- `get_asset_key()` → Override `get_asset_spec()` and customize the `key` attribute
+- `get_group_name()` → Override `get_asset_spec()` and customize the `group_name` attribute
+- `get_description()` → Override `get_asset_spec()` and customize the `description` attribute
+- `get_metadata()` → Override `get_asset_spec()` and customize the `metadata` attribute
+
+### Alternative: YAML configuration
+
+For simpler customizations, you can also use YAML configuration with the `translation` field:
+
+<CodeExample
+  path="docs_snippets/docs_snippets/guides/components/integrations/dbt-component/12-customized-component.yaml"
   title="my_project/defs/dbt_ingest/defs.yaml"
   language="yaml"
 />
 
 ## 4. Migrating incremental models (Optional)
 
-If you had incremental models defined in your dbt project, this logic can be moved into the `defs.yaml` that was generated from scaffolding the component. For example, the partition:
+If you had incremental models defined in your dbt project, the **recommended approach** is to create a custom subclass of `DbtProjectComponent` and override the `execute` method. This allows you to customize the dbt CLI arguments based on partition information.
 
-<CodeExample
-  path="docs_snippets/docs_snippets/integrations/dbt/pythonic/assets_incrementals.py"
-  title="my_project/defs/assets.py"
-  language="python"
-  startAfter="start_incremental_partition"
-  endBefore="end_incremental_partition"
-/>
-
-Applied to `@dbt_assets`:
+For example, the partitioned incremental models:
 
 <CodeExample
   path="docs_snippets/docs_snippets/integrations/dbt/pythonic/assets_incrementals.py"
@@ -93,7 +114,17 @@ Applied to `@dbt_assets`:
   endBefore="end_incremental_dbt_models"
 />
 
-Can be applied to the components by doing the following. The first step is to add a new [template var](/guides/build/components/building-pipelines-with-components/using-template-variables) to your component. This will be used to define the partitions definition that will be used to partition the assets:
+Can be migrated to a custom component by creating a new Python file:
+
+<CodeExample
+  path="docs_snippets/docs_snippets/integrations/dbt/pythonic/custom_component_incremental.py"
+  title="my_project/lib/incremental_dbt_component.py"
+  language="python"
+  startAfter="start_custom_component_incremental"
+  endBefore="end_custom_component_incremental"
+/>
+
+To use this custom component, you'll also need to define the partition definition. First, add a new [template var](/guides/build/components/building-pipelines-with-components/using-template-variables) to define the partitions:
 
 <CodeExample
   path="docs_snippets/docs_snippets/guides/components/integrations/dbt-component/18-template-vars.py"
@@ -101,9 +132,17 @@ Can be applied to the components by doing the following. The first step is to ad
   title="my_project/defs/dbt_ingest/template_vars.py"
 />
 
-This will take the place of the `dg.DailyPartitionsDefinition` definition.
+Then reference the custom component and apply the partition in your `defs.yaml`:
 
-Next, apply the partition from the new template vars to the `defs.yaml` using the `post_process` field. You will also need to include configurations to the `cli_args` field so dbt can execute the using the partition:
+<CodeExample
+  path="docs_snippets/docs_snippets/integrations/dbt/pythonic/custom_component_incremental_defs.yaml"
+  title="my_project/defs/dbt_ingest/defs.yaml"
+  language="yaml"
+/>
+
+### Alternative: YAML configuration with cli_args
+
+For simpler cases where you don't need custom logic, you can use YAML configuration with the `cli_args` field:
 
 <CodeExample
   path="docs_snippets/docs_snippets/guides/components/integrations/dbt-component/20-defs.yaml"
