@@ -23,6 +23,7 @@ attributes:
       type: "example_string"
   select: "tag:dagster"
   exclude: "tag:skip_dagster"
+  selector: "custom_selector"
   translation:
     deps:
       - "example_string"

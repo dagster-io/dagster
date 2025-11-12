@@ -17,16 +17,7 @@ def scaffold_group():
 
 # Register all scaffold commands from submodules
 scaffold_group.add_command(scaffold_branch_command)
-scaffold_group.add_command(scaffold_build_artifacts_command)
+scaffold_group.add_command(scaffold_build_artifacts_command)  # Legacy shim
 scaffold_group.add_command(scaffold_component_command)
 scaffold_group.add_command(scaffold_defs_group)
-scaffold_group.add_command(scaffold_github_actions_command)
-
-__all__ = [
-    "scaffold_branch_command",
-    "scaffold_build_artifacts_command",
-    "scaffold_component_command",
-    "scaffold_defs_group",
-    "scaffold_github_actions_command",
-    "scaffold_group",
-]
+scaffold_group.add_command(scaffold_github_actions_command)  # Legacy shim

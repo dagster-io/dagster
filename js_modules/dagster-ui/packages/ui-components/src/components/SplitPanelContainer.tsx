@@ -20,6 +20,16 @@ export type SplitPanelContainerHandle = {
   changeSize: (value: number) => void;
 };
 
+function getStorageKey(identifier: string) {
+  return `dagster.panel-width.${identifier}`;
+}
+
+export function getFirstPanelSizeFromStorage(identifier: string, firstInitialPercent: number) {
+  const storedSize = window.localStorage.getItem(getStorageKey(identifier));
+  const parsed = storedSize === null ? null : parseFloat(storedSize);
+  return parsed === null || isNaN(parsed) ? firstInitialPercent : parsed;
+}
+
 export const SplitPanelContainer = forwardRef<SplitPanelContainerHandle, SplitPanelContainerProps>(
   (props, ref) => {
     const {
@@ -34,23 +44,20 @@ export const SplitPanelContainer = forwardRef<SplitPanelContainerHandle, SplitPa
 
     const [_, setTrigger] = useState(0);
     const [resizing, setResizing] = useState(false);
-    const key = `dagster.panel-width.${identifier}`;
 
     const getSize = useCallback(() => {
       if (!second) {
         return 100;
       }
-      const storedSize = window.localStorage.getItem(key);
-      const parsed = storedSize === null ? null : parseFloat(storedSize);
-      return parsed === null || isNaN(parsed) ? firstInitialPercent : parsed;
-    }, [firstInitialPercent, key, second]);
+      return getFirstPanelSizeFromStorage(identifier, firstInitialPercent);
+    }, [firstInitialPercent, identifier, second]);
 
     const onChangeSize = useCallback(
       (newValue: number) => {
-        window.localStorage.setItem(key, `${newValue}`);
+        window.localStorage.setItem(getStorageKey(identifier), `${newValue}`);
         setTrigger((current) => (current ? 0 : 1));
       },
-      [key],
+      [identifier],
     );
 
     useImperativeHandle(ref, () => ({getSize, changeSize: onChangeSize}), [onChangeSize, getSize]);
