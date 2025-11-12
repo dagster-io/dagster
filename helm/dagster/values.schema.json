@@ -689,6 +689,18 @@
                 "image": {
                     "$ref": "#/$defs/Image"
                 },
+                "replicaCount": {
+                    "anyOf": [
+                        {
+                            "type": "integer"
+                        },
+                        {
+                            "type": "null"
+                        }
+                    ],
+                    "default": null,
+                    "title": "Replicacount"
+                },
                 "runCoordinator": {
                     "$ref": "#/$defs/RunCoordinator"
                 },
@@ -819,6 +831,18 @@
                     ],
                     "default": null,
                     "title": "Schedulername"
+                },
+                "logFormat": {
+                    "anyOf": [
+                        {
+                            "type": "string"
+                        },
+                        {
+                            "type": "null"
+                        }
+                    ],
+                    "default": null,
+                    "title": "Logformat"
                 },
                 "volumeMounts": {
                     "anyOf": [
@@ -3521,6 +3545,18 @@
                     ],
                     "default": null,
                     "title": "Loglevel"
+                },
+                "logFormat": {
+                    "anyOf": [
+                        {
+                            "type": "string"
+                        },
+                        {
+                            "type": "null"
+                        }
+                    ],
+                    "default": null,
+                    "title": "Logformat"
                 },
                 "schedulerName": {
                     "anyOf": [
