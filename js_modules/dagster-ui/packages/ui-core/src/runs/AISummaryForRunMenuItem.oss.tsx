@@ -1,4 +1,8 @@
-import {RunActionsMenuRunFragment} from './types/RunActionsMenuRunFragment.types';
+import {RunStatus} from '../graphql/types';
+
+interface Props {
+  run: {id: string; status: RunStatus};
+}
 
 // eslint-disable-next-line unused-imports/no-unused-vars
-export const AISummaryForRunMenuItem = ({run}: {run: RunActionsMenuRunFragment}) => null;
+export const AISummaryForRunMenuItem = ({run}: Props) => null;
