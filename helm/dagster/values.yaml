@@ -78,6 +78,9 @@ dagsterWebserver:
   # Deploy a separate instance of the webserver in --read-only mode (can't launch runs, disable schedules, etc.)
   enableReadOnly: false
 
+  # The log format of the webserver, defaults to text if not set
+  logFormat: colored # colored|json|rich
+
   # The timeout in milliseconds to set on database statements sent to the Dagster instance.
   dbStatementTimeout: ~
 
@@ -1110,6 +1113,9 @@ dagsterDaemon:
     pullPolicy: Always
 
   heartbeatTolerance: 1800
+
+  # The log format of the daemon, defaults to text if not set
+  logFormat: colored # colored|json|rich
 
   runCoordinator:
     # Whether or not to enable the run queue (or some other custom run coordinator). See
