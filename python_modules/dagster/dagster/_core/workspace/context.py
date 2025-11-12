@@ -284,6 +284,9 @@ class BaseWorkspaceRequestContext(LoadingContext):
     def viewer_has_any_owner_definition_permissions(self) -> bool:
         return False
 
+    def read_partition_subsets_from_asset_health(self) -> bool:
+        return False
+
     def get_viewer_tags(self) -> dict[str, str]:
         return {}
 
