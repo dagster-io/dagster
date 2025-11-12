@@ -11,6 +11,7 @@ import {JobTileQuery, JobTileQueryVariables} from './types/JobTileQuery.types';
 import {useSelectionHealthData} from './useSelectionHealthData';
 import {RunStatusIndicator} from '../../runs/RunStatusDots';
 import {TimeFromNow} from '../../ui/TimeFromNow';
+import {numberFormatter} from '../../ui/formatters';
 import {RepoAddress} from '../../workspace/types';
 import {workspacePathFromAddress} from '../../workspace/workspacePath';
 import {AssetTableFragment} from '../types/AssetTableFragment.types';
@@ -66,7 +67,7 @@ export const AssetSelectionSummaryTile = React.memo(
     loading?: boolean;
     threadId?: string;
   }) => {
-    const {jsx, loading} = useAssetHealthStatuses({
+    const {loading} = useAssetHealthStatuses({
       assets,
       threadId: useMemo(() => getThreadId(), []),
       loading: _assetsLoading,
@@ -76,9 +77,9 @@ export const AssetSelectionSummaryTile = React.memo(
       <AssetSelectionSummaryTileWithHealthStatus
         icon={icon}
         label={label}
-        statusJsx={jsx}
         link={link}
         loading={loading}
+        assets={assets}
       />
     );
   },
@@ -91,12 +92,14 @@ const AssetSelectionSummaryTileWithHealthStatus = React.memo(
     statusJsx,
     link,
     loading,
+    assets,
   }: {
     icon: React.ReactNode;
     label: string;
-    statusJsx: React.ReactNode;
+    statusJsx?: React.ReactNode;
     link: string;
     loading?: boolean;
+    assets?: AssetTableFragment[];
   }) => {
     return (
       <Link to={link} className={styles.tileLink}>
@@ -104,7 +107,6 @@ const AssetSelectionSummaryTileWithHealthStatus = React.memo(
           border="all"
           style={{
             minWidth: TILE_WIDTH,
-            minHeight: TILE_HEIGHT,
           }}
           className={clsx(styles.tile, loading && styles.tileLoading)}
         >
@@ -114,7 +116,11 @@ const AssetSelectionSummaryTileWithHealthStatus = React.memo(
               <MiddleTruncate text={label} />
             </div>
           </div>
-          <div className={styles.footer}>{statusJsx}</div>
+          {statusJsx ? (
+            <div className={styles.footer}>{statusJsx}</div>
+          ) : assets ? (
+            <div className={styles.assetCount}>{numberFormatter.format(assets.length)} assets</div>
+          ) : null}
         </Box>
       </Link>
     );
@@ -152,7 +158,6 @@ export const JobTile = ({name, repoAddress}: {name: string; repoAddress: RepoAdd
         border="all"
         style={{
           minWidth: TILE_WIDTH,
-          minHeight: TILE_HEIGHT,
         }}
         className={styles.tile}
       >
