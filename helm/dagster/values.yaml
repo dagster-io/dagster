@@ -1111,6 +1111,8 @@ dagsterDaemon:
 
   heartbeatTolerance: 1800
 
+  replicaCount: 1
+
   runCoordinator:
     # Whether or not to enable the run queue (or some other custom run coordinator). See
     # https://docs.dagster.io/deployment/run-coordinator for more information.
