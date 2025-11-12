@@ -189,3 +189,46 @@ Dagster will automatically convert this configuration dictionary into the JSON-e
 </WideContent>
 
 If you have multiple different partitions definitions, you will need to create separate `DbtProjectComponent` instances for each `PartitionsDefinition` you want to use. You can filter each component to a selection of dbt models using the `select` configuration option.
+
+## 9. Advanced configuration (subclassing)
+
+For more complex use cases that cannot easily be handled with templated yaml, you can create a custom subclass of `DbtProjectComponent` to add custom behavior. This allows you to:
+
+- Add custom op configuration using `op_config_schema`
+- Override the `get_asset_spec` method to add custom metadata
+- Override the `execute` method to customize how dbt commands are executed
+
+To do this, we can create a new subclass of the `DbtProjectComponent` in our `lib` directory. This component adds a `full_refresh` runtime config option and custom metadata:
+
+<CodeExample
+  path="docs_snippets/docs_snippets/guides/components/integrations/dbt-component/22-custom_dbt_component.py"
+  title="my_project/lib/custom_dbt_component.py"
+  language="python"
+/>
+
+This component can then be swapped in for the standard `DbtProjectComponent` in our `defs.yaml` file by updating the `type` field to reference the new component:
+
+<CodeExample
+  path="docs_snippets/docs_snippets/guides/components/integrations/dbt-component/23-custom-dbt-defs.yaml"
+  title="my_project/defs/custom_dbt/defs.yaml"
+  language="yaml"
+/>
+
+The custom component will be loaded and used just like the standard `DbtProjectComponent`:
+
+<WideContent maxSize={1100}>
+  <CliInvocationExample path="docs_snippets/docs_snippets/guides/components/integrations/dbt-component/25-list-custom-defs.txt" />
+</WideContent>
+
+### Configuring the custom component at runtime
+
+When you use a custom component with an `op_config_schema`, you can provide config values at runtime through the Dagster UI or when launching runs from the CLI. For example:
+
+```yaml
+ops:
+  dbt_injest:
+    config:
+      full_refresh: true
+```
+
+This allows you to control the behavior of your dbt runs without modifying the component definition itself.
