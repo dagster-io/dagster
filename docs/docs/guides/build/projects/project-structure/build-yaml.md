@@ -1,27 +1,63 @@
 ---
-description: The dagster_cloud.yaml file defines the location of Dagster projects for Dagster+ Hybrid deployments, along with environment variables and secrets.
+description: The build.yaml file defines the location of Dagster projects for Dagster+ Hybrid deployments, along with environment variables and secrets.
 sidebar_position: 1000
 tags: [dagster-plus-feature]
-title: dagster_cloud.yaml reference (Dagster+)
+title: build.yaml reference (Dagster+)
 ---
 
 import DagsterPlus from '@site/docs/partials/\_DagsterPlus.md';
 
 <DagsterPlus />
 
-`dagster_cloud.yaml` is used to define the location of Dagster projects for Dagster+ Hybrid so they can be discovered by CI/CD processes. It can also be used to manage environment variables and secrets.
+`build.yaml` is used to define the location of Dagster projects for Dagster+ Hybrid so they can be discovered by CI/CD processes. It can also be used to manage environment variables and secrets.
+
+:::note
+
+In older deployments, this file may be called `dagster_cloud.yaml`.
+
+:::
 
 ## File location
 
 <Tabs>
 <TabItem value="single_project" label="Single project">
 
-The `dagster_cloud.yaml` file should be placed in the root of your Dagster project, similar to the example below:
+The `build.yaml` file should be placed in the root of your Dagster project, similar to the example below:
+
+  ```shell
+  my-project
+  ├── build.yaml
+  ├── Dockerfile
+  ├── pyproject.toml
+  ├── README.md
+  ├── src
+  │   └── my_project
+  │       ├── __init__.py
+  │       ├── definitions.py
+  │       └── defs
+  │           └── __init__.py
+  ├── tests
+  │   └── __init__.py
+  └── uv.lock
+
+  ```
 
 </TabItem>
-<TabItem value="multiple_projects" label="Multiple projects">
+<TabItem value="multiple_projects" label="Workspace (multiple projects)">
 
-The `dagster_cloud.yaml` file should be placed in the root of your Dagster workspace, similar to the example below:
+The `build.yaml` file should be placed in the root of your Dagster workspace, similar to the example below:
+
+  ```shell
+  my-workspace
+  ├── build.yaml
+  ├── deployments
+  │   └── local
+  │       ├── pyproject.toml
+  │       └── uv.lock
+  ├── dg.toml
+  └── projects
+
+  ```
 
 </TabItem>
 </Tabs>
@@ -31,7 +67,7 @@ The `dagster_cloud.yaml` file should be placed in the root of your Dagster works
 Settings are formatted using YAML. For example, using the file structure above as an example:
 
 ```yaml
-# dagster_cloud.yaml
+# build.yaml
 locations:
   - location_name: data-eng-pipeline
     code_source:
@@ -58,7 +94,7 @@ locations:
 
 ## Settings
 
-The `dagster_cloud.yaml` file contains a single top-level key, `locations`. This key accepts a list of Dagster projects; for each project, you can configure the following:
+The `build.yaml` file contains a single top-level key, `locations`. This key accepts a list of Dagster projects; for each project, you can configure the following:
 
 - [Location name](#location-name)
 - [Code source](#code-source)
@@ -72,7 +108,7 @@ The `dagster_cloud.yaml` file contains a single top-level key, `locations`. This
 **This key is required.** The `location_name` key specifies the name of the Dagster project. The location name will always be paired with a [code source](#code-source).
 
 ```yaml
-# dagster_cloud.yaml
+# build.yaml
 
 locations:
   - location_name: data-eng-pipeline
@@ -94,7 +130,7 @@ A `code_source` key must contain either a `module_name`, `package_name`, or `fil
 <TabItem value="Single Dagster project">
 
 ```yaml
-# dagster_cloud.yaml
+# build.yaml
 
 locations:
   - location_name: data-eng-pipeline
@@ -106,7 +142,7 @@ locations:
 <TabItem value="Multiple Dagster projects">
 
 ```yaml
-# dagster_cloud.yaml
+# build.yaml
 
 locations:
   - location_name: data-eng-pipeline
@@ -140,16 +176,16 @@ example_etl
 │     ├── __init__.py
 │     ├── assets
 │   ├── example_etl_tests
-├── dagster_cloud.yaml
+├── build.yaml
 ├── pyproject.toml
 ├── setup.cfg
 └── setup.py
 ```
 
-To load from `/project_directory`, the `dagster_cloud.yaml` file would look like this:
+To load from `/project_directory`, the `build.yaml` file would look like this:
 
 ```yaml
-# dagster_cloud.yaml
+# build.yaml
 
 locations:
   - location_name: data-eng-pipeline
@@ -172,7 +208,7 @@ The `build` section contains two parameters:
 In the example below, the Docker image for the Dagster project is in the root directory and the registry and image defined:
 
 ```yaml
-# dagster_cloud.yaml
+# build.yaml
 
 locations:
   - location_name: data-eng-pipeline
@@ -195,7 +231,7 @@ For Dagster+ Hybrid deployments, the Python executable that is installed globall
 For Dagster+ Serverless deployments, you can specify a different Python version by [following these instructions](/deployment/dagster-plus/serverless/runtime-environment#use-a-different-python-version).
 
 ```yaml
-# dagster_cloud.yaml
+# build.yaml
 
 locations:
   - location_name: data-eng-pipeline

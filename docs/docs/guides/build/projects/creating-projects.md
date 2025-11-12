@@ -150,44 +150,46 @@ See [Running Dagster locally](/deployment/oss/deployment-options/running-dagster
 
 ## Step 4: Continue local development
 
-- [Add new Python dependencies](#add-new-python-dependencies)
-- [Add integrations](#add-integrations)
-- [Use environment variables and secrets](#use-environment-variables-and-secrets)
-- [Add and run unit tests](#add-and-run-unit-tests)
-- [Create custom components](#create-custom-components)
+<Tabs>
+   <TabItem value="python-dependencies" label="Add new Python dependencies">
 
-### Add new Python dependencies
+   You can specify new Python dependencies in `pyproject.toml`.
 
-You can specify new Python dependencies in `pyproject.toml`.
+   </TabItem>
+   <TabItem value="add-integrations" label="Add integrations">
 
-### Add integrations
+   See the [Integrations docs](/integrations/libraries) for a full list of Dagster-supported and community-supported integrations.
 
-See the [Integrations docs](/integrations/libraries) for a full list of Dagster-supported and community-supported integrations.
+   </TabItem>
+   <TabItem value="env-vars" label="Use environment variables and secrets">
 
-### Use environment variables and secrets
+   Environment variables, which are key-value pairs configured outside your source code, allow you to dynamically modify application behavior depending on environment.
 
-Environment variables, which are key-value pairs configured outside your source code, allow you to dynamically modify application behavior depending on environment.
+   Using environment variables, you can define various configuration options for your Dagster application and securely set up secrets. For example, instead of hard-coding database credentials - which is bad practice and cumbersome for development - you can use environment variables to supply user details. This allows you to parameterize your pipeline without modifying code or insecurely storing sensitive data.
 
-Using environment variables, you can define various configuration options for your Dagster application and securely set up secrets. For example, instead of hard-coding database credentials - which is bad practice and cumbersome for development - you can use environment variables to supply user details. This allows you to parameterize your pipeline without modifying code or insecurely storing sensitive data.
+   For more information and examples, see [Using environment variables and secrets](/guides/operate/configuration/using-environment-variables-and-secrets).
 
-For more information and examples, see [Using environment variables and secrets](/guides/operate/configuration/using-environment-variables-and-secrets).
+   </TabItem>
+   <TabItem value="tests" label="Add and run unit tests">
 
-### Add and run unit tests
+   Tests can be added to the `tests` directory and run using `pytest`:
 
-Tests can be added to the `tests` directory and run using `pytest`:
+   ```bash
+   pytest tests
+   ```
 
-```bash
-pytest tests
-```
+   For more information on testing, see the following docs:
+   * The [Testing guides](/guides/test) have guidance on asset checks, data freshness checks, unit testing assets and ops, and testing partitioned config and jobs.
+   * [Testing component definitions](/guides/build/components/building-pipelines-with-components/testing-component-definitions) contains testing best practices for definitions scaffolded existing components.
+   * [Testing your component](/guides/build/components/creating-new-components/testing-your-component) has best practices for testing custom components.
 
-For more information on testing, see the following docs:
-* The [Testing guides](/guides/test) have guidance on asset checks, data freshness checks, unit testing assets and ops, and testing partitioned config and jobs.
-* [Testing component definitions](/guides/build/components/building-pipelines-with-components/testing-component-definitions) contains testing best practices for definitions scaffolded existing components.
-* [Testing your component](/guides/build/components/creating-new-components/testing-your-component) has best practices for testing custom components.
+   </TabItem>
+   <TabItem value="components" label="Create custom components">
 
-### Create custom components
+   If built-in Dagster components and integrations don't meet your needs, you can [create custom components](/guides/build/components/creating-new-components) to share with your team.
 
-If built-in Dagster components and integrations don't meet your needs, you can [create custom components](/guides/build/components/creating-new-components) to share with your team.
+   </TabItem>
+</Tabs>
 
 ## Step 5: Deploy your project to the cloud (Optional)
 
