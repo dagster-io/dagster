@@ -866,6 +866,24 @@ def test_graph_asset_partitioned():
     assert dg.materialize_to_memory([assets_def], partition_key="a").success
 
 
+def test_multi_asset_with_different_partitions_defs():
+    unpartitioned_asset_spec = dg.AssetSpec("asset1")
+    specs = [
+        dg.AssetSpec("asset2", partitions_def=dg.StaticPartitionsDefinition(["a", "b"])),
+        dg.AssetSpec("asset3", partitions_def=dg.StaticPartitionsDefinition(["x", "y"])),
+        unpartitioned_asset_spec,
+    ]
+
+    @dg.multi_asset(specs=specs, can_subset=True)
+    def my_multi_asset(context: dg.AssetExecutionContext):
+        for asset_key in context.selected_asset_keys:
+            yield dg.MaterializeResult(asset_key)
+
+    assert dg.materialize_to_memory(
+        [my_multi_asset], selection=[unpartitioned_asset_spec.key]
+    ).success
+
+
 def test_all_assets_job():
     @dg.asset
     def a1():
