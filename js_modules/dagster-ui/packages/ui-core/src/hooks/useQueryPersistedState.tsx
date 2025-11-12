@@ -150,7 +150,20 @@ export function useQueryPersistedState<T extends QueryPersistedDataType>(
         !areQueriesEqual(currentQueryString, next)
       ) {
         currentQueryString = next;
-        const nextPath = `${history.location.pathname}?${qs.stringify(next, {arrayFormat: 'indices'})}`;
+        const nextPath = `${history.location.pathname}?${qs.stringify(next, {
+          arrayFormat: 'indices',
+          sort: (a, b) => {
+            // Ensure partition comes before default_range in the URL
+            if (a === 'partition' && b === 'default_range') {
+              return -1;
+            }
+            if (a === 'default_range' && b === 'partition') {
+              return 1;
+            }
+            // Otherwise maintain alphabetical order for other params
+            return COMMON_COLLATOR.compare(a, b);
+          },
+        })}`;
         if (behavior === 'replace') {
           history.replace(nextPath);
         } else {
@@ -170,13 +183,24 @@ export function useQueryPersistedState<T extends QueryPersistedDataType>(
 // Stringify two query objects to check whether they have the same value. Explicitly sort the
 // keys, since key order is otherwise undefined.
 function areQueriesEqual(queryA: qs.ParsedQs, queryB: qs.ParsedQs) {
+  const sortFn = (a: string, b: string) => {
+    // Ensure partition comes before default_range in the URL
+    if (a === 'partition' && b === 'default_range') {
+      return -1;
+    }
+    if (a === 'default_range' && b === 'partition') {
+      return 1;
+    }
+    // Otherwise maintain alphabetical order for other params
+    return COMMON_COLLATOR.compare(a, b);
+  };
   const stringA = qs.stringify(queryA, {
     arrayFormat: 'brackets',
-    sort: (a, b) => COMMON_COLLATOR.compare(a, b),
+    sort: sortFn,
   });
   const stringB = qs.stringify(queryB, {
     arrayFormat: 'brackets',
-    sort: (a, b) => COMMON_COLLATOR.compare(a, b),
+    sort: sortFn,
   });
   return stringA === stringB;
 }

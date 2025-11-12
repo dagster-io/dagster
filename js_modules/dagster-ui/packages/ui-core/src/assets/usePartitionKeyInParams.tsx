@@ -33,9 +33,12 @@ export function usePartitionKeyInParams({
     if (dimensionKey) {
       nextFocusedDimensionKeys.push(dimensionKey);
     }
+    // Ensure partition comes before default_range in the URL by explicitly ordering properties
+    const {partition: _partition, default_range, ...restParams} = params;
     setParams({
-      ...params,
+      ...restParams,
       partition: nextFocusedDimensionKeys.join('|'),
+      ...(default_range ? {default_range} : {}),
     });
   };
 
