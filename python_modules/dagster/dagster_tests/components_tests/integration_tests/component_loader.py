@@ -22,7 +22,7 @@ def load_test_component_defs(
     """
     src_path = Path(src_path)
     with construct_component_tree_for_test(src_path, local_component_defn_to_inject) as tree:
-        yield tree.build_defs_at_path(Path(src_path.stem))
+        yield tree.build_defs(Path(src_path.stem))
 
 
 @contextmanager

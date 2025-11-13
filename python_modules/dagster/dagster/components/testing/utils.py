@@ -184,8 +184,8 @@ class DefsFolderSandbox:
                     assert defs.get_asset_def("my_asset").key == AssetKey("my_asset")
         """
         with self.build_component_tree() as tree:
-            component = tree.load_component_at_path(defs_path)
-            defs = tree.build_defs_at_path(defs_path)
+            component = tree.load_component(defs_path)
+            defs = tree.build_defs(defs_path)
             yield component, defs
 
     def scaffold_component(
