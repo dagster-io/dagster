@@ -806,6 +806,7 @@ class AssetDaemon(DagsterDaemon):
                 f"Checking {num_target_entities} assets/checks and"
                 f" {num_auto_observe_assets} observable source"
                 f" asset{'' if num_auto_observe_assets == 1 else 's'}{print_group_name}"
+                f" in thread {threading.current_thread().name}"
             )
 
             if sensor:
