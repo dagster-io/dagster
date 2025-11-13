@@ -1114,7 +1114,6 @@ dagsterDaemon:
 
   heartbeatTolerance: 1800
 
-  replicaCount: 1
   # The log format of the daemon, defaults to text if not set
   logFormat: colored # colored|json|rich
 

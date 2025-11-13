@@ -689,18 +689,6 @@
                 "image": {
                     "$ref": "#/$defs/Image"
                 },
-                "replicaCount": {
-                    "anyOf": [
-                        {
-                            "type": "integer"
-                        },
-                        {
-                            "type": "null"
-                        }
-                    ],
-                    "default": null,
-                    "title": "Replicacount"
-                },
                 "runCoordinator": {
                     "$ref": "#/$defs/RunCoordinator"
                 },

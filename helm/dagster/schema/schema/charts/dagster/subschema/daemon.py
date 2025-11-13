@@ -87,7 +87,6 @@ class RunRetries(BaseModel):
 class Daemon(BaseModel, extra="forbid"):
     enabled: bool
     image: kubernetes.Image
-    replicaCount: Optional[int] = None
     runCoordinator: RunCoordinator
     heartbeatTolerance: int
     env: Union[dict[str, str], list[kubernetes.EnvVar]]
