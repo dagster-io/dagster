@@ -28,26 +28,65 @@ To deploy more than one Dagster project, use the `dagster-create workspace` comm
 
 Follow the steps in the [OSS deployment docs](/deployment/oss/deployment-options) to set up a production OSS deployment. You will need to add your project code to the Docker container used in the deployment.
 
-### Dagster+ production deployment
-
-<Tabs>
-<TabItem value="serverless" label="Serverless">
+### Dagster+ Serverless production deployment
 
 Get started with [Dagster+ Serverless](/deployment/dagster-plus/getting-started), if you haven't already. You will be guided through the process of creating a project that contains a CI/CD workflow file, which is used to configure continuous deployment of your project.
 
-If you are deploying another project to an existing Dagster+ Serverless deployment, you will need to create the CI/CD workflow file yourself. For more information, see the [Dagster+ Serverless CI/CD guide](/deployment/dagster-plus/deploying-code/ci-cd/ci-cd-in-serverless).
+If you are deploying an additional project to an existing Dagster+ Serverless deployment, you will need to create the CI/CD workflow file yourself.
 
-</TabItem>
-<TabItem value="hybrid" label="Hybrid">
+For more information, see the [Dagster+ Serverless CI/CD guide](/deployment/dagster-plus/deploying-code/ci-cd/ci-cd-in-serverless).
 
-TK - update link to `dg plus deploy configure`
+### Dagster+ Hybrid production deployment
 
-1. Get started with [Dagster+ Hybrid](/deployment/dagster-plus/getting-started), if you haven't already.
-2. In the root directory of your project, run [`dg plus deploy configure`](/api/clis/dg-cli/dg-plus#deploy) to create a `build.yaml` deployment configuration file and a Dockerfile. You will need to update the `build.yaml` file with your Docker registry.
-3. To deploy to the cloud, you can either:
-   - Perform a one-time deployment with the [`dg plus deploy`](/api/clis/dg-cli/dg-plus#deploy) command
-   - [Configure CI/CD](/deployment/dagster-plus/deploying-code/ci-cd/ci-cd-in-hybrid) for continuous deployment.
+Get started with [Dagster+ Hybrid](/deployment/dagster-plus/getting-started), if you haven't already, then follow the steps below to generate configuration files for your use case.
 
-</TabItem>
+<Tabs>
+   <TabItem value="github" label="CI/CD with GitHub">
+   1. Change to the project directory:
+      ```shell
+      cd my-project
+      ```
+   2. Initialize a Git repository:
+      ```shell
+      git init .
+      ```
+   3. Use the `dg` CLI to scaffold deployment configuration files:
+      ```shell
+      dg plus deploy configure hybrid --git-provider github
+      ```
+   4. Update the `build.yaml` file with your Docker registry.
+   
+   :::info
+
+   The `dg plus deploy configure hybrid --git-provider github` command will create the following deployment configuration files:
+
+      - A Dockerfile
+      - A `build.yaml` configuration file
+      - A `.github/dagster-cloud-deploy.yml` GitHub Action workflow configuration file for continuous deployment.
+   ::: 
+   </TabItem>
+   <TabItem value="non-github" label="CI/CD with a non-GitHub provider">
+   1. Change to the project directory:
+      ```shell
+      cd my-project
+      ```
+   2. Initialize a Git repository:
+      ```shell
+      git init .
+      ```
+   3. Use the `dg` CLI to scaffold deployment configuration files:
+      ```shell
+      dg plus deploy configure hybrid
+      ```
+   4. Update the `build.yaml` file with your Docker registry.
+   5. To configure CI/CD, follow the steps in the ["Non-GitHub CI/CD provider" section of CI/CD in Dagster+ Hybrid guide](/deployment/dagster-plus/deploying-code/ci-cd/ci-cd-in-hybrid#non-github).
+   
+   :::info
+
+   The `dg plus deploy configure hybrid` command will create the following deployment configuration files:
+
+      - A Dockerfile
+      - A `build.yaml` configuration file
+   ::: 
+   </TabItem>
 </Tabs>
-
