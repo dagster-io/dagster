@@ -16,7 +16,7 @@ The Atlan integration can be configured using the [dagster-cloud CLI](/api/clis/
 
 ## Enable the Atlan integration
 
-```bash 
+```bash
 dagster-cloud integration atlan set-settings $ATLAN_TOKEN $ATLAN_DOMAIN \
   --api-token $DAGSTER_CLOUD_API_TOKEN \
   --url $DAGSTER_CLOUD_URL
@@ -24,7 +24,7 @@ dagster-cloud integration atlan set-settings $ATLAN_TOKEN $ATLAN_DOMAIN \
 
 After doing this, you can confirm that the integration is correctly configured by running the following command:
 
-```bash 
+```bash
 dagster-cloud integration atlan preflight-check \
   --api-token $DAGSTER_CLOUD_API_TOKEN \
   --url $DAGSTER_CLOUD_URL
@@ -36,7 +36,7 @@ This will return a success message if the integration is correctly configured.
 
 To check the current integration settings, you can run the following command:
 
-```bash 
+```bash
 dagster-cloud integration atlan get-settings \
   --api-token $DAGSTER_CLOUD_API_TOKEN \
   --url $DAGSTER_CLOUD_URL
@@ -48,11 +48,12 @@ This will return the current integration settings, with the token redacted.
 
 The Atlan integration can be disabled by deleting your Atlan settings using the [dagster-cloud CLI](/api/clis/dagster-cloud-cli):
 
-```bash 
+```bash
 dagster-cloud integration atlan delete-settings \
   --api-token $DAGSTER_CLOUD_API_TOKEN \
   --url $DAGSTER_CLOUD_URL
 ```
+
 ## About Atlan
 
 **Atlan** is a modern data workspace platform that helps organizations with data discovery, governance, and collaboration.
