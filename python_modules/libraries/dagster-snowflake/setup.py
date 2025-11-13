@@ -34,7 +34,7 @@ setup(
     include_package_data=True,
     python_requires=">=3.10,<3.14",
     install_requires=[
-        f"dagster{pin}",
+        "dagster==1.12.2",
         "snowflake-connector-python>=3.4.0",
         # Workaround for incorrect pin in the snowflake-connector-python package
         # See https://github.com/snowflakedb/snowflake-connector-python/issues/2109

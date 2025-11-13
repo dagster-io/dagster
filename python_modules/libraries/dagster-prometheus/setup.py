@@ -33,6 +33,6 @@ setup(
     packages=find_packages(exclude=["dagster_prometheus_tests*"]),
     include_package_data=True,
     python_requires=">=3.10,<3.14",
-    install_requires=[f"dagster{pin}", "prometheus_client"],
+    install_requires=["dagster==1.12.2", "prometheus_client"],
     zip_safe=False,
 )
