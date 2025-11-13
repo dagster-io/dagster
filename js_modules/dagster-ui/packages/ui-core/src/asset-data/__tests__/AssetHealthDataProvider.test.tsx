@@ -80,6 +80,8 @@ describe('AssetHealthDataProvider integration tests', () => {
           latestMaterializationTimestamp: null,
           latestFailedToMaterializeTimestamp: null,
           freshnessStatusChangedTimestamp: null,
+          latestCheckWarningTimestamp: null,
+          latestCheckFailureTimestamp: null,
           assetHealth: null,
         });
       });
@@ -152,6 +154,8 @@ describe('AssetHealthDataProvider integration tests', () => {
           latestMaterializationTimestamp: null,
           latestFailedToMaterializeTimestamp: null,
           freshnessStatusChangedTimestamp: null,
+          latestCheckWarningTimestamp: null,
+          latestCheckFailureTimestamp: null,
           assetHealth: null,
         });
 
@@ -164,6 +168,8 @@ describe('AssetHealthDataProvider integration tests', () => {
           latestMaterializationTimestamp: null,
           latestFailedToMaterializeTimestamp: null,
           freshnessStatusChangedTimestamp: null,
+          latestCheckWarningTimestamp: null,
+        latestCheckFailureTimestamp: null,
           assetHealth: null,
         });
       });
@@ -216,6 +222,8 @@ describe('AssetHealthDataProvider integration tests', () => {
           latestMaterializationTimestamp: null,
           latestFailedToMaterializeTimestamp: null,
           freshnessStatusChangedTimestamp: null,
+          latestCheckWarningTimestamp: null,
+          latestCheckFailureTimestamp: null,
           assetHealth: null,
         });
       });
@@ -323,6 +331,8 @@ describe('AssetHealthDataProvider integration tests', () => {
           latestMaterializationTimestamp: null,
           latestFailedToMaterializeTimestamp: null,
           freshnessStatusChangedTimestamp: null,
+          latestCheckWarningTimestamp: null,
+          latestCheckFailureTimestamp: null,
           assetHealth: null,
         });
       });
@@ -352,6 +362,8 @@ describe('AssetHealthDataProvider integration tests', () => {
           latestMaterializationTimestamp: null,
           latestFailedToMaterializeTimestamp: null,
           freshnessStatusChangedTimestamp: null,
+          latestCheckWarningTimestamp: null,
+          latestCheckFailureTimestamp: null,
           assetHealth: null,
         });
       });
