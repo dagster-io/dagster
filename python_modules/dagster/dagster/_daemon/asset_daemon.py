@@ -644,9 +644,35 @@ class AssetDaemon(DagsterDaemon):
 
         result = {}
 
-        initial_cursor = asset_daemon_cursor_to_instigator_serialized_cursor(pre_sensor_cursor)
-
         for sensor, repo in sensors_and_repos:
+            selection = sensor.asset_selection
+            if not selection:
+                continue
+
+            repo_asset_graph = repo.asset_graph
+            resolved_keys = selection.resolve(repo_asset_graph) | selection.resolve_checks(
+                repo_asset_graph
+            )
+
+            serialized_cursor = None
+
+            if len(resolved_keys) > 0:
+                # filter down the cursor to just the keys targeted by the sensor
+                condition_cursors = [
+                    condition_cursor
+                    for condition_cursor in (pre_sensor_cursor.previous_condition_cursors or [])
+                    if condition_cursor.key in resolved_keys
+                ]
+
+                cursor_to_use = dataclasses.replace(
+                    pre_sensor_cursor,
+                    previous_condition_cursors=condition_cursors,
+                )
+
+                serialized_cursor = asset_daemon_cursor_to_instigator_serialized_cursor(
+                    cursor_to_use
+                )
+
             new_auto_materialize_state = InstigatorState(
                 sensor.get_remote_origin(),
                 InstigatorType.SENSOR,
@@ -657,7 +683,7 @@ class AssetDaemon(DagsterDaemon):
                 ),
                 SensorInstigatorData(
                     min_interval=sensor.min_interval_seconds,
-                    cursor=initial_cursor,
+                    cursor=serialized_cursor,
                     last_sensor_start_timestamp=get_current_timestamp(),
                     sensor_type=sensor.sensor_type,
                 ),
