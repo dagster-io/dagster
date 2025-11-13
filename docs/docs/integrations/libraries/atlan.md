@@ -42,7 +42,7 @@ dagster-cloud integration atlan get-settings \
   --url $DAGSTER_CLOUD_URL
 ```
 
-This will return the current integration settings.
+This will return the current integration settings, with the token redacted.
 
 ## Disable the Atlan integration
 
