@@ -1,5 +1,6 @@
 import dagster as dg
 import pytest
+from dagster._core.definitions.sensor_definition import SensorType
 
 
 def test_jobs_attr():
@@ -140,3 +141,91 @@ def test_owners_validation():
     # Test empty team name
     with pytest.raises(dg.DagsterInvalidDefinitionError, match="Team name cannot be empty"):
         dg.SensorDefinition(evaluation_fn=eval_fn, job_name="test_job", owners=["team:"])
+
+
+def test_sensor_metadata_preserved_through_with_definition_metadata_update():
+    """Test that sensor_type and other attributes are preserved when metadata is updated via Definitions."""
+
+    # Create a dummy job for sensors that need it
+    @dg.job
+    def my_job():
+        pass
+
+    # Test AutomationConditionSensorDefinition
+    automation_sensor = dg.AutomationConditionSensorDefinition(
+        name="test_automation_sensor",
+        target="group:test",
+    )
+    assert automation_sensor.sensor_type == SensorType.AUTO_MATERIALIZE
+
+    defs = dg.Definitions(sensors=[automation_sensor]).with_definition_metadata_update(
+        lambda metadata: {**metadata, "foo": "bar"}
+    )
+
+    updated_automation_sensor = defs.get_sensor_def("test_automation_sensor")
+    assert updated_automation_sensor.metadata["foo"].value == "bar"
+    assert updated_automation_sensor.sensor_type == SensorType.AUTO_MATERIALIZE
+
+    # Test RunStatusSensorDefinition
+    @dg.run_status_sensor(run_status=dg.DagsterRunStatus.SUCCESS, name="test_run_status_sensor")
+    def my_run_status_sensor(context):
+        pass
+
+    assert my_run_status_sensor.sensor_type == SensorType.RUN_STATUS
+
+    defs = dg.Definitions(
+        sensors=[my_run_status_sensor], jobs=[my_job]
+    ).with_definition_metadata_update(lambda metadata: {**metadata, "baz": "qux"})
+
+    updated_run_status_sensor = defs.get_sensor_def("test_run_status_sensor")
+    assert updated_run_status_sensor.metadata["baz"].value == "qux"
+    assert updated_run_status_sensor.sensor_type == SensorType.RUN_STATUS
+
+    # Test AssetSensorDefinition
+    @dg.asset_sensor(asset_key=dg.AssetKey("my_asset"), job_name="my_job")
+    def my_asset_sensor(context, asset_event):
+        pass
+
+    assert my_asset_sensor.sensor_type == SensorType.ASSET
+
+    defs = dg.Definitions(sensors=[my_asset_sensor], jobs=[my_job]).with_definition_metadata_update(
+        lambda metadata: {**metadata, "asset_metadata": "value"}
+    )
+
+    updated_asset_sensor = defs.get_sensor_def("my_asset_sensor")
+    assert updated_asset_sensor.metadata["asset_metadata"].value == "value"
+    assert updated_asset_sensor.sensor_type == SensorType.ASSET
+
+    # Test MultiAssetSensorDefinition
+    @dg.multi_asset_sensor(
+        monitored_assets=[dg.AssetKey("asset1"), dg.AssetKey("asset2")],
+        name="test_multi_asset_sensor",
+        job_name="my_job",
+    )
+    def my_multi_asset_sensor(context):
+        pass
+
+    assert my_multi_asset_sensor.sensor_type == SensorType.MULTI_ASSET
+
+    defs = dg.Definitions(
+        sensors=[my_multi_asset_sensor], jobs=[my_job]
+    ).with_definition_metadata_update(lambda metadata: {**metadata, "multi": "metadata"})
+
+    updated_multi_asset_sensor = defs.get_sensor_def("test_multi_asset_sensor")
+    assert updated_multi_asset_sensor.metadata["multi"].value == "metadata"
+    assert updated_multi_asset_sensor.sensor_type == SensorType.MULTI_ASSET
+
+    # Test base SensorDefinition
+    @dg.sensor(name="test_base_sensor", job_name="my_job")
+    def my_base_sensor(context):
+        pass
+
+    assert my_base_sensor.sensor_type == SensorType.STANDARD
+
+    defs = dg.Definitions(sensors=[my_base_sensor], jobs=[my_job]).with_definition_metadata_update(
+        lambda metadata: {**metadata, "standard": "sensor"}
+    )
+
+    updated_base_sensor = defs.get_sensor_def("test_base_sensor")
+    assert updated_base_sensor.metadata["standard"].value == "sensor"
+    assert updated_base_sensor.sensor_type == SensorType.STANDARD
