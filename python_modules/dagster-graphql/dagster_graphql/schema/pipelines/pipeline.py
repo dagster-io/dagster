@@ -3,6 +3,7 @@ from typing import TYPE_CHECKING, AbstractSet, Optional  # noqa: UP035
 
 import dagster._check as check
 import graphene
+from dagster._core.definitions.asset_health.asset_freshness_health import AssetFreshnessHealthState
 from dagster._core.definitions.asset_health.asset_materialization_health import (
     MinimalAssetMaterializationHealthState,
 )
@@ -498,10 +499,8 @@ class GrapheneAsset(graphene.ObjectType):
     async def resolve_latestFailedToMaterializeTimestamp(
         self, graphene_info: ResolveInfo
     ) -> Optional[float]:
-        materialization_state = (
-            graphene_info.context.instance.get_asset_materialization_health_state_for_assets(
-                self._asset_key
-            ).get(self._asset_key)
+        materialization_state = await MinimalAssetMaterializationHealthState.gen(
+            graphene_info.context, self._asset_key
         )
         if materialization_state is not None:
             ts = materialization_state.latest_failed_to_materialize_timestamp
@@ -518,13 +517,11 @@ class GrapheneAsset(graphene.ObjectType):
 
         return ts * 1000 if ts else None  # FE prefers timestamp in milliseconds
 
-    def resolve_freshnessStatusChangedTimestamp(
+    async def resolve_freshnessStatusChangedTimestamp(
         self, graphene_info: ResolveInfo
     ) -> Optional[float]:
-        freshness_state = (
-            graphene_info.context.instance.get_asset_freshness_health_state_for_assets(
-                self._asset_key
-            ).get(self._asset_key)
+        freshness_state = await AssetFreshnessHealthState.gen(
+            graphene_info.context, self._asset_key
         )
         if freshness_state is not None:
             ts = freshness_state.updated_timestamp
