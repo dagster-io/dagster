@@ -28,9 +28,9 @@ export const CollapsibleSection = ({
           grow: 1,
           ...(headerWrapperProps?.flex || {}),
         }}
-        onClick={() => {
+        onClick={(e) => {
           setIsCollapsed(!isCollapsed);
-          headerWrapperProps?.onClick?.();
+          headerWrapperProps?.onClick?.(e);
         }}
       >
         {arrowSide === 'left' ? (

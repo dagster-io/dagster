@@ -38,9 +38,9 @@ export const DimensionRangeWizards = ({
           border={idx < selections.length - 1 ? 'bottom' : undefined}
           padding={{vertical: 12, horizontal: 20}}
         >
-          <Box as={Subheading} flex={{alignItems: 'center', gap: 8}}>
+          <Box flex={{alignItems: 'center', gap: 8}}>
             <Icon name="partition" />
-            {range.dimension.name}
+            <Subheading>{range.dimension.name}</Subheading>
           </Box>
           <Box>
             Select partitions to materialize.{' '}

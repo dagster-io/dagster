@@ -131,15 +131,12 @@ export const useSelectionInputLintingAndHighlighting = ({
 
   return ReactDOM.createPortal(
     <PortalElement $bottom={error.y} $left={error.x}>
-      <Box
-        as={Content}
-        padding={{horizontal: 12, vertical: 8}}
-        flex={{direction: 'row', gap: 4}}
-        color={Colors.textLight()}
-      >
-        <Icon name="run_failed" color={Colors.accentRed()} />
-        <BodySmall color={Colors.textLight()}>{message}</BodySmall>
-      </Box>
+      <Content>
+        <Box padding={{horizontal: 12, vertical: 8}} flex={{direction: 'row', gap: 4}}>
+          <Icon name="run_failed" color={Colors.accentRed()} />
+          <BodySmall color={Colors.textLight()}>{message}</BodySmall>
+        </Box>
+      </Content>
     </PortalElement>,
     document.body,
   );
