@@ -293,7 +293,9 @@ MIN_ENV_VAR_INJECTION_VERSION = Version("1.10.8")
 
 
 @contextmanager
-def create_temp_workspace_file(dg_context: DgContext) -> Iterator[str]:
+def create_temp_workspace_file(
+    dg_context: DgContext, use_active_venv: bool = False
+) -> Iterator[str]:
     # defer for import performance
     import yaml
 
@@ -313,8 +315,13 @@ def create_temp_workspace_file(dg_context: DgContext) -> Iterator[str]:
                 project_root = dg_context.root_path / spec.path
                 project_context: DgContext = dg_context.with_root_path(project_root)
 
+                # when using the active virtual environment, do not attempt to resolve the python executable
+                use_executable_path = not use_active_venv
+
                 entries.append(
-                    _workspace_entry_for_project(project_context, use_executable_path=True)
+                    _workspace_entry_for_project(
+                        project_context, use_executable_path=use_executable_path
+                    )
                 )
 
         temp_workspace_file.write_text(yaml.dump({"load_from": entries}))
@@ -325,7 +332,8 @@ def _dagster_cloud_entry_for_project(
     dg_context: DgContext, workspace_context: Optional[DgContext]
 ) -> dict[str, Any]:
     merged_build_config: DgRawBuildConfig = merge_build_configs(
-        workspace_context.build_config if workspace_context else None, dg_context.build_config
+        workspace_context.build_config if workspace_context else None,
+        dg_context.build_config,
     )
 
     merged_container_context_config = merge_container_context_configs(
@@ -391,7 +399,10 @@ def _get_display_header(statuses: dict[str, ComponentStateRefreshStatus]) -> str
 
 
 def _get_display_text_for_status(
-    status: ComponentStateRefreshStatus, key: str, max_key_length: int, spinner_char: str
+    status: ComponentStateRefreshStatus,
+    key: str,
+    max_key_length: int,
+    spinner_char: str,
 ) -> str:
     padded_key = key.ljust(max_key_length)
     if status.status == "refreshing":
