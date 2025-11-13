@@ -1,4 +1,3 @@
-import os
 from collections.abc import Mapping
 from typing import Any, Optional
 
@@ -9,11 +8,6 @@ from dagster_shared.serdes.objects.models.defs_state_info import DefsStateInfo
 from dagster_shared.serdes.serdes import serialize_value
 
 from dagster_cloud_cli.core.agent_queue import AgentQueue
-
-# Python 3.8 is EOL and support will be removed soon.
-# Dagster 1.9 onwards there is no support for 3.8 so we use an older base image.
-# Defaults to a base image tag for  1.8.13
-_PYTHON_38_BASE_IMAGE_TAG = os.getenv("PYTHON_38_BASE_IMAGE_TAG", "1be1105a-626d7d2a")
 
 
 @whitelist_for_serdes
