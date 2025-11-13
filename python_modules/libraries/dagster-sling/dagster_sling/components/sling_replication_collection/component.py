@@ -4,6 +4,7 @@ from functools import cached_property
 from pathlib import Path
 from typing import Annotated, Any, Literal, Optional, TypeAlias, Union
 
+import dagster as dg
 from dagster import Resolvable, Resolver
 from dagster._annotations import public
 from dagster._core.definitions.assets.definition.asset_spec import AssetSpec
@@ -29,7 +30,7 @@ from dagster.components.utils.translation import (
 from dagster_shared.utils.warnings import deprecation_warning
 from pydantic import BaseModel, ConfigDict, Field
 
-from dagster_sling.asset_decorator import sling_assets
+from dagster_sling.asset_decorator import get_sling_asset_specs
 from dagster_sling.components.sling_replication_collection.scaffolder import (
     SlingReplicationComponentScaffolder,
 )
@@ -142,6 +143,17 @@ class SlingReplicationCollectionComponent(Component, Resolvable):
     def _base_translator(self) -> DagsterSlingTranslator:
         return DagsterSlingTranslator()
 
+    @property
+    def op_config_schema(self) -> Optional[type]:
+        """Returns the config schema for the op.
+
+        Override this method to provide a custom config schema for the sling assets op.
+
+        Returns:
+            Optional[type]: The config schema class, or None for no config.
+        """
+        return None
+
     @public
     def get_asset_spec(self, stream_definition: Mapping[str, Any]) -> AssetSpec:
         """Generates an AssetSpec for a given Sling stream definition.
@@ -184,12 +196,19 @@ class SlingReplicationCollectionComponent(Component, Resolvable):
         op_spec = replication_spec_model.op or OpSpec()
         translator = SlingComponentTranslator(self, replication_spec_model, context.path)
 
-        @sling_assets(
-            name=op_spec.name or Path(replication_spec_model.path).stem,
-            op_tags=op_spec.tags,
+        # Build asset specs using the same logic as @sling_assets decorator
+        specs = get_sling_asset_specs(
             replication_config=context.path / replication_spec_model.path,
             dagster_sling_translator=translator,
+        )
+
+        @dg.multi_asset(
+            name=op_spec.name or Path(replication_spec_model.path).stem,
+            specs=specs,
+            can_subset=True,
+            op_tags=op_spec.tags,
             backfill_policy=op_spec.backfill_policy,
+            config_schema=self.op_config_schema.to_fields_dict() if self.op_config_schema else None,
         )
         def _asset(context: AssetExecutionContext):
             yield from self.execute(
