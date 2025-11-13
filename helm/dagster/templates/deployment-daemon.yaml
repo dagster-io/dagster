@@ -16,7 +16,7 @@ metadata:
     {{ $key }}: {{ $value | squote }}
     {{- end }}
 spec:
-  replicas: {{ .Values.dagsterDaemon.replicaCount }}
+  replicas: 1
   strategy:
     type: Recreate
   selector:
