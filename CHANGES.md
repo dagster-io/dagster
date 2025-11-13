@@ -1,5 +1,22 @@
 # Changelog
 
+## 1.12.2 (core) / 0.28.2 (libraries)
+
+### New
+
+- Dagster has dropped support for Python 3.9 (due to end of life). The minimum supported Python version is now 3.10.
+- A new sidebar in the Asset catalog (behind a feature flag) provides a hierarchical view of your asset keys.
+- Added `dg api schedule {list,get}` command.
+- [dagster-census] Added `CensusComponent` allowing Dagster assets to sync with census connections.
+- [ui] Improve a few parts of the "Recent updates" timeline section of the Asset overview page.
+- [dagster-airbyte] New AirbyteWorkspace configurations: `poll_previous_running_sync`, `max_items_per_page`, `poll_interval`, `poll_timeout` & `cancel_on_termination`. (Thanks, [@stevenayers](https://github.com/stevenayers) and [@sonianuj287](https://github.com/sonianuj287)!)
+- [dagster-dbt] You can now override the `op_config_schema` property on the `DbtProjectComponent` to customize how your dbt execution can be configured at runtime.
+
+### Dagster Plus
+
+- [ui] Show "Edit public catalog views" in role permission list.
+- Added a new `dg plus deploy configure` CLI group that generates all the files necessary to get an existing project ready for deployment via Dagster+.
+
 ## 1.12.1 (core) / 0.28.1 (libraries)
 
 ### New
