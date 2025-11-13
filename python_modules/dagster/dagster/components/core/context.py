@@ -99,14 +99,7 @@ class ComponentDeclLoadContext:
         return dataclasses.replace(self, resolution_context=resolution_context)
 
     def with_rendering_scope(self, rendering_scope: Mapping[str, Any]) -> "Self":
-        return self._with_resolution_context(
-            self.resolution_context.with_scope(
-                **rendering_scope,
-                **{
-                    "project_root": str(self.project_root.resolve()),
-                },
-            )
-        )
+        return self._with_resolution_context(self.resolution_context.with_scope(**rendering_scope))
 
     def with_source_position_tree(self, source_position_tree: SourcePositionTree) -> "Self":
         return self._with_resolution_context(
