@@ -476,6 +476,7 @@ def test_fivetran_resync_and_poll_materialization_method(
         result = materialize(
             [my_fivetran_assets],
             resources={"fivetran": workspace},
+            run_config={"ops": {connector_id: {"config": {"resync": True}}}},
         )
         assert result.success
         asset_materializations = [
