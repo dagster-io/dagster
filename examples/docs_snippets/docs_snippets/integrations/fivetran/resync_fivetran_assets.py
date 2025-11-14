@@ -1,4 +1,4 @@
-from dagster_fivetran import FivetranWorkspace, fivetran_assets
+from dagster_fivetran import FivetranSyncConfig, FivetranWorkspace, fivetran_assets
 
 import dagster as dg
 
@@ -16,16 +16,18 @@ fivetran_workspace = FivetranWorkspace(
     workspace=fivetran_workspace,
 )
 def fivetran_connector_assets(
-    context: dg.AssetExecutionContext, fivetran: FivetranWorkspace
+    context: dg.AssetExecutionContext,
+    fivetran: FivetranWorkspace,
+    config: FivetranSyncConfig,
 ):
-    # Perform a historical resync of specific tables
-    yield from fivetran.resync_and_poll(
-        context=context,
-        resync_parameters={
-            "schema_name": ["table1", "table2"],
-            "another_schema": ["table3"],
-        },
-    )
+    """Syncs Fivetran connector with optional resync capability.
+
+    Configure at runtime:
+    - For normal sync: Pass config with resync=False (default)
+    - For historical resync of specific tables: Pass config with resync=True and resync_parameters
+    - For full historical resync: Pass config with resync=True and no resync_parameters
+    """
+    yield from fivetran.sync_and_poll(context=context, config=config)
 
 
 # start_resync_all
@@ -36,10 +38,15 @@ def fivetran_connector_assets(
     workspace=fivetran_workspace,
 )
 def fivetran_connector_full_resync_assets(
-    context: dg.AssetExecutionContext, fivetran: FivetranWorkspace
+    context: dg.AssetExecutionContext,
+    fivetran: FivetranWorkspace,
+    config: FivetranSyncConfig,
 ):
-    # Perform a full historical resync of all tables in the connector
-    yield from fivetran.resync_and_poll(context=context)
+    """Performs a full historical resync of all tables in the connector.
+
+    Configure at runtime with resync=True.
+    """
+    yield from fivetran.sync_and_poll(context=context, config=config)
 
 
 # end_resync_all
