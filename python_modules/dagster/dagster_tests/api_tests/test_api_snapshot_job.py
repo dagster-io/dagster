@@ -229,7 +229,7 @@ def test_job_with_invalid_definition_snapshot_api_grpc(instance):
             error_info = serializable_error_info_from_exc_info(sys.exc_info())
             assert (
                 "Input 'some_input' of op 'fail_subset' has no way of being resolved"
-                in error_info.cause.message
+                in check.not_none(error_info.cause).message
             )
 
 
@@ -245,5 +245,5 @@ async def test_async_job_with_invalid_definition_snapshot_api_grpc(instance):
             error_info = serializable_error_info_from_exc_info(sys.exc_info())
             assert (
                 "Input 'some_input' of op 'fail_subset' has no way of being resolved"
-                in error_info.cause.message
+                in check.not_none(error_info.cause).message
             )

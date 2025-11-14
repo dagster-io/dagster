@@ -3,6 +3,7 @@ import re
 import traceback
 
 import dagster as dg
+import dagster._check as check
 import pytest
 from dagster import (
     AssetKey,
@@ -210,9 +211,12 @@ def test_resolve_subset_job_errors(job_selection, use_multi, expected_error):
         error_info = SerializableErrorInfo.from_traceback(tb_exc)
 
         # assert exception context has the expected message and class
-        assert error_info.cause.cls_name == expected_class.__name__
+        assert check.not_none(error_info.cause).cls_name == expected_class.__name__
         if expected_message:
-            assert re.compile(expected_message).search(error_info.cause.message) is not None
+            assert (
+                re.compile(expected_message).search(check.not_none(error_info.cause).message)
+                is not None
+            )
 
     else:
         assert create_test_asset_job(_get_assets_defs(use_multi), selection=job_selection)
