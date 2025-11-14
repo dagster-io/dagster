@@ -252,3 +252,10 @@ def freshness_repository():
     from dagster_test.toys.freshness import get_freshness_assets
 
     return get_freshness_assets()
+
+
+@repository
+def snowflake_connection_repository():
+    from dagster_test.toys.snowflake_connection import get_snowflake_connection_assets
+
+    return get_snowflake_connection_assets()
