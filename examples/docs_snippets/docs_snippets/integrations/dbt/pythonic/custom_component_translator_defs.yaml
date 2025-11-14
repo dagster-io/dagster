@@ -1,4 +1,4 @@
 type: my_project.lib.custom_dbt_component.CustomDbtProjectComponent
 
 attributes:
-  project: '{{ project_root }}/dbt'
+  project: '{{ load_ctx.project_root }}/dbt'

@@ -5,9 +5,9 @@ attributes:
     path: script_one.py
   assets:
     - key: a
-      automation_condition: "{{ automation_condition.eager() }}"
+      automation_condition: "{{ dg.AutomationCondition.eager() }}"
     - key: b
-      automation_condition: "{{ automation_condition.on_cron('@daily') }}"
+      automation_condition: "{{ dg.AutomationCondition.on_cron('@daily') }}"
       deps: [up1, up2]
 ---
 type: dagster.components.lib.executable_component.python_script_component.PythonScriptComponent

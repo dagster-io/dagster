@@ -4,7 +4,7 @@ type: dagster_dbt.DbtProjectComponent
 template_vars_module: .template_vars
 # highlight-end
 attributes:
-  project: '{{ project_root }}/src/project_dbt/analytics'
+  project: '{{ context.project_root }}/src/project_dbt/analytics'
   select: "tag:daily"
   translation:
     key: "taxi_{{ node.name }}"

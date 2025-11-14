@@ -22,7 +22,7 @@ The generated YAML already points to the correct project path, so no edits are n
 type: dagster_dbt.DbtProjectComponent
 
 attributes:
-  project: '{{ project_root }}/src/project_dbt/analytics'
+  project: '{{ context.project_root }}/src/project_dbt/analytics'
 ```
 
 ## 2. Customize the dbt model assets
@@ -35,7 +35,7 @@ To fix this, we can add a `translation` section to the scaffolding. Translations
 type: dagster_dbt.DbtProjectComponent
 
 attributes:
-  project: '{{ project_root }}/src/project_dbt/analytics'
+  project: '{{ context.project_root }}/src/project_dbt/analytics'
   translation:
     key: 'taxi_{{ node.name }}'
     group_name: dbt
