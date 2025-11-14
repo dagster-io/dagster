@@ -78,7 +78,7 @@ dagsterWebserver:
   # Deploy a separate instance of the webserver in --read-only mode (can't launch runs, disable schedules, etc.)
   enableReadOnly: false
 
-  # The log format of the webserver, defaults to text if not set
+  # The log format of the webserver, defaults to colored if not set
   # Valid options are: colored|json|rich
   # logFormat: colored 
 
@@ -1115,7 +1115,7 @@ dagsterDaemon:
 
   heartbeatTolerance: 1800
 
-  # The log format of the daemon, defaults to text if not set
+  # The log format of the daemon, defaults to colored if not set
   # Valid options are: colored|json|rich
   # logFormat: colored 
 
