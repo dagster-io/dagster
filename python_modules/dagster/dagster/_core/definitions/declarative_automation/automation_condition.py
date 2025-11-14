@@ -15,6 +15,7 @@ from dagster._core.definitions.asset_key import (
     AssetCheckKey,
     AssetKey,
     CoercibleToAssetKey,
+    EntityKey,
     T_EntityKey,
 )
 from dagster._core.definitions.declarative_automation.serialized_objects import (
@@ -136,7 +137,9 @@ class AutomationCondition(ABC, Generic[T_EntityKey]):
         self, *, parent_unique_id: Optional[str] = None, index: Optional[int] = None
     ) -> AutomationConditionSnapshot:
         """Returns a serializable snapshot of the entire AutomationCondition tree."""
-        unique_id = self.get_node_unique_id(parent_unique_id=parent_unique_id, index=index)
+        unique_id = self.get_node_unique_id(
+            parent_unique_id=parent_unique_id, index=index, target_key=None
+        )
         node_snapshot = self.get_node_snapshot(unique_id)
         children = [
             child.get_snapshot(parent_unique_id=unique_id, index=i)
@@ -144,12 +147,22 @@ class AutomationCondition(ABC, Generic[T_EntityKey]):
         ]
         return AutomationConditionSnapshot(node_snapshot=node_snapshot, children=children)
 
-    def get_node_unique_id(self, *, parent_unique_id: Optional[str], index: Optional[int]) -> str:
+    def get_node_unique_id(
+        self,
+        *,
+        parent_unique_id: Optional[str],
+        index: Optional[int],
+        target_key: Optional[EntityKey],
+    ) -> str:
         """Returns a unique identifier for this condition within the broader condition tree."""
         return non_secure_md5_hash_str(f"{parent_unique_id}{index}{self.name}".encode())
 
     def get_backcompat_node_unique_ids(
-        self, *, parent_unique_id: Optional[str] = None, index: Optional[int] = None
+        self,
+        *,
+        parent_unique_id: Optional[str] = None,
+        index: Optional[int] = None,
+        target_key: Optional[EntityKey] = None,
     ) -> Sequence[str]:
         """Used for backwards compatibility when condition unique id logic changes."""
         return []
@@ -159,6 +172,7 @@ class AutomationCondition(ABC, Generic[T_EntityKey]):
         *,
         parent_unique_ids: Sequence[Optional[str]],
         child_indices: Sequence[Optional[int]],
+        target_key: Optional[EntityKey],
     ) -> Sequence[str]:
         unique_ids = []
         for parent_unique_id in parent_unique_ids:
@@ -166,10 +180,14 @@ class AutomationCondition(ABC, Generic[T_EntityKey]):
                 unique_ids.extend(
                     [
                         self.get_node_unique_id(
-                            parent_unique_id=parent_unique_id, index=child_index
+                            parent_unique_id=parent_unique_id,
+                            index=child_index,
+                            target_key=target_key,
                         ),
                         *self.get_backcompat_node_unique_ids(
-                            parent_unique_id=parent_unique_id, index=child_index
+                            parent_unique_id=parent_unique_id,
+                            index=child_index,
+                            target_key=target_key,
                         ),
                     ]
                 )
@@ -180,7 +198,7 @@ class AutomationCondition(ABC, Generic[T_EntityKey]):
     ) -> str:
         """Returns a unique identifier for the entire subtree."""
         node_unique_id = self.get_node_unique_id(
-            parent_unique_id=parent_node_unique_id, index=index
+            parent_unique_id=parent_node_unique_id, index=index, target_key=None
         )
         child_unique_ids = [
             child.get_unique_id(parent_node_unique_id=node_unique_id, index=i)

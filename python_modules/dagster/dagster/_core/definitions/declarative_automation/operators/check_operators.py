@@ -5,7 +5,7 @@ from typing import TYPE_CHECKING, AbstractSet, Any, Optional, Sequence  # noqa: 
 from dagster_shared.serdes import whitelist_for_serdes
 
 import dagster._check as check
-from dagster._core.definitions.asset_key import AssetCheckKey, AssetKey
+from dagster._core.definitions.asset_key import AssetCheckKey, AssetKey, EntityKey
 from dagster._core.definitions.assets.graph.base_asset_graph import BaseAssetGraph, BaseAssetNode
 from dagster._core.definitions.declarative_automation.automation_condition import (
     AutomationCondition,
@@ -56,16 +56,30 @@ class ChecksAutomationCondition(BuiltinAutomationCondition[AssetKey]):
     def requires_cursor(self) -> bool:
         return False
 
-    def get_node_unique_id(self, *, parent_unique_id: Optional[str], index: Optional[int]) -> str:
+    def get_node_unique_id(
+        self,
+        *,
+        parent_unique_id: Optional[str],
+        index: Optional[int],
+        target_key: Optional[EntityKey],
+    ) -> str:
         """Ignore allow_selection / ignore_selection for the cursor hash."""
         parts = [str(parent_unique_id), str(index), self.base_name]
         return non_secure_md5_hash_str("".join(parts).encode())
 
     def get_backcompat_node_unique_ids(
-        self, *, parent_unique_id: Optional[str] = None, index: Optional[int] = None
+        self,
+        *,
+        parent_unique_id: Optional[str] = None,
+        index: Optional[int] = None,
+        target_key: Optional[EntityKey] = None,
     ) -> Sequence[str]:
         # backcompat for previous cursors where the allow/ignore selection influenced the hash
-        return [super().get_node_unique_id(parent_unique_id=parent_unique_id, index=index)]
+        return [
+            super().get_node_unique_id(
+                parent_unique_id=parent_unique_id, index=index, target_key=target_key
+            )
+        ]
 
     def allow(self, selection: "AssetSelection") -> "ChecksAutomationCondition":
         """Returns a copy of this condition that will only consider dependencies within the provided
