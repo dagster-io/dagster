@@ -1,0 +1,35 @@
+.wrapper {
+  background-color: var(--color-background-red);
+  box-shadow: inset 0 0 0 1px var(--color-background-red-hover);
+  border-radius: 8px;
+  max-width: 90vw;
+  max-height: calc(100vh - 250px);
+  overflow: auto;
+}
+
+.contextHeader {
+  font-weight: 400;
+  margin: 0 0 16px;
+}
+
+.causeHeader {
+  font-weight: 400;
+  margin: 16px 0 16px;
+}
+
+.errorHeader {
+  color: var(--color-text-red);
+  font-weight: 400;
+  margin: 8px 0 4px;
+  white-space: pre-wrap;
+}
+
+.trace {
+  color: var(--color-text-light);
+  font-family: var(--font-mono);
+  font-size: 13px;
+  line-height: 20px;
+  font-variant-ligatures: none;
+  white-space: pre;
+  padding-bottom: 1em;
+}
