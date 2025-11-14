@@ -5,7 +5,7 @@ from dagster_shared.serdes import whitelist_for_serdes
 
 from dagster._core.asset_graph_view.entity_subset import EntitySubset
 from dagster._core.asset_graph_view.serializable_entity_subset import SerializableEntitySubset
-from dagster._core.definitions.asset_key import T_EntityKey
+from dagster._core.definitions.asset_key import EntityKey, T_EntityKey
 from dagster._core.definitions.declarative_automation.automation_condition import (
     AutomationCondition,
     AutomationResult,
@@ -38,6 +38,15 @@ class NewlyTrueCondition(BuiltinAutomationCondition[T_EntityKey]):
         if not true_subset:
             return None
         return context.asset_graph_view.get_subset_from_serializable_subset(true_subset)
+
+    def get_backcompat_node_unique_ids(
+        self,
+        *,
+        parent_unique_id: Optional[str] = None,
+        index: Optional[int] = None,
+        target_key: Optional[EntityKey] = None,
+    ) -> Sequence[str]:
+        return [self._get_stable_unique_id(target_key)]
 
     async def evaluate(self, context: AutomationContext) -> AutomationResult:  # pyright: ignore[reportIncompatibleMethodOverride]
         # evaluate child condition
