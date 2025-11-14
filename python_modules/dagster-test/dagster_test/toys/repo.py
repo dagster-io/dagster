@@ -255,7 +255,7 @@ def freshness_repository():
 
 
 @repository
-def snowflake_connection_repository():
-    from dagster_test.toys.snowflake_connection import get_snowflake_connection_assets
+def source_observable_repository():
+    from dagster_test.toys.source_observable import get_source_observable_assets
 
-    return get_snowflake_connection_assets()
+    return get_source_observable_assets()
