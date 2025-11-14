@@ -13,6 +13,7 @@ import requests
 from dagster import (
     AssetExecutionContext,
     AssetMaterialization,
+    Config,
     Definitions,
     Failure,
     InitResourceContext,
@@ -928,6 +929,29 @@ class FivetranClient:
         return FivetranOutput(connector_details=final_details, schema_config=schema_config_details)
 
 
+class FivetranSyncConfig(Config):
+    """Configuration for controlling Fivetran sync behavior.
+
+    Attributes:
+        resync: If True, performs a historical resync. If False, performs a normal sync.
+        resync_parameters: Optional parameters to control which tables to resync.
+            If not provided with resync=True, all tables will be resynced.
+            Example: {"schema_name": ["table1", "table2"], "another_schema": ["table3"]}
+    """
+
+    resync: bool = Field(
+        default=False,
+        description="Whether to perform a historical resync instead of a normal sync",
+    )
+    resync_parameters: Optional[dict[str, Any]] = Field(
+        default=None,
+        description=(
+            "Optional parameters to control which tables to resync. "
+            "If not provided with resync=True, all tables will be resynced."
+        ),
+    )
+
+
 class FivetranWorkspace(ConfigurableResource):
     """This class represents a Fivetran workspace and provides utilities
     to interact with Fivetran APIs.
@@ -1185,7 +1209,9 @@ class FivetranWorkspace(ConfigurableResource):
 
     @public
     def sync_and_poll(
-        self, context: AssetExecutionContext
+        self,
+        context: AssetExecutionContext,
+        config: Optional[FivetranSyncConfig] = None,
     ) -> FivetranEventIterator[Union[AssetMaterialization, MaterializeResult]]:
         """Executes a sync and poll process to materialize Fivetran assets.
             This method can only be used in the context of an asset execution.
@@ -1193,14 +1219,74 @@ class FivetranWorkspace(ConfigurableResource):
         Args:
             context (AssetExecutionContext): The execution context
                 from within `@fivetran_assets`.
+            config (Optional[FivetranSyncConfig]): Optional configuration to control sync behavior.
+                If config.resync is True, performs a historical resync instead of a normal sync.
+                If config.resync_parameters is provided, only the specified tables will be resynced.
 
         Returns:
             Iterator[Union[AssetMaterialization, MaterializeResult]]: An iterator of MaterializeResult
                 or AssetMaterialization.
+
+        Examples:
+            Normal sync (without config):
+
+            .. code-block:: python
+
+                from dagster import AssetExecutionContext
+                from dagster_fivetran import FivetranWorkspace, fivetran_assets
+
+                @fivetran_assets(connector_id="my_connector", workspace=fivetran_workspace)
+                def my_fivetran_assets(context: AssetExecutionContext, fivetran: FivetranWorkspace):
+                    yield from fivetran.sync_and_poll(context=context)
+
+            Historical resync of specific tables (config passed at runtime):
+
+            .. code-block:: python
+
+                from dagster import AssetExecutionContext
+                from dagster_fivetran import FivetranWorkspace, FivetranSyncConfig, fivetran_assets
+
+                @fivetran_assets(connector_id="my_connector", workspace=fivetran_workspace)
+                def my_fivetran_assets(
+                    context: AssetExecutionContext,
+                    fivetran: FivetranWorkspace,
+                    config: FivetranSyncConfig,
+                ):
+                    # When materializing, pass config with:
+                    # resync=True
+                    # resync_parameters={"schema_name": ["table1", "table2"]}
+                    yield from fivetran.sync_and_poll(context=context, config=config)
+
+            Full historical resync (config passed at runtime):
+
+            .. code-block:: python
+
+                from dagster import AssetExecutionContext
+                from dagster_fivetran import FivetranWorkspace, FivetranSyncConfig, fivetran_assets
+
+                @fivetran_assets(connector_id="my_connector", workspace=fivetran_workspace)
+                def my_fivetran_assets(
+                    context: AssetExecutionContext,
+                    fivetran: FivetranWorkspace,
+                    config: FivetranSyncConfig,
+                ):
+                    # When materializing, pass config with resync=True to resync all tables
+                    yield from fivetran.sync_and_poll(context=context, config=config)
         """
-        return FivetranEventIterator(
-            events=self._sync_and_poll(context=context), fivetran_workspace=self, context=context
-        )
+        if config and config.resync:
+            return FivetranEventIterator(
+                events=self._resync_and_poll(
+                    context=context, resync_parameters=config.resync_parameters
+                ),
+                fivetran_workspace=self,
+                context=context,
+            )
+        else:
+            return FivetranEventIterator(
+                events=self._sync_and_poll(context=context),
+                fivetran_workspace=self,
+                context=context,
+            )
 
     def _sync_and_poll(self, context: AssetExecutionContext):
         assets_def = context.assets_def
@@ -1220,6 +1306,54 @@ class FivetranWorkspace(ConfigurableResource):
             context.log.warning(
                 f"The connector with ID {connector_id} is currently paused and so it has not been synced. "
                 f"Make sure that your connector is enabled before syncing it with Dagster."
+            )
+            return
+
+        materialized_asset_keys = set()
+        for materialization in self._generate_materialization(
+            fivetran_output=fivetran_output, dagster_fivetran_translator=dagster_fivetran_translator
+        ):
+            # Scan through all tables actually created, if it was expected then emit a MaterializeResult.
+            # Otherwise, emit a runtime AssetMaterialization.
+            if materialization.asset_key in context.selected_asset_keys:
+                yield MaterializeResult(
+                    asset_key=materialization.asset_key, metadata=materialization.metadata
+                )
+                materialized_asset_keys.add(materialization.asset_key)
+            else:
+                context.log.warning(
+                    f"An unexpected asset was materialized: {materialization.asset_key}. "
+                    f"Yielding a materialization event."
+                )
+                yield materialization
+
+        unmaterialized_asset_keys = context.selected_asset_keys - materialized_asset_keys
+        if unmaterialized_asset_keys:
+            context.log.warning(f"Assets were not materialized: {unmaterialized_asset_keys}")
+
+    def _resync_and_poll(
+        self,
+        context: AssetExecutionContext,
+        resync_parameters: Optional[Mapping[str, Sequence[str]]] = None,
+    ):
+        assets_def = context.assets_def
+        dagster_fivetran_translator = get_translator_from_fivetran_assets(assets_def)
+        connector_id = next(
+            check.not_none(FivetranMetadataSet.extract(spec.metadata).connector_id)
+            for spec in assets_def.specs
+        )
+
+        client = self.get_client()
+        fivetran_output = client.resync_and_poll(
+            connector_id=connector_id,
+            resync_parameters=resync_parameters,
+        )
+
+        # The FivetranOutput is None if the connector hasn't been synced
+        if not fivetran_output:
+            context.log.warning(
+                f"The connector with ID {connector_id} is currently paused and so it has not been resynced. "
+                f"Make sure that your connector is enabled before resyncing it with Dagster."
             )
             return
 

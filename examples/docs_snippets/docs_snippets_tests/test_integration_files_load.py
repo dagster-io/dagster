@@ -34,6 +34,7 @@ EXCLUDED_FILES = {
     f"{snippets_folder}/fivetran/create_fivetran_all_assets_job.py",
     f"{snippets_folder}/fivetran/create_fivetran_selection_job.py",
     f"{snippets_folder}/fivetran/schedule_fivetran_jobs.py",
+    f"{snippets_folder}/fivetran/resync_fivetran_assets.py",
     f"{snippets_folder}/airbyte_cloud/customize_airbyte_cloud_asset_defs.py",
     f"{snippets_folder}/airbyte_cloud/customize_airbyte_cloud_translator_asset_spec.py",
     f"{snippets_folder}/airbyte_cloud/define_downstream_dependencies.py",
