@@ -2,7 +2,7 @@ from typing import TYPE_CHECKING, Optional
 
 from dagster_shared.serdes import whitelist_for_serdes
 
-from dagster._core.definitions.asset_key import AssetKey
+from dagster._core.definitions.asset_key import AssetKey, EntityKey
 from dagster._core.definitions.auto_materialize_rule import AutoMaterializeRule
 from dagster._core.definitions.declarative_automation.automation_condition import (
     AutomationResult,
@@ -24,7 +24,13 @@ class RuleCondition(BuiltinAutomationCondition[AssetKey]):
 
     rule: AutoMaterializeRule
 
-    def get_node_unique_id(self, *, parent_unique_id: Optional[str], index: Optional[int]) -> str:
+    def get_node_unique_id(
+        self,
+        *,
+        parent_unique_id: Optional[str],
+        index: Optional[int],
+        target_key: Optional[EntityKey],
+    ) -> str:
         # preserves old (bad) behavior of not including the parent_unique_id to avoid invalidating
         # old serialized information
         parts = [self.rule.__class__.__name__, self.description]

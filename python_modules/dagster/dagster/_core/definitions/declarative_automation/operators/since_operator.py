@@ -8,7 +8,7 @@ from typing_extensions import Self
 
 import dagster._check as check
 from dagster._annotations import public
-from dagster._core.definitions.asset_key import T_EntityKey
+from dagster._core.definitions.asset_key import EntityKey, T_EntityKey
 from dagster._core.definitions.declarative_automation.automation_condition import (
     AutomationCondition,
     AutomationResult,
@@ -20,6 +20,7 @@ from dagster._core.definitions.declarative_automation.operators.utils import has
 from dagster._core.definitions.metadata import MetadataMapping
 from dagster._core.definitions.metadata.metadata_value import FloatMetadataValue, IntMetadataValue
 from dagster._record import copy, record
+from dagster._utils.security import non_secure_md5_hash_str
 
 if TYPE_CHECKING:
     from dagster._core.definitions.asset_selection import AssetSelection
@@ -92,6 +93,39 @@ class SinceCondition(BuiltinAutomationCondition[T_EntityKey]):
     @property
     def children(self) -> Sequence[AutomationCondition[T_EntityKey]]:
         return [self.trigger_condition, self.reset_condition]
+
+    def get_node_unique_id(
+        self,
+        *,
+        parent_unique_id: Optional[str],
+        index: Optional[int],
+        target_key: Optional[EntityKey],
+    ) -> str:
+        # since conditions should have stable cursoring logic regardless of where they
+        # exist in the broader condition tree, as they're always evaluated over the entire
+        # subset
+        trigger_id = self.trigger_condition.get_node_unique_id(
+            parent_unique_id=None, index=0, target_key=target_key
+        )
+        reset_id = self.reset_condition.get_node_unique_id(
+            parent_unique_id=None, index=1, target_key=target_key
+        )
+        parts = [trigger_id, reset_id, target_key.to_user_string() if target_key else ""]
+        return non_secure_md5_hash_str("".join(parts).encode())
+
+    def get_backcompat_node_unique_ids(
+        self,
+        *,
+        parent_unique_id: Optional[str] = None,
+        index: Optional[int] = None,
+        target_key: Optional[EntityKey] = None,
+    ) -> Sequence[str]:
+        return [
+            # for cursors before this change, use the standard globally-aware unique id
+            super().get_node_unique_id(
+                parent_unique_id=parent_unique_id, index=index, target_key=target_key
+            )
+        ]
 
     async def evaluate(  # pyright: ignore[reportIncompatibleMethodOverride]
         self, context: AutomationContext[T_EntityKey]
