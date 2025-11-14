@@ -9,6 +9,13 @@ import {DataVizColorStyles} from '../palettes/DataVizColorStyles';
 import {TranslucentColorStyles} from '../palettes/TranslucentColorStyles';
 
 const ThemeRoot = createGlobalStyle`
+  :root {
+    --font-default: Geist, Inter, -apple-system, BlinkMacSystemFont, Segoe UI, Roboto, Oxygen, Ubuntu, Cantarell, Open Sans, Helvetica Neue, Icons16, sans-serif;
+    --font-mono: Geist Mono, Roboto Mono, SF Mono, SFMono-Regular, ui-monospace, Source Code Pro,
+      Menlo, Monaco, Cascadia Mono, Segoe UI Mono, Oxygen Mono, Ubuntu Monospace, Fira Mono,
+      Droid Sans Mono, Courier New, monospace;
+    }
+  }
   @media (prefers-color-scheme: light) {
     :root, .themeSystem {
       ${lightThemeColors}

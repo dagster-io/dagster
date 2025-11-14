@@ -14,7 +14,6 @@ import {
 import {useLayoutEffect} from 'react';
 import {createGlobalStyle} from 'styled-components';
 
-import {GlobalCustomAlertPortalStyle} from './CustomAlertProvider';
 import {useThemeState} from './useThemeState';
 
 const GlobalStyle = createGlobalStyle`
@@ -106,7 +105,6 @@ export const GlobalStyleProvider = () => {
       <GlobalTooltipStyle />
       <GlobalPopoverStyle />
       <GlobalDialogStyle />
-      <GlobalCustomAlertPortalStyle />
       <GlobalSuggestStyle />
       <Toaster richColors />
     </>
