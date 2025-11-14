@@ -20,6 +20,7 @@ from docs_snippets_tests.snippet_checks.utils import (
 MASK_MY_PROJECT = (r" \/.*?\/my-project", " /.../my-project")
 MASK_VENV = (r"Using.*\.venv.*", "")
 MASK_USING_LOG_MESSAGE = (r"Using.*\n", "")
+MASK_PKG_RESOURCES = (r"\n.*import pkg_resources\n", "")
 
 SNIPPETS_DIR = (
     DAGSTER_ROOT
@@ -46,6 +47,7 @@ def test_components_docs_snowflake_sql(
                 MASK_VENV,
                 MASK_USING_LOG_MESSAGE,
                 MASK_MY_PROJECT,
+                MASK_PKG_RESOURCES,
             ],
         ) as context,
         environ(
