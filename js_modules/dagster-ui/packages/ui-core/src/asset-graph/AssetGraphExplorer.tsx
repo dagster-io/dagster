@@ -947,7 +947,7 @@ const TopbarWrapper = styled.div<{$isFullScreen?: boolean; $viewType: AssetGraph
 const GraphQueryInputFlexWrap = styled.div`
   flex: 1;
 
-  > ${Box} {
+  > div {
     ${TextInputContainer} {
       width: 100%;
     }

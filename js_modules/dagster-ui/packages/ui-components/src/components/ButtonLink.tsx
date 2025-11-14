@@ -1,6 +1,5 @@
 import styled, {css} from 'styled-components';
 
-import {Box} from './Box';
 import {Colors} from './Color';
 
 type Colors =
@@ -38,9 +37,6 @@ const textDecoration = (underline: Underline) => {
       return css`
         &:hover:not(:disabled) {
           text-decoration: underline;
-          & > ${Box} {
-            text-decoration: underline;
-          }
         }
       `;
     case 'never':
