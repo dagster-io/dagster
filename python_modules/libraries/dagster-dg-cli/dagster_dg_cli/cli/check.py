@@ -6,7 +6,7 @@ import click
 import dagster_shared.check as check
 from dagster_dg_core.config import discover_and_validate_config_files, normalize_cli_config
 from dagster_dg_core.context import DgContext
-from dagster_dg_core.shared_options import dg_global_options, dg_path_options
+from dagster_dg_core.shared_options import dg_global_options, dg_path_options, dg_venv_options
 from dagster_dg_core.utils import DgClickCommand, DgClickGroup, exit_with_error, pushd
 from dagster_dg_core.utils.telemetry import cli_telemetry_wrapper
 
@@ -26,7 +26,9 @@ def check_group():
 @check_group.command(name="yaml", cls=DgClickCommand)
 @click.argument("paths", nargs=-1, type=click.Path(exists=True))
 @click.option(
-    "--watch", is_flag=True, help="Watch for changes to the component files and re-validate them."
+    "--watch",
+    is_flag=True,
+    help="Watch for changes to the component files and re-validate them.",
 )
 @click.option(
     "--validate-requirements/--no-validate-requirements",
@@ -146,6 +148,7 @@ def check_toml_command(
 )
 @dg_path_options
 @dg_global_options
+@dg_venv_options
 @click.pass_context
 @cli_telemetry_wrapper
 def check_definitions_command(
@@ -155,6 +158,7 @@ def check_definitions_command(
     verbose: bool,  # from dg_global_options
     target_path: Path,
     check_yaml: Optional[bool],
+    use_active_venv: bool,
     **global_options: Mapping[str, object],
 ) -> None:
     """Loads and validates your Dagster definitions using a Dagster instance.
@@ -183,7 +187,7 @@ def check_definitions_command(
 
     with (
         pushd(dg_context.root_path),
-        create_temp_workspace_file(dg_context) as workspace_file,
+        create_temp_workspace_file(dg_context, use_active_venv) as workspace_file,
     ):
         if check_yaml:
             overall_check_result = True

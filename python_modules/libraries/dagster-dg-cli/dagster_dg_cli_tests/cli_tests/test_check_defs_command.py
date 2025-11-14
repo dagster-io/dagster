@@ -1,13 +1,14 @@
 from pathlib import Path
 
 import pytest
-from dagster_dg_core.utils import discover_git_root, is_windows, pushd
+from dagster_dg_core.utils import activate_venv, discover_git_root, is_windows, pushd
 from dagster_shared.utils import environ
 from dagster_test.components.test_utils.test_cases import BASIC_INVALID_VALUE, BASIC_MISSING_VALUE
 from dagster_test.dg_utils.utils import (
     ProxyRunner,
     assert_runner_result,
     create_project_from_components,
+    install_editable_dg_dev_packages_to_venv,
     isolated_example_project_foo_bar,
     isolated_example_workspace,
 )
@@ -149,3 +150,87 @@ def test_implicit_yaml_check_from_dg_check_defs_disallowed_in_workspace_context(
             assert BASIC_INVALID_VALUE.check_error_msg and BASIC_MISSING_VALUE.check_error_msg
             BASIC_INVALID_VALUE.check_error_msg(str(result.output))
             BASIC_MISSING_VALUE.check_error_msg(str(result.output))
+
+
+@pytest.mark.skipif(is_windows(), reason="Temporarily skipping (signal issues in CLI)..")
+def test_check_defs_with_use_active_venv_flag_success():
+    """Test that check defs works correctly with --use-active-venv flag in workspace context."""
+    dagster_git_repo_dir = str(discover_git_root(Path(__file__)))
+    with (
+        ProxyRunner.test() as runner,
+        isolated_example_workspace(runner, create_venv=True) as workspace_path,
+        environ({"DAGSTER_GIT_REPO_DIR": dagster_git_repo_dir}),
+    ):
+        venv_path = workspace_path / ".venv"
+        install_editable_dg_dev_packages_to_venv(venv_path)
+
+        with activate_venv(venv_path):
+            # Create projects
+            result = runner.invoke_create_dagster(
+                "project", "--use-editable-dagster", "projects/project-1", "--uv-sync"
+            )
+            assert_runner_result(result)
+
+            result = runner.invoke_create_dagster(
+                "project", "--use-editable-dagster", "projects/project-2", "--uv-sync"
+            )
+            assert_runner_result(result)
+
+            # Run check defs with --use-active-venv flag
+            result = runner.invoke("check", "defs", "--use-active-venv")
+            assert_runner_result(result)
+
+
+@pytest.mark.skipif(is_windows(), reason="Temporarily skipping (signal issues in CLI)..")
+def test_check_defs_with_use_active_venv_flag_detects_errors():
+    """Test that check defs with --use-active-venv still detects definition errors."""
+    dagster_git_repo_dir = str(discover_git_root(Path(__file__)))
+    with (
+        ProxyRunner.test() as runner,
+        isolated_example_workspace(runner, create_venv=True) as workspace_path,
+        environ({"DAGSTER_GIT_REPO_DIR": dagster_git_repo_dir}),
+    ):
+        venv_path = workspace_path / ".venv"
+        install_editable_dg_dev_packages_to_venv(venv_path)
+
+        with activate_venv(venv_path):
+            # Create a project
+            result = runner.invoke_create_dagster(
+                "project", "--use-editable-dagster", "projects/project-1", "--uv-sync"
+            )
+            assert_runner_result(result)
+
+            # Introduce an error in the definitions
+            (
+                Path("projects") / "project-1" / "src" / "project_1" / "defs" / "__init__.py"
+            ).write_text("invalid python code")
+
+            # Run check defs with --use-active-venv flag - should fail
+            result = runner.invoke("check", "defs", "--use-active-venv")
+            assert result.exit_code == 1
+
+
+@pytest.mark.skipif(is_windows(), reason="Temporarily skipping (signal issues in CLI)..")
+def test_check_defs_project_context_with_use_active_venv():
+    """Test that check defs works with --use-active-venv in project context."""
+    dagster_git_repo_dir = str(discover_git_root(Path(__file__)))
+    with (
+        ProxyRunner.test() as runner,
+        isolated_example_workspace(runner, create_venv=True) as workspace_path,
+        environ({"DAGSTER_GIT_REPO_DIR": dagster_git_repo_dir}),
+    ):
+        venv_path = workspace_path / ".venv"
+        install_editable_dg_dev_packages_to_venv(venv_path)
+
+        with activate_venv(venv_path):
+            # Create a project
+            result = runner.invoke_create_dagster(
+                "project", "--use-editable-dagster", "projects/test-project", "--uv-sync"
+            )
+            assert_runner_result(result)
+
+            # Change to project directory
+            with pushd(Path("projects") / "test-project"):
+                # Run check defs with --use-active-venv from project context
+                result = runner.invoke("check", "defs", "--use-active-venv")
+                assert_runner_result(result)

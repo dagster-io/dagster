@@ -202,3 +202,94 @@ def test_implicit_yaml_check_from_dg_dev_in_workspace_context() -> None:
             assert BASIC_INVALID_VALUE.check_error_msg and BASIC_MISSING_VALUE.check_error_msg
             BASIC_INVALID_VALUE.check_error_msg(str(result.output))
             BASIC_MISSING_VALUE.check_error_msg(str(result.output))
+
+
+@pytest.mark.skipif(is_windows(), reason="Temporarily skipping (signal issues in CLI)..")
+def test_dev_workspace_with_use_active_venv_flag():
+    """Test that dev command works with --use-active-venv flag in workspace context."""
+    dagster_git_repo_dir = str(discover_git_root(Path(__file__)))
+    with (
+        ProxyRunner.test() as runner,
+        isolated_example_workspace(runner, create_venv=True) as workspace_path,
+        environ({"DAGSTER_GIT_REPO_DIR": dagster_git_repo_dir}),
+    ):
+        venv_path = workspace_path / ".venv"
+        install_editable_dg_dev_packages_to_venv(venv_path)
+
+        with activate_venv(venv_path):
+            # Create projects
+            result = runner.invoke_create_dagster(
+                "project", "--use-editable-dagster", "project-1", "--uv-sync"
+            )
+            assert_runner_result(result)
+
+            result = runner.invoke_create_dagster(
+                "project", "--use-editable-dagster", "project-2", "--uv-sync"
+            )
+            assert_runner_result(result)
+
+            # Start dev server with --use-active-venv flag
+            port = find_free_port()
+            dev_process = launch_dev_command(["--port", str(port), "--use-active-venv"])
+
+            # Verify both projects loaded successfully
+            assert_projects_loaded_and_exit({"project-1", "project-2"}, port, dev_process)
+
+
+@pytest.mark.skipif(is_windows(), reason="Temporarily skipping (signal issues in CLI)..")
+def test_dev_project_context_with_use_active_venv_flag():
+    """Test that dev command works with --use-active-venv flag in project context."""
+    dagster_git_repo_dir = str(discover_git_root(Path(__file__)))
+    with (
+        ProxyRunner.test() as runner,
+        isolated_example_workspace(runner, create_venv=True) as workspace_path,
+        environ({"DAGSTER_GIT_REPO_DIR": dagster_git_repo_dir}),
+    ):
+        venv_path = workspace_path / ".venv"
+        install_editable_dg_dev_packages_to_venv(venv_path)
+
+        with activate_venv(venv_path):
+            # Create a project
+            result = runner.invoke_create_dagster(
+                "project", "--use-editable-dagster", "test-project", "--uv-sync"
+            )
+            assert_runner_result(result)
+
+            # Change to project directory and start dev with --use-active-venv
+            with pushd(Path("test-project")):
+                port = find_free_port()
+                dev_process = launch_dev_command(["--port", str(port), "--use-active-venv"])
+
+                # Verify project loaded successfully
+                assert_projects_loaded_and_exit({"test-project"}, port, dev_process)
+
+
+@pytest.mark.skipif(is_windows(), reason="Temporarily skipping (signal issues in CLI)..")
+def test_dev_with_use_active_venv_flag_and_env_file():
+    """Test that --use-active-venv works correctly with environment variable loading."""
+    dagster_git_repo_dir = str(discover_git_root(Path(__file__)))
+    with (
+        ProxyRunner.test() as runner,
+        isolated_example_workspace(runner, create_venv=True) as workspace_path,
+        environ({"DAGSTER_GIT_REPO_DIR": dagster_git_repo_dir}),
+    ):
+        venv_path = workspace_path / ".venv"
+        install_editable_dg_dev_packages_to_venv(venv_path)
+
+        with activate_venv(venv_path):
+            # Create a project
+            result = runner.invoke_create_dagster(
+                "project", "--use-editable-dagster", "test-project", "--uv-sync"
+            )
+            assert_runner_result(result)
+
+            # Create an .env file in the workspace
+            env_file = workspace_path / ".env"
+            env_file.write_text("TEST_VAR=test_value\n")
+
+            # Start dev with --use-active-venv and verify it works
+            port = find_free_port()
+            dev_process = launch_dev_command(["--port", str(port), "--use-active-venv"])
+
+            # Verify project loaded successfully
+            assert_projects_loaded_and_exit({"test-project"}, port, dev_process)
