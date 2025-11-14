@@ -15,20 +15,20 @@ This guide only applies to [Dagster+ Hybrid deployments](/deployment/dagster-plu
 
 You can configure CI/CD for your project using GitHub or a non-GitHub CI/CD provider.
 
-- If you use [GitHub](#github) as a CI/CD provider, you can configure GitHub Actions with the `dg` CLI.
+- If you use [GitHub](#github) as a CI/CD provider, you can use `dg` CLI to scaffold a GitHub Actions workflow YAML file.
 - If you use a [non-GitHub CI/CD provider](#non-github), you can configure CI/CD using the `dagster-cloud CLI`.
 
 :::info
 
-This guide assumes you have an existing Dagster project. For project creation steps, see [Creating Dagster projects](/guides/build/projects/creating-projects).
+This guide assumes you have an existing Dagster project and have not already scaffolded a GitHub Actions workflow file. For project creation steps, see [Creating Dagster projects](/guides/build/projects/creating-projects).
 
 :::
 
 ## GitHub
 
-### Step 1. Generate the GitHub workflow YAML file
+### Step 1. Generate the GitHub Actions workflow YAML file
 
-To set up continuous integration using GitHub Actions, you can use `dg plus deploy configure` to generate the GitHub workflow YAML file:
+To set up continuous integration using GitHub Actions, you can use the [`dg plus deploy configure CLI command`](/api/clis/dg-cli/dg-plus#deployapi/) to generate the GitHub workflow YAML file:
 
 ```shell
 dg plus deploy configure --git-provider github
@@ -58,7 +58,7 @@ During the deployment, the agent will attempt to load your code and update the m
 
 ## Non-GitHub CI/CD provider \{#non-github}
 
-If you are using a non-GitHub CI/CD provider, your system should use the `dagster-cloud ci` command to deploy code locations to Dagster+.
+If you are using a non-GitHub CI/CD provider, your system should use the [`dg deploy` command](/api/clis/dg-cli/dg-plus#deploy) to deploy code locations to Dagster+.
 
 1. Set the build environment variables. Note that all variables are required:
    - `DAGSTER_CLOUD_ORGANIZATION`: The name of your organization in Dagster+.
@@ -71,9 +71,9 @@ If you are using a non-GitHub CI/CD provider, your system should use the `dagste
    This is an optional step but useful to validate the contents of your `dagster_cloud.yaml` file and connection to Dagster+.
 3. Initialize the build session:
    ```
-   dagster-cloud ci init --project-dir=.
+   dg plus deploy start --deployment=DEPLOYMENT_NAME --project-dir=.
    ```
-   This reads the `dagster_cloud.yaml` configuration and initializes the DAGSTER_BUILD_STATEDIR.
+   This reads the `build.yaml` configuration and initializes the DAGSTER_BUILD_STATEDIR.
 4. Build and upload Docker images for your code locations.
 
    The Docker image should contain a Python environment with `dagster`, `dagster-cloud`, and your code. For reference, see the [example Dockerfile](https://github.com/dagster-io/dagster-cloud-hybrid-quickstart/blob/main/Dockerfile) in our template repository. The example uses `pip install .` to install the code including the dependencies specified in [`setup.py`](https://github.com/dagster-io/dagster-cloud-hybrid-quickstart/blob/main/setup.py).
@@ -96,7 +96,7 @@ If you are using a non-GitHub CI/CD provider, your system should use the `dagste
 5. Update the build session with the Docker image tag. For each code location you want to deploy, run the following command passing the `IMAGE_TAG` used in the previous step:
 
    ```
-   dagster-cloud ci set-build-output --location-name=code-location-a --image-tag=IMAGE_TAG
+   dg plus deploy set-build-output --location-name=code-location-a --image-tag=IMAGE_TAG
    ```
 
    This command does not deploy the code location but just updates the local state in `DAGSTER_BUILD_STATEDIR`.
@@ -104,7 +104,7 @@ If you are using a non-GitHub CI/CD provider, your system should use the `dagste
 6. Deploy to Dagster+:
 
    ```
-   dagster-cloud ci deploy
+   dg plus deploy
    ```
 
    This command updates the code locations in Dagster+. Once this finishes successfully, you should be able to see the code locations under the **Deployments** tab in Dagster+.

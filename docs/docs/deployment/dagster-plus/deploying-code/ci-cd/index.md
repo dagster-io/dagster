@@ -7,7 +7,7 @@ slug: '/deployment/dagster-plus/deploying-code/ci-cd'
 tags: [dagster-plus-feature]
 ---
 
-If you're a GitHub or GitLab user, you can use our predefined workflows to deploy and synchronize your code to Dagster+. You can also use other Git providers, or a local Git repository with the [dagster-cloud CLI](/api/clis/dagster-cloud-cli) to run your own CI/CD process.
+If you're a GitHub or GitLab user, you can use our predefined workflows to deploy and synchronize your code to Dagster+. You can also use other Git providers, or a local Git repository with the [dg deploy CLI](/api/clis/dg-cli/dg-plus) to run your own CI/CD process.
 
 import DocCardList from '@theme/DocCardList';
 
