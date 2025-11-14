@@ -9,7 +9,7 @@ from dagster._config.field_utils import EnvVar
 from dagster._core.definitions.materialize import materialize
 from dagster._core.test_utils import environ
 from dagster._vendored.dateutil import parser
-from dagster_fivetran import FivetranOutput, FivetranWorkspace, fivetran_assets
+from dagster_fivetran import FivetranOutput, FivetranSyncConfig, FivetranWorkspace, fivetran_assets
 from dagster_fivetran.translator import MIN_TIME_STR, FivetranConnectorSetupStateType
 
 from dagster_fivetran_tests.conftest import (
@@ -409,13 +409,18 @@ def test_fivetran_resync_and_poll_materialization_method(
         )
 
         @fivetran_assets(connector_id=connector_id, workspace=workspace, name=connector_id)
-        def my_fivetran_assets(context: AssetExecutionContext, fivetran: FivetranWorkspace):
-            yield from fivetran.resync_and_poll(context=context)
+        def my_fivetran_assets(
+            context: AssetExecutionContext,
+            fivetran: FivetranWorkspace,
+            config: FivetranSyncConfig,
+        ):
+            yield from fivetran.sync_and_poll(context=context, config=config)
 
         # Mocked FivetranClient.resync_and_poll returns API response where all connector tables are expected
         result = materialize(
             [my_fivetran_assets],
             resources={"fivetran": workspace},
+            run_config={"ops": {connector_id: {"config": {"resync": True}}}},
         )
         assert result.success
         asset_materializations = [
@@ -435,6 +440,7 @@ def test_fivetran_resync_and_poll_materialization_method(
         result = materialize(
             [my_fivetran_assets],
             resources={"fivetran": workspace},
+            run_config={"ops": {connector_id: {"config": {"resync": True}}}},
         )
 
         assert result.success
@@ -499,17 +505,28 @@ def test_fivetran_resync_and_poll_with_resync_parameters(
         )
 
         @fivetran_assets(connector_id=connector_id, workspace=workspace, name=connector_id)
-        def my_fivetran_assets(context: AssetExecutionContext, fivetran: FivetranWorkspace):
-            yield from fivetran.resync_and_poll(
-                context=context,
-                resync_parameters={
-                    "schema_name_in_destination_1": ["table_name_in_destination_1"],
-                },
-            )
+        def my_fivetran_assets(
+            context: AssetExecutionContext,
+            fivetran: FivetranWorkspace,
+            config: FivetranSyncConfig,
+        ):
+            yield from fivetran.sync_and_poll(context=context, config=config)
 
         result = materialize(
             [my_fivetran_assets],
             resources={"fivetran": workspace},
+            run_config={
+                "ops": {
+                    connector_id: {
+                        "config": {
+                            "resync": True,
+                            "resync_parameters": {
+                                "schema_name_in_destination_1": ["table_name_in_destination_1"],
+                            },
+                        }
+                    }
+                }
+            },
         )
         assert result.success
 
