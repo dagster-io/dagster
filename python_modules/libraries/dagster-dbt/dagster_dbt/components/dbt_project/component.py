@@ -394,6 +394,7 @@ class DbtProjectComponent(StateBackedComponent, dg.Resolvable):
             backfill_policy=op_spec.backfill_policy,
             pool=op_spec.pool,
             config_schema=self.config_cls.to_fields_dict() if self.config_cls else None,
+            allow_arbitrary_check_specs=self.translator.settings.enable_source_tests_as_checks,
         )
         def _fn(context: dg.AssetExecutionContext):
             with _set_resolution_context(res_ctx):
