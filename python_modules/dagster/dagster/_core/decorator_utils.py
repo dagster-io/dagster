@@ -77,7 +77,7 @@ def get_type_hints(fn: Callable[..., Any]) -> Mapping[str, Any]:
         target = fn.__call__  # pyright: ignore[reportFunctionMemberAccess]
     else:
         check.failed(f"Unhandled Callable object {fn}")
-
+    
     try:
         return typing_get_type_hints(target, include_extras=True)
     except NameError as e:
