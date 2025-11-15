@@ -61,6 +61,8 @@
   display: flex;
   align-items: center;
   gap: 6px;
+  color: var(--color-text-light);
+  font-size: 12px;
 }
 
 .statusCounts {
