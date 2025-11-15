@@ -322,8 +322,8 @@ def test_multiple_error_daemon(monkeypatch):
 
         def run_loop_error(_, _ctx, _shutdown_event):
             # ?message stack cls_name cause"
-            yield SerializableErrorInfo("foobar", None, None, None)  # pyright: ignore[reportArgumentType]
-            yield SerializableErrorInfo("bizbuz", None, None, None)  # pyright: ignore[reportArgumentType]
+            yield SerializableErrorInfo("foobar", [], None, None)
+            yield SerializableErrorInfo("bizbuz", [], None, None)
 
             while True:
                 yield
