@@ -8,8 +8,29 @@
 """Client and server classes corresponding to protobuf-defined services."""
 
 import grpc
+import warnings
 
 from . import dagster_api_pb2 as dagster__api__pb2
+
+GRPC_GENERATED_VERSION = "1.71.0"
+GRPC_VERSION = grpc.__version__
+_version_not_supported = False
+
+try:
+    from grpc._utilities import first_version_is_lower
+
+    _version_not_supported = first_version_is_lower(GRPC_VERSION, GRPC_GENERATED_VERSION)
+except ImportError:
+    _version_not_supported = True
+
+if _version_not_supported:
+    raise RuntimeError(
+        f"The grpc package installed is at version {GRPC_VERSION},"
+        + f" but the generated code in dagster_api_pb2_grpc.py depends on"
+        + f" grpcio>={GRPC_GENERATED_VERSION}."
+        + f" Please upgrade your grpc module to grpcio>={GRPC_GENERATED_VERSION}"
+        + f" or downgrade your generated code using grpcio-tools<={GRPC_VERSION}."
+    )
 
 
 class DagsterApiStub(object):
@@ -25,131 +46,163 @@ class DagsterApiStub(object):
             "/api.DagsterApi/Ping",
             request_serializer=dagster__api__pb2.PingRequest.SerializeToString,
             response_deserializer=dagster__api__pb2.PingReply.FromString,
+            _registered_method=True,
         )
         self.Heartbeat = channel.unary_unary(
             "/api.DagsterApi/Heartbeat",
             request_serializer=dagster__api__pb2.PingRequest.SerializeToString,
             response_deserializer=dagster__api__pb2.PingReply.FromString,
+            _registered_method=True,
         )
         self.StreamingPing = channel.unary_stream(
             "/api.DagsterApi/StreamingPing",
             request_serializer=dagster__api__pb2.StreamingPingRequest.SerializeToString,
             response_deserializer=dagster__api__pb2.StreamingPingEvent.FromString,
+            _registered_method=True,
         )
         self.GetServerId = channel.unary_unary(
             "/api.DagsterApi/GetServerId",
             request_serializer=dagster__api__pb2.Empty.SerializeToString,
             response_deserializer=dagster__api__pb2.GetServerIdReply.FromString,
+            _registered_method=True,
         )
         self.ExecutionPlanSnapshot = channel.unary_unary(
             "/api.DagsterApi/ExecutionPlanSnapshot",
             request_serializer=dagster__api__pb2.ExecutionPlanSnapshotRequest.SerializeToString,
             response_deserializer=dagster__api__pb2.ExecutionPlanSnapshotReply.FromString,
+            _registered_method=True,
         )
         self.ListRepositories = channel.unary_unary(
             "/api.DagsterApi/ListRepositories",
             request_serializer=dagster__api__pb2.ListRepositoriesRequest.SerializeToString,
             response_deserializer=dagster__api__pb2.ListRepositoriesReply.FromString,
+            _registered_method=True,
         )
         self.ExternalPartitionNames = channel.unary_unary(
             "/api.DagsterApi/ExternalPartitionNames",
             request_serializer=dagster__api__pb2.ExternalPartitionNamesRequest.SerializeToString,
             response_deserializer=dagster__api__pb2.ExternalPartitionNamesReply.FromString,
+            _registered_method=True,
         )
         self.ExternalNotebookData = channel.unary_unary(
             "/api.DagsterApi/ExternalNotebookData",
             request_serializer=dagster__api__pb2.ExternalNotebookDataRequest.SerializeToString,
             response_deserializer=dagster__api__pb2.ExternalNotebookDataReply.FromString,
+            _registered_method=True,
         )
         self.ExternalPartitionConfig = channel.unary_unary(
             "/api.DagsterApi/ExternalPartitionConfig",
             request_serializer=dagster__api__pb2.ExternalPartitionConfigRequest.SerializeToString,
             response_deserializer=dagster__api__pb2.ExternalPartitionConfigReply.FromString,
+            _registered_method=True,
         )
         self.ExternalPartitionTags = channel.unary_unary(
             "/api.DagsterApi/ExternalPartitionTags",
             request_serializer=dagster__api__pb2.ExternalPartitionTagsRequest.SerializeToString,
             response_deserializer=dagster__api__pb2.ExternalPartitionTagsReply.FromString,
+            _registered_method=True,
         )
         self.ExternalPartitionSetExecutionParams = channel.unary_stream(
             "/api.DagsterApi/ExternalPartitionSetExecutionParams",
             request_serializer=dagster__api__pb2.ExternalPartitionSetExecutionParamsRequest.SerializeToString,
             response_deserializer=dagster__api__pb2.StreamingChunkEvent.FromString,
+            _registered_method=True,
         )
         self.ExternalPipelineSubsetSnapshot = channel.unary_unary(
             "/api.DagsterApi/ExternalPipelineSubsetSnapshot",
             request_serializer=dagster__api__pb2.ExternalPipelineSubsetSnapshotRequest.SerializeToString,
             response_deserializer=dagster__api__pb2.ExternalPipelineSubsetSnapshotReply.FromString,
+            _registered_method=True,
         )
         self.ExternalRepository = channel.unary_unary(
             "/api.DagsterApi/ExternalRepository",
             request_serializer=dagster__api__pb2.ExternalRepositoryRequest.SerializeToString,
             response_deserializer=dagster__api__pb2.ExternalRepositoryReply.FromString,
+            _registered_method=True,
         )
         self.ExternalJob = channel.unary_unary(
             "/api.DagsterApi/ExternalJob",
             request_serializer=dagster__api__pb2.ExternalJobRequest.SerializeToString,
             response_deserializer=dagster__api__pb2.ExternalJobReply.FromString,
+            _registered_method=True,
         )
         self.StreamingExternalRepository = channel.unary_stream(
             "/api.DagsterApi/StreamingExternalRepository",
             request_serializer=dagster__api__pb2.ExternalRepositoryRequest.SerializeToString,
             response_deserializer=dagster__api__pb2.StreamingExternalRepositoryEvent.FromString,
+            _registered_method=True,
         )
         self.ExternalScheduleExecution = channel.unary_stream(
             "/api.DagsterApi/ExternalScheduleExecution",
             request_serializer=dagster__api__pb2.ExternalScheduleExecutionRequest.SerializeToString,
             response_deserializer=dagster__api__pb2.StreamingChunkEvent.FromString,
+            _registered_method=True,
         )
         self.SyncExternalScheduleExecution = channel.unary_unary(
             "/api.DagsterApi/SyncExternalScheduleExecution",
             request_serializer=dagster__api__pb2.ExternalScheduleExecutionRequest.SerializeToString,
             response_deserializer=dagster__api__pb2.ExternalScheduleExecutionReply.FromString,
+            _registered_method=True,
         )
         self.ExternalSensorExecution = channel.unary_stream(
             "/api.DagsterApi/ExternalSensorExecution",
             request_serializer=dagster__api__pb2.ExternalSensorExecutionRequest.SerializeToString,
             response_deserializer=dagster__api__pb2.StreamingChunkEvent.FromString,
+            _registered_method=True,
         )
         self.SyncExternalSensorExecution = channel.unary_unary(
             "/api.DagsterApi/SyncExternalSensorExecution",
             request_serializer=dagster__api__pb2.ExternalSensorExecutionRequest.SerializeToString,
             response_deserializer=dagster__api__pb2.ExternalSensorExecutionReply.FromString,
+            _registered_method=True,
         )
         self.ShutdownServer = channel.unary_unary(
             "/api.DagsterApi/ShutdownServer",
             request_serializer=dagster__api__pb2.Empty.SerializeToString,
             response_deserializer=dagster__api__pb2.ShutdownServerReply.FromString,
+            _registered_method=True,
         )
         self.CancelExecution = channel.unary_unary(
             "/api.DagsterApi/CancelExecution",
             request_serializer=dagster__api__pb2.CancelExecutionRequest.SerializeToString,
             response_deserializer=dagster__api__pb2.CancelExecutionReply.FromString,
+            _registered_method=True,
         )
         self.CanCancelExecution = channel.unary_unary(
             "/api.DagsterApi/CanCancelExecution",
             request_serializer=dagster__api__pb2.CanCancelExecutionRequest.SerializeToString,
             response_deserializer=dagster__api__pb2.CanCancelExecutionReply.FromString,
+            _registered_method=True,
         )
         self.StartRun = channel.unary_unary(
             "/api.DagsterApi/StartRun",
             request_serializer=dagster__api__pb2.StartRunRequest.SerializeToString,
             response_deserializer=dagster__api__pb2.StartRunReply.FromString,
+            _registered_method=True,
         )
         self.GetCurrentImage = channel.unary_unary(
             "/api.DagsterApi/GetCurrentImage",
             request_serializer=dagster__api__pb2.Empty.SerializeToString,
             response_deserializer=dagster__api__pb2.GetCurrentImageReply.FromString,
+            _registered_method=True,
         )
         self.GetCurrentRuns = channel.unary_unary(
             "/api.DagsterApi/GetCurrentRuns",
             request_serializer=dagster__api__pb2.Empty.SerializeToString,
             response_deserializer=dagster__api__pb2.GetCurrentRunsReply.FromString,
+            _registered_method=True,
         )
         self.ReloadCode = channel.unary_unary(
             "/api.DagsterApi/ReloadCode",
             request_serializer=dagster__api__pb2.ReloadCodeRequest.SerializeToString,
             response_deserializer=dagster__api__pb2.ReloadCodeReply.FromString,
+            _registered_method=True,
+        )
+        self.ReloadCodeWithState = channel.unary_unary(
+            "/api.DagsterApi/ReloadCodeWithState",
+            request_serializer=dagster__api__pb2.ReloadCodeWithStateRequest.SerializeToString,
+            response_deserializer=dagster__api__pb2.ReloadCodeWithStateReply.FromString,
+            _registered_method=True,
         )
 
 
@@ -312,6 +365,12 @@ class DagsterApiServicer(object):
         context.set_details("Method not implemented!")
         raise NotImplementedError("Method not implemented!")
 
+    def ReloadCodeWithState(self, request, context):
+        """Missing associated documentation comment in .proto file."""
+        context.set_code(grpc.StatusCode.UNIMPLEMENTED)
+        context.set_details("Method not implemented!")
+        raise NotImplementedError("Method not implemented!")
+
 
 def add_DagsterApiServicer_to_server(servicer, server):
     rpc_method_handlers = {
@@ -445,9 +504,15 @@ def add_DagsterApiServicer_to_server(servicer, server):
             request_deserializer=dagster__api__pb2.ReloadCodeRequest.FromString,
             response_serializer=dagster__api__pb2.ReloadCodeReply.SerializeToString,
         ),
+        "ReloadCodeWithState": grpc.unary_unary_rpc_method_handler(
+            servicer.ReloadCodeWithState,
+            request_deserializer=dagster__api__pb2.ReloadCodeWithStateRequest.FromString,
+            response_serializer=dagster__api__pb2.ReloadCodeWithStateReply.SerializeToString,
+        ),
     }
     generic_handler = grpc.method_handlers_generic_handler("api.DagsterApi", rpc_method_handlers)
     server.add_generic_rpc_handlers((generic_handler,))
+    server.add_registered_method_handlers("api.DagsterApi", rpc_method_handlers)
 
 
 # This class is part of an EXPERIMENTAL API.
@@ -481,6 +546,7 @@ class DagsterApi(object):
             wait_for_ready,
             timeout,
             metadata,
+            _registered_method=True,
         )
 
     @staticmethod
@@ -510,6 +576,7 @@ class DagsterApi(object):
             wait_for_ready,
             timeout,
             metadata,
+            _registered_method=True,
         )
 
     @staticmethod
@@ -539,6 +606,7 @@ class DagsterApi(object):
             wait_for_ready,
             timeout,
             metadata,
+            _registered_method=True,
         )
 
     @staticmethod
@@ -568,6 +636,7 @@ class DagsterApi(object):
             wait_for_ready,
             timeout,
             metadata,
+            _registered_method=True,
         )
 
     @staticmethod
@@ -597,6 +666,7 @@ class DagsterApi(object):
             wait_for_ready,
             timeout,
             metadata,
+            _registered_method=True,
         )
 
     @staticmethod
@@ -626,6 +696,7 @@ class DagsterApi(object):
             wait_for_ready,
             timeout,
             metadata,
+            _registered_method=True,
         )
 
     @staticmethod
@@ -655,6 +726,7 @@ class DagsterApi(object):
             wait_for_ready,
             timeout,
             metadata,
+            _registered_method=True,
         )
 
     @staticmethod
@@ -684,6 +756,7 @@ class DagsterApi(object):
             wait_for_ready,
             timeout,
             metadata,
+            _registered_method=True,
         )
 
     @staticmethod
@@ -713,6 +786,7 @@ class DagsterApi(object):
             wait_for_ready,
             timeout,
             metadata,
+            _registered_method=True,
         )
 
     @staticmethod
@@ -742,6 +816,7 @@ class DagsterApi(object):
             wait_for_ready,
             timeout,
             metadata,
+            _registered_method=True,
         )
 
     @staticmethod
@@ -771,6 +846,7 @@ class DagsterApi(object):
             wait_for_ready,
             timeout,
             metadata,
+            _registered_method=True,
         )
 
     @staticmethod
@@ -800,6 +876,7 @@ class DagsterApi(object):
             wait_for_ready,
             timeout,
             metadata,
+            _registered_method=True,
         )
 
     @staticmethod
@@ -829,6 +906,7 @@ class DagsterApi(object):
             wait_for_ready,
             timeout,
             metadata,
+            _registered_method=True,
         )
 
     @staticmethod
@@ -858,6 +936,7 @@ class DagsterApi(object):
             wait_for_ready,
             timeout,
             metadata,
+            _registered_method=True,
         )
 
     @staticmethod
@@ -887,6 +966,7 @@ class DagsterApi(object):
             wait_for_ready,
             timeout,
             metadata,
+            _registered_method=True,
         )
 
     @staticmethod
@@ -916,6 +996,7 @@ class DagsterApi(object):
             wait_for_ready,
             timeout,
             metadata,
+            _registered_method=True,
         )
 
     @staticmethod
@@ -945,6 +1026,7 @@ class DagsterApi(object):
             wait_for_ready,
             timeout,
             metadata,
+            _registered_method=True,
         )
 
     @staticmethod
@@ -974,6 +1056,7 @@ class DagsterApi(object):
             wait_for_ready,
             timeout,
             metadata,
+            _registered_method=True,
         )
 
     @staticmethod
@@ -1003,6 +1086,7 @@ class DagsterApi(object):
             wait_for_ready,
             timeout,
             metadata,
+            _registered_method=True,
         )
 
     @staticmethod
@@ -1032,6 +1116,7 @@ class DagsterApi(object):
             wait_for_ready,
             timeout,
             metadata,
+            _registered_method=True,
         )
 
     @staticmethod
@@ -1061,6 +1146,7 @@ class DagsterApi(object):
             wait_for_ready,
             timeout,
             metadata,
+            _registered_method=True,
         )
 
     @staticmethod
@@ -1090,6 +1176,7 @@ class DagsterApi(object):
             wait_for_ready,
             timeout,
             metadata,
+            _registered_method=True,
         )
 
     @staticmethod
@@ -1119,6 +1206,7 @@ class DagsterApi(object):
             wait_for_ready,
             timeout,
             metadata,
+            _registered_method=True,
         )
 
     @staticmethod
@@ -1148,6 +1236,7 @@ class DagsterApi(object):
             wait_for_ready,
             timeout,
             metadata,
+            _registered_method=True,
         )
 
     @staticmethod
@@ -1177,6 +1266,7 @@ class DagsterApi(object):
             wait_for_ready,
             timeout,
             metadata,
+            _registered_method=True,
         )
 
     @staticmethod
@@ -1206,4 +1296,35 @@ class DagsterApi(object):
             wait_for_ready,
             timeout,
             metadata,
+            _registered_method=True,
+        )
+
+    @staticmethod
+    def ReloadCodeWithState(
+        request,
+        target,
+        options=(),
+        channel_credentials=None,
+        call_credentials=None,
+        insecure=False,
+        compression=None,
+        wait_for_ready=None,
+        timeout=None,
+        metadata=None,
+    ):
+        return grpc.experimental.unary_unary(
+            request,
+            target,
+            "/api.DagsterApi/ReloadCodeWithState",
+            dagster__api__pb2.ReloadCodeWithStateRequest.SerializeToString,
+            dagster__api__pb2.ReloadCodeWithStateReply.FromString,
+            options,
+            channel_credentials,
+            insecure,
+            call_credentials,
+            compression,
+            wait_for_ready,
+            timeout,
+            metadata,
+            _registered_method=True,
         )

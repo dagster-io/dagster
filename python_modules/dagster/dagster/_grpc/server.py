@@ -327,6 +327,49 @@ class LoadedRepositories:
     def reconstructables_by_name(self) -> Mapping[str, ReconstructableRepository]:
         return self._recon_repos_by_name
 
+    def reload_code_with_component_tree(
+        self, repo_name: str, defs_state_info: DefsStateInfo
+    ) -> Optional[RepositoryDefinition]:
+        """Attempt to partially reload code using its ComponentTree if available.
+
+        Args:
+            repo_name: The name of the repository to reload
+            defs_state_info: The state information to use when rebuilding definitions
+
+        Returns:
+            The reloaded RepositoryDefinition if successful, None if ComponentTree not available
+        """
+        # Make sure we have a persistent load context before loading any repositories.
+        # TODO: cleanup
+        DefinitionsLoadContext.set(
+            DefinitionsLoadContext(
+                DefinitionsLoadType.INITIALIZATION,
+                repository_load_data=DefinitionsLoadContext.get()._repository_load_data._replace(  # noqa
+                    defs_state_info=defs_state_info,
+                ),
+            )
+        )
+        if repo_name not in self._repo_defs_by_name:
+            return None
+
+        existing_repo_def = self._repo_defs_by_name[repo_name]
+        component_tree = existing_repo_def.get_component_tree()
+
+        if component_tree is None:
+            # No ComponentTree available, can't do partial reload
+            return None
+
+        # Use the ComponentTree to build new definitions with the provided state info
+        new_definitions = component_tree.build_defs()
+
+        # Convert the new definitions to a repository definition
+        new_repo_def = new_definitions.get_repository_def()
+
+        # Update our cached repository definition
+        self._repo_defs_by_name[repo_name] = new_repo_def
+
+        return new_repo_def
+
 
 def _get_code_pointer(
     loadable_target_origin: LoadableTargetOrigin,
@@ -616,6 +659,67 @@ class DagsterApiServer(DagsterApiServicer):
         )
 
         return dagster_api_pb2.ReloadCodeReply()
+
+    def ReloadCodeWithState(  # pyright: ignore[reportIncompatibleMethodOverride]
+        self,
+        request: dagster_api_pb2.ReloadCodeWithStateRequest,
+        _context: grpc.ServicerContext,
+    ) -> dagster_api_pb2.ReloadCodeWithStateReply:
+        try:
+            from dagster._serdes import deserialize_value
+
+            # Deserialize the defs_state_info from the request
+            defs_state_info = deserialize_value(request.serialized_defs_state_info, DefsStateInfo)
+
+            # set the DefinitionsLoadContext to have the new defs_state_info so that this
+            # can be used in the ComponenTree
+            DefinitionsLoadContext.get()._defs_state_info = defs_state_info  # noqa
+
+            # If we have loaded repositories, attempt partial reloads using ComponentTree
+            if self._loaded_repositories is not None:
+                repositories_reloaded = 0
+                total_repositories = len(self._loaded_repositories.definitions_by_name)
+
+                for repo_name in list(self._loaded_repositories.definitions_by_name.keys()):
+                    reloaded_repo = self._loaded_repositories.reload_code_with_component_tree(
+                        repo_name, defs_state_info
+                    )
+                    if reloaded_repo is not None:
+                        repositories_reloaded += 1
+
+                # If we successfully reloaded at least some repositories via ComponentTree,
+                # and we have loaded repositories, we're done
+                if repositories_reloaded > 0:
+                    self._logger.info(
+                        f"Successfully performed partial reload on {repositories_reloaded}/{total_repositories} "
+                        f"repositories using ComponentTree"
+                    )
+                    return dagster_api_pb2.ReloadCodeWithStateReply()
+                else:
+                    self._logger.info(
+                        "No repositories had ComponentTree available for partial reload, falling back to full reload"
+                    )
+
+            # Fallback to full reload if partial reload wasn't possible
+            self._loaded_repositories = LoadedRepositories(
+                self._loadable_target_origin,
+                entry_point=self._entry_point,
+                container_image=self._container_image,
+                container_context=self._container_context,
+                defs_state_info=defs_state_info,
+            )
+
+            # Clear any previous load error since we successfully reloaded
+            self._serializable_load_error = None
+
+            return dagster_api_pb2.ReloadCodeWithStateReply()
+
+        except Exception:
+            _maybe_log_exception(self._logger, "ReloadCodeWithState")
+            serialized_error = serialize_value(
+                serializable_error_info_from_exc_info(sys.exc_info())
+            )
+            return dagster_api_pb2.ReloadCodeWithStateReply(serialized_error=serialized_error)
 
     @retrieve_metrics()
     def Ping(self, request, _context: grpc.ServicerContext) -> dagster_api_pb2.PingReply:

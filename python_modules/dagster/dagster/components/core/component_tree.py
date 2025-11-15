@@ -18,6 +18,7 @@ from dagster_shared.utils.config import (
 from typing_extensions import Self, TypeVar
 
 from dagster._core.definitions.definitions_class import Definitions
+from dagster._core.definitions.definitions_load_context import DefinitionsLoadContext
 from dagster._core.errors import DagsterError
 from dagster.components.component.component import Component
 from dagster.components.core.component_tree_state import ComponentTreeStateTracker
@@ -71,7 +72,9 @@ class ComponentTree(IHaveNew):
 
     @cached_property
     def state_tracker(self) -> ComponentTreeStateTracker:
-        return ComponentTreeStateTracker(self.defs_module_path)
+        tracker = ComponentTreeStateTracker(self.defs_module_path)
+        tracker.set_defs_state_info(DefinitionsLoadContext.get().defs_state_info)
+        return tracker
 
     @contextmanager
     def augment_component_tree_exception(
@@ -207,6 +210,9 @@ class ComponentTree(IHaveNew):
 
     def build_defs(self) -> Definitions:
         from dagster.components.core.load_defs import get_library_json_enriched_defs
+
+        # this makes sure that we invalidate the cache for any components that have an updated state version
+        self.state_tracker.set_defs_state_info(DefinitionsLoadContext.get().defs_state_info)
 
         if self.state_tracker.get_cache_data(self.defs_module_path).defs is None:
             defs = Definitions.merge(
