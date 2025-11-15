@@ -109,6 +109,8 @@ export type Asset = {
   hasDefinitionOrRecord: Scalars['Boolean']['output'];
   id: Scalars['String']['output'];
   key: AssetKey;
+  latestCheckFailureTimestamp: Maybe<Scalars['Float']['output']>;
+  latestCheckWarningTimestamp: Maybe<Scalars['Float']['output']>;
   latestEventSortKey: Maybe<Scalars['ID']['output']>;
   latestFailedToMaterializeTimestamp: Maybe<Scalars['Float']['output']>;
   latestMaterializationTimestamp: Maybe<Scalars['Float']['output']>;
@@ -6379,6 +6381,14 @@ export const buildAsset = (
         : relationshipsToOmit.has('AssetKey')
           ? ({} as AssetKey)
           : buildAssetKey({}, relationshipsToOmit),
+    latestCheckFailureTimestamp:
+      overrides && overrides.hasOwnProperty('latestCheckFailureTimestamp')
+        ? overrides.latestCheckFailureTimestamp!
+        : 0.75,
+    latestCheckWarningTimestamp:
+      overrides && overrides.hasOwnProperty('latestCheckWarningTimestamp')
+        ? overrides.latestCheckWarningTimestamp!
+        : 1.93,
     latestEventSortKey:
       overrides && overrides.hasOwnProperty('latestEventSortKey')
         ? overrides.latestEventSortKey!
