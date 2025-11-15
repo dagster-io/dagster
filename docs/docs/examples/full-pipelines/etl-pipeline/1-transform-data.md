@@ -73,7 +73,7 @@ The dbt component creates a single file, `defs.yaml`, which configures the Dagst
 type: dagster_dbt.DbtProjectComponent
 
 attributes:
-  project: '{{ project_root }}/transform/jdbt'
+  project: '{{ context.project_root }}/transform/jdbt'
 ```
 
 To check that Dagster can load the dbt component definition correctly in the top-level `Definitions` object, run `dg check` again:
