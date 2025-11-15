@@ -741,6 +741,18 @@
                     "title": "Labels",
                     "type": "object"
                 },
+                "logFormat": {
+                    "anyOf": [
+                        {
+                            "type": "string"
+                        },
+                        {
+                            "type": "null"
+                        }
+                    ],
+                    "default": null,
+                    "title": "Logformat"
+                },
                 "nodeSelector": {
                     "$ref": "#/$defs/NodeSelector"
                 },
@@ -3521,6 +3533,18 @@
                     ],
                     "default": null,
                     "title": "Loglevel"
+                },
+                "logFormat": {
+                    "anyOf": [
+                        {
+                            "type": "string"
+                        },
+                        {
+                            "type": "null"
+                        }
+                    ],
+                    "default": null,
+                    "title": "Logformat"
                 },
                 "schedulerName": {
                     "anyOf": [

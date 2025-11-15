@@ -92,6 +92,10 @@ dagsterWebserver:
   # The log level of the uvicorn web server, defaults to warning if not set
   logLevel: ~
 
+  # The log format of the dagster web server, defaults to colored if not set
+  # Options are [colored, json, rich]
+  logFormat: ~
+
   # Additional environment variables to set.
   # These will be directly applied to the daemon container. See
   # https://kubernetes.io/docs/tasks/inject-data-application/define-environment-variable-container/
@@ -1110,6 +1114,10 @@ dagsterDaemon:
     pullPolicy: Always
 
   heartbeatTolerance: 1800
+
+  # The log format of the dagster daemon, defaults to colored if not set
+  # Options are [colored, json, rich]
+  logFormat: ~
 
   runCoordinator:
     # Whether or not to enable the run queue (or some other custom run coordinator). See
