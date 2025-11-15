@@ -1,4 +1,4 @@
-from collections.abc import Mapping
+from collections.abc import Mapping, Sequence
 from functools import partial
 from typing import Any, Optional, cast
 
@@ -16,8 +16,10 @@ from dagster._core.definitions.sensor_definition import (
     SensorEvaluationContext,
     SensorType,
 )
+from dagster._core.definitions.target import ExecutableDefinition
 from dagster._core.definitions.utils import check_valid_name
 from dagster._core.errors import DagsterInvalidInvocationError
+from dagster._utils import IHasInternalInit
 from dagster._utils.tags import normalize_tags
 
 MAX_ENTITIES = 500
@@ -79,7 +81,7 @@ def not_supported(context) -> None:
 @public
 @beta_param(param="use_user_code_server")
 @beta_param(param="default_condition")
-class AutomationConditionSensorDefinition(SensorDefinition):
+class AutomationConditionSensorDefinition(SensorDefinition, IHasInternalInit):
     """Targets a set of assets and repeatedly evaluates all the AutomationConditions on all of
     those assets to determine which to request runs for.
 
@@ -171,6 +173,8 @@ class AutomationConditionSensorDefinition(SensorDefinition):
         )
 
         self._run_tags = normalize_tags(run_tags)
+        self._sensor_target = target
+        self._emit_backfills = emit_backfills
 
         # only store this value in the metadata if it's True
         if emit_backfills:
@@ -210,3 +214,56 @@ class AutomationConditionSensorDefinition(SensorDefinition):
     @property
     def sensor_type(self) -> SensorType:
         return SensorType.AUTOMATION if self._use_user_code_server else SensorType.AUTO_MATERIALIZE
+
+    @staticmethod
+    def dagster_internal_init(  # type: ignore
+        *,
+        name: str,
+        target: CoercibleToAssetSelection,
+        tags: Optional[Mapping[str, str]],
+        run_tags: Optional[Mapping[str, Any]],
+        default_status: DefaultSensorStatus,
+        minimum_interval_seconds: Optional[int],
+        description: Optional[str],
+        metadata: Optional[RawMetadataMapping],
+        emit_backfills: bool,
+        use_user_code_server: bool,
+        default_condition: Optional[AutomationCondition],
+    ) -> "AutomationConditionSensorDefinition":
+        return AutomationConditionSensorDefinition(
+            name=name,
+            target=target,
+            tags=tags,
+            run_tags=run_tags,
+            default_status=default_status,
+            minimum_interval_seconds=minimum_interval_seconds,
+            description=description,
+            metadata=metadata,
+            emit_backfills=emit_backfills,
+            use_user_code_server=use_user_code_server,
+            default_condition=default_condition,
+        )
+
+    def with_attributes(
+        self,
+        *,
+        jobs: Optional[Sequence[ExecutableDefinition]] = None,
+        metadata: Optional[RawMetadataMapping] = None,
+    ) -> "AutomationConditionSensorDefinition":
+        """Returns a copy of this sensor with the attributes replaced.
+
+        Note: jobs parameter is ignored for AutomationConditionSensorDefinition as it doesn't use jobs.
+        """
+        return AutomationConditionSensorDefinition.dagster_internal_init(
+            name=self.name,
+            target=self._sensor_target,
+            tags=self._tags,
+            run_tags=self._run_tags,
+            default_status=self.default_status,
+            minimum_interval_seconds=self.minimum_interval_seconds,
+            description=self.description,
+            metadata=metadata if metadata is not None else self._metadata,
+            emit_backfills=self._emit_backfills,
+            use_user_code_server=self._use_user_code_server,
+            default_condition=self._default_condition,
+        )

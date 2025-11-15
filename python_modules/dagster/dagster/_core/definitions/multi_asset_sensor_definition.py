@@ -22,6 +22,7 @@ from dagster._core.definitions.sensor_definition import (
     SensorType,
     get_context_param_name,
     get_sensor_context_from_args_or_kwargs,
+    resolve_jobs_from_targets_for_with_attributes,
     validate_and_get_resource_dict,
 )
 from dagster._core.definitions.target import ExecutableDefinition
@@ -33,7 +34,7 @@ from dagster._core.errors import (
 )
 from dagster._core.instance import DagsterInstance
 from dagster._core.instance.ref import InstanceRef
-from dagster._utils import normalize_to_repository
+from dagster._utils import IHasInternalInit, normalize_to_repository
 from dagster._utils.warnings import deprecation_warning, normalize_renamed_param
 
 if TYPE_CHECKING:
@@ -1103,7 +1104,7 @@ MultiAssetMaterializationFunction = Callable[
     "multi_asset_sensors may be used."
 )
 @public
-class MultiAssetSensorDefinition(SensorDefinition):
+class MultiAssetSensorDefinition(SensorDefinition, IHasInternalInit):
     """Define an asset sensor that initiates a set of runs based on the materialization of a list of
     assets.
 
@@ -1245,6 +1246,9 @@ class MultiAssetSensorDefinition(SensorDefinition):
             return _fn
 
         self._raw_asset_materialization_fn = asset_materialization_fn
+        self._monitored_assets = monitored_assets
+        self._job_name = job_name
+        self._raw_required_resource_keys = combined_required_resource_keys
 
         super().__init__(
             name=check_valid_name(name),
@@ -1288,3 +1292,61 @@ class MultiAssetSensorDefinition(SensorDefinition):
     @property
     def sensor_type(self) -> SensorType:
         return SensorType.MULTI_ASSET
+
+    @staticmethod
+    def dagster_internal_init(  # type: ignore
+        *,
+        name: str,
+        monitored_assets: Union[Sequence[AssetKey], AssetSelection],
+        job_name: Optional[str],
+        asset_materialization_fn: MultiAssetMaterializationFunction,
+        minimum_interval_seconds: Optional[int],
+        description: Optional[str],
+        job: Optional[ExecutableDefinition],
+        jobs: Optional[Sequence[ExecutableDefinition]],
+        default_status: DefaultSensorStatus,
+        request_assets: Optional[AssetSelection],
+        required_resource_keys: Optional[set[str]],
+        tags: Optional[Mapping[str, str]],
+        metadata: Optional[RawMetadataMapping],
+    ) -> "MultiAssetSensorDefinition":
+        return MultiAssetSensorDefinition(
+            name=name,
+            monitored_assets=monitored_assets,
+            job_name=job_name,
+            asset_materialization_fn=asset_materialization_fn,
+            minimum_interval_seconds=minimum_interval_seconds,
+            description=description,
+            job=job,
+            jobs=jobs,
+            default_status=default_status,
+            request_assets=request_assets,
+            required_resource_keys=required_resource_keys,
+            tags=tags,
+            metadata=metadata,
+        )
+
+    def with_attributes(
+        self,
+        *,
+        jobs: Optional[Sequence[ExecutableDefinition]] = None,
+        metadata: Optional[RawMetadataMapping] = None,
+    ) -> "MultiAssetSensorDefinition":
+        """Returns a copy of this sensor with the attributes replaced."""
+        job_name, new_job, new_jobs = resolve_jobs_from_targets_for_with_attributes(self, jobs)
+
+        return MultiAssetSensorDefinition.dagster_internal_init(
+            name=self.name,
+            monitored_assets=self._monitored_assets,
+            job_name=job_name,
+            asset_materialization_fn=self._raw_asset_materialization_fn,
+            minimum_interval_seconds=self.minimum_interval_seconds,
+            description=self.description,
+            job=new_job,
+            jobs=new_jobs,
+            default_status=self.default_status,
+            request_assets=self.asset_selection,
+            required_resource_keys=self._raw_required_resource_keys,
+            tags=self._tags,
+            metadata=metadata if metadata is not None else self._metadata,
+        )
