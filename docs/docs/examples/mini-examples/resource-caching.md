@@ -9,7 +9,7 @@ sidebar_custom_props:
 
 In this example, we'll explore different ways to handle caching in Dagster. Caching is especially useful for assets that rely on expensive operations, such as API calls, database queries, or heavy computations, as it can dramatically improve performance, reduce costs, and make pipelines more efficient. In practice, it’s usually best to implement caching within [resources](/guides/build/external-resources) rather than [assets](/guides/build/assets), since this makes the functionality easier to share and reuse.
 
-### Problem: Expensive resource
+## Problem: Expensive resource
 
 Imagine a simple resource `ExpensiveResource` with an `addition` method that includes a forced 5-second sleep. Without caching, the resource executes the method from scratch every time it’s called. Because no intermediate results are stored, repeated calls with the same inputs always re-run the computation and incur the full cost.
 

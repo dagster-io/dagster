@@ -24,7 +24,7 @@ The challenge is creating a pipeline that can:
 - Collect and aggregate results efficiently
 - Maintain proper lineage and observability
 
-## Solution 1: Sequential processing within sub-pipelines
+### Solution 1: Sequential processing within sub-pipelines
 
 The first approach uses dynamic fanout to create parallel sub-pipelines for each record, but processes units within each sub-pipeline sequentially. This provides the first layer of parallelization.
 
@@ -69,8 +69,6 @@ This enhanced approach provides two layers of parallelization:
 | ---------------- | --------------- | ----------------------------- |
 | Record-level     | Parallel        | Scales with number of records |
 | Unit-level       | Parallel        | Scales with CPU cores         |
-
-### Complete pipeline implementation
 
 The complete pipeline uses a [graph-backed asset](/guides/build/assets/graph-backed-assets) to orchestrate the dynamic fanout pattern:
 
