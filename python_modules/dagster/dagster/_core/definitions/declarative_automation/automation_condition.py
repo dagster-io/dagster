@@ -682,6 +682,57 @@ class AutomationCondition(ABC, Generic[T_EntityKey]):
 
     @public
     @staticmethod
+    def on_cron_deps_fresh(
+        cron_schedule: str,
+        cron_timezone: str = "UTC",
+        allow_missing_freshness_policy: bool = True,
+    ) -> "BuiltinAutomationCondition[AssetKey]":
+        """Returns an AutomationCondition which will cause a target to be executed on a given
+        cron schedule, after all of its dependencies are considered "fresh" according to their
+        freshness policies.
+
+        This differs from `on_cron` in how it evaluates dependencies:
+        - `on_cron` requires all dependencies to have been updated since the latest cron tick
+        - `on_cron_deps_fresh` requires all dependencies to be in a fresh state (PASS or WARN)
+          according to their freshness policies, OR to have no freshness policy at all
+
+        This is useful for assets that depend on external or static data sources (like reference
+        tables) that may not update on a regular schedule but should still be considered valid
+        dependencies as long as they meet their freshness requirements.
+
+        For time partitioned assets, only the latest time partition will be considered.
+
+        Args:
+            cron_schedule: A cron schedule string (e.g., "@hourly", "0 0 * * *").
+            cron_timezone: The timezone in which the cron schedule should be evaluated.
+                Defaults to "UTC".
+            allow_missing_freshness_policy: If True (default), dependencies without freshness
+                policies (NOT_APPLICABLE state) are considered fresh. This allows static or
+                reference tables without freshness policies to be valid dependencies.
+                If False, all dependencies must have freshness policies and be in PASS or WARN state.
+        """
+        from dagster._core.definitions.declarative_automation.operands import (
+            FreshnessResultCondition,
+        )
+
+        is_fresh = FreshnessResultCondition(state=FreshnessState.PASS) | FreshnessResultCondition(
+            state=FreshnessState.WARN
+        )
+        if allow_missing_freshness_policy:
+            is_fresh |= FreshnessResultCondition(state=FreshnessState.NOT_APPLICABLE)
+
+        return (
+            AutomationCondition.in_latest_time_window()
+            & AutomationCondition.cron_tick_passed(
+                cron_schedule, cron_timezone
+            ).since_last_handled()
+            & AutomationCondition.all_deps_match(is_fresh | AutomationCondition.will_be_requested())
+        ).with_label(
+            f"on_cron_deps_fresh({cron_schedule}, {cron_timezone}, allow_missing_freshness_policy={allow_missing_freshness_policy})"
+        )
+
+    @public
+    @staticmethod
     def newly_missing() -> "BuiltinAutomationCondition":
         """Returns an AutomationCondition that is true on the tick that the target becomes missing."""
         return AutomationCondition.missing().newly_true().with_label("newly_missing")
