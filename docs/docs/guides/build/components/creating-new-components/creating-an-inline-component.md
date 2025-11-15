@@ -1,7 +1,7 @@
 ---
-description: Use the dg CLI to create and register an inline component.
+description: Use the dg CLI to create and register an inline component for single use.
 sidebar_position: 200
-title: Creating an inline component
+title: Creating an inline (single use) component
 ---
 
 Sometimes you need to define a component that you are unlikely to
