@@ -1602,7 +1602,6 @@ export type ExecutionPlan = {
   __typename: 'ExecutionPlan';
   artifactsPersisted: Scalars['Boolean']['output'];
   assetKeys: Array<AssetKey>;
-  assetSelection: Array<Scalars['String']['output']>;
   steps: Array<ExecutionStep>;
 };
 
@@ -8945,8 +8944,6 @@ export const buildExecutionPlan = (
         ? overrides.artifactsPersisted!
         : true,
     assetKeys: overrides && overrides.hasOwnProperty('assetKeys') ? overrides.assetKeys! : [],
-    assetSelection:
-      overrides && overrides.hasOwnProperty('assetSelection') ? overrides.assetSelection! : [],
     steps: overrides && overrides.hasOwnProperty('steps') ? overrides.steps! : [],
   };
 };

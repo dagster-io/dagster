@@ -2343,7 +2343,6 @@ type DuplicateDynamicPartitionError implements Error {
 type ExecutionPlan {
   steps: [ExecutionStep!]!
   artifactsPersisted: Boolean!
-  assetSelection: [String!]!
   assetKeys: [AssetKey!]!
 }
 
