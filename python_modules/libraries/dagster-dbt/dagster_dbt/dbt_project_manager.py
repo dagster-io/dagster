@@ -38,7 +38,8 @@ class DbtProjectManager(ABC):
         """
         # ensure local dir is empty
         local_dir = self._local_project_dir(state_path)
-        shutil.rmtree(local_dir, ignore_errors=True)
+        if local_dir.exists():
+            shutil.rmtree(local_dir)
         local_dir.mkdir()
 
         # ensure project exists in the dir and is compiled
