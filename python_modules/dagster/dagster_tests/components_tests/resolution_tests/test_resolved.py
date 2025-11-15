@@ -1,7 +1,8 @@
 from collections.abc import Sequence
 from dataclasses import dataclass, field
 from enum import Enum
-from typing import Annotated, Literal, NamedTuple, Optional, TypeAlias, Union
+
+from typing import Annotated, Any, Literal, NamedTuple, Optional, Union
 
 import dagster as dg
 import pytest
@@ -10,6 +11,12 @@ from dagster.components.resolved.errors import ResolutionException
 from dagster.components.resolved.model import Resolver
 from dagster_shared.record import record
 from pydantic import BaseModel, ConfigDict, Field, ValidationError
+
+
+try:
+    from typing import TypeAlias
+except Exception:
+    from typing_extensions import TypeAlias
 
 
 def test_basic():
@@ -267,6 +274,10 @@ def test_component_docs():
     assert json_schema["$defs"]["RangeTest"]["properties"]["type"]["description"]
     assert json_schema["$defs"]["SumTest"]["properties"]["type"]["description"]
 
+    json_schema = model_cls.model_json_schema()
+    assert json_schema["$defs"]["RangeTest"]["properties"]["type"]["description"]
+    assert json_schema["$defs"]["SumTest"]["properties"]["type"]["description"]
+
 
 def test_nested_not_resolvable():
     @dataclass
@@ -340,6 +351,116 @@ foo: foo
 bar: bar
 """)
     assert w.foo == "cool"
+
+
+def test_default_factory():
+    # Test for default_factory in dataclass
+    @dataclass
+    class MyThing(dg.Resolvable):
+        items: dict = field(default_factory=dict)
+
+    # empty yaml should produce an instance with the default dict
+    t = MyThing.resolve_from_yaml("")
+    assert isinstance(t.items, dict)
+    assert t.items == {}
+
+    # explicit yaml should override the default
+    t2 = MyThing.resolve_from_yaml(
+        """
+items:
+  a: 1
+"""
+    )
+    assert t2.items == {"a": 1}
+
+    # Test for default_factory in pydantic model
+    class DefaultFactoryDictTestComponent(dg.Component, dg.Model, dg.Resolvable):
+        config: dict[str, Any] = Field(default_factory=dict)
+
+        def build_defs(self, context):
+            return dg.Definitions()
+
+    model_cls = DefaultFactoryDictTestComponent.get_model_cls()
+    assert model_cls
+    instance = DefaultFactoryDictTestComponent.resolve_from_yaml("")
+    assert instance.config == {}
+
+    class DefaultFactoryListTestComponent(dg.Component, dg.Model, dg.Resolvable):
+        config: list[str] = Field(default_factory=list)
+
+        def build_defs(self, context):
+            return dg.Definitions()
+
+    model_cls = DefaultFactoryListTestComponent.get_model_cls()
+    assert model_cls
+    instance = DefaultFactoryListTestComponent.resolve_from_yaml("")
+    assert instance.config == []
+
+    class DefaultFactoryTupleTestComponent(dg.Component, dg.Model, dg.Resolvable):
+        config: tuple[str, ...] = Field(default_factory=tuple)
+
+        def build_defs(self, context):
+            return dg.Definitions()
+
+    model_cls = DefaultFactoryTupleTestComponent.get_model_cls()
+    assert model_cls
+    instance = DefaultFactoryTupleTestComponent.resolve_from_yaml("")
+    assert instance.config == ()
+
+    class DefaultFacotoryIntTestComponent(dg.Component, dg.Model, dg.Resolvable):
+        config: int = Field(default_factory=lambda: 42)
+
+        def build_defs(self, context):
+            return dg.Definitions()
+
+    model_cls = DefaultFacotoryIntTestComponent.get_model_cls()
+    assert model_cls
+    instance = DefaultFacotoryIntTestComponent.resolve_from_yaml("")
+    assert instance.config == 42
+
+    class DefaultFactoryFloatTestComponent(dg.Component, dg.Model, dg.Resolvable):
+        config: float = Field(default_factory=lambda: 3.14)
+
+        def build_defs(self, context):
+            return dg.Definitions()
+
+    model_cls = DefaultFactoryFloatTestComponent.get_model_cls()
+    assert model_cls
+    instance = DefaultFactoryFloatTestComponent.resolve_from_yaml("")
+    assert instance.config == 3.14
+
+    class DefaultFactoryBoolTestComponent(dg.Component, dg.Model, dg.Resolvable):
+        config: bool = Field(default_factory=lambda: True)
+
+        def build_defs(self, context):
+            return dg.Definitions()
+
+    model_cls = DefaultFactoryBoolTestComponent.get_model_cls()
+    assert model_cls
+    instance = DefaultFactoryBoolTestComponent.resolve_from_yaml("")
+    assert instance.config is True
+
+    class DefaultFactoryStringTestComponent(dg.Component, dg.Model, dg.Resolvable):
+        config: str = Field(default_factory=lambda: "default")
+
+        def build_defs(self, context):
+            return dg.Definitions()
+
+    model_cls = DefaultFactoryStringTestComponent.get_model_cls()
+    assert model_cls
+    instance = DefaultFactoryStringTestComponent.resolve_from_yaml("")
+    assert instance.config == "default"
+
+    class DefaultFactoryAnyTestComponent(dg.Component, dg.Model, dg.Resolvable):
+        config: Any = Field(default_factory=lambda: {"key": "value"})
+
+        def build_defs(self, context):
+            return dg.Definitions()
+
+    model_cls = DefaultFactoryAnyTestComponent.get_model_cls()
+    assert model_cls
+    instance = DefaultFactoryAnyTestComponent.resolve_from_yaml("")
+    assert instance.config == {"key": "value"}
 
 
 def test_scope():
@@ -487,7 +608,9 @@ def test_plain_named_tuple():
         thing: OuterWrapper
 
     # or indirectly
-    with pytest.raises(ResolutionException, match="Wrapper includes incompatible field\n  nt:"):
+    with pytest.raises(
+        ResolutionException, match="Wrapper includes incompatible field\n  nt:"
+    ):
         Outer.model()
 
 
@@ -523,7 +646,9 @@ class Foo:
     name: str
 
 
-ResolvedFoo: TypeAlias = Annotated[Foo, dg.Resolver(lambda _, v: Foo(name=v), model_field_type=str)]
+ResolvedFoo: TypeAlias = Annotated[
+    Foo, dg.Resolver(lambda _, v: Foo(name=v), model_field_type=str)
+]
 
 
 def test_containers():
@@ -624,4 +749,6 @@ def test_dicts():
         thing: dict[int, Inner]
 
     with pytest.raises(ResolutionException, match="dict key type must be str"):
-        BadHasDict.resolve_from_dict({"thing": {"a": {"name": "a", "value": {"key": "a"}}}})
+        BadHasDict.resolve_from_dict(
+            {"thing": {"a": {"name": "a", "value": {"key": "a"}}}}
+        )
