@@ -1102,6 +1102,7 @@ export enum DagsterEventType {
   ALERT_FAILURE = 'ALERT_FAILURE',
   ALERT_START = 'ALERT_START',
   ALERT_SUCCESS = 'ALERT_SUCCESS',
+  ALERT_SUCCESS_WITH_WARNINGS = 'ALERT_SUCCESS_WITH_WARNINGS',
   ASSET_CHECK_EVALUATION = 'ASSET_CHECK_EVALUATION',
   ASSET_CHECK_EVALUATION_PLANNED = 'ASSET_CHECK_EVALUATION_PLANNED',
   ASSET_FAILED_TO_MATERIALIZE = 'ASSET_FAILED_TO_MATERIALIZE',
@@ -1129,9 +1130,11 @@ export enum DagsterEventType {
   PIPELINE_START = 'PIPELINE_START',
   PIPELINE_STARTING = 'PIPELINE_STARTING',
   PIPELINE_SUCCESS = 'PIPELINE_SUCCESS',
+  PIPELINE_SUCCESS_WITH_WARNINGS = 'PIPELINE_SUCCESS_WITH_WARNINGS',
   RESOURCE_INIT_FAILURE = 'RESOURCE_INIT_FAILURE',
   RESOURCE_INIT_STARTED = 'RESOURCE_INIT_STARTED',
   RESOURCE_INIT_SUCCESS = 'RESOURCE_INIT_SUCCESS',
+  RESOURCE_INIT_SUCCESS_WITH_WARNINGS = 'RESOURCE_INIT_SUCCESS_WITH_WARNINGS',
   RUN_CANCELED = 'RUN_CANCELED',
   RUN_CANCELING = 'RUN_CANCELING',
   RUN_DEQUEUED = 'RUN_DEQUEUED',
@@ -1140,6 +1143,7 @@ export enum DagsterEventType {
   RUN_START = 'RUN_START',
   RUN_STARTING = 'RUN_STARTING',
   RUN_SUCCESS = 'RUN_SUCCESS',
+  RUN_SUCCESS_WITH_WARNINGS = 'RUN_SUCCESS_WITH_WARNINGS',
   STEP_EXPECTATION_RESULT = 'STEP_EXPECTATION_RESULT',
   STEP_FAILURE = 'STEP_FAILURE',
   STEP_INPUT = 'STEP_INPUT',
@@ -1148,6 +1152,7 @@ export enum DagsterEventType {
   STEP_SKIPPED = 'STEP_SKIPPED',
   STEP_START = 'STEP_START',
   STEP_SUCCESS = 'STEP_SUCCESS',
+  STEP_SUCCESS_WITH_WARNINGS = 'STEP_SUCCESS_WITH_WARNINGS',
   STEP_UP_FOR_RETRY = 'STEP_UP_FOR_RETRY',
   STEP_WORKER_STARTED = 'STEP_WORKER_STARTED',
   STEP_WORKER_STARTING = 'STEP_WORKER_STARTING',
@@ -1198,6 +1203,7 @@ export type DagsterRunEvent =
   | RunStartEvent
   | RunStartingEvent
   | RunSuccessEvent
+  | RunSuccessWithWarningsEvent
   | StepExpectationResultEvent
   | StepWorkerStartedEvent
   | StepWorkerStartingEvent;
@@ -2537,6 +2543,11 @@ export type LaunchPipelineRunSuccess = {
   run: Run;
 };
 
+export type LaunchPipelineRunSuccessWithWarnings = {
+  run: Run;
+  warnings: Maybe<Array<Scalars['String']['output']>>;
+};
+
 export type LaunchRunMutation = {
   __typename: 'LaunchRunMutation';
   Output: LaunchRunResult;
@@ -2578,6 +2589,12 @@ export type LaunchRunResult =
 export type LaunchRunSuccess = LaunchPipelineRunSuccess & {
   __typename: 'LaunchRunSuccess';
   run: Run;
+};
+
+export type LaunchRunSuccessWithWarnings = LaunchPipelineRunSuccessWithWarnings & {
+  __typename: 'LaunchRunSuccessWithWarnings';
+  run: Run;
+  warnings: Maybe<Array<Scalars['String']['output']>>;
 };
 
 export type ListDagsterType = DagsterType &
@@ -5151,6 +5168,7 @@ export enum RunStatus {
   STARTED = 'STARTED',
   STARTING = 'STARTING',
   SUCCESS = 'SUCCESS',
+  SUCCESS_WITH_WARNINGS = 'SUCCESS_WITH_WARNINGS',
 }
 
 export type RunStepStats = PipelineRunStepStats & {
@@ -5169,6 +5187,19 @@ export type RunStepStats = PipelineRunStepStats & {
 export type RunSuccessEvent = MessageEvent &
   RunEvent & {
     __typename: 'RunSuccessEvent';
+    eventType: Maybe<DagsterEventType>;
+    level: LogLevel;
+    message: Scalars['String']['output'];
+    pipelineName: Scalars['String']['output'];
+    runId: Scalars['String']['output'];
+    solidHandleID: Maybe<Scalars['String']['output']>;
+    stepKey: Maybe<Scalars['String']['output']>;
+    timestamp: Scalars['String']['output'];
+  };
+
+export type RunSuccessWithWarningsEvent = MessageEvent &
+  RunEvent & {
+    __typename: 'RunSuccessWithWarningsEvent';
     eventType: Maybe<DagsterEventType>;
     level: LogLevel;
     message: Scalars['String']['output'];
@@ -5683,6 +5714,7 @@ export enum StepEventStatus {
   IN_PROGRESS = 'IN_PROGRESS',
   SKIPPED = 'SKIPPED',
   SUCCESS = 'SUCCESS',
+  SUCCESS_WITH_WARNINGS = 'SUCCESS_WITH_WARNINGS',
 }
 
 export type StepExecution = {
@@ -10476,6 +10508,24 @@ export const buildLaunchPipelineRunSuccess = (
   };
 };
 
+export const buildLaunchPipelineRunSuccessWithWarnings = (
+  overrides?: Partial<LaunchPipelineRunSuccessWithWarnings>,
+  _relationshipsToOmit: Set<string> = new Set(),
+): {__typename: 'LaunchPipelineRunSuccessWithWarnings'} & LaunchPipelineRunSuccessWithWarnings => {
+  const relationshipsToOmit: Set<string> = new Set(_relationshipsToOmit);
+  relationshipsToOmit.add('LaunchPipelineRunSuccessWithWarnings');
+  return {
+    __typename: 'LaunchPipelineRunSuccessWithWarnings',
+    run:
+      overrides && overrides.hasOwnProperty('run')
+        ? overrides.run!
+        : relationshipsToOmit.has('Run')
+          ? ({} as Run)
+          : buildRun({}, relationshipsToOmit),
+    warnings: overrides && overrides.hasOwnProperty('warnings') ? overrides.warnings! : [],
+  };
+};
+
 export const buildLaunchRunMutation = (
   overrides?: Partial<LaunchRunMutation>,
   _relationshipsToOmit: Set<string> = new Set(),
@@ -10524,6 +10574,24 @@ export const buildLaunchRunSuccess = (
         : relationshipsToOmit.has('Run')
           ? ({} as Run)
           : buildRun({}, relationshipsToOmit),
+  };
+};
+
+export const buildLaunchRunSuccessWithWarnings = (
+  overrides?: Partial<LaunchRunSuccessWithWarnings>,
+  _relationshipsToOmit: Set<string> = new Set(),
+): {__typename: 'LaunchRunSuccessWithWarnings'} & LaunchRunSuccessWithWarnings => {
+  const relationshipsToOmit: Set<string> = new Set(_relationshipsToOmit);
+  relationshipsToOmit.add('LaunchRunSuccessWithWarnings');
+  return {
+    __typename: 'LaunchRunSuccessWithWarnings',
+    run:
+      overrides && overrides.hasOwnProperty('run')
+        ? overrides.run!
+        : relationshipsToOmit.has('Run')
+          ? ({} as Run)
+          : buildRun({}, relationshipsToOmit),
+    warnings: overrides && overrides.hasOwnProperty('warnings') ? overrides.warnings! : [],
   };
 };
 
@@ -14807,6 +14875,30 @@ export const buildRunSuccessEvent = (
         : 'similique',
     stepKey: overrides && overrides.hasOwnProperty('stepKey') ? overrides.stepKey! : 'aspernatur',
     timestamp: overrides && overrides.hasOwnProperty('timestamp') ? overrides.timestamp! : 'optio',
+  };
+};
+
+export const buildRunSuccessWithWarningsEvent = (
+  overrides?: Partial<RunSuccessWithWarningsEvent>,
+  _relationshipsToOmit: Set<string> = new Set(),
+): {__typename: 'RunSuccessWithWarningsEvent'} & RunSuccessWithWarningsEvent => {
+  const relationshipsToOmit: Set<string> = new Set(_relationshipsToOmit);
+  relationshipsToOmit.add('RunSuccessWithWarningsEvent');
+  return {
+    __typename: 'RunSuccessWithWarningsEvent',
+    eventType:
+      overrides && overrides.hasOwnProperty('eventType')
+        ? overrides.eventType!
+        : DagsterEventType.ALERT_FAILURE,
+    level: overrides && overrides.hasOwnProperty('level') ? overrides.level! : LogLevel.CRITICAL,
+    message: overrides && overrides.hasOwnProperty('message') ? overrides.message! : 'maxime',
+    pipelineName:
+      overrides && overrides.hasOwnProperty('pipelineName') ? overrides.pipelineName! : 'autem',
+    runId: overrides && overrides.hasOwnProperty('runId') ? overrides.runId! : 'aut',
+    solidHandleID:
+      overrides && overrides.hasOwnProperty('solidHandleID') ? overrides.solidHandleID! : 'ad',
+    stepKey: overrides && overrides.hasOwnProperty('stepKey') ? overrides.stepKey! : 'dolorem',
+    timestamp: overrides && overrides.hasOwnProperty('timestamp') ? overrides.timestamp! : 'quia',
   };
 };
 
