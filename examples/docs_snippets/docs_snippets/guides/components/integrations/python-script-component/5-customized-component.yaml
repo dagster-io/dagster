@@ -1,0 +1,10 @@
+type: dagster.PythonScriptComponent
+
+attributes:
+  execution:
+    path: process_sales_data.py
+  assets:
+    - key: sales_revenue_report
+      description: "Daily sales revenue report generated from transaction data"
+      group_name: "analytics"
+      kinds: ["python", "report"]
