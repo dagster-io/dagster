@@ -10,7 +10,7 @@ While factories are powerful and flexible, many patterns that use them can also 
 
 :::note Prerequisites
 
-Before scaffolding a custom component, you must either [create a components-ready Dagster project](/guides/build/projects/creating-a-new-project) or [migrate an existing project to `dg`](/guides/build/projects/moving-to-components/migrating-project).
+Before scaffolding a custom component, you must either [create a components-ready Dagster project](/guides/build/projects/creating-projects) or [migrate an existing project to `dg`](/guides/build/projects/moving-to-components/migrating-project).
 
 :::
 

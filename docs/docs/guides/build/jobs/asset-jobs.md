@@ -27,7 +27,7 @@ You can target one or multiple assets, or create multiple jobs that target overl
 
 ## Making asset jobs available to Dagster tools
 
-Jobs are loaded automatically with [`dg`](/api/clis) and there is no need to explicity define a [`Definitions`](/api/dagster/definitions) object for them. If you include schedules or sensors, the [code location](/deployment/code-locations) will automatically include jobs that those schedules or sensors target.
+Jobs are loaded automatically with [`dg`](/api/clis) and there is no need to explicity define a [`Definitions`](/api/dagster/definitions) object for them. If you include schedules or sensors, the [code location](/guides/build/projects) will automatically include jobs that those schedules or sensors target.
 
 <CodeExample path="docs_snippets/docs_snippets/concepts/assets/jobs_to_definitions.py" title="src/<project_name>/defs/assets.py"/>
 

@@ -1,47 +1,73 @@
 ---
-description: The dagster_cloud.yaml file defines multiple code locations for Dagster+ projects.
-sidebar_position: 500
+description: The build.yaml file defines the location of Dagster projects for Dagster+ Hybrid deployments, along with environment variables and secrets.
+sidebar_position: 1000
 tags: [dagster-plus-feature]
-title: dagster_cloud.yaml reference (Dagster+)
+title: build.yaml reference (Dagster+)
 ---
 
 import DagsterPlus from '@site/docs/partials/\_DagsterPlus.md';
 
 <DagsterPlus />
 
-`dagster_cloud.yaml` is used to define multiple code locations for Dagster+. It is similar to `workspace.yaml` in Dagster open source. For [Hybrid deployments](/deployment/dagster-plus/hybrid), `dagster_cloud.yaml` can be used to manage environment variables and secrets.
+`build.yaml` is used to define the location of Dagster projects for Dagster+ Hybrid so they can be discovered by CI/CD processes. It can also be used to manage environment variables and secrets.
+
+:::note
+
+In older deployments, this file may be called `dagster_cloud.yaml`.
+
+:::
 
 ## File location
 
-The `dagster_cloud.yaml` file should be placed in the root of your Dagster project, similar to the example below:
+<Tabs>
+<TabItem value="single_project" label="Single project">
 
-```shell
-example_etl
-├── README.md
-├── example_etl
-│  ├──__init__.py
-│  ├── assets
-│  └──  docker_image
-├── ml_project
-│  └──  example_ml
-│    ├── __init__.py
-│    └── ml_assets
-├── random_assets.py
-├── example_etl_tests
-├── dagster_cloud.yaml
-├── pyproject.toml
-├── setup.cfg
-└── setup.py
-```
+The `build.yaml` file should be placed in the root of your Dagster project, similar to the example below:
 
-If your repository contains multiple Dagster projects in subdirectories - otherwise known as a monorepository - add the `dagster_cloud.yaml` file to the root of where the Dagster projects are stored.
+  ```shell
+  my-project
+  ├── build.yaml
+  ├── Dockerfile
+  ├── pyproject.toml
+  ├── README.md
+  ├── src
+  │   └── my_project
+  │       ├── __init__.py
+  │       ├── definitions.py
+  │       └── defs
+  │           └── __init__.py
+  ├── tests
+  │   └── __init__.py
+  └── uv.lock
+
+  ```
+
+</TabItem>
+<TabItem value="multiple_projects" label="Workspace (multiple projects)">
+
+The `build.yaml` file should be placed in the root of your Dagster workspace, similar to the example below:
+
+  ```shell
+  my-workspace
+  ├── build.yaml
+  ├── deployments
+  │   └── local
+  │       ├── pyproject.toml
+  │       └── uv.lock
+  ├── dg.toml
+  └── projects
+
+  ```
+
+</TabItem>
+</Tabs>
 
 ## File structure
 
 Settings are formatted using YAML. For example, using the file structure above as an example:
 
 ```yaml
-# dagster_cloud.yaml
+# build.yaml
 locations:
   - location_name: data-eng-pipeline
     code_source:
@@ -68,7 +94,7 @@ locations:
 
 ## Settings
 
-The `dagster_cloud.yaml` file contains a single top-level key, `locations`. This key accepts a list of code locations; for each code location, you can configure the following:
+The `build.yaml` file contains a single top-level key, `locations`. This key accepts a list of Dagster projects; for each project, you can configure the following:
 
 - [Location name](#location-name)
 - [Code source](#code-source)
@@ -79,10 +105,10 @@ The `dagster_cloud.yaml` file contains a single top-level key, `locations`. This
 
 ### Location name
 
-**This key is required.** The `location_name` key specifies the name of the code location. The location name will always be paired with a [code source](#code-source).
+**This key is required.** The `location_name` key specifies the name of the Dagster project. The location name will always be paired with a [code source](#code-source).
 
 ```yaml
-# dagster_cloud.yaml
+# build.yaml
 
 locations:
   - location_name: data-eng-pipeline
@@ -92,19 +118,19 @@ locations:
 
 | Property        | Description                                                                            | Format   |
 | --------------- | -------------------------------------------------------------------------------------- | -------- |
-| `location_name` | The name of your code location that will appear in the Dagster UI Code locations page. | `string` |
+| `location_name` | The name of your Dagster project that will appear in the Dagster UI Code locations page. | `string` |
 
 ### Code source
 
-**This section is required.** The `code_source` defines how a code location is sourced.
+**This section is required.** The `code_source` defines how a Dagster project is sourced.
 
-A `code_source` key must contain either a `module_name`, `package_name`, or `file_name` parameter that specifies where to find the definitions in the code location.
+A `code_source` key must contain either a `module_name`, `package_name`, or `file_name` parameter that specifies where to find the definitions in the Dagster project.
 
 <Tabs>
-<TabItem value="Single code location">
+<TabItem value="Single Dagster project">
 
 ```yaml
-# dagster_cloud.yaml
+# build.yaml
 
 locations:
   - location_name: data-eng-pipeline
@@ -113,10 +139,10 @@ locations:
 ```
 
 </TabItem>
-<TabItem value="Multiple code locations">
+<TabItem value="Multiple Dagster projects">
 
 ```yaml
-# dagster_cloud.yaml
+# build.yaml
 
 locations:
   - location_name: data-eng-pipeline
@@ -150,16 +176,16 @@ example_etl
 │     ├── __init__.py
 │     ├── assets
 │   ├── example_etl_tests
-├── dagster_cloud.yaml
+├── build.yaml
 ├── pyproject.toml
 ├── setup.cfg
 └── setup.py
 ```
 
-To load from `/project_directory`, the `dagster_cloud.yaml` code location would look like this:
+To load from `/project_directory`, the `build.yaml` file would look like this:
 
 ```yaml
-# dagster_cloud.yaml
+# build.yaml
 
 locations:
   - location_name: data-eng-pipeline
@@ -177,12 +203,12 @@ locations:
 The `build` section contains two parameters:
 
 - `directory` - Setting a build directory is useful if your `setup.py` or `requirements.txt` is in a subdirectory instead of the project root. This is common if you have multiple Python modules within a single Dagster project.
-- `registry` - **Applicable only to Hybrid deployments.** Specifies the Docker registry to push the code location to.
+- `registry` - **Applicable only to Hybrid deployments.** Specifies the Docker registry to push the Dagster project to.
 
-In the example below, the Docker image for the code location is in the root directory and the registry and image defined:
+In the example below, the Docker image for the Dagster project is in the root directory and the registry and image defined:
 
 ```yaml
-# dagster_cloud.yaml
+# build.yaml
 
 locations:
   - location_name: data-eng-pipeline
@@ -196,16 +222,16 @@ locations:
 | Property          | Description                                                                                                                                                           | Format                     | Default |
 | ----------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------- | ------- |
 | `build.directory` | The path to the directory in your project that you want to deploy. If there are subdirectories, you can specify the path to only deploy a specific project directory. | `string` (path)            | `.`     |
-| `build.registry`  | **Applicable to Hybrid deployments.** The Docker registry to push your code location to                                                                               | `string` (docker registry) |         |
+| `build.registry`  | **Applicable to Hybrid deployments.** The Docker registry to push your Dagster project to                                                                               | `string` (docker registry) |         |
 
 ### Python executable
 
-For Dagster+ Hybrid deployments, the Python executable that is installed globally in the image, or the default Python executable on the local system if you use the local agent, will be used. To use a different Python executable, specify it using the `executable_path` setting. It can be useful to have different Python executables for different code locations.
+For Dagster+ Hybrid deployments, the Python executable that is installed globally in the image, or the default Python executable on the local system if you use the local agent, will be used. To use a different Python executable, specify it using the `executable_path` setting. It can be useful to have different Python executables for different Dagster projects.
 
 For Dagster+ Serverless deployments, you can specify a different Python version by [following these instructions](/deployment/dagster-plus/serverless/runtime-environment#use-a-different-python-version).
 
 ```yaml
-# dagster_cloud.yaml
+# build.yaml
 
 locations:
   - location_name: data-eng-pipeline
@@ -224,7 +250,7 @@ locations:
 
 ### Container context
 
-If using Hybrid deployment, you can define additional configuration options for code locations using the `container_context` parameter. Depending on the Hybrid agent you're using, the configuration settings under `container_context` will vary.
+If using Hybrid deployment, you can define additional configuration options for Dagster projects using the `container_context` parameter. Depending on the Hybrid agent you're using, the configuration settings under `container_context` will vary.
 
 Refer to the configuration reference for your agent for more info:
 
