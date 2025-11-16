@@ -1117,7 +1117,7 @@ dagsterDaemon:
 
   # The log format of the daemon, defaults to colored if not set
   # Valid options are: colored|json|rich
-  # logFormat: colored 
+  # logFormat: colored
 
   runCoordinator:
     # Whether or not to enable the run queue (or some other custom run coordinator). See
