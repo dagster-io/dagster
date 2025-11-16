@@ -83,6 +83,11 @@ class BaseTableauClient:
         return get_dagster_logger()
 
     @cached_method
+    def get_data_sources(self) -> list[TSC.DatasourceItem]: # TODO: pagination
+        datasources, _ = self._server.datasources.get()
+        return datasources
+
+    @cached_method
     def get_data_source(
         self,
         data_source_id: str,
@@ -223,52 +228,119 @@ class BaseTableauClient:
         job = self.poll_job(job_id=job.id, poll_interval=poll_interval, poll_timeout=poll_timeout)
         return job.datasource_id
 
+    def refresh_and_poll_data_sources(
+        self,
+        data_source_ids: Sequence[str],
+        poll_interval: Optional[float] = None,
+        poll_timeout: Optional[float] = None,
+    ) -> Iterator[str]:
+        """Refreshes multiple data sources and yields their IDs as they complete.
+
+        Args:
+            data_source_ids: List of data source IDs to refresh
+            poll_interval: Optional polling interval in seconds
+            poll_timeout: Optional timeout in seconds
+
+        Yields:
+            str: Data source IDs as their refresh jobs complete
+        """
+        # First, kick off all refresh jobs
+        job_ids = []
+        for data_source_id in data_source_ids:
+            job = self.refresh_data_source(data_source_id)
+            self._log.info(f"Job {job.id} initialized for data_source_id={data_source_id}.")
+            job_ids.append(job.id)
+
+        # Then poll all jobs until they complete, yielding datasource_id as each completes
+        for job in self.poll_jobs(job_ids=job_ids, poll_interval=poll_interval, poll_timeout=poll_timeout):
+            if job.datasource_id:
+                yield job.datasource_id
+
+    def poll_jobs(
+        self,
+        job_ids: Sequence[str],
+        poll_interval: Optional[float] = None,
+        poll_timeout: Optional[float] = None,
+    ) -> Iterator[TSC.JobItem]:
+        """Polls multiple jobs and yields them as they complete.
+
+        Args:
+            job_ids: List of job IDs to poll
+            poll_interval: Optional polling interval in seconds
+            poll_timeout: Optional timeout in seconds
+
+        Yields:
+            TSC.JobItem: Completed job items as they finish successfully
+        """
+        if not poll_interval:
+            poll_interval = DEFAULT_POLL_INTERVAL_SECONDS
+        if not poll_timeout:
+            poll_timeout = DEFAULT_POLL_TIMEOUT
+
+        start = time.monotonic()
+        pending_job_ids = set(job_ids)
+
+        try:
+            while pending_job_ids:
+                if poll_timeout and start + poll_timeout < time.monotonic():
+                    raise Failure(
+                        f"Timeout: Tableau jobs {pending_job_ids} are not ready after the timeout"
+                        f" {poll_timeout} seconds"
+                    )
+
+                time.sleep(poll_interval)
+
+                # Check status of all pending jobs
+                for job_id in list(pending_job_ids):
+                    job = self.get_job(job_id=job_id)
+
+                    if job.finish_code == -1:
+                        # -1 is the default value for JobItem.finish_code, when the job is in progress
+                        continue
+                    elif job.finish_code == TSC.JobItem.FinishCode.Success:
+                        pending_job_ids.remove(job_id)
+                        yield job
+                    elif job.finish_code == TSC.JobItem.FinishCode.Failed:
+                        pending_job_ids.remove(job_id)
+                        raise Failure(f"Job failed: {job.id}")
+                    elif job.finish_code == TSC.JobItem.FinishCode.Cancelled:
+                        pending_job_ids.remove(job_id)
+                        raise Failure(f"Job was cancelled: {job.id}")
+                    else:
+                        pending_job_ids.remove(job_id)
+                        raise Failure(
+                            f"Encountered unexpected finish code `{job.finish_code}` for job {job.id}"
+                        )
+        finally:
+            # if any Tableau syncs have not completed, make sure to cancel them so they don't outlive
+            # the python process
+            for job_id in pending_job_ids:
+                job = self.get_job(job_id=job_id)
+                if job.finish_code not in (
+                    TSC.JobItem.FinishCode.Success,
+                    TSC.JobItem.FinishCode.Failed,
+                    TSC.JobItem.FinishCode.Cancelled,
+                ):
+                    self.cancel_job(job_id)
+
     def poll_job(
         self,
         job_id: str,
         poll_interval: Optional[float] = None,
         poll_timeout: Optional[float] = None,
     ) -> TSC.JobItem:
-        if not poll_interval:
-            poll_interval = DEFAULT_POLL_INTERVAL_SECONDS
-        if not poll_timeout:
-            poll_timeout = DEFAULT_POLL_TIMEOUT
+        """Polls a single job until it completes.
 
-        job = self.get_job(job_id=job_id)
-        start = time.monotonic()
+        Args:
+            job_id: The job ID to poll
+            poll_interval: Optional polling interval in seconds
+            poll_timeout: Optional timeout in seconds
 
-        try:
-            while True:
-                if poll_timeout and start + poll_timeout < time.monotonic():
-                    raise Failure(
-                        f"Timeout: Tableau job {job.id} is not ready after the timeout"
-                        f" {poll_timeout} seconds"
-                    )
-                time.sleep(poll_interval)
-                job = self.get_job(job_id=job.id)
-
-                if job.finish_code == -1:
-                    # -1 is the default value for JobItem.finish_code, when the job is in progress
-                    continue
-                elif job.finish_code == TSC.JobItem.FinishCode.Success:
-                    return job
-                elif job.finish_code == TSC.JobItem.FinishCode.Failed:
-                    raise Failure(f"Job failed: {job.id}")
-                elif job.finish_code == TSC.JobItem.FinishCode.Cancelled:
-                    raise Failure(f"Job was cancelled: {job.id}")
-                else:
-                    raise Failure(
-                        f"Encountered unexpected finish code `{job.finish_code}` for job {job.id}"
-                    )
-        finally:
-            # if Tableau sync has not completed, make sure to cancel it so that it doesn't outlive
-            # the python process
-            if job.finish_code not in (
-                TSC.JobItem.FinishCode.Success,
-                TSC.JobItem.FinishCode.Failed,
-                TSC.JobItem.FinishCode.Cancelled,
-            ):
-                self.cancel_job(job.id)
+        Returns:
+            TSC.JobItem: The completed job item
+        """
+        jobs = list(self.poll_jobs(job_ids=[job_id], poll_interval=poll_interval, poll_timeout=poll_timeout))
+        return jobs[0]
 
     def add_data_quality_warning_to_data_source(
         self,
@@ -618,6 +690,31 @@ class BaseTableauWorkspace(ConfigurableResource):
                                 properties=augmented_dashboard_data,
                             )
                         )
+
+            """
+            We add to the data all the published-data-sources, that weren't already added from a workbook.
+            """
+            for published_data_source in client.get_data_sources():
+            
+                # if we already processed this data_source, skip it
+                if published_data_source.id in data_source_ids: 
+                    continue
+                
+                data_sources.append(
+                    TableauContentData(
+                        content_type=TableauContentType.DATA_SOURCE,
+                        properties={
+                            "id": published_data_source.id,
+                            "name": published_data_source.name,
+                            "hasExtracts": published_data_source.has_extracts,
+                            "luid": published_data_source.id,
+                            "isPublished": True,
+                            "workbook": None
+                        }
+                    )
+                )
+                
+
 
         return TableauWorkspaceData.from_content_data(
             self.site_name,

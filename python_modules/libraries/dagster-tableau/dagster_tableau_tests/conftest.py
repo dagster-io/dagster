@@ -245,6 +245,12 @@ def get_data_source_fixture(build_data_source_item):
         mocked_function.return_value = build_data_source_item()
         yield mocked_function
 
+@pytest.fixture(name="get_data_sources", autouse=True)
+def get_data_sources_fixture(build_data_sources_item):
+    with patch("dagster_tableau.resources.BaseTableauClient.get_data_sources") as mocked_function:
+        mocked_function.return_value = build_data_sources_item
+        yield mocked_function
+
 
 @pytest.fixture(name="get_job", autouse=True)
 def get_job_fixture(workbook_id, job_id):
@@ -356,6 +362,27 @@ def build_data_source_item_fixture():
         type(mock_embedded_data_source.return_value).updated_at = PropertyMock(return_value=None)
         mocked_class.side_effect = [mock_embedded_data_source]
         yield mocked_class
+
+
+@pytest.fixture(name="build_data_sources_item", autouse=True)
+def build_data_sources_item_fixture():
+    mock_data_source_1 = MagicMock()
+    type(mock_data_source_1).id = PropertyMock(return_value=SAMPLE_DATA_SOURCE["luid"])
+    type(mock_data_source_1).owner_id = PropertyMock(return_value=None)
+    type(mock_data_source_1).name = PropertyMock(return_value=SAMPLE_DATA_SOURCE["name"])
+    type(mock_data_source_1).content_url = PropertyMock(return_value=None)
+    type(mock_data_source_1).created_at = PropertyMock(return_value=None)
+    type(mock_data_source_1).updated_at = PropertyMock(return_value=None)
+
+    mock_data_source_2 = MagicMock()
+    type(mock_data_source_2).id = PropertyMock(return_value=SAMPLE_DATA_SOURCE_HIDDEN_SHEET["luid"])
+    type(mock_data_source_2).owner_id = PropertyMock(return_value=None)
+    type(mock_data_source_2).name = PropertyMock(return_value=SAMPLE_DATA_SOURCE_HIDDEN_SHEET["name"])
+    type(mock_data_source_2).content_url = PropertyMock(return_value=None)
+    type(mock_data_source_2).created_at = PropertyMock(return_value=None)
+    type(mock_data_source_2).updated_at = PropertyMock(return_value=None)
+
+    yield [mock_data_source_1, mock_data_source_2]
 
 
 @pytest.fixture(name="get_data_source_by_id", autouse=True)

@@ -10,11 +10,11 @@ from dagster._core.definitions.tags.tag_set import NamespacedTagSet
 from dagster._record import record
 from dagster._serdes import whitelist_for_serdes
 from dagster._utils.cached_method import cached_method
-from dagster._utils.names import clean_name_lower_with_dots
+from dagster._utils.names import clean_name_lower
 
 TABLEAU_PREFIX = "tableau/"
 
-_coerce_input_to_valid_name = clean_name_lower_with_dots
+_coerce_input_to_valid_name = clean_name_lower
 
 
 WorkbookSelectorFn: TypeAlias = Callable[["TableauWorkbookMetadata"], bool]

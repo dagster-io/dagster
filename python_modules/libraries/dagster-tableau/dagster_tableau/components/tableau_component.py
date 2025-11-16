@@ -14,7 +14,7 @@ from dagster.components.utils.defs_state import (
     DefsStateConfigArgs,
     ResolvedDefsStateConfig,
 )
-from dagster._utils.names import clean_name_lower_with_dots
+from dagster._utils.names import clean_name_lower
 from pydantic import BaseModel, Field
 
 from dagster_tableau.components.translation import (
@@ -191,8 +191,10 @@ class TableauComponent(StateBackedComponent, Resolvable):
         ),
     ]
 
-    # Takes a list of workbook names or ids to enable refresh for, or True to enable for all semantic models
+    # Takes a list of workbook names or ids to enable refresh for, or True to enable for all embedded datasources
     enable_embedded_datasource_refresh: Union[bool, list[str]] = False
+    # Takes a list of published datasource names or id's to enable refresh for, or True to enable for all published datasources
+    enable_published_datasource_refresh: Union[bool, list[str]] = False
 
     translation: Optional[ResolvedMultilayerTranslationFn] = None
     defs_state: ResolvedDefsStateConfig = field(
@@ -278,11 +280,11 @@ class TableauComponent(StateBackedComponent, Resolvable):
         # Serialize and write to path
         state_path.write_text(dg.serialize_value(workspace_data))
 
-    def build_refreshable_asset_definition(self, workbook_id: str, specs: list[dg.AssetSpec]) -> dg.AssetsDefinition:
+    def build_refreshable_embedded_data_sources_asset_definition(self, workbook_id: str, specs: list[dg.AssetSpec]) -> dg.AssetsDefinition:
         @dg.multi_asset(
             specs=specs,
             can_subset=False,
-            name=clean_name_lower_with_dots(workbook_id)
+            name=clean_name_lower(workbook_id)
         )
         def asset_fn(context: dg.AssetExecutionContext):
             with self.workspace.get_client() as client:
@@ -291,10 +293,49 @@ class TableauComponent(StateBackedComponent, Resolvable):
                         yield dg.AssetMaterialization(
                             asset_key=spec.key,
                         )
-                
+
+        return asset_fn
+    
+    def build_refreshable_published_data_sources_asset_definition(self, specs: list[dg.AssetSpec]) -> dg.AssetsDefinition:
+        @dg.multi_asset(
+            specs=specs,
+            can_subset=True,
+            name="tableau_published_data_sources_multi_asset"
+        )
+        def asset_fn(context: dg.AssetExecutionContext):
+            specs_by_data_source_id = {
+                TableauDataSourceMetadataSet.extract(spec.metadata).id: spec
+                for spec in context.assets_def.specs
+            }
+            assert all(specs_by_data_source_id.keys())
+            with self.workspace.get_client() as client:
+                for datasource_id in client.refresh_and_poll_data_sources(specs_by_data_source_id.keys()):
+                    yield dg.AssetMaterialization(asset_key=specs_by_data_source_id[datasource_id].key)
+
         return asset_fn
 
-    def is_refreshable(self, spec: dg.AssetSpec, workspace_data: TableauWorkspaceData) -> bool:
+
+    def is_refreshable_published_data_source(self, spec: dg.AssetSpec, workspace_data: TableauWorkspaceData) -> bool:
+        if not self.enable_published_datasource_refresh:
+            return False
+        
+        if ("published datasource" not in spec.kinds) or ('extract' not in spec.kinds):
+            return False
+        
+        metadataset = TableauDataSourceMetadataSet.extract(spec.metadata)
+        data_source_id = metadataset.id
+        assert data_source_id is not None
+        data_source_name = workspace_data.data_sources_by_id[data_source_id].properties["name"]
+
+        if (isinstance(self.enable_published_datasource_refresh, list)
+            and (data_source_id not in self.enable_published_datasource_refresh)
+            and (data_source_name not in self.enable_published_datasource_refresh)):
+            return False
+        return True
+
+        
+
+    def is_refreshable_embedded_data_source(self, spec: dg.AssetSpec, workspace_data: TableauWorkspaceData) -> bool:
         if not self.enable_embedded_datasource_refresh:
             return False
 
@@ -313,6 +354,7 @@ class TableauComponent(StateBackedComponent, Resolvable):
             return False
         return True
 
+
     def build_defs_from_state(
         self, context: ComponentLoadContext, state_path: Optional[Path]
     ) -> dg.Definitions:
@@ -325,11 +367,12 @@ class TableauComponent(StateBackedComponent, Resolvable):
 
         specs = self._load_asset_specs(workspace_data)
 
-        non_refreshable_specs = [spec for spec in specs if not self.is_refreshable(spec, workspace_data)]
-        refreshable_specs = [spec for spec in specs if self.is_refreshable(spec, workspace_data)]
-
+        non_refreshable_specs = [spec for spec in specs if (not self.is_refreshable_embedded_data_source(spec, workspace_data)) and (not self.is_refreshable_published_data_source(spec, workspace_data))]
+        refreshable_embedded_data_source_specs = [spec for spec in specs if self.is_refreshable_embedded_data_source(spec, workspace_data)]
+        refreshable_published_data_source_specs = [spec for spec in specs if self.is_refreshable_published_data_source(spec, workspace_data)]
+        
         refreshable_specs_by_workbook_id = {}
-        for spec in refreshable_specs:
+        for spec in refreshable_embedded_data_source_specs:
             workbook_id = TableauDataSourceMetadataSet.extract(spec.metadata).workbook_id
             if workbook_id not in refreshable_specs_by_workbook_id:
                 refreshable_specs_by_workbook_id[workbook_id] = []
@@ -338,6 +381,8 @@ class TableauComponent(StateBackedComponent, Resolvable):
         assets_defs = []
 
         for workbook_id, specs in refreshable_specs_by_workbook_id.items():
-            assets_defs.append(self.build_refreshable_asset_definition(workbook_id, specs))
+            assets_defs.append(self.build_refreshable_embedded_data_sources_asset_definition(workbook_id, specs))
+
+        assets_defs.append(self.build_refreshable_published_data_sources_asset_definition(refreshable_published_data_source_specs))
 
         return dg.Definitions(assets=non_refreshable_specs + assets_defs)

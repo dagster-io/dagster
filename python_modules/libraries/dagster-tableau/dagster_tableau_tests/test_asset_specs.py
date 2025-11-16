@@ -36,7 +36,7 @@ def test_fetch_tableau_workspace_data(
     site_name: str,
     sign_in: MagicMock,
     get_workbooks: MagicMock,
-    get_workbook: MagicMock,
+    get_workbook: MagicMock
 ) -> None:
     connected_app_client_id = uuid.uuid4().hex
     connected_app_secret_id = uuid.uuid4().hex
@@ -180,7 +180,7 @@ def test_translator_spec(
         ]
         assert next(asset_deps_iter).asset_key.path == ["hidden_sheet_datasource"]
 
-        iter_data_source = iter(spec for spec in all_assets if "datasource" in spec.key.path[0])
+        iter_data_source = iter(spec for spec in all_assets if "datasource" in spec.key.path[-1])
         published_data_source_asset_spec = next(iter_data_source)
         assert published_data_source_asset_spec.key.path == ["superstore_datasource"]
         assert published_data_source_asset_spec.metadata == {
@@ -190,7 +190,7 @@ def test_translator_spec(
         }
 
         embedded_data_source_asset_spec = next(iter_data_source)
-        assert embedded_data_source_asset_spec.key.path == ["embedded_superstore_datasource"]
+        assert embedded_data_source_asset_spec.key.path == ["test_workbook", "embedded_datasource", "embedded_superstore_datasource"]
         assert embedded_data_source_asset_spec.metadata == {
             "dagster-tableau/id": TEST_EMBEDDED_DATA_SOURCE_ID,
             "dagster-tableau/has_extracts": True,
