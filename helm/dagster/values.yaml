@@ -80,7 +80,7 @@ dagsterWebserver:
 
   # The log format of the webserver, defaults to colored if not set
   # Valid options are: colored|json|rich
-  # logFormat: colored 
+  # logFormat: colored
 
   # The timeout in milliseconds to set on database statements sent to the Dagster instance.
   dbStatementTimeout: ~
