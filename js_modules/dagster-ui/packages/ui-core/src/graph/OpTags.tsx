@@ -2,6 +2,7 @@ import {Box, Colors, FontFamily, IconWrapper} from '@dagster-io/ui-components';
 import * as React from 'react';
 import styled from 'styled-components';
 
+import {CustomKindIconMappingContext} from './CustomKindIcons';
 import csv from './kindtag-images/csv.svg';
 import dag from './kindtag-images/dag.svg';
 import dashboard from './kindtag-images/dashboard.svg';
@@ -1440,12 +1441,17 @@ export const extractIconSrc = (knownTag: KnownTag | undefined) => {
 };
 
 export const OpTags = React.memo(({tags, style, reduceColor, reduceText}: OpTagsProps) => {
+  const [customKindIconMapping, _] = React.useContext(CustomKindIconMappingContext);
+
   return (
     <OpTagsContainer style={style}>
       {tags.map((tag) => {
         const known = KNOWN_TAGS[coerceToStandardLabel(tag.label) as KnownTagType];
         const blackAndWhite = known && 'blackAndWhite' in known && known.blackAndWhite;
         const text = known?.content || tag.label;
+        const customKindIcon = customKindIconMapping.find(
+          (mapping) => coerceToStandardLabel(mapping.kind) === coerceToStandardLabel(tag.label),
+        );
 
         return (
           <Box
@@ -1458,11 +1464,11 @@ export const OpTags = React.memo(({tags, style, reduceColor, reduceText}: OpTags
               fontWeight: reduceColor ? 500 : 600,
             }}
           >
-            {known && 'icon' in known && (
+            {((known && 'icon' in known) || customKindIcon) && (
               <OpTagIconWrapper
                 role="img"
                 $size={16}
-                $img={extractIconSrc(known)}
+                $img={customKindIcon ? `"${customKindIcon.svg_url}"` : extractIconSrc(known)}
                 $color={blackAndWhite ? Colors.accentPrimary() : null}
                 $rotation={null}
                 aria-label={tag.label}
