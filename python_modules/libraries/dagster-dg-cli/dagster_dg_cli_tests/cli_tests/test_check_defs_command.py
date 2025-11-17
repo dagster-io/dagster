@@ -183,3 +183,34 @@ def test_implicit_yaml_check_from_dg_check_defs_disallowed_in_workspace_context(
             assert BASIC_INVALID_VALUE.check_error_msg and BASIC_MISSING_VALUE.check_error_msg
             BASIC_INVALID_VALUE.check_error_msg(str(result.output))
             BASIC_MISSING_VALUE.check_error_msg(str(result.output))
+
+
+@pytest.mark.skipif(is_windows(), reason="Temporarily skipping (signal issues in CLI)..")
+def test_check_defs_uses_active_venv_when_flag_set():
+    """Test that check defs command logs the active venv Python when --use-active-venv is set."""
+    dagster_git_repo_dir = str(discover_git_root(Path(__file__)))
+    with (
+        ProxyRunner.test() as runner,
+        isolated_example_workspace(runner, create_venv=True) as workspace_path,
+        environ({"DAGSTER_GIT_REPO_DIR": dagster_git_repo_dir}),
+    ):
+        venv_path = workspace_path / ".venv"
+        install_editable_dg_dev_packages_to_venv(venv_path)
+
+        with activate_venv(venv_path):
+            # Create a project
+            result = runner.invoke_create_dagster(
+                "project", "--use-editable-dagster", "test-project", "--uv-sync"
+            )
+            assert_runner_result(result)
+
+            # Run check defs with --use-active-venv flag
+            result = runner.invoke("check", "defs", "--use-active-venv")
+
+            # Verify the command succeeded
+            assert_runner_result(result)
+
+            # Verify the log message is present in output
+            assert "Using active Python environment:" in str(result.output), (
+                f"Expected log message about using active Python environment, but got:\n{result.output}"
+            )

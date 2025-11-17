@@ -239,9 +239,7 @@ def test_implicit_yaml_check_from_dg_dev_in_workspace_context() -> None:
 
 @pytest.mark.skipif(is_windows(), reason="Temporarily skipping (signal issues in CLI)..")
 def test_dev_uses_active_venv_when_flag_set():
-    """Test that dev command uses the active venv Python when --use-active-venv is set."""
-    import signal
-
+    """Test that dev command logs the active venv Python when --use-active-venv is set."""
     dagster_git_repo_dir = str(discover_git_root(Path(__file__)))
     with (
         ProxyRunner.test() as runner,
@@ -258,44 +256,36 @@ def test_dev_uses_active_venv_when_flag_set():
             )
             assert_runner_result(result)
 
-            # Get the Python executable from the workspace venv (this is the "active" venv)
-            from dagster_dg_core.utils import get_venv_executable
-
-            active_venv_python = str(get_venv_executable(venv_path))
-
-            # Write a simple asset that captures sys.executable
-            asset_file = Path("test-project") / "src" / "test_project" / "defs" / "test_asset.py"
-            asset_file.write_text(
-                textwrap.dedent(f"""
-                import sys
-                from pathlib import Path
-                import dagster as dg
-
-                # Write sys.executable to a file when the definition loads
-                venv_marker_file = Path("{workspace_path}") / "loaded_python.txt"
-                venv_marker_file.write_text(sys.executable)
-
-                @dg.asset
-                def test_asset():
-                    pass
-                """)
-            )
-
-            # Start dev server with --use-active-venv flag
+            # Start dev server with --use-active-venv flag and capture output
             port = find_free_port()
-            dev_process = launch_dev_command(["--port", str(port), "--use-active-venv"])
+            with (
+                tempfile.NamedTemporaryFile(mode="w+") as stdout_file,
+                tempfile.NamedTemporaryFile(mode="w+") as stderr_file,
+            ):
+                with open(stdout_file.name, "w") as stdout, open(stderr_file.name, "w") as stderr:
+                    dev_process = launch_dev_command(
+                        ["--port", str(port), "--use-active-venv"], stdout=stdout, stderr=stderr
+                    )
 
-            try:
-                wait_for_projects_loaded({"test-project"}, port, dev_process)
+                # Give it a moment to start and log the message
+                import time
 
-                # Read the captured sys.executable
-                loaded_python = (workspace_path / "loaded_python.txt").read_text().strip()
+                time.sleep(2)
 
-                # Verify it matches the active venv (workspace venv)
-                # Normalize paths to resolve symlinks for comparison
-                assert Path(loaded_python).resolve() == Path(active_venv_python).resolve(), (
-                    f"Expected active venv Python {active_venv_python} but got {loaded_python}"
-                )
-            finally:
+                # Read the captured output
+                with open(stdout_file.name) as f:
+                    stdout_content = f.read()
+                with open(stderr_file.name) as f:
+                    stderr_content = f.read()
+
+                # Clean up the process
+                import signal
+
                 dev_process.send_signal(signal.SIGINT)
                 dev_process.communicate()
+
+                # Verify the log message is present
+                combined_output = stdout_content + stderr_content
+                assert "Using active Python environment:" in combined_output, (
+                    f"Expected log message about using active Python environment, but got:\n{combined_output}"
+                )

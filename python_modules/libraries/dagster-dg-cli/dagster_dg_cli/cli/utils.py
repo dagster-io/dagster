@@ -297,12 +297,17 @@ def create_temp_workspace_file(
     dg_context: DgContext, use_active_venv: bool = False
 ) -> Iterator[str]:
     # defer for import performance
+    import sys
+
     import yaml
 
     check.invariant(
         dg_context.is_in_workspace or dg_context.is_project,
         "can only create a workspace file within a project or workspace context",
     )
+
+    if use_active_venv:
+        click.echo(f"Using active Python environment: {sys.executable}")
 
     with tempfile.TemporaryDirectory() as temp_dir:
         temp_workspace_file = Path(temp_dir) / "workspace.yaml"
