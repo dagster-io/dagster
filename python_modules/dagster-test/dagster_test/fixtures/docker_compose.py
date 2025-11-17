@@ -9,6 +9,8 @@ import yaml
 
 from dagster_test.fixtures.utils import BUILDKITE
 
+ON_KUBERNETES = os.environ.get("KUBERNETES_PORT") is not None
+
 
 @contextmanager
 def docker_compose_cm(
@@ -31,7 +33,7 @@ def docker_compose_cm(
             dump_docker_compose_logs(docker_context, docker_compose_yml)
             raise
 
-        if BUILDKITE:
+        if BUILDKITE and not ON_KUBERNETES:
             # When running in a container on Buildkite, we need to first connect our container
             # and our network and then yield a dict of container name to the container's
             # hostname.
@@ -204,7 +206,9 @@ def default_docker_compose_yml(default_directory) -> str:
 def network_name_from_yml(docker_compose_yml) -> str:
     with open(docker_compose_yml) as f:
         config = yaml.safe_load(f)
-    if "name" in config:
+    if "COMPOSE_PROJECT_NAME" in os.environ:
+        name = os.environ["COMPOSE_PROJECT_NAME"]
+    elif "name" in config:
         name = config["name"]
     else:
         dirname = os.path.dirname(docker_compose_yml)
