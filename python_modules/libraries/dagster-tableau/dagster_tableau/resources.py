@@ -50,8 +50,35 @@ from dagster_tableau.translator import (
 
 DEFAULT_POLL_INTERVAL_SECONDS = 10
 DEFAULT_POLL_TIMEOUT = 600
+DEFAULT_PAGE_SIZE = 100
 
 TABLEAU_RECONSTRUCTION_METADATA_KEY_PREFIX = "dagster-tableau/reconstruction_metadata"
+
+
+def _paginate_get(
+    get_fn,
+    page_size: int = DEFAULT_PAGE_SIZE,
+):
+    """Generic pagination function for Tableau Server Client get methods.
+
+    Args:
+        get_fn: The get function to paginate (e.g., server.datasources.get, server.workbooks.get)
+        page_size: Number of items to fetch per page. Defaults to DEFAULT_PAGE_SIZE.
+
+    Returns:
+        List of all items from all pages.
+    """
+    all_items = []
+    items, pagination = get_fn(TSC.RequestOptions(pagenumber=1, pagesize=page_size))
+    all_items.extend(items)
+
+    page_number = 2
+    while pagination.page_number * pagination.page_size < pagination.total_available:
+        items, pagination = get_fn(TSC.RequestOptions(pagenumber=page_number, pagesize=page_size))
+        all_items.extend(items)
+        page_number += 1
+
+    return all_items
 
 
 @beta
@@ -83,9 +110,8 @@ class BaseTableauClient:
         return get_dagster_logger()
 
     @cached_method
-    def get_data_sources(self) -> list[TSC.DatasourceItem]: # TODO: pagination
-        datasources, _ = self._server.datasources.get()
-        return datasources
+    def get_data_sources(self) -> list[TSC.DatasourceItem]:
+        return _paginate_get(self._server.datasources.get)
 
     @cached_method
     def get_data_source(
@@ -102,8 +128,7 @@ class BaseTableauClient:
     @cached_method
     def get_workbooks(self) -> list[TSC.WorkbookItem]:
         """Fetches a list of all Tableau workbooks in the workspace."""
-        workbooks, _ = self._server.workbooks.get()
-        return workbooks
+        return _paginate_get(self._server.workbooks.get)
 
     @cached_method
     def get_workbook(self, workbook_id) -> Mapping[str, object]:
