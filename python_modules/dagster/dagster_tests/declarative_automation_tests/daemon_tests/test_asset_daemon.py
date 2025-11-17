@@ -489,6 +489,48 @@ def _assert_sensor_state(
     assert len(ticks) == expected_num_ticks
 
 
+def test_auto_materialize_sensor_enforced_minimum_interval():
+    with get_daemon_instance(paused=False) as instance:
+        with environ({"DAGSTER_ASSET_DAEMON_MINIMUM_ALLOWED_MIN_INTERVAL": "60"}):
+            result = daemon_sensor_scenario.evaluate_daemon(instance)
+
+            sensor_states = instance.schedule_storage.all_instigator_state(  # pyright: ignore[reportOptionalMemberAccess]
+                instigator_type=InstigatorType.SENSOR
+            )
+            assert len(sensor_states) == 1
+            _assert_sensor_state(
+                instance,
+                "auto_materialize_sensor_a",
+                expected_num_ticks=1,
+                expected_status=InstigatorStatus.DECLARED_IN_CODE,
+            )
+
+            # would run a tick based on interval in code, but minimum allowed interval is set via env var to 30 seconds
+            result = result.with_current_time_advanced(seconds=59)
+            result = result.evaluate_tick()
+            daemon_sensor_scenario.evaluate_daemon(instance)
+            sensor_states = instance.schedule_storage.all_instigator_state(  # pyright: ignore[reportOptionalMemberAccess]
+                instigator_type=InstigatorType.SENSOR
+            )
+
+            _assert_sensor_state(
+                instance,
+                "auto_materialize_sensor_a",
+                expected_num_ticks=1,
+                expected_status=InstigatorStatus.DECLARED_IN_CODE,
+            )
+
+            result = result.with_current_time_advanced(seconds=1)
+            result = result.evaluate_tick()
+
+            _assert_sensor_state(
+                instance,
+                "auto_materialize_sensor_a",
+                expected_num_ticks=2,
+                expected_status=InstigatorStatus.DECLARED_IN_CODE,
+            )
+
+
 def test_auto_materialize_sensor_no_transition():
     # have not been using global AMP before - first tick does not create
     # any sensor states except for the one that is declared in code
