@@ -205,17 +205,45 @@ class ComponentTree(IHaveNew):
             self.state_tracker.get_cache_data(self.defs_module_path).component_decl
         )
 
-    def build_defs(self) -> Definitions:
-        from dagster.components.core.load_defs import get_library_json_enriched_defs
+    def build_defs_at_path(self, path: ResolvableToComponentPath) -> Definitions:
+        """Builds definitions from the given defs subdirectory.
 
-        if self.state_tracker.get_cache_data(self.defs_module_path).defs is None:
-            defs = Definitions.merge(
-                self.build_defs_at_path(self.defs_module_path),
-                get_library_json_enriched_defs(self),
-            )
-            self.state_tracker.set_cache_data(self.defs_module_path, defs=defs)
+        Args:
+            path: Path to the defs module to load. If relative, resolves relative to the defs root.
 
-        return check.not_none(self.state_tracker.get_cache_data(self.defs_module_path).defs)
+        Returns:
+            Definitions: The definitions loaded from the given path.
+        """
+        defs = self._build_defs_at_path(path)
+        if defs is None:
+            raise Exception(f"No definitions found for path {path}")
+        return defs
+
+    def build_defs(self, path: Optional[ResolvableToComponentPath] = None) -> Definitions:
+        """Builds definitions from the given defs subdirectory, or all defs modules if no
+        path is provided.
+
+        Args:
+            path (Optional[ResolvableToComponentPath]): Path to the defs module to load.
+                If relative, resolves relative to the defs root.  If None, builds
+                definitions for the entire defs module.
+
+        Returns:
+            Definitions: The definitions loaded from the given path.
+        """
+        if path is None:
+            from dagster.components.core.load_defs import get_library_json_enriched_defs
+
+            if self.state_tracker.get_cache_data(self.defs_module_path).defs is None:
+                defs = Definitions.merge(
+                    self.build_defs(self.defs_module_path),
+                    get_library_json_enriched_defs(self),
+                )
+                self.state_tracker.set_cache_data(self.defs_module_path, defs=defs)
+
+            return check.not_none(self.state_tracker.get_cache_data(self.defs_module_path).defs)
+        else:
+            return self.build_defs_at_path(path)
 
     def find_decl_at_path(self, defs_path: ResolvableToComponentPath) -> ComponentDecl:
         """Loads a component declaration from the given path.
@@ -267,13 +295,13 @@ class ComponentTree(IHaveNew):
         self.state_tracker.mark_component_defs_state_key(component_path, defs_state_key)
 
     @overload
-    def load_component_at_path(self, defs_path: Union[Path, ComponentPath, str]) -> Component: ...
+    def load_component(self, defs_path: Union[Path, ComponentPath, str]) -> Component: ...
     @overload
-    def load_component_at_path(
+    def load_component(
         self, defs_path: Union[Path, ComponentPath, str], expected_type: type[T]
     ) -> T: ...
 
-    def load_component_at_path(
+    def load_component(
         self, defs_path: Union[Path, ComponentPath, str], expected_type: Optional[type[T]] = None
     ) -> Any:
         """Loads a component from the given path.
@@ -362,21 +390,6 @@ class ComponentTree(IHaveNew):
             raise Exception(f"No component found for path {defs_path}")
         return component_with_context[0]
 
-    def build_defs_at_path(self, defs_path: ResolvableToComponentPath) -> Definitions:
-        """Builds definitions from the given defs subdirectory. Currently
-        does not incorporate postprocessing from parent defs modules.
-
-        Args:
-            defs_path: Path to the defs module to load. If relative, resolves relative to the defs root.
-
-        Returns:
-            Definitions: The definitions loaded from the given path.
-        """
-        defs = self._build_defs_at_path(defs_path)
-        if defs is None:
-            raise Exception(f"No definitions found for path {defs_path}")
-        return defs
-
     def get_all_components(
         self,
         of_type: type[TComponent],
@@ -385,7 +398,7 @@ class ComponentTree(IHaveNew):
         Avoids loading components that are not of the specified type.
         """
         return [
-            check.inst(self.load_component_at_path(path), of_type)
+            check.inst(self.load_component(path), of_type)
             for path, decl in self._component_decl_tree().items()
             if safe_is_subclass(decl.component_type, of_type)
         ]

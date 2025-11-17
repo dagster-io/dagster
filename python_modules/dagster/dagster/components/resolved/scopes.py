@@ -41,16 +41,14 @@ class WrappedObjectScope:
 
     This allows us to expose Python objects (like modules or context objects) to Jinja templates
     with explicit attribute whitelisting.
+
+    Args:
+        wrapped_object: The object to wrap and expose to templates
+        accessible_attributes: Set of attribute names that are allowed to be accessed from templates.
+                              Only these attributes will be accessible via {{ scope.attr }}
     """
 
     def __init__(self, wrapped_object: Any, accessible_attributes: set[str]):
-        """Initialize the wrapped object scope.
-
-        Args:
-            wrapped_object: The object to wrap and expose to templates
-            accessible_attributes: Set of attribute names that are allowed to be accessed from templates.
-                                  Only these attributes will be accessible via {{ scope.attr }}
-        """
         self._wrapped_object = wrapped_object
         self._accessible_attributes = accessible_attributes
 
@@ -60,7 +58,6 @@ class WrappedObjectScope:
         # for this access
         if name.startswith("jinja") or name.startswith("_"):
             raise AttributeError(f"{name} not found")
-
         # Check if this attribute is whitelisted
         if name not in self._accessible_attributes:
             raise AttributeError(
@@ -82,10 +79,8 @@ class DgScope(WrappedObjectScope):
     """
 
     def __init__(self):
-        # Import dagster module to expose its contents
         import dagster as dg
 
-        # Whitelist commonly used Dagster definitions
         accessible_attributes = {
             "AutomationCondition",
             "DailyPartitionsDefinition",
@@ -106,33 +101,22 @@ class LoadContextScope(WrappedObjectScope):
 
     Examples:
         {{ context.project_root }}/data/input.csv
-        {{ context.load_component_at_path("other_component") }}
-        {{ context.build_defs_at_path("submodule") }}
+        {{ context.load_component("other_component") }}
+        {{ context.build_defs("submodule") }}
     """
 
     def __init__(self, context):
-        """Initialize with a ComponentLoadContext.
-
-        Args:
-            context: ComponentLoadContext object that provides project_root,
-                    load_component_at_path, and build_defs_at_path
-        """
-        # For now, keep the _at_path suffix in the method names
-        # In a future PR, we'll rename the methods on ComponentLoadContext
         accessible_attributes = {
-            "load_component_at_path",
-            "build_defs_at_path",
+            "load_component",
+            "build_defs",
+            "project_root",
         }
 
         super().__init__(context, accessible_attributes)
 
     @property
     def project_root(self) -> str:
-        """The root directory of the Dagster project.
-
-        Example:
-            {{ context.project_root }}/data/input.csv
-        """
+        # override here so we can resolve the project_root to a string
         return str(self._wrapped_object.project_root.resolve())
 
 
@@ -156,12 +140,10 @@ class DeprecatedScope:
         )
 
     def __call__(self, *args, **kwargs):
-        """Support calling if the underlying value is callable."""
         self._warn()
         return self._value(*args, **kwargs)
 
     def __getattr__(self, key: str):
-        """Support attribute access on the underlying value."""
         # jinja2 applies a hasattr check to any scope fn - we avoid raising our own exception
         # for this access
         if key.startswith("jinja") or key.startswith("_"):
@@ -171,11 +153,9 @@ class DeprecatedScope:
         return getattr(self._value, key)
 
     def __getitem__(self, key: str):
-        """Support item access on the underlying value."""
         self._warn()
         return self._value[key]
 
     def __str__(self):
-        """Support string conversion."""
         self._warn()
         return str(self._value)
