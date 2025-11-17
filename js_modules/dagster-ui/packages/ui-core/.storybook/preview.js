@@ -17,6 +17,7 @@ import {withThemeByClassName} from '@storybook/addon-themes';
 
 import {createGlobalStyle} from 'styled-components';
 
+import '@dagster-io/ui-components/fonts/Fonts.css';
 import '../src/app/blueprint.css';
 
 const GlobalStyle = createGlobalStyle`
