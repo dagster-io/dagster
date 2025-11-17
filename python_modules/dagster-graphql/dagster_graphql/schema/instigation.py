@@ -43,7 +43,6 @@ from dagster_graphql.schema.errors import (
     GrapheneError,
     GraphenePythonError,
     GrapheneRepositoryLocationNotFound,
-    GrapheneRepositoryNotFoundError,
     GrapheneScheduleNotFoundError,
     GrapheneSensorNotFoundError,
 )
@@ -356,18 +355,10 @@ class GrapheneDryRunInstigationTick(graphene.ObjectType):
             )
 
         code_location = graphene_info.context.get_code_location(self._selector.location_name)
-        if not code_location.has_repository(self._selector.repository_name):
-            raise UserFacingGraphQLError(
-                GrapheneRepositoryNotFoundError(
-                    repository_location_name=self._selector.location_name,
-                    repository_name=self._selector.repository_name,
-                )
-            )
-
-        repository = code_location.get_repository(self._selector.repository_name)
 
         if isinstance(self._selector, SensorSelector):
-            if not repository.has_sensor(self._selector.sensor_name):
+            sensor = graphene_info.context.get_sensor(self._selector)
+            if not sensor:
                 raise UserFacingGraphQLError(
                     GrapheneSensorNotFoundError(self._selector.sensor_name)
                 )
@@ -376,7 +367,7 @@ class GrapheneDryRunInstigationTick(graphene.ObjectType):
                 sensor_data = code_location.get_sensor_execution_data(
                     name=self._selector.sensor_name,
                     instance=graphene_info.context.instance,
-                    repository_handle=repository.handle,
+                    repository_handle=sensor.handle.repository_handle,
                     cursor=self._cursor,
                     last_tick_completion_time=None,
                     last_run_key=None,
@@ -385,10 +376,10 @@ class GrapheneDryRunInstigationTick(graphene.ObjectType):
                 )
             except Exception:
                 sensor_data = serializable_error_info_from_exc_info(sys.exc_info())
-            sensor = repository.get_sensor(self._selector.sensor_name)
             return GrapheneTickEvaluation(sensor_data, sensor)
         else:
-            if not repository.has_schedule(self._selector.schedule_name):
+            schedule = graphene_info.context.get_schedule(self._selector)
+            if not schedule:
                 raise UserFacingGraphQLError(
                     GrapheneScheduleNotFoundError(self._selector.schedule_name)
                 )
@@ -397,7 +388,6 @@ class GrapheneDryRunInstigationTick(graphene.ObjectType):
                     "No tick timestamp provided when attempting to dry-run schedule"
                     f" {self._selector.schedule_name}."
                 )
-            schedule = repository.get_schedule(self._selector.schedule_name)
             timezone_str = schedule.execution_timezone
             if not timezone_str:
                 timezone_str = "UTC"
@@ -407,7 +397,7 @@ class GrapheneDryRunInstigationTick(graphene.ObjectType):
             try:
                 schedule_data = code_location.get_schedule_execution_data(
                     instance=graphene_info.context.instance,
-                    repository_handle=repository.handle,
+                    repository_handle=schedule.handle.repository_handle,
                     schedule_name=schedule.name,
                     scheduled_execution_time=TimestampWithTimezone(
                         next_tick_datetime.timestamp(),
