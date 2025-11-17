@@ -43,9 +43,9 @@ Depending on your use case or if you're using Dagster+, you may also need to add
 | File/Directory | Description | OSS | Dagster+ |
 |----------------|-------------|-----|----------|
 | dagster.yaml   | Configures your Dagster instance, including defining storage locations, run launchers, sensors, and schedules. For more information. including a list of use cases and available options, see the [`dagster.yaml` reference](/deployment/oss/dagster-yaml).<br /><br />For [Dagster+ Hybrid deployments](/deployment/dagster-plus/hybrid), this file can be used to customize the [Hybrid agent](/deployment/dagster-plus/management/customizing-agent-settings). | Optional | Optional |
-| build.yaml | Defines projects for Dagster+ deployment. For more information, see the [`build.yaml` reference](/guides/build/projects/project-structure/dagster-cloud-yaml). | Not applicable | Recommended for Dagster+ Hybrid |
+| build.yaml | Defines projects for Dagster+ deployment. For more information, see the [`build.yaml` reference](/guides/build/projects/project-structure/build-yaml). | Not applicable | Recommended for Dagster+ Hybrid |
 | deployment_settings.yaml | Configures settings for full deployments in Dagster+, including run queue priority and concurrency limits. For more information, see the [full deployment settings reference](/deployment/dagster-plus/deploying-code/full-deployments/full-deployment-settings-reference).<br /><br />**Note:** This file can be named anything, but we recommend choosing a name that is easy to understand. | Not applicable | Optional |
-| dg.toml | Defines multiple Dagster projects in a workspace for local development or deploying to a production OSS deployment. For more information and available options, see the [`dg.toml` file reference](/guides/build/projects/workspaces/dg.toml) | Optional | TK |
+| dg.toml | Defines multiple Dagster projects in a workspace for local development or deploying to a production OSS deployment. For more information and available options, see the [`dg.toml` file reference](/guides/build/projects/workspaces/dg-toml) | Optional | TK |
 | .github/dagster-plus-deploy.yml | GitHub Action workflow file used for CI/CD. For more information, see [CI/CD in Dagster+ Serverless](/deployment/dagster-plus/deploying-code/ci-cd/ci-cd-in-serverless) | Not applicable | Dagster+ Serverless only |
 | .github/dagster-cloud-deploy.yml | GitHub Action workflow file used for CI/CD. For more information, see [CI/CD in Dagster+ Hybrid](/deployment/dagster-plus/deploying-code/ci-cd/ci-cd-in-serverless) | Not applicable | Dagster+ Hybrid only |
 
@@ -59,7 +59,7 @@ Using the default project skeleton, let's take a look at how some example Dagste
 
 :::note Configuration file location
 
-With the exception of [`build.yaml`](/guides/build/projects/project-structure/dagster-cloud-yaml), it's not necessary for configuration files to be located with your project files. These files typically need to be located in `DAGSTER_HOME`. For example, in larger deployments, `DAGSTER_HOME` and Dagster infrastructure configuration can be managed separately from the projects they support.
+With the exception of [`build.yaml`](/guides/build/projects/project-structure/build-yaml), it's not necessary for configuration files to be located with your project files. These files typically need to be located in `DAGSTER_HOME`. For example, in larger deployments, `DAGSTER_HOME` and Dagster infrastructure configuration can be managed separately from the projects they support.
 
 :::
 
