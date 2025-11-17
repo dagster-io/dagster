@@ -1,3 +1,4 @@
+import signal
 import tempfile
 import textwrap
 from pathlib import Path
@@ -279,8 +280,6 @@ def test_dev_uses_active_venv_when_flag_set():
                     stderr_content = f.read()
 
                 # Clean up the process
-                import signal
-
                 dev_process.send_signal(signal.SIGINT)
                 dev_process.communicate()
 
