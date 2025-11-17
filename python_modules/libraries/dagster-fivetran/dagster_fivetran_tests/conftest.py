@@ -775,3 +775,41 @@ def sync_and_poll_fixture():
             paused_connector_output,
         ]
         yield mocked_function
+
+
+@pytest.fixture(name="resync_and_poll")
+def resync_and_poll_fixture():
+    with (
+        patch("dagster_fivetran.resources.FivetranClient.resync_and_poll") as mocked_function,
+        patch(
+            "dagster_fivetran.resources.FivetranResource.resync_and_poll"
+        ) as mocked_resync_and_poll_legacy_resource,
+    ):
+        # Fivetran output where all resync'd tables match the workspace data that was used to create the assets def
+        expected_fivetran_output = FivetranOutput(
+            connector_details=get_sample_connection_details(
+                succeeded_at=TEST_MAX_TIME_STR, failed_at=TEST_PREVIOUS_MAX_TIME_STR
+            )["data"],
+            schema_config=SAMPLE_SCHEMA_CONFIG_FOR_CONNECTOR["data"],
+        )
+        # Fivetran output where a table is missing and an unexpected table is resync'd,
+        # compared to the workspace data that was used to create the assets def
+        unexpected_fivetran_output = FivetranOutput(
+            connector_details=get_sample_connection_details(
+                succeeded_at=TEST_MAX_TIME_STR, failed_at=TEST_PREVIOUS_MAX_TIME_STR
+            )["data"],
+            schema_config=ALTERED_SAMPLE_SCHEMA_CONFIG_FOR_CONNECTOR["data"],
+        )
+        # resync_and_poll returns None if the connector is paused
+        paused_connector_output = None
+        mocked_function.side_effect = [
+            expected_fivetran_output,
+            unexpected_fivetran_output,
+            paused_connector_output,
+        ]
+        mocked_resync_and_poll_legacy_resource.side_effect = [
+            expected_fivetran_output,
+            unexpected_fivetran_output,
+            paused_connector_output,
+        ]
+        yield mocked_function
