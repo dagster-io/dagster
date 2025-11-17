@@ -14,8 +14,10 @@ from dagster_tableau_tests.conftest import (
 
 def test_translator_sheet_spec(workspace_data: TableauWorkspaceData) -> None:
     translator = DagsterTableauTranslator()
-    asset_key_list = [AssetKey(["superstore_datasource"]), 
-                      AssetKey(["test_workbook","embedded_datasource","embedded_superstore_datasource"])]
+    asset_key_list = [
+        AssetKey(["superstore_datasource"]),
+        AssetKey(["test_workbook", "embedded_datasource", "embedded_superstore_datasource"]),
+    ]
     index = 0
     for sheet in workspace_data.sheets_by_id.values():
         asset_spec = translator.get_asset_spec(
@@ -102,7 +104,11 @@ def test_translator_data_source_spec(
         TableauTranslatorData(content_data=embedded_data_source, workspace_data=workspace_data)
     )
 
-    assert asset_spec.key.path == ["test_workbook","embedded_datasource","embedded_superstore_datasource"]
+    assert asset_spec.key.path == [
+        "test_workbook",
+        "embedded_datasource",
+        "embedded_superstore_datasource",
+    ]
     assert asset_spec.metadata == {
         "dagster-tableau/id": TEST_EMBEDDED_DATA_SOURCE_ID,
         "dagster-tableau/has_extracts": True,

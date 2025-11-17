@@ -277,7 +277,9 @@ class BaseTableauClient:
             job_ids.append(job.id)
 
         # Then poll all jobs until they complete, yielding datasource_id as each completes
-        for job in self.poll_jobs(job_ids=job_ids, poll_interval=poll_interval, poll_timeout=poll_timeout):
+        for job in self.poll_jobs(
+            job_ids=job_ids, poll_interval=poll_interval, poll_timeout=poll_timeout
+        ):
             if job.datasource_id:
                 yield job.datasource_id
 
@@ -364,7 +366,9 @@ class BaseTableauClient:
         Returns:
             TSC.JobItem: The completed job item
         """
-        jobs = list(self.poll_jobs(job_ids=[job_id], poll_interval=poll_interval, poll_timeout=poll_timeout))
+        jobs = list(
+            self.poll_jobs(job_ids=[job_id], poll_interval=poll_interval, poll_timeout=poll_timeout)
+        )
         return jobs[0]
 
     def add_data_quality_warning_to_data_source(
@@ -720,11 +724,10 @@ class BaseTableauWorkspace(ConfigurableResource):
             We add to the data all the published-data-sources, that weren't already added from a workbook.
             """
             for published_data_source in client.get_data_sources():
-            
                 # if we already processed this data_source, skip it
-                if published_data_source.id in data_source_ids: 
+                if published_data_source.id in data_source_ids:
                     continue
-                
+
                 data_sources.append(
                     TableauContentData(
                         content_type=TableauContentType.DATA_SOURCE,
@@ -734,12 +737,10 @@ class BaseTableauWorkspace(ConfigurableResource):
                             "hasExtracts": published_data_source.has_extracts,
                             "luid": published_data_source.id,
                             "isPublished": True,
-                            "workbook": None
-                        }
+                            "workbook": None,
+                        },
                     )
                 )
-                
-
 
         return TableauWorkspaceData.from_content_data(
             self.site_name,

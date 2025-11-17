@@ -28,7 +28,7 @@ BASIC_TABLEAU_COMPONENT_BODY = {
             "pod_name": "10ax",
         },
         "enable_embedded_datasource_refresh": True,
-        "enable_published_datasource_refresh": True
+        "enable_published_datasource_refresh": True,
     },
 }
 
@@ -93,6 +93,7 @@ def test_component_load_with_defs_state(
             assert AssetKey(["test_workbook", "dashboard", "dashboard_sales"]) in asset_keys
             # Check for data sources
             assert AssetKey(["superstore_datasource"]) in asset_keys
+
 
 class TestTableauTranslation(TestTranslation):
     """Test translation of asset attributes for Tableau components."""
