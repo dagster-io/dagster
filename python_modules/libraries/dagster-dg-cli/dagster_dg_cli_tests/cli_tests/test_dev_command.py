@@ -16,6 +16,7 @@ from dagster_test.dg_utils.utils import (
     isolated_example_project_foo_bar,
     isolated_example_workspace,
     launch_dev_command,
+    wait_for_projects_loaded,
 )
 
 
@@ -25,6 +26,8 @@ def test_dev_workspace_context_success(monkeypatch):
     # cannot find a venv with `dagster` and `dagster-webserver` installed. `uv tool run` will
     # pull the `dagster` package from PyPI. To avoid this, we ensure the workspace directory has a
     # venv with `dagster` and `dagster-webserver` installed.
+    import signal
+
     dagster_git_repo_dir = str(discover_git_root(Path(__file__)))
     with (
         ProxyRunner.test() as runner,
@@ -47,13 +50,43 @@ def test_dev_workspace_context_success(monkeypatch):
             )
             assert_runner_result(result)
 
+            # Write an asset that captures sys.executable to verify correct venv is used
             (Path("project-2") / "src" / "project_2" / "defs" / "my_asset.py").write_text(
-                "import dagster as dg\n\n@dg.asset\ndef my_asset(): pass"
+                textwrap.dedent(f"""
+                import sys
+                from pathlib import Path
+                import dagster as dg
+
+                # Write sys.executable to a file when the definition loads
+                venv_marker_file = Path("{workspace_path}") / "loaded_python_project_scoped.txt"
+                venv_marker_file.write_text(sys.executable)
+
+                @dg.asset
+                def my_asset():
+                    pass
+                """)
             )
             port = find_free_port()
             dev_process = launch_dev_command(["--port", str(port)])
             projects = {"project-1", "project-2"}
-            assert_projects_loaded_and_exit(projects, port, dev_process)
+            try:
+                wait_for_projects_loaded(projects, port, dev_process)
+
+                # Verify project-scoped venv was used (not the active venv)
+                loaded_python = (
+                    (workspace_path / "loaded_python_project_scoped.txt").read_text().strip()
+                )
+                project_venv_python = str(
+                    (workspace_path / "project-2" / ".venv" / "bin" / "python").resolve()
+                )
+
+                # Should use project-scoped venv, not active venv
+                assert Path(loaded_python).resolve() == Path(project_venv_python).resolve(), (
+                    f"Expected project venv Python {project_venv_python} but got {loaded_python}"
+                )
+            finally:
+                dev_process.send_signal(signal.SIGINT)
+                dev_process.communicate()
 
 
 @pytest.mark.skipif(is_windows(), reason="Temporarily skipping (signal issues in CLI)..")
@@ -205,8 +238,10 @@ def test_implicit_yaml_check_from_dg_dev_in_workspace_context() -> None:
 
 
 @pytest.mark.skipif(is_windows(), reason="Temporarily skipping (signal issues in CLI)..")
-def test_dev_workspace_with_use_active_venv_flag():
-    """Test that dev command works with --use-active-venv flag in workspace context."""
+def test_dev_uses_active_venv_when_flag_set():
+    """Test that dev command uses the active venv Python when --use-active-venv is set."""
+    import signal
+
     dagster_git_repo_dir = str(discover_git_root(Path(__file__)))
     with (
         ProxyRunner.test() as runner,
@@ -217,79 +252,50 @@ def test_dev_workspace_with_use_active_venv_flag():
         install_editable_dg_dev_packages_to_venv(venv_path)
 
         with activate_venv(venv_path):
-            # Create projects
+            # Create a project
             result = runner.invoke_create_dagster(
-                "project", "--use-editable-dagster", "project-1", "--uv-sync"
+                "project", "--use-editable-dagster", "test-project", "--uv-sync"
             )
             assert_runner_result(result)
 
-            result = runner.invoke_create_dagster(
-                "project", "--use-editable-dagster", "project-2", "--uv-sync"
+            # Get the Python executable from the workspace venv (this is the "active" venv)
+            from dagster_dg_core.utils import get_venv_executable
+
+            active_venv_python = str(get_venv_executable(venv_path))
+
+            # Write a simple asset that captures sys.executable
+            asset_file = Path("test-project") / "src" / "test_project" / "defs" / "test_asset.py"
+            asset_file.write_text(
+                textwrap.dedent(f"""
+                import sys
+                from pathlib import Path
+                import dagster as dg
+
+                # Write sys.executable to a file when the definition loads
+                venv_marker_file = Path("{workspace_path}") / "loaded_python.txt"
+                venv_marker_file.write_text(sys.executable)
+
+                @dg.asset
+                def test_asset():
+                    pass
+                """)
             )
-            assert_runner_result(result)
 
             # Start dev server with --use-active-venv flag
             port = find_free_port()
             dev_process = launch_dev_command(["--port", str(port), "--use-active-venv"])
 
-            # Verify both projects loaded successfully
-            assert_projects_loaded_and_exit({"project-1", "project-2"}, port, dev_process)
+            try:
+                wait_for_projects_loaded({"test-project"}, port, dev_process)
 
+                # Read the captured sys.executable
+                loaded_python = (workspace_path / "loaded_python.txt").read_text().strip()
 
-@pytest.mark.skipif(is_windows(), reason="Temporarily skipping (signal issues in CLI)..")
-def test_dev_project_context_with_use_active_venv_flag():
-    """Test that dev command works with --use-active-venv flag in project context."""
-    dagster_git_repo_dir = str(discover_git_root(Path(__file__)))
-    with (
-        ProxyRunner.test() as runner,
-        isolated_example_workspace(runner, create_venv=True) as workspace_path,
-        environ({"DAGSTER_GIT_REPO_DIR": dagster_git_repo_dir}),
-    ):
-        venv_path = workspace_path / ".venv"
-        install_editable_dg_dev_packages_to_venv(venv_path)
-
-        with activate_venv(venv_path):
-            # Create a project
-            result = runner.invoke_create_dagster(
-                "project", "--use-editable-dagster", "test-project", "--uv-sync"
-            )
-            assert_runner_result(result)
-
-            # Change to project directory and start dev with --use-active-venv
-            with pushd(Path("test-project")):
-                port = find_free_port()
-                dev_process = launch_dev_command(["--port", str(port), "--use-active-venv"])
-
-                # Verify project loaded successfully
-                assert_projects_loaded_and_exit({"test-project"}, port, dev_process)
-
-
-@pytest.mark.skipif(is_windows(), reason="Temporarily skipping (signal issues in CLI)..")
-def test_dev_with_use_active_venv_flag_and_env_file():
-    """Test that --use-active-venv works correctly with environment variable loading."""
-    dagster_git_repo_dir = str(discover_git_root(Path(__file__)))
-    with (
-        ProxyRunner.test() as runner,
-        isolated_example_workspace(runner, create_venv=True) as workspace_path,
-        environ({"DAGSTER_GIT_REPO_DIR": dagster_git_repo_dir}),
-    ):
-        venv_path = workspace_path / ".venv"
-        install_editable_dg_dev_packages_to_venv(venv_path)
-
-        with activate_venv(venv_path):
-            # Create a project
-            result = runner.invoke_create_dagster(
-                "project", "--use-editable-dagster", "test-project", "--uv-sync"
-            )
-            assert_runner_result(result)
-
-            # Create an .env file in the workspace
-            env_file = workspace_path / ".env"
-            env_file.write_text("TEST_VAR=test_value\n")
-
-            # Start dev with --use-active-venv and verify it works
-            port = find_free_port()
-            dev_process = launch_dev_command(["--port", str(port), "--use-active-venv"])
-
-            # Verify project loaded successfully
-            assert_projects_loaded_and_exit({"test-project"}, port, dev_process)
+                # Verify it matches the active venv (workspace venv)
+                # Normalize paths to resolve symlinks for comparison
+                assert Path(loaded_python).resolve() == Path(active_venv_python).resolve(), (
+                    f"Expected active venv Python {active_venv_python} but got {loaded_python}"
+                )
+            finally:
+                dev_process.send_signal(signal.SIGINT)
+                dev_process.communicate()
