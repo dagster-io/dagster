@@ -315,6 +315,10 @@ class InstigatorSelector:
     def get_id(self) -> str:
         return create_snapshot_id(self)
 
+    @property
+    def instigator_name(self) -> str:
+        return self.name
+
 
 @record
 class GraphSelector:

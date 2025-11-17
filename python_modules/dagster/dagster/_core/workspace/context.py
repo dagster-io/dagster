@@ -26,6 +26,7 @@ from dagster._core.definitions.data_version import CachingStaleStatusResolver
 from dagster._core.definitions.partitions.context import partition_loading_context
 from dagster._core.definitions.partitions.definition import PartitionsDefinition
 from dagster._core.definitions.selector import (
+    InstigatorSelector,
     JobSelector,
     JobSubsetSelector,
     RepositorySelector,
@@ -69,7 +70,7 @@ from dagster._core.remote_representation.grpc_server_state_subscriber import (
     LocationStateChangeEventType,
     LocationStateSubscriber,
 )
-from dagster._core.remote_representation.handle import InstigatorHandle, RepositoryHandle
+from dagster._core.remote_representation.handle import RepositoryHandle
 from dagster._core.snap.dagster_types import DagsterTypeSnap
 from dagster._core.snap.mode import ResourceDefSnap
 from dagster._core.snap.node import GraphDefSnap, OpDefSnap
@@ -596,7 +597,7 @@ class BaseWorkspaceRequestContext(LoadingContext):
         )
 
     def get_sensor(
-        self, selector: Union[InstigatorHandle, SensorSelector]
+        self, selector: Union[SensorSelector, InstigatorSelector]
     ) -> Optional[RemoteSensor]:
         if not self.has_code_location(selector.location_name):
             return None
@@ -613,7 +614,7 @@ class BaseWorkspaceRequestContext(LoadingContext):
         return repository.get_sensor(selector.instigator_name)
 
     def get_schedule(
-        self, selector: Union[InstigatorHandle, ScheduleSelector]
+        self, selector: Union[ScheduleSelector, InstigatorSelector]
     ) -> Optional[RemoteSchedule]:
         if not self.has_code_location(selector.location_name):
             return None

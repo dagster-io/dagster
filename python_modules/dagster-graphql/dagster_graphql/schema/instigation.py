@@ -3,6 +3,7 @@ from typing import Optional, Union
 
 import dagster._check as check
 import graphene
+from dagster import RunRecord
 from dagster._core.definitions.dynamic_partitions_request import (
     AddDynamicPartitionsRequest,
     DeleteDynamicPartitionsRequest,
@@ -284,10 +285,9 @@ class GrapheneInstigationTick(graphene.ObjectType):
     def resolve_tickId(self, _: ResolveInfo) -> str:
         return str(self._tick.tick_id)
 
-    def resolve_runs(self, graphene_info: ResolveInfo):
+    async def resolve_runs(self, graphene_info: ResolveInfo):
         from dagster_graphql.schema.pipelines.pipeline import GrapheneRun
 
-        instance = graphene_info.context.instance
         run_ids = self._tick.origin_run_ids or self._tick.run_ids or []
 
         # filter out backfills
@@ -298,7 +298,8 @@ class GrapheneInstigationTick(graphene.ObjectType):
 
         records_by_id = {
             record.dagster_run.run_id: record
-            for record in instance.get_run_records(RunsFilter(run_ids=run_ids))
+            for record in await RunRecord.gen_many(graphene_info.context, run_ids)
+            if record
         }
 
         return [GrapheneRun(records_by_id[run_id]) for run_id in run_ids if run_id in records_by_id]
