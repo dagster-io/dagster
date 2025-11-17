@@ -106,10 +106,8 @@ export const TextInputStyles = css`
   }
 
   :disabled {
-    box-shadow:
-      ${Colors.borderDisabled()} inset 0px 0px 0px 1px,
-      ${Colors.keylineDefault()} inset 2px 2px 1.5px;
-    background-color: ${Colors.backgroundDisabled()};
+    box-shadow: ${Colors.keylineDefault()} inset 0px 0px 0px 1px;
+    background-color: ${Colors.backgroundLight()};
     color: ${Colors.textDisabled()};
   }
 
