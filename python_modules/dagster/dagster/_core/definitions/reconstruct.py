@@ -448,7 +448,7 @@ def reconstructable(target: Callable[..., "JobDefinition"]) -> ReconstructableJo
 def build_reconstructable_job(
     reconstructor_module_name: str,
     reconstructor_function_name: str,
-    reconstructable_args: Optional[tuple[object]] = None,
+    reconstructable_args: Optional[tuple[object, ...]] = None,
     reconstructable_kwargs: Optional[Mapping[str, object]] = None,
     reconstructor_working_directory: Optional[str] = None,
 ) -> ReconstructableJob:

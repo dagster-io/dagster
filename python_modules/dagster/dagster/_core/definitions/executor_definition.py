@@ -3,9 +3,9 @@ from enum import Enum as PyEnum
 from functools import update_wrapper
 from typing import TYPE_CHECKING, Any, Optional, TypeAlias, Union, overload
 
+from dagster_shared import check
 from typing_extensions import Self
 
-import dagster._check as check
 from dagster._annotations import public
 from dagster._builtins import Int
 from dagster._config import Field, Noneable, Selector, UserConfigSchema
@@ -28,6 +28,7 @@ from dagster._core.execution.step_dependency_config import (
 from dagster._core.execution.tags import get_tag_concurrency_limits_config
 
 if TYPE_CHECKING:
+    from dagster._core.executor.async_executor import AsyncExecutor
     from dagster._core.executor.base import Executor
     from dagster._core.executor.in_process import InProcessExecutor
     from dagster._core.executor.init import InitExecutorContext
@@ -329,6 +330,35 @@ def execute_in_process_executor(_) -> "InProcessExecutor":
     return InProcessExecutor(
         retries=RetryMode.ENABLED,
         marker_to_close=None,
+    )
+
+
+ASYNC_CONFIG = Field(
+    {
+        "retries": get_retries_config(),
+        "step_dependency_config": get_step_dependency_config_field(),
+    },
+)
+
+
+@executor(
+    name="async_executor",
+    config_schema=ASYNC_CONFIG,
+)
+def async_executor(init_context):
+    return _core_async_executor_creation(init_context.executor_config)
+
+
+def _core_async_executor_creation(config: ExecutorConfig) -> "AsyncExecutor":
+    from dagster._core.executor.async_executor import AsyncExecutor
+
+    return AsyncExecutor(
+        retries=RetryMode.from_config(check.dict_elem(config, "retries")),  # type: ignore  # (possible none)
+        max_concurrent=check.opt_int_elem(config, "max_concurrent"),
+        tag_concurrency_limits=check.opt_list_elem(config, "tag_concurrency_limits"),
+        step_dependency_config=StepDependencyConfig.from_config(
+            check.opt_nullable_dict_elem(config, "step_dependency_config")
+        ),
     )
 
 
