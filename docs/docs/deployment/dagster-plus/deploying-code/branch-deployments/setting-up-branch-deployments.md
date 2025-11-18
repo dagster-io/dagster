@@ -132,7 +132,7 @@ After using the GitLab app to import your repo to Dagster+ Serverless, we recomm
   </TabItem>
   <TabItem value="cli" label="dagster-cloud CLI">
 
-  <BranchDeploymentCli />
+<BranchDeploymentCli />
 
   </TabItem>
 </Tabs>
@@ -323,7 +323,7 @@ The last step is to verify that the GitLab pipeline runs successfully.
   </TabItem>
   <TabItem value="cli" label="dagster-cloud CLI">
 
-  <BranchDeploymentCli />
+<BranchDeploymentCli />
 
   </TabItem>
 </Tabs>

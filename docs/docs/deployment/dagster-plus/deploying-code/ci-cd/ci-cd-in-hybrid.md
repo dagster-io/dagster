@@ -64,17 +64,16 @@ If you are using a non-GitHub CI/CD provider, your system should use the [`dg de
    - `DAGSTER_CLOUD_ORGANIZATION`: The name of your organization in Dagster+.
    - `DAGSTER_CLOUD_API_TOKEN`: A Dagster+ API token. **Note:** This is a sensitive value and should be stored as a CI/CD secret if possible.
    - `DAGSTER_BUILD_STATEDIR`: A path to a blank or non-existent temporary directory on the build machine that will be used to store local state during the build.
-{/* 2. Run the configuration check: */}
-{/*   ``` */}
-{/* TODO replace with `dg` command when it exists dagster-cloud ci check --project-dir=. */}
-{/*   ``` */}
-{/*   This is an optional step but useful to validate the contents of your `dagster_cloud.yaml` file and connection to Dagster+. /*}
-3. Initialize the build session:
+     {/* 2. Run the configuration check: */}
+     {/* TODO replace with `dg` command when it exists dagster-cloud ci check --project-dir=. */}
+     {/* This is an optional step but useful to validate the contents of your `dagster_cloud.yaml` file and connection to Dagster+. */}
+2. Initialize the build session:
    ```
     dg plus deploy start --deployment=DEPLOYMENT_NAME --project-dir=.
-   ``` */}
+   ```
    This reads the `build.yaml` configuration and initializes the DAGSTER_BUILD_STATEDIR.
-4. Build and upload Docker images for your code locations.
+   ````
+3. Build and upload Docker images for your code locations.
 
    The Docker image should contain a Python environment with `dagster`, `dagster-cloud`, and your code. For reference, see the [example Dockerfile](https://github.com/dagster-io/dagster-cloud-hybrid-quickstart/blob/main/Dockerfile) in our template repository. The example uses `pip install .` to install the code including the dependencies specified in [`setup.py`](https://github.com/dagster-io/dagster-cloud-hybrid-quickstart/blob/main/setup.py).
 
@@ -93,7 +92,7 @@ If you are using a non-GitHub CI/CD provider, your system should use the [`dg de
 
    The upload step is specific to your Docker container registry and will require authentication. The only requirement is that the registry you upload to must match the registry specified in `build.yaml`.
 
-5. Update the build session with the Docker image tag. For each code location you want to deploy, run the following command passing the `IMAGE_TAG` used in the previous step:
+4. Update the build session with the Docker image tag. For each code location you want to deploy, run the following command passing the `IMAGE_TAG` used in the previous step:
 
    ```
    dg plus deploy set-build-output --location-name=code-location-a --image-tag=IMAGE_TAG
@@ -101,7 +100,7 @@ If you are using a non-GitHub CI/CD provider, your system should use the [`dg de
 
    This command does not deploy the code location but just updates the local state in `DAGSTER_BUILD_STATEDIR`.
 
-6. Deploy to Dagster+:
+5. Deploy to Dagster+:
 
    ```
    dg plus deploy

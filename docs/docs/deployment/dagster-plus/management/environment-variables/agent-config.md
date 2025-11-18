@@ -49,7 +49,6 @@ If you have an older Dagster+ deployment, you may have a `dagster_cloud.yaml` fi
 
 :::
 
-
 <Tabs>
   <TabItem value="Amazon ECS agents">
 

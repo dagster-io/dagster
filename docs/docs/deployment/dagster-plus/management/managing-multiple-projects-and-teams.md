@@ -39,7 +39,6 @@ If you have an older Dagster+ deployment, you may have a `dagster_cloud.yaml` fi
 
 :::
 
-
 #### Example with GitHub CI/CD on Hybrid deployment
 
 1. **For each repository**, use the CI/CD workflow provided in [Dagster+ Hybrid quickstart repository](https://github.com/dagster-io/dagster-cloud-hybrid-quickstart/blob/main/.github/workflows/dagster-cloud-deploy.yml).
