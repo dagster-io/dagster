@@ -28,7 +28,7 @@ This guide assumes you have an existing Dagster project and have not already sca
 
 ### Step 1. Generate the GitHub Actions workflow YAML file
 
-To set up continuous integration using GitHub Actions, you can use the [`dg plus deploy configure CLI command`](/api/clis/dg-cli/dg-plus#deployapi/) to generate the GitHub workflow YAML file:
+To set up continuous integration using GitHub Actions, you can use the [`dg plus deploy configure CLI command`](/api/clis/dg-cli/dg-plus#deploy) to generate the GitHub workflow YAML file:
 
 ```shell
 dg plus deploy configure --git-provider github
