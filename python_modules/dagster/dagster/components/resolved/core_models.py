@@ -16,6 +16,7 @@ from dagster._core.definitions.freshness import FreshnessPolicy
 from dagster._core.definitions.partitions.definition import (
     DailyPartitionsDefinition,
     HourlyPartitionsDefinition,
+    MultiPartitionsDefinition,
     PartitionsDefinition,
     StaticPartitionsDefinition,
     TimeWindowPartitionsDefinition,
@@ -77,46 +78,68 @@ class StaticPartitionsDefinitionModel(Resolvable, Model):
     partition_keys: Sequence[str]
 
 
+class MultiPartitionsDefinitionModel(Resolvable, Model):
+    type: Literal["multi"] = "multi"
+    partitions_defs: Mapping[
+        str,
+        Union[
+            HourlyPartitionsDefinitionModel,
+            DailyPartitionsDefinitionModel,
+            WeeklyPartitionsDefinitionModel,
+            TimeWindowPartitionsDefinitionModel,
+            StaticPartitionsDefinitionModel,
+        ],
+    ]
+
+
 def resolve_partitions_def(context: ResolutionContext, model) -> Optional[PartitionsDefinition]:
     if model is None:
         return None
 
-    elif model.type == "hourly":
-        return HourlyPartitionsDefinition(
-            start_date=model.start_date,
-            end_date=model.end_date,
-            timezone=model.timezone,
-            minute_offset=model.minute_offset,
-        )
-    elif model.type == "daily":
-        return DailyPartitionsDefinition(
-            start_date=model.start_date,
-            end_date=model.end_date,
-            timezone=model.timezone,
-            minute_offset=model.minute_offset,
-            hour_offset=model.hour_offset,
-        )
-    elif model.type == "weekly":
-        return WeeklyPartitionsDefinition(
-            start_date=model.start_date,
-            end_date=model.end_date,
-            timezone=model.timezone,
-            minute_offset=model.minute_offset,
-            hour_offset=model.hour_offset,
-            day_offset=model.day_offset,
-        )
-    elif model.type == "time_window":
-        return TimeWindowPartitionsDefinition(
-            start=model.start_date,
-            end=model.end_date,
-            timezone=model.timezone,
-            fmt=model.fmt,
-            cron_schedule=model.cron_schedule,
-        )
-    elif model.type == "static":
-        return StaticPartitionsDefinition(partition_keys=model.partition_keys)
-    else:
-        raise ValueError(f"Invalid partitions definition type: {model.type}")
+    match model.type:
+        case "hourly":
+            return HourlyPartitionsDefinition(
+                start_date=model.start_date,
+                end_date=model.end_date,
+                timezone=model.timezone,
+                minute_offset=model.minute_offset,
+            )
+        case "daily":
+            return DailyPartitionsDefinition(
+                start_date=model.start_date,
+                end_date=model.end_date,
+                timezone=model.timezone,
+                minute_offset=model.minute_offset,
+                hour_offset=model.hour_offset,
+            )
+        case "weekly":
+            return WeeklyPartitionsDefinition(
+                start_date=model.start_date,
+                end_date=model.end_date,
+                timezone=model.timezone,
+                minute_offset=model.minute_offset,
+                hour_offset=model.hour_offset,
+                day_offset=model.day_offset,
+            )
+        case "time_window":
+            return TimeWindowPartitionsDefinition(
+                start=model.start_date,
+                end=model.end_date,
+                timezone=model.timezone,
+                fmt=model.fmt,
+                cron_schedule=model.cron_schedule,
+            )
+        case "static":
+            return StaticPartitionsDefinition(partition_keys=model.partition_keys)
+        case "multi":
+            return MultiPartitionsDefinition(
+                partitions_defs={  # pyright: ignore[reportArgumentType]
+                    name: resolve_partitions_def(context, pd)
+                    for name, pd in model.partitions_defs.items()
+                }
+            )
+        case _:
+            raise ValueError(f"Invalid partitions definition type: {model.type}")
 
 
 class SingleRunBackfillPolicyModel(Resolvable, Model):
@@ -254,6 +277,7 @@ class SharedAssetKwargs(Resolvable):
                 WeeklyPartitionsDefinitionModel,
                 TimeWindowPartitionsDefinitionModel,
                 StaticPartitionsDefinitionModel,
+                MultiPartitionsDefinitionModel,
             ],
         ),
     ] = None

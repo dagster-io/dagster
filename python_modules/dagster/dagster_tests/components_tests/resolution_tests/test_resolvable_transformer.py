@@ -176,6 +176,37 @@ def test_asset_spec_static_partitions_def():
     assert spec.partitions_def.get_partition_keys() == ["a", "b", "c"]
 
 
+def test_asset_spec_multi_partitions_def():
+    model = AssetSpecKwargs.model()(
+        key="asset_key",
+        partitions_def={
+            "type": "multi",
+            "partitions_defs": {
+                "part1": {
+                    "type": "static",
+                    "partition_keys": ["a", "b", "c"],
+                },
+                "part2": {
+                    "type": "daily",
+                    "start_date": "2021-01-01",
+                    "end_date": "2021-01-03",
+                },
+            },
+        },
+    )
+
+    spec = resolve_asset_spec(model=model, context=ResolutionContext.default())
+    assert isinstance(spec.partitions_def, dg.MultiPartitionsDefinition)
+    assert spec.partitions_def.get_partition_keys() == [
+        "a|2021-01-01",
+        "a|2021-01-02",
+        "b|2021-01-01",
+        "b|2021-01-02",
+        "c|2021-01-01",
+        "c|2021-01-02",
+    ]
+
+
 def test_resolved_asset_spec() -> None:
     @dataclass
     class SomeObject(dg.Resolvable):
