@@ -78,8 +78,6 @@ Built-in Components
 
 .. autoclass:: DefinitionsComponent
 
-.. autoclass:: ExecutableComponent
-
 .. autoclass:: UvRunComponent
 
 .. autoclass:: PythonScriptComponent

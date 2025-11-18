@@ -97,29 +97,30 @@ class FunctionComponent(ExecutableComponent):
     The provided function should return either a `MaterializeResult` or an `AssetCheckResult`.
 
     Examples:
-    ```yaml
-    type: dagster.FunctionComponent
-    attributes:
-      execution:
-        fn: .my_module.update_table
-      assets:
-        - key: my_table
-    ```
 
-    ```python
-    from dagster import MaterializeResult
+    .. code-block:: yaml
 
-    def update_table(context: AssetExecutionContext) -> MaterializeResult:
-        # ...
-        return MaterializeResult(metadata={"rows_updated": 100})
+        type: dagster.FunctionComponent
+        attributes:
+          execution:
+            fn: .my_module.update_table
+          assets:
+            - key: my_table
 
-    @component
-    def my_component():
-        return FunctionComponent(
-            execution=update_table,
-            assets=[AssetSpec(key="my_table")],
-        )
-    ```
+    .. code-block:: python
+
+        from dagster import MaterializeResult
+
+        def update_table(context: AssetExecutionContext) -> MaterializeResult:
+            # ...
+            return MaterializeResult(metadata={"rows_updated": 100})
+
+        @component
+        def my_component():
+            return FunctionComponent(
+                execution=update_table,
+                assets=[AssetSpec(key="my_table")],
+            )
 
     """
 
