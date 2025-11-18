@@ -1,5 +1,4 @@
 import {StoryFn} from '@storybook/nextjs';
-import * as React from 'react';
 
 import {ButtonLink} from '../ButtonLink';
 import {Colors} from '../Color';
@@ -25,7 +24,7 @@ ColorMap.args = {
   color: {
     link: Colors.linkDefault(),
     hover: Colors.linkHover(),
-    active: Colors.linkHover(),
+    active: Colors.accentGreen(),
   },
 };
 

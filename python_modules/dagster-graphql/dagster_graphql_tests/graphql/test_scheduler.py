@@ -512,7 +512,7 @@ def test_dry_run_nonexistent_schedule(graphql_context):
         )
     unknown_repo_selector = {**unknown_instigator_selector}
     unknown_repo_selector["repositoryName"] = "doesnt_exist"
-    with pytest.raises(UserFacingGraphQLError, match="GrapheneRepositoryNotFoundError"):
+    with pytest.raises(UserFacingGraphQLError, match="GrapheneScheduleNotFoundError"):
         execute_dagster_graphql(
             context,
             SCHEDULE_DRY_RUN_MUTATION,

@@ -8,6 +8,8 @@ import {CoreColorStyles} from '../palettes/CoreColorStyles';
 import {DataVizColorStyles} from '../palettes/DataVizColorStyles';
 import {TranslucentColorStyles} from '../palettes/TranslucentColorStyles';
 
+import '../fonts/Fonts.css';
+
 const ThemeRoot = createGlobalStyle`
   @media (prefers-color-scheme: light) {
     :root, .themeSystem {

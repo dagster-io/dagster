@@ -938,13 +938,13 @@ class GrapheneAssetNode(graphene.ObjectType):
             # global nodes have saved references to their targeting instigators
             schedules = [
                 schedule
-                for schedule_handle in self._remote_node.get_targeting_schedule_handles()
-                if (schedule := graphene_info.context.get_schedule(schedule_handle)) is not None
+                for schedule_selector in self._remote_node.get_targeting_schedule_selectors()
+                if (schedule := graphene_info.context.get_schedule(schedule_selector)) is not None
             ]
             sensors = [
                 sensor
-                for sensor_handle in self._remote_node.get_targeting_sensor_handles()
-                if (sensor := graphene_info.context.get_sensor(sensor_handle)) is not None
+                for sensor_selector in self._remote_node.get_targeting_sensor_selectors()
+                if (sensor := graphene_info.context.get_sensor(sensor_selector)) is not None
             ]
 
         else:
