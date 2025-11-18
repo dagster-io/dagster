@@ -60,13 +60,12 @@ During the deployment, the agent will attempt to load your code and update the m
 
 If you are using a non-GitHub CI/CD provider, your system should use the [`dg deploy` command](/api/clis/dg-cli/dg-plus#deploy) to deploy code locations to Dagster+.
 
+{/* TODO add step 2 below for running `dg` equivalent of `dagster-cloud ci check --project-dir=. */}
+
 1. Set the build environment variables. Note that all variables are required:
    - `DAGSTER_CLOUD_ORGANIZATION`: The name of your organization in Dagster+.
    - `DAGSTER_CLOUD_API_TOKEN`: A Dagster+ API token. **Note:** This is a sensitive value and should be stored as a CI/CD secret if possible.
    - `DAGSTER_BUILD_STATEDIR`: A path to a blank or non-existent temporary directory on the build machine that will be used to store local state during the build.
-     {/* 2. Run the configuration check: */}
-     {/* TODO replace with `dg` command when it exists dagster-cloud ci check --project-dir=. */}
-     {/* This is an optional step but useful to validate the contents of your `dagster_cloud.yaml` file and connection to Dagster+. */}
 2. Initialize the build session:
    ```
     dg plus deploy start --deployment=DEPLOYMENT_NAME --project-dir=.
