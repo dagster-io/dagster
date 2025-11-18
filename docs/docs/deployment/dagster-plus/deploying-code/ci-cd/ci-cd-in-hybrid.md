@@ -72,7 +72,9 @@ If you are using a non-GitHub CI/CD provider, your system should use the [`dg de
     dg plus deploy start --deployment=DEPLOYMENT_NAME --project-dir=.
    ```
    This reads the `build.yaml` configuration and initializes the DAGSTER_BUILD_STATEDIR.
-   ````
+   ```
+
+   ```
 3. Build and upload Docker images for your code locations.
 
    The Docker image should contain a Python environment with `dagster`, `dagster-cloud`, and your code. For reference, see the [example Dockerfile](https://github.com/dagster-io/dagster-cloud-hybrid-quickstart/blob/main/Dockerfile) in our template repository. The example uses `pip install .` to install the code including the dependencies specified in [`setup.py`](https://github.com/dagster-io/dagster-cloud-hybrid-quickstart/blob/main/setup.py).
