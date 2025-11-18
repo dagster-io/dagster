@@ -1,3 +1,4 @@
+from collections import defaultdict
 from dataclasses import dataclass, field
 from functools import cached_property
 from pathlib import Path
@@ -15,6 +16,7 @@ from dagster.components.utils.defs_state import (
     DefsStateConfigArgs,
     ResolvedDefsStateConfig,
 )
+from dagster_shared import check
 from pydantic import BaseModel, Field
 
 from dagster_tableau.components.translation import (
@@ -280,17 +282,37 @@ class TableauComponent(StateBackedComponent, Resolvable):
         # Serialize and write to path
         state_path.write_text(dg.serialize_value(workspace_data))
 
+    def execute_embedded_data_sources(
+        self, context: dg.AssetExecutionContext, workspace: BaseTableauWorkspace, workbook_id: str
+    ):
+        with workspace.get_client() as client:
+            client.refresh_and_poll_workbook(workbook_id)
+            for asset_key in context.selected_asset_keys:
+                yield dg.AssetMaterialization(
+                    asset_key=asset_key,
+                )
+
+    def execute_published_data_sources(
+        self, context: dg.AssetExecutionContext, workspace: BaseTableauWorkspace
+    ):
+        specs_by_data_source_id = {
+            TableauDataSourceMetadataSet.extract(spec.metadata).id: spec
+            for spec in context.assets_def.specs
+        }
+        assert all(specs_by_data_source_id.keys())
+        with workspace.get_client() as client:
+            # pyright false positive (he can't parse the 'assert' line)
+            for datasource_id in client.refresh_and_poll_data_sources(
+                specs_by_data_source_id.keys()  # pyright: ignore[reportArgumentType]
+            ):
+                yield dg.AssetMaterialization(asset_key=specs_by_data_source_id[datasource_id].key)
+
     def build_refreshable_embedded_data_sources_asset_definition(
         self, workbook_id: str, specs: list[dg.AssetSpec]
     ) -> dg.AssetsDefinition:
         @dg.multi_asset(specs=specs, can_subset=False, name=clean_name_lower(workbook_id))
         def asset_fn(context: dg.AssetExecutionContext):
-            with self.workspace.get_client() as client:
-                client.refresh_and_poll_workbook(workbook_id)
-                for spec in context.assets_def.specs:
-                    yield dg.AssetMaterialization(
-                        asset_key=spec.key,
-                    )
+            yield from self.execute_embedded_data_sources(context, self.workspace, workbook_id)
 
         return asset_fn
 
@@ -298,22 +320,12 @@ class TableauComponent(StateBackedComponent, Resolvable):
         self, specs: list[dg.AssetSpec]
     ) -> dg.AssetsDefinition:
         @dg.multi_asset(
-            specs=specs, can_subset=True, name="tableau_published_data_sources_multi_asset"
+            specs=specs,
+            can_subset=True,
+            name=clean_name_lower(f"tableau_published_data_sources_{self.workspace.site_name}"),
         )
         def asset_fn(context: dg.AssetExecutionContext):
-            specs_by_data_source_id = {
-                TableauDataSourceMetadataSet.extract(spec.metadata).id: spec
-                for spec in context.assets_def.specs
-            }
-            assert all(specs_by_data_source_id.keys())
-            with self.workspace.get_client() as client:
-                # pyright false positive (he can't parse the 'assert' line)
-                for datasource_id in client.refresh_and_poll_data_sources(
-                    specs_by_data_source_id.keys()  # pyright: ignore[reportArgumentType]
-                ):
-                    yield dg.AssetMaterialization(
-                        asset_key=specs_by_data_source_id[datasource_id].key
-                    )
+            yield from self.execute_published_data_sources(context, self.workspace)
 
         return asset_fn
 
@@ -327,8 +339,7 @@ class TableauComponent(StateBackedComponent, Resolvable):
             return False
 
         metadataset = TableauDataSourceMetadataSet.extract(spec.metadata)
-        data_source_id = metadataset.id
-        assert data_source_id is not None
+        data_source_id = check.not_none(metadataset.id)
         data_source_name = workspace_data.data_sources_by_id[data_source_id].properties["name"]
 
         if (
@@ -349,9 +360,8 @@ class TableauComponent(StateBackedComponent, Resolvable):
             return False
 
         metadataset = TableauDataSourceMetadataSet.extract(spec.metadata)
-        workbook_id = metadataset.workbook_id
-        # should never happen - an embedded datasource will always be embedded in a workbook
-        assert workbook_id is not None
+        workbook_id = check.not_none(metadataset.workbook_id)
+
         workbook_name = workspace_data.workbooks_by_id[workbook_id].properties["name"]
 
         if (
@@ -389,11 +399,9 @@ class TableauComponent(StateBackedComponent, Resolvable):
             if self.is_refreshable_published_data_source(spec, workspace_data)
         ]
 
-        refreshable_specs_by_workbook_id = {}
+        refreshable_specs_by_workbook_id = defaultdict(list)
         for spec in refreshable_embedded_data_source_specs:
             workbook_id = TableauDataSourceMetadataSet.extract(spec.metadata).workbook_id
-            if workbook_id not in refreshable_specs_by_workbook_id:
-                refreshable_specs_by_workbook_id[workbook_id] = []
             refreshable_specs_by_workbook_id[workbook_id].append(spec)
 
         assets_defs = []
