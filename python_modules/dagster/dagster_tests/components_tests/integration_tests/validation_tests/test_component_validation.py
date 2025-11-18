@@ -29,7 +29,9 @@ DEFS_TEST_CASES = [
             'a_string: "{{ fake.x }}"',
             "                ^ 'fake' is undefined",
             "defs.yaml:4",
-            "available scope is: env, automation_condition",
+            # New namespaces plus backward compatibility scopes
+            "available scope is: env, dg",
+            "context",
         ),
     ),
     ComponentValidationTestCase(

@@ -144,6 +144,10 @@ def set_auto_materialize_paused(instance: DagsterInstance, paused: bool):
     )
 
 
+def _get_minimum_allowed_asset_daemon_interval() -> Optional[int]:
+    return int(os.getenv("DAGSTER_ASSET_DAEMON_MINIMUM_ALLOWED_MIN_INTERVAL", "0"))
+
+
 def _get_pre_sensor_auto_materialize_cursor(
     instance: DagsterInstance, full_asset_graph: Optional[BaseAssetGraph]
 ) -> AssetDaemonCursor:
@@ -597,7 +601,11 @@ class AssetDaemon(DagsterDaemon):
                     ),
                 )
                 instance.add_instigator_state(auto_materialize_state)
-            elif is_under_min_interval(auto_materialize_state, sensor):
+            elif is_under_min_interval(
+                auto_materialize_state,
+                sensor,
+                minimum_allowed_min_interval=_get_minimum_allowed_asset_daemon_interval(),
+            ):
                 continue
 
             self.instrument_elapsed(
@@ -771,7 +779,11 @@ class AssetDaemon(DagsterDaemon):
             auto_materialize_instigator_state = check.not_none(
                 instance.get_instigator_state(sensor.get_remote_origin_id(), sensor.selector_id)
             )
-            if is_under_min_interval(auto_materialize_instigator_state, sensor):
+            if is_under_min_interval(
+                auto_materialize_instigator_state,
+                sensor,
+                minimum_allowed_min_interval=_get_minimum_allowed_asset_daemon_interval(),
+            ):
                 # check the since we might have been queued before processing
                 return
             else:

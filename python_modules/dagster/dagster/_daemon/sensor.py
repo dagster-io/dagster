@@ -1251,15 +1251,23 @@ def _submit_backfill_request(
     )
 
 
-def is_under_min_interval(state: InstigatorState, remote_sensor: RemoteSensor) -> bool:
+def is_under_min_interval(
+    state: InstigatorState,
+    remote_sensor: RemoteSensor,
+    minimum_allowed_min_interval: Optional[int] = None,
+) -> bool:
     elapsed = get_elapsed(state)
     if elapsed is None:
         return False
 
-    if not remote_sensor.min_interval_seconds:
+    min_interval = remote_sensor.min_interval_seconds or 0
+    if minimum_allowed_min_interval is not None:
+        min_interval = max(min_interval, minimum_allowed_min_interval)
+
+    if not min_interval:
         return False
 
-    return elapsed < remote_sensor.min_interval_seconds
+    return elapsed < min_interval
 
 
 def get_elapsed(state: InstigatorState) -> Optional[float]:
