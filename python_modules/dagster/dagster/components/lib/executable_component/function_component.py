@@ -5,6 +5,7 @@ from typing import Annotated, Any, Literal, Optional, TypeAlias, Union
 
 from dagster_shared import check
 
+from dagster._annotations import public
 from dagster._config.field import Field
 from dagster._config.pythonic_config.config import Config
 from dagster._config.pythonic_config.type_check_utils import safe_is_subclass
@@ -91,6 +92,7 @@ class ExecuteFnMetadata:
         return self.config_cls.to_fields_dict() if self.config_cls else None
 
 
+@public
 class FunctionComponent(ExecutableComponent):
     """Represents a Python function, alongside the set of assets or asset checks that it is responsible for executing.
 
