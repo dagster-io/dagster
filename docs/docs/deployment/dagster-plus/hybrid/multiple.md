@@ -153,10 +153,10 @@ To route requests for a code location to a specific agent, annotate the code loc
 
 ### Step 1: Define an agent queue for the code location
 
-First, set an agent queue for the code location in your [`dagster_cloud.yaml`](/guides/build/projects/project-structure/build-yaml):
+First, set an agent queue for the code location in your [`build.yaml`](/guides/build/projects/project-structure/build-yaml):
 
 ```yaml
-# dagster_cloud.yaml
+# build.yaml
 
 locations:
   - location_name: data-eng-pipeline

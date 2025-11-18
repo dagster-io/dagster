@@ -34,10 +34,7 @@ In this section, we'll demonstrate how to import an existing project to Dagster+
 
 ## Step 2: Review the repository changes
 
-The file structure of the repository will change the first time a project is deployed using Dagster+. For dbt projects, a few things will happen:
-
-- **A [`dagster_cloud.yaml` file](/guides/build/projects/project-structure/build-yaml) will be created.** This file defines the project as a Dagster+ code location.
-- **A `.yml` workflow file, used for [CI/CD](/deployment/dagster-plus/deploying-code/ci-cd), will be created in `.github/workflows`.** This file, named `dagster-plus-deploy.yml`, manages the deployments of the repository.
+The file structure of the repository will change the first time a project is deployed using Dagster+. For dbt projects, a `.yml` workflow file, used for [CI/CD](/deployment/dagster-plus/deploying-code/ci-cd), will be created in `.github/workflows`. This file, named `dagster-plus-deploy.yml`, manages the deployments of the repository.
 
 ### How the repository will change after the project is deployed for the first time
 
@@ -67,7 +64,6 @@ my_dbt_and_dagster_project
 ├── .gitignore
 ├── LICENSE
 ├── README.md
-├── dagster_cloud.yaml                                     ## Dagster+ code location file
 ├── pyproject.toml
 └── setup.py
 ```

@@ -36,14 +36,20 @@ Next, you'll need to create a Hybrid agent to execute your code. Follow the setu
 - **[Kubernetes](/deployment/dagster-plus/hybrid/kubernetes)**, which launches user code on a Kubernetes cluster.
 - **[Local](/deployment/dagster-plus/hybrid/local)**, which launches user code in operating system subprocesses on your machine.
 
-## 3. Update your code locations' configuration in `dagster_cloud.yaml`
+## 3. Update your code locations' configuration in `build.yaml`
 
 See the documentation for the agent of your choice:
 
 - [Amazon Web Services (AWS)](/deployment/dagster-plus/hybrid/amazon-ecs/configuration-reference#per-location-configuration)
 - [Docker](/deployment/dagster-plus/hybrid/docker/configuration)
-- [Microsoft Azure](/deployment/dagster-plus/hybrid/azure/acr-user-code#update-the-dagster_cloudyaml-build-configuration-to-use-the-azure-container-registry)
+- [Microsoft Azure](/deployment/dagster-plus/hybrid/azure/acr-user-code#update-the-buildyaml-build-configuration-to-use-the-azure-container-registry)
 - [Kubernetes](/deployment/dagster-plus/hybrid/kubernetes/configuration#per-location-configuration)
+
+:::note
+
+If you have an older Dagster+ deployment, you may have a `dagster_cloud.yaml` file instead of a `build.yaml` file.
+
+:::
 
 ## 4. Confirm successful setup
 

@@ -48,7 +48,7 @@ The project has the following structure:
 ├── .github
 │   └── workflows
 │       └── dagster-cloud-deploy.yml
-├── dagster_cloud.yaml
+├── build.yaml
 ├── Dockerfile
 ├── pyproject.toml
 ├── quickstart_etl_tests
@@ -142,12 +142,12 @@ Finally, update the tags in the "Build and upload Docker image" step to match th
     cache-to: type=gha,mode=max
 ```
 
-### Update the `dagster_cloud.yaml` build configuration to use the Azure Container Registry
+### Update the `build.yaml` build configuration to use the Azure Container Registry
 
-Edit the `dagster_cloud.yaml` file in the root of your repository. Update the `build` section to use the Azure Container Registry, and provide an image name specific to the code location. This must match the registry and image name used in the previous step.
+Edit the `build.yaml` file in the root of your repository. Update the `build` section to use the Azure Container Registry, and provide an image name specific to the code location. This must match the registry and image name used in the previous step.
 
 ```yaml
-# dagster_cloud.yaml
+# build.yaml
 locations:
   - location_name: quickstart_etl
     code_source:
@@ -156,6 +156,12 @@ locations:
       directory: ./
       registry: <your-acr-name>.azurecr.io/<image-name>
 ```
+
+:::note
+
+If you have an older Dagster+ deployment, you may have a `dagster_cloud.yaml` file instead of a `build.yaml` file.
+
+:::
 
 ### Push and run the workflow
 
