@@ -76,6 +76,20 @@ Built-in Components
 
 .. autoclass:: DefsFolderComponent
 
+.. autoclass:: DefinitionsComponent
+
+.. autoclass:: ExecutableComponent
+
+.. autoclass:: UvRunComponent
+
+.. autoclass:: PythonScriptComponent
+
+.. autoclass:: FunctionComponent
+
+.. autoclass:: SqlComponent
+
+.. autoclass:: TemplatedSqlComponent
+
 Loading Components
 ------------------
 
