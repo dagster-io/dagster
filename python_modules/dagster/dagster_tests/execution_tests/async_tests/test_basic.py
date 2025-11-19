@@ -2,8 +2,6 @@ import time
 
 import anyio
 import dagster as dg
-from dagster._core.definitions.reconstruct import reconstructable
-from dagster._core.execution.api import execute_job
 
 
 def sync_job_def_in_process_executor() -> dg.JobDefinition:
@@ -101,8 +99,8 @@ def async_job_def_async_executor() -> dg.JobDefinition:
 def test_sync_job_in_process_executor():
     with (
         dg.instance_for_test() as instance,
-        execute_job(
-            reconstructable(sync_job_def_in_process_executor),
+        dg.execute_job(
+            dg.reconstructable(sync_job_def_in_process_executor),
             instance=instance,
         ) as result,
     ):
@@ -113,8 +111,8 @@ def test_sync_job_in_process_executor():
 def test_sync_job_async_executor():
     with (
         dg.instance_for_test() as instance,
-        execute_job(
-            reconstructable(sync_job_def_async_executor),
+        dg.execute_job(
+            dg.reconstructable(sync_job_def_async_executor),
             instance=instance,
         ) as result,
     ):
@@ -125,8 +123,8 @@ def test_sync_job_async_executor():
 def test_async_job_in_process_executor():
     with (
         dg.instance_for_test() as instance,
-        execute_job(
-            reconstructable(async_job_def_in_process_executor),
+        dg.execute_job(
+            dg.reconstructable(async_job_def_in_process_executor),
             instance=instance,
         ) as result,
     ):
@@ -137,8 +135,8 @@ def test_async_job_in_process_executor():
 def test_async_job_async_executor():
     with (
         dg.instance_for_test() as instance,
-        execute_job(
-            reconstructable(async_job_def_async_executor),
+        dg.execute_job(
+            dg.reconstructable(async_job_def_async_executor),
             instance=instance,
         ) as result,
     ):

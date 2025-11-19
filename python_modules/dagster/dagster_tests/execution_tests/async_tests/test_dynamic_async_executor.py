@@ -1,6 +1,4 @@
 import dagster as dg
-from dagster._core.definitions.reconstruct import reconstructable
-from dagster._core.execution.api import execute_job
 
 
 def dynamic_job_def_async_executor() -> dg.JobDefinition:
@@ -48,8 +46,8 @@ def dynamic_job_def_async_executor() -> dg.JobDefinition:
 def test_dynamic_job_async_executor() -> None:
     with (
         dg.instance_for_test() as instance,
-        execute_job(
-            reconstructable(dynamic_job_def_async_executor),
+        dg.execute_job(
+            dg.reconstructable(dynamic_job_def_async_executor),
             instance=instance,
         ) as result,
     ):

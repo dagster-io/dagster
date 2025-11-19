@@ -4,7 +4,6 @@ import threading
 import anyio
 import dagster as dg
 import pytest
-from dagster._core.execution.api import execute_job
 
 logger = logging.getLogger(__name__)
 
@@ -64,7 +63,7 @@ def test_async_performance_basic(
 ) -> None:
     with (
         dg.instance_for_test() as instance,
-        execute_job(
+        dg.execute_job(
             dg.build_reconstructable_job(
                 reconstructor_module_name=__name__,
                 reconstructor_function_name="simple_fanout_job_def",

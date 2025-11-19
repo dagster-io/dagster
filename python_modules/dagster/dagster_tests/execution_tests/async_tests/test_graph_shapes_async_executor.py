@@ -1,8 +1,6 @@
 import time
 
 import dagster as dg
-from dagster._core.definitions.reconstruct import reconstructable
-from dagster._core.execution.api import execute_job
 
 
 def diamond_job_def_async_executor() -> dg.JobDefinition:
@@ -52,8 +50,8 @@ def highly_nested_job_def_async_executor() -> dg.JobDefinition:
 def test_diamond_job_async_executor() -> None:
     with (
         dg.instance_for_test() as instance,
-        execute_job(
-            reconstructable(diamond_job_def_async_executor),
+        dg.execute_job(
+            dg.reconstructable(diamond_job_def_async_executor),
             instance=instance,
         ) as result,
     ):
@@ -65,8 +63,8 @@ def test_diamond_job_async_executor() -> None:
 def test_highly_nested_job_async_executor() -> None:
     with (
         dg.instance_for_test() as instance,
-        execute_job(
-            reconstructable(highly_nested_job_def_async_executor),
+        dg.execute_job(
+            dg.reconstructable(highly_nested_job_def_async_executor),
             instance=instance,
         ) as result,
     ):

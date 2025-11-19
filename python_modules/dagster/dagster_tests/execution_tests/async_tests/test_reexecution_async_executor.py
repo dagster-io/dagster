@@ -1,8 +1,6 @@
 import tempfile
 
 import dagster as dg
-from dagster._core.definitions.reconstruct import reconstructable
-from dagster._core.execution.api import execute_job
 from dagster._core.storage.fs_io_manager import fs_io_manager
 
 
@@ -76,14 +74,14 @@ def fs_io_job_def_async_executor() -> dg.JobDefinition:
 
 def test_branching_reexecution_async_executor() -> None:
     with dg.instance_for_test() as instance:
-        with execute_job(
-            reconstructable(branching_job_def_async_executor),
+        with dg.execute_job(
+            dg.reconstructable(branching_job_def_async_executor),
             instance=instance,
         ) as result:
             assert not result.success
 
-        with execute_job(
-            reconstructable(branching_job_def_async_executor),
+        with dg.execute_job(
+            dg.reconstructable(branching_job_def_async_executor),
             instance=instance,
             reexecution_options=dg.ReexecutionOptions.from_failure(result.run_id, instance),
         ) as result_2:
@@ -97,8 +95,8 @@ def test_branching_reexecution_async_executor() -> None:
 def test_reexecute_subset_of_subset_async_executor() -> None:
     with tempfile.TemporaryDirectory() as tmpdir_path:
         with dg.instance_for_test() as instance:
-            with execute_job(
-                reconstructable(can_fail_job_def_async_executor),
+            with dg.execute_job(
+                dg.reconstructable(can_fail_job_def_async_executor),
                 instance=instance,
                 run_config={
                     "ops": {"plus_two": {"config": {"should_fail": True}}},
@@ -108,8 +106,8 @@ def test_reexecute_subset_of_subset_async_executor() -> None:
                 assert not result.success
 
             reexecution_options = dg.ReexecutionOptions.from_failure(result.run_id, instance)
-            with execute_job(
-                reconstructable(can_fail_job_def_async_executor),
+            with dg.execute_job(
+                dg.reconstructable(can_fail_job_def_async_executor),
                 instance=instance,
                 run_config={
                     "ops": {"plus_two": {"config": {"should_fail": False}}},
@@ -120,8 +118,8 @@ def test_reexecute_subset_of_subset_async_executor() -> None:
                 assert first_re_result.success
                 assert first_re_result.output_for_node("plus_two") == 3
 
-            with execute_job(
-                reconstructable(can_fail_job_def_async_executor),
+            with dg.execute_job(
+                dg.reconstructable(can_fail_job_def_async_executor),
                 instance=instance,
                 run_config={
                     "ops": {"plus_two": {"config": {"should_fail": False}}},
@@ -139,15 +137,15 @@ def test_reexecute_subset_of_subset_async_executor() -> None:
 def test_fs_io_manager_reexecution_async_executor() -> None:
     with tempfile.TemporaryDirectory() as tmpdir_path:
         with dg.instance_for_test() as instance:
-            with execute_job(
-                reconstructable(fs_io_job_def_async_executor),
+            with dg.execute_job(
+                dg.reconstructable(fs_io_job_def_async_executor),
                 instance=instance,
                 run_config={"resources": {"io_manager": {"config": {"base_dir": tmpdir_path}}}},
             ) as result:
                 assert result.success
 
-            with execute_job(
-                reconstructable(fs_io_job_def_async_executor),
+            with dg.execute_job(
+                dg.reconstructable(fs_io_job_def_async_executor),
                 instance=instance,
                 run_config={"resources": {"io_manager": {"config": {"base_dir": tmpdir_path}}}},
                 reexecution_options=dg.ReexecutionOptions(
