@@ -34,6 +34,7 @@ dagster-cloud-deploy:
     # Install Python and uv for running dg CLI
     - apk add --no-cache python3 py3-pip
     - pip install --break-system-packages uv
+    - uv pip install dagster dagster-dg-cli dagster-cloud
   script:
     # Checkout is automatic in GitLab CI
 
@@ -43,6 +44,9 @@ dagster-cloud-deploy:
       python -m uv run dg plus deploy start
       --deployment=TEMPLATE_DEFAULT_DEPLOYMENT_NAME
       --yes
+
+    # Sync all projects (workspace or single project)
+    - find . -maxdepth 3 -name "pyproject.toml" -type f -execdir python -m uv sync \;
 
     # Refresh state for any StateBackedComponents in the project
     - python -m uv run dg plus deploy refresh-defs-state
