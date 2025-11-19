@@ -24,7 +24,7 @@ export const NavItemContent = ({icon, label, collapsed, rightIcon}: Props) => {
     >
       <div>{icon}</div>
       {label && <div>{label}</div>}
-      {typeof rightIcon === 'object' && rightIcon !== null ? <div>{rightIcon}</div> : null}
+      {rightIcon ? <div>{rightIcon}</div> : null}
     </Box>
   );
 };
