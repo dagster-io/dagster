@@ -9,15 +9,21 @@ interface NavItemWithExternalLinkProps {
   icon: ReactNode;
   href: string;
   label: string;
+  rightIcon?: ReactNode;
 }
 
-export const NavItemWithExternalLink = ({icon, href, label}: NavItemWithExternalLinkProps) => {
+export const NavItemWithExternalLink = ({
+  icon,
+  href,
+  label,
+  rightIcon,
+}: NavItemWithExternalLinkProps) => {
   const {isCollapsed} = useContext(NavCollapseContext);
 
   return (
     <Tooltip content={label} placement="right" canShow={isCollapsed}>
       <a href={href} target="_blank" rel="noreferrer" className={styles.link}>
-        <NavItemContent icon={icon} label={label} collapsed={isCollapsed} />
+        <NavItemContent icon={icon} label={label} collapsed={isCollapsed} rightIcon={rightIcon} />
       </a>
     </Tooltip>
   );
