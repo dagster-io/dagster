@@ -104,7 +104,7 @@ You can specify dependencies between assets from different scripts. Using the mu
 
 ### Automate Python scripts
 
-You can configure when assets should be automatically materialized using automation conditions:
+You can configure when assets should be automatically materialized using [declarative automation](/guides/automate/declarative-automation) conditions:
 
 <CodeExample
   path="docs_snippets/docs_snippets/guides/components/integrations/python-script-component/11-automation-component.yaml"
