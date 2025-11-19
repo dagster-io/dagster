@@ -90,7 +90,7 @@ You can define multiple Python script component instances in a single `defs.yaml
   language="yaml"
 />
 
-Each component instance runs independently and can execute different Python scripts. This approach is useful when you have multiple related data processing tasks that should be organized together but run separately.
+Each component instance runs independently and can execute different Python scripts. This approach is useful when you have multiple related data processing tasks that should be organized together, but run separately.
 
 ### Set up dependencies
 
