@@ -28,7 +28,7 @@ The scaffold call will generate a `defs.yaml` file:
 
 ## 3. Create a Python script (if needed)
 
-Create a Python script that will be executed by the component, or use any existing Python script you've already written. Dagster will orchestrate it without requiring changes to your code. For this example, we'll create a simple data processing script:
+Next, you will need to create a Python script that will be executed by the component if you do not already have an existing Python script you've already written. Dagster will orchestrate it without requiring changes to your code. For this example, we'll create a simple data processing script:
 
 <CodeExample
   path="docs_snippets/docs_snippets/guides/components/integrations/python-script-component/4-process-sales-data.py"
