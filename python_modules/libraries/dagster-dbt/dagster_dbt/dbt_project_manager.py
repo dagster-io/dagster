@@ -40,7 +40,7 @@ class DbtProjectManager(ABC):
         local_dir = self._local_project_dir(state_path)
         if local_dir.exists():
             shutil.rmtree(local_dir)
-        local_dir.mkdir()
+        local_dir.mkdir(parents=True, exist_ok=True)
 
         # ensure project exists in the dir and is compiled
         self.sync(state_path)

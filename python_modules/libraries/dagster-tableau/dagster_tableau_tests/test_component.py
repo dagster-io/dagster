@@ -27,6 +27,8 @@ BASIC_TABLEAU_COMPONENT_BODY = {
             "site_name": "test_site",
             "pod_name": "10ax",
         },
+        "enable_embedded_datasource_refresh": True,
+        "enable_published_datasource_refresh": True,
     },
 }
 
