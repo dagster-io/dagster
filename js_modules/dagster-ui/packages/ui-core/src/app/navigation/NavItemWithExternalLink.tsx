@@ -1,5 +1,4 @@
 import {Tooltip} from '@dagster-io/ui-components';
-import clsx from 'clsx';
 import {ReactNode, useContext} from 'react';
 
 import {NavCollapseContext} from './NavCollapseProvider';
@@ -17,7 +16,7 @@ export const NavItemWithExternalLink = ({icon, href, label}: NavItemWithExternal
 
   return (
     <Tooltip content={label} placement="right" canShow={isCollapsed}>
-      <a href={href} target="_blank" rel="noreferrer" className={clsx(styles.link, null)}>
+      <a href={href} target="_blank" rel="noreferrer" className={styles.link}>
         <NavItemContent icon={icon} label={label} collapsed={isCollapsed} />
       </a>
     </Tooltip>
