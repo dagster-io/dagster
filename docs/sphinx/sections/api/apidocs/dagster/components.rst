@@ -52,7 +52,6 @@ common Dagster types.
 
     Allows resolving to an AssetCheckSpec via a YAML-friendly schema.
 
-
 Built-in Components
 -------------------
 
@@ -70,11 +69,6 @@ Built-in Components
 
 .. autoclass:: TemplatedSqlComponent
 
-Loading Components
-------------------
-
-.. autofunction:: load_from_defs_folder
-
 Testing Components
 ------------------
 
@@ -85,7 +79,6 @@ Testing Components
 .. autoclass:: DefsFolderSandbox
     :members:
 
-
 ****************
 Using Components
 ****************
@@ -94,14 +87,12 @@ Using Components
 
 .. autodecorator:: component_instance
 
-
 .. autoclass:: ComponentLoadContext
    :members:
 
 
 .. autoclass:: ComponentTree
    :members:
-
 
 *****************************
 Loading Component definitions
