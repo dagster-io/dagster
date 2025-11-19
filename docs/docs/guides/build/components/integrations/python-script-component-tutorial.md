@@ -76,7 +76,7 @@ For more advanced use cases, you can use [Dagster Pipes](/guides/build/external-
 
 With Dagster Pipes, you can:
 
-- **Log structured information**: Use `context.log.info()` to send logs directly to Dagster
+- **Log structured information**: Use `context.log.info()` to send logs directly to Dagster.
 - **Report asset metadata**: Use <PyObject section="libraries" module="dagster-pipes" object="PipesContext.report_asset_materialization()" displayText="context.report_asset_materialization()" /> to attach rich metadata that appears in the Dagster UI.
 - **Handle errors**: Exception information is automatically captured and reported to Dagster.
 
