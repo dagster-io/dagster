@@ -24,6 +24,7 @@ import CommunityIntegration from '@site/docs/partials/\_CommunityIntegration.md'
 ## Example
 
 - Get a quick overview here https://dagster-slurm.geoheil.com/docs/slides
+- Read more: https://georgheiler.com/post/dagster-slurm/
 - See the docs for detailed instructions https://dagster-slurm.geoheil.com/
 
 ## About ASCII
