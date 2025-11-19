@@ -44,10 +44,16 @@ from dagster._core.errors import (
     DagsterTypeCheckError,
     user_code_error_boundary,
 )
-from dagster._core.events import DagsterEvent, DagsterEventBatchMetadata, generate_event_batch_id
+from dagster._core.events import (
+    DagsterEvent,
+    DagsterEventBatchMetadata,
+    DagsterEventType,
+    generate_event_batch_id,
+)
 from dagster._core.execution.context.compute import enter_execution_context
 from dagster._core.execution.context.output import OutputContext
-from dagster._core.execution.context.system import StepExecutionContext
+from dagster._core.execution.context.system import PlanExecutionContext, StepExecutionContext
+from dagster._core.execution.plan.active import ActiveExecution
 from dagster._core.execution.plan.aio.compute import OpOutputUnion, execute_core_compute
 from dagster._core.execution.plan.aio.compute_generator import create_op_compute_wrapper
 from dagster._core.execution.plan.execute_step import (
@@ -70,6 +76,23 @@ from dagster._utils.warnings import beta_warning, disable_dagster_warnings
 
 class AssetResultOutput(Output):
     """This is a marker subclass that represents an Output that was produced from an AssetResult."""
+
+
+async def _verify_if_complete(
+    job_context: PlanExecutionContext, active: ActiveExecution, event: DagsterEvent
+) -> None:
+    if (
+        event.is_step_event
+        and event.step_key is not None
+        and event.event_type
+        in {
+            DagsterEventType.STEP_SUCCESS,
+            DagsterEventType.STEP_FAILURE,
+            DagsterEventType.STEP_SKIPPED,
+            DagsterEventType.STEP_UP_FOR_RETRY,
+        }
+    ):
+        active.verify_complete(job_context, event.step_key)
 
 
 async def _process_asset_results_to_events(

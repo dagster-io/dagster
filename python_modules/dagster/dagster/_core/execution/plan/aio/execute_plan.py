@@ -1,15 +1,20 @@
+import inspect
 import sys
-from collections.abc import AsyncIterator
+from collections.abc import AsyncIterator, Sequence
 
 from dagster_shared import check
 from dagster_shared.error import DagsterError, SerializableErrorInfo
 
-from dagster import DagsterEvent, Failure, RetryRequested, StepExecutionContext
+from dagster._core.definitions import Failure, HookExecutionResult, RetryRequested
 from dagster._core.errors import (
     DagsterExecutionInterruptedError,
     DagsterMaxRetriesExceededError,
     DagsterUserCodeExecutionError,
+    HookExecutionError,
+    user_code_error_boundary,
 )
+from dagster._core.events import DagsterEvent
+from dagster._core.execution.context.system import StepExecutionContext
 from dagster._core.execution.plan.aio.execute_step import core_dagster_event_sequence_for_step
 from dagster._core.execution.plan.execute_plan import _user_failure_data_for_exc
 from dagster._core.execution.plan.objects import (
@@ -180,3 +185,52 @@ async def dagster_event_sequence_for_step(
 
         if step_context.raise_on_error:
             raise error
+
+
+async def _trigger_hook(
+    step_context: StepExecutionContext, step_event_list: Sequence[DagsterEvent]
+) -> AsyncIterator[DagsterEvent]:
+    """Trigger hooks and record hook's operatonal events."""
+    hook_defs = step_context.job_def.get_all_hooks_for_handle(step_context.node_handle)
+    # when the solid doesn't have a hook configured
+    if hook_defs is None:
+        return
+
+    op_label = step_context.describe_op()
+
+    # when there are multiple hooks set on a solid, the hooks will run sequentially for the solid.
+    # * we will not able to execute hooks asynchronously until we drop python 2.
+    for hook_def in hook_defs:
+        hook_context = step_context.for_hook(hook_def)
+
+        try:
+            with user_code_error_boundary(
+                HookExecutionError,
+                lambda: f"Error occurred during the execution of hook_fn triggered for {op_label}",
+                log_manager=hook_context.log,
+            ):
+                if inspect.iscoroutinefunction(hook_def.hook_fn):
+                    hook_execution_result = await hook_def.hook_fn(hook_context, step_event_list)
+                else:
+                    hook_execution_result = hook_def.hook_fn(hook_context, step_event_list)
+
+        except HookExecutionError as hook_execution_error:
+            # catch hook execution error and field a failure event instead of failing the pipeline run
+            yield DagsterEvent.hook_errored(step_context, hook_execution_error)
+            continue
+
+        check.invariant(
+            isinstance(hook_execution_result, HookExecutionResult),
+            (
+                f"Error in hook {hook_def.name}: hook unexpectedly returned result {hook_execution_result} of "
+                f"type {type(hook_execution_result)}. Should be a HookExecutionResult"
+            ),
+        )
+        if hook_execution_result and hook_execution_result.is_skipped:
+            # when the triggering condition didn't meet in the hook_fn, for instance,
+            # a @success_hook decorated user-defined function won't run on a failed solid
+            # but internally the hook_fn still runs, so we yield HOOK_SKIPPED event instead
+            yield DagsterEvent.hook_skipped(step_context, hook_def)
+        else:
+            # hook_fn finishes successfully
+            yield DagsterEvent.hook_completed(step_context, hook_def)

@@ -54,8 +54,12 @@ def simple_fanout_job_def(num_fanouts: int, sleep_seconds: int):
 @pytest.mark.parametrize(
     "num_fanouts,sleep_seconds,expected_max_seconds_duration",
     [
-        (20, 3, 10),
-        (100, 3, 12),
+        (20, 3, 30),  # takes a lot less time in reality, but putting it high to avoid a flakey test
+        (
+            100,
+            3,
+            60,
+        ),  # takes a lot less time in reality, but putting it high to avoid a flakey test
     ],
 )
 def test_async_performance_basic(

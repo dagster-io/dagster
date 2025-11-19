@@ -9,16 +9,21 @@ from typing import Any, Optional, ParamSpec, TypeVar
 import anyio
 import anyio.abc
 from anyio.from_thread import start_blocking_portal
+from anyio.streams.memory import MemoryObjectReceiveStream, MemoryObjectSendStream
 from dagster_shared.utils.timing import format_duration
 
 import dagster._check as check
-from dagster._core.events import DagsterEvent, DagsterEventType, EngineEventData
+from dagster._core.events import DagsterEvent, EngineEventData
 from dagster._core.execution.api import ExecuteRunWithPlanIterable
 from dagster._core.execution.compute_logs import create_compute_log_file_key
 from dagster._core.execution.context.system import PlanExecutionContext, PlanOrchestrationContext
 from dagster._core.execution.context_creation_job import PlanExecutionContextManager
 from dagster._core.execution.plan.active import ActiveExecution
-from dagster._core.execution.plan.aio.execute_plan import dagster_event_sequence_for_step
+from dagster._core.execution.plan.aio.execute_plan import (
+    _trigger_hook,
+    dagster_event_sequence_for_step,
+)
+from dagster._core.execution.plan.aio.execute_step import _verify_if_complete
 from dagster._core.execution.plan.execute_plan import _handle_compute_log_setup_error
 from dagster._core.execution.plan.instance_concurrency_context import InstanceConcurrencyContext
 from dagster._core.execution.plan.objects import step_failure_event_from_exc_info
@@ -33,12 +38,6 @@ from dagster._utils.timing import time_execution_scope
 T = TypeVar("T")
 P = ParamSpec("P")
 
-_STEP_COMPLETE_EVENTS = {
-    DagsterEventType.STEP_SUCCESS,
-    DagsterEventType.STEP_FAILURE,
-    DagsterEventType.STEP_SKIPPED,
-    DagsterEventType.STEP_UP_FOR_RETRY,
-}
 _SENTINEL = object()
 _SYNC_ASYNC_BRIDGE_QUEUE_MAXSIZE = 0
 
@@ -198,81 +197,105 @@ class AsyncExecutor(Executor):
         job_context: PlanExecutionContext,
         active: ActiveExecution,
     ) -> AsyncIterator[DagsterEvent]:
+        """Async orchestrator that runs steps in a TaskGroup and yields events.
+
+        - Uses a single anyio memory object stream as the central event bus.
+        - Each step worker clones the send_stream and writes its events there.
+        - We update ActiveExecution based on events and schedule new work as usual.
+        """
         send_stream, recv_stream = anyio.create_memory_object_stream[DagsterEvent]()
 
-        async with recv_stream, anyio.create_task_group() as task_group:
-            while not active.is_complete:
-                steps_to_execute = active.get_steps_to_execute(limit=None)
-
-                for event in active.concurrency_event_iterator(job_context):
-                    yield event
-
-                for step in steps_to_execute:
-                    task_group.start_soon(
-                        self._run_step_worker,
-                        job_context,
-                        active.get_known_state(),
-                        step,
-                        send_stream.clone(),
-                    )
-
-                try:
-                    event = await recv_stream.receive()
-                except anyio.EndOfStream:
-                    break
-
-                yield event
-                active.handle_event(event)
-                if event.is_step_event and event.event_type in _STEP_COMPLETE_EVENTS:
-                    if event.step_key is not None:
-                        active.verify_complete(job_context, event.step_key)
-
-                for plan_event in active.plan_events_iterator(job_context):
-                    yield plan_event
-
-                # TODO: might need _trigger_hook(step_context, step_event_list)
-
+        async with recv_stream, anyio.create_task_group() as tg:
             try:
-                event = recv_stream.receive_nowait()
+                while not active.is_complete:
+                    steps_to_execute = active.get_steps_to_execute(limit=None)
+
+                    for event in active.concurrency_event_iterator(job_context):
+                        yield event
+
+                    known_state = active.get_known_state()
+                    for step in steps_to_execute:
+                        tg.start_soon(
+                            self._run_step_worker,
+                            job_context,
+                            known_state,
+                            step,
+                            send_stream.clone(),
+                        )
+
+                    try:
+                        event = await recv_stream.receive()
+                    except anyio.EndOfStream:
+                        raise
+
+                    yield event
+                    active.handle_event(event)
+                    await _verify_if_complete(job_context, active, event)
+
+                    for plan_event in active.plan_events_iterator(job_context):
+                        yield plan_event
+            finally:
+                await send_stream.aclose()
+
+            async for event in self._drain_events(active, job_context, recv_stream):
                 yield event
-                if event.is_step_event and event.event_type in _STEP_COMPLETE_EVENTS:
-                    if event.step_key is not None:
-                        active.verify_complete(job_context, event.step_key)
-            except (anyio.EndOfStream, anyio.WouldBlock):
-                pass
-            except BaseException:
-                raise
 
     async def _run_step_worker(
         self,
         job_context: PlanExecutionContext,
         known_state: KnownExecutionState,
         step: ExecutionStep,
-        send_stream: anyio.abc.ObjectSendStream[DagsterEvent],
+        send_stream: MemoryObjectSendStream[DagsterEvent],
     ) -> None:
         """Run a single step's async compute, emitting DagsterEvents via send_stream."""
         step_context = job_context.for_step(step, known_state)
-        try:
-            missing_resources = [
-                resource_key
-                for resource_key in step_context.required_resource_keys
-                if not hasattr(step_context.resources, resource_key)
-            ]
-            check.invariant(
-                len(missing_resources) == 0,
-                (
-                    f"Expected step context for solid {step_context.op.name} to have all required"
-                    f" resources, but missing {missing_resources}."
-                ),
-            )
-
-            async with send_stream:
+        missing_resources = [
+            resource_key
+            for resource_key in step_context.required_resource_keys
+            if not hasattr(step_context.resources, resource_key)
+        ]
+        check.invariant(
+            len(missing_resources) == 0,
+            (
+                f"Expected step context for op {step_context.op.name} to have all required "
+                f"resources, but missing {missing_resources}."
+            ),
+        )
+        async with send_stream:
+            try:
+                step_events: list[DagsterEvent] = []
                 async for event in dagster_event_sequence_for_step(step_context):
                     await send_stream.send(event)
-        except BaseException as e:
-            failure_event = step_failure_event_from_exc_info(
-                step_context,
-                sys.exc_info(),
-            )
-            await send_stream.send(failure_event)
-            raise e
+                    step_events.append(event)
+
+                async for hook_event in _trigger_hook(step_context, step_events):
+                    await send_stream.send(hook_event)
+            except BaseException:
+                failure_event = step_failure_event_from_exc_info(
+                    step_context,
+                    sys.exc_info(),
+                )
+                try:
+                    await send_stream.send(failure_event)
+                finally:
+                    raise
+
+    async def _drain_events(
+        self,
+        active: ActiveExecution,
+        job_context: PlanExecutionContext,
+        recv_stream: MemoryObjectReceiveStream[DagsterEvent],
+    ) -> AsyncIterator[DagsterEvent]:
+        """Drain any remaining events from recv_stream after all steps complete."""
+        while True:
+            try:
+                event = await recv_stream.receive()
+            except anyio.EndOfStream:
+                break
+            yield event
+
+            active.handle_event(event)
+            await _verify_if_complete(job_context, active, event)
+
+            for plan_event in active.plan_events_iterator(job_context):
+                yield plan_event

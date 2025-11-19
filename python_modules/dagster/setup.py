@@ -99,6 +99,7 @@ setup(
         "tomli<3",
         "tqdm<5",
         "tzdata",
+        "anyio",
         "structlog",
         "sqlalchemy>=1.0,<3",
         "toposort>=1.0",
