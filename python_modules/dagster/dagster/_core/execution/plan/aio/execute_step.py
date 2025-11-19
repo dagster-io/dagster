@@ -567,7 +567,6 @@ async def _get_output_asset_events(
 
     if execution_type == AssetExecutionType.MATERIALIZATION:
         event_class = AssetMaterialization
-        event_class = AssetMaterialization
     elif execution_type == AssetExecutionType.OBSERVATION:
         event_class = AssetObservation
     else:
