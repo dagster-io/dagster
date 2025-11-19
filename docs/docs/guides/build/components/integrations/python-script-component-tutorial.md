@@ -82,7 +82,7 @@ With Dagster Pipes, you can:
 
 ### Orchestrate multiple Python scripts
 
-You can define multiple Python script components in a single `defs.yaml` file using the `---` separator syntax. This allows you to run different scripts for different assets:
+You can define multiple Python script component instances in a single `defs.yaml` file using the `---` separator syntax. This allows you to run different scripts for different assets:
 
 <CodeExample
   path="docs_snippets/docs_snippets/guides/components/integrations/python-script-component/9-multiple-scripts-component.yaml"
