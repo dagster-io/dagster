@@ -18,7 +18,7 @@ Activate the project virtual environment:
 
 ## 2. Scaffold a Python script component definition
 
-Now that you have a Dagster project, you can scaffold a Python script component. You'll need to provide a name for your component. In this example, we'll create a component that will execute a Python script to process sales data and generate a revenue report.
+Now that you have a Dagster project, you can scaffold a Python script component definition. In this example, we'll create a component definition called `generate_revenue_report` that will execute a Python script to process sales data and generate a revenue report.
 
 <CliInvocationExample path="docs_snippets/docs_snippets/guides/components/integrations/python-script-component/2-scaffold-python-script-component.txt" />
 
