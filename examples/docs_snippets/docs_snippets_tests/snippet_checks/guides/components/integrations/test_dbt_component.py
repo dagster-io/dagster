@@ -136,7 +136,7 @@ def test_components_docs_dbt_project(
                 type: dagster_dbt.DbtProjectComponent
 
                 attributes:
-                  project: '{{ project_root }}/dbt'
+                  project: '{{ context.project_root }}/dbt'
                   select: "customers"
                 """
             ),
@@ -156,7 +156,7 @@ def test_components_docs_dbt_project(
                 type: dagster_dbt.DbtProjectComponent
 
                 attributes:
-                  project: '{{ project_root }}/dbt'
+                  project: '{{ context.project_root }}/dbt'
                   select: "customers"
                   translation:
                     group_name: dbt_models
@@ -233,7 +233,7 @@ def test_components_docs_dbt_project(
 
                 template_vars_module: .template_vars
                 attributes:
-                  project: '{{ project_root }}/dbt'
+                  project: '{{ context.project_root }}/dbt'
                   select: "customers"
                   translation:
                     group_name: dbt_models
@@ -257,7 +257,7 @@ def test_components_docs_dbt_project(
 
                 template_vars_module: .template_vars
                 attributes:
-                  project: '{{ project_root }}/dbt'
+                  project: '{{ context.project_root }}/dbt'
                   select: "customers"
                   translation:
                     group_name: dbt_models
@@ -348,7 +348,7 @@ def test_components_docs_dbt_project(
 
                 template_vars_module: .template_vars
                 attributes:
-                  project: '{{ project_root }}/dbt'
+                  project: '{{ context.project_root }}/dbt'
                   select: "customers"
                 post_processing:
                   assets:

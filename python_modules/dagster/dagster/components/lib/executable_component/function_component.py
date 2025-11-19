@@ -5,6 +5,7 @@ from typing import Annotated, Any, Literal, Optional, TypeAlias, Union
 
 from dagster_shared import check
 
+from dagster._annotations import public
 from dagster._config.field import Field
 from dagster._config.pythonic_config.config import Config
 from dagster._config.pythonic_config.type_check_utils import safe_is_subclass
@@ -91,35 +92,37 @@ class ExecuteFnMetadata:
         return self.config_cls.to_fields_dict() if self.config_cls else None
 
 
+@public
 class FunctionComponent(ExecutableComponent):
     """Represents a Python function, alongside the set of assets or asset checks that it is responsible for executing.
 
     The provided function should return either a `MaterializeResult` or an `AssetCheckResult`.
 
     Examples:
-    ```yaml
-    type: dagster.FunctionComponent
-    attributes:
-      execution:
-        fn: .my_module.update_table
-      assets:
-        - key: my_table
-    ```
 
-    ```python
-    from dagster import MaterializeResult
+    .. code-block:: yaml
 
-    def update_table(context: AssetExecutionContext) -> MaterializeResult:
-        # ...
-        return MaterializeResult(metadata={"rows_updated": 100})
+        type: dagster.FunctionComponent
+        attributes:
+          execution:
+            fn: .my_module.update_table
+          assets:
+            - key: my_table
 
-    @component
-    def my_component():
-        return FunctionComponent(
-            execution=update_table,
-            assets=[AssetSpec(key="my_table")],
-        )
-    ```
+    .. code-block:: python
+
+        from dagster import MaterializeResult
+
+        def update_table(context: AssetExecutionContext) -> MaterializeResult:
+            # ...
+            return MaterializeResult(metadata={"rows_updated": 100})
+
+        @component
+        def my_component():
+            return FunctionComponent(
+                execution=update_table,
+                assets=[AssetSpec(key="my_table")],
+            )
 
     """
 

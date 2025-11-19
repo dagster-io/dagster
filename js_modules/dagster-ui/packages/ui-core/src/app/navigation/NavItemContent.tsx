@@ -5,9 +5,10 @@ interface Props {
   icon: ReactNode;
   label?: string;
   collapsed: boolean;
+  rightIcon?: ReactNode;
 }
 
-export const NavItemContent = ({icon, label, collapsed}: Props) => {
+export const NavItemContent = ({icon, label, collapsed, rightIcon}: Props) => {
   if (collapsed) {
     return (
       <Box flex={{alignItems: 'center', justifyContent: 'center'}} padding={8}>
@@ -23,6 +24,7 @@ export const NavItemContent = ({icon, label, collapsed}: Props) => {
     >
       <div>{icon}</div>
       {label && <div>{label}</div>}
+      {rightIcon ? <div>{rightIcon}</div> : null}
     </Box>
   );
 };
