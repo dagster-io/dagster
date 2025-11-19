@@ -66,7 +66,7 @@ Navigate to the Dagster UI and you'll see your assets. To execute your Python sc
 
 ### Log metadata inside Python script
 
-For more advanced use cases, you can use [Dagster Pipes](/guides/build/external-pipelines/) to pass metadata from your Python script back to Dagster. This allows you to provide rich information about your assets directly in the Dagster UI:
+For more advanced use cases, you can use [Dagster Pipes](/guides/build/external-pipelines) to pass metadata from your Python script back to Dagster. This allows you to provide rich information about your assets directly in the Dagster UI:
 
 <CodeExample
   path="docs_snippets/docs_snippets/guides/components/integrations/python-script-component/8-advanced-pipes-script.py"
