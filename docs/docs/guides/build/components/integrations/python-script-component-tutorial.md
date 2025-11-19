@@ -62,7 +62,7 @@ Once your component is configured, you can launch your assets to execute the Pyt
 
 Navigate to the Dagster UI and you'll see your assets. To execute your Python script, click on the asset, then click **Materialize**. The script will run in a subprocess, and you'll be able to see the logs and metadata in the Dagster UI.
 
-## 6. Advanced configuration
+## Advanced configuration
 
 ### Log metadata inside Python script
 
