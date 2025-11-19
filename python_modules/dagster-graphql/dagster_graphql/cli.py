@@ -150,9 +150,7 @@ PREDEFINED_QUERIES = {
 @click.option(
     "--text", "-t", type=click.STRING, help="GraphQL document to execute passed as a string"
 )
-@click.option(
-    "--file", type=click.File(), help="GraphQL document to execute passed as a file"
-)
+@click.option("--file", type=click.File(), help="GraphQL document to execute passed as a file")
 @click.option(
     "--predefined",
     "-p",
