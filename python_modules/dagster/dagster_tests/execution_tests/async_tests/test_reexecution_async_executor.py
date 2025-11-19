@@ -1,7 +1,6 @@
 import tempfile
 
 import dagster as dg
-from dagster._core.definitions.executor_definition import async_executor
 from dagster._core.definitions.reconstruct import reconstructable
 from dagster._core.execution.api import execute_job
 from dagster._core.storage.fs_io_manager import fs_io_manager
@@ -24,7 +23,7 @@ def branching_job_def_async_executor() -> dg.JobDefinition:
         context.instance.run_storage.set_cursor_values({key: "true"})
         raise Exception("failed (just this once)")
 
-    @dg.job(executor_def=async_executor)
+    @dg.job(executor_def=dg.async_executor)
     def branching_job():
         a, b = a_or_b()
         echo(
@@ -52,7 +51,7 @@ def can_fail_job_def_async_executor() -> dg.JobDefinition:
     async def plus_three(i: int) -> int:
         return i + 3
 
-    @dg.job(executor_def=async_executor)
+    @dg.job(executor_def=dg.async_executor)
     def my_job():
         plus_three(plus_two(one()))
 
@@ -68,7 +67,7 @@ def fs_io_job_def_async_executor() -> dg.JobDefinition:
     async def op_b(_context, _df):
         return 1
 
-    @dg.job(resource_defs={"io_manager": fs_io_manager}, executor_def=async_executor)
+    @dg.job(resource_defs={"io_manager": fs_io_manager}, executor_def=dg.async_executor)
     def my_job():
         op_b(op_a())
 

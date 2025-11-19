@@ -2,7 +2,6 @@ import time
 
 import anyio
 import dagster as dg
-from dagster._core.definitions.executor_definition import async_executor
 from dagster._core.definitions.reconstruct import reconstructable
 from dagster._core.execution.api import execute_job
 
@@ -44,7 +43,7 @@ def sync_job_def_async_executor() -> dg.JobDefinition:
         time.sleep(0.01)
         return x * 2
 
-    @dg.job(executor_def=async_executor)
+    @dg.job(executor_def=dg.async_executor)
     def sync_job():
         slow_double(slow_add_one(emit_one()))
 
@@ -91,7 +90,7 @@ def async_job_def_async_executor() -> dg.JobDefinition:
         return x * 2
 
     @dg.job(
-        executor_def=async_executor,
+        executor_def=dg.async_executor,
     )
     def async_job():
         slow_double(slow_add_one(emit_one()))

@@ -1,5 +1,4 @@
 import dagster as dg
-from dagster._core.definitions.executor_definition import async_executor
 from dagster._core.definitions.reconstruct import reconstructable
 from dagster._core.execution.api import execute_job
 
@@ -36,7 +35,7 @@ def dynamic_job_def_async_executor() -> dg.JobDefinition:
     def echo(_, value: int) -> int:
         return value
 
-    @dg.job(executor_def=async_executor)
+    @dg.job(executor_def=dg.async_executor)
     def dynamic_job():
         numbers = emit(num_range())
         dynamic = numbers.map(lambda num: multiply_by_two(multiply_inputs(num)))

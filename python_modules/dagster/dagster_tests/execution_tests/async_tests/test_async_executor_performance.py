@@ -4,7 +4,6 @@ import threading
 import anyio
 import dagster as dg
 import pytest
-from dagster._core.definitions.executor_definition import async_executor
 from dagster._core.execution.api import execute_job
 
 logger = logging.getLogger(__name__)
@@ -44,7 +43,7 @@ def simple_fanout_job_def(num_fanouts: int, sleep_seconds: int):
         context.log.info(f"[{context.op_handle}] collected {len(results)} results")
         return results
 
-    @dg.job(executor_def=async_executor)
+    @dg.job(executor_def=dg.async_executor)
     def simple_fanout_job():
         dynamic_items = create_dynamic_outputs()
         processed = dynamic_items.map(process_item)
