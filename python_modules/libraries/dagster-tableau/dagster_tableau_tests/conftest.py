@@ -361,6 +361,7 @@ def build_data_source_item_fixture():
         type(mock_embedded_data_source.return_value).content_url = PropertyMock(return_value=None)
         type(mock_embedded_data_source.return_value).created_at = PropertyMock(return_value=None)
         type(mock_embedded_data_source.return_value).updated_at = PropertyMock(return_value=None)
+        type(mock_embedded_data_source.return_value).has_extracts = PropertyMock(return_value=True)
         mocked_class.side_effect = [mock_embedded_data_source]
         yield mocked_class
 
@@ -374,6 +375,7 @@ def build_data_sources_item_fixture():
     type(mock_data_source_1).content_url = PropertyMock(return_value=None)
     type(mock_data_source_1).created_at = PropertyMock(return_value=None)
     type(mock_data_source_1).updated_at = PropertyMock(return_value=None)
+    type(mock_data_source_1).has_extracts = PropertyMock(return_value=False)
 
     mock_data_source_2 = MagicMock()
     type(mock_data_source_2).id = PropertyMock(return_value=SAMPLE_DATA_SOURCE_HIDDEN_SHEET["luid"])
@@ -384,6 +386,7 @@ def build_data_sources_item_fixture():
     type(mock_data_source_2).content_url = PropertyMock(return_value=None)
     type(mock_data_source_2).created_at = PropertyMock(return_value=None)
     type(mock_data_source_2).updated_at = PropertyMock(return_value=None)
+    type(mock_data_source_1).has_extracts = PropertyMock(return_value=True)
 
     yield [mock_data_source_1, mock_data_source_2]
 

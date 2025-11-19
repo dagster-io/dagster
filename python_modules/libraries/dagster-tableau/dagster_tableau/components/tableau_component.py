@@ -285,6 +285,34 @@ class TableauComponent(StateBackedComponent, Resolvable):
     def execute_embedded_data_sources(
         self, context: dg.AssetExecutionContext, workspace: BaseTableauWorkspace, workbook_id: str
     ):
+        """Executes a refresh for embedded data sources within a Tableau workbook.
+
+        This method can be overridden in a subclass to customize the refresh execution behavior,
+        such as adding custom logging or handling refresh results differently.
+
+        Args:
+            context: The asset execution context provided by Dagster
+            workspace: The BaseTableauWorkspace used to trigger and monitor refreshes
+            workbook_id: The ID of the Tableau workbook containing the embedded data sources
+
+        Yields:
+            AssetMaterialization events for each embedded data source in the workbook
+
+        Example:
+            Override this method to add custom logging during refresh execution:
+
+            .. code-block:: python
+
+                from dagster_tableau import TableauComponent
+                import dagster as dg
+
+                class CustomTableauComponent(TableauComponent):
+                    def execute_embedded_data_sources(self, context, workspace, workbook_id):
+                        context.log.info(f"Starting refresh for workbook {workbook_id}")
+                        result = yield from super().execute_embedded_data_sources(context, workspace, workbook_id)
+                        context.log.info("Workbook refresh completed successfully")
+                        return result
+        """
         with workspace.get_client() as client:
             client.refresh_and_poll_workbook(workbook_id)
             for asset_key in context.selected_asset_keys:
@@ -293,17 +321,52 @@ class TableauComponent(StateBackedComponent, Resolvable):
                 )
 
     def execute_published_data_sources(
-        self, context: dg.AssetExecutionContext, workspace: BaseTableauWorkspace
+        self,
+        context: dg.AssetExecutionContext,
+        workspace: BaseTableauWorkspace,
+        workspace_data: TableauWorkspaceData,
     ):
+        """Executes a refresh for published data sources in the Tableau workspace.
+
+        This method can be overridden in a subclass to customize the refresh execution behavior,
+        such as adding custom logging or handling refresh results differently.
+
+        Args:
+            context: The asset execution context provided by Dagster. Only the assets that are in this context should be refreshed.
+            workspace: The BaseTableauWorkspace used to trigger and monitor refreshes
+            workspace_data: The TableauWorkspaceData containing information about all workspace content
+
+        Yields:
+            AssetMaterialization events for each published data source that was refreshed
+
+        Example:
+            Override this method to add custom logging during refresh execution:
+
+            .. code-block:: python
+
+                from dagster_tableau import TableauComponent
+                import dagster as dg
+
+                class CustomTableauComponent(TableauComponent):
+                    def execute_published_data_sources(self, context, workspace, workspace_data):
+                        context.log.info(f"Starting refresh for {len(context.selected_asset_keys)} published data sources")
+                        result = yield from super().execute_published_data_sources(context, workspace, workspace_data)
+                        context.log.info("Published data source refreshes completed successfully")
+                        return result
+        """
         specs_by_data_source_id = {
-            TableauDataSourceMetadataSet.extract(spec.metadata).id: spec
-            for spec in context.assets_def.specs
+            k: self.get_asset_spec(
+                TableauTranslatorData(content_data=v, workspace_data=workspace_data)
+            )
+            for k, v in workspace_data.data_sources_by_id.items()
         }
-        assert all(specs_by_data_source_id.keys())
+        specs_by_data_source_id = {  # Filter to only selected asset keys
+            k: v for k, v in specs_by_data_source_id.items() if v.key in context.selected_asset_keys
+        }
+
         with workspace.get_client() as client:
-            # pyright false positive (he can't parse the 'assert' line)
             for datasource_id in client.refresh_and_poll_data_sources(
-                specs_by_data_source_id.keys()  # pyright: ignore[reportArgumentType]
+                list(specs_by_data_source_id.keys())
             ):
                 yield dg.AssetMaterialization(asset_key=specs_by_data_source_id[datasource_id].key)
 
@@ -317,15 +380,17 @@ class TableauComponent(StateBackedComponent, Resolvable):
         return asset_fn
 
     def build_refreshable_published_data_sources_asset_definition(
-        self, specs: list[dg.AssetSpec]
+        self, specs: list[dg.AssetSpec], workspace_data: TableauWorkspaceData
     ) -> dg.AssetsDefinition:
         @dg.multi_asset(
             specs=specs,
             can_subset=True,
-            name=clean_name_lower(f"tableau_published_data_sources_{self.workspace.site_name}"),
+            name=clean_name_lower(
+                f"tableau_published_data_sources_{clean_name_lower(self.workspace.site_name)}"
+            ),
         )
         def asset_fn(context: dg.AssetExecutionContext):
-            yield from self.execute_published_data_sources(context, self.workspace)
+            yield from self.execute_published_data_sources(context, self.workspace, workspace_data)
 
         return asset_fn
 
@@ -413,7 +478,7 @@ class TableauComponent(StateBackedComponent, Resolvable):
 
         assets_defs.append(
             self.build_refreshable_published_data_sources_asset_definition(
-                refreshable_published_data_source_specs
+                refreshable_published_data_source_specs, workspace_data
             )
         )
 
