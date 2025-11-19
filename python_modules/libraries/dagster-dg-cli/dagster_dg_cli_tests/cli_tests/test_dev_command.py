@@ -1,3 +1,4 @@
+import signal
 import tempfile
 import textwrap
 from pathlib import Path
@@ -202,3 +203,55 @@ def test_implicit_yaml_check_from_dg_dev_in_workspace_context() -> None:
             assert BASIC_INVALID_VALUE.check_error_msg and BASIC_MISSING_VALUE.check_error_msg
             BASIC_INVALID_VALUE.check_error_msg(str(result.output))
             BASIC_MISSING_VALUE.check_error_msg(str(result.output))
+
+
+@pytest.mark.skipif(is_windows(), reason="Temporarily skipping (signal issues in CLI)..")
+def test_dev_uses_active_venv_when_flag_set():
+    """Test that dev command logs the active venv Python when --use-active-venv is set."""
+    dagster_git_repo_dir = str(discover_git_root(Path(__file__)))
+    with (
+        ProxyRunner.test() as runner,
+        isolated_example_workspace(runner, create_venv=True) as workspace_path,
+        environ({"DAGSTER_GIT_REPO_DIR": dagster_git_repo_dir}),
+    ):
+        venv_path = workspace_path / ".venv"
+        install_editable_dg_dev_packages_to_venv(venv_path)
+
+        with activate_venv(venv_path):
+            # Create a project
+            result = runner.invoke_create_dagster(
+                "project", "--use-editable-dagster", "test-project", "--uv-sync"
+            )
+            assert_runner_result(result)
+
+            # Start dev server with --use-active-venv flag and capture output
+            port = find_free_port()
+            with (
+                tempfile.NamedTemporaryFile(mode="w+") as stdout_file,
+                tempfile.NamedTemporaryFile(mode="w+") as stderr_file,
+            ):
+                with open(stdout_file.name, "w") as stdout, open(stderr_file.name, "w") as stderr:
+                    dev_process = launch_dev_command(
+                        ["--port", str(port), "--use-active-venv"], stdout=stdout, stderr=stderr
+                    )
+
+                # Give it a moment to start and log the message
+                import time
+
+                time.sleep(2)
+
+                # Read the captured output
+                with open(stdout_file.name) as f:
+                    stdout_content = f.read()
+                with open(stderr_file.name) as f:
+                    stderr_content = f.read()
+
+                # Clean up the process
+                dev_process.send_signal(signal.SIGINT)
+                dev_process.communicate()
+
+                # Verify the log message is present
+                combined_output = stdout_content + stderr_content
+                assert "Using active Python environment:" in combined_output, (
+                    f"Expected log message about using active Python environment, but got:\n{combined_output}"
+                )

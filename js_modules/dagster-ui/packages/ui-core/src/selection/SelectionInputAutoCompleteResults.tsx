@@ -119,16 +119,16 @@ export const SelectionInputAutoCompleteResults = React.memo(
                 <BodySmall>to search</BodySmall>
               </Box>
             </Box>
-            <Box
-              as="a"
+            <a
               href="https://docs.dagster.io/guides/build/assets/asset-selection-syntax"
               target="_blank"
               rel="noopener noreferrer"
-              flex={{direction: 'row', alignItems: 'center', gap: 4}}
             >
-              <BodySmall>View documentation</BodySmall>
-              <Icon name="open_in_new" color={Colors.linkDefault()} />
-            </Box>
+              <Box flex={{direction: 'row', alignItems: 'center', gap: 4}}>
+                <BodySmall>View documentation</BodySmall>
+                <Icon name="open_in_new" color={Colors.linkDefault()} />
+              </Box>
+            </a>
           </Box>
         ) : null}
         <IndeterminateLoadingBar $loading={loading} />

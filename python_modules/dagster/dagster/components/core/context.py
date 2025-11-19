@@ -10,7 +10,7 @@ from dagster_shared import check
 from dagster_shared.yaml_utils.source_position import SourcePositionTree
 from typing_extensions import Self
 
-from dagster._annotations import PublicAttr, public
+from dagster._annotations import PublicAttr, deprecated, public
 from dagster._core.definitions.definitions_class import Definitions
 from dagster._utils import pushd
 from dagster.components.resolved.context import ResolutionContext
@@ -99,14 +99,7 @@ class ComponentDeclLoadContext:
         return dataclasses.replace(self, resolution_context=resolution_context)
 
     def with_rendering_scope(self, rendering_scope: Mapping[str, Any]) -> "Self":
-        return self._with_resolution_context(
-            self.resolution_context.with_scope(
-                **rendering_scope,
-                **{
-                    "project_root": str(self.project_root.resolve()),
-                },
-            )
-        )
+        return self._with_resolution_context(self.resolution_context.with_scope(**rendering_scope))
 
     def with_source_position_tree(self, source_position_tree: SourcePositionTree) -> "Self":
         return self._with_resolution_context(
@@ -165,13 +158,13 @@ class ComponentDeclLoadContext:
         return importlib.import_module(self.defs_relative_module_name(path))
 
     @overload
-    def load_component_at_path(self, defs_path: "ResolvableToComponentPath") -> "Component": ...
+    def load_component(self, defs_path: "ResolvableToComponentPath") -> "Component": ...
     @overload
-    def load_component_at_path(
+    def load_component(
         self, defs_path: "ResolvableToComponentPath", expected_type: type[T]
     ) -> T: ...
 
-    def load_component_at_path(
+    def load_component(
         self, defs_path: "ResolvableToComponentPath", expected_type: Optional[type[T]] = None
     ) -> Any:
         """Loads a component from the given path.
@@ -188,7 +181,32 @@ class ComponentDeclLoadContext:
         self.component_tree.mark_component_load_dependency(
             from_path=self.component_path, to_path=resolved_path
         )
-        return self.component_tree.load_component_at_path(resolved_path, expected_type)  # type: ignore[reportIncompatibleArgumentType]
+        return self.component_tree.load_component(resolved_path, expected_type)  # type: ignore[reportIncompatibleArgumentType]
+
+    @overload
+    def load_component_at_path(self, defs_path: "ResolvableToComponentPath") -> "Component": ...
+    @overload
+    def load_component_at_path(
+        self, defs_path: "ResolvableToComponentPath", expected_type: type[T]
+    ) -> T: ...
+
+    @deprecated(
+        breaking_version="1.13.0",
+        additional_warn_text="Use load_component instead.",
+    )
+    def load_component_at_path(
+        self, defs_path: "ResolvableToComponentPath", expected_type: Optional[type[T]] = None
+    ) -> Any:
+        """Loads a component from the given path.
+
+        Args:
+            defs_path: Path to the component to load. If relative, resolves relative to the defs root.
+
+        Returns:
+            Component: The component loaded from the given path.
+
+        """
+        return self.load_component(defs_path, expected_type)  # type: ignore[reportIncompatibleArgumentType]
 
     def load_structural_component_at_path(
         self, defs_path: "ResolvableToComponentPath"
@@ -284,7 +302,7 @@ class ComponentLoadContext(ComponentDeclLoadContext):
             component_decl=component_decl,
         )
 
-    def build_defs_at_path(self, defs_path: Union[Path, "ComponentPath"]) -> Definitions:
+    def build_defs(self, defs_path: Union[Path, "ComponentPath"]) -> Definitions:
         """Builds definitions from the given defs subdirectory. Currently
         does not incorporate postprocessing from parent defs modules.
 
@@ -300,7 +318,24 @@ class ComponentLoadContext(ComponentDeclLoadContext):
         self.component_tree.mark_component_defs_dependency(
             from_path=self.component_path, to_path=resolved_path
         )
-        return self.component_tree.build_defs_at_path(resolved_path)
+        return self.component_tree.build_defs(resolved_path)
+
+    @deprecated(
+        breaking_version="1.13.0",
+        additional_warn_text="Use build_defs instead.",
+    )
+    def build_defs_at_path(self, defs_path: Union[Path, "ComponentPath"]) -> Definitions:
+        """Builds definitions from the given defs subdirectory. Currently
+        does not incorporate postprocessing from parent defs modules.
+
+        Args:
+            defs_path: Path to the defs module to load. If relative, resolves relative to the defs root.
+
+        Returns:
+            Definitions: The definitions loaded from the given path.
+
+        """
+        return self.build_defs(defs_path)
 
     def for_path(self, path: Path) -> "Self":
         """Creates a new context for the given path.
