@@ -26,6 +26,8 @@ EXCLUDE_MISSING_RST = {
     "dagster.components.scaffold.scaffold.Scaffolder",
     "dagster.components.lib.sql_component.sql_component.SqlComponent",
     "dagster.components.core.component_tree.ComponentTree",
+    # Component testing utils - documented in dagster.components.testing namespace
+    "dagster.components.testing.utils.component_defs",
     # Core internal functionality
     "dagster._core.definitions.definitions_class.create_repository_using_definitions_args",
     # Core storage and compute management - internal functionality
@@ -101,9 +103,6 @@ EXCLUDE_MISSING_EXPORT = {
     "dagster.components.scaffold.scaffold.scaffold_with",
     "dagster.components.scaffold.scaffold.ScaffoldRequest",
     "dagster.components.scaffold.scaffold.Scaffolder",
-    # Component testing utils
-    "dagster.components.testing.utils.DefsFolderSandbox",
-    "dagster.components.testing.utils.create_defs_folder_sandbox",
 }
 
 # Hardcoded list of all RST symbols missing @public decorators
@@ -418,9 +417,9 @@ EXCLUDE_MISSING_PUBLIC = {
     "dagster.Scheduler",
     "dagster.ScheduleStorage",
     "dagster_polars.patito.patito_model_to_dagster_type",
-    # Component testing utils
-    "dagster.components.testing.utils.DefsFolderSandbox",
-    "dagster.components.testing.utils.create_defs_folder_sandbox",
+    # Component testing utils - RST references them without full path
+    "dagster.DefsFolderSandbox",
+    "dagster.create_defs_folder_sandbox",
 }
 # Total: 305 symbols
 
