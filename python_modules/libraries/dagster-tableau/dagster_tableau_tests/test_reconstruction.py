@@ -279,7 +279,7 @@ def test_load_assets_workspace_data_refreshable_workbooks(
         assert get_workbook.call_count == 1
         assert get_view.call_count == 3
         assert refresh_workbook.call_count == 1
-        assert get_job.call_count == 2
+        assert get_job.call_count == 1
         # The finish_code of the mocked get_job is 0, so no cancel_job is not called
         assert cancel_job.call_count == 0
 
@@ -382,7 +382,7 @@ def test_load_assets_workspace_data_refreshable_data_sources(
         assert get_view.call_count == 3
         assert get_data_source.call_count == 1
         assert refresh_data_source.call_count == 1
-        assert get_job.call_count == 2
+        assert get_job.call_count == 1
         # The finish_code of the mocked get_job is 0, so no cancel_job is not called
         assert cancel_job.call_count == 0
 

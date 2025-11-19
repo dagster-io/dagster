@@ -10,11 +10,11 @@ from dagster._core.definitions.tags.tag_set import NamespacedTagSet
 from dagster._record import record
 from dagster._serdes import whitelist_for_serdes
 from dagster._utils.cached_method import cached_method
-from dagster._utils.names import clean_name_lower_with_dots
+from dagster._utils.names import clean_name_lower
 
 TABLEAU_PREFIX = "tableau/"
 
-_coerce_input_to_valid_name = clean_name_lower_with_dots
+_coerce_input_to_valid_name = clean_name_lower
 
 
 WorkbookSelectorFn: TypeAlias = Callable[["TableauWorkbookMetadata"], bool]
@@ -328,8 +328,21 @@ class DagsterTableauTranslator:
             *["published datasource" if data.properties["isPublished"] else "embedded datasource"],
         }
 
+        if data.properties["isPublished"]:
+            asset_key = AssetKey([_coerce_input_to_valid_name(data.properties["name"])])
+        else:
+            workbook_id = data.properties["workbook"]["luid"]
+            workbook_data = data.workspace_data.workbooks_by_id[workbook_id]
+            asset_key = AssetKey(
+                [
+                    _coerce_input_to_valid_name(workbook_data.properties["name"]),
+                    "embedded_datasource",
+                    _coerce_input_to_valid_name(data.properties["name"]),
+                ]
+            )
+
         return AssetSpec(
-            key=AssetKey([_coerce_input_to_valid_name(data.properties["name"])]),
+            key=asset_key,
             tags={"dagster/storage_kind": "tableau", **TableauTagSet(asset_type="data_source")},
             metadata={
                 **TableauDataSourceMetadataSet(
