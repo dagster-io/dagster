@@ -2,7 +2,7 @@ type: my_project.lib.incremental_dbt_component.IncrementalDbtProjectComponent
 
 template_vars_module: .template_vars
 attributes:
-  project: '{{ project_root }}/dbt'
+  project: '{{ context.project_root }}/dbt'
   select: "config.materialized:incremental"
 post_processing:
   assets:
