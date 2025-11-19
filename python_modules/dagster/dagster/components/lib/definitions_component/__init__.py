@@ -1,6 +1,7 @@
 from pathlib import Path
 from typing import Optional
 
+from dagster._annotations import public
 from dagster._core.definitions.definitions_class import Definitions
 from dagster.components.component.component import Component
 from dagster.components.core.context import ComponentLoadContext
@@ -13,6 +14,7 @@ from dagster.components.resolved.model import Model
 ############
 
 
+@public
 class DefinitionsComponent(Component, Model, Resolvable):
     """An arbitrary set of Dagster definitions."""
 

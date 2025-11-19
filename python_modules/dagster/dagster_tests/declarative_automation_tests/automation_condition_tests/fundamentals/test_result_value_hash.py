@@ -1,6 +1,9 @@
+import datetime
+
 import dagster as dg
 import pytest
 from dagster import AutomationCondition as SC
+from dagster._core.definitions.asset_daemon_cursor import AssetDaemonCursor
 from dagster._core.definitions.asset_selection import AssetSelection
 
 from dagster_tests.declarative_automation_tests.scenario_utils.automation_condition_scenario import (
@@ -74,9 +77,60 @@ def test_node_unique_id() -> None:
         .ignore(AssetSelection.keys("b"))
     )
     assert (
-        condition.get_node_unique_id(parent_unique_id=None, index=None)
+        condition.get_node_unique_id(parent_unique_id=None, index=None, target_key=None)
         == "80f87fb32baaf7ce3f65f68c12d3eb11"
     )
     assert condition.get_backcompat_node_unique_ids(parent_unique_id=None, index=None) == [
         "35b152923d1d99348e85c3cbe426bcb7"
     ]
+
+
+def test_since_condition_cursor_backcompat() -> None:
+    # This cursor was generated on master branch after:
+    # - Initial evaluation at 2025-08-16 08:16:00
+    # - Advancing time by 1 hour (passing a cron tick) and evaluating
+    # - Materializing u1 and evaluating
+    # - Materializing u2 and evaluating
+    # It represents the state where we've seen u1 and u2 materialized, but not u3 yet.
+    SERIALIZED_CURSOR = '{"__class__": "AssetDaemonCursor", "evaluation_id": 4, "last_observe_request_timestamp_by_asset_key": {"__mapping_items__": []}, "previous_condition_cursors": [{"__class__": "AutomationConditionCursor", "effective_timestamp": 1755360960.0, "last_event_id": 2, "node_cursors_by_unique_id": {"3a9f75060a801f9d701f3a413d3bf357": {"__class__": "AutomationConditionNodeCursor", "candidate_subset": {"__class__": "AssetSubset", "asset_key": {"__class__": "AssetKey", "path": ["downstream"]}, "value": true}, "extra_state": null, "metadata": {}, "subsets_with_metadata": [], "true_subset": {"__class__": "AssetSubset", "asset_key": {"__class__": "AssetKey", "path": ["downstream"]}, "value": false}}, "70f16bbec00eb312c4da7cfd827c0d6f": {"__class__": "AutomationConditionNodeCursor", "candidate_subset": {"__class__": "AssetSubset", "asset_key": {"__class__": "AssetKey", "path": ["u2"]}, "value": true}, "extra_state": null, "metadata": {"reset_evaluation_id": {"__class__": "IntMetadataEntryData", "value": 1}, "reset_timestamp": {"__class__": "FloatMetadataEntryData", "value": 1755360960.0}, "trigger_evaluation_id": {"__class__": "IntMetadataEntryData", "value": 3}, "trigger_timestamp": {"__class__": "FloatMetadataEntryData", "value": 1755360960.0}}, "subsets_with_metadata": [], "true_subset": {"__class__": "AssetSubset", "asset_key": {"__class__": "AssetKey", "path": ["u2"]}, "value": true}}, "78fcf9818d90b7a754ce5ca8438f38a7": {"__class__": "AutomationConditionNodeCursor", "candidate_subset": {"__class__": "AssetSubset", "asset_key": {"__class__": "AssetKey", "path": ["downstream"]}, "value": true}, "extra_state": null, "metadata": {"reset_evaluation_id": {"__class__": "IntMetadataEntryData", "value": 0}, "reset_timestamp": {"__class__": "FloatMetadataEntryData", "value": 1755357360.0}, "trigger_evaluation_id": {"__class__": "IntMetadataEntryData", "value": 1}, "trigger_timestamp": {"__class__": "FloatMetadataEntryData", "value": 1755360960.0}}, "subsets_with_metadata": [], "true_subset": {"__class__": "AssetSubset", "asset_key": {"__class__": "AssetKey", "path": ["downstream"]}, "value": true}}, "8cdd899bf2549b7a5c2e859374ece3e0": {"__class__": "AutomationConditionNodeCursor", "candidate_subset": {"__class__": "AssetSubset", "asset_key": {"__class__": "AssetKey", "path": ["u1"]}, "value": true}, "extra_state": null, "metadata": {"reset_evaluation_id": {"__class__": "IntMetadataEntryData", "value": 1}, "reset_timestamp": {"__class__": "FloatMetadataEntryData", "value": 1755360960.0}, "trigger_evaluation_id": {"__class__": "IntMetadataEntryData", "value": 2}, "trigger_timestamp": {"__class__": "FloatMetadataEntryData", "value": 1755360960.0}}, "subsets_with_metadata": [], "true_subset": {"__class__": "AssetSubset", "asset_key": {"__class__": "AssetKey", "path": ["u1"]}, "value": true}}, "96cdedfb5f6eda4a495cd248e15b0199": {"__class__": "AutomationConditionNodeCursor", "candidate_subset": {"__class__": "AssetSubset", "asset_key": {"__class__": "AssetKey", "path": ["downstream"]}, "value": true}, "extra_state": null, "metadata": {}, "subsets_with_metadata": [], "true_subset": {"__class__": "AssetSubset", "asset_key": {"__class__": "AssetKey", "path": ["downstream"]}, "value": true}}, "9a75684cd0cb75d2ebc6d5766664af8d": {"__class__": "AutomationConditionNodeCursor", "candidate_subset": {"__class__": "AssetSubset", "asset_key": {"__class__": "AssetKey", "path": ["downstream"]}, "value": true}, "extra_state": "30941eb8f7bb4d6d5a93ddcb3d7d9a44", "metadata": {}, "subsets_with_metadata": [], "true_subset": {"__class__": "AssetSubset", "asset_key": {"__class__": "AssetKey", "path": ["downstream"]}, "value": false}}, "cb267651e07bf0097d6897293b5e0a16": {"__class__": "AutomationConditionNodeCursor", "candidate_subset": {"__class__": "AssetSubset", "asset_key": {"__class__": "AssetKey", "path": ["downstream"]}, "value": true}, "extra_state": null, "metadata": {}, "subsets_with_metadata": [], "true_subset": {"__class__": "AssetSubset", "asset_key": {"__class__": "AssetKey", "path": ["downstream"]}, "value": true}}, "de921ed0f21116b1537bdad77a7c3300": {"__class__": "AutomationConditionNodeCursor", "candidate_subset": {"__class__": "AssetSubset", "asset_key": {"__class__": "AssetKey", "path": ["u3"]}, "value": true}, "extra_state": null, "metadata": {"reset_evaluation_id": {"__class__": "IntMetadataEntryData", "value": 1}, "reset_timestamp": {"__class__": "FloatMetadataEntryData", "value": 1755360960.0}, "trigger_evaluation_id": {"__class__": "IntMetadataEntryData", "value": null}, "trigger_timestamp": {"__class__": "FloatMetadataEntryData", "value": null}}, "subsets_with_metadata": [], "true_subset": {"__class__": "AssetSubset", "asset_key": {"__class__": "AssetKey", "path": ["u3"]}, "value": false}}}, "previous_requested_subset": {"__class__": "AssetSubset", "asset_key": {"__class__": "AssetKey", "path": ["downstream"]}, "value": false}, "result_value_hash": "4600b054dde72ed5b654f1e698b73e0e"}], "previous_evaluation_state": []}'
+
+    downstream_key = dg.AssetKey("downstream")
+
+    @dg.asset
+    def u1() -> None: ...
+
+    @dg.asset
+    def u2() -> None: ...
+
+    @dg.asset
+    def u3() -> None: ...
+
+    condition = SC.on_cron("@hourly")
+
+    @dg.asset(key=downstream_key, deps=[u1, u2, u3], automation_condition=condition)
+    def downstream() -> None: ...
+
+    defs = dg.Definitions(assets=[u1, u2, u3, downstream])
+    instance = dg.DagsterInstance.ephemeral()
+
+    # Start at the same time as when the cursor was generated (after the cron tick)
+    current_time = datetime.datetime(2025, 8, 16, 8, 16, 0) + datetime.timedelta(hours=1)
+
+    # Deserialize the cursor from the string representation
+    cursor = dg.deserialize_value(SERIALIZED_CURSOR, AssetDaemonCursor)
+
+    # First evaluation with the deserialized cursor - nothing should be requested yet
+    # because we haven't materialized u3
+    result = dg.evaluate_automation_conditions(
+        defs, instance=instance, evaluation_time=current_time, cursor=cursor
+    )
+    assert result.total_requested == 0
+
+    # Now materialize u3 (the final parent that was missing)
+    instance.report_runless_asset_event(dg.AssetMaterialization(dg.AssetKey("u3")))
+
+    # Evaluate again - now downstream should be requested since all parents are materialized
+    result = dg.evaluate_automation_conditions(
+        defs, instance=instance, evaluation_time=current_time, cursor=result.cursor
+    )
+    assert result.total_requested == 1

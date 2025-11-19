@@ -820,6 +820,18 @@
                     "default": null,
                     "title": "Schedulername"
                 },
+                "logFormat": {
+                    "anyOf": [
+                        {
+                            "type": "string"
+                        },
+                        {
+                            "type": "null"
+                        }
+                    ],
+                    "default": null,
+                    "title": "Logformat"
+                },
                 "volumeMounts": {
                     "anyOf": [
                         {
@@ -3521,6 +3533,18 @@
                     ],
                     "default": null,
                     "title": "Loglevel"
+                },
+                "logFormat": {
+                    "anyOf": [
+                        {
+                            "type": "string"
+                        },
+                        {
+                            "type": "null"
+                        }
+                    ],
+                    "default": null,
+                    "title": "Logformat"
                 },
                 "schedulerName": {
                     "anyOf": [
