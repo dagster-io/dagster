@@ -16,7 +16,7 @@ Activate the project virtual environment:
 
 <CliInvocationExample contents="source ../.venv/bin/activate" />
 
-## 2. Scaffold a Python script component
+## 2. Scaffold a Python script component definition
 
 Now that you have a Dagster project, you can scaffold a Python script component. You'll need to provide a name for your component. In this example, we'll create a component that will execute a Python script to process sales data and generate a revenue report.
 
