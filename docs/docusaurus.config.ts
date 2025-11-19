@@ -12,12 +12,14 @@ const config: Config = {
   favicon: 'img/favicon.ico',
   baseUrl: '/',
   onBrokenLinks: 'throw',
-  onBrokenMarkdownLinks: 'throw',
   onBrokenAnchors: 'throw',
   organizationName: 'dagster',
   projectName: 'dagster',
   markdown: {
     mermaid: true,
+    hooks: {
+      onBrokenMarkdownLinks: 'throw',
+    },
   },
   themes: ['@docusaurus/theme-mermaid'],
   clientModules: [require.resolve('./src/clientModules/disableSlashSearch.js')],
