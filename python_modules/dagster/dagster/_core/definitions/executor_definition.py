@@ -335,6 +335,16 @@ def execute_in_process_executor(_) -> "InProcessExecutor":
 
 ASYNC_CONFIG = Field(
     {
+        "max_concurrent": Field(
+            Noneable(Int),
+            default_value=None,
+            description=(
+                "The number of asynchronous tasks that may run concurrently. "
+                "By default, this is set to None, which allows for an unlimited number of "
+                "concurrent tasks."
+            ),
+        ),
+        "tag_concurrency_limits": get_tag_concurrency_limits_config(),
         "retries": get_retries_config(),
         "step_dependency_config": get_step_dependency_config_field(),
     },
