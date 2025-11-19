@@ -1,5 +1,5 @@
 ---
-title: 'Dagster & Python scripts with components'
+title: Build pipelines with Python scripts
 description: Execute Python scripts as assets with Dagster components
 sidebar_position: 403
 ---
