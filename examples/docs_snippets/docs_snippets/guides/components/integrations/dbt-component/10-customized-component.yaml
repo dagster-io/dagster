@@ -1,5 +1,5 @@
 type: dagster_dbt.DbtProjectComponent
 
 attributes:
-  project: '{{ project_root }}/dbt'
+  project: '{{ context.project_root }}/dbt'
   select: "customers"

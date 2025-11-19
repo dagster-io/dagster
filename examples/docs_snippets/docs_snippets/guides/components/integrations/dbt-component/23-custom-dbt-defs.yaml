@@ -2,7 +2,7 @@ type: my_project.lib.custom_dbt_component.CustomDbtProjectComponent
 
 template_vars_module: .template_vars
 attributes:
-  project: '{{ project_root }}/dbt'
+  project: '{{ context.project_root }}/dbt'
   select: "customers"
 post_processing:
   assets:
