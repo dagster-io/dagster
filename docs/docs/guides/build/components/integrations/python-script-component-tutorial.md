@@ -36,7 +36,7 @@ Next, you will need to create a Python script that will be executed by the compo
   language="python"
 />
 
-This script will be executed by Dagster in a subprocess. Any output printed to stdout/stderr will be captured and displayed in the Dagster UI logs.
+This script will be executed by Dagster in a subprocess. Any output printed to `stdout/stderr` will be captured and displayed in the Dagster UI logs.
 
 ## 4. Configure your component
 
