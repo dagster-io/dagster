@@ -98,7 +98,7 @@ locations:
 For more information about agent queue routing or code location configuration, refer to:
 
 - [Agent queue routing](/deployment/dagster-plus/hybrid/multiple#routing-requests-to-specific-agents)
-- [build.yaml code location configuration reference](/guides/build/projects/project-structure/build-yaml)
+- [build.yaml code location configuration reference](/deployment/dagster-plus/management/build-yaml)
 
 </TabItem>
 

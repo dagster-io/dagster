@@ -259,7 +259,7 @@ helm --namespace dagster-cloud upgrade agent \
 
 <TabItem value="code-location-secrets" label="Single code location">
 
-Modify the [`build.yaml` file](/guides/build/projects/project-structure/build-yaml) in your project's Git repository:
+Modify the [`build.yaml` file](/deployment/dagster-plus/management/build-yaml) in your project's Git repository:
 
 ```yaml
 # build.yaml
@@ -291,7 +291,7 @@ If you need to request secrets from a secret manager like AWS Secrets Manager or
 
 ### Use a different service account for a specific code location
 
-Modify the [`build.yaml` file](/guides/build/projects/project-structure/build-yaml) in your project's Git repository:
+Modify the [`build.yaml` file](/deployment/dagster-plus/management/build-yaml) in your project's Git repository:
 
 ```yaml
 # build.yaml
@@ -427,7 +427,7 @@ First determine if you want to change the requested resource for everything in a
 
 <TabItem value="code-location-resource" label="Resources for everything in a code location">
 
-Modify the [`build.yaml` file](/guides/build/projects/project-structure/build-yaml) in your project's Git repository:
+Modify the [`build.yaml` file](/deployment/dagster-plus/management/build-yaml) in your project's Git repository:
 
 ```yaml
 # build.yaml

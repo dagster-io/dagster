@@ -37,7 +37,7 @@ If you're a Dagster **Editor** or **Admin**, you can only set environment variab
 
 :::
 
-You can set environment variables for specific code locations by adding them to your agent's configuration in your project's [`build.yaml` file](/guides/build/projects/project-structure/build-yaml). The `container_context` property in this file sets the variables in the agent's environment.
+You can set environment variables for specific code locations by adding them to your agent's configuration in your project's [`build.yaml` file](/deployment/dagster-plus/management/build-yaml). The `container_context` property in this file sets the variables in the agent's environment.
 
 This approach is functionally the same as [setting environment variables using the Dagster+ UI](/deployment/dagster-plus/management/environment-variables/dagster-ui).
 
