@@ -523,8 +523,7 @@ def test_k8s_executor_owner_references_garbage_collection(
         time.sleep(1)
 
 
-# K8s issue for Python 3.12 and 3.13 not supported https://github.com/kubernetes-client/python/issues/2419
-@pytest.mark.skipif(sys.version_info >= (3, 12), reason="Python 3.12 and 3.13 not supported")
+@pytest.mark.skipif(sys.version_info > (3, 12), reason="Flaky on Python 3.13")
 @pytest.mark.integration
 def test_k8s_executor_owner_references_disabled(
     dagster_instance_for_k8s_run_launcher,
