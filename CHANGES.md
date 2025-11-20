@@ -1,5 +1,39 @@
 # Changelog
 
+## 1.12.3 (core) / 0.28.3 (libraries)
+
+### New
+
+- Updated the cursoring logic of `AutomationCondition.since()`/`AutomationCondition.newly_true()` to make them retain access to their stored data in a wider range of scenarios where the underlying condition structure is changed.
+- Added a `--use-active-venv` method to a variety of `dg` commands. (Thanks, [@cmpadden](https://github.com/cmpadden)!)
+- The `build_defs_at_path` and `load_component_at_path` methods on the `ComponentLoadContext` class have been renamed to `build_defs` and `load_component` respectively. The previous names have been preserved for backcompat.
+- The template variables available in the default resolution scope for Components have been reorganized / expanded:
+  - `{{ automation_condition.on_cron(...) }} ` -> `{{ dg.AutomationCondition.on_cron(...) }}`
+  - **new: ** All `AutomationCondition` static constructors may be accessed via the `dg` context, e.g.:
+    - `{{ dg.AutomationCondition.on_missing() & dg.AutomationCondition.in_latest_time_window() }}`
+  - **new: ** All `PartitionsDefinition` subclasses are now available via the `dg` context, e.g.:
+  - `{{ dg.StaticPartitionsDefinition(['a', 'b', 'c']) }}`
+  - `{{ dg.DailyPartitionsDefinition('2025-01-01') }}`
+  - `{{ project_root }}` -> `{{ context.project_root }}`
+  - `{{ build_definitions_at_path(...) }}` -> `{{ context.build_defs(...) }}`
+  - `{{ load_component_at_path(...) }}` -> `{{ context.load_component(...) }}`
+  - All previous template vars will continue to work as before for backcompat.
+- [ui] Improve browser performance for large asset graphs.
+- [dagster-snowflake] Added `create_snowpark_session()` which provides a convenient way to create a Snowpark session. (Thanks, [@stevenayers](https://github.com/stevenayers)!)
+- [dagster-snowflake] Added `get_databases()`, `get_schemas()`, `get_tables()`, `get_views()`, `get_pipes()` & `get_stages()` which provide a pythonic interface for Snowflake introspection. (Thanks, [@stevenayers](https://github.com/stevenayers)!)
+- [dagster-dbt] You can now override the `op_config_schema` property on the `DbtProjectComponent` to customize how your dbt execution can be configured at runtime.
+
+### Bugfixes
+
+- Added the ability to execute refreshes of embedded and published datasources when using the TableauComponent.
+- Fixed a bug in asset partitions where the partition range selector would sometimes stop working.
+- [dagster-dbt] Fixed a `FileExistsError` on Windows when reloading `dbt` project definitions by ensuring the local project directory creation handles pre-existing directories. (Thanks, [@Jongwan93](https://github.com/Jongwan93)!)
+- [dagster-dbt] Fixed an issue introduced in version 1.12.2 that caused the `DbtProjectComponent` to not produce asset checks for tests on dbt sources. (Thanks, [@stevenayers](https://github.com/stevenayers)!)
+
+### Documentation
+
+- Added documentation for the community dagster-slurm integration. (Thanks, [@geoHeil](https://github.com/geoHeil)!)
+
 ## 1.12.2 (core) / 0.28.2 (libraries)
 
 ### New
