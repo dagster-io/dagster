@@ -1,4 +1,4 @@
-import {Box, Colors, ConfigTypeSchema, Icon, IconWrapper} from '@dagster-io/ui-components';
+import {Box, Colors, ConfigTypeSchema, Icon} from '@dagster-io/ui-components';
 import styled from 'styled-components';
 
 import {Description} from './Description';
@@ -91,7 +91,7 @@ const ContextResourceContainer = styled.div`
   & h4 {
     margin-top: -2px;
   }
-  & ${IconWrapper} {
+  & .iconGlobal {
     margin-right: 8px;
   }
 `;

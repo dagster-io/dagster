@@ -1,4 +1,4 @@
-import {Box, Colors, FontFamily, IconWrapper, UnstyledButton} from '@dagster-io/ui-components';
+import {Box, Colors, FontFamily, UnstyledButton} from '@dagster-io/ui-components';
 import {ReactNode} from 'react';
 import styled from 'styled-components';
 
@@ -20,12 +20,13 @@ export const TopNavButton = styled(UnstyledButton)`
     outline: ${Colors.focusRing()} auto 1px;
   }
 
-  ${IconWrapper} {
+  .iconGlobal {
     background-color: ${Colors.accentWhite()};
     transition: background-color 100ms linear;
   }
 
-  :focus ${IconWrapper}, :hover ${IconWrapper} {
+  :focus .iconGlobal,
+  :hover .iconGlobal {
     background-color: ${Colors.navTextHover()};
   }
 `;

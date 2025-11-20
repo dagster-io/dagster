@@ -7,7 +7,6 @@ import {
   DialogHeader,
   Group,
   Icon,
-  IconWrapper,
   Spinner,
   Tooltip,
 } from '@dagster-io/ui-components';
@@ -204,11 +203,11 @@ const ReloadButton = styled.button`
     outline: none;
   }
 
-  & ${IconWrapper} {
+  & .iconGlobal {
     transition: color 0.1s ease-in-out;
   }
 
-  :hover ${IconWrapper} {
+  :hover .iconGlobal {
     color: ${Colors.accentBlue()};
   }
 `;

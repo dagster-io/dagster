@@ -2,7 +2,7 @@ import * as React from 'react';
 import styled, {css} from 'styled-components';
 
 import {Colors} from './Color';
-import {Icon, IconName, IconWrapper} from './Icon';
+import {Icon, IconName} from './Icon';
 import {FontFamily} from './styles';
 
 interface Props extends Omit<React.ComponentPropsWithRef<'input'>, 'onChange'> {
@@ -64,7 +64,7 @@ export const TextInputContainerStyles = css`
 export const TextInputContainer = styled.div<{$disabled?: boolean}>`
   ${TextInputContainerStyles}
 
-  > ${IconWrapper}:first-child {
+  > .iconGlobal:first-child {
     position: absolute;
     left: 8px;
     top: 8px;

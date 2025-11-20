@@ -6,7 +6,6 @@ import {
   Group,
   Icon,
   Spinner,
-  SpinnerWrapper,
   SplitPanelContainer,
   useViewport,
 } from '@dagster-io/ui-components';
@@ -813,7 +812,7 @@ const GanttChartContainer = styled.div`
       filter: brightness(115%);
     }
 
-    ${SpinnerWrapper} {
+    .spinnerGlobal {
       display: inline-block;
       vertical-align: text-bottom;
       padding-right: 4px;

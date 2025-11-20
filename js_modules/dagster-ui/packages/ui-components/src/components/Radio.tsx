@@ -3,7 +3,6 @@ import {Radio as BlueprintRadio} from '@blueprintjs/core';
 import styled from 'styled-components';
 
 import {Colors} from './Color';
-import {IconWrapper} from './Icon';
 
 // Re-export Radio from Blueprint so that we don't have to deal with the lint
 // error elsewhere.
@@ -28,7 +27,7 @@ export const RadioContainer = styled.div`
     cursor: default;
     color: ${Colors.textDisabled()};
 
-    ${IconWrapper} {
+    .iconGlobal {
       opacity: 0.4;
     }
   }

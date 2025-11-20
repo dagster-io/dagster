@@ -1,4 +1,4 @@
-import {Box, Colors, IconWrapper, Tooltip, UnstyledButton} from '@dagster-io/ui-components';
+import {Box, Colors, Tooltip, UnstyledButton} from '@dagster-io/ui-components';
 import {Link} from 'react-router-dom';
 import styled, {css} from 'styled-components';
 
@@ -91,7 +91,7 @@ const sharedSideNavItemStyle = css<{$active: boolean}>`
   }
 
   .iconAndLabel {
-    ${IconWrapper} {
+    .iconGlobal {
       background-color: ${({$active}) => ($active ? Colors.textBlue() : Colors.textDefault())};
     }
   }
