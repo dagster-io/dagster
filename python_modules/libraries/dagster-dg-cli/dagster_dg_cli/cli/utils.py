@@ -31,6 +31,7 @@ from dagster_dg_core.utils.editor import (
 )
 from dagster_dg_core.utils.telemetry import cli_telemetry_wrapper
 from dagster_shared import check
+from dagster_shared.serdes import deserialize_value
 from dagster_shared.serdes.objects import EnvRegistryKey
 from packaging.version import Version
 from rich.live import Live
@@ -493,20 +494,28 @@ async def _refresh_defs_state_with_live_display(
     type=click.Choice(["LOCAL_FILESYSTEM", "VERSIONED_STATE_STORAGE"]),
     help="Only refresh components with the specified management type. Can be specified multiple times to include multiple types. Defaults to all management types except for LEGACY_CODE_SERVER_SNAPSHOTS.",
 )
+@click.option(
+    "--instance-ref",
+    type=click.STRING,
+    required=False,
+    hidden=True,
+)
 @cli_telemetry_wrapper
 def refresh_defs_state(
     target_path: Path,
     defs_state_key: tuple[str, ...],
     management_type: tuple[str, ...],
+    instance_ref: Optional[str],
     **other_opts: object,
 ) -> None:
     """Refresh the defs state for the current project."""
     from dagster._cli.utils import get_possibly_temporary_instance_for_cli
     from dagster._core.instance.config import is_dagster_home_set
+    from dagster._core.instance.ref import InstanceRef
     from dagster_shared.serdes.objects.models.defs_state_info import DefsStateManagementType
 
     # Check if DAGSTER_HOME is set before proceeding
-    if not is_dagster_home_set():
+    if not instance_ref and not is_dagster_home_set():
         # emit warning
         click.echo(
             click.style(
@@ -524,7 +533,10 @@ def refresh_defs_state(
     cli_config = normalize_cli_config(other_opts, click.get_current_context())
     dg_context = DgContext.for_project_environment(target_path, cli_config)
 
-    with get_possibly_temporary_instance_for_cli("dg utils refresh-defs-state") as instance:
+    with get_possibly_temporary_instance_for_cli(
+        "dg utils refresh-defs-state",
+        instance_ref=deserialize_value(instance_ref, InstanceRef) if instance_ref else None,
+    ) as instance:
         defs_state_keys = set(defs_state_key) if defs_state_key else None
         management_types = (
             {DefsStateManagementType(mt) for mt in management_type}
