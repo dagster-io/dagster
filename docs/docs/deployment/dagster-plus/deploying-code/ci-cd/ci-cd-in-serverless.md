@@ -11,7 +11,7 @@ This guide only applies to [Dagster+ Serverless deployments](/deployment/dagster
 
 :::
 
-If you're a GitHub or GitLab user, you can use our predefined workflows to deploy and synchronize your code to Dagster+ Serverless. You can also use other Git providers, or a local Git repository with the [dagster-cloud CLI](/api/clis/dagster-cloud-cli) to run your own CI/CD process.
+If you're a GitHub or GitLab user, you can use our predefined workflows to deploy and synchronize your code to Dagster+ Serverless. You can also use other Git providers, or a local Git repository with the [dg CLI](/api/clis/) to run your own CI/CD process.
 
 :::note
 
@@ -46,12 +46,9 @@ Once you have set up the repo, pushing your code changes to the `main` branch wi
 
 If you don't want to use our automated GitHub/GitLab process, you can use the [`dagster-cloud` command-line CLI](/api/clis/dagster-cloud-cli) in another CI environment or locally.
 
-1. First, create a new project by doing one of the following:
+1. First, [create a new project with the `create-dagster project` command](/guides/build/projects/creating-projects). **Note:** You will need to add `dagster-cloud` as a dependency in your `pyproject.toml` file after creating the project.
 
-   - Cloning the [Serverless quickstart example](https://github.com/dagster-io/dagster/tree/master/examples/quickstart_etl)
-   - [Using the `create-dagster project` command](/guides/build/projects/creating-projects). **Note:** If you create your project from the command line, you will need to add `dagster-cloud` as a dependency in your `pyproject.toml` file and add a `dagster-plus-deploy.yml` workflow file to the `.github/workflows` directory. See the [Serverless quickstart example repo](https://github.com/dagster-io/dagster-cloud-serverless-quickstart) for examples of both.
-
-2. Next, install the [`dagster-cloud` CLI](/api/clis/dagster-cloud-cli/installing-and-configuring) and use the `configure` command to authenticate it to your Dagster+ organization:
+2. Next, install the [`dg` CLI](/api/clis/dagster-cloud-cli/installing-and-configuring) and use the `configure` command to authenticate it to your Dagster+ organization:
 
    ```shell
    pip install dagster-cloud
