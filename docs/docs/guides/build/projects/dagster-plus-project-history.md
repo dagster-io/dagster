@@ -2,22 +2,22 @@
 description: Track and manage project history and rollbacks in Dagster+.
 sidebar_position: 500
 tags: [dagster-plus-feature]
-title: Dagster+ project history and rollbacks
+title: Dagster+ project (code location) history and rollbacks
 ---
 
 import DagsterPlus from '@site/docs/partials/\_DagsterPlus.md';
 
 <DagsterPlus />
 
-Dagster+ automatically tracks metadata every time a project is loaded, which you can use to understand when changes have been made, and what those changes were. You can also use this metadata to quickly redeploy an older project version.
+Dagster+ automatically tracks metadata every time a project (code location) is loaded, which you can use to understand when changes have been made, and what those changes were. You can also use this metadata to quickly redeploy an older project version.
 
 ## Viewing project history
 
 1. In the Dagster+ UI, navigate to the **Deployment** tab.
 2. In the row associated with the project you're interested in, click **View history** in the **Updated** column.
 
-TK - update screenshot
-![Screenshot highlighting the "Updated" column for a project](/images/dagster-plus/deployment/code-locations/view-code-location-history.png)
+{/* TODO - update screenshot when code location renamed in UI */}
+![Screenshot highlighting the "Updated" column for a project/code location](/images/dagster-plus/deployment/code-locations/view-code-location-history.png)
 
 This will bring up a modal showing a history of every time that project has been loaded, and metadata associated with that load. If you have connected Dagster+ to a GitHub or GitLab repository, each row will have a link to the commit that was deployed at that point in time.
 
@@ -45,8 +45,8 @@ If you notice an issue with newly deployed code, or your code fails to deploy su
 2. In the row associated with the project you're interested in, click **View history** in the **Updated** column.
 3. In the **Actions** column click the dropdown menu to the right of **View metadata**, select **Rollback to this version**.
 
-TK - update screenshot
-![Screenshot highlighting the "Updated" column for a project](/images/dagster-plus/deployment/code-locations/rollback-code-location.png)
+{/* TODO - update screenshot when code location renamed in UI */}
+![Screenshot highlighting the "Updated" column for a project/code location](/images/dagster-plus/deployment/code-locations/rollback-code-location.png)
 
 :::tip
 
