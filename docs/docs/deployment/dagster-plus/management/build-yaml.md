@@ -24,40 +24,40 @@ In older deployments, this file may be called `dagster_cloud.yaml`.
 
 The `build.yaml` file should be placed in the root of your Dagster project, similar to the example below:
 
-  ```shell
-  my-project
-  ├── build.yaml
-  ├── Dockerfile
-  ├── pyproject.toml
-  ├── README.md
-  ├── src
-  │   └── my_project
-  │       ├── __init__.py
-  │       ├── definitions.py
-  │       └── defs
-  │           └── __init__.py
-  ├── tests
-  │   └── __init__.py
-  └── uv.lock
+```shell
+my-project
+├── build.yaml
+├── Dockerfile
+├── pyproject.toml
+├── README.md
+├── src
+│   └── my_project
+│       ├── __init__.py
+│       ├── definitions.py
+│       └── defs
+│           └── __init__.py
+├── tests
+│   └── __init__.py
+└── uv.lock
 
-  ```
+```
 
 </TabItem>
 <TabItem value="multiple_projects" label="Workspace (multiple projects)">
 
 The `build.yaml` file should be placed in the root of your Dagster workspace, similar to the example below:
 
-  ```shell
-  my-workspace
-  ├── build.yaml
-  ├── deployments
-  │   └── local
-  │       ├── pyproject.toml
-  │       └── uv.lock
-  ├── dg.toml
-  └── projects
+```shell
+my-workspace
+├── build.yaml
+├── deployments
+│   └── local
+│       ├── pyproject.toml
+│       └── uv.lock
+├── dg.toml
+└── projects
 
-  ```
+```
 
 </TabItem>
 </Tabs>
@@ -116,8 +116,8 @@ locations:
       package_name: example_etl
 ```
 
-| Property        | Description                                                                            | Format   |
-| --------------- | -------------------------------------------------------------------------------------- | -------- |
+| Property        | Description                                                                              | Format   |
+| --------------- | ---------------------------------------------------------------------------------------- | -------- |
 | `location_name` | The name of your Dagster project that will appear in the Dagster UI Code locations page. | `string` |
 
 ### Code source
@@ -222,7 +222,7 @@ locations:
 | Property          | Description                                                                                                                                                           | Format                     | Default |
 | ----------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------- | ------- |
 | `build.directory` | The path to the directory in your project that you want to deploy. If there are subdirectories, you can specify the path to only deploy a specific project directory. | `string` (path)            | `.`     |
-| `build.registry`  | **Applicable to Hybrid deployments.** The Docker registry to push your Dagster project to                                                                               | `string` (docker registry) |         |
+| `build.registry`  | **Applicable to Hybrid deployments.** The Docker registry to push your Dagster project to                                                                             | `string` (docker registry) |         |
 
 ### Python executable
 
