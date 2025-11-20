@@ -78,6 +78,7 @@ import collapse_arrows from '../icon-svgs/collapse_arrows.svg';
 import collapse_fullscreen from '../icon-svgs/collapse_fullscreen.svg';
 import column_lineage from '../icon-svgs/column_lineage.svg';
 import column_schema from '../icon-svgs/column_schema.svg';
+import compass from '../icon-svgs/compass.svg';
 import compute_kind from '../icon-svgs/compute_kind.svg';
 import concept_book from '../icon-svgs/concept_book.svg';
 import concurrency from '../icon-svgs/concurrency.svg';
@@ -504,6 +505,7 @@ export const Icons = {
   collapse_arrows,
   column_lineage,
   column_schema,
+  compass,
   compute_kind,
   concept_book,
   concurrency,
