@@ -43,122 +43,14 @@ Depending on your use case or if you're using Dagster+, you may also need to add
 | File/Directory | Description | OSS | Dagster+ |
 |----------------|-------------|-----|----------|
 | dagster.yaml   | Configures your Dagster instance, including defining storage locations, run launchers, sensors, and schedules. For more information. including a list of use cases and available options, see the [`dagster.yaml` reference](/deployment/oss/dagster-yaml).<br /><br />For [Dagster+ Hybrid deployments](/deployment/dagster-plus/hybrid), this file can be used to customize the [Hybrid agent](/deployment/dagster-plus/management/customizing-agent-settings). | Optional | Optional |
-| build.yaml | Defines projects for Dagster+ deployment. For more information, see the [`build.yaml` reference](/guides/build/projects/project-structure/build-yaml). | Not applicable | Recommended for Dagster+ Hybrid |
-| deployment_settings.yaml | Configures settings for full deployments in Dagster+, including run queue priority and concurrency limits. For more information, see the [full deployment settings reference](/deployment/dagster-plus/deploying-code/full-deployments/full-deployment-settings-reference).<br /><br />**Note:** This file can be named anything, but we recommend choosing a name that is easy to understand. | Not applicable | Optional |
-| dg.toml | Defines multiple Dagster projects in a workspace for local development or deploying to a production OSS deployment. For more information and available options, see the [`dg.toml` file reference](/guides/build/projects/workspaces/dg-toml) | Optional | TK |
-| .github/dagster-plus-deploy.yml | GitHub Action workflow file used for CI/CD. For more information, see [CI/CD in Dagster+ Serverless](/deployment/dagster-plus/deploying-code/ci-cd/ci-cd-in-serverless) | Not applicable | Dagster+ Serverless only |
-| .github/dagster-cloud-deploy.yml | GitHub Action workflow file used for CI/CD. For more information, see [CI/CD in Dagster+ Hybrid](/deployment/dagster-plus/deploying-code/ci-cd/ci-cd-in-serverless) | Not applicable | Dagster+ Hybrid only |
+| deployment_settings.yaml | Configures settings for [full deployments](/deployment/dagster-plus/deploying-code/full-deployments) in Dagster+, including run queue priority and concurrency limits. See the [full deployment settings reference](/deployment/dagster-plus/deploying-code/full-deployments/full-deployment-settings-reference).<br /><br />**Note:** This file can be named anything, but we recommend choosing a name that is easy to understand. | Not applicable | Optional |
+| build.yaml | Defines projects for Dagster+ deployment. See the [`build.yaml` reference](/guides/build/projects/project-structure/build-yaml). | Not applicable | Dagster+ Hybrid only |
+| .github/dagster-plus-deploy.yml | GitHub Action workflow file used for CI/CD. | Not applicable | Dagster+ Serverless only |
+| .github/dagster-cloud-deploy.yml | GitHub Action workflow file used for CI/CD. | Not applicable | Dagster+ Hybrid only |
+| .gitlab-ci.yml | GitLab CI/CD configuration file. | Not applicable | Dagster+ Serverless or Hybrid only |
 
-## Deployment-specific project structures
 
-Using the default project skeleton, let's take a look at how some example Dagster projects would be structured in the following deployment scenarios:
+## CI/CD configuration files
 
-- [Local development](#local-development)
-- [Dagster Open Source deployment](#dagster-open-source-deployment)
-- [Dagster+ deployment](#dagster-deployment)
-
-:::note Configuration file location
-
-With the exception of [`build.yaml`](/guides/build/projects/project-structure/build-yaml), it's not necessary for configuration files to be located with your project files. These files typically need to be located in `DAGSTER_HOME`. For example, in larger deployments, `DAGSTER_HOME` and Dagster infrastructure configuration can be managed separately from the projects they support.
-
-:::
-
-### Local development
-
-<Tabs>
-<TabItem value="Single Dagster project">
-
-For local development, a [single Dagster project](/guides/build/projects/creating-projects) might look like this:
-
-<Tabs groupId="package-manager">
-  <TabItem value="uv" label="uv" >
-
-  <CliInvocationExample path="docs_snippets/docs_snippets/guides/projects/uv-tree-project.txt" />
-
-  </TabItem>
-  <TabItem value="pip" label="pip">
-
-  <CliInvocationExample path="docs_snippets/docs_snippets/guides/projects/pip-tree-project.txt" />
-
-  </TabItem>
-</Tabs>
-
-</TabItem>
-<TabItem value="Multiple Dagster projects">
-
-For local development, a [workspace with multiple Dagster projects](/guides/build/projects/workspaces/creating-workspaces) might look like this:
-
-<Tabs groupId="package-manager">
-  <TabItem label="uv" value="uv">
-
-  <CliInvocationExample path="docs_snippets/docs_snippets/guides/projects/uv-tree-workspace.txt" />
-
-  </TabItem>
-  <TabItem label="pip" value="pip">
-
-  <CliInvocationExample path="docs_snippets/docs_snippets/guides/projects/pip-tree-workspace.txt" />
-
-  </TabItem>
-</Tabs>
-
-</TabItem>
-</Tabs>
-
-### Dagster Open Source deployment
-
-Once you're ready to move from working locally to deploying Dagster to your infrastructure, use our [deployment guides](/deployment/oss/deployment-options) to get up and running. Dagster projects and workspaces deployed to OSS will have the same structure as the [local development](#local-development) examples, with the addition of an optional `dagster.yaml` Dagster instance configuration file, along with any deployment-specific configuration files required by your deployment type.
-
-### Dagster+ deployment
-
-Depending on whether you're using Dagster+ Serverless or Hybrid, your project structure might look slightly different.
-
-#### Dagster+ Serverless
-
-For a Dagster+ Serverless deployment, a project might look like this:
-
-<Tabs groupId="package-manager">
-  <TabItem value="uv" label="uv">
-
-  <CliInvocationExample path="docs_snippets/docs_snippets/guides/projects/uv-tree-project-serverless.txt" />
-
-  </TabItem>
-  <TabItem value="pip" label="pip">
-
-  <CliInvocationExample path="docs_snippets/docs_snippets/guides/projects/pip-tree-project-serverless.txt" />
-
-  </TabItem>
-</Tabs>
-
-:::info GitHub Actions workflow file
-
-If you use GitHub Actions for CI/CD, your project will also contain a `.github/dagster-plus-deploy.yml` file. For more information on configuring CI/CD for Dagster+ Serverless, including with non-GitHub providers, see [CI/CD in Dagster+ Serverless](/deployment/dagster-plus/deploying-code/ci-cd/ci-cd-in-serverless).
-
-:::
-
-#### Dagster+ Hybrid deployment
-
-For a Dagster+ Hybrid deployment, a project might look like this:
-
-<Tabs groupId="package-manager">
-
-  <TabItem value="uv" label="uv">
-
-  <CliInvocationExample path="docs_snippets/docs_snippets/guides/projects/uv-tree-project-hybrid.txt" />
-
-  </TabItem>
-  <TabItem value="pip" label="pip">
-
-  <CliInvocationExample path="docs_snippets/docs_snippets/guides/projects/pip-tree-project-hybrid.txt" />
-
-  </TabItem>
-</Tabs>
-
-:::info GitHub Actions workflow file
-
-If you use GitHub Actions for CI/CD, your project will also contain a `.github/dagster-cloud-deploy.yml` file. For more information on configuring CI/CD for Dagster+ Hybrid, including with non-GitHub providers, see [CI/CD in Dagster+ Hybrid](/deployment/dagster-plus/deploying-code/ci-cd/ci-cd-in-hybrid).
-
-:::
-
-## Next steps
-
-Now that you've learned about the default files in a Dagster project, we recommend checking out the [Structuring your project guide](/guides/build/projects/project-structure/organizing-dagster-projects) to learn how to sustainably scale your project.
+- For **OSS deployments**, you can add your own CI/CD files as needed.
+- For **Dagter+ deployments**, you can use the `dg plus deploy configure` CLI command to generate CI/CD files for GitHub or GitLab, or set your system to use the necessary `dg deploy` CLI commands if you use a different Git provider. For more information, see the [Dagster+ CI/CD documentation](/deployment/dagster-plus/deploying-code/ci-cd).

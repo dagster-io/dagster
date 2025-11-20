@@ -15,12 +15,12 @@ This guide only applies to [Dagster+ Hybrid deployments](/deployment/dagster-plu
 
 You can configure CI/CD for your project using GitHub or a non-GitHub CI/CD provider.
 
-- If you use [GitHub](#github) as a CI/CD provider, you can use `dg` CLI to scaffold a GitHub Actions workflow YAML file.
+- If you use [GitHub](#github) or [GitLab](#gitlab) as a CI/CD provider, you can use the `dg` CLI to scaffold a GitHub Actions workflow YAML file.
 - If you use a [non-GitHub CI/CD provider](#non-github), you can configure CI/CD using the `dg` CLI.
 
 :::info
 
-This guide assumes you have an existing Dagster project and have not already scaffolded a GitHub Actions workflow file. For project creation steps, see [Creating Dagster projects](/guides/build/projects/creating-projects).
+This guide assumes you have created a Dagster project with a `build.yaml` file and a Dockerfile, but have not yet scaffolded a CI/CD configuration file. For project creation steps, see [Creating Dagster projects](/guides/build/projects/creating-projects).
 
 :::
 
@@ -55,6 +55,20 @@ After you make the above changes and commit the workflow file, the CI process sh
 During the deployment, the agent will attempt to load your code and update the metadata in Dagster+. When that has finished, you should see the GitHub Action complete successfully, and also be able to see the code location under the **Deployment** tag in Dagster+.
 
 <UpdateGitHubActionVersion />
+
+## GitLab
+
+### Step 1. Generate the GitLab CI/CD configuration file
+
+To set up continuous integration with GitLab, you can use the [`dg plus deploy configure CLI command`](/api/clis/dg-cli/dg-plus#deploy) to generate the GitLab CI/CD configuration file:
+
+```shell
+dg plus deploy configure --git-provider gitlab
+```
+
+### Step 2. Configure the GitLab CI/CD configuration file
+
+TK
 
 ## Non-GitHub CI/CD provider \{#non-github}
 

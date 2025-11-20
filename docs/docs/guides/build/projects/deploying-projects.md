@@ -62,7 +62,31 @@ Get started with [Dagster+ Hybrid](/deployment/dagster-plus/getting-started), if
 
       - A Dockerfile
       - A `build.yaml` configuration file
-      - A `.github/dagster-cloud-deploy.yml` GitHub Action workflow configuration file for continuous deployment.
+      - A `.github/dagster-cloud-deploy.yml` GitHub Action workflow configuration file.
+   ::: 
+   </TabItem>
+   <TabItem value="gitlab" label="CI/CD with GitLab">
+   1. Change to the project directory:
+      ```shell
+      cd my-project
+      ```
+   2. Initialize a Git repository:
+      ```shell
+      git init .
+      ```
+   3. Use the `dg` CLI to scaffold deployment configuration files:
+      ```shell
+      dg plus deploy configure hybrid --git-provider gitlab
+      ```
+   4. Update the `build.yaml` file with your Docker registry.
+   
+   :::info
+
+   The `dg plus deploy configure hybrid --git-provider gitlab` command will create the following deployment configuration files:
+
+      - A Dockerfile
+      - A `build.yaml` configuration file
+      - A `.gitlab-ci.yml` GitLab CI/CD configuration file.
    ::: 
    </TabItem>
    <TabItem value="non-github" label="CI/CD with a non-GitHub provider">
