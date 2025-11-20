@@ -12,9 +12,9 @@ import {
   ProductTour,
   ProductTourPosition,
   Spinner,
-  Tooltip,
+  Tooltip, UnstyledButton,
 } from '@dagster-io/ui-components';
-import {useCallback, useContext, useState} from 'react';
+import React, {useCallback, useContext, useState} from 'react';
 import {useLocation} from 'react-router-dom';
 
 import {AppContext} from './AppContext';
@@ -25,6 +25,7 @@ import {useStateWithStorage} from '../hooks/useStateWithStorage';
 import {useLatestVersionNumber} from '../nav/LatestVersionNumber';
 import {useVersionNumber} from '../nav/VersionNumber';
 import {CopyIconButton} from '../ui/CopyButton';
+import {useOpenInNewTab} from 'shared/hooks/useOpenInNewTab';
 
 interface Props {
   showContactSales?: boolean;
@@ -179,11 +180,12 @@ export const HelpMenuContents = ({
                 <Spinner purpose="caption-text" />
               )}
             </div>
-            <Tooltip content="Copy version number" canShow={!latestLoading} placement="top">
-              <CopyIconButton
-                value={latestVersion ?? ''}
-                iconSize={12}
-                iconColor={Colors.textLight()}
+            <Tooltip content="View latest Version" canShow={!latestLoading} placement="right">
+              <MenuExternalLink
+                onClick={dismissDaggyU}
+                href="https://github.com/dagster-io/dagster/releases"
+                icon="github"
+                text=""
               />
             </Tooltip>
           </Box>
