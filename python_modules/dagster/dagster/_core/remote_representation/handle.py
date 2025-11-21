@@ -25,7 +25,7 @@ if TYPE_CHECKING:
 class RepositoryHandle:
     repository_name: str
     code_location_origin: CodeLocationOrigin
-    repository_python_origin: RepositoryPythonOrigin
+    repository_python_origin: Optional[RepositoryPythonOrigin]
     display_metadata: Mapping[str, str]
 
     @classmethod
@@ -51,7 +51,9 @@ class RepositoryHandle:
         )
 
     def get_python_origin(self) -> RepositoryPythonOrigin:
-        return self.repository_python_origin
+        return check.not_none(
+            self.repository_python_origin, "Repository does not have a RepositoryPythonOrigin"
+        )
 
     def to_selector(self) -> RepositorySelector:
         return RepositorySelector(

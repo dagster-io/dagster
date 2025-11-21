@@ -181,7 +181,7 @@ def _fetch_plugin_manifest(entry_points: bool, extra_modules: Sequence[str]) -> 
 
     if isinstance(result, SerializableErrorInfo):
         clean_result = remove_system_frames_from_error(
-            result.cause,
+            result.cause if result.cause else result,
             make_simple_frames_removed_hint(),
         )
         message_match = check.not_none(

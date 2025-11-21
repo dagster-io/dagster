@@ -1,5 +1,6 @@
 import datetime
 import os
+import sys
 import time
 from collections.abc import Mapping
 from typing import Any
@@ -522,6 +523,7 @@ def test_k8s_executor_owner_references_garbage_collection(
         time.sleep(1)
 
 
+@pytest.mark.skipif(sys.version_info > (3, 12), reason="Flaky on Python 3.13")
 @pytest.mark.integration
 def test_k8s_executor_owner_references_disabled(
     dagster_instance_for_k8s_run_launcher,

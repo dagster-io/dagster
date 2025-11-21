@@ -6,7 +6,6 @@ import {
   DialogFooter,
   Group,
   Icon,
-  IconWrapper,
   Mono,
   Table,
 } from '@dagster-io/ui-components';
@@ -388,7 +387,7 @@ const DisclosureTriangleButton = styled.button<{$open: boolean}>`
   background: transparent;
   outline: none;
 
-  ${IconWrapper} {
+  .iconGlobal {
     margin: -2px -5px;
     transform: ${({$open}) => ($open ? 'rotate(0deg)' : 'rotate(-90deg)')};
     opacity: 0.25;
@@ -397,7 +396,7 @@ const DisclosureTriangleButton = styled.button<{$open: boolean}>`
   :focus {
     outline: none;
 
-    ${IconWrapper} {
+    .iconGlobal {
       background: ${Colors.textDefault()};
       opacity: 0.5;
     }

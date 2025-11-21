@@ -212,6 +212,10 @@ select = [
   "A001",
   "A002",
 
+  # (jump-statement-in-finally) break, continue, and return statements in finally blocks
+  # are usually mistakes that swallow exceptions.
+  "B012",
+
   # (useless expression): Expressions that aren't assigned to anything are typically bugs.
   "B018",
 
@@ -329,5 +333,3 @@ exclude = ["examples/docs_snippets/docs_snippets/guides/etl/transform-dbt/dbt_de
 
 [tool.dagster]
 module_name = "dagster_test.toys.repo"
-
-

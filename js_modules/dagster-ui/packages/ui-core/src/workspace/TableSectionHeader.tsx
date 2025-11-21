@@ -1,4 +1,4 @@
-import {Box, Colors, Icon, IconWrapper} from '@dagster-io/ui-components';
+import {Box, Colors, Icon} from '@dagster-io/ui-components';
 import styled from 'styled-components';
 
 export const SECTION_HEADER_HEIGHT = 32;
@@ -54,7 +54,7 @@ const SectionHeaderButton = styled.button<{$open: boolean}>`
     background-color: ${Colors.backgroundLightHover()};
   }
 
-  ${IconWrapper}[aria-label="arrow_drop_down"] {
+  .iconGlobal[aria-label='arrow_drop_down'] {
     transition: transform 100ms linear;
     ${({$open}) => ($open ? null : `transform: rotate(-90deg);`)}
   }
