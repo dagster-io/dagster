@@ -1,6 +1,5 @@
 import {HTMLProps, useCallback, useState} from 'react';
 
-import {BaseButton} from '../BaseButton';
 import {Box} from '../Box';
 import {Button} from '../Button';
 import {Colors} from '../Color';
@@ -72,16 +71,7 @@ const AutomationButton = ({type, enabled = false}: {type: AutomationType; enable
     return <Icon name={type} color={enabled ? Colors.accentGreen() : Colors.accentGray()} />;
   };
 
-  return (
-    <BaseButton
-      icon={icon()}
-      iconColor={enabled && type !== 'none' ? Colors.accentGreen() : Colors.accentGray()}
-      fillColor="transparent"
-      fillColorHover={Colors.backgroundLightHover()}
-      strokeColor="transparent"
-      strokeColorHover="transparent"
-    />
-  );
+  return <Button icon={icon()} intent={enabled ? 'success' : 'none'} />;
 };
 
 const renderLink = (props: HTMLProps<HTMLAnchorElement>) => <a {...props} />;
