@@ -142,7 +142,7 @@ dg dev
 
 To see your assets, navigate to [http://localhost:3000](http://localhost:3000).
 
-:::info
+:::tip
 
 See [Running Dagster locally](/deployment/oss/deployment-options/running-dagster-locally) for more information on configuring and running your local Dagster instance, including creating a persistent instance and detecting when you're running locally to selectively run schedules or sensors depending on environment.
 
@@ -191,6 +191,9 @@ See [Running Dagster locally](/deployment/oss/deployment-options/running-dagster
    </TabItem>
 </Tabs>
 
-## Step 5: Deploy your project to the cloud (Optional)
+## Step 5: Deploy your project to production (Optional)
 
-If you have a cloud deployment of Dagster, you can deploy your project by adding a configuration file at the root, and optionally configuring CI/CD for continuous deployment. For more information, see [Deploying Dagster projects](/guides/build/projects/deploying-projects).
+* **OSS:** Follow the steps in the [OSS deployment docs](/deployment/oss/deployment-options) to set up a production OSS deployment. You will need to add your project code to the Docker container used in the deployment.
+* **Dagster+ Serverless:** Follow the steps in the [CI/CD in Dagster+ Serverless guide](/deployment/dagster-plus/deploying-code/ci-cd/ci-cd-in-serverless).
+* **Dagster+ Hybrid:** Follow the steps in the [CI/CD in Dagster+ Hybrid guide](deployment/dagster-plus/deploying-code/ci-cd/ci-cd-in-hybrid).
+
