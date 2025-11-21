@@ -1,0 +1,247 @@
+/* <Button> */
+
+.button {
+  --button-fill-color: var(--color-background-default);
+  --button-fill-color-hover: var(--color-background-default-hover);
+  --button-stroke-color: var(--color-accent-gray);
+  --button-stroke-color-hover: var(--color-accent-gray);
+  --button-text-color: var(--color-text-default);
+  --button-icon-color: var(--color-accent-primary);
+  --button-spinner-color: var(--color-accent-gray);
+
+  align-items: center;
+  background-color: var(--button-fill-color);
+  border: none;
+  border-radius: 8px;
+  color: var(--button-text-color);
+  cursor: pointer;
+  display: inline-flex;
+  flex-direction: row;
+  font-family: var(--font-family-default);
+  font-size: 14px;
+  font-weight: normal;
+  line-height: 20px;
+  padding: 6px 12px;
+  transition:
+    background-color 100ms,
+    box-shadow 150ms,
+    filter 100ms,
+    opacity 150ms;
+  user-select: none;
+  white-space: nowrap;
+
+  box-shadow: var(--button-stroke-color) inset 0px 0px 0px 1px;
+}
+
+.button:hover:not(:disabled) {
+  background-color: var(--button-fill-color-hover);
+  box-shadow:
+    var(--button-stroke-color-hover) inset 0px 0px 0px 1px,
+    var(--color-shadow-default) 0px 2px 12px 0px;
+  color: var(--button-text-color);
+  text-decoration: none;
+}
+
+.button:focus,
+.button:focus-visible,
+.button:focus:hover:not(:disabled) {
+  box-shadow: var(--color-focus-ring) 0 0 0 2px;
+  outline: none;
+}
+
+.button:focus:not(:focus-visible) {
+  box-shadow:
+    var(--button-stroke-color) inset 0px 0px 0px 1px,
+    var(--color-shadow-default) 0px 2px 12px 0px;
+}
+
+.button:active:not(:disabled) {
+  filter: brightness(0.95);
+}
+
+.button:disabled {
+  cursor: default;
+  opacity: 0.5;
+}
+
+.button:disabled:hover {
+  box-shadow: var(--button-stroke-color) inset 0px 0px 0px 1px;
+}
+
+.button :global(.spinnerGlobal) {
+  --spinner-fill-color: var(--button-spinner-color);
+  align-self: center;
+  display: block;
+}
+
+.button :global(.iconGlobal) {
+  color: var(--button-icon-color);
+  background-color: var(--button-icon-color);
+}
+
+.button :global(.spinnerGlobal:first-child),
+.button :global(.iconGlobal:first-child) {
+  margin-left: -4px;
+  margin-right: 4px;
+}
+
+.button :global(.spinnerGlobal:last-child),
+.button :global(.iconGlobal:last-child) {
+  margin-right: -4px;
+  margin-left: 4px;
+}
+
+.button :global(.spinnerGlobal:first-child:last-child),
+.button :global(.iconGlobal:first-child:last-child) {
+  margin: 2px -4px;
+}
+
+.buttonText {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  text-align: left;
+  flex: 1;
+}
+
+.button.filled {
+  --button-fill-color: transparent;
+  --button-fill-color-hover: var(--color-background-light-hover);
+  --button-stroke-color: transparent;
+  --button-stroke-color-hover: transparent;
+  --button-text-color: var(--color-always-white);
+  --button-icon-color: var(--color-always-white);
+  --button-spinner-color: var(--color-always-white);
+}
+
+.button.filled.danger {
+  --button-fill-color: var(--color-accent-red);
+  --button-fill-color-hover: var(--color-accent-red-hover);
+}
+
+.button.filled.success {
+  --button-fill-color: var(--color-accent-green);
+  --button-fill-color-hover: var(--color-accent-green-hover);
+}
+
+.button.filled.warning {
+  --button-fill-color: var(--color-accent-yellow);
+  --button-fill-color-hover: var(--color-accent-yellow-hover);
+}
+
+.button.filled.primary {
+  --button-fill-color: var(--color-accent-primary);
+  --button-fill-color-hover: var(--color-accent-primary-hover);
+  --button-text-color: var(--color-accent-reversed);
+  --button-icon-color: var(--color-accent-reversed);
+  --button-spinner-color: var(--color-accent-reversed);
+}
+
+.button.filled.none {
+  --button-fill-color: transparent;
+  --button-fill-color-hover: var(--color-background-gray-hover);
+  --button-stroke-color: transparent;
+  --button-stroke-color-hover: transparent;
+  --button-text-color: var(--color-accent-primary);
+  --button-icon-color: var(--color-accent-primary);
+  --button-spinner-color: var(--color-accent-primary);
+}
+
+.button.filled.noIntent {
+  --button-fill-color: transparent;
+  --button-fill-color-hover: var(--color-background-gray-hover);
+  --button-stroke-color: var(--color-border-default);
+  --button-stroke-color-hover: var(--color-border-default);
+  --button-text-color: var(--color-accent-primary);
+  --button-icon-color: var(--color-accent-primary);
+}
+
+.button.outlined {
+  --button-fill-color: transparent;
+  --button-fill-color-hover: var(--color-background-gray);
+  --button-stroke-color: var(--color-border-default);
+  --button-stroke-color-hover: var(--color-border-hover);
+  --button-text-color: var(--color-accent-primary);
+  --button-icon-color: var(--color-accent-primary);
+  --button-spinner-color: var(--color-accent-gray);
+}
+
+.button.outlined.danger {
+  --button-fill-color-hover: var(--color-background-red);
+  --button-stroke-color: var(--color-accent-red);
+  --button-stroke-color-hover: var(--color-accent-red-hover);
+  --button-text-color: var(--color-accent-red);
+  --button-icon-color: var(--color-accent-red);
+  --button-spinner-color: var(--color-accent-red);
+}
+
+.button.outlined.success {
+  --button-fill-color-hover: var(--color-background-green);
+  --button-stroke-color: var(--color-accent-green);
+  --button-stroke-color-hover: var(--color-accent-green-hover);
+  --button-text-color: var(--color-accent-green);
+  --button-icon-color: var(--color-accent-green);
+  --button-spinner-color: var(--color-accent-green);
+}
+
+.button.outlined.warning {
+  --button-fill-color-hover: var(--color-background-yellow);
+  --button-stroke-color: var(--color-accent-yellow);
+  --button-stroke-color-hover: var(--color-accent-yellow-hover);
+  --button-text-color: var(--color-accent-yellow);
+  --button-icon-color: var(--color-accent-yellow);
+  --button-spinner-color: var(--color-accent-yellow);
+}
+
+.button.outlined.primary {
+  --button-stroke-color: var(--color-border-default);
+  --button-stroke-color-hover: var(--color-border-hover);
+  --button-text-color: var(--color-accent-primary);
+  --button-icon-color: var(--color-accent-primary);
+  --button-spinner-color: var(--color-border-default);
+}
+
+.button.outlined.none {
+  --button-stroke-color: transparent;
+  --button-stroke-color-hover: transparent;
+}
+
+/* <ButtonGroup> */
+
+.buttonGroupItem.button.button {
+  --button-stroke-color: var(--color-border-default);
+  --button-stroke-color-hover: var(--color-border-default);
+}
+
+.buttonGroupItem.button.active {
+  --button-fill-color: var(--color-background-lighter);
+  --button-fill-color-hover: var(--color-background-lighter-hover);
+  --button-text-color: var(--color-text-default);
+  --button-stroke-color: var(--color-border-hover);
+  --button-stroke-color-hover: var(--color-border-default);
+}
+
+/* <JoinedButtons> */
+
+.joinedButtons {
+  display: flex;
+  align-items: center;
+}
+
+.joinedButtons .button:not(:last-child),
+.joinedButtons > *:not(:last-child) .button {
+  border-top-right-radius: 0;
+  border-bottom-right-radius: 0;
+}
+
+.joinedButtons .button:not(:first-child),
+.joinedButtons > *:not(:first-child) .button {
+  margin-left: -1px;
+  border-top-left-radius: 0;
+  border-bottom-left-radius: 0;
+}
+
+.joinedButtons .button:focus-visible {
+  z-index: 1;
+  position: relative;
+}

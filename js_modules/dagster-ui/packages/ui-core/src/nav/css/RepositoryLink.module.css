@@ -1,0 +1,8 @@
+.repositoryName {
+  max-width: 280px;
+  flex: 1;
+}
+
+.buttonContainer {
+  line-height: 0;
+}
