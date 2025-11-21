@@ -1,5 +1,6 @@
 def types():
     from dagster_graphql.schema.pipelines.config import (
+        GrapheneConfigValidationError,
         GrapheneEvaluationErrorReason,
         GrapheneEvaluationStack,
         GrapheneEvaluationStackEntry,
@@ -11,7 +12,6 @@ def types():
         GrapheneFieldsNotDefinedConfigError,
         GrapheneMissingFieldConfigError,
         GrapheneMissingFieldsConfigError,
-        GraphenePipelineConfigValidationError,
         GraphenePipelineConfigValidationInvalid,
         GraphenePipelineConfigValidationValid,
         GrapheneRunConfigValidationInvalid,
@@ -70,7 +70,7 @@ def types():
         GrapheneMissingFieldsConfigError,
         GrapheneMode,
         GraphenePipeline,
-        GraphenePipelineConfigValidationError,
+        GrapheneConfigValidationError,
         GraphenePipelineConfigValidationInvalid,
         GrapheneRunConfigValidationInvalid,
         GraphenePipelineConfigValidationResult,
