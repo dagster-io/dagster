@@ -374,7 +374,7 @@ class CommandStepBuilder:
         if self._requires_docker:
             sidecars.append(
                 {
-                    "image": "docker:20.10.16-dind",
+                    "image": "968703565975.dkr.ecr.us-west-2.amazonaws.com/dind:20.10.16",
                     "command": ["dockerd-entrypoint.sh"],
                     "resources": {
                         "requests": {
