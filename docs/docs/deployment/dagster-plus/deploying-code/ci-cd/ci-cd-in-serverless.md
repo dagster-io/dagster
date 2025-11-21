@@ -20,109 +20,129 @@ Once you have set up your project repository, pushing changes to the `main` bran
 <Tabs>
   <TabItem value="github" label="GitHub">
 
-  :::note Prerequisites
+:::note Prerequisites
 
-  Before following the steps in this section, you must first [create a Dagster project](/guides/build/projects/creating-projects).
+Before following the steps in this section, you must first [create a Dagster project](/guides/build/projects/creating-projects).
 
-  :::
+:::
 
-  1. Change to the project directory:
+1. Change to the project directory:
+
+
     ```shell
     cd <project-directory>
     ```
-  2. Initialize a Git repository:
+
+2. Initialize a Git repository:
+
+
     ```shell
     git init .
     ```
-  3. Use the `dg` CLI to scaffold deployment configuration files:
+
+3. Use the `dg` CLI to scaffold deployment configuration files:
+
+
     ```shell
     dg plus deploy configure serverless --git-provider github
     ```
-    
-  :::info
 
-  The `dg plus deploy configure serverless --git-provider github` command will create the following deployment configuration files:
+:::info
+
+The `dg plus deploy configure serverless --git-provider github` command will create the following deployment configuration files:
 
     - A Dockerfile
     - A `build.yaml` configuration file
     - A `.github/dagster-plus-deploy.yml` GitHub Action workflow configuration file.
-  ::: 
+
+:::
 
   </TabItem>
   <TabItem value="gitlab" label="GitLab">
 
-  :::note Prerequisites
+:::note Prerequisites
 
-  Before following the steps in this section, you must first [create a Dagster project](/guides/build/projects/creating-projects).
+Before following the steps in this section, you must first [create a Dagster project](/guides/build/projects/creating-projects).
 
 :::
 
-  1. Change to the project directory:
+1. Change to the project directory:
+
+
     ```shell
     cd <project-directory>
     ```
-  2. Initialize a Git repository:
+
+2. Initialize a Git repository:
+
+
     ```shell
     git init .
     ```
-  3. Use the `dg` CLI to scaffold deployment configuration files:
+
+3. Use the `dg` CLI to scaffold deployment configuration files:
+
+
     ```shell
     dg plus deploy configure serverless --git-provider gitlab
     ```
-  4. Update the `build.yaml` file with your Docker registry.
-  
-  :::info
 
-  The `dg plus deploy configure serverless --git-provider gitlab` command will create the following deployment configuration files:
+4. Update the `build.yaml` file with your Docker registry.
+
+:::info
+
+The `dg plus deploy configure serverless --git-provider gitlab` command will create the following deployment configuration files:
 
     - A Dockerfile
     - A `build.yaml` configuration file
     - A `.gitlab-ci.yml` GitLab CI/CD configuration file.
-  ::: 
+
+:::
 
   </TabItem>
   <TabItem value="other" label="Other Git providers or local development">
 
-  :::note Prerequisites
+:::note Prerequisites
 
-  Before following the steps in this section, you must first [create a Dagster project](/guides/build/projects/creating-projects).
+Before following the steps in this section, you must first [create a Dagster project](/guides/build/projects/creating-projects).
 
-  :::
+:::
 
-  If you don't want to use our automated GitHub/GitLab process, you can use the [`dagster-cloud` command-line CLI](/api/clis/dagster-cloud-cli) in another CI environment or locally.
+If you don't want to use our automated GitHub/GitLab process, you can use the [`dagster-cloud` command-line CLI](/api/clis/dagster-cloud-cli) in another CI environment or locally.
 
-  1. First, [create a new project with the `create-dagster project` command](/guides/build/projects/creating-projects) and activate the project virtual environment.
+1. First, [create a new project with the `create-dagster project` command](/guides/build/projects/creating-projects) and activate the project virtual environment.
 
-  2. Next, install the [`dagster-cloud` CLI](/api/clis/dagster-cloud-cli/installing-and-configuring) and use the `configure` command to authenticate it to your Dagster+ organization: TODO - replace this with `dg` equivalent
+2. Next, install the [`dagster-cloud` CLI](/api/clis/dagster-cloud-cli/installing-and-configuring) and use the `configure` command to authenticate it to your Dagster+ organization: TODO - replace this with `dg` equivalent
+
 
     ```shell
     pip install dagster-cloud
     dagster-cloud configure
     ```
 
-  You can also configure the `dagster-cloud` tool non-interactively; for more information, see [the `dagster-cloud` installation and configuration docs](/api/clis/dagster-cloud-cli/installing-and-configuring). TODO - replace with `dg` equivalent
+You can also configure the `dagster-cloud` tool non-interactively; for more information, see [the `dagster-cloud` installation and configuration docs](/api/clis/dagster-cloud-cli/installing-and-configuring). TODO - replace with `dg` equivalent
 
-  3. Finally, deploy your project to Dagster+ using the `serverless` command:
+3. Finally, deploy your project to Dagster+ using the `serverless` command:
 
-  ```shell
-  dagster-cloud serverless deploy-python-executable ./my-project \
-    --location-name example \
-    --package-name quickstart_etl \
-    --python-version 3.12
-  ```
+```shell
+dagster-cloud serverless deploy-python-executable ./my-project \
+  --location-name example \
+  --package-name quickstart_etl \
+  --python-version 3.12
+```
 
-  :::note Windows variant
+:::note Windows variant
 
-  If you are using Windows, you will need to replace the `deploy-python-executable` command with `deploy`:
+If you are using Windows, you will need to replace the `deploy-python-executable` command with `deploy`:
 
-  ```shell
-  dagster-cloud serverless deploy ./my-project \
-    --location-name example \
-    --package-name quickstart_etl \
-    --python-version 3.12
-  ```
+```shell
+dagster-cloud serverless deploy ./my-project \
+  --location-name example \
+  --package-name quickstart_etl \
+  --python-version 3.12
+```
 
-  :::
+:::
 
   </TabItem>
 </Tabs>
