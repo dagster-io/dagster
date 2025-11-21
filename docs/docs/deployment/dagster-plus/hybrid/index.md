@@ -25,7 +25,7 @@ To get started with a Hybrid deployment, you'll need to:
    - [AWS ECS](/deployment/dagster-plus/hybrid/amazon-ecs/new-vpc)
    - [Docker](/deployment/dagster-plus/hybrid/docker)
    - [Microsoft Azure](/deployment/dagster-plus/hybrid/azure)
-3. [Add a Dagster project](/guides/build/projects/deploying-projects) to your deployment, typically using a [Git repository and CI/CD](/deployment/dagster-plus/deploying-code/ci-cd/ci-cd-in-hybrid).
+3. [Create a Dagster project](/guides/build/projects/creating-projects) and add it to your deployment, typically using a [Git repository and CI/CD](/deployment/dagster-plus/deploying-code/ci-cd/ci-cd-in-hybrid).
 
 <HybridAgentRecommendation />
 

@@ -125,4 +125,4 @@ Once you have set up your project repository, pushing changes to the `main` bran
   :::
 
   </TabItem>
-</Tab>
+</Tabs>
