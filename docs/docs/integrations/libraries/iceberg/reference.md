@@ -217,86 +217,15 @@ Upsert options can be set at deployment time via asset definition metadata, or d
 
 To use upsert mode, set the `write_mode` to `"upsert"` and provide `upsert_options` in the asset or output metadata:
 
-```python
-import pyarrow as pa
-from dagster import asset, AssetExecutionContext
-
-@asset(
-    metadata={
-        "write_mode": "upsert",
-        "upsert_options": {
-            "join_cols": ["id"],  # Columns to join on for matching
-            "when_matched_update_all": True,  # Update all columns when matched
-            "when_not_matched_insert_all": True,  # Insert all columns when not matched
-        }
-    }
-)
-def user_profiles(context: AssetExecutionContext) -> pa.Table:
-    # Returns a table with user profiles
-    # Rows with matching 'id' will be updated
-    # Rows with new 'id' values will be inserted
-    return pa.table({
-        "id": [1, 2, 3],
-        "name": ["Alice", "Bob", "Charlie"],
-        "updated_at": ["2024-01-01", "2024-01-02", "2024-01-03"]
-    })
-```
+<CodeExample path="docs_snippets/docs_snippets/integrations/iceberg/using_upsert_mode.py" language="python" startAfter="start_basic_upsert" endBefore="end_basic_upsert" />
 
 You can also override upsert options at runtime using output metadata:
 
-```python
-@asset(
-    metadata={
-        "write_mode": "upsert",
-        "upsert_options": {
-            "join_cols": ["id"],
-            "when_matched_update_all": True,
-            "when_not_matched_insert_all": True,
-        }
-    }
-)
-def user_profiles_dynamic(context: AssetExecutionContext) -> pa.Table:
-    # Override upsert options at runtime based on business logic
-    if context.run.tags.get("update_mode") == "id_and_timestamp":
-        context.add_output_metadata({
-            "upsert_options": {
-                "join_cols": ["id", "timestamp"],  # Join on multiple columns
-                "when_matched_update_all": False,
-                "when_not_matched_insert_all": False,
-            }
-        })
-
-    return pa.table({
-        "id": [1, 2, 3],
-        "timestamp": ["2024-01-01", "2024-01-01", "2024-01-01"],
-        "name": ["Alice", "Bob", "Charlie"],
-    })
-```
+<CodeExample path="docs_snippets/docs_snippets/integrations/iceberg/using_upsert_mode.py" language="python" startAfter="start_dynamic_upsert" endBefore="end_dynamic_upsert" />
 
 You can use the `UpsertOptions` `BaseModel` subclass to represent upsert options metadata to provide deployment-time type validation:
 
-```python
-from dagster_iceberg.config import UpsertOptions
-
-@asset(
-    metadata={
-        "write_mode": "upsert",
-        "upsert_options": UpsertOptions(
-            join_cols=["id", "timestamp"],
-            when_matched_update_all=True,
-            when_not_matched_insert_all=True,
-        )
-    }
-)
-def my_table_typed_upsert(context: AssetExecutionContext, my_table: pa.Table):
-    context.add_output_metadata({"upsert_options": UpsertOptions(
-                join_cols=["id", "timestamp"],
-                when_matched_update_all=True,
-                when_not_matched_insert_all=False,
-            )
-        }
-    )
-```
+<CodeExample path="docs_snippets/docs_snippets/integrations/iceberg/using_upsert_mode.py" language="python" startAfter="start_typed_upsert" endBefore="end_typed_upsert" />
 
 ---
 
@@ -304,25 +233,7 @@ def my_table_typed_upsert(context: AssetExecutionContext, my_table: pa.Table):
 
 By default, assets will error when you change the partition spec (e.g. if you change a partition from hourly to daily) or the schema (e.g. when you add a column). You can allow updates to an asset's partition spec and/or schema by adding the following configuration options to the asset metadata:
 
-```python
-@asset(
-    partitions_def=MultiPartitionsDefinition(
-        {
-            "date": DailyPartitionsDefinition(start_date="2023-01-01"),
-            "species": StaticPartitionDefinition(
-                ["Iris-setosa", "Iris-virginica", "Iris-versicolor"]
-            ),
-        }
-    ),
-    metadata={
-        "partition_expr": {"date": "time", "species": "species"},
-        "partition_spec_update_mode": "update",
-        "schema_update_mode": "update"
-    },
-)
-def iris_dataset_partitioned(context) -> pd.DataFrame:
-    ...
-```
+<CodeExample path="docs_snippets/docs_snippets/integrations/iceberg/allowing_updates.py" language="python" startAfter="start_defining_the_asset" endBefore="end_defining_the_asset" />
 
 ---
 
@@ -330,72 +241,12 @@ def iris_dataset_partitioned(context) -> pd.DataFrame:
 
 The `dagster-iceberg` library leans heavily on Dagster's `DbIOManager` implementation. This IO manager comes with some limitations, however, such as the lack of support for various [partition mappings](https://docs.dagster.io/_apidocs/partitions#partition-mapping). A custom (experimental) `DbIOManager` implementation is available that supports partition mappings as long as any time-based partition is *consecutive* and static partitions are of string type. You can enable it as follows:
 
-```python
-from dagster_iceberg.config import IcebergCatalogConfig
-from dagster_iceberg.io_manager.arrow import PyArrowIcebergIOManager
-
-
-PyArrowIcebergIOManager(
-    name="my_catalog",
-    config=IcebergCatalogConfig(properties={...}),
-    namespace="my_schema",
-    db_io_manager="custom"
-)
-```
+<CodeExample path="docs_snippets/docs_snippets/integrations/iceberg/using_custom_io_manager.py" language="python" startAfter="start_defining_the_io_manager" endBefore="end_defining_the_io_manager" />
 
 For example, a `MultiToSingleDimensionPartitionMapping` is supported:
 
-```python
-@asset(
-    key_prefix=["my_schema"],
-    partitions_def=daily_partitions_def,
-    ins={
-        "multi_partitioned_asset": AssetIn(
-            ["my_schema", "multi_partitioned_asset_1"],
-            partition_mapping=MultiToSingleDimensionPartitionMapping(
-                partition_dimension_name="date"
-            ),
-        )
-    },
-    metadata={
-        "partition_expr": "date_column",
-    },
-)
-def single_partitioned_asset_date(multi_partitioned_asset: pa.Table) -> pa.Table:
-    ...
-```
+<CodeExample path="docs_snippets/docs_snippets/integrations/iceberg/using_custom_io_manager.py" language="python" startAfter="start_supported_partition_mapping" endBefore="end_supported_partition_mapping" />
 
 But a `SpecificPartitionsPartitionMapping` is not because these dates are not consecutive:
 
-```python
-@asset(
-    partitions_def=multi_partition_with_letter,
-    key_prefix=["my_schema"],
-    metadata={"partition_expr": {"time": "time", "letter": "letter"}},
-    ins={
-        "multi_partitioned_asset": AssetIn(
-            ["my_schema", "multi_partitioned_asset_1"],
-            partition_mapping=MultiPartitionMapping(
-                {
-                    "color": DimensionPartitionMapping(
-                        dimension_name="letter",
-                        partition_mapping=StaticPartitionMapping(
-                            {"blue": "a", "red": "b", "yellow": "c"}
-                        ),
-                    ),
-                    "date": DimensionPartitionMapping(
-                        dimension_name="date",
-                        partition_mapping=SpecificPartitionsPartitionMapping(
-                            ["2022-01-01", "2024-01-01"]
-                        ),
-                    ),
-                }
-            ),
-        )
-    },
-)
-def mapped_multi_partition(
-    context: AssetExecutionContext, multi_partitioned_asset: pa.Table
-) -> pa.Table:
-    ...
-```
+<CodeExample path="docs_snippets/docs_snippets/integrations/iceberg/using_custom_io_manager.py" language="python" startAfter="start_unsupported_partition_mapping" endBefore="end_unsupported_partition_mapping" />
