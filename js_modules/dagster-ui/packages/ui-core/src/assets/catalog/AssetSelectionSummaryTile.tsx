@@ -79,7 +79,7 @@ export const AssetSelectionSummaryTile = React.memo(
         label={label}
         link={link}
         loading={loading}
-        assets={assets}
+        assetCount={assets.length}
       />
     );
   },
@@ -92,14 +92,14 @@ const AssetSelectionSummaryTileWithHealthStatus = React.memo(
     statusJsx,
     link,
     loading,
-    assets,
+    assetCount,
   }: {
     icon: React.ReactNode;
     label: string;
     statusJsx?: React.ReactNode;
     link: string;
     loading?: boolean;
-    assets?: AssetTableFragment[];
+    assetCount?: number;
   }) => {
     return (
       <Link to={link} className={styles.tileLink}>
@@ -118,8 +118,8 @@ const AssetSelectionSummaryTileWithHealthStatus = React.memo(
           </div>
           {statusJsx ? (
             <div className={styles.footer}>{statusJsx}</div>
-          ) : assets ? (
-            <div className={styles.assetCount}>{numberFormatter.format(assets.length)} assets</div>
+          ) : assetCount !== undefined ? (
+            <div className={styles.assetCount}>{numberFormatter.format(assetCount)} assets</div>
           ) : null}
         </Box>
       </Link>
