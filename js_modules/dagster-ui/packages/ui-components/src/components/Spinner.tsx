@@ -1,10 +1,18 @@
 // eslint-disable-next-line no-restricted-imports
 import {Spinner as BlueprintSpinner} from '@blueprintjs/core';
-import styled from 'styled-components';
+import clsx from 'clsx';
+import {CSSProperties} from 'react';
 
-import {Colors} from './Color';
+import styles from './css/Spinner.module.css';
 
 type SpinnerPurpose = 'page' | 'section' | 'body-text' | 'caption-text';
+
+const SPINNER_SIZES: Record<SpinnerPurpose, number> = {
+  page: 80,
+  section: 32,
+  'caption-text': 10,
+  'body-text': 12,
+};
 
 interface Props {
   purpose: SpinnerPurpose;
@@ -14,67 +22,24 @@ interface Props {
   title?: string;
 }
 
-export const Spinner = ({
-  purpose,
-  value,
-  fillColor = Colors.accentGray(),
-  stopped,
-  title = 'Loading…',
-}: Props) => {
-  const size = () => {
-    switch (purpose) {
-      case 'page':
-        return 80;
-      case 'section':
-        return 32;
-      case 'caption-text':
-        return 10;
-      case 'body-text':
-      default:
-        return 12;
-    }
-  };
+export const Spinner = ({purpose, value, fillColor, stopped, title = 'Loading…'}: Props) => {
+  const className = clsx(
+    'spinnerGlobal', // Global class for targeting spinners
+    styles.spinner,
+    stopped ? styles.stopped : null,
+    purpose === 'caption-text' && styles.captionText,
+    purpose === 'body-text' && styles.bodyText,
+  );
 
-  const padding = () => {
-    switch (purpose) {
-      case 'caption-text':
-        return 1;
-      case 'body-text':
-        return 2;
-      default:
-        return 0;
-    }
-  };
+  const style = fillColor ? ({'--spinner-fill-color': fillColor} as CSSProperties) : undefined;
 
   return (
-    <SpinnerWrapper $padding={padding()} title={title}>
-      <SlowSpinner size={size()} value={value} $fillColor={fillColor} $stopped={stopped} />
-    </SpinnerWrapper>
+    <div className={className} title={title} style={style}>
+      <BlueprintSpinner
+        className={styles.slowSpinner}
+        value={value}
+        size={SPINNER_SIZES[purpose]}
+      />
+    </div>
   );
 };
-
-export const SpinnerWrapper = styled.div<{$padding: number}>`
-  padding: ${({$padding}) => $padding}px;
-`;
-
-const SlowSpinner = styled(BlueprintSpinner)<{$fillColor: string; $stopped?: boolean}>`
-  .bp5-spinner-animation {
-    animation-duration: 0.8s;
-    ${(p) => (p.$stopped ? 'animation: none;' : '')}
-
-    path.bp5-spinner-track {
-      stroke: ${(p) => p.$fillColor};
-      stroke-opacity: 0.25;
-    }
-    path.bp5-spinner-head {
-      ${(p) =>
-        p.$stopped
-          ? `stroke-opacity: 0;
-             fill: ${p.$fillColor};
-             fill-opacity: 1;
-             transform: scale(44%);`
-          : `stroke: ${p.$fillColor};
-             stroke-opacity: 1;`}
-    }
-  }
-`;

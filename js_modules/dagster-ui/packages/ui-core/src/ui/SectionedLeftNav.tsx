@@ -1,12 +1,4 @@
-import {
-  BaseTag,
-  Box,
-  Colors,
-  Icon,
-  IconWrapper,
-  MiddleTruncate,
-  StyledTag,
-} from '@dagster-io/ui-components';
+import {BaseTag, Box, Colors, Icon, MiddleTruncate, StyledTag} from '@dagster-io/ui-components';
 import {useVirtualizer} from '@tanstack/react-virtual';
 import * as React from 'react';
 import {useRouteMatch} from 'react-router-dom';
@@ -534,12 +526,12 @@ const SectionHeader = styled.button<{
     outline: none;
   }
 
-  ${IconWrapper}[aria-label="arrow_drop_down"] {
+  .iconGlobal[aria-label="arrow_drop_down"] {
     transition: transform 100ms linear;
     ${({$open}) => ($open ? null : `transform: rotate(-90deg);`)}
   }
 
-  :disabled ${IconWrapper} {
+  :disabled .iconGlobal {
     background-color: ${Colors.textDisabled()};
   }
 

@@ -2,8 +2,6 @@ import * as React from 'react';
 import styled from 'styled-components';
 
 import {Colors} from './Color';
-import {IconWrapper} from './Icon';
-import {SpinnerWrapper} from './Spinner';
 
 export interface BaseTagProps {
   fillColor?: string;
@@ -91,17 +89,20 @@ export const StyledTag = styled.div<StyledTagProps>`
     text-overflow: ellipsis;
   }
 
-  > ${IconWrapper}:first-child, > ${SpinnerWrapper}:first-child {
+  > .iconGlobal:first-child,
+  > .spinnerGlobal:first-child {
     margin-right: 4px;
     margin-left: -4px;
   }
 
-  > ${IconWrapper}:last-child, > ${SpinnerWrapper}:last-child {
+  > .iconGlobal:last-child,
+  > .spinnerGlobal:last-child {
     margin-left: 4px;
     margin-right: -4px;
   }
 
-  > ${IconWrapper}:first-child:last-child, > ${SpinnerWrapper}:first-child:last-child {
+  > .iconGlobal:first-child:last-child,
+  > .spinnerGlobal:first-child:last-child {
     margin: 0 -4px;
   }
 `;

@@ -1,6 +1,6 @@
 // eslint-disable-next-line no-restricted-imports
 import {Text} from '@blueprintjs/core';
-import {Code, Colors, FontFamily, Group, Icon, IconWrapper} from '@dagster-io/ui-components';
+import {Code, Colors, FontFamily, Group, Icon} from '@dagster-io/ui-components';
 import * as React from 'react';
 import {Link} from 'react-router-dom';
 import styled from 'styled-components';
@@ -115,7 +115,7 @@ export const ResourceContainer = styled.div`
   & h4 {
     margin-top: 0;
   }
-  & ${IconWrapper} {
+  & .iconGlobal {
     margin-right: 8px;
   }
 `;

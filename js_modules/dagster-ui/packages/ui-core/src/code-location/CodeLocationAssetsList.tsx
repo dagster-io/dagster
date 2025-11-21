@@ -2,7 +2,6 @@ import {
   Box,
   Colors,
   Icon,
-  IconWrapper,
   NonIdealState,
   SpinnerWithText,
   Tag,
@@ -225,7 +224,7 @@ const ClickableRow = styled(Row)<{$open: boolean}>`
     outline: none;
   }
 
-  ${IconWrapper}[aria-label="arrow_drop_down"] {
+  .iconGlobal[aria-label='arrow_drop_down'] {
     transition: transform 100ms linear;
     ${({$open}) => ($open ? null : `transform: rotate(-90deg);`)}
   }

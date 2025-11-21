@@ -2,7 +2,7 @@ import styled from 'styled-components';
 
 import {Colors} from './Color';
 import {Group} from './Group';
-import {Icon, IconWrapper} from './Icon';
+import {Icon} from './Icon';
 import {Tooltip} from './Tooltip';
 import {secondsToCountdownTime} from './secondsToCountdownTime';
 
@@ -49,7 +49,7 @@ export const RefreshButton = styled.button`
   position: relative;
   top: 1px;
 
-  & ${IconWrapper} {
+  & .iconGlobal {
     display: block;
     transition: color 100ms linear;
 
