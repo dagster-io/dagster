@@ -121,6 +121,39 @@ In the above example:
 
 `dagster-iceberg` supports several compute engines out-of-the-box. You can [find examples of how to use each engine in the API docs](/api/libraries/dagster-iceberg#io-managers).
 
+## Storing and loading PyArrow, Pandas, or Polars DataFrames with Iceberg
+
+The Iceberg I/O manager also supports storing and loading PyArrow and Polars DataFrames.
+
+<Tabs>
+  <TabItem value="pyarrow" label="PyArrow Tables">
+    The `Iceberg` package relies heavily on Apache Arrow for efficient data transfer, so PyArrow is natively supported.
+
+    You can use `PyArrowIcebergIOManager` to read and write iceberg tables:
+
+    <CodeExample path="docs_snippets/docs_snippets/integrations/iceberg/io_manager_pyarrow.py" language="python" />
+
+  </TabItem>
+  <TabItem value="pandas" label="Pandas DataFrames">
+     You can use `PandasIcebergIOManager` to read and write iceberg tables using Pandas:
+
+    <CodeExample path="docs_snippets/docs_snippets/integrations/iceberg/io_manager_pandas.py" language="python" />
+
+  </TabItem>
+  <TabItem value="polars" label="Polars DataFrames">
+     You can use the `PolarsIcebergIOManager` to read and write iceberg tables using Polars using a full lazily optimized query engine:
+
+    <CodeExample path="docs_snippets/docs_snippets/integrations/iceberg/io_manager_polars.py" language="python" />
+
+  </TabItem>
+  <TabItem value="daft" label="Daft DataFrames">
+     You can use the `DaftIcebergIOManager` to read and write iceberg tables using Daft using a full lazily optimized query engine:
+
+    <CodeExample path="docs_snippets/docs_snippets/integrations/iceberg/io_manager_daft.py" language="python" />
+
+  </TabItem>
+</Tabs>
+
 ## Executing custom SQL commands
 
 In addition to the Iceberg I/O manager, Dagster also provides an <PyObject section="libraries" object="resource.IcebergTableResource" module="dagster_iceberg" /> for executing custom SQL queries.
@@ -136,6 +169,105 @@ PyIceberg tables support table properties to configure table behavior. You can f
 Use asset metadata to set table properties:
 
 <CodeExample path="docs_snippets/docs_snippets/integrations/iceberg/setting_table_properties.py" language="python" />
+
+## Using upsert mode to update and insert data
+
+The Iceberg I/O manager supports upsert operations, which allow you to update existing rows and insert new rows in a single operation. This is useful for maintaining slowly changing dimensions or incrementally updating tables.
+
+### Upsert options
+
+Upsert options can be set at deployment time via asset definition metadata, or dynamically at runtime via output metadata. Upsert options set at runtime via `context.add_output_metadata()` take precedence over those set in definition metadata.
+
+**Required**:
+  - **join_cols**: list[str] - list of columns that make up the join key for the upsert operation
+
+**Optional**:
+  - **when_matched_update_all**: bool - Whether to update rows in the target table that join with the dataframe being upserted (default True)
+  - **when_not_matched_insert_all**: bool - Whether to insert all rows from the upsert dataframe that do not join with the target table (default True)
+
+
+To use upsert mode, set the `write_mode` to `"upsert"` and provide `upsert_options` in the asset or output metadata:
+
+```python
+import pyarrow as pa
+from dagster import asset, AssetExecutionContext
+
+@asset(
+    metadata={
+        "write_mode": "upsert",
+        "upsert_options": {
+            "join_cols": ["id"],  # Columns to join on for matching
+            "when_matched_update_all": True,  # Update all columns when matched
+            "when_not_matched_insert_all": True,  # Insert all columns when not matched
+        }
+    }
+)
+def user_profiles(context: AssetExecutionContext) -> pa.Table:
+    # Returns a table with user profiles
+    # Rows with matching 'id' will be updated
+    # Rows with new 'id' values will be inserted
+    return pa.table({
+        "id": [1, 2, 3],
+        "name": ["Alice", "Bob", "Charlie"],
+        "updated_at": ["2024-01-01", "2024-01-02", "2024-01-03"]
+    })
+```
+
+You can also override upsert options at runtime using output metadata:
+
+```python
+@asset(
+    metadata={
+        "write_mode": "upsert",
+        "upsert_options": {
+            "join_cols": ["id"],
+            "when_matched_update_all": True,
+            "when_not_matched_insert_all": True,
+        }
+    }
+)
+def user_profiles_dynamic(context: AssetExecutionContext) -> pa.Table:
+    # Override upsert options at runtime based on business logic
+    if context.run.tags.get("update_mode") == "id_and_timestamp":
+        context.add_output_metadata({
+            "upsert_options": {
+                "join_cols": ["id", "timestamp"],  # Join on multiple columns
+                "when_matched_update_all": False,
+                "when_not_matched_insert_all": False,
+            }
+        })
+
+    return pa.table({
+        "id": [1, 2, 3],
+        "timestamp": ["2024-01-01", "2024-01-01", "2024-01-01"],
+        "name": ["Alice", "Bob", "Charlie"],
+    })
+```
+
+You can use the `UpsertOptions` `BaseModel` subclass to represent upsert options metadata to provide deployment-time type validation:
+
+```python
+from dagster_iceberg.config import UpsertOptions
+
+@asset(
+    metadata={
+        "write_mode": "upsert",
+        "upsert_options": UpsertOptions(
+            join_cols=["id", "timestamp"],
+            when_matched_update_all=True,
+            when_not_matched_insert_all=True,
+        )
+    }
+)
+def my_table_typed_upsert(context: AssetExecutionContext, my_table: pa.Table):
+    context.add_output_metadata({"upsert_options": UpsertOptions(
+                join_cols=["id", "timestamp"],
+                when_matched_update_all=True,
+                when_not_matched_insert_all=False,
+            )
+        }
+    )
+```
 
 ## Allowing updates to schema and partitions
 
