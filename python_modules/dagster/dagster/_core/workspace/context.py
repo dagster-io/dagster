@@ -85,6 +85,7 @@ from dagster._core.workspace.workspace import (
     CodeLocationLoadStatus,
     CodeLocationStatusEntry,
     CurrentWorkspace,
+    DefinitionsSource,
     location_status_from_location_entry,
 )
 from dagster._grpc.constants import INCREASE_TIMEOUT_DAGSTER_YAML_MSG, GrpcServerCommand
@@ -1121,6 +1122,7 @@ class WorkspaceProcessContext(IWorkspaceProcessContext[WorkspaceRequestContext])
             ),
             update_timestamp=load_time,
             version_key=version_key,
+            definitions_source=DefinitionsSource.CODE_SERVER,
         )
 
     def get_current_workspace(self) -> CurrentWorkspace:

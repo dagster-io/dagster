@@ -1282,6 +1282,11 @@ export type DefinitionTag = {
   value: Scalars['String']['output'];
 };
 
+export enum DefinitionsSource {
+  CODE_SERVER = 'CODE_SERVER',
+  CONNECTION = 'CONNECTION',
+}
+
 export type DefsKeyStateInfo = {
   __typename: 'DefsKeyStateInfo';
   createTimestamp: Scalars['Float']['output'];
@@ -6146,6 +6151,7 @@ export type Workspace = {
 
 export type WorkspaceLocationEntry = {
   __typename: 'WorkspaceLocationEntry';
+  definitionsSource: DefinitionsSource;
   defsStateInfo: Maybe<DefsStateInfo>;
   displayMetadata: Array<RepositoryMetadata>;
   featureFlags: Array<FeatureFlag>;
@@ -16596,6 +16602,10 @@ export const buildWorkspaceLocationEntry = (
   relationshipsToOmit.add('WorkspaceLocationEntry');
   return {
     __typename: 'WorkspaceLocationEntry',
+    definitionsSource:
+      overrides && overrides.hasOwnProperty('definitionsSource')
+        ? overrides.definitionsSource!
+        : DefinitionsSource.CODE_SERVER,
     defsStateInfo:
       overrides && overrides.hasOwnProperty('defsStateInfo')
         ? overrides.defsStateInfo!
