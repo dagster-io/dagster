@@ -1,7 +1,7 @@
 import os
 from abc import ABC, abstractmethod
-from collections.abc import Iterable, Mapping, Sequence, Set
-from typing import TYPE_CHECKING, Annotated, NamedTuple, Optional, Union
+from collections.abc import Iterable, Mapping, Sequence
+from typing import TYPE_CHECKING, AbstractSet, Annotated, NamedTuple, Optional, Union  # noqa: UP035
 
 from dagster_shared.record import ImportFrom, record
 
@@ -35,6 +35,8 @@ from dagster._core.loader import LoadableBy, LoadingContext
 from dagster._core.storage.asset_check_execution_record import (
     AssetCheckExecutionRecord,
     AssetCheckExecutionRecordStatus,
+    AssetCheckPartitionRecord,
+    AssetCheckPartitionStatusCacheValue,
 )
 from dagster._core.storage.dagster_run import DagsterRunStatsSnapshot
 from dagster._core.storage.partition_status_cache import get_and_update_asset_status_cache_value
@@ -632,7 +634,8 @@ class EventLogStorage(ABC, MayHaveInstanceWeakref[T_DagsterInstance]):
         check_key: AssetCheckKey,
         limit: int,
         cursor: Optional[int] = None,
-        status: Optional[Set[AssetCheckExecutionRecordStatus]] = None,
+        status: Optional[AbstractSet[AssetCheckExecutionRecordStatus]] = None,
+        partition: Optional[str] = None,
     ) -> Sequence[AssetCheckExecutionRecord]:
         """Get executions for one asset check, sorted by recency."""
         pass
@@ -642,6 +645,30 @@ class EventLogStorage(ABC, MayHaveInstanceWeakref[T_DagsterInstance]):
         self, check_keys: Sequence[AssetCheckKey]
     ) -> Mapping[AssetCheckKey, AssetCheckExecutionRecord]:
         """Get the latest executions for a list of asset checks."""
+        pass
+
+    @abstractmethod
+    def get_asset_check_cached_value(
+        self, check_key: AssetCheckKey
+    ) -> Optional["AssetCheckPartitionStatusCacheValue"]:
+        """Get the cached partition status record - pure storage retrieval."""
+        pass
+
+    @abstractmethod
+    def update_asset_check_cached_value(
+        self, check_key: AssetCheckKey, cache_value: "AssetCheckPartitionStatusCacheValue"
+    ) -> None:
+        """Update the cached partition status record - pure storage write."""
+        pass
+
+    @abstractmethod
+    def get_asset_check_partition_records(
+        self,
+        check_key: AssetCheckKey,
+        partition_key: Optional[str] = None,
+        after_event_storage_id: Optional[int] = None,
+    ) -> Sequence[AssetCheckPartitionRecord]:
+        """Get asset check partition records with execution status and planned run info."""
         pass
 
     @abstractmethod

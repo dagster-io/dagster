@@ -73,6 +73,7 @@ from dagster._utils.error import (
 )
 
 if TYPE_CHECKING:
+    from dagster._core.definitions.asset_checks.asset_check_spec import AssetCheckKey
     from dagster._core.definitions.events import ObjectStoreOperation
     from dagster._core.definitions.freshness import FreshnessStateChange, FreshnessStateEvaluation
     from dagster._core.execution.plan.plan import ExecutionPlan
@@ -1646,6 +1647,32 @@ class DagsterEvent(
                 f"{job_name} intends to materialize asset {asset_materialization_planned_data.asset_key.to_string()}"
             ),
             event_specific_data=asset_materialization_planned_data,
+            step_key=step_key,
+        )
+        return event
+
+    @staticmethod
+    def build_asset_check_evaluation_planned_event(
+        job_name: str,
+        step_key: str,
+        asset_check_key: "AssetCheckKey",
+        partition: Optional[str] = None,
+        partitions_subset: Optional["PartitionsSubset"] = None,
+    ) -> "DagsterEvent":
+        """Constructs an asset check evaluation planned event, to be logged by the caller."""
+        event = DagsterEvent(
+            event_type_value=DagsterEventType.ASSET_CHECK_EVALUATION_PLANNED.value,
+            job_name=job_name,
+            message=(
+                f"{job_name} intends to execute asset check {asset_check_key.name} on"
+                f" asset {asset_check_key.asset_key.to_string()}"
+            ),
+            event_specific_data=AssetCheckEvaluationPlanned(
+                asset_key=asset_check_key.asset_key,
+                check_name=asset_check_key.name,
+                partition=partition,
+                partitions_subset=partitions_subset,
+            ),
             step_key=step_key,
         )
         return event
