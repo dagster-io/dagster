@@ -190,7 +190,16 @@ class MultiPartitionsDefinition(PartitionsDefinition[MultiPartitionKey]):
         check.failed(f"Invalid dimension name {dimension_name}")
 
     # We override the default implementation of `has_partition_key` for performance.
-    def has_partition_key(self, partition_key: Union[MultiPartitionKey, str]) -> bool:
+    def has_partition_key(
+        self,
+        partition_key: Union[MultiPartitionKey, str],
+        current_time: Optional[datetime] = None,
+        dynamic_partitions_store: Optional["DynamicPartitionsStore"] = None,
+    ) -> bool:
+        from dagster._core.definitions.partitions.definition.dynamic import (
+            DynamicPartitionsDefinition,
+        )
+
         if isinstance(partition_key, str):
             try:
                 partition_key = self.get_partition_key_from_str(partition_key)
@@ -204,9 +213,19 @@ class MultiPartitionsDefinition(PartitionsDefinition[MultiPartitionKey]):
             )
 
         for dimension in self.partitions_defs:
-            if not dimension.partitions_def.has_partition_key(
-                partition_key.keys_by_dimension[dimension.name]
-            ):
+            # For DynamicPartitionsDefinition, pass the dynamic_partitions_store
+            if isinstance(dimension.partitions_def, DynamicPartitionsDefinition):
+                has_key = dimension.partitions_def.has_partition_key(
+                    partition_key.keys_by_dimension[dimension.name],
+                    current_time=current_time,
+                    dynamic_partitions_store=dynamic_partitions_store,
+                )
+            else:
+                has_key = dimension.partitions_def.has_partition_key(
+                    partition_key.keys_by_dimension[dimension.name]
+                )
+
+            if not has_key:
                 return False
         return True
 

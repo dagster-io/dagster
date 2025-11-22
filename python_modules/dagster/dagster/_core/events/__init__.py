@@ -39,6 +39,7 @@ from dagster._core.definitions.asset_checks.asset_check_evaluation import (
     AssetCheckEvaluation,
     AssetCheckEvaluationPlanned,
 )
+from dagster._core.definitions.asset_checks.asset_check_spec import AssetCheckKey
 from dagster._core.definitions.asset_health.asset_health import AssetHealthStatus
 from dagster._core.definitions.events import (
     AssetLineageInfo,
