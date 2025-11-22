@@ -18,7 +18,6 @@ from dagster._core.asset_graph_view.serializable_entity_subset import Serializab
 from dagster._core.definitions.asset_key import AssetCheckKey, AssetKey, EntityKey, T_EntityKey
 from dagster._core.definitions.assets.graph.asset_graph_subset import AssetGraphSubset
 from dagster._core.definitions.events import AssetKeyPartitionKey
-from dagster._core.definitions.freshness import FreshnessState
 from dagster._core.definitions.partitions.context import (
     PartitionLoadingContext,
     use_partition_loading_context,
@@ -162,10 +161,7 @@ class AssetGraphView(LoadingContext):
         return self._queryer
 
     def _get_partitions_def(self, key: T_EntityKey) -> Optional["PartitionsDefinition"]:
-        if isinstance(key, AssetKey):
-            return self.asset_graph.get(key).partitions_def
-        else:
-            return None
+        return self.asset_graph.get(key).partitions_def
 
     @cached_method
     @use_partition_loading_context
@@ -550,6 +546,11 @@ class AssetGraphView(LoadingContext):
         from dagster._core.storage.event_log.base import AssetCheckSummaryRecord
 
         """Returns the subset of an asset check that matches a given status."""
+        # Handle partitioned asset checks with partition-level granularity
+        if self._get_partitions_def(key):
+            return await self._get_partitioned_check_subset_with_status(key, status)
+
+        # Handle non-partitioned asset checks with existing logic
         summary = await AssetCheckSummaryRecord.gen(self, key)
         latest_record = summary.last_check_execution_record if summary else None
         resolved_status = (
@@ -558,26 +559,6 @@ class AssetGraphView(LoadingContext):
             else None
         )
         if resolved_status == status:
-            return self.get_full_subset(key=key)
-        else:
-            return self.get_empty_subset(key=key)
-
-    async def compute_subset_with_freshness_state(
-        self, key: AssetKey, state: FreshnessState
-    ) -> EntitySubset[AssetKey]:
-        from dagster._core.definitions.asset_health.asset_freshness_health import (
-            AssetFreshnessHealthState,
-        )
-
-        if not self.asset_graph.has(key) or self.asset_graph.get(key).freshness_policy is None:
-            if state == FreshnessState.NOT_APPLICABLE:
-                return self.get_full_subset(key=key)
-            else:
-                return self.get_empty_subset(key=key)
-
-        asset_freshness_health_state = await AssetFreshnessHealthState.compute_for_asset(key, self)
-
-        if asset_freshness_health_state.freshness_state == state:
             return self.get_full_subset(key=key)
         else:
             return self.get_empty_subset(key=key)
@@ -608,6 +589,31 @@ class AssetGraphView(LoadingContext):
         self, key: AssetCheckKey
     ) -> EntitySubset[AssetCheckKey]:
         return await self.compute_subset_with_status(key, None)
+
+    async def _get_partitioned_check_subset_with_status(
+        self, key: AssetCheckKey, status: Optional["AssetCheckExecutionResolvedStatus"]
+    ) -> EntitySubset[AssetCheckKey]:
+        """Get subset of partitioned asset check matching specific status."""
+        from dagster._core.storage.asset_check_partition_cache import (
+            get_asset_check_partition_status,
+        )
+
+        check_node = self.asset_graph.get(key)
+        if not check_node or not check_node.partitions_def:
+            check.failed(f"Asset check {key} not found or not partitioned.")
+
+        # Get partition status from our cache service
+        partition_status = get_asset_check_partition_status(
+            self._queryer.instance, key, check_node.partitions_def
+        )
+
+        matching_subset = (
+            partition_status.get_subset_for_status(status) if status else partition_status.missing
+        )
+        if not matching_subset.is_empty:
+            return EntitySubset(self, key=key, value=_ValidatedEntitySubsetValue(matching_subset))
+        else:
+            return self.get_empty_subset(key=key)
 
     async def _compute_run_in_progress_asset_subset(self, key: AssetKey) -> EntitySubset[AssetKey]:
         from dagster._core.storage.partition_status_cache import AssetStatusCacheValue

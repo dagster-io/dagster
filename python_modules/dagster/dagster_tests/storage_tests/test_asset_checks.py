@@ -83,3 +83,97 @@ def test_partitioned_asset_check_graph_structure():
     # Test: check is linked to asset
     asset_node = asset_graph.get(partitioned_asset.key)
     assert partitioned_asset_check.check_key in asset_node.check_keys
+
+
+@pytest.mark.asyncio
+async def test_partitioned_asset_check_subset_computation_empty():
+    """Test subset computation for partitioned asset checks before any executions."""
+    from dagster._core.asset_graph_view.asset_graph_view import AssetGraphView
+    from dagster._core.storage.asset_check_execution_record import AssetCheckExecutionResolvedStatus
+
+    with dg.instance_for_test() as instance:
+        view = AssetGraphView.for_test(partitioned_defs, instance=instance)
+        partitioned_key = partitioned_asset_check.check_key
+
+        # Before executions, all partitions should be missing
+        missing_subset = await view.compute_subset_with_status(partitioned_key, None)
+        assert not missing_subset.is_empty
+        assert missing_subset.expensively_compute_partition_keys() == {"a", "b", "c"}
+
+        # No partitions should have execution statuses
+        for status in [
+            AssetCheckExecutionResolvedStatus.SUCCEEDED,
+            AssetCheckExecutionResolvedStatus.FAILED,
+            AssetCheckExecutionResolvedStatus.IN_PROGRESS,
+        ]:
+            subset = await view.compute_subset_with_status(partitioned_key, status)
+            assert subset.is_empty
+
+
+@pytest.mark.asyncio
+async def test_partitioned_asset_check_subset_computation_after_execution():
+    """Test subset computation after executing partitions with different outcomes."""
+    from dagster._core.asset_graph_view.asset_graph_view import AssetGraphView
+    from dagster._core.storage.asset_check_execution_record import AssetCheckExecutionResolvedStatus
+
+    with dg.instance_for_test() as instance:
+        # Execute partitions with known outcomes
+        result_a = dg.materialize(
+            [partitioned_asset, partitioned_asset_check], instance=instance, partition_key="a"
+        )
+        assert result_a.success
+
+        result_b = dg.materialize(
+            [partitioned_asset, partitioned_asset_check], instance=instance, partition_key="b"
+        )
+        assert result_b.success  # Run succeeds but check fails
+
+        view = AssetGraphView.for_test(partitioned_defs, instance=instance)
+        partitioned_key = partitioned_asset_check.check_key
+
+        # Test: subsets reflect execution outcomes
+        succeeded_subset = await view.compute_subset_with_status(
+            partitioned_key, AssetCheckExecutionResolvedStatus.SUCCEEDED
+        )
+        assert not succeeded_subset.is_empty
+        assert succeeded_subset.expensively_compute_partition_keys() == {"a"}
+
+        failed_subset = await view.compute_subset_with_status(
+            partitioned_key, AssetCheckExecutionResolvedStatus.FAILED
+        )
+        assert not failed_subset.is_empty  # Should contain 'b'
+        assert failed_subset.expensively_compute_partition_keys() == {"b"}
+
+        missing_subset = await view.compute_subset_with_status(partitioned_key, None)
+        assert not missing_subset.is_empty  # Should contain 'c'
+        assert missing_subset.expensively_compute_partition_keys() == {"c"}
+
+
+@pytest.mark.asyncio
+async def test_non_partitioned_asset_check_compatibility():
+    """Test that non-partitioned asset checks still work with existing logic."""
+    from dagster._core.asset_graph_view.asset_graph_view import AssetGraphView
+    from dagster._core.storage.asset_check_execution_record import AssetCheckExecutionResolvedStatus
+
+    with dg.instance_for_test() as instance:
+        view = AssetGraphView.for_test(defs, instance=instance)
+        non_partitioned_key = the_asset_check.check_key
+
+        missing_subset = await view.compute_subset_with_status(non_partitioned_key, None)
+        assert not missing_subset.is_partitioned
+
+        succeeded_subset = await view.compute_subset_with_status(
+            non_partitioned_key, AssetCheckExecutionResolvedStatus.SUCCEEDED
+        )
+        assert not succeeded_subset.is_partitioned
+
+        # Execute the check
+        result = dg.materialize([the_asset, the_asset_check], instance=instance)
+        assert result.success
+
+        # After execution
+        view_after = AssetGraphView.for_test(defs, instance=instance)
+        succeeded_subset_after = await view_after.compute_subset_with_status(
+            non_partitioned_key, AssetCheckExecutionResolvedStatus.SUCCEEDED
+        )
+        assert not succeeded_subset_after.is_partitioned
