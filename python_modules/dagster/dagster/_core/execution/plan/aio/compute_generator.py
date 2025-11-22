@@ -1,7 +1,7 @@
 import inspect
-from collections.abc import AsyncIterator, Awaitable, Callable, Iterator, Mapping, Sequence
+from collections.abc import AsyncIterator, Awaitable, Callable, Mapping, Sequence
 from functools import wraps
-from typing import TYPE_CHECKING, Any, Optional, Union, cast, get_args
+from typing import TYPE_CHECKING, Any, Optional, cast
 
 from dagster._config.pythonic_config import Config
 from dagster._core.definitions import (
@@ -16,7 +16,11 @@ from dagster._core.definitions.op_definition import OpDefinition
 from dagster._core.definitions.result import AssetResult, ObserveResult
 from dagster._core.errors import DagsterInvariantViolationError
 from dagster._core.execution.context.compute import ExecutionContextTypes
-from dagster._core.execution.context.op_execution_context import OpExecutionContext
+from dagster._core.execution.plan.compute_generator import (
+    _check_output_object_name,
+    _get_annotation_for_output_position,
+    construct_config_from_context,
+)
 from dagster._core.types.dagster_type import DagsterTypeKind, is_generic_output_annotation
 from dagster._utils import is_named_tuple_instance
 from dagster._utils.warnings import disable_dagster_warnings
@@ -25,7 +29,7 @@ if TYPE_CHECKING:
     from dagster._core.definitions.decorators.op_decorator import DecoratedOpFunction
 
 
-def create_op_compute_wrapper(
+async def create_op_compute_wrapper(
     op_def: OpDefinition,
 ) -> Callable[[ExecutionContextTypes, Mapping[str, Any]], Any]:
     compute_fn = cast("DecoratedOpFunction", op_def.compute_fn)
@@ -43,11 +47,11 @@ def create_op_compute_wrapper(
     ]
 
     @wraps(fn)
-    def compute(
+    async def compute(
         context: ExecutionContextTypes,
         inputs: Mapping[str, Any],
-    ) -> Union[Iterator[Output], AsyncIterator[Output]]:
-        kwargs = {}
+    ) -> AsyncIterator[Output]:
+        kwargs: dict[str, Any] = {}
         for input_name in input_names:
             kwargs[input_name] = inputs[input_name]
 
@@ -57,13 +61,20 @@ def create_op_compute_wrapper(
             or inspect.iscoroutinefunction(fn)
         ):
             # safe to execute the function, as doing so will not immediately execute user code
-            result = invoke_compute_fn(
+            result = await invoke_compute_fn(
                 fn, context, kwargs, context_arg_provided, config_arg_cls, resource_arg_mapping
             )
+
+            # If the user function returned a coroutine, wrap it so its result is normalized
             if inspect.iscoroutine(result):
-                return _coerce_async_op_to_async_gen(result, context, output_defs)
-            # already a generator
-            return result
+                return _coerce_async_op_to_async_gen(result, context, output_defs)  # don't await
+
+            # If the user function returned an async generator, that's already an async iterator
+            if inspect.isasyncgen(result):
+                return result
+
+            # Otherwise, treat the result as a "return value" and normalize it
+            return validate_and_coerce_op_result_to_iterator(result, context, output_defs)
         else:
             # we have a regular function, do not execute it before we are in an iterator
             # (as we want all potential failures to happen inside iterators)
@@ -80,17 +91,18 @@ def create_op_compute_wrapper(
     return compute
 
 
+# already async
 async def _coerce_async_op_to_async_gen(
     awaitable: Awaitable[Any],
     context: ExecutionContextTypes,
     output_defs: Sequence[OutputDefinition],
 ) -> AsyncIterator[Any]:
     result = await awaitable
-    for event in validate_and_coerce_op_result_to_iterator(result, context, output_defs):
+    async for event in validate_and_coerce_op_result_to_iterator(result, context, output_defs):
         yield event
 
 
-def invoke_compute_fn(
+async def invoke_compute_fn(
     fn: Callable[..., Any],
     context: ExecutionContextTypes,
     kwargs: Mapping[str, Any],
@@ -114,15 +126,7 @@ def invoke_compute_fn(
     return fn(context, **args_to_pass) if context_arg_provided else fn(**args_to_pass)
 
 
-def construct_config_from_context(
-    config_arg_cls: type[Config], op_execution_context: OpExecutionContext
-) -> Config:
-    return config_arg_cls(
-        **config_arg_cls._get_non_default_public_field_values_cls(op_execution_context.op_config)  # noqa: SLF001
-    )
-
-
-def _coerce_op_compute_fn_to_iterator(
+async def _coerce_op_compute_fn_to_iterator(
     fn,
     output_defs,
     context: ExecutionContextTypes,
@@ -131,15 +135,16 @@ def _coerce_op_compute_fn_to_iterator(
     config_arg_class,
     resource_arg_mapping,
 ):
-    result = invoke_compute_fn(
+    result = await invoke_compute_fn(
         fn, context, kwargs, context_arg_provided, config_arg_class, resource_arg_mapping
     )
-    yield from validate_and_coerce_op_result_to_iterator(result, context, output_defs)
+    async for event in validate_and_coerce_op_result_to_iterator(result, context, output_defs):
+        yield event
 
 
-def _zip_and_iterate_op_result(
+async def _zip_and_iterate_op_result(
     result: Any, context: ExecutionContextTypes, output_defs: Sequence[OutputDefinition]
-) -> Iterator[tuple[int, Any, OutputDefinition]]:
+) -> AsyncIterator[tuple[int, Any, OutputDefinition]]:
     # Filtering the expected output defs here is an unfortunate temporary solution to deal with the
     # change in expected outputs that occurs as a result of putting `AssetCheckResults` onto
     # `MaterializeResults`. Prior to this, `AssetCheckResults` were yielded/returned directly, and
@@ -153,18 +158,19 @@ def _zip_and_iterate_op_result(
     # to here because we can't rely on the presence of asset layer here, since the present code path
     # is used by direct invocation. Probably the solution is to expose an asset layer on the
     # invocation context.
-    expected_return_outputs = _filter_expected_output_defs(result, context, output_defs)
+    expected_return_outputs = await _filter_expected_output_defs(result, context, output_defs)
     if len(expected_return_outputs) > 1:
-        result = _validate_multi_return(context, result, expected_return_outputs)
+        result = await _validate_multi_return(context, result, expected_return_outputs)
         for position, (output_def, element) in enumerate(zip(expected_return_outputs, result)):
-            yield position, output_def, element
+            yield position, element, output_def
     else:
-        yield 0, output_defs[0], result
+        # NOTE: we keep the original behavior (index 0, output_defs[0]) for the single-output case
+        yield 0, result, output_defs[0]
 
 
 # Filter out output_defs corresponding to asset check results that already exist on a
 # MaterializeResult.
-def _filter_expected_output_defs(
+async def _filter_expected_output_defs(
     result: Any, context: ExecutionContextTypes, output_defs: Sequence[OutputDefinition]
 ) -> Sequence[OutputDefinition]:
     result_tuple = (
@@ -175,13 +181,13 @@ def _filter_expected_output_defs(
     if not asset_results:
         return output_defs
 
-    check_names_by_asset_key = {}
+    check_names_by_asset_key: dict[Any, set[str]] = {}
     for check_key in context.op_execution_context.selected_asset_check_keys:
         if check_key.asset_key not in check_names_by_asset_key:
-            check_names_by_asset_key[check_key.asset_key] = []
-        check_names_by_asset_key[check_key.asset_key].append(check_key.name)
+            check_names_by_asset_key[check_key.asset_key] = set()
+        check_names_by_asset_key[check_key.asset_key].add(check_key.name)
 
-    remove_outputs = []
+    remove_outputs: list[str] = []
     for asset_result in asset_results:
         for check_result in asset_result.check_results:
             remove_outputs.append(
@@ -193,7 +199,7 @@ def _filter_expected_output_defs(
     return [out for out in output_defs if out.name not in remove_outputs]
 
 
-def _validate_multi_return(
+async def _validate_multi_return(
     context: ExecutionContextTypes,
     result: Any,
     output_defs: Sequence[OutputDefinition],
@@ -207,7 +213,9 @@ def _validate_multi_return(
         ):
             return [None for _ in output_defs]
 
-    # When returning from an op with multiple outputs, the returned object must be a tuple of the same length as the number of outputs. At the time of the op's construction, we verify that a provided annotation is a tuple with the same length as the number of outputs, so if the result matches the number of output defs on the op, it will transitively also match the annotation.
+    # When returning from an op with multiple outputs, the returned object must be a tuple of the same length as the number of outputs.
+    # At the time of the op's construction, we verify that a provided annotation is a tuple with the same length as the number of outputs,
+    # so if the result matches the number of output defs on the op, it will transitively also match the annotation.
     if not isinstance(result, tuple):
         raise DagsterInvariantViolationError(
             f"{context.describe_op()} has multiple outputs, but only one "
@@ -228,41 +236,21 @@ def _validate_multi_return(
     return result
 
 
-def _get_annotation_for_output_position(
-    position: int, op_def: OpDefinition, output_defs: Sequence[OutputDefinition]
-) -> Any:
-    if op_def.is_from_decorator():
-        if len(output_defs) > 1:
-            annotation_subitems = get_args(op_def.get_output_annotation())
-            if len(annotation_subitems) == len(output_defs):
-                return annotation_subitems[position]
-        else:
-            return op_def.get_output_annotation()
-
-    return inspect.Parameter.empty
-
-
-def _check_output_object_name(
-    output: Union[DynamicOutput, Output], output_def: OutputDefinition, position: int
-) -> None:
-    from dagster._core.definitions.events import DEFAULT_OUTPUT
-
-    if not output.output_name == DEFAULT_OUTPUT and not output.output_name == output_def.name:
-        raise DagsterInvariantViolationError(
-            f"Bad state: Output was explicitly named '{output.output_name}', "
-            "which does not match the output definition specified for position "
-            f"{position}: '{output_def.name}'."
-        )
-
-
-def validate_and_coerce_op_result_to_iterator(
+async def validate_and_coerce_op_result_to_iterator(
     result: Any,
     context: ExecutionContextTypes,
     output_defs: Sequence[OutputDefinition],
-) -> Iterator[Any]:
+) -> AsyncIterator[Any]:
     if inspect.isgenerator(result):
-        # this happens when a user explicitly returns a generator in the op
-        yield from result
+        for r in result:
+            yield r
+        return
+
+    if inspect.isasyncgen(result):
+        async for r in result:
+            yield r
+        return
+
     elif isinstance(result, (AssetMaterialization, ExpectationResult)):
         raise DagsterInvariantViolationError(
             f"Error in {context.describe_op()}: If you are "
@@ -296,9 +284,10 @@ def validate_and_coerce_op_result_to_iterator(
             result_tuple = (result,)
         else:
             result_tuple = result
-        yield from result_tuple
+        for r in result_tuple:
+            yield r
     elif output_defs:
-        for position, output_def, element in _zip_and_iterate_op_result(
+        async for position, element, output_def in _zip_and_iterate_op_result(
             result, context, output_defs
         ):
             annotation = _get_annotation_for_output_position(position, context.op_def, output_defs)
