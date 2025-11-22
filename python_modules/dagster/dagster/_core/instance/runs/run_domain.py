@@ -954,7 +954,20 @@ class RunDomain:
                 f" {PARTITION_NAME_TAG}"
             )
 
-        partitions_def = asset_graph.get(asset_key_or_check_key).partitions_def
+        # Get the node from the asset graph - handle both AssetKey and AssetCheckKey
+        if isinstance(asset_key_or_check_key, AssetKey):
+            node = self._get_repo_scoped_asset_node(
+                asset_graph, asset_key_or_check_key, dagster_run.remote_job_origin
+            )
+        else:
+            # For AssetCheckKey, check if it exists before trying to get it
+            node = (
+                asset_graph.get(asset_key_or_check_key)
+                if asset_graph.has(asset_key_or_check_key)
+                else None
+            )
+
+        partitions_def = node.partitions_def if node else None
         partitions_subset = None
         individual_partitions = None
         if partition_range_start or partition_range_end:
@@ -985,8 +998,13 @@ class RunDomain:
                             PartitionKeyRange(partition_range_start, partition_range_end),
                         )
         elif partitions_def and partition_tag:
-            # For DynamicPartitionsDefinition, we need to pass the instance to check partition existence
-            if isinstance(partitions_def, DynamicPartitionsDefinition):
+            # For DynamicPartitionsDefinition and MultiPartitionsDefinition (which may contain dynamic dimensions),
+            # we need to pass the instance to check partition existence
+            from dagster._core.definitions.partitions.definition.multi import (
+                MultiPartitionsDefinition,
+            )
+
+            if isinstance(partitions_def, (DynamicPartitionsDefinition, MultiPartitionsDefinition)):
                 has_key = partitions_def.has_partition_key(
                     partition_tag, dynamic_partitions_store=self._instance
                 )
