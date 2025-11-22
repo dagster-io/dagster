@@ -22,9 +22,11 @@ type Execution = AssetCheckDetailsQuery['assetCheckExecutions'][0];
 export const AssetCheckExecutionList = ({
   executions,
   paginationProps,
+  hasPartitions = false,
 }: {
   executions: Execution[];
   paginationProps: CursorPaginationProps;
+  hasPartitions?: boolean;
 }) => {
   if (!executions) {
     return (
@@ -43,6 +45,7 @@ export const AssetCheckExecutionList = ({
               <th style={{width: '160px'}}>Evaluation result</th>
               <th style={{width: '200px'}}>Timestamp</th>
               <th style={{width: '200px'}}>Target materialization</th>
+              {hasPartitions && <th style={{width: '150px'}}>Partition</th>}
               <th>
                 <Box flex={{gap: 4}}>
                   Description
@@ -95,6 +98,11 @@ export const AssetCheckExecutionList = ({
                       ' - '
                     )}
                   </td>
+                  {hasPartitions && (
+                    <td>
+                      {execution.evaluation?.partition ? execution.evaluation.partition : ' - '}
+                    </td>
+                  )}
                   <td>
                     {execution.evaluation?.description ? (
                       <Description fontSize="14px" description={execution.evaluation.description} />

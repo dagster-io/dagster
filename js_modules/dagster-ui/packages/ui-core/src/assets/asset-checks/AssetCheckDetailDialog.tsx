@@ -90,6 +90,7 @@ export const ASSET_CHECK_EXECUTION_FRAGMENT = gql`
       metadataEntries {
         ...MetadataEntryFragment
       }
+      partition
     }
   }
   ${METADATA_ENTRY_FRAGMENT}
