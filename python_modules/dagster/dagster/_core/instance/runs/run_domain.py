@@ -35,6 +35,7 @@ from dagster._core.storage.tags import (
     ASSET_RESUME_RETRY_TAG,
     BACKFILL_ID_TAG,
     BACKFILL_TAGS,
+    CODE_LOCATION_TAG,
     PARENT_RUN_ID_TAG,
     PARTITION_NAME_TAG,
     RESUME_RETRY_TAG,
@@ -221,6 +222,15 @@ class RunDomain:
                 remote_job_origin is not None,
                 "must include a remote job origin when creating a run using a remote asset graph",
             )
+
+        # Add the code location tag to the validated tags
+        # This is useful for filtering runs by code location in the web server
+        # or control concurrency by code location with tag concurrency limits.
+        if remote_job_origin:
+            validated_tags = {
+                **validated_tags,
+                CODE_LOCATION_TAG: remote_job_origin.repository_origin.code_location_origin.location_name,
+            }
 
         dagster_run = self.construct_run_with_snapshots(
             job_name=job_name,
