@@ -60,13 +60,20 @@ jobs:
         run: ${{ steps.setup-python-version.outputs.python-path }} -m pip install uv
         shell: bash
 
-      # Refresh state for any StateBackedComponents in the project
-      - name: Refresh defs state
+      # Sync all projects (workspace or single project)
+      - name: Sync project dependencies
         if: steps.prerun.outputs.result != 'skip'
         run: |
           cd ${{ env.DAGSTER_PROJECT_DIR }}
-          ${{ steps.setup-python-version.outputs.python-path }} -m uv run dg plus deploy refresh-defs-state
+          find . -maxdepth 3 -name "pyproject.toml" -type f -execdir ${{ steps.setup-python-version.outputs.python-path }} -m uv sync \;
         shell: bash
+
+      # Refresh state for any StateBackedComponents in the project
+      - name: Refresh defs state
+        if: steps.prerun.outputs.result != 'skip'
+        uses: dagster-io/dagster-cloud-action/actions/utils/dg-cli@TEMPLATE_DAGSTER_CLOUD_ACTION_VERSION
+        with:
+          command: "plus deploy refresh-defs-state"
 
       # Any value can be used as the docker image tag. It is recommended to use a unique value
       # for each build so that multiple builds do not overwrite each other.

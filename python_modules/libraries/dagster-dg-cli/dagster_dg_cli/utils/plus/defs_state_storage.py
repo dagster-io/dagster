@@ -1,8 +1,11 @@
+from collections.abc import Mapping
 from pathlib import Path
 from typing import TYPE_CHECKING, Any, Optional
 
+from dagster._config import Field, Shape
 from dagster._core.instance.types import T_DagsterInstance
 from dagster._core.storage.defs_state.base import DefsStateStorage
+from dagster._serdes.config_class import ConfigurableClass, ConfigurableClassData
 from dagster_cloud_cli.core.artifacts import download_artifact, upload_artifact
 from dagster_cloud_cli.core.headers.auth import DagsterCloudInstanceScope
 from dagster_shared import check
@@ -35,16 +38,26 @@ SET_LATEST_VERSION_MUTATION = """
 """
 
 
-class DagsterPlusCliDefsStateStorage(DefsStateStorage[T_DagsterInstance]):
+class DagsterPlusCliDefsStateStorage(DefsStateStorage[T_DagsterInstance], ConfigurableClass):
     """DefsStateStorage that can be instantiated from a DagsterPlusCliConfig,
     intended for use within the CLI.
     """
 
-    def __init__(self, url: str, api_token: str, deployment: str, graphql_client):
+    def __init__(
+        self,
+        url: str,
+        api_token: str,
+        deployment: str,
+        graphql_client,
+        organization: str,
+        inst_data: Optional[ConfigurableClassData] = None,
+    ):
         self._url = url
         self._api_token = api_token
         self._deployment = deployment
         self._graphql_client = graphql_client
+        self._organization = organization
+        self._inst_data = inst_data
 
     @classmethod
     def from_location_state(
@@ -57,6 +70,50 @@ class DagsterPlusCliDefsStateStorage(DefsStateStorage[T_DagsterInstance]):
             api_token,
             location_state.deployment_name,
             DagsterPlusGraphQLClient.from_location_state(location_state, api_token, organization),
+            organization,
+        )
+
+    @property
+    def inst_data(self) -> Optional[ConfigurableClassData]:
+        return self._inst_data
+
+    @classmethod
+    def config_type(cls):
+        return Shape(
+            {
+                "url": Field(str, is_required=True),
+                "api_token": Field(str, is_required=True),
+                "deployment": Field(str, is_required=True),
+                "organization": Field(str, is_required=True),
+            }
+        )
+
+    @classmethod
+    def from_config_value(cls, inst_data: ConfigurableClassData, config_value: Mapping[str, Any]):
+        from dagster_dg_cli.utils.plus.gql_client import DagsterPlusGraphQLClient
+
+        url = check.str_param(config_value.get("url"), "url")
+        api_token = check.str_param(config_value.get("api_token"), "api_token")
+        deployment = check.str_param(config_value.get("deployment"), "deployment")
+        organization = check.str_param(config_value.get("organization"), "organization")
+
+        # Create graphql client from config
+        graphql_client = DagsterPlusGraphQLClient(
+            url=f"{url}/graphql",
+            headers={
+                "Dagster-Cloud-Api-Token": api_token,
+                "Dagster-Cloud-Organization": organization,
+                "Dagster-Cloud-Deployment": deployment,
+            },
+        )
+
+        return cls(
+            url=url,
+            api_token=api_token,
+            deployment=deployment,
+            graphql_client=graphql_client,
+            organization=organization,
+            inst_data=inst_data,
         )
 
     @property
