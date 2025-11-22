@@ -55,6 +55,7 @@ class TimeWindowPartitionsSubsetSerializer(NamedTupleSerializer):
         # value.num_partitions will calculate the number of partitions if the field is None
         # We want to check if the field is None and replace the value with the calculated value
         # for serialization
+
         if value._asdict()["num_partitions"] is None:
             return TimeWindowPartitionsSubset(
                 partitions_def=value.partitions_def,
