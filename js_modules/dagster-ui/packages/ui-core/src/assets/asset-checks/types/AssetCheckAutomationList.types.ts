@@ -462,6 +462,13 @@ export type AssetCheckAutomationListQuery = {
                   assetKey: {__typename: 'AssetKey'; path: Array<string>};
                 }
               | {__typename: 'AssetKey'; path: Array<string>};
+            sinceMetadata: {
+              __typename: 'SinceConditionMetadata';
+              triggerEvaluationId: number | null;
+              triggerTimestamp: number | null;
+              resetEvaluationId: number | null;
+              resetTimestamp: number | null;
+            } | null;
           }>;
         }>;
       }
@@ -469,4 +476,4 @@ export type AssetCheckAutomationListQuery = {
     | null;
 };
 
-export const AssetCheckAutomationListQueryVersion = '559745a4f28472ae6f81faa603be4b4cedacad38132ce20f72e1799833430273';
+export const AssetCheckAutomationListQueryVersion = '85db8eaf26a311039495e1e04b4283308859531de0bcfaafed862b9e0f014137';
