@@ -8,6 +8,8 @@ dependencies = [
     # highlight-start
     "shared",
     # highlight-end
+    "dagster-prometheus",
+    "prometheus-client",
 ]
 # end_dependencies
 
