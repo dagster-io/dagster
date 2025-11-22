@@ -1,0 +1,16 @@
+tree my-project
+
+my-project
+├── deployment_settings.yaml    ## optional, defines settings for full deployments
+├── pyproject.toml
+├── README.md
+├── src
+│   └── my_project
+│       ├── __init__.py
+│       ├── definitions.py
+│       └── defs
+│           └── __init__.py
+└── tests
+    └── __init__.py
+
+5 directories, 7 files

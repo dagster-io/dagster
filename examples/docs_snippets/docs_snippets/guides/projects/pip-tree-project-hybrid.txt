@@ -1,0 +1,18 @@
+tree my-project
+
+my-project
+├── build.yaml
+├── deployment_settings.yaml    ## optional, defines settings for full deployments
+├── Dockerfile
+├── pyproject.toml
+├── README.md
+├── src
+│   └── my_project
+│       ├── __init__.py
+│       ├── definitions.py
+│       └── defs
+│           └── __init__.py
+└── tests
+    └── __init__.py
+
+5 directories, 9 files

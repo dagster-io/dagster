@@ -116,5 +116,5 @@ These credential helpers generally are configured in `~/.docker.config.json`. To
 
 Now that you've got your agent running, what's next?
 
-- **If you're getting Dagster+ set up**, the next step is to [add a code location](/deployment/code-locations) using the agent.
-- **If you're ready to load your Dagster code**, refer to the [Adding Code to Dagster+](/deployment/code-locations) guide for more info.
+- **If you're getting Dagster+ set up**, the next step is to [add a code location](/guides/build/projects) using the agent.
+- **If you're ready to load your Dagster code**, refer to the [Adding Code to Dagster+](/guides/build/projects) guide for more info.
