@@ -787,12 +787,6 @@ class LegacyEventLogStorage(EventLogStorage, ConfigurableClass):
             check_key, partition_key, after_event_storage_id
         )
 
-    def has_secondary_index(self, name: str) -> bool:
-        """This method uses a checkpoint migration table to see if summary data has been constructed
-        in a secondary index table.  Can be used to checkpoint event_log data migrations.
-        """
-        return self._storage.event_log_storage.has_secondary_index(name)
-
 
 class LegacyScheduleStorage(ScheduleStorage, ConfigurableClass):
     def __init__(self, storage: DagsterStorage, inst_data: Optional[ConfigurableClassData] = None):

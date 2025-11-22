@@ -7191,13 +7191,22 @@ class TestEventLogStorage:
 
         def _verify_summary_records(tested_check_keys):
             """Helper to verify legacy and optimized results are equivalent."""
+            # Determine which object to mock: for LegacyEventLogStorage, we need to mock the underlying storage
+            from dagster._core.storage.legacy_storage import LegacyEventLogStorage
+
+            mock_target = (
+                storage._storage.event_log_storage  # noqa: SLF001
+                if isinstance(storage, LegacyEventLogStorage)
+                else storage
+            )
+
             # Get results using legacy implementation
-            with mock.patch.object(storage, "has_secondary_index") as mock_has_index:
+            with mock.patch.object(mock_target, "has_secondary_index") as mock_has_index:
                 mock_has_index.return_value = False
                 legacy_results = storage.get_asset_check_summary_records(tested_check_keys)
 
             # Get results using optimized implementation
-            with mock.patch.object(storage, "has_secondary_index") as mock_has_index:
+            with mock.patch.object(mock_target, "has_secondary_index") as mock_has_index:
                 mock_has_index.return_value = True
                 optimized_results = storage.get_asset_check_summary_records(tested_check_keys)
 
