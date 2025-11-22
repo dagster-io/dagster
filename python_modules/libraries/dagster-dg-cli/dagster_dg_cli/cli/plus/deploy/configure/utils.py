@@ -173,13 +173,34 @@ TEMPLATES_DIR = Path(__file__).parent.parent.parent.parent.parent / "templates"
 SERVERLESS_GITHUB_ACTION_FILE = TEMPLATES_DIR / "serverless-github-action.yaml"
 HYBRID_GITHUB_ACTION_FILE = TEMPLATES_DIR / "hybrid-github-action.yaml"
 BUILD_LOCATION_FRAGMENT = TEMPLATES_DIR / "build-location-fragment.yaml"
+SERVERLESS_GITLAB_CI_FILE = TEMPLATES_DIR / "serverless-gitlab-ci.yaml"
+HYBRID_GITLAB_CI_FILE = TEMPLATES_DIR / "hybrid-gitlab-ci.yaml"
+BUILD_LOCATION_FRAGMENT_GITLAB = TEMPLATES_DIR / "build-location-fragment-gitlab.yaml"
+
+
+class FragmentInfo(NamedTuple):
+    """Container registry fragment information for a specific git provider."""
+
+    fragment: Path
+    secrets_hints: list[str]
 
 
 class ContainerRegistryInfo(NamedTuple):
+    """Container registry configuration supporting multiple git providers."""
+
     name: str
     match: Callable[[str], bool]
-    fragment: Path
-    secrets_hints: list[str]
+    github_fragment_info: FragmentInfo
+    gitlab_fragment_info: FragmentInfo
+
+    def get_fragment_info(self, provider: GitProvider) -> FragmentInfo:
+        """Get the fragment info for the specified git provider."""
+        if provider == GitProvider.GITHUB:
+            return self.github_fragment_info
+        elif provider == GitProvider.GITLAB:
+            return self.gitlab_fragment_info
+        else:
+            raise ValueError(f"Unsupported git provider: {provider}")
 
 
 def _matches_ecr(url: str) -> bool:
@@ -228,47 +249,106 @@ REGISTRY_INFOS = [
     ContainerRegistryInfo(
         name="ECR",
         match=_matches_ecr,
-        fragment=TEMPLATES_DIR / "registry_fragments" / "ecr-login-fragment.yaml",
-        secrets_hints=[
-            'gh secret set AWS_ACCESS_KEY_ID --body "(your AWS access key ID)"',
-            'gh secret set AWS_SECRET_ACCESS_KEY --body "(your AWS secret access key)"',
-            'gh secret set AWS_REGION --body "(your AWS region)"',
-        ],
+        github_fragment_info=FragmentInfo(
+            fragment=TEMPLATES_DIR / "registry_fragments" / "github" / "ecr-login-fragment.yaml",
+            secrets_hints=[
+                'gh secret set AWS_ACCESS_KEY_ID --body "(your AWS access key ID)"',
+                'gh secret set AWS_SECRET_ACCESS_KEY --body "(your AWS secret access key)"',
+                'gh secret set AWS_REGION --body "(your AWS region)"',
+            ],
+        ),
+        gitlab_fragment_info=FragmentInfo(
+            fragment=TEMPLATES_DIR / "registry_fragments" / "gitlab" / "ecr-login-fragment.yaml",
+            secrets_hints=[
+                "AWS_ACCESS_KEY_ID - Your AWS access key ID",
+                "AWS_SECRET_ACCESS_KEY - Your AWS secret access key",
+                "AWS_REGION - Your AWS region",
+            ],
+        ),
     ),
     ContainerRegistryInfo(
         name="DockerHub",
         match=_matches_dockerhub,
-        fragment=TEMPLATES_DIR / "registry_fragments" / "dockerhub-login-fragment.yaml",
-        secrets_hints=[
-            'gh secret set DOCKERHUB_USERNAME --body "(your DockerHub username)"',
-            'gh secret set DOCKERHUB_TOKEN --body "(your DockerHub token)"',
-        ],
+        github_fragment_info=FragmentInfo(
+            fragment=TEMPLATES_DIR
+            / "registry_fragments"
+            / "github"
+            / "dockerhub-login-fragment.yaml",
+            secrets_hints=[
+                'gh secret set DOCKERHUB_USERNAME --body "(your DockerHub username)"',
+                'gh secret set DOCKERHUB_TOKEN --body "(your DockerHub token)"',
+            ],
+        ),
+        gitlab_fragment_info=FragmentInfo(
+            fragment=TEMPLATES_DIR
+            / "registry_fragments"
+            / "gitlab"
+            / "dockerhub-login-fragment.yaml",
+            secrets_hints=[
+                "DOCKERHUB_USERNAME - Your DockerHub username",
+                "DOCKERHUB_TOKEN - Your DockerHub access token",
+            ],
+        ),
     ),
     ContainerRegistryInfo(
         name="GitHub Container Registry",
         match=_matches_ghcr,
-        fragment=TEMPLATES_DIR
-        / "registry_fragments"
-        / "github-container-registry-login-fragment.yaml",
-        secrets_hints=[],
+        github_fragment_info=FragmentInfo(
+            fragment=TEMPLATES_DIR
+            / "registry_fragments"
+            / "github"
+            / "github-container-registry-login-fragment.yaml",
+            secrets_hints=[],
+        ),
+        gitlab_fragment_info=FragmentInfo(
+            fragment=TEMPLATES_DIR
+            / "registry_fragments"
+            / "gitlab"
+            / "github-container-registry-login-fragment.yaml",
+            secrets_hints=[
+                "GITHUB_USERNAME - Your GitHub username",
+                "GITHUB_TOKEN - Your GitHub personal access token with packages:read permission",
+            ],
+        ),
     ),
     ContainerRegistryInfo(
         name="Azure Container Registry",
         match=_matches_azure,
-        fragment=TEMPLATES_DIR
-        / "registry_fragments"
-        / "azure-container-registry-login-fragment.yaml",
-        secrets_hints=[
-            'gh secret set AZURE_CLIENT_ID --body "(your Azure client ID)"',
-            'gh secret set AZURE_CLIENT_SECRET --body "(your Azure client secret)"',
-        ],
+        github_fragment_info=FragmentInfo(
+            fragment=TEMPLATES_DIR
+            / "registry_fragments"
+            / "github"
+            / "azure-container-registry-login-fragment.yaml",
+            secrets_hints=[
+                'gh secret set AZURE_CLIENT_ID --body "(your Azure client ID)"',
+                'gh secret set AZURE_CLIENT_SECRET --body "(your Azure client secret)"',
+            ],
+        ),
+        gitlab_fragment_info=FragmentInfo(
+            fragment=TEMPLATES_DIR
+            / "registry_fragments"
+            / "gitlab"
+            / "azure-container-registry-login-fragment.yaml",
+            secrets_hints=[
+                "AZURE_CLIENT_ID - Your Azure service principal client ID",
+                "AZURE_CLIENT_SECRET - Your Azure service principal client secret",
+            ],
+        ),
     ),
     ContainerRegistryInfo(
         name="Google Container Registry",
         match=_matches_gcr,
-        fragment=TEMPLATES_DIR / "registry_fragments" / "gcr-login-fragment.yaml",
-        secrets_hints=[
-            'gh secret set GCR_JSON_KEY --body "(your GCR JSON key)"',
-        ],
+        github_fragment_info=FragmentInfo(
+            fragment=TEMPLATES_DIR / "registry_fragments" / "github" / "gcr-login-fragment.yaml",
+            secrets_hints=[
+                'gh secret set GCR_JSON_KEY --body "(your GCR JSON key)"',
+            ],
+        ),
+        gitlab_fragment_info=FragmentInfo(
+            fragment=TEMPLATES_DIR / "registry_fragments" / "gitlab" / "gcr-login-fragment.yaml",
+            secrets_hints=[
+                "GCR_JSON_KEY - Your GCR service account JSON key",
+            ],
+        ),
     ),
 ]
