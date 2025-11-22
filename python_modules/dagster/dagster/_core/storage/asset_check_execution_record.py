@@ -1,17 +1,23 @@
 import enum
 from collections.abc import Iterable
-from typing import NamedTuple, Optional, cast
+from typing import TYPE_CHECKING, NamedTuple, Optional, cast
 
+from dagster_shared.record import record
 from dagster_shared.serdes import deserialize_value
 
 import dagster._check as check
 from dagster._core.definitions.asset_checks.asset_check_evaluation import AssetCheckEvaluation
 from dagster._core.definitions.asset_key import AssetCheckKey
+from dagster._core.definitions.partitions.subset.serialized import SerializedPartitionsSubset
 from dagster._core.events.log import DagsterEventType, EventLogEntry
 from dagster._core.loader import LoadableBy, LoadingContext
 from dagster._core.storage.dagster_run import DagsterRunStatus, RunRecord
 from dagster._serdes import whitelist_for_serdes
 from dagster._time import utc_datetime_from_naive
+
+if TYPE_CHECKING:
+    from dagster._core.definitions.partitions.definition import PartitionsDefinition
+    from dagster._core.definitions.partitions.subset import PartitionsSubset
 
 
 class AssetCheckInstanceSupport(enum.Enum):
@@ -39,12 +45,80 @@ COMPLETED_ASSET_CHECK_EXECUTION_RECORD_STATUSES = {
 
 
 @whitelist_for_serdes
+@record
+class AssetCheckPartitionStatusCacheValue:
+    """Serializable cache value stored in database for asset check partition status."""
+
+    latest_storage_id: int
+    partitions_def_id: Optional[str]
+    serialized_planned_subset: "SerializedPartitionsSubset"
+    serialized_succeeded_subset: "SerializedPartitionsSubset"
+    serialized_failed_subset: "SerializedPartitionsSubset"
+    # Map of partition key -> run_id for planned partitions (to resolve run status)
+    planned_partition_run_mapping: dict[str, str]
+
+    @classmethod
+    def from_partitions_def(
+        cls, partitions_def: "PartitionsDefinition"
+    ) -> "AssetCheckPartitionStatusCacheValue":
+        serialized_subset = SerializedPartitionsSubset.from_subset(
+            partitions_def.empty_subset(), partitions_def
+        )
+        return AssetCheckPartitionStatusCacheValue(
+            latest_storage_id=0,
+            partitions_def_id=partitions_def.get_serializable_unique_identifier(),
+            serialized_planned_subset=serialized_subset,
+            serialized_succeeded_subset=serialized_subset,
+            serialized_failed_subset=serialized_subset,
+            planned_partition_run_mapping={},
+        )
+
+
+@record
+class AssetCheckPartitionRecord:
+    """Record representing a single asset check partition with execution and run info."""
+
+    partition_key: str
+    last_execution_status: AssetCheckExecutionRecordStatus
+    last_planned_run_id: Optional[str]
+    last_event_id: int
+
+
+@whitelist_for_serdes
 class AssetCheckExecutionResolvedStatus(enum.Enum):
     IN_PROGRESS = "IN_PROGRESS"
     SUCCEEDED = "SUCCEEDED"
     FAILED = "FAILED"  # explicit fail result
     EXECUTION_FAILED = "EXECUTION_FAILED"  # hit some exception
     SKIPPED = "SKIPPED"  # the run finished, didn't fail, but the check didn't execute
+
+
+@record
+class AssetCheckPartitionStatus:
+    """Computed partition status with fine-grained execution states for an asset check."""
+
+    missing: "PartitionsSubset"
+    succeeded: "PartitionsSubset"
+    failed: "PartitionsSubset"
+    in_progress: "PartitionsSubset"
+    skipped: "PartitionsSubset"
+    execution_failed: "PartitionsSubset"
+
+    def get_subset_for_status(
+        self, status: AssetCheckExecutionResolvedStatus
+    ) -> "PartitionsSubset":
+        if status == AssetCheckExecutionResolvedStatus.IN_PROGRESS:
+            return self.in_progress
+        elif status == AssetCheckExecutionResolvedStatus.SKIPPED:
+            return self.skipped
+        elif status == AssetCheckExecutionResolvedStatus.EXECUTION_FAILED:
+            return self.execution_failed
+        elif status == AssetCheckExecutionResolvedStatus.SUCCEEDED:
+            return self.succeeded
+        elif status == AssetCheckExecutionResolvedStatus.FAILED:
+            return self.failed
+        else:
+            check.failed(f"Unexpected check status {status}")
 
 
 class AssetCheckExecutionRecord(
