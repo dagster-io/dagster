@@ -209,7 +209,6 @@ AssetChecksTable = db.Table(
     ),  # Reference to asset_check_executions.id
     db.Column("created_timestamp", db.DateTime, server_default=get_sql_current_timestamp()),
     db.Column("updated_timestamp", db.DateTime),
-    db.UniqueConstraint("asset_key", "check_name"),
 )
 
 # Summary table for asset check partitions
@@ -239,7 +238,6 @@ AssetCheckPartitionsTable = db.Table(
     ),
     db.Column("created_timestamp", db.DateTime, server_default=get_sql_current_timestamp()),
     db.Column("updated_timestamp", db.DateTime),
-    db.UniqueConstraint("asset_key", "check_name", "partition_key"),
 )
 
 db.Index(
@@ -268,6 +266,23 @@ db.Index(
 )
 
 # Indexes for new asset checks tables
+db.Index(
+    "idx_asset_checks_unique",
+    AssetChecksTable.c.asset_key,
+    AssetChecksTable.c.check_name,
+    unique=True,
+    mysql_length={"asset_key": 64, "check_name": 64},
+)
+
+db.Index(
+    "idx_asset_check_partitions_unique",
+    AssetCheckPartitionsTable.c.asset_key,
+    AssetCheckPartitionsTable.c.check_name,
+    AssetCheckPartitionsTable.c.partition_key,
+    unique=True,
+    mysql_length={"asset_key": 64, "check_name": 64, "partition_key": 64},
+)
+
 db.Index(
     "idx_asset_checks",
     AssetChecksTable.c.asset_key,
