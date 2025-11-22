@@ -407,6 +407,21 @@ class TimeWindowPartitionsSubset(
     def __repr__(self) -> str:
         return f"TimeWindowPartitionsSubset({self.get_partition_key_ranges(self.partitions_def, respect_bounds=False)})"
 
+    @staticmethod
+    def union_subsets(
+        subsets: Sequence["TimeWindowPartitionsSubset"],
+    ) -> "TimeWindowPartitionsSubset":
+        check.invariant(len(subsets) >= 1, "Must union at least one subset")
+        base_subset = subsets[0]
+
+        input_time_windows = []
+        for subset in subsets:
+            input_time_windows.extend(subset.included_time_windows)
+
+        input_time_windows = sorted(input_time_windows, key=lambda tw: tw.start_timestamp)
+
+        return base_subset._merge_sorted_time_windows(input_time_windows)
+
     def __and__(self, other: "PartitionsSubset") -> "PartitionsSubset":
         other = _attempt_coerce_to_time_window_subset(other)
         if not isinstance(other, TimeWindowPartitionsSubset):
@@ -457,7 +472,11 @@ class TimeWindowPartitionsSubset(
             [*self.included_time_windows, *other.included_time_windows],
             key=lambda tw: tw.start_timestamp,
         )
+        return self._merge_sorted_time_windows(input_time_windows)
 
+    def _merge_sorted_time_windows(
+        self, input_time_windows: Sequence[PersistedTimeWindow]
+    ) -> "TimeWindowPartitionsSubset":
         result_windows = [input_time_windows[0]] if len(input_time_windows) > 0 else []
 
         for window in input_time_windows[1:]:

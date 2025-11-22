@@ -6,7 +6,10 @@ from typing import TYPE_CHECKING, NamedTuple
 import dagster._check as check
 from dagster._core.asset_graph_view.asset_graph_view import AssetGraphView
 from dagster._core.asset_graph_view.serializable_entity_subset import SerializableEntitySubset
-from dagster._core.definitions.assets.graph.asset_graph_subset import AssetGraphSubset
+from dagster._core.definitions.assets.graph.asset_graph_subset import (
+    AssetGraphSubset,
+    union_subsets,
+)
 
 if TYPE_CHECKING:
     from dagster._core.asset_graph_view.entity_subset import EntitySubset
@@ -154,13 +157,15 @@ class ToposortedPriorityQueue:
         # the minimum item in a heap is always at index 0
         min_item = self._heap[0]
 
-        result = AssetGraphSubset.create_empty_subset()
         # Collect all items with the same minimum sort key (asset key)
+
+        to_combine = []
+
         while self._heap and self._heap[0].sort_key == min_item.sort_key:
             heap_value = heappop(self._heap)
-            result |= heap_value.asset_graph_subset
+            to_combine.append(heap_value.asset_graph_subset)
 
-        return result
+        return union_subsets(to_combine)
 
     def _queue_item(self, entity_subset: "EntitySubset") -> "ToposortedPriorityQueue.QueueItem":
         asset_key = entity_subset.key
