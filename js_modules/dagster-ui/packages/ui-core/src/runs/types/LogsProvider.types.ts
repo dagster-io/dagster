@@ -60,6 +60,7 @@ export type PipelineRunLogsSubscription = {
                 checkName: string;
                 success: boolean;
                 timestamp: number;
+                partition: string | null;
                 assetKey: {__typename: 'AssetKey'; path: Array<string>};
                 targetMaterialization: {
                   __typename: 'AssetCheckEvaluationTargetMaterializationData';
@@ -3915,6 +3916,7 @@ export type RunLogsSubscriptionSuccessFragment = {
           checkName: string;
           success: boolean;
           timestamp: number;
+          partition: string | null;
           assetKey: {__typename: 'AssetKey'; path: Array<string>};
           targetMaterialization: {
             __typename: 'AssetCheckEvaluationTargetMaterializationData';
@@ -7705,6 +7707,7 @@ export type RunLogsQuery = {
                 checkName: string;
                 success: boolean;
                 timestamp: number;
+                partition: string | null;
                 assetKey: {__typename: 'AssetKey'; path: Array<string>};
                 targetMaterialization: {
                   __typename: 'AssetCheckEvaluationTargetMaterializationData';
@@ -11517,6 +11520,6 @@ export type RunLogsQuery = {
     | {__typename: 'RunNotFoundError'};
 };
 
-export const PipelineRunLogsSubscriptionVersion = '929d969805de91b8890960433258984bbd32d2c08dbca55583da64c309fa3127';
+export const PipelineRunLogsSubscriptionVersion = '1fef76dfc3116df896a129a3e98e3071ced9a72b302b9e551dbcd5b28e7037cd';
 
-export const RunLogsQueryVersion = '811ef63a737599640cc1677f4a6c01c5193e5651e0b641680847abe613296deb';
+export const RunLogsQueryVersion = 'f81b9500cc7636e8bc477dbef44c955a449171ed951c2ffabd55c00f36aea8af';

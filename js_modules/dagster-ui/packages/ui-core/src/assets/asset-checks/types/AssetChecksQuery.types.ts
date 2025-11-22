@@ -8,6 +8,19 @@ export type AssetCheckKeyFragment = {
   assetKey: {__typename: 'AssetKey'; path: Array<string>};
 };
 
+export type AssetCheckPartitionFragment = {
+  __typename: 'AssetCheck';
+  partitionDefinition: {
+    __typename: 'PartitionDefinition';
+    description: string;
+    dimensionTypes: Array<{
+      __typename: 'DimensionDefinitionType';
+      type: Types.PartitionDefinitionType;
+      dynamicPartitionsDefinitionName: string | null;
+    }>;
+  } | null;
+};
+
 export type AssetChecksQueryVariables = Types.Exact<{
   assetKey: Types.AssetKeyInput;
 }>;
@@ -50,6 +63,7 @@ export type AssetChecksQuery = {
                     severity: Types.AssetCheckSeverity;
                     timestamp: number;
                     description: string | null;
+                    partition: string | null;
                     targetMaterialization: {
                       __typename: 'AssetCheckEvaluationTargetMaterializationData';
                       timestamp: number;
@@ -244,6 +258,15 @@ export type AssetChecksQuery = {
                     >;
                   } | null;
                 } | null;
+                partitionDefinition: {
+                  __typename: 'PartitionDefinition';
+                  description: string;
+                  dimensionTypes: Array<{
+                    __typename: 'DimensionDefinitionType';
+                    type: Types.PartitionDefinitionType;
+                    dynamicPartitionsDefinitionName: string | null;
+                  }>;
+                } | null;
               }>;
             };
         assetKey: {__typename: 'AssetKey'; path: Array<string>};
@@ -257,4 +280,4 @@ export type AssetChecksQuery = {
     | {__typename: 'AssetNotFoundError'};
 };
 
-export const AssetChecksQueryVersion = 'df2f0eba0bb9816ab3ffabe630b837f47a61ae541a1b543bd7abf365b0754094';
+export const AssetChecksQueryVersion = '0161481af04ecfb7dd909572994e065f7ec758af1b61e3bd825e494702063ecf';

@@ -20,6 +20,7 @@ export type AssetCheckExecutionFragment = {
     severity: Types.AssetCheckSeverity;
     timestamp: number;
     description: string | null;
+    partition: string | null;
     targetMaterialization: {
       __typename: 'AssetCheckEvaluationTargetMaterializationData';
       timestamp: number;
@@ -202,6 +203,7 @@ export type AssetCheckDetailsQuery = {
       severity: Types.AssetCheckSeverity;
       timestamp: number;
       description: string | null;
+      partition: string | null;
       targetMaterialization: {
         __typename: 'AssetCheckEvaluationTargetMaterializationData';
         timestamp: number;
@@ -364,4 +366,4 @@ export type AssetCheckDetailsQuery = {
   }>;
 };
 
-export const AssetCheckDetailsQueryVersion = 'dafb023319ef2c8aa8075c43686b318d3206f5781b8b87cf21130db3172a9f71';
+export const AssetCheckDetailsQueryVersion = 'f5e3bf07865d4121f8ab8e2e31c9af1519f915dfbfec0daa941de352610a4673';
