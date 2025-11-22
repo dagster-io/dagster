@@ -1,5 +1,5 @@
 from collections.abc import Sequence
-from typing import Optional, Union, cast
+from typing import TYPE_CHECKING, Optional, Union, cast
 
 import dagster._check as check
 import graphene
@@ -14,6 +14,7 @@ from dagster._core.definitions.assets.graph.remote_asset_graph import RemoteAsse
 from dagster._core.definitions.declarative_automation.serialized_objects import (
     AutomationConditionSnapshot,
 )
+from dagster._core.definitions.partitions.snap import MultiPartitionsSnap
 from dagster._core.events import DagsterEventType
 from dagster._core.storage.asset_check_execution_record import (
     AssetCheckExecutionRecord,
@@ -27,6 +28,14 @@ from dagster_graphql.schema.entity_key import GrapheneAssetKey
 from dagster_graphql.schema.errors import GrapheneError
 from dagster_graphql.schema.metadata import GrapheneMetadataEntry
 from dagster_graphql.schema.util import ResolveInfo, non_null_list
+
+if TYPE_CHECKING:
+    from dagster._core.storage.asset_check_execution_record import AssetCheckPartitionStatus
+
+    from dagster_graphql.schema.partition_sets import (
+        GrapheneDimensionPartitionKeys,
+        GraphenePartitionDefinition,
+    )
 
 GrapheneAssetCheckExecutionResolvedStatus = graphene.Enum.from_enum(
     AssetCheckExecutionResolvedStatus
@@ -63,6 +72,7 @@ class GrapheneAssetCheckEvaluation(graphene.ObjectType):
 
     # NOTE: this should be renamed passed
     success = graphene.NonNull(graphene.Boolean)
+    partition = graphene.String()
 
     class Meta:
         name = "AssetCheckEvaluation"
@@ -87,6 +97,7 @@ class GrapheneAssetCheckEvaluation(graphene.ObjectType):
         self.checkName = evaluation_data.check_name
         self.assetKey = evaluation_data.asset_key
         self.description = evaluation_data.description
+        self.partition = evaluation_data.partition
 
 
 class GrapheneAssetCheckExecution(graphene.ObjectType):
@@ -131,6 +142,26 @@ class GrapheneAssetCheckCanExecuteIndividually(graphene.Enum):
     NEEDS_USER_CODE_UPGRADE = "NEEDS_USER_CODE_UPGRADE"
 
 
+class GrapheneAssetCheckPartitionStatuses(graphene.ObjectType):
+    missing = non_null_list(graphene.String)
+    succeeded = non_null_list(graphene.String)
+    failed = non_null_list(graphene.String)
+    inProgress = non_null_list(graphene.String)
+    skipped = non_null_list(graphene.String)
+    executionFailed = non_null_list(graphene.String)
+
+    class Meta:
+        name = "AssetCheckPartitionStatuses"
+
+    def __init__(self, partition_status: "AssetCheckPartitionStatus"):
+        self.missing = list(partition_status.missing.get_partition_keys())
+        self.succeeded = list(partition_status.succeeded.get_partition_keys())
+        self.failed = list(partition_status.failed.get_partition_keys())
+        self.inProgress = list(partition_status.in_progress.get_partition_keys())
+        self.skipped = list(partition_status.skipped.get_partition_keys())
+        self.executionFailed = list(partition_status.execution_failed.get_partition_keys())
+
+
 class GrapheneAssetCheck(graphene.ObjectType):
     name = graphene.NonNull(graphene.String)
     assetKey = graphene.NonNull(GrapheneAssetKey)
@@ -141,6 +172,15 @@ class GrapheneAssetCheck(graphene.ObjectType):
     blocking = graphene.NonNull(graphene.Boolean)
     additionalAssetKeys = non_null_list(GrapheneAssetKey)
     automationCondition = graphene.Field(GrapheneAutomationCondition)
+    partitionDefinition = graphene.Field(
+        "dagster_graphql.schema.partition_sets.GraphenePartitionDefinition"
+    )
+    partitionKeysByDimension = graphene.Field(
+        non_null_list("dagster_graphql.schema.partition_sets.GrapheneDimensionPartitionKeys"),
+        startIdx=graphene.Int(),
+        endIdx=graphene.Int(),
+    )
+    partitionStatuses = graphene.Field(GrapheneAssetCheckPartitionStatuses)
 
     class Meta:
         name = "AssetCheck"
@@ -208,6 +248,102 @@ class GrapheneAssetCheck(graphene.ObjectType):
             )
         return None
 
+    def resolve_partitionDefinition(
+        self, _graphene_info: ResolveInfo
+    ) -> Optional["GraphenePartitionDefinition"]:
+        from dagster_graphql.schema.partition_sets import GraphenePartitionDefinition
+
+        partitions_snap = self._asset_check.partitions_def_snapshot
+        if partitions_snap:
+            return GraphenePartitionDefinition(partitions_snap)
+        return None
+
+    def resolve_partitionKeysByDimension(
+        self,
+        graphene_info: ResolveInfo,
+        startIdx: Optional[int] = None,
+        endIdx: Optional[int] = None,
+    ) -> Sequence["GrapheneDimensionPartitionKeys"]:
+        from dagster_graphql.schema.partition_sets import (
+            GrapheneDimensionPartitionKeys,
+            GraphenePartitionDefinitionType,
+            get_partition_keys_from_snap,
+        )
+
+        # Accepts startIdx and endIdx arguments. This will be used to select a range of
+        # time partitions. StartIdx is inclusive, endIdx is exclusive.
+        # For non time partition definitions, these arguments will be ignored
+        # and the full list of partition keys will be returned.
+        if not self._asset_check.partitions_def_snapshot:
+            return []
+
+        dynamic_partitions_loader = graphene_info.context.dynamic_partitions_loader
+        if isinstance(self._asset_check.partitions_def_snapshot, MultiPartitionsSnap):
+            return [
+                GrapheneDimensionPartitionKeys(
+                    name=dimension.name,
+                    partition_keys=get_partition_keys_from_snap(
+                        dimension.partitions,
+                        dynamic_partitions_loader,
+                        startIdx,
+                        endIdx,
+                    ),
+                    type=GraphenePartitionDefinitionType.from_partition_def_data(
+                        dimension.partitions
+                    ),
+                )
+                for dimension in cast(
+                    "MultiPartitionsSnap",
+                    self._asset_check.partitions_def_snapshot,
+                ).partition_dimensions
+            ]
+
+        return [
+            GrapheneDimensionPartitionKeys(
+                name="default",
+                type=GraphenePartitionDefinitionType.from_partition_def_data(
+                    self._asset_check.partitions_def_snapshot
+                ),
+                partition_keys=get_partition_keys_from_snap(
+                    partitions_snap=self._asset_check.partitions_def_snapshot,
+                    dynamic_partitions_loader=dynamic_partitions_loader,
+                    start_idx=startIdx,
+                    end_idx=endIdx,
+                ),
+            )
+        ]
+
+    def resolve_partitionStatuses(
+        self, graphene_info: ResolveInfo
+    ) -> Optional["GrapheneAssetCheckPartitionStatuses"]:
+        """Resolve partition statuses using partition subsets for efficient representation."""
+        from dagster._core.definitions.asset_checks.asset_check_spec import AssetCheckKey
+        from dagster._core.storage.asset_check_partition_cache import (
+            get_asset_check_partition_status,
+        )
+
+        # Only return partition statuses for partitioned checks
+        if not self._asset_check.partitions_def_snapshot:
+            return None
+
+        check_key = AssetCheckKey(
+            asset_key=self._asset_check.asset_key, name=self._asset_check.name
+        )
+
+        # Get current partition definition
+        current_partition_def = (
+            self._asset_check.partitions_def_snapshot.get_partitions_definition()
+        )
+
+        # Get partition status cache using the cache service (handles storage + reconciliation)
+        partition_status = get_asset_check_partition_status(
+            instance=graphene_info.context.instance,
+            check_key=check_key,
+            partitions_def=current_partition_def,
+        )
+
+        return GrapheneAssetCheckPartitionStatuses(partition_status)
+
 
 class GrapheneAssetChecks(graphene.ObjectType):
     checks = non_null_list(GrapheneAssetCheck)
@@ -257,3 +393,23 @@ class GrapheneAssetChecksOrError(graphene.Union):
             GrapheneAssetCheckNeedsAgentUpgradeError,
         )
         name = "AssetChecksOrError"
+
+
+class GrapheneAssetCheckNotFoundError(graphene.ObjectType):
+    message = graphene.NonNull(graphene.String)
+
+    class Meta:
+        interfaces = (GrapheneError,)
+        name = "AssetCheckNotFoundError"
+
+
+class GrapheneAssetCheckOrError(graphene.Union):
+    class Meta:
+        types = (
+            GrapheneAssetCheck,
+            GrapheneAssetCheckNotFoundError,
+            GrapheneAssetCheckNeedsMigrationError,
+            GrapheneAssetCheckNeedsUserCodeUpgrade,
+            GrapheneAssetCheckNeedsAgentUpgradeError,
+        )
+        name = "AssetCheckOrError"
