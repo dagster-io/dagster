@@ -3304,6 +3304,15 @@ export type PipelineRunLogsSubscription = {
               eventType: Types.DagsterEventType | null;
             }
           | {
+              __typename: 'RunSuccessWithWarningsEvent';
+              runId: string;
+              message: string;
+              timestamp: string;
+              level: Types.LogLevel;
+              stepKey: string | null;
+              eventType: Types.DagsterEventType | null;
+            }
+          | {
               __typename: 'StepExpectationResultEvent';
               runId: string;
               message: string;
@@ -7081,6 +7090,15 @@ export type RunLogsSubscriptionSuccessFragment = {
       }
     | {
         __typename: 'RunSuccessEvent';
+        runId: string;
+        message: string;
+        timestamp: string;
+        level: Types.LogLevel;
+        stepKey: string | null;
+        eventType: Types.DagsterEventType | null;
+      }
+    | {
+        __typename: 'RunSuccessWithWarningsEvent';
         runId: string;
         message: string;
         timestamp: string;
@@ -10941,6 +10959,15 @@ export type RunLogsQuery = {
             }
           | {
               __typename: 'RunSuccessEvent';
+              runId: string;
+              message: string;
+              timestamp: string;
+              level: Types.LogLevel;
+              stepKey: string | null;
+              eventType: Types.DagsterEventType | null;
+            }
+          | {
+              __typename: 'RunSuccessWithWarningsEvent';
               runId: string;
               message: string;
               timestamp: string;

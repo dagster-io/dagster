@@ -197,6 +197,8 @@ export const LogsRowStructuredContent = ({node, metadata}: IStructuredContentPro
       return <DefaultContent message={node.message} eventType={eventType} eventIntent="danger" />;
     case 'RunSuccessEvent':
       return <DefaultContent message={node.message} eventType={eventType} eventIntent="success" />;
+    case 'RunSuccessWithWarningsEvent':
+      return <DefaultContent message={node.message} eventType={eventType} eventIntent="warning" />;
     case 'RunStartEvent':
     case 'RunEnqueuedEvent':
     case 'RunDequeuedEvent':
