@@ -803,9 +803,9 @@ def new_resource_on_sensor() -> None:
             def fetch_users(self) -> list[str]:
                 return ["1", "2", "3"]
 
-        context = dg.build_sensor_context()
-        run_requests = process_new_users_sensor(context, users_api=FakeUsersAPI())
-        assert len(run_requests) == 3
+        with dg.build_sensor_context() as context:
+            run_requests = process_new_users_sensor(context, users_api=FakeUsersAPI())
+            assert len(run_requests) == 3
 
         # end_test_resource_on_sensor
 
@@ -852,15 +852,15 @@ def new_resource_on_schedule() -> None:
     import dagster as dg
 
     def test_process_data_schedule():
-        context = dg.build_schedule_context(
+        with dg.build_schedule_context(
             scheduled_execution_time=datetime.datetime(2020, 1, 1)
-        )
-        run_request = process_data_schedule(
-            context, date_formatter=DateFormatter(format="%Y-%m-%d")
-        )
-        assert (
-            run_request.run_config["ops"]["fetch_data"]["config"]["date"]
-            == "2020-01-01"
-        )
+        ) as context:
+            run_request = process_data_schedule(
+                context, date_formatter=DateFormatter(format="%Y-%m-%d")
+            )
+            assert (
+                run_request.run_config["ops"]["fetch_data"]["config"]["date"]
+                == "2020-01-01"
+            )
 
     # end_test_resource_on_schedule
