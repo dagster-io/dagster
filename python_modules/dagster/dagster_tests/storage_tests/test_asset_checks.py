@@ -41,3 +41,45 @@ def test_get_asset_check_summary_records(instance: DagsterInstance):
     assert len(records) == 1
     assert records[check_key].last_check_execution_record.event.asset_check_evaluation.passed  # type: ignore
     assert records[check_key].last_run_id == result.run_id
+
+
+@dg.asset(partitions_def=dg.StaticPartitionsDefinition(["a", "b", "c"]))
+def partitioned_asset(context):
+    return f"data_for_{context.partition_key}"
+
+
+@dg.asset_check(
+    asset=partitioned_asset, partitions_def=dg.StaticPartitionsDefinition(["a", "b", "c"])
+)
+def partitioned_asset_check(context):
+    # Simulate different outcomes for different partitions
+    if context.partition_key == "a":
+        return dg.AssetCheckResult(passed=True, description="Partition a passed")
+    elif context.partition_key == "b":
+        return dg.AssetCheckResult(passed=False, description="Partition b failed")
+    else:
+        # Partition c will be planned but not executed in tests
+        return dg.AssetCheckResult(passed=True, description="Partition c passed")
+
+
+partitioned_defs = dg.Definitions(
+    assets=[partitioned_asset], asset_checks=[partitioned_asset_check]
+)
+
+
+def test_partitioned_asset_check_graph_structure():
+    """Test basic graph structure for partitioned asset checks."""
+    from dagster._core.definitions.assets.graph.asset_graph import AssetGraph
+    from dagster._core.definitions.assets.graph.base_asset_graph import AssetCheckNode
+
+    asset_graph = AssetGraph.from_assets([partitioned_asset, partitioned_asset_check])
+
+    # Test: asset check node exists and is correctly configured
+    check_node = asset_graph.get(partitioned_asset_check.check_key)
+    assert isinstance(check_node, AssetCheckNode)
+    assert check_node.partitions_def is not None
+    assert check_node.partitions_def.get_partition_keys() == ["a", "b", "c"]
+
+    # Test: check is linked to asset
+    asset_node = asset_graph.get(partitioned_asset.key)
+    assert partitioned_asset_check.check_key in asset_node.check_keys
