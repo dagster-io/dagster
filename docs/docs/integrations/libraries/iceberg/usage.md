@@ -130,11 +130,7 @@ In the above example:
 
 ## Using different compute engines to read from and write to Iceberg
 
-`dagster-iceberg` supports several compute engines out-of-the-box. You can [find examples of how to use each engine in the API docs](/api/libraries/dagster-iceberg#io-managers).
-
-## Storing and loading Daft, PyArrow, Pandas, or Polars DataFrames with Iceberg
-
-The Iceberg I/O manager also supports storing and loading PyArrow and Polars DataFrames.
+`dagster-iceberg` supports several compute engines out-of-the-box. You can [find detailed examples of how to use each engine in the API docs](/api/libraries/dagster-iceberg#io-managers).
 
 <Tabs>
   <TabItem value="pyarrow" label="PyArrow Tables">
