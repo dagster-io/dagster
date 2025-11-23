@@ -243,6 +243,7 @@ export const LOGS_ROW_STRUCTURED_FRAGMENT = gql`
         metadataEntries {
           ...MetadataEntryFragment
         }
+        partition
       }
     }
   }
