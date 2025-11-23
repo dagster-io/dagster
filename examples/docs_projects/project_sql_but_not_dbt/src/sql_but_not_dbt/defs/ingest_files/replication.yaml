@@ -1,0 +1,16 @@
+# start_sling_replication_config
+source: LOCAL
+target: DUCKDB
+
+defaults:
+  mode: full-refresh
+  object: "{stream_table}"
+
+streams:
+  file://raw_customers.csv:
+    object: "main.raw_customers"
+  file://raw_orders.csv:
+    object: "main.raw_orders"
+  file://raw_payments.csv:
+    object: "main.raw_payments"
+# end_sling_replication_config
