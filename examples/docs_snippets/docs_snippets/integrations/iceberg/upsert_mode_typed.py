@@ -21,5 +21,9 @@ def my_table_typed_upsert(context: AssetExecutionContext):
             when_not_matched_insert_all=False,
         )
     })
-    ... # return the table to be upserted
+    return pa.table({
+        "id": [1, 2, 3],
+        "timestamp": ["2024-01-01", "2024-01-01", "2024-01-01"],
+        "name": ["Alice", "Bob", "Charlie"],
+    })
 
