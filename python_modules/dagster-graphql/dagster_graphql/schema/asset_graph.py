@@ -42,7 +42,7 @@ from dagster._core.definitions.partitions.snap import (
     StaticPartitionsSnap,
     TimeWindowPartitionsSnap,
 )
-from dagster._core.definitions.selector import JobSelector
+from dagster._core.definitions.selector import JobSelector, ScheduleSelector, SensorSelector
 from dagster._core.definitions.sensor_definition import SensorType
 from dagster._core.definitions.temporal_context import TemporalContext
 from dagster._core.errors import DagsterInvariantViolationError
@@ -936,15 +936,34 @@ class GrapheneAssetNode(graphene.ObjectType):
     def resolve_targetingInstigators(self, graphene_info: ResolveInfo) -> Sequence[GrapheneSensor]:
         if isinstance(self._remote_node, RemoteWorkspaceAssetNode):
             # global nodes have saved references to their targeting instigators
+            # Convert InstigatorHandles to selectors
             schedules = [
                 schedule
-                for schedule_selector in self._remote_node.get_targeting_schedule_selectors()
-                if (schedule := graphene_info.context.get_schedule(schedule_selector)) is not None
+                for handle in self._remote_node.get_targeting_schedule_handles()
+                if (
+                    schedule := graphene_info.context.get_schedule(
+                        ScheduleSelector(
+                            location_name=handle.repository_handle.location_name,
+                            repository_name=handle.repository_handle.repository_name,
+                            schedule_name=handle.instigator_name,
+                        )
+                    )
+                )
+                is not None
             ]
             sensors = [
                 sensor
-                for sensor_selector in self._remote_node.get_targeting_sensor_selectors()
-                if (sensor := graphene_info.context.get_sensor(sensor_selector)) is not None
+                for handle in self._remote_node.get_targeting_sensor_handles()
+                if (
+                    sensor := graphene_info.context.get_sensor(
+                        SensorSelector(
+                            location_name=handle.repository_handle.location_name,
+                            repository_name=handle.repository_handle.repository_name,
+                            sensor_name=handle.instigator_name,
+                        )
+                    )
+                )
+                is not None
             ]
 
         else:
