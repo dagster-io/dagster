@@ -18,6 +18,7 @@ from dagster._core.asset_graph_view.serializable_entity_subset import Serializab
 from dagster._core.definitions.asset_key import AssetCheckKey, AssetKey, EntityKey, T_EntityKey
 from dagster._core.definitions.assets.graph.asset_graph_subset import AssetGraphSubset
 from dagster._core.definitions.events import AssetKeyPartitionKey
+from dagster._core.definitions.freshness import FreshnessState
 from dagster._core.definitions.partitions.context import (
     PartitionLoadingContext,
     use_partition_loading_context,
@@ -559,6 +560,26 @@ class AssetGraphView(LoadingContext):
             else None
         )
         if resolved_status == status:
+            return self.get_full_subset(key=key)
+        else:
+            return self.get_empty_subset(key=key)
+
+    async def compute_subset_with_freshness_state(
+        self, key: AssetKey, state: FreshnessState
+    ) -> EntitySubset[AssetKey]:
+        from dagster._core.definitions.asset_health.asset_freshness_health import (
+            AssetFreshnessHealthState,
+        )
+
+        if not self.asset_graph.has(key) or self.asset_graph.get(key).freshness_policy is None:
+            if state == FreshnessState.NOT_APPLICABLE:
+                return self.get_full_subset(key=key)
+            else:
+                return self.get_empty_subset(key=key)
+
+        asset_freshness_health_state = await AssetFreshnessHealthState.compute_for_asset(key, self)
+
+        if asset_freshness_health_state.freshness_state == state:
             return self.get_full_subset(key=key)
         else:
             return self.get_empty_subset(key=key)
