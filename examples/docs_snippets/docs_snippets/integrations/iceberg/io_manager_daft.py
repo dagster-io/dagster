@@ -5,10 +5,9 @@ from dagster import Definitions, asset
 from dagster_iceberg.config import IcebergCatalogConfig
 from dagster_iceberg.io_manager.daft import DaftIcebergIOManager
 
-CATALOG_URI = "sqlite:////home/vscode/workspace/.tmp/examples/select_columns/catalog.db"
-CATALOG_WAREHOUSE = (
-    "file:///home/vscode/workspace/.tmp/examples/select_columns/warehouse"
-)
+# Replace with your actual catalog and warehouse paths, or use environment variables to set these values at runtime.
+CATALOG_URI = "sqlite:////path/to/your/catalog.db"
+CATALOG_WAREHOUSE = "file:///path/to/your/warehouse"
 
 
 resources = {
