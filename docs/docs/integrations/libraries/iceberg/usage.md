@@ -220,11 +220,11 @@ To use upsert mode, set the `write_mode` to `"upsert"` and provide `upsert_optio
 
 <CodeExample path="docs_snippets/docs_snippets/integrations/iceberg/upsert_mode_basic.py" language="python" />
 
-You can also override upsert options at runtime using output metadata:
+Upsert options set in definition metadata can be overridden at runtime using output metadata:
 
 <CodeExample path="docs_snippets/docs_snippets/integrations/iceberg/upsert_mode_dynamic.py" language="python" />
 
-You can use the `UpsertOptions` `BaseModel` subclass to represent upsert options metadata to provide deployment-time type validation:
+The `UpsertOptions` `BaseModel` subclass can be used to represent upsert options metadata to provide deployment-time type validation:
 
 <CodeExample path="docs_snippets/docs_snippets/integrations/iceberg/upsert_mode_typed.py" language="python" />
 
