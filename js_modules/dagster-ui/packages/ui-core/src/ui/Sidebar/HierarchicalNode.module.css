@@ -1,0 +1,13 @@
+.itemContainer {
+  height: 32px;
+  width: 100%;
+  position: relative;
+  cursor: pointer;
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+}
+
+.itemContainer:hover button {
+  background: var(--color-background-light-hover);
+}

@@ -2,36 +2,44 @@ import invariant from 'invariant';
 import {useMemo} from 'react';
 
 import {tokenForAssetKey} from '../../asset-graph/Utils';
+import {useAssetSelectionFiltering} from '../../asset-selection/useAssetSelectionFiltering';
 import {HierarchicalSidebar} from '../../ui/Sidebar/HierarchicalSidebar';
 import {buildHierarchyFromPaths} from '../../ui/Sidebar/buildHierarchyFromPaths';
 import {HierarchyNode} from '../../ui/Sidebar/types';
-import {AssetTableFragment} from '../types/AssetTableFragment.types';
+import {useAllAssets} from '../useAllAssets';
 
 export const AssetCatalogTableSidebar = ({
-  assets,
-  loading,
   selection,
   onChangeSelection,
 }: {
-  assets: AssetTableFragment[] | undefined;
-  loading: boolean;
   selection: string;
   onChangeSelection: (str: string) => void;
 }) => {
+  const assetSelectionWihoutKeyClause = useMemo(
+    () => selectionWithoutKeyPrefix(selection),
+    [selection],
+  );
+  const all = useAllAssets();
+  const {loading, filtered} = useAssetSelectionFiltering({
+    assetSelection: assetSelectionWihoutKeyClause,
+    assets: all.assets,
+    loading: all.loading,
+  });
+
   const hierarchyData = useMemo(() => {
     const hierarchy = buildHierarchyFromPaths(
-      (assets || []).map((a) => tokenForAssetKey(a.key)),
+      (filtered || []).map((a) => tokenForAssetKey(a.key)),
       false,
     );
     const root: HierarchyNode = {
       type: 'folder',
-      name: 'Catalog',
+      name: `Catalog${assetSelectionWihoutKeyClause ? ` (${assetSelectionWihoutKeyClause})` : ''}`,
       children: hierarchy,
       path: 'Catalog',
       icon: 'catalog_book',
     };
     return [root];
-  }, [assets]);
+  }, [filtered, assetSelectionWihoutKeyClause]);
 
   const currentKeyPrefix = extractKeyPrefixFromSelection(selection);
   return (
@@ -39,14 +47,10 @@ export const AssetCatalogTableSidebar = ({
       loading={loading}
       hierarchyData={hierarchyData}
       selectedPaths={
-        currentKeyPrefix?.key === '*'
-          ? ['Catalog']
-          : currentKeyPrefix?.key
-            ? [`Catalog/${currentKeyPrefix.key}`]
-            : []
+        !currentKeyPrefix?.key ? ['Catalog'] : currentKeyPrefix?.key ? [currentKeyPrefix.key] : []
       }
       onSelectPath={(e, path) => {
-        onChangeSelection(selectionReplacingKeyPrefix(selection, path.replace(/^Catalog\/?/, '')));
+        onChangeSelection(selectionReplacingKeyPrefix(selection, path));
       }}
     />
   );
@@ -78,4 +82,11 @@ export function selectionReplacingKeyPrefix(selection: string, nextKeyPrefix: st
     return `(${selection}) AND ${term}`;
   }
   return `${selection}${selection.length > 0 ? ' AND ' : ''}${term}`;
+}
+
+/* Given an existing search selection, replace any key:"foo/*" style clause with an empty one
+ * and remove it entirely if it matches the style we add.
+ */
+export function selectionWithoutKeyPrefix(selection: string) {
+  return selectionReplacingKeyPrefix(selection, '').replace(/( AND )?key:"\*"/g, '');
 }

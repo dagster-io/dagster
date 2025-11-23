@@ -38,8 +38,6 @@ export const HierarchicalSidebar = React.memo(
       isEmptyState: (val) => val.size === 0,
     });
 
-    const [selectedPath, setSelectedPath] = React.useState<string | null>(null);
-
     const renderedNodes = React.useMemo(() => {
       return buildRenderedNodes(hierarchyData, openNodes);
     }, [hierarchyData, openNodes]);
@@ -57,9 +55,9 @@ export const HierarchicalSidebar = React.memo(
     const items = rowVirtualizer.getVirtualItems();
 
     React.useLayoutEffect(() => {
-      if (selectedPath) {
+      if (lastSelectedPath) {
         // Auto-expand parent folders when a node is selected
-        const selectedNodeIndex = renderedNodes.findIndex((node) => node.path === selectedPath);
+        const selectedNodeIndex = renderedNodes.findIndex((node) => node.path === lastSelectedPath);
         if (selectedNodeIndex >= 0) {
           const selectedRenderedNode = renderedNodes[selectedNodeIndex];
           if (selectedRenderedNode) {
@@ -67,17 +65,17 @@ export const HierarchicalSidebar = React.memo(
               const nextOpenNodes = new Set(prevOpenNodes);
               // Open all parent folders in the path
               const pathParts = selectedRenderedNode.path.split('/');
-              for (let i = 1; i < pathParts.length; i++) {
+              for (let i = 1; i <= pathParts.length; i++) {
                 const parentPath = pathParts.slice(0, i).join('/');
                 nextOpenNodes.add(parentPath);
               }
+              console.log(nextOpenNodes);
               return nextOpenNodes;
             });
           }
         }
-        setSelectedPath(null);
       }
-    }, [selectedPath, renderedNodes, setOpenNodes]);
+    }, [lastSelectedPath, renderedNodes, setOpenNodes]);
 
     const indexOfLastSelectedNode = React.useMemo(() => {
       if (!lastSelectedPath) {
@@ -125,7 +123,6 @@ export const HierarchicalSidebar = React.memo(
                 if (!nextNode) {
                   return;
                 }
-                setSelectedPath(nextNode.path);
                 onSelectPath(e, nextNode.path);
               } else if (e.code === 'ArrowLeft' || e.code === 'ArrowRight') {
                 const open = e.code === 'ArrowRight';
@@ -153,30 +150,35 @@ export const HierarchicalSidebar = React.memo(
                 const isSelected = selectedPaths.includes(node.path);
                 const isLastSelected = lastSelectedPath === node.path;
                 const isOpen = openNodes.has(node.path);
+                const isRootNode = node.level === 1;
 
                 return (
                   <Row $height={size} $start={start} key={key}>
                     <div data-index={index} ref={rowVirtualizer.measureElement}>
                       <HierarchicalNode
                         node={node}
-                        isOpen={isOpen}
+                        isOpen={isOpen || isRootNode}
                         isSelected={isSelected}
                         isLastSelected={isLastSelected}
-                        onToggleOpen={() => {
-                          if (node.type === 'folder') {
-                            setOpenNodes((nodes) => {
-                              const openNodes = new Set(nodes);
-                              if (isOpen) {
-                                openNodes.delete(node.path);
-                              } else {
-                                openNodes.add(node.path);
+                        onToggleOpen={
+                          isRootNode
+                            ? undefined
+                            : () => {
+                                if (node.type === 'folder') {
+                                  setOpenNodes((nodes) => {
+                                    const openNodes = new Set(nodes);
+                                    if (isOpen) {
+                                      openNodes.delete(node.path);
+                                    } else {
+                                      openNodes.add(node.path);
+                                    }
+                                    return openNodes;
+                                  });
+                                }
                               }
-                              return openNodes;
-                            });
-                          }
-                        }}
+                        }
                         onSelect={(e) => {
-                          setSelectedPath(node.path);
+                          console.log(node.path);
                           onSelectPath(e, node.path);
                         }}
                       />
@@ -198,7 +200,7 @@ function buildRenderedNodes(
 ): RenderedNode[] {
   const flattenedNodes: RenderedNode[] = [];
 
-  function traverse(nodes: HierarchyNode[], level: number, pathPrefix: string = '') {
+  function traverse(nodes: HierarchyNode[], level: number) {
     const sortedNodes = [...nodes].sort((a, b) => {
       if (a.type !== b.type) {
         return a.type === 'folder' ? -1 : 1; // Folders first, then files
@@ -207,19 +209,21 @@ function buildRenderedNodes(
     });
 
     for (const node of sortedNodes) {
-      const currentPath = pathPrefix ? `${pathPrefix}/${node.name}` : node.name;
-
       flattenedNodes.push({
         level,
         name: node.name,
-        path: currentPath,
+        path: node.path,
         type: node.type,
         icon: node.icon || (node.type === 'folder' ? 'folder_open' : 'asset'),
         hasChildren: node.type === 'folder' && 'children' in node && node.children.length > 0,
       });
 
-      if (node.type === 'folder' && 'children' in node && openNodes.has(currentPath)) {
-        traverse(node.children, level + 1, currentPath);
+      if (
+        node.type === 'folder' &&
+        'children' in node &&
+        (openNodes.has(node.path) || level === 1)
+      ) {
+        traverse(node.children, level + 1);
       }
     }
   }

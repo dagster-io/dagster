@@ -2,6 +2,7 @@ import {Box, Icon} from '@dagster-io/ui-components';
 import * as React from 'react';
 
 import {FocusableLabelContainer} from './FocusableLabelContainer';
+import styles from './HierarchicalNode.module.css';
 import {SidebarDisclosureTriangle} from './SidebarDisclosureTriangle';
 import {RenderedNode} from './types';
 
@@ -18,29 +19,29 @@ export const HierarchicalNode = React.memo(
     isOpen: boolean;
     isSelected: boolean;
     isLastSelected: boolean;
-    onToggleOpen: () => void;
     onSelect: (e: React.MouseEvent<any> | React.KeyboardEvent<any>) => void;
+    onToggleOpen?: () => void;
   }) => {
     const paddingLeft = node.level * 16;
 
     return (
-      <Box flex={{alignItems: 'center'}} style={{paddingLeft}}>
-        {node.type === 'folder' && node.hasChildren && (
+      <Box style={{paddingLeft}} flex={{alignItems: 'center'}}>
+        {node.type === 'folder' && node.hasChildren && onToggleOpen && (
           <SidebarDisclosureTriangle isOpen={isOpen} toggleOpen={onToggleOpen} />
         )}
-        {node.type === 'folder' && !node.hasChildren && (
-          <div style={{width: 20, marginRight: 4, flexShrink: 0}} />
-        )}
-        {node.type === 'file' && <div style={{width: 20, flexShrink: 0}} />}
+        <div className={styles.itemContainer} onClick={onSelect}>
+          {node.type === 'folder' && !node.hasChildren && (
+            <div style={{width: 18, flexShrink: 0}} />
+          )}
+          {node.type === 'file' && <div style={{width: 20, flexShrink: 0}} />}
 
-        <Box style={{width: '100%'}} onClick={onSelect}>
           <FocusableLabelContainer
             isSelected={isSelected}
             isLastSelected={isLastSelected}
             icon={<Icon name={node.icon} />}
             text={node.name}
           />
-        </Box>
+        </div>
       </Box>
     );
   },
