@@ -24,7 +24,7 @@ resources = {
 
 @asset
 def iris_dataset() -> pa.Table:
-    pa.Table.from_pandas(
+    return pa.Table.from_pandas(
         pd.read_csv(
             "https://docs.dagster.io/assets/iris.csv",
             names=[

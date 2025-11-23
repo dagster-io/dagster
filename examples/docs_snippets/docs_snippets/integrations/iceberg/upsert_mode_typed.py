@@ -13,7 +13,7 @@ from dagster_iceberg.config import UpsertOptions
         ),
     }
 )
-def my_table_typed_upsert(context: AssetExecutionContext, my_table: pa.Table):
+def my_table_typed_upsert(context: AssetExecutionContext):
     context.add_output_metadata({
         "upsert_options": UpsertOptions(
             join_cols=["id", "timestamp"],
@@ -21,4 +21,5 @@ def my_table_typed_upsert(context: AssetExecutionContext, my_table: pa.Table):
             when_not_matched_insert_all=False,
         )
     })
+    ... # return the table to be upserted
 
