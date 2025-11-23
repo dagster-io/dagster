@@ -1601,6 +1601,7 @@ class TestAssetChecks(ExecutingGraphQLContextTestMatrix):
                     passed=True,
                     severity=AssetCheckSeverity.WARN,
                     description="Check for January",
+                    partition="2024-01",
                 ),
             )
         )
@@ -1625,6 +1626,7 @@ class TestAssetChecks(ExecutingGraphQLContextTestMatrix):
                     passed=True,
                     severity=AssetCheckSeverity.WARN,
                     description="Check for February",
+                    partition="2024-02",
                 ),
             )
         )
@@ -1643,6 +1645,7 @@ class TestAssetChecks(ExecutingGraphQLContextTestMatrix):
         executions = res.data["assetCheckExecutions"]
         assert len(executions) == 1
         assert executions[0]["runId"] == run_id_one
+        assert executions[0]["evaluation"] is not None
         assert executions[0]["evaluation"]["description"] == "Check for January"
 
         # Query with partition filter for "2024-02"
@@ -1659,6 +1662,7 @@ class TestAssetChecks(ExecutingGraphQLContextTestMatrix):
         executions = res.data["assetCheckExecutions"]
         assert len(executions) == 1
         assert executions[0]["runId"] == run_id_two
+        assert executions[0]["evaluation"] is not None
         assert executions[0]["evaluation"]["description"] == "Check for February"
 
         # Query without partition filter - should get both
