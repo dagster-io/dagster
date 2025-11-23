@@ -40,10 +40,9 @@ from dagster._core.definitions.freshness_policy import LegacyFreshnessPolicy
 from dagster._core.definitions.metadata import ArbitraryMetadataMapping
 from dagster._core.definitions.partitions.definition import PartitionsDefinition
 from dagster._core.definitions.partitions.mapping import PartitionMapping
-from dagster._core.definitions.selector import ScheduleSelector, SensorSelector
 from dagster._core.definitions.utils import DEFAULT_GROUP_NAME
 from dagster._core.remote_representation.external import RemoteRepository
-from dagster._core.remote_representation.handle import RepositoryHandle
+from dagster._core.remote_representation.handle import InstigatorHandle, RepositoryHandle
 from dagster._core.workspace.workspace import CurrentWorkspace
 from dagster._record import ImportFrom, record
 from dagster._utils.cached_method import cached_method
@@ -396,33 +395,31 @@ class RemoteWorkspaceAssetNode(RemoteAssetNode):
             )
         )
 
-    def get_targeting_schedule_selectors(
+    def get_targeting_schedule_handles(
         self,
-    ) -> Sequence[ScheduleSelector]:
+    ) -> Sequence[InstigatorHandle]:
         selectors = []
         for node in self.repo_scoped_asset_infos:
             for schedule_name in node.targeting_schedule_names:
                 selectors.append(
-                    ScheduleSelector(
-                        location_name=node.handle.location_name,
-                        repository_name=node.handle.repository_name,
-                        schedule_name=schedule_name,
+                    InstigatorHandle(
+                        repository_handle=node.handle,
+                        instigator_name=schedule_name,
                     )
                 )
 
         return selectors
 
-    def get_targeting_sensor_selectors(
+    def get_targeting_sensor_handles(
         self,
-    ) -> Sequence[SensorSelector]:
+    ) -> Sequence[InstigatorHandle]:
         selectors = []
         for node in self.repo_scoped_asset_infos:
             for sensor_name in node.targeting_sensor_names:
                 selectors.append(
-                    SensorSelector(
-                        location_name=node.handle.location_name,
-                        repository_name=node.handle.repository_name,
-                        sensor_name=sensor_name,
+                    InstigatorHandle(
+                        repository_handle=node.handle,
+                        instigator_name=sensor_name,
                     )
                 )
         return selectors
@@ -480,6 +477,9 @@ class RemoteAssetGraph(BaseAssetGraph[TRemoteAssetNode], ABC, Generic[TRemoteAss
             remote_node.asset_check.description,
             remote_node.asset_check.automation_condition,
             {},  # metadata not yet on AssetCheckNodeSnap
+            remote_node.asset_check.partitions_def_snapshot.get_partitions_definition()
+            if remote_node.asset_check.partitions_def_snapshot
+            else None,
         )
 
     ##### COMMON ASSET GRAPH INTERFACE
