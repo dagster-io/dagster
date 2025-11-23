@@ -13,7 +13,8 @@ from dagster._core.definitions.partitions.snap import (
     TimeWindowPartitionsSnap,
 )
 from dagster._core.definitions.selector import JobSelector
-from dagster._core.errors import DagsterUserCodeProcessError
+from dagster._core.errors import DagsterInvariantViolationError, DagsterUserCodeProcessError
+from dagster._core.instance import DynamicPartitionsStore
 from dagster._core.remote_representation.external import RemoteJob, RemotePartitionSet
 from dagster._core.remote_representation.external_data import (
     PartitionExecutionErrorSnap,
@@ -595,6 +596,42 @@ class GraphenePartitionDefinition(graphene.ObjectType):
                 if isinstance(partition_def_data, TimeWindowPartitionsSnap)
                 else None
             ),
+        )
+
+
+def get_partition_keys_from_snap(
+    partitions_snap: PartitionsSnap,
+    dynamic_partitions_loader: DynamicPartitionsStore,
+    start_idx: Optional[int] = None,
+    end_idx: Optional[int] = None,
+) -> Sequence[str]:
+    check.opt_inst_param(partitions_snap, "partitions_snap", PartitionsSnap)
+    check.opt_int_param(start_idx, "start_idx")
+    check.opt_int_param(end_idx, "end_idx")
+
+    if isinstance(
+        partitions_snap,
+        (
+            StaticPartitionsSnap,
+            TimeWindowPartitionsSnap,
+            MultiPartitionsSnap,
+        ),
+    ):
+        if start_idx and end_idx and isinstance(partitions_snap, TimeWindowPartitionsSnap):
+            return partitions_snap.get_partitions_definition().get_partition_keys_between_indexes(
+                start_idx, end_idx
+            )
+        else:
+            return partitions_snap.get_partitions_definition().get_partition_keys(
+                dynamic_partitions_store=dynamic_partitions_loader
+            )
+    elif isinstance(partitions_snap, DynamicPartitionsSnap):
+        return dynamic_partitions_loader.get_dynamic_partitions(
+            partitions_def_name=partitions_snap.name
+        )
+    else:
+        raise DagsterInvariantViolationError(
+            f"Unsupported partition definition type {partitions_snap}"
         )
 
 

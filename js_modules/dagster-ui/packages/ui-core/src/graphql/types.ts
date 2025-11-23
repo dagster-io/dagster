@@ -167,6 +167,14 @@ export type AssetCheck = {
   executionForLatestMaterialization: Maybe<AssetCheckExecution>;
   jobNames: Array<Scalars['String']['output']>;
   name: Scalars['String']['output'];
+  partitionDefinition: Maybe<PartitionDefinition>;
+  partitionKeysByDimension: Array<DimensionPartitionKeys>;
+  partitionStatuses: Maybe<AssetCheckPartitionStatuses>;
+};
+
+export type AssetCheckPartitionKeysByDimensionArgs = {
+  endIdx?: InputMaybe<Scalars['Int']['input']>;
+  startIdx?: InputMaybe<Scalars['Int']['input']>;
 };
 
 export enum AssetCheckCanExecuteIndividually {
@@ -202,6 +210,7 @@ export type AssetCheckEvaluation = {
     | TimestampMetadataEntry
     | UrlMetadataEntry
   >;
+  partition: Maybe<Scalars['String']['output']>;
   severity: AssetCheckSeverity;
   success: Scalars['Boolean']['output'];
   targetMaterialization: Maybe<AssetCheckEvaluationTargetMaterializationData>;
@@ -278,6 +287,28 @@ export type AssetCheckNeedsMigrationError = Error & {
 export type AssetCheckNeedsUserCodeUpgrade = Error & {
   __typename: 'AssetCheckNeedsUserCodeUpgrade';
   message: Scalars['String']['output'];
+};
+
+export type AssetCheckNotFoundError = Error & {
+  __typename: 'AssetCheckNotFoundError';
+  message: Scalars['String']['output'];
+};
+
+export type AssetCheckOrError =
+  | AssetCheck
+  | AssetCheckNeedsAgentUpgradeError
+  | AssetCheckNeedsMigrationError
+  | AssetCheckNeedsUserCodeUpgrade
+  | AssetCheckNotFoundError;
+
+export type AssetCheckPartitionStatuses = {
+  __typename: 'AssetCheckPartitionStatuses';
+  executionFailed: Array<Scalars['String']['output']>;
+  failed: Array<Scalars['String']['output']>;
+  inProgress: Array<Scalars['String']['output']>;
+  missing: Array<Scalars['String']['output']>;
+  skipped: Array<Scalars['String']['output']>;
+  succeeded: Array<Scalars['String']['output']>;
 };
 
 export enum AssetCheckSeverity {
@@ -520,6 +551,7 @@ export type AssetMetadataEntry = MetadataEntry & {
 
 export type AssetNode = {
   __typename: 'AssetNode';
+  assetCheckOrError: AssetCheckOrError;
   assetChecksOrError: AssetChecksOrError;
   assetKey: AssetKey;
   assetMaterializationUsedData: Array<MaterializationUpstreamDataVersion>;
@@ -604,6 +636,10 @@ export type AssetNode = {
   tags: Array<DefinitionTag>;
   targetingInstigators: Array<Instigator>;
   type: Maybe<ListDagsterType | NullableDagsterType | RegularDagsterType>;
+};
+
+export type AssetNodeAssetCheckOrErrorArgs = {
+  checkName: Scalars['String']['input'];
 };
 
 export type AssetNodeAssetChecksOrErrorArgs = {
@@ -4186,6 +4222,7 @@ export type QueryAssetCheckExecutionsArgs = {
   checkName: Scalars['String']['input'];
   cursor?: InputMaybe<Scalars['String']['input']>;
   limit: Scalars['Int']['input'];
+  partition?: InputMaybe<Scalars['String']['input']>;
 };
 
 export type QueryAssetConditionEvaluationForPartitionArgs = {
@@ -6488,6 +6525,22 @@ export const buildAssetCheck = (
           : buildAssetCheckExecution({}, relationshipsToOmit),
     jobNames: overrides && overrides.hasOwnProperty('jobNames') ? overrides.jobNames! : [],
     name: overrides && overrides.hasOwnProperty('name') ? overrides.name! : 'dignissimos',
+    partitionDefinition:
+      overrides && overrides.hasOwnProperty('partitionDefinition')
+        ? overrides.partitionDefinition!
+        : relationshipsToOmit.has('PartitionDefinition')
+          ? ({} as PartitionDefinition)
+          : buildPartitionDefinition({}, relationshipsToOmit),
+    partitionKeysByDimension:
+      overrides && overrides.hasOwnProperty('partitionKeysByDimension')
+        ? overrides.partitionKeysByDimension!
+        : [],
+    partitionStatuses:
+      overrides && overrides.hasOwnProperty('partitionStatuses')
+        ? overrides.partitionStatuses!
+        : relationshipsToOmit.has('AssetCheckPartitionStatuses')
+          ? ({} as AssetCheckPartitionStatuses)
+          : buildAssetCheckPartitionStatuses({}, relationshipsToOmit),
   };
 };
 
@@ -6510,6 +6563,7 @@ export const buildAssetCheckEvaluation = (
       overrides && overrides.hasOwnProperty('description') ? overrides.description! : 'quia',
     metadataEntries:
       overrides && overrides.hasOwnProperty('metadataEntries') ? overrides.metadataEntries! : [],
+    partition: overrides && overrides.hasOwnProperty('partition') ? overrides.partition! : 'non',
     severity:
       overrides && overrides.hasOwnProperty('severity')
         ? overrides.severity!
@@ -6677,6 +6731,36 @@ export const buildAssetCheckNeedsUserCodeUpgrade = (
   return {
     __typename: 'AssetCheckNeedsUserCodeUpgrade',
     message: overrides && overrides.hasOwnProperty('message') ? overrides.message! : 'tempora',
+  };
+};
+
+export const buildAssetCheckNotFoundError = (
+  overrides?: Partial<AssetCheckNotFoundError>,
+  _relationshipsToOmit: Set<string> = new Set(),
+): {__typename: 'AssetCheckNotFoundError'} & AssetCheckNotFoundError => {
+  const relationshipsToOmit: Set<string> = new Set(_relationshipsToOmit);
+  relationshipsToOmit.add('AssetCheckNotFoundError');
+  return {
+    __typename: 'AssetCheckNotFoundError',
+    message: overrides && overrides.hasOwnProperty('message') ? overrides.message! : 'molestiae',
+  };
+};
+
+export const buildAssetCheckPartitionStatuses = (
+  overrides?: Partial<AssetCheckPartitionStatuses>,
+  _relationshipsToOmit: Set<string> = new Set(),
+): {__typename: 'AssetCheckPartitionStatuses'} & AssetCheckPartitionStatuses => {
+  const relationshipsToOmit: Set<string> = new Set(_relationshipsToOmit);
+  relationshipsToOmit.add('AssetCheckPartitionStatuses');
+  return {
+    __typename: 'AssetCheckPartitionStatuses',
+    executionFailed:
+      overrides && overrides.hasOwnProperty('executionFailed') ? overrides.executionFailed! : [],
+    failed: overrides && overrides.hasOwnProperty('failed') ? overrides.failed! : [],
+    inProgress: overrides && overrides.hasOwnProperty('inProgress') ? overrides.inProgress! : [],
+    missing: overrides && overrides.hasOwnProperty('missing') ? overrides.missing! : [],
+    skipped: overrides && overrides.hasOwnProperty('skipped') ? overrides.skipped! : [],
+    succeeded: overrides && overrides.hasOwnProperty('succeeded') ? overrides.succeeded! : [],
   };
 };
 
@@ -7196,6 +7280,12 @@ export const buildAssetNode = (
   relationshipsToOmit.add('AssetNode');
   return {
     __typename: 'AssetNode',
+    assetCheckOrError:
+      overrides && overrides.hasOwnProperty('assetCheckOrError')
+        ? overrides.assetCheckOrError!
+        : relationshipsToOmit.has('AssetCheck')
+          ? ({} as AssetCheck)
+          : buildAssetCheck({}, relationshipsToOmit),
     assetChecksOrError:
       overrides && overrides.hasOwnProperty('assetChecksOrError')
         ? overrides.assetChecksOrError!

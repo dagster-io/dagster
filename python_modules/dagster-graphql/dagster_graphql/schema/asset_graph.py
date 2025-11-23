@@ -35,17 +35,10 @@ from dagster._core.definitions.partitions.context import (
 )
 from dagster._core.definitions.partitions.definition import PartitionsDefinition
 from dagster._core.definitions.partitions.mapping import PartitionMapping
-from dagster._core.definitions.partitions.snap import (
-    DynamicPartitionsSnap,
-    MultiPartitionsSnap,
-    PartitionsSnap,
-    StaticPartitionsSnap,
-    TimeWindowPartitionsSnap,
-)
+from dagster._core.definitions.partitions.snap import MultiPartitionsSnap, PartitionsSnap
 from dagster._core.definitions.selector import JobSelector, ScheduleSelector, SensorSelector
 from dagster._core.definitions.sensor_definition import SensorType
 from dagster._core.definitions.temporal_context import TemporalContext
-from dagster._core.errors import DagsterInvariantViolationError
 from dagster._core.event_api import AssetRecordsFilter
 from dagster._core.events import DagsterEventType
 from dagster._core.remote_representation.external import RemoteJob, RemoteRepository, RemoteSensor
@@ -61,6 +54,7 @@ from dagster._time import get_current_datetime
 from packaging import version
 
 from dagster_graphql.implementation.events import iterate_metadata_entries
+from dagster_graphql.implementation.fetch_asset_checks import check_asset_checks_support
 from dagster_graphql.implementation.fetch_assets import (
     build_partition_statuses,
     get_asset_materializations,
@@ -70,7 +64,6 @@ from dagster_graphql.implementation.fetch_assets import (
 from dagster_graphql.implementation.fetch_partition_subsets import (
     regenerate_and_check_partition_subsets,
 )
-from dagster_graphql.implementation.utils import has_permission_for_definition
 from dagster_graphql.schema import external
 from dagster_graphql.schema.asset_checks import (
     AssetChecksOrErrorUnion,
@@ -78,6 +71,8 @@ from dagster_graphql.schema.asset_checks import (
     GrapheneAssetCheckNeedsAgentUpgradeError,
     GrapheneAssetCheckNeedsMigrationError,
     GrapheneAssetCheckNeedsUserCodeUpgrade,
+    GrapheneAssetCheckNotFoundError,
+    GrapheneAssetCheckOrError,
     GrapheneAssetChecks,
     GrapheneAssetChecksOrError,
 )
@@ -123,6 +118,7 @@ from dagster_graphql.schema.partition_sets import (
     GrapheneDimensionPartitionKeys,
     GraphenePartitionDefinition,
     GraphenePartitionDefinitionType,
+    get_partition_keys_from_snap,
 )
 from dagster_graphql.schema.pipelines.pipeline import (
     GrapheneAssetPartitionStatuses,
@@ -332,6 +328,10 @@ class GrapheneAssetNode(graphene.ObjectType):
     # the acutal checks are listed in the assetChecksOrError resolver. We use this boolean
     # to show/hide the checks tab. We plan to remove this field once we always show the checks tab.
     hasAssetChecks = graphene.NonNull(graphene.Boolean)
+    assetCheckOrError = graphene.Field(
+        graphene.NonNull(GrapheneAssetCheckOrError),
+        checkName=graphene.Argument(graphene.NonNull(graphene.String)),
+    )
     assetChecksOrError = graphene.Field(
         graphene.NonNull(GrapheneAssetChecksOrError),
         limit=graphene.Argument(graphene.Int),
@@ -498,30 +498,12 @@ class GrapheneAssetNode(graphene.ObjectType):
             self._asset_node_snap.partitions if not partitions_snap else partitions_snap
         )
         if partitions_snap:
-            if isinstance(
+            return get_partition_keys_from_snap(
                 partitions_snap,
-                (
-                    StaticPartitionsSnap,
-                    TimeWindowPartitionsSnap,
-                    MultiPartitionsSnap,
-                ),
-            ):
-                if start_idx and end_idx and isinstance(partitions_snap, TimeWindowPartitionsSnap):
-                    return partitions_snap.get_partitions_definition().get_partition_keys_between_indexes(
-                        start_idx, end_idx
-                    )
-                else:
-                    return partitions_snap.get_partitions_definition().get_partition_keys(
-                        dynamic_partitions_store=dynamic_partitions_loader
-                    )
-            elif isinstance(partitions_snap, DynamicPartitionsSnap):
-                return dynamic_partitions_loader.get_dynamic_partitions(
-                    partitions_def_name=partitions_snap.name
-                )
-            else:
-                raise DagsterInvariantViolationError(
-                    f"Unsupported partition definition type {partitions_snap}"
-                )
+                dynamic_partitions_loader,
+                start_idx=start_idx,
+                end_idx=end_idx,
+            )
         return []
 
     def is_multipartitioned(self) -> bool:
@@ -567,24 +549,24 @@ class GrapheneAssetNode(graphene.ObjectType):
         self,
         graphene_info: ResolveInfo,
     ) -> bool:
-        return has_permission_for_definition(
-            graphene_info, Permissions.LAUNCH_PIPELINE_EXECUTION, self._remote_node
+        return graphene_info.context.has_permission_for_selector(
+            Permissions.LAUNCH_PIPELINE_EXECUTION, self._asset_node_snap.asset_key
         )
 
     def resolve_hasWipePermission(
         self,
         graphene_info: ResolveInfo,
     ) -> bool:
-        return has_permission_for_definition(
-            graphene_info, Permissions.WIPE_ASSETS, self._remote_node
+        return graphene_info.context.has_permission_for_selector(
+            Permissions.WIPE_ASSETS, self._asset_node_snap.asset_key
         )
 
     def resolve_hasReportRunlessAssetEventPermission(
         self,
         graphene_info: ResolveInfo,
     ) -> bool:
-        return has_permission_for_definition(
-            graphene_info, Permissions.REPORT_RUNLESS_ASSET_EVENTS, self._remote_node
+        return graphene_info.context.has_permission_for_location(
+            Permissions.REPORT_RUNLESS_ASSET_EVENTS, self._repository_selector.location_name
         )
 
     def resolve_assetMaterializationUsedData(
@@ -1401,6 +1383,35 @@ class GrapheneAssetNode(graphene.ObjectType):
     def resolve_hasAssetChecks(self, graphene_info: ResolveInfo) -> bool:
         return bool(self._remote_node.check_keys)
 
+    def resolve_assetCheckOrError(
+        self,
+        graphene_info: ResolveInfo,
+        checkName: str,
+    ) -> GrapheneAssetCheckOrError:
+        validation_error = check_asset_checks_support(graphene_info, self._repository_handle)
+        if validation_error:
+            return validation_error
+
+        remote_check_nodes = graphene_info.context.asset_graph.get_checks_for_asset(
+            self._asset_node_snap.asset_key
+        )
+
+        matching_node = next(
+            iter(
+                [
+                    remote_check_node
+                    for remote_check_node in remote_check_nodes
+                    if remote_check_node.asset_check.name == checkName
+                ]
+            ),
+            None,
+        )
+        if not matching_node:
+            return GrapheneAssetCheckNotFoundError(
+                message=f"Asset check '{checkName}' not found for asset '{self._asset_node_snap.asset_key.to_user_string()}'"
+            )
+        return GrapheneAssetCheck(matching_node)
+
     def resolve_assetChecksOrError(
         self,
         graphene_info: ResolveInfo,
@@ -1412,6 +1423,10 @@ class GrapheneAssetNode(graphene.ObjectType):
         )
         if not remote_check_nodes:
             return GrapheneAssetChecks(checks=[])
+
+        validation_error = check_asset_checks_support(graphene_info, self._repository_handle)
+        if validation_error:
+            return validation_error
 
         asset_check_support = graphene_info.context.instance.get_asset_check_support()
         if asset_check_support == AssetCheckInstanceSupport.NEEDS_MIGRATION:
