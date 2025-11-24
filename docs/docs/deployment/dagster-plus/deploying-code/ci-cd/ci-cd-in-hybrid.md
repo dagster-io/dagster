@@ -18,17 +18,18 @@ You can configure CI/CD for your project using GitHub or a non-GitHub CI/CD prov
 - If you use [GitHub](#github) or [GitLab](#gitlab) as a CI/CD provider, you can use the `dg` CLI to scaffold a GitHub Actions workflow YAML file.
 - If you use a [non-GitHub CI/CD provider](#non-github), you can configure CI/CD using the `dg` CLI.
 
-:::info
-
-This guide assumes you have created a Dagster project with a `build.yaml` file and a Dockerfile, but have not yet scaffolded a CI/CD configuration file. For project creation steps, see [Creating Dagster projects](/guides/build/projects/creating-projects).
-
-:::
-
 ## GitHub
 
-### Step 1. Generate the GitHub Actions workflow YAML file
+### Prerequisites
 
-To set up continuous integration using GitHub Actions, you can use the [`dg plus deploy configure CLI command`](/api/clis/dg-cli/dg-plus#deploy) to generate the GitHub workflow YAML file:
+Before following the steps in this section, you must:
+- Install the [GitHub `gh` CLI](https://github.com/cli/cli#installation) and authenticate to GitHub with `gh auth login`
+- [Create a Dagster project](/guides/build/projects/creating-projects)
+- Log in to Dagster with `dg plus login`
+
+### Step 1. Generate the GitHub Actions workflow YAML file, Dockerfile, and `build.yaml` file
+
+To set up continuous integration using GitHub Actions, you can use the [`dg plus deploy configure CLI command`](/api/clis/dg-cli/dg-plus#deploy) to generate the GitHub workflow YAML file, along with the Dockerfile and `build.yaml` file:
 
 ```shell
 dg plus deploy configure --git-provider github
