@@ -1,9 +1,9 @@
 import pandas as pd
 import polars as pl
-from dagster import Definitions, asset
-
 from dagster_iceberg.config import IcebergCatalogConfig
 from dagster_iceberg.io_manager.polars import PolarsIcebergIOManager
+
+from dagster import Definitions, asset
 
 CATALOG_URI = "sqlite:////home/vscode/workspace/.tmp/examples/select_columns/catalog.db"
 CATALOG_WAREHOUSE = (
