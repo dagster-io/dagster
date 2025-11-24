@@ -10,7 +10,7 @@ resources = {
         name="test",
         config=IcebergCatalogConfig(
             properties={"uri": CATALOG_URI, "warehouse": CATALOG_WAREHOUSE},
-            partition_field_name_prefix="custom-prefix"
+            partition_field_name_prefix="custom-prefix",
         ),
         namespace="dagster",
     )
