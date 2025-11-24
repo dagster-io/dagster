@@ -18,6 +18,11 @@ class CodeLocationLoadStatus(Enum):
     LOADED = "LOADED"  # Finished loading (may be an error)
 
 
+class DefinitionsSource(Enum):
+    CODE_SERVER = "CODE_SERVER"
+    CONNECTION = "CONNECTION"
+
+
 @record
 class CodeLocationEntry:
     origin: Annotated[
@@ -35,6 +40,7 @@ class CodeLocationEntry:
     display_metadata: Mapping[str, str]
     update_timestamp: float
     version_key: str
+    definitions_source: DefinitionsSource
 
 
 @record

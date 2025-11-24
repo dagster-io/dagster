@@ -14,7 +14,11 @@ from dagster._core.remote_representation.grpc_server_state_subscriber import (
 )
 from dagster._core.remote_representation.handle import RepositoryHandle
 from dagster._core.workspace.context import WorkspaceProcessContext
-from dagster._core.workspace.workspace import CodeLocationEntry, CodeLocationLoadStatus
+from dagster._core.workspace.workspace import (
+    CodeLocationEntry,
+    CodeLocationLoadStatus,
+    DefinitionsSource,
+)
 from dagster.components.core.load_defs import PLUGIN_COMPONENT_TYPES_JSON_METADATA_KEY
 from dagster_shared.serdes.objects.models.defs_state_info import (
     DefsStateInfo,
@@ -189,6 +193,9 @@ class GrapheneFeatureFlag(graphene.ObjectType):
     enabled = graphene.NonNull(graphene.Boolean)
 
 
+GrapheneDefinitionsSource = graphene.Enum.from_enum(DefinitionsSource)
+
+
 class GrapheneWorkspaceLocationEntry(graphene.ObjectType):
     id = graphene.NonNull(graphene.ID)
     name = graphene.NonNull(graphene.String)
@@ -203,12 +210,17 @@ class GrapheneWorkspaceLocationEntry(graphene.ObjectType):
 
     featureFlags = non_null_list(GrapheneFeatureFlag)
 
+    definitionsSource = graphene.NonNull(GrapheneDefinitionsSource)
+
     class Meta:
         name = "WorkspaceLocationEntry"
 
     def __init__(self, location_entry: CodeLocationEntry):
         self._location_entry = check.inst_param(location_entry, "location_entry", CodeLocationEntry)
-        super().__init__(name=self._location_entry.origin.location_name)
+        super().__init__(
+            name=self._location_entry.origin.location_name,
+            definitionsSource=self._location_entry.definitions_source,
+        )
 
     def resolve_id(self, _):
         return self.name

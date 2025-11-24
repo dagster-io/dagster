@@ -1,12 +1,15 @@
 import random
 from collections.abc import Mapping, Sequence
-from typing import Any, Optional
+from typing import TYPE_CHECKING, Any, Optional
 from unittest.mock import PropertyMock, patch
 
 import dagster._check as check
 from dagster import AssetKey, AutomationCondition, RunRequest, asset, evaluate_automation_conditions
 from dagster._core.asset_graph_view.serializable_entity_subset import SerializableEntitySubset
 from dagster._core.definitions.asset_daemon_cursor import AssetDaemonCursor
+from dagster._core.definitions.declarative_automation.operators.since_operator import (
+    SinceConditionData,
+)
 from dagster._core.definitions.declarative_automation.serialized_objects import (
     AutomationConditionEvaluation,
     AutomationConditionEvaluationWithRunIds,
@@ -42,6 +45,9 @@ from dagster_graphql.test.utils import execute_dagster_graphql, infer_repository
 from dagster_graphql_tests.graphql.graphql_context_test_suite import (
     ExecutingGraphQLContextTestMatrix,
 )
+
+if TYPE_CHECKING:
+    from dagster._core.definitions.asset_key import EntityKey
 
 TICKS_QUERY = """
 query AssetDameonTicksQuery($dayRange: Int, $dayOffset: Int, $statuses: [InstigationTickStatus!], $limit: Int, $cursor: String, $beforeTimestamp: Float, $afterTimestamp: Float) {
@@ -382,6 +388,46 @@ query GetTruePartitions($assetKey: AssetKeyInput!, $evaluationId: ID!, $nodeUniq
     truePartitionsForAutomationConditionEvaluationNode(assetKey: $assetKey, evaluationId: $evaluationId, nodeUniqueId: $nodeUniqueId)
 }
 """
+
+QUERY_WITH_SINCE_METADATA = (
+    ENTITY_FRAGMENT
+    + """
+query GetEvaluationsWithSinceMetadata($assetKey: AssetKeyInput!, $limit: Int!, $cursor: String) {
+    assetConditionEvaluationRecordsOrError(assetKey: $assetKey, limit: $limit, cursor: $cursor) {
+        ... on AssetConditionEvaluationRecords {
+            records {
+                evaluationId
+                isLegacy
+                numRequested
+                assetKey {
+                    path
+                }
+                rootUniqueId
+                evaluationNodes {
+                    operatorType
+                    userLabel
+                    expandedLabel
+                    startTimestamp
+                    endTimestamp
+                    numTrue
+                    uniqueId
+                    childUniqueIds
+                    entityKey {
+                        ...entityKeyFragment
+                    }
+                    sinceMetadata {
+                        triggerEvaluationId
+                        triggerTimestamp
+                        resetEvaluationId
+                        resetTimestamp
+                    }
+                }
+            }
+        }
+    }
+}
+"""
+)
 
 
 class TestAssetConditionEvaluations(ExecutingGraphQLContextTestMatrix):
@@ -775,3 +821,67 @@ class TestAssetConditionEvaluations(ExecutingGraphQLContextTestMatrix):
             "c",
             "d",
         }
+
+    def test_since_metadata_field(self, graphql_context: WorkspaceRequestContext):
+        """Test that the sinceMetadata field is correctly populated for SinceCondition evaluations."""
+        asset_key = AssetKey("test_asset")
+        partitions_def = StaticPartitionsDefinition(["a", "b"])
+
+        # Create an evaluation with SinceCondition metadata
+        since_metadata = SinceConditionData(
+            trigger_evaluation_id=5,
+            trigger_timestamp=1234567890.0,
+            reset_evaluation_id=3,
+            reset_timestamp=1234567880.0,
+        ).to_metadata()
+
+        evaluation: AutomationConditionEvaluation[EntityKey] = AutomationConditionEvaluation(
+            condition_snapshot=AutomationConditionNodeSnapshot(
+                class_name="SinceCondition",
+                description="since_test",
+                unique_id="since_node_123",
+            ),
+            true_subset=SerializableEntitySubset(
+                key=asset_key,
+                value=partitions_def.subset_with_partition_keys(["a"]),
+            ),
+            candidate_subset=HistoricalAllPartitionsSubsetSentinel(),
+            start_timestamp=123.0,
+            end_timestamp=456.0,
+            child_evaluations=[],
+            subsets_with_metadata=[],
+            metadata=since_metadata,
+        )
+
+        check.not_none(
+            graphql_context.instance.schedule_storage
+        ).add_auto_materialize_asset_evaluations(
+            evaluation_id=200,
+            asset_evaluations=[
+                AutomationConditionEvaluationWithRunIds(evaluation=evaluation, run_ids=frozenset())
+            ],
+        )
+
+        # Query with the sinceMetadata field
+        results = execute_dagster_graphql(
+            graphql_context,
+            QUERY_WITH_SINCE_METADATA,
+            variables={"assetKey": {"path": ["test_asset"]}, "limit": 10, "cursor": None},
+        )
+
+        records = results.data["assetConditionEvaluationRecordsOrError"]["records"]
+        assert len(records) == 1
+
+        # Find the SinceCondition node
+        evaluation_nodes = records[0]["evaluationNodes"]
+        assert len(evaluation_nodes) == 1
+        since_node = evaluation_nodes[0]
+
+        # Verify sinceMetadata is populated correctly
+        assert since_node["sinceMetadata"] is not None
+        since_metadata_result = since_node["sinceMetadata"]
+
+        assert since_metadata_result["triggerEvaluationId"] == 5
+        assert since_metadata_result["triggerTimestamp"] == 1234567890.0
+        assert since_metadata_result["resetEvaluationId"] == 3
+        assert since_metadata_result["resetTimestamp"] == 1234567880.0
