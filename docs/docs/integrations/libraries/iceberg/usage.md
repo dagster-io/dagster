@@ -93,7 +93,10 @@ For example, an asset that is partitioned using hourly partitions on a column `i
 
 The user may configure the prefix in the IO manager configuration via the `IcebergCatalogConfig`:
 
-<CodeExample path="docs_snippets/docs_snippets/integrations/iceberg/partition_field_naming_config.py" language="python" />
+<CodeExample
+  path="docs_snippets/docs_snippets/integrations/iceberg/partition_field_naming_config.py"
+  language="python"
+/>
 
 Users may also configure the prefix at launch time via run config if the IO manager is set up using `configure_at_launch()` (see the [resource configuration docs](/guides/build/external-resources/configuring-resources#configuring-resources-at-launch-time) for more details on this pattern).
 
@@ -180,8 +183,9 @@ Use asset metadata to set table properties:
 
 ## Write modes
 
-The Iceberg I/O manager supports three write modes: 
-- `overwrite` (**default**):  every asset materialization will overwrite the backing Iceberg table. Partitioned assets only overwrite partitions of the Iceberg table that were part of the asset materialization.
+The Iceberg I/O manager supports three write modes:
+
+- `overwrite` (**default**): every asset materialization will overwrite the backing Iceberg table. Partitioned assets only overwrite partitions of the Iceberg table that were part of the asset materialization.
 - `append`: results returned from each asset materialization will be inserted into the backing Iceberg table, respecting partitions when appropriate. **Not currently supported in the Spark I/O manager**.
 - `upsert`: asset materialization results will be merged into the backing Iceberg table using [pyiceberg's native implementation](https://py.iceberg.apache.org/api/#upsert), updating any existing records that match on a configurable join key, and inserting records that do not exist in the target table. Insert and update actions can be turned on or off via configuration; for example, you may only want to insert any new records but not update any matching records, or vice versa (see [Using upsert mode](#using-upsert-mode) for usage details). **Not currently supported in the Spark I/O manager**.
 
@@ -208,11 +212,13 @@ The Iceberg I/O manager supports upsert operations, which allow you to update ex
 Upsert options can be set at deployment time via asset definition metadata, or dynamically at runtime via output metadata. Upsert options set at runtime via `context.add_output_metadata()` take precedence over those set in definition metadata.
 
 **Required**:
-  - `join_cols`: **list[str]** - list of columns that make up the join key for the upsert operation
+
+- `join_cols`: **list[str]** - list of columns that make up the join key for the upsert operation
 
 **Optional**:
-  - `when_matched_update_all`: **bool** - Whether to update rows in the target table that join with the dataframe being upserted (default True)
-  - `when_not_matched_insert_all`: **bool** - Whether to insert all rows from the upsert dataframe that do not join with the target table (default True)
+
+- `when_matched_update_all`: **bool** - Whether to update rows in the target table that join with the dataframe being upserted (default True)
+- `when_not_matched_insert_all`: **bool** - Whether to insert all rows from the upsert dataframe that do not join with the target table (default True)
 
 Any `upsert_options` set when `write_mode` is not set to `upsert` will be ignored, with a debug log message indicating the options were ignored. This allows a user to set the `write_mode` to `upsert` with `upsert_options` in the asset definition metadata while still being able to override the write mode in the output metadata.
 

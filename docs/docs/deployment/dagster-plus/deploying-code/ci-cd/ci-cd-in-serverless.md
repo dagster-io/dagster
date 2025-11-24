@@ -23,6 +23,7 @@ Once you have set up your project repository, pushing changes to the `main` bran
 :::note Prerequisites
 
 Before following the steps in this section, you must:
+
 - Install the [GitHub `gh` CLI](https://github.com/cli/cli#installation) and authenticate to GitHub with `gh auth login`
 - [Create a Dagster project](/guides/build/projects/creating-projects)
 - Log in to Dagster with `dg plus login`
@@ -31,45 +32,39 @@ Before following the steps in this section, you must:
 
 1. Change to the project root directory:
 
-
-    ```shell
-    cd <project-directory>
-    ```
+   ```shell
+   cd <project-directory>
+   ```
 
 2. If you haven't already done so, initialize a Git repository in the project directory:
 
-
-    ```shell
-    git init .
-    ```
+   ```shell
+   git init .
+   ```
 
 3. If you haven't already done so, create a remote repository on GitHub to connect with the local project repository. Be sure to select `Push an existing local repository to github.com` when prompted:
 
-
-    ```shell
-    gh repo create
-    ```
+   ```shell
+   gh repo create
+   ```
 
 4. Use the `dg` CLI to scaffold deployment configuration files:
 
-
-    ```shell
-    dg plus deploy configure serverless --git-provider github
-    ```
+   ```shell
+   dg plus deploy configure serverless --git-provider github
+   ```
 
 5. Create a Dagster Cloud API token and set it as a GitHub Action secret for the project:
 
-
-    ```shell
-    dg plus create ci-api-token --description 'Used in my-project GitHub Actions' | gh secret set DAGSTER_CLOUD_API_TOKEN
-    ```
+   ```shell
+   dg plus create ci-api-token --description 'Used in my-project GitHub Actions' | gh secret set DAGSTER_CLOUD_API_TOKEN
+   ```
 
 6. Commit and push your changes to deploy to Dagster Plus:
 
-
-    ```shell
-    git add . && git commit -m "Deploy to Dagster+" && git push origin main
-    ```
+   ```shell
+   git add . && git commit -m "Deploy to Dagster+" && git push origin main
+   ```
 
 :::info
 
@@ -87,6 +82,7 @@ The `dg plus deploy configure serverless --git-provider github` command will cre
 :::note Prerequisites
 
 Before following the steps in this section, you must:
+
 - TK - install [GitLab CLI](https://gitlab.com/gitlab-org/cli)? Auth to GitLab via command line?
 - [Create a Dagster project](/guides/build/projects/creating-projects)
 - Log in to Dagster with `dg plus login`
@@ -95,35 +91,31 @@ Before following the steps in this section, you must:
 
 1. Change to the project root directory:
 
-
-    ```shell
-    cd <project-directory>
-    ```
+   ```shell
+   cd <project-directory>
+   ```
 
 2. If you haven't already done so, initialize a Git repository in the project directory:
 
-
-    ```shell
-    git init .
-    ```
+   ```shell
+   git init .
+   ```
 
 3. TK - create remote repo on GitLab
 
 4. Use the `dg` CLI to scaffold deployment configuration files:
 
-
-    ```shell
-    dg plus deploy configure serverless --git-provider gitlab
-    ```
+   ```shell
+   dg plus deploy configure serverless --git-provider gitlab
+   ```
 
 5. TK - create a Dagster Cloud API token and set it as a secret for the GitLab repo:`
 
 6. Commit and push your changes to deploy to Dagster Plus:
 
-
-    ```shell
-    git add . && git commit -m "Deploy to Dagster+" && git push origin main
-    ```
+   ```shell
+   git add . && git commit -m "Deploy to Dagster+" && git push origin main
+   ```
 
 :::info
 
@@ -150,11 +142,10 @@ If you don't want to use our automated GitHub/GitLab process, you can use the [`
 
 2. Next, install the [`dagster-cloud` CLI](/api/clis/dagster-cloud-cli/installing-and-configuring) and use the `configure` command to authenticate it to your Dagster+ organization:
 
-
-    ```shell
-    pip install dagster-cloud
-    dagster-cloud configure
-    ```
+   ```shell
+   pip install dagster-cloud
+   dagster-cloud configure
+   ```
 
 You can also configure the `dagster-cloud` tool non-interactively; for more information, see [the `dagster-cloud` installation and configuration docs](/api/clis/dagster-cloud-cli/installing-and-configuring). TODO - replace with `dg` equivalent
 
