@@ -286,10 +286,18 @@ def test_pool_mismatch():
 
 
 def test_pool_invalid():
-    illegal_pools = ["foo/bar", "foo bar", "foo:bar", "foo,bar", "foo|bar", "foo.bar", "foo-bar"]
+    illegal_pools = ["foo bar", "foo:bar", "foo,bar", "foo|bar", "foo.bar", "foo-bar"]
     for pool in illegal_pools:
         with pytest.raises(dg.DagsterInvalidDefinitionError) as _:
 
             @dg.op(pool=pool)
             def my_op():
                 pass
+
+
+def test_pool_with_slash_valid():
+    @dg.op(pool="foo/bar")
+    def my_op():
+        pass
+
+    assert my_op.pool == "foo/bar"
