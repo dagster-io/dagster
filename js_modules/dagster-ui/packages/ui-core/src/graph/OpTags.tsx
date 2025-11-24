@@ -209,6 +209,7 @@ import wechat from './kindtag-images/tool-wechat-color.svg';
 import x from './kindtag-images/tool-x-color.svg';
 import xgboost from './kindtag-images/tool-xgboost-color.svg';
 import youtube from './kindtag-images/tool-youtube-color.svg';
+import zendesk from './kindtag-images/tool-zendesk-color.svg';
 import view from './kindtag-images/view.svg';
 import yaml from './kindtag-images/yaml.svg';
 
@@ -412,6 +413,7 @@ export type KnownTagType =
   | 'wechat'
   | 'x'
   | 'youtube'
+  | 'zendesk'
   | 'typescript'
   | 'javascript'
   | 'scala'
@@ -1165,6 +1167,10 @@ export const KNOWN_TAGS: Record<KnownTagType, KnownTag> = {
   youtube: {
     icon: youtube,
     content: 'YouTube',
+  },
+  zendesk: {
+    icon: zendesk,
+    content: 'Zendesk',
   },
   typescript: {
     icon: typescript,
