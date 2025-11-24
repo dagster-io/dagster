@@ -3,9 +3,9 @@ import os
 import random
 import time
 from collections import defaultdict
-from collections.abc import Mapping
+from collections.abc import Callable, Mapping
 from contextlib import contextmanager
-from typing import Any, Callable, Optional, Union
+from typing import Any, Optional, Union
 
 import boto3
 from dagster import (

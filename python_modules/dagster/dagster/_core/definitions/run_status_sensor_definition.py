@@ -1,14 +1,13 @@
 import functools
 import logging
 import os
-from collections.abc import Iterator, Mapping, Sequence
+from collections.abc import Callable, Iterator, Mapping, Sequence
 from contextlib import ExitStack
-from typing import TYPE_CHECKING, Any, Callable, NamedTuple, Optional, Union, cast, overload
+from typing import TYPE_CHECKING, Any, NamedTuple, Optional, TypeAlias, Union, cast, overload
 
 from dagster_shared.serdes import deserialize_value
 from dagster_shared.serdes.errors import DeserializationError
 from dagster_shared.seven import JSONDecodeError
-from typing_extensions import TypeAlias
 
 import dagster._check as check
 from dagster._annotations import beta_param, deprecated_param, public
@@ -31,6 +30,7 @@ from dagster._core.definitions.sensor_definition import (
     SkipReason,
     get_context_param_name,
     get_or_create_sensor_context,
+    resolve_jobs_from_targets_for_with_attributes,
     validate_and_get_resource_dict,
 )
 from dagster._core.definitions.target import ExecutableDefinition
@@ -47,6 +47,7 @@ from dagster._core.instance import DagsterInstance
 from dagster._core.storage.dagster_run import DagsterRun, DagsterRunStatus, RunsFilter
 from dagster._serdes import serialize_value, whitelist_for_serdes
 from dagster._time import datetime_from_timestamp, parse_time_string
+from dagster._utils import IHasInternalInit
 from dagster._utils.error import serializable_error_info_from_exc_info
 from dagster._utils.warnings import normalize_renamed_param
 
@@ -584,7 +585,7 @@ def run_failure_sensor(
 
 
 @public
-class RunStatusSensorDefinition(SensorDefinition):
+class RunStatusSensorDefinition(SensorDefinition, IHasInternalInit):
     """Define a sensor that reacts to a given status of job execution, where the decorated
     function will be evaluated when a run is at the given status.
 
@@ -686,6 +687,10 @@ class RunStatusSensorDefinition(SensorDefinition):
         self._run_status_sensor_fn = check.callable_param(
             run_status_sensor_fn, "run_status_sensor_fn"
         )
+        self._run_status = run_status
+        self._monitored_jobs = monitored_jobs
+        self._monitor_all_code_locations = monitor_all_code_locations
+        self._raw_required_resource_keys = combined_required_resource_keys
         event_type = PIPELINE_RUN_STATUS_TO_EVENT_TYPE[run_status]
 
         # split monitored_jobs into external repos, external jobs, and jobs in the current repo
@@ -1024,6 +1029,78 @@ class RunStatusSensorDefinition(SensorDefinition):
     @property
     def sensor_type(self) -> SensorType:
         return SensorType.RUN_STATUS
+
+    @staticmethod
+    def dagster_internal_init(  # type: ignore
+        *,
+        name: str,
+        run_status: DagsterRunStatus,
+        run_status_sensor_fn: RunStatusSensorEvaluationFunction,
+        minimum_interval_seconds: Optional[int],
+        description: Optional[str],
+        monitored_jobs: Optional[
+            Sequence[
+                Union[
+                    JobDefinition,
+                    GraphDefinition,
+                    UnresolvedAssetJobDefinition,
+                    "RepositorySelector",
+                    "JobSelector",
+                    "CodeLocationSelector",
+                ]
+            ]
+        ],
+        monitor_all_code_locations: Optional[bool],
+        default_status: DefaultSensorStatus,
+        request_job: Optional[ExecutableDefinition],
+        request_jobs: Optional[Sequence[ExecutableDefinition]],
+        tags: Optional[Mapping[str, str]],
+        metadata: Optional[RawMetadataMapping],
+        required_resource_keys: Optional[set[str]],
+    ) -> "RunStatusSensorDefinition":
+        return RunStatusSensorDefinition(
+            name=name,
+            run_status=run_status,
+            run_status_sensor_fn=run_status_sensor_fn,
+            minimum_interval_seconds=minimum_interval_seconds,
+            description=description,
+            monitored_jobs=monitored_jobs,
+            monitor_all_code_locations=monitor_all_code_locations,
+            default_status=default_status,
+            request_job=request_job,
+            request_jobs=request_jobs,
+            tags=tags,
+            metadata=metadata,
+            required_resource_keys=required_resource_keys,
+        )
+
+    def with_attributes(
+        self,
+        *,
+        jobs: Optional[Sequence[ExecutableDefinition]] = None,
+        metadata: Optional[RawMetadataMapping] = None,
+    ) -> "RunStatusSensorDefinition":
+        """Returns a copy of this sensor with the attributes replaced."""
+        job_name, new_job, new_jobs = resolve_jobs_from_targets_for_with_attributes(self, jobs)
+
+        # We need to store the run_status and monitored_jobs for reconstruction
+        # Extract monitored_jobs from the wrapped function's closure if possible
+        # For now, we'll need to access the stored attributes
+        return RunStatusSensorDefinition.dagster_internal_init(
+            name=self.name,
+            run_status=self._run_status,
+            run_status_sensor_fn=self._run_status_sensor_fn,
+            minimum_interval_seconds=self.minimum_interval_seconds,
+            description=self.description,
+            monitored_jobs=self._monitored_jobs,
+            monitor_all_code_locations=self._monitor_all_code_locations,
+            default_status=self.default_status,
+            request_job=new_job,
+            request_jobs=new_jobs,
+            tags=self._tags,
+            metadata=metadata if metadata is not None else self._metadata,
+            required_resource_keys=self._raw_required_resource_keys,
+        )
 
 
 @deprecated_param(

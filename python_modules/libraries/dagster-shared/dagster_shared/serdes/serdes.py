@@ -30,12 +30,13 @@ from typing import (  # noqa: UP035
     Generic,
     NamedTuple,
     Optional,
+    TypeAlias,
     Union,
     cast,
     overload,
 )
 
-from typing_extensions import Self, TypeAlias, TypeVar
+from typing_extensions import Self, TypeVar
 
 import dagster_shared.check as check
 from dagster_shared import seven

@@ -22,7 +22,7 @@ In this example, you'll build a complete CNN-based digit classifier that:
 To follow the steps in this guide, you'll need:
 
 - Basic Python knowledge
-- Python 3.9+ installed on your system. Refer to the [Installation guide](/getting-started/installation) for information.
+- Python 3.10+ installed on your system. Refer to the [Installation guide](/getting-started/installation) for information.
 - Basic familiarity with machine learning concepts (neural networks, training/validation splits)
 - Understanding of PyTorch fundamentals (tensors, models, training loops)
 

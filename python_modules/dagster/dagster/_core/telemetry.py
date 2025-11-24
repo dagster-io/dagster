@@ -15,9 +15,9 @@ import hashlib
 import inspect
 import os
 import uuid
-from collections.abc import Mapping, Sequence
+from collections.abc import Callable, Mapping, Sequence
 from functools import wraps
-from typing import TYPE_CHECKING, Any, Callable, Optional, TypeVar, Union, overload
+from typing import TYPE_CHECKING, Any, Optional, TypeVar, Union, overload
 
 from dagster_shared.telemetry import (
     DAGSTER_HOME_FALLBACK,

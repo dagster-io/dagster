@@ -2,9 +2,9 @@
 
 import asyncio
 import copy
-from collections.abc import Iterator, Mapping
+from collections.abc import Callable, Iterator, Mapping
 from contextlib import contextmanager
-from typing import Any, Callable, Optional
+from typing import Any, Optional
 
 import pytest
 from dagster import AssetKey
@@ -27,6 +27,8 @@ BASIC_TABLEAU_COMPONENT_BODY = {
             "site_name": "test_site",
             "pod_name": "10ax",
         },
+        "enable_embedded_datasource_refresh": True,
+        "enable_published_datasource_refresh": True,
     },
 }
 

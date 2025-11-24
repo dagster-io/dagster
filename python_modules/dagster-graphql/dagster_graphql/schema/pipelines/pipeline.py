@@ -3,6 +3,7 @@ from typing import TYPE_CHECKING, AbstractSet, Optional  # noqa: UP035
 
 import dagster._check as check
 import graphene
+from dagster._core.definitions.asset_health.asset_freshness_health import AssetFreshnessHealthState
 from dagster._core.definitions.asset_health.asset_materialization_health import (
     MinimalAssetMaterializationHealthState,
 )
@@ -498,27 +499,39 @@ class GrapheneAsset(graphene.ObjectType):
     async def resolve_latestFailedToMaterializeTimestamp(
         self, graphene_info: ResolveInfo
     ) -> Optional[float]:
-        record = await AssetRecord.gen(graphene_info.context, self._asset_key)
-        latest_failed_to_materialize_event = (
-            record.asset_entry.last_failed_to_materialize_entry if record else None
+        materialization_state = await MinimalAssetMaterializationHealthState.gen(
+            graphene_info.context, self._asset_key
         )
-        return (
-            latest_failed_to_materialize_event.timestamp
-            * 1000  # FE prefers timestamp in milliseconds
-            if latest_failed_to_materialize_event
-            else None
-        )
+        if materialization_state is not None:
+            ts = materialization_state.latest_failed_to_materialize_timestamp
+        else:
+            record = await AssetRecord.gen(graphene_info.context, self._asset_key)
+            latest_failed_to_materialize_event = (
+                record.asset_entry.last_failed_to_materialize_entry if record else None
+            )
+            ts = (
+                latest_failed_to_materialize_event.timestamp
+                if latest_failed_to_materialize_event
+                else None
+            )
 
-    def resolve_freshnessStatusChangedTimestamp(
+        return ts * 1000 if ts else None  # FE prefers timestamp in milliseconds
+
+    async def resolve_freshnessStatusChangedTimestamp(
         self, graphene_info: ResolveInfo
     ) -> Optional[float]:
-        freshness_state_record = graphene_info.context.instance.get_freshness_state_records(
-            [self._asset_key]
-        ).get(self._asset_key)
-        if freshness_state_record is not None:
-            return (
-                freshness_state_record.updated_at.timestamp() * 1000
-            )  # FE prefers timestamp in milliseconds
+        freshness_state = await AssetFreshnessHealthState.gen(
+            graphene_info.context, self._asset_key
+        )
+        if freshness_state is not None:
+            ts = freshness_state.updated_timestamp
+        else:
+            freshness_state_record = graphene_info.context.instance.get_freshness_state_records(
+                [self._asset_key]
+            ).get(self._asset_key)
+            ts = freshness_state_record.updated_at.timestamp() if freshness_state_record else None
+
+        return ts * 1000 if ts else None  # FE prefers timestamp in milliseconds
 
 
 class GrapheneEventConnection(graphene.ObjectType):
@@ -1200,6 +1213,7 @@ class GraphenePipeline(GrapheneIPipelineSnapshotMixin, graphene.ObjectType):
     )
     hasLaunchExecutionPermission = graphene.NonNull(graphene.Boolean)
     hasLaunchReexecutionPermission = graphene.NonNull(graphene.Boolean)
+    nodeNames = non_null_list(graphene.String)
 
     class Meta:  # pyright: ignore[reportIncompatibleVariableOverride]
         interfaces = (GrapheneSolidContainer, GrapheneIPipelineSnapshot)
@@ -1219,6 +1233,9 @@ class GraphenePipeline(GrapheneIPipelineSnapshotMixin, graphene.ObjectType):
 
     def get_represented_job(self) -> RepresentedJob:
         return self._remote_job
+
+    def resolve_nodeNames(self, _graphene_info: ResolveInfo):
+        return self._remote_job.node_names
 
     def resolve_presets(self, _graphene_info: ResolveInfo):
         return [

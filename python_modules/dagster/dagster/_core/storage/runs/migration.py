@@ -1,12 +1,11 @@
 from collections.abc import Iterator, Mapping
 from contextlib import ExitStack
-from typing import AbstractSet, Any, Callable, Final, Optional, cast  # noqa: UP035
+from typing import AbstractSet, Any, Callable, Final, Optional, TypeAlias, cast  # noqa: UP035
 
 import sqlalchemy as db
 import sqlalchemy.exc as db_exc
 from sqlalchemy.engine import Connection
 from tqdm import tqdm
-from typing_extensions import TypeAlias
 
 import dagster._check as check
 from dagster._core.execution.backfill import BULK_ACTION_TERMINAL_STATUSES, PartitionBackfill

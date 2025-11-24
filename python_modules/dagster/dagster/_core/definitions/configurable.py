@@ -1,5 +1,6 @@
 from abc import ABC, abstractmethod
-from typing import TYPE_CHECKING, Any, Callable, NamedTuple, Optional, TypeVar, Union, cast
+from collections.abc import Callable
+from typing import TYPE_CHECKING, Any, NamedTuple, Optional, TypeVar, Union, cast
 
 from typing_extensions import Self
 

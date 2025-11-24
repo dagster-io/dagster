@@ -1,1 +1,1 @@
-export const PythonErrorInfoHeader: null | any = null;
+export const PythonErrorInfoHeader = (_: any) => null;

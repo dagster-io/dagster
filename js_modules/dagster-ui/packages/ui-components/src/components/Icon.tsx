@@ -1,7 +1,10 @@
+import clsx from 'clsx';
+import memoize from 'lodash/memoize';
 import * as React from 'react';
-import styled from 'styled-components';
+import {CSSProperties} from 'react';
 
 import {Colors} from './Color';
+import styles from './css/Icon.module.css';
 import abc from '../icon-svgs/abc.svg';
 import account_circle from '../icon-svgs/account_circle.svg';
 import account_tree from '../icon-svgs/account_tree.svg';
@@ -78,6 +81,7 @@ import collapse_arrows from '../icon-svgs/collapse_arrows.svg';
 import collapse_fullscreen from '../icon-svgs/collapse_fullscreen.svg';
 import column_lineage from '../icon-svgs/column_lineage.svg';
 import column_schema from '../icon-svgs/column_schema.svg';
+import compass from '../icon-svgs/compass.svg';
 import compute_kind from '../icon-svgs/compute_kind.svg';
 import concept_book from '../icon-svgs/concept_book.svg';
 import concurrency from '../icon-svgs/concurrency.svg';
@@ -340,6 +344,7 @@ import sign_out from '../icon-svgs/sign_out.svg';
 import sinks from '../icon-svgs/sinks.svg';
 import slack from '../icon-svgs/slack.svg';
 import slack_color from '../icon-svgs/slack_color.svg';
+import smart_toy from '../icon-svgs/smart_toy.svg';
 import snapshot from '../icon-svgs/snapshot.svg';
 import sort_asc from '../icon-svgs/sort_asc.svg';
 import sort_by_alpha from '../icon-svgs/sort_by_alpha.svg';
@@ -426,7 +431,7 @@ export const Icons = {
   partition_set,
   op_dynamic,
   new: new_svg,
-  //Core Icons
+  // Core Icons
   abc,
   account_circle,
   account_tree,
@@ -503,6 +508,7 @@ export const Icons = {
   collapse_arrows,
   column_lineage,
   column_schema,
+  compass,
   compute_kind,
   concept_book,
   concurrency,
@@ -762,6 +768,7 @@ export const Icons = {
   slack,
   slack_color,
   snapshot,
+  smart_toy,
   sort_by_alpha,
   sort_asc,
   sort_desc,
@@ -840,74 +847,65 @@ export const Icons = {
 
 export type IconName = keyof typeof Icons;
 
-const rotations: {[key in IconName]?: string} = {
-  // waterfall_chart: '-90deg',
-};
-
 export const IconNames = Object.keys(Icons) as IconName[];
+export type IconSize = 12 | 16 | 20 | 24 | 48;
+
+const getSizeClass = memoize((size: IconSize) => {
+  return clsx(
+    size === 12 && styles.size12,
+    size === 16 && styles.size16,
+    size === 20 && styles.size20,
+    size === 24 && styles.size24,
+    size === 48 && styles.size48,
+  );
+});
 
 interface Props {
   color?: string;
-  name: IconName;
-  size?: 12 | 16 | 20 | 24 | 48;
-  style?: React.CSSProperties;
-  useOriginalColor?: boolean;
+  size?: IconSize;
+  style?: CSSProperties;
+  className?: string;
 }
 
-export const Icon = React.memo((props: Props) => {
-  const {name, size = 16, style} = props;
+interface IconProps extends Props {
+  name: IconName;
+}
+
+export const Icon = React.memo((props: IconProps) => {
+  const {name, color = Colors.accentPrimary(), ...rest} = props;
 
   // Storybook imports SVGs are string but nextjs imports them as object.
   // This is a temporary work around until we can get storybook to import them the same way as nextjs
   const img = typeof Icons[name] === 'string' ? (Icons[name] as any) : Icons[name].src;
 
-  const color: string | null = props.useOriginalColor
-    ? null
-    : props.color || Colors.accentPrimary();
-  return (
-    <IconWrapper
-      role="img"
-      $size={size}
-      $img={img}
-      $color={color}
-      $rotation={rotations[name] || null}
-      aria-label={name}
-      style={style}
-    />
-  );
+  return <BaseIcon {...rest} img={img} name={name} color={color} />;
 });
-interface WrapperProps {
-  $color: string | null;
-  $size: number;
-  $img: string;
-  $rotation: string | null;
+
+interface BaseIconProps extends Props {
+  img: string;
+  name: string;
 }
 
-export const IconWrapper = styled.div<WrapperProps>`
-  width: ${(p) => p.$size}px;
-  height: ${(p) => p.$size}px;
-  flex-shrink: 0;
-  flex-grow: 0;
-  ${(p) =>
-    p.$color === null
-      ? // Increased specificity so that StyledButton background-color logic doesn't apply here.
-        // We could just use !important but specificity is a little more flexible
-        `
-        background: url(${p.$img});
-        background-size: cover;
-        &[role='img'][role='img'] {
-          background-color: transparent;
-        }
-      `
-      : `
-        background: ${p.$color};
-        mask-size: contain;
-        mask-repeat: no-repeat;
-        mask-position: center;
-        mask-image: url(${p.$img});
-      `}
-  object-fit: contain;
-  transition: transform 150ms linear;
+export const BaseIcon = React.memo((props: BaseIconProps) => {
+  const {name, color, size = 16, style, img, className} = props;
 
-  ${({$rotation}) => ($rotation ? `transform: rotate(${$rotation});` : null)}
-`;
+  const allClassNames = clsx(
+    'iconGlobal', // Global class for targeting icons
+    className,
+    styles.icon,
+    getSizeClass(size),
+    color ? styles.usePropColor : styles.useOriginalColor,
+  );
+
+  const iconStyle = {
+    ...(style ?? {}),
+    ...(color ? {'--icon-color': color} : {}),
+    '--icon-image-path': `url(${img})`,
+  } as CSSProperties;
+
+  return <div className={allClassNames} role="img" aria-label={name} style={iconStyle} />;
+});
+
+BaseIcon.displayName = 'BaseIcon';
+
+Icon.displayName = 'Icon';

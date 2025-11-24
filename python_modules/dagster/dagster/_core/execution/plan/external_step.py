@@ -3,8 +3,8 @@ import pickle
 import shutil
 import subprocess
 import sys
-from collections.abc import Iterator, Sequence
-from typing import TYPE_CHECKING, Callable, Optional, cast
+from collections.abc import Callable, Iterator, Sequence
+from typing import TYPE_CHECKING, Optional, cast
 
 import dagster._check as check
 from dagster._config import Field, StringSource

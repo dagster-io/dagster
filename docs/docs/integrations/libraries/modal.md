@@ -2,7 +2,7 @@
 title: Dagster & Modal
 sidebar_label: Modal
 description: The community-supported Modal package provides an integration with Modal.
-tags: [community-supported, compute]
+tags: [dagster-supported, compute]
 source: https://github.com/dagster-io/community-integrations/tree/main/libraries/dagster-modal
 pypi: https://pypi.org/project/dagster-modal/
 sidebar_custom_props:

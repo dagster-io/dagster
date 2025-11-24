@@ -1,6 +1,7 @@
 """Base classes and functional interface for validation rules."""
 
-from typing import Callable, Optional
+from collections.abc import Callable
+from typing import Optional
 
 from dagster_shared.record import record
 

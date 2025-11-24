@@ -1,8 +1,8 @@
 import logging
 import os
 import sys
-from collections.abc import Iterator, Mapping, Sequence
-from typing import TYPE_CHECKING, Callable, Optional
+from collections.abc import Callable, Iterator, Mapping, Sequence
+from typing import TYPE_CHECKING, Optional
 
 import dagster._check as check
 from dagster import DagsterEventType

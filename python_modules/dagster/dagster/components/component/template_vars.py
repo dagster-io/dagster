@@ -1,8 +1,6 @@
 import inspect
-from collections.abc import Generator
-from typing import TYPE_CHECKING, Any, Callable, Optional, Union, overload
-
-from typing_extensions import TypeAlias
+from collections.abc import Callable, Generator
+from typing import TYPE_CHECKING, Any, Optional, TypeAlias, Union, overload
 
 from dagster._symbol_annotations.public import public
 

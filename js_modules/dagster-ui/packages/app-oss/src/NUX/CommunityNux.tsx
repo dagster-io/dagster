@@ -152,14 +152,15 @@ const Form = ({dismiss, submit}: FormProps) => {
             Add your email to get updates from Dagster.
           </div>
         ) : null}
-        <Box as="label" flex={{direction: 'row', gap: 8, alignItems: 'center'}}>
+        <Box flex={{direction: 'row', gap: 8, alignItems: 'center'}}>
           <Checkbox
+            id="newsletter"
             checked={newsletter}
             onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
               setNewsLetter(e.target.checked);
             }}
-          />{' '}
-          <span>Sign up for the Dagster newsletter</span>
+          />
+          <label htmlFor="newsletter">Sign up for the Dagster newsletter</label>
         </Box>
       </Box>
       <Box flex={{direction: 'row', justifyContent: 'space-between', alignItems: 'center'}}>

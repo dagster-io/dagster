@@ -1,12 +1,13 @@
 import {
   Box,
   Caption,
+  CaptionMono,
   Colors,
+  FontFamily,
   Icon,
   Popover,
   Skeleton,
   Subtitle2,
-  Tag,
   useViewport,
 } from '@dagster-io/ui-components';
 import {memo, useMemo} from 'react';
@@ -21,7 +22,6 @@ import {useRecentAssetEvents} from './useRecentAssetEvents';
 import {Timestamp} from '../app/time/Timestamp';
 import {AssetRunLink} from '../asset-graph/AssetRunLinking';
 import {AssetEventHistoryEventTypeSelector} from '../graphql/types';
-import {RunStatusWithStats} from '../runs/RunStatusDots';
 import {titleForRun} from '../runs/RunUtils';
 import {useFormatDateTime} from '../ui/useFormatDateTime';
 
@@ -149,7 +149,7 @@ export const RecentUpdatesTimeline = ({assetKey, events, loading}: Props) => {
         <Box flex={{direction: 'row'}}>
           <Subtitle2>Recent updates</Subtitle2>
         </Box>
-        <Skeleton $width="100%" $height={32} />
+        <Skeleton $width="100%" $height={36} />
         <Box padding={{top: 4}} flex={{justifyContent: 'space-between'}}>
           <Skeleton $width={70} $height="1em" style={{minHeight: '1em'}} />
           <Skeleton $width={70} $height="1em" style={{minHeight: '1em'}} />
@@ -174,8 +174,8 @@ export const RecentUpdatesTimeline = ({assetKey, events, loading}: Props) => {
                 : `Showing all ${count} updates`}
         </Caption>
       </Box>
-      <Box border="all" padding={6 as any} style={{height: 32, overflow: 'hidden'}}>
-        <div {...containerProps} style={{width: '100%', height: 20, position: 'relative'}}>
+      <Box border="all" padding={6 as any} style={{height: 36, overflow: 'hidden'}}>
+        <div {...containerProps} style={{width: '100%', height: 24, position: 'relative'}}>
           {bucketedMaterializations.map((bucket) => {
             const width = bucket.end - bucket.start;
             const bucketStartTime = startTimestamp + bucket.start * bucketTimeRange;
@@ -189,7 +189,7 @@ export const RecentUpdatesTimeline = ({assetKey, events, loading}: Props) => {
                   width: (100 * width) / buckets + '%',
                 }}
               >
-                {bucket.events.map(({timestamp, __typename}) => {
+                {bucket.events.map(({timestamp}) => {
                   const percent = (100 * (parseInt(timestamp) - bucketStartTime)) / bucketRange;
 
                   return (
@@ -209,29 +209,32 @@ export const RecentUpdatesTimeline = ({assetKey, events, loading}: Props) => {
                   position="top"
                   interactionKind="hover"
                   content={
-                    <Box flex={{direction: 'column', gap: 8}}>
-                      <Box padding={8} border="bottom">
+                    <div style={{width: 400}}>
+                      <Box padding={{vertical: 8, horizontal: 12}} border="bottom">
                         <Subtitle2>Updates</Subtitle2>
                       </Box>
-                      <div style={{maxHeight: 'min(80vh, 300px)', overflow: 'scroll'}}>
-                        {bucket.events
+                      <Box style={{maxHeight: '300px', overflowY: 'auto'}}>
+                        {[...bucket.events]
                           .sort((a, b) => parseInt(b.timestamp) - parseInt(a.timestamp))
                           .map((event, index) => (
-                            <AssetUpdate assetKey={assetKey} event={event} key={index} />
+                            <AssetUpdate
+                              assetKey={assetKey}
+                              event={event}
+                              key={event.timestamp}
+                              last={index === bucket.events.length - 1}
+                            />
                           ))}
-                      </div>
-                    </Box>
+                      </Box>
+                    </div>
                   }
                 >
-                  <>
-                    <Tick
-                      $hasError={bucket.hasFailedMaterializations}
-                      $hasSuccess={bucket.hasMaterializations}
-                      $hasSkipped={bucket.hasSkippedMaterializations}
-                    >
-                      <TickText>{bucket.events.length}</TickText>
-                    </Tick>
-                  </>
+                  <Tick
+                    $hasError={bucket.hasFailedMaterializations}
+                    $hasSuccess={bucket.hasMaterializations}
+                    $hasSkipped={bucket.hasSkippedMaterializations}
+                  >
+                    <TickText>{bucket.events.length}</TickText>
+                  </Tick>
                 </Popover>
               </TickWrapper>
             );
@@ -249,26 +252,52 @@ export const RecentUpdatesTimeline = ({assetKey, events, loading}: Props) => {
   );
 };
 
-const AssetUpdate = ({assetKey, event}: {assetKey: AssetKey; event: AssetEventType}) => {
+const AssetUpdate = ({
+  assetKey,
+  event,
+  last,
+}: {
+  assetKey: AssetKey;
+  event: AssetEventType;
+  last: boolean;
+}) => {
   const run = event?.runOrError.__typename === 'Run' ? event.runOrError : null;
   const icon = () => {
     switch (event.__typename) {
       case 'MaterializationEvent':
-        return <Icon name="run_success" color={Colors.accentGreen()} size={16} />;
+        return <Icon name="run_success" color={Colors.accentGreen()} />;
       case 'ObservationEvent':
-        return <Icon name="observation" color={Colors.accentGreen()} size={16} />;
+        return <Icon name="observation" color={Colors.accentGreen()} />;
       case 'FailedToMaterializeEvent':
         return event.materializationFailureType === 'FAILED' ? (
-          <Icon name="run_failed" color={Colors.accentRed()} size={16} />
+          <Icon name="run_failed" color={Colors.accentRed()} />
         ) : (
-          <Icon name="status" color={Colors.accentGray()} size={16} />
+          <Icon name="status" color={Colors.accentGray()} />
         );
     }
   };
+
+  const label = () => {
+    switch (event.__typename) {
+      case 'MaterializationEvent':
+        return 'Materialized at';
+      case 'ObservationEvent':
+        return 'Observed at';
+      case 'FailedToMaterializeEvent':
+        return 'Failed to materialize at';
+    }
+  };
+
   return (
-    <Box padding={4} border="bottom" flex={{justifyContent: 'space-between', gap: 8}}>
+    <Box
+      padding={{vertical: 8, horizontal: 12}}
+      border={last ? null : 'bottom'}
+      flex={{gap: 4, wrap: 'wrap'}}
+      style={{fontSize: 12}}
+    >
       <Box flex={{gap: 4, direction: 'row', alignItems: 'center'}}>
         {icon()}
+        {label()}
         <Link
           to={assetDetailsPathForKey(assetKey, {
             view: 'events',
@@ -282,18 +311,16 @@ const AssetUpdate = ({assetKey, event}: {assetKey: AssetKey; event: AssetEventTy
       </Box>
       <div>
         {event && run ? (
-          <Tag>
+          <Box flex={{gap: 4, direction: 'row', alignItems: 'center'}}>
+            <div>in run</div>
             <AssetRunLink
               runId={run.id}
               assetKey={assetKey}
               event={{stepKey: event.stepKey, timestamp: event.timestamp}}
             >
-              <Box flex={{gap: 4, direction: 'row', alignItems: 'center'}}>
-                <RunStatusWithStats runId={run.id} status={run.status} size={8} />
-                {titleForRun(run)}
-              </Box>
+              <CaptionMono>{titleForRun(run)}</CaptionMono>
             </AssetRunLink>
-          </Tag>
+          </Box>
         ) : event && isRunlessEvent(event) ? (
           <RunlessEventTag tags={event.tags} />
         ) : undefined}
@@ -318,18 +345,18 @@ const Tick = styled.div<{
   &:hover {
     background: ${({$hasError, $hasSuccess, $hasSkipped}) => {
       if ($hasError && $hasSuccess) {
-        return `linear-gradient(90deg, ${Colors.accentRedHover()} 50%, ${Colors.accentGreenHover()} 50%)`;
+        return `linear-gradient(90deg, ${Colors.accentRed()} 50%, ${Colors.accentGreen()} 50%)`;
       }
       if ($hasError) {
-        return Colors.accentRedHover();
+        return Colors.accentRed();
       }
       if ($hasSuccess) {
-        return Colors.accentGreenHover();
+        return Colors.accentGreen();
       }
       if ($hasSkipped) {
-        return Colors.accentGrayHover();
+        return Colors.accentGray();
       }
-      return Colors.accentGreenHover();
+      return Colors.accentGreen();
     }};
   }
 `;
@@ -342,20 +369,22 @@ const TickText = styled.div`
   bottom: 0;
   display: grid;
   place-content: center;
+  font-family: ${FontFamily.monospace};
+  font-size: 12px;
   color: transparent;
   background: none;
   user-select: none;
   &:hover {
     user-select: initial;
-    color: ${Colors.textLight()};
+    color: ${Colors.accentReversed()};
   }
 `;
 
 const TickWrapper = styled.div`
   position: absolute;
-  height: 20px;
+  height: 24px;
   * {
-    height: 20px;
+    height: 24px;
   }
 `;
 
@@ -370,8 +399,10 @@ const InnerTick = styled.div<{
   position: absolute;
   pointer-events: none;
   border-radius: 1px;
-  opacity: 0.5;
   background: ${({$hasError, $hasSuccess, $hasSkipped}) => {
+    if ($hasError && $hasSuccess) {
+      return `linear-gradient(90deg, ${Colors.accentRed()} 50%, ${Colors.accentGreen()} 50%)`;
+    }
     if ($hasError) {
       return Colors.accentRed();
     }

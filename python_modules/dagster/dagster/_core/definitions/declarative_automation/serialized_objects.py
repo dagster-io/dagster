@@ -7,12 +7,12 @@ from typing import (  # noqa: UP035
     Literal,
     NamedTuple,
     Optional,
+    TypeAlias,
     TypeVar,
     Union,
 )
 
 from dagster_shared.serdes import whitelist_for_serdes
-from typing_extensions import TypeAlias
 
 from dagster._core.asset_graph_view.asset_graph_view import TemporalContext
 from dagster._core.asset_graph_view.entity_subset import EntitySubset

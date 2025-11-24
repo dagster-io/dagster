@@ -4,12 +4,12 @@ import signal
 import subprocess
 import time
 import uuid
-from collections.abc import Generator
+from collections.abc import Callable, Generator
 from contextlib import contextmanager
 from pathlib import Path
 from subprocess import CompletedProcess
 from tempfile import TemporaryDirectory
-from typing import Any, Callable
+from typing import Any
 
 import pytest
 import requests

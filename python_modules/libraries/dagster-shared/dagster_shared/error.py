@@ -2,11 +2,12 @@
 import os
 import sys
 import traceback
-from collections.abc import Sequence
-from typing import Any, Callable, NamedTuple, Optional
+from collections.abc import Callable, Sequence
+from typing import Optional
 
 from typing_extensions import Self
 
+from dagster_shared.record import LegacyNamedTupleMixin, record
 from dagster_shared.serdes.serdes import whitelist_for_serdes
 
 
@@ -30,31 +31,16 @@ class DagsterUnresolvableSymbolError(DagsterError):
 # but that is a significant refactor. Currently we're just moving SerializableErrorInfo so that we
 # can use it with the dg packages`.
 @whitelist_for_serdes
-class SerializableErrorInfo(
-    NamedTuple(
-        "SerializableErrorInfo",
-        [
-            ("message", str),
-            ("stack", Sequence[str]),
-            ("cls_name", Optional[str]),
-            ("cause", Any),
-            ("context", Any),
-        ],
-    )
-):
+@record(kw_only=False)
+class SerializableErrorInfo(LegacyNamedTupleMixin):
     # serdes log
     # * added cause - default to None in constructor to allow loading old entries
     # * added context - default to None for similar reasons
-    #
-    def __new__(
-        cls,
-        message: str,
-        stack: Sequence[str],
-        cls_name: Optional[str],
-        cause: Optional["SerializableErrorInfo"] = None,
-        context: Optional["SerializableErrorInfo"] = None,
-    ):
-        return super().__new__(cls, message, stack, cls_name, cause, context)
+    message: str
+    stack: Sequence[str]
+    cls_name: Optional[str]
+    cause: Optional["SerializableErrorInfo"] = None
+    context: Optional["SerializableErrorInfo"] = None
 
     def __str__(self) -> str:
         return self.to_string()

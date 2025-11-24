@@ -23,7 +23,6 @@ setup(
     description="Package for using Dask as Dagster's execution engine.",
     url="https://github.com/dagster-io/dagster/tree/master/python_modules/libraries/dagster-dask",
     classifiers=[
-        "Programming Language :: Python :: 3.9",
         "Programming Language :: Python :: 3.10",
         "Programming Language :: Python :: 3.11",
         "Programming Language :: Python :: 3.12",
@@ -33,7 +32,7 @@ setup(
     ],
     packages=find_packages(exclude=["dagster_dask_tests*"]),
     include_package_data=True,
-    python_requires=">=3.9,<3.14",
+    python_requires=">=3.10,<3.14",
     install_requires=[
         "bokeh",
         f"dagster{pin}",

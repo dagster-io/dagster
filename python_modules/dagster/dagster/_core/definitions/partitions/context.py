@@ -1,12 +1,12 @@
 import datetime
-from collections.abc import Iterator
+from collections.abc import Callable, Iterator
 from contextlib import contextmanager
 from contextvars import ContextVar
 from functools import wraps
-from typing import TYPE_CHECKING, Annotated, Callable, Optional, Protocol, TypeVar
+from typing import TYPE_CHECKING, Annotated, Concatenate, Optional, Protocol, TypeVar
 
 from dagster_shared.record import ImportFrom, replace
-from typing_extensions import Concatenate, ParamSpec
+from typing_extensions import ParamSpec
 
 import dagster._check as check
 from dagster._core.definitions.temporal_context import TemporalContext

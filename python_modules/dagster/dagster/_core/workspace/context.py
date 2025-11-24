@@ -8,7 +8,7 @@ from collections.abc import Mapping, Sequence
 from contextlib import ExitStack
 from functools import cached_property
 from itertools import count
-from typing import TYPE_CHECKING, AbstractSet, Any, Optional, TypeVar, Union  # noqa: UP035
+from typing import TYPE_CHECKING, AbstractSet, Any, Generic, Optional, TypeVar, Union  # noqa: UP035
 
 from typing_extensions import Self
 
@@ -26,6 +26,7 @@ from dagster._core.definitions.data_version import CachingStaleStatusResolver
 from dagster._core.definitions.partitions.context import partition_loading_context
 from dagster._core.definitions.partitions.definition import PartitionsDefinition
 from dagster._core.definitions.selector import (
+    InstigatorSelector,
     JobSelector,
     JobSubsetSelector,
     RepositorySelector,
@@ -69,7 +70,7 @@ from dagster._core.remote_representation.grpc_server_state_subscriber import (
     LocationStateChangeEventType,
     LocationStateSubscriber,
 )
-from dagster._core.remote_representation.handle import InstigatorHandle, RepositoryHandle
+from dagster._core.remote_representation.handle import RepositoryHandle
 from dagster._core.snap.dagster_types import DagsterTypeSnap
 from dagster._core.snap.mode import ResourceDefSnap
 from dagster._core.snap.node import GraphDefSnap, OpDefSnap
@@ -84,6 +85,7 @@ from dagster._core.workspace.workspace import (
     CodeLocationLoadStatus,
     CodeLocationStatusEntry,
     CurrentWorkspace,
+    DefinitionsSource,
     location_status_from_location_entry,
 )
 from dagster._grpc.constants import INCREASE_TIMEOUT_DAGSTER_YAML_MSG, GrpcServerCommand
@@ -135,8 +137,10 @@ class BaseWorkspaceRequestContext(LoadingContext):
     def get_current_workspace(self) -> CurrentWorkspace: ...
 
     # abstracted since they may be calculated without the full CurrentWorkspace
+    @abstractmethod
     def get_location_entry(self, name: str) -> Optional[CodeLocationEntry]: ...
 
+    @abstractmethod
     def get_code_location_statuses(self) -> Sequence[CodeLocationStatusEntry]: ...
 
     # implemented here since they require the full CurrentWorkspace
@@ -280,6 +284,9 @@ class BaseWorkspaceRequestContext(LoadingContext):
         return True
 
     def viewer_has_any_owner_definition_permissions(self) -> bool:
+        return False
+
+    def read_partition_subsets_from_asset_health(self) -> bool:
         return False
 
     def get_viewer_tags(self) -> dict[str, str]:
@@ -594,7 +601,7 @@ class BaseWorkspaceRequestContext(LoadingContext):
         )
 
     def get_sensor(
-        self, selector: Union[InstigatorHandle, SensorSelector]
+        self, selector: Union[SensorSelector, InstigatorSelector]
     ) -> Optional[RemoteSensor]:
         if not self.has_code_location(selector.location_name):
             return None
@@ -611,7 +618,7 @@ class BaseWorkspaceRequestContext(LoadingContext):
         return repository.get_sensor(selector.instigator_name)
 
     def get_schedule(
-        self, selector: Union[InstigatorHandle, ScheduleSelector]
+        self, selector: Union[ScheduleSelector, InstigatorSelector]
     ) -> Optional[RemoteSchedule]:
         if not self.has_code_location(selector.location_name):
             return None
@@ -833,14 +840,17 @@ class WorkspaceRequestContext(BaseWorkspaceRequestContext):
         return int(os.getenv("DAGSTER_UI_EVENT_LOAD_CHUNK_SIZE", "1000"))
 
 
-class IWorkspaceProcessContext(ABC):
+TRequestContext = TypeVar("TRequestContext", bound="BaseWorkspaceRequestContext")
+
+
+class IWorkspaceProcessContext(ABC, Generic[TRequestContext]):
     """Class that stores process-scoped information about a webserver session.
     In most cases, you will want to create a `BaseWorkspaceRequestContext` to create a request-scoped
     object.
     """
 
     @abstractmethod
-    def create_request_context(self, source: Optional[Any] = None) -> BaseWorkspaceRequestContext:
+    def create_request_context(self, source: Optional[Any] = None) -> TRequestContext:
         """Create a usable fixed context for the scope of a request.
 
         Args:
@@ -883,7 +893,7 @@ class IWorkspaceProcessContext(ABC):
         pass
 
 
-class WorkspaceProcessContext(IWorkspaceProcessContext):
+class WorkspaceProcessContext(IWorkspaceProcessContext[WorkspaceRequestContext]):
     """Process-scoped object that tracks the state of a workspace.
 
     1. Maintains an update-to-date dictionary of repository locations
@@ -1112,6 +1122,7 @@ class WorkspaceProcessContext(IWorkspaceProcessContext):
             ),
             update_timestamp=load_time,
             version_key=version_key,
+            definitions_source=DefinitionsSource.CODE_SERVER,
         )
 
     def get_current_workspace(self) -> CurrentWorkspace:

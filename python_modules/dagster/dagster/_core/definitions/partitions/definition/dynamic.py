@@ -1,6 +1,6 @@
-from collections.abc import Sequence
+from collections.abc import Callable, Sequence
 from datetime import datetime
-from typing import TYPE_CHECKING, Callable, NamedTuple, Optional, Union
+from typing import TYPE_CHECKING, NamedTuple, Optional, Union
 
 import dagster._check as check
 from dagster._annotations import PublicAttr, deprecated_param, public

@@ -1,9 +1,9 @@
 import copy
-from collections.abc import Mapping, Sequence
+from collections.abc import Callable, Mapping, Sequence
 from datetime import datetime
-from typing import TYPE_CHECKING, Any, Callable, Generic, Optional, Union, cast
+from typing import TYPE_CHECKING, Any, Generic, Optional, TypeAlias, Union, cast
 
-from typing_extensions import TypeAlias, TypeVar
+from typing_extensions import TypeVar
 
 import dagster._check as check
 from dagster._annotations import deprecated, deprecated_param, public

@@ -1,6 +1,6 @@
 import responses
 from dagster import job, op
-from dagster_census import CensusOutput, census_resource, census_trigger_sync_op
+from dagster_census import CensusOutput, CensusResource, census_trigger_sync_op
 
 from dagster_census_tests.utils import (
     get_destination_data,
@@ -12,7 +12,7 @@ from dagster_census_tests.utils import (
 
 
 def test_census_trigger_sync_op():
-    cen_resource = census_resource.configured({"api_key": "foo"})
+    cen_resource = CensusResource(api_key="foo")
 
     @op
     def foo_op():

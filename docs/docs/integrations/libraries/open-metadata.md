@@ -11,6 +11,10 @@ sidebar_custom_props:
 partnerlink: https://docs.open-metadata.org/latest/connectors/pipeline/dagster
 ---
 
+import CommunityIntegration from '@site/docs/partials/\_CommunityIntegration.md';
+
+<CommunityIntegration />
+
 <p>{frontMatter.description}</p>
 
 ## About Open Metadata

@@ -1,5 +1,6 @@
+from collections.abc import Callable
 from enum import Enum
-from typing import Callable, NamedTuple, Optional
+from typing import NamedTuple, Optional
 
 import dagster._check as check
 

@@ -7,12 +7,12 @@ from typing import (  # noqa: UP035
     AbstractSet,
     Callable,
     Generic,
+    Literal,
     NamedTuple,
     Optional,
+    TypeAlias,
     TypeVar,
 )
-
-from typing_extensions import Literal, TypeAlias
 
 from dagster._core.definitions.asset_checks.asset_check_spec import AssetCheckKey
 from dagster._core.definitions.dependency import DependencyStructure

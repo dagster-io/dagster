@@ -9,7 +9,7 @@ from dagster._config.field_utils import EnvVar
 from dagster._core.definitions.materialize import materialize
 from dagster._core.test_utils import environ
 from dagster._vendored.dateutil import parser
-from dagster_fivetran import FivetranOutput, FivetranWorkspace, fivetran_assets
+from dagster_fivetran import FivetranOutput, FivetranSyncConfig, FivetranWorkspace, fivetran_assets
 from dagster_fivetran.translator import MIN_TIME_STR, FivetranConnectorSetupStateType
 
 from dagster_fivetran_tests.conftest import (
@@ -392,4 +392,147 @@ def test_fivetran_sync_and_poll_materialization_method(
         assert re.search(
             r"dagster - WARNING - (?s:.)+ - The connector with ID (?s:.)+ has not been synced.",
             captured.err,
+        )
+
+
+def test_fivetran_resync_and_poll_materialization_method(
+    connector_id: str,
+    fetch_workspace_data_api_mocks: responses.RequestsMock,
+    resync_and_poll: MagicMock,
+    capsys: pytest.CaptureFixture,
+) -> None:
+    with environ({"FIVETRAN_API_KEY": TEST_API_KEY, "FIVETRAN_API_SECRET": TEST_API_SECRET}):
+        workspace = FivetranWorkspace(
+            account_id=TEST_ACCOUNT_ID,
+            api_key=EnvVar("FIVETRAN_API_KEY"),
+            api_secret=EnvVar("FIVETRAN_API_SECRET"),
+        )
+
+        @fivetran_assets(connector_id=connector_id, workspace=workspace, name=connector_id)
+        def my_fivetran_assets(
+            context: AssetExecutionContext,
+            fivetran: FivetranWorkspace,
+            config: FivetranSyncConfig,
+        ):
+            yield from fivetran.sync_and_poll(context=context, config=config)
+
+        # Mocked FivetranClient.resync_and_poll returns API response where all connector tables are expected
+        result = materialize(
+            [my_fivetran_assets],
+            resources={"fivetran": workspace},
+            run_config={"ops": {connector_id: {"config": {"resync": True}}}},
+        )
+        assert result.success
+        asset_materializations = [
+            event
+            for event in result.events_for_node(connector_id)
+            if event.event_type_value == "ASSET_MATERIALIZATION"
+        ]
+        assert len(asset_materializations) == 4
+        materialized_asset_keys = {
+            asset_materialization.asset_key for asset_materialization in asset_materializations
+        }
+        assert len(materialized_asset_keys) == 4
+        assert my_fivetran_assets.keys == materialized_asset_keys
+
+        # Mocked FivetranClient.resync_and_poll returns API response
+        # where one expected table is missing and an unexpected table is present
+        result = materialize(
+            [my_fivetran_assets],
+            resources={"fivetran": workspace},
+            run_config={"ops": {connector_id: {"config": {"resync": True}}}},
+        )
+
+        assert result.success
+        asset_materializations = [
+            event
+            for event in result.events_for_node(connector_id)
+            if event.event_type_value == "ASSET_MATERIALIZATION"
+        ]
+        assert len(asset_materializations) == 4
+        materialized_asset_keys = {
+            asset_materialization.asset_key for asset_materialization in asset_materializations
+        }
+        assert len(materialized_asset_keys) == 4
+        assert my_fivetran_assets.keys != materialized_asset_keys
+        assert (
+            AssetKey(["schema_name_in_destination_1", "another_table_name_in_destination_1"])
+            in materialized_asset_keys
+        )
+        assert (
+            AssetKey(["schema_name_in_destination_1", "table_name_in_destination_1"])
+            not in materialized_asset_keys
+        )
+
+        captured = capsys.readouterr()
+        assert re.search(
+            r"dagster - WARNING - (?s:.)+ - An unexpected asset was materialized", captured.err
+        )
+        assert re.search(
+            r"dagster - WARNING - (?s:.)+ - Assets were not materialized", captured.err
+        )
+
+        # Mocked FivetranClient.resync_and_poll returns None if the connector is paused
+        result = materialize(
+            [my_fivetran_assets],
+            resources={"fivetran": workspace},
+            run_config={"ops": {connector_id: {"config": {"resync": True}}}},
+        )
+        assert result.success
+        asset_materializations = [
+            event
+            for event in result.events_for_node(connector_id)
+            if event.event_type_value == "ASSET_MATERIALIZATION"
+        ]
+        assert len(asset_materializations) == 0
+
+        captured = capsys.readouterr()
+        assert re.search(
+            r"dagster - WARNING - (?s:.)+ - The connector with ID (?s:.)+ has not been resynced.",
+            captured.err,
+        )
+
+
+def test_fivetran_resync_and_poll_with_resync_parameters(
+    connector_id: str,
+    fetch_workspace_data_api_mocks: responses.RequestsMock,
+    resync_and_poll: MagicMock,
+) -> None:
+    with environ({"FIVETRAN_API_KEY": TEST_API_KEY, "FIVETRAN_API_SECRET": TEST_API_SECRET}):
+        workspace = FivetranWorkspace(
+            account_id=TEST_ACCOUNT_ID,
+            api_key=EnvVar("FIVETRAN_API_KEY"),
+            api_secret=EnvVar("FIVETRAN_API_SECRET"),
+        )
+
+        @fivetran_assets(connector_id=connector_id, workspace=workspace, name=connector_id)
+        def my_fivetran_assets(
+            context: AssetExecutionContext,
+            fivetran: FivetranWorkspace,
+            config: FivetranSyncConfig,
+        ):
+            yield from fivetran.sync_and_poll(context=context, config=config)
+
+        result = materialize(
+            [my_fivetran_assets],
+            resources={"fivetran": workspace},
+            run_config={
+                "ops": {
+                    connector_id: {
+                        "config": {
+                            "resync": True,
+                            "resync_parameters": {
+                                "schema_name_in_destination_1": ["table_name_in_destination_1"],
+                            },
+                        }
+                    }
+                }
+            },
+        )
+        assert result.success
+
+        # Verify resync_and_poll was called with the correct parameters
+        resync_and_poll.assert_called_with(
+            connector_id=connector_id,
+            resync_parameters={"schema_name_in_destination_1": ["table_name_in_destination_1"]},
         )

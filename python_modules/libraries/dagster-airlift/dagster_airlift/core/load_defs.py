@@ -1,7 +1,7 @@
 from collections import defaultdict
-from collections.abc import Iterable, Mapping, Sequence
+from collections.abc import Callable, Iterable, Mapping, Sequence
 from dataclasses import dataclass
-from typing import Callable, Optional, Union, cast
+from typing import Optional, Union, cast
 
 from dagster import AssetsDefinition, AssetSpec, Definitions
 from dagster._annotations import beta

@@ -23,7 +23,6 @@ setup(
     description="Package for integrating Omni with Dagster.",
     url=("https://github.com/dagster-io/dagster/tree/master/python_modules/libraries/dagster-omni"),
     classifiers=[
-        "Programming Language :: Python :: 3.9",
         "Programming Language :: Python :: 3.10",
         "Programming Language :: Python :: 3.11",
         "Programming Language :: Python :: 3.12",

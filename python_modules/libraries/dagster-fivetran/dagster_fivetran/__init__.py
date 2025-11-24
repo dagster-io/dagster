@@ -15,6 +15,7 @@ from dagster_fivetran.ops import (
 )
 from dagster_fivetran.resources import (
     FivetranResource as FivetranResource,
+    FivetranSyncConfig as FivetranSyncConfig,
     FivetranWorkspace as FivetranWorkspace,
     fivetran_resource as fivetran_resource,
     load_fivetran_asset_specs as load_fivetran_asset_specs,

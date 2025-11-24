@@ -1,9 +1,9 @@
 import itertools
 import logging
 import re
-from collections.abc import Iterator, Mapping, Sequence
+from collections.abc import Callable, Iterator, Mapping, Sequence
 from pathlib import Path
-from typing import Any, Callable, Literal, Optional, cast
+from typing import Any, Literal, Optional, cast
 
 from dagster import AssetKey, AssetSpec
 from dagster._annotations import beta, public, superseded

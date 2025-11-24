@@ -1,10 +1,9 @@
 import functools
-from collections.abc import Mapping
+from collections.abc import Callable, Mapping
 from dataclasses import dataclass
-from typing import TYPE_CHECKING, Annotated, Any, Callable, Generic, Optional, TypeVar, Union, cast
+from typing import TYPE_CHECKING, Annotated, Any, Generic, Optional, TypeAlias, TypeVar, Union, cast
 
 from pydantic import BaseModel
-from typing_extensions import TypeAlias
 
 from dagster import _check as check
 from dagster._core.definitions.asset_checks.asset_check_spec import AssetCheckSpec

@@ -4,7 +4,7 @@ import tempfile
 from collections.abc import Iterator, Mapping, Sequence
 from contextlib import contextmanager
 from pathlib import Path
-from typing import Any, Optional, Union, cast
+from typing import Any, Optional, TypeAlias, Union, cast
 
 import dagster._check as check
 import graphene
@@ -16,7 +16,7 @@ from dagster._core.remote_representation.external import RemoteRepository
 from dagster._core.test_utils import wait_for_runs_to_finish
 from dagster._core.workspace.context import WorkspaceProcessContext, WorkspaceRequestContext
 from dagster._core.workspace.load_target import PythonFileTarget, WorkspaceFileTarget
-from typing_extensions import Protocol, TypeAlias, TypedDict
+from typing_extensions import Protocol, TypedDict
 
 from dagster_graphql import __file__ as dagster_graphql_init_py
 from dagster_graphql.schema import create_schema

@@ -1,5 +1,6 @@
 import threading
-from typing import Callable, Optional
+from collections.abc import Callable
+from typing import Optional
 
 import dagster._check as check
 from dagster._core.errors import DagsterUserCodeUnreachableError

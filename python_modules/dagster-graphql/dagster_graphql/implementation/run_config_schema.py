@@ -44,7 +44,7 @@ def resolve_is_run_config_valid(
     run_config: Mapping[str, object],
 ) -> "GraphenePipelineConfigValidationValid":
     from dagster_graphql.schema.pipelines.config import (
-        GraphenePipelineConfigValidationError,
+        GrapheneConfigValidationError,
         GraphenePipelineConfigValidationValid,
         GrapheneRunConfigValidationInvalid,
     )
@@ -69,7 +69,7 @@ def resolve_is_run_config_valid(
             GrapheneRunConfigValidationInvalid(
                 pipeline_name=represented_pipeline.name,
                 errors=[
-                    GraphenePipelineConfigValidationError.from_dagster_error(
+                    GrapheneConfigValidationError.from_dagster_error(
                         represented_pipeline.config_schema_snapshot.get_config_snap,
                         err,
                     )

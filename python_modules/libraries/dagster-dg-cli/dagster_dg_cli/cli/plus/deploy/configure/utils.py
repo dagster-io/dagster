@@ -1,0 +1,274 @@
+"""Shared utilities and constants for deployment configuration scaffolding."""
+
+import subprocess
+import textwrap
+from collections.abc import Callable
+from enum import Enum
+from pathlib import Path
+from typing import NamedTuple, Optional
+from urllib.parse import urlparse
+
+from dagster_dg_core.config import DgRawCliConfig
+from dagster_dg_core.context import DgContext
+from dagster_shared.plus.config import DagsterPlusCliConfig
+from dagster_shared.record import record
+
+from dagster_dg_cli.cli.plus.constants import DgPlusAgentPlatform, DgPlusAgentType
+
+
+class GitProvider(Enum):
+    """Supported git providers for CI/CD scaffolding."""
+
+    GITHUB = "github"
+    GITLAB = "gitlab"
+
+
+@record
+class DeploymentScaffoldConfig:
+    """Configuration for deployment scaffolding."""
+
+    dg_context: DgContext
+    cli_config: DgRawCliConfig
+    plus_config: Optional[DagsterPlusCliConfig]
+    agent_type: DgPlusAgentType
+    agent_platform: Optional[DgPlusAgentPlatform]
+    organization_name: Optional[str]
+    deployment_name: str
+    git_root: Optional[Path]
+    python_version: str
+    skip_confirmation_prompt: bool
+    git_provider: Optional[GitProvider]
+    use_editable_dagster: bool
+
+
+def get_cli_version_or_main() -> str:
+    from dagster_dg_cli.version import __version__ as cli_version
+
+    return "main" if cli_version.endswith("+dev") else f"v{cli_version}"
+
+
+def search_for_git_root(path: Path) -> Optional[Path]:
+    if path.joinpath(".git").exists():
+        return path
+    elif path.parent == path:
+        return None
+    else:
+        return search_for_git_root(path.parent)
+
+
+def get_project_contexts(dg_context: DgContext, cli_config: DgRawCliConfig) -> list[DgContext]:
+    if dg_context.is_in_workspace:
+        return [
+            dg_context.for_project_environment(project.path, cli_config)
+            for project in dg_context.project_specs
+        ]
+    else:
+        return [dg_context]
+
+
+def get_git_web_url(git_root: Path) -> Optional[str]:
+    from dagster_cloud_cli.core.pex_builder.code_location import get_local_repo_name
+
+    try:
+        local_repo_name = get_local_repo_name(str(git_root))
+        return f"https://github.com/{local_repo_name}"
+    except subprocess.CalledProcessError:
+        return None
+
+
+def get_scaffolded_container_context_yaml(agent_platform: DgPlusAgentPlatform) -> Optional[str]:
+    if agent_platform == DgPlusAgentPlatform.K8S:
+        return textwrap.dedent(
+            """
+            ### Uncomment to add configuration for k8s resources.
+            # k8s:
+            #   server_k8s_config: # Raw kubernetes config for code servers launched by the agent
+            #     pod_spec_config: # Config for the code server pod spec
+            #       node_selector:
+            #         disktype: standard
+            #     pod_template_spec_metadata: # Metadata for the code server pod
+            #       annotations:
+            #         mykey: myvalue
+            #     container_config: # Config for the main dagster container in the code server pod
+            #       resources:
+            #         limits:
+            #           cpu: 100m
+            #           memory: 128Mi
+            #   run_k8s_config: # Raw kubernetes config for runs launched by the agent
+            #     pod_spec_config: # Config for the run's PodSpec
+            #       node_selector:
+            #         disktype: ssd
+            #     container_config: # Config for the main dagster container in the run pod
+            #       resources:
+            #         limits:
+            #           cpu: 500m
+            #           memory: 1024Mi
+            #     pod_template_spec_metadata: # Metadata for the run pod
+            #       annotations:
+            #         mykey: myvalue
+            #     job_spec_config: # Config for the Kubernetes job for the run
+            #       ttl_seconds_after_finished: 7200
+            """
+        )
+    elif agent_platform == DgPlusAgentPlatform.ECS:
+        return textwrap.dedent(
+            """
+            ### Uncomment to add configuration for ECS resources.
+            # ecs:
+            #   env_vars:
+            #     - DATABASE_NAME=staging
+            #     - DATABASE_PASSWORD
+            #   secrets:
+            #     - name: 'MY_API_TOKEN'
+            #       valueFrom: 'arn:aws:secretsmanager:us-east-1:123456789012:secret:FOO-AbCdEf:token::'
+            #     - name: 'MY_PASSWORD'
+            #       valueFrom: 'arn:aws:secretsmanager:us-east-1:123456789012:secret:FOO-AbCdEf:password::'
+            #   server_resources: # Resources for code servers launched by the agent for this location
+            #     cpu: "256"
+            #     memory: "512"
+            #   run_resources: # Resources for runs launched by the agent for this location
+            #     cpu: "4096"
+            #     memory: "16384"
+            #   execution_role_arn: arn:aws:iam::123456789012:role/MyECSExecutionRole
+            #   task_role_arn: arn:aws:iam::123456789012:role/MyECSTaskRole
+            #   mount_points:
+            #     - sourceVolume: myEfsVolume
+            #       containerPath: '/mount/efs'
+            #       readOnly: True
+            #   volumes:
+            #     - name: myEfsVolume
+            #       efsVolumeConfiguration:
+            #         fileSystemId: fs-1234
+            #         rootDirectory: /path/to/my/data
+            #   server_sidecar_containers:
+            #     - name: DatadogAgent
+            #       image: public.ecr.aws/datadog/agent:latest
+            #       environment:
+            #         - name: ECS_FARGATE
+            #           value: true
+            #   run_sidecar_containers:
+            #     - name: DatadogAgent
+            #       image: public.ecr.aws/datadog/agent:latest
+            #       environment:
+            #         - name: ECS_FARGATE
+            #           value: true
+            """
+        )
+    elif agent_platform == DgPlusAgentPlatform.DOCKER:
+        return textwrap.dedent(
+            """
+            ### Uncomment to add configuration for Docker resources.
+            # docker:
+            #   env_vars:
+            #     - DATABASE_NAME=staging
+            #     - DATABASE_PASSWORD
+            """
+        )
+    else:
+        return None
+
+
+# Template file paths
+TEMPLATES_DIR = Path(__file__).parent.parent.parent.parent.parent / "templates"
+SERVERLESS_GITHUB_ACTION_FILE = TEMPLATES_DIR / "serverless-github-action.yaml"
+HYBRID_GITHUB_ACTION_FILE = TEMPLATES_DIR / "hybrid-github-action.yaml"
+BUILD_LOCATION_FRAGMENT = TEMPLATES_DIR / "build-location-fragment.yaml"
+
+
+class ContainerRegistryInfo(NamedTuple):
+    name: str
+    match: Callable[[str], bool]
+    fragment: Path
+    secrets_hints: list[str]
+
+
+def _matches_ecr(url: str) -> bool:
+    """Check if URL is an AWS ECR registry.
+
+    ECR URLs follow the format: <account-id>.dkr.ecr.<region>.amazonaws.com
+    """
+    parsed = urlparse(url if "://" in url else f"https://{url}")
+    hostname = parsed.hostname or ""
+    # Check that hostname ends with .amazonaws.com and contains .ecr. in the subdomain structure
+    return hostname.endswith(".amazonaws.com") and ".ecr." in hostname
+
+
+def _matches_dockerhub(url: str) -> bool:
+    """Check if URL is DockerHub."""
+    parsed = urlparse(url if "://" in url else f"https://{url}")
+    hostname = parsed.hostname or ""
+    return hostname == "docker.io" or hostname.endswith(".docker.io")
+
+
+def _matches_ghcr(url: str) -> bool:
+    """Check if URL is GitHub Container Registry."""
+    parsed = urlparse(url if "://" in url else f"https://{url}")
+    hostname = parsed.hostname or ""
+    return hostname == "ghcr.io" or hostname.endswith(".ghcr.io")
+
+
+def _matches_azure(url: str) -> bool:
+    """Check if URL is Azure Container Registry.
+
+    Azure URLs follow the format: <name>.azurecr.io
+    """
+    parsed = urlparse(url if "://" in url else f"https://{url}")
+    hostname = parsed.hostname or ""
+    return hostname == "azurecr.io" or hostname.endswith(".azurecr.io")
+
+
+def _matches_gcr(url: str) -> bool:
+    """Check if URL is Google Container Registry."""
+    parsed = urlparse(url if "://" in url else f"https://{url}")
+    hostname = parsed.hostname or ""
+    return hostname == "gcr.io" or hostname.endswith(".gcr.io")
+
+
+REGISTRY_INFOS = [
+    ContainerRegistryInfo(
+        name="ECR",
+        match=_matches_ecr,
+        fragment=TEMPLATES_DIR / "registry_fragments" / "ecr-login-fragment.yaml",
+        secrets_hints=[
+            'gh secret set AWS_ACCESS_KEY_ID --body "(your AWS access key ID)"',
+            'gh secret set AWS_SECRET_ACCESS_KEY --body "(your AWS secret access key)"',
+            'gh secret set AWS_REGION --body "(your AWS region)"',
+        ],
+    ),
+    ContainerRegistryInfo(
+        name="DockerHub",
+        match=_matches_dockerhub,
+        fragment=TEMPLATES_DIR / "registry_fragments" / "dockerhub-login-fragment.yaml",
+        secrets_hints=[
+            'gh secret set DOCKERHUB_USERNAME --body "(your DockerHub username)"',
+            'gh secret set DOCKERHUB_TOKEN --body "(your DockerHub token)"',
+        ],
+    ),
+    ContainerRegistryInfo(
+        name="GitHub Container Registry",
+        match=_matches_ghcr,
+        fragment=TEMPLATES_DIR
+        / "registry_fragments"
+        / "github-container-registry-login-fragment.yaml",
+        secrets_hints=[],
+    ),
+    ContainerRegistryInfo(
+        name="Azure Container Registry",
+        match=_matches_azure,
+        fragment=TEMPLATES_DIR
+        / "registry_fragments"
+        / "azure-container-registry-login-fragment.yaml",
+        secrets_hints=[
+            'gh secret set AZURE_CLIENT_ID --body "(your Azure client ID)"',
+            'gh secret set AZURE_CLIENT_SECRET --body "(your Azure client secret)"',
+        ],
+    ),
+    ContainerRegistryInfo(
+        name="Google Container Registry",
+        match=_matches_gcr,
+        fragment=TEMPLATES_DIR / "registry_fragments" / "gcr-login-fragment.yaml",
+        secrets_hints=[
+            'gh secret set GCR_JSON_KEY --body "(your GCR JSON key)"',
+        ],
+    ),
+]

@@ -1,12 +1,4 @@
-import {
-  Box,
-  Colors,
-  Icon,
-  IconWrapper,
-  MiddleTruncate,
-  Spinner,
-  Tooltip,
-} from '@dagster-io/ui-components';
+import {Box, Colors, Icon, MiddleTruncate, Spinner, Tooltip} from '@dagster-io/ui-components';
 import {Link} from 'react-router-dom';
 import styled from 'styled-components';
 
@@ -103,12 +95,12 @@ const StyledButton = styled.button`
     outline: none;
   }
 
-  & ${IconWrapper} {
+  & .iconGlobal {
     display: block;
     transition: color 100ms linear;
   }
 
-  :hover ${IconWrapper} {
+  :hover .iconGlobal {
     color: ${Colors.accentBlue()};
   }
 `;

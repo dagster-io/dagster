@@ -4,11 +4,11 @@ import logging
 import sys
 import threading
 from collections import defaultdict
-from collections.abc import Sequence
+from collections.abc import Callable, Sequence
 from concurrent.futures import Future, ThreadPoolExecutor
 from contextlib import AbstractContextManager
 from types import TracebackType
-from typing import TYPE_CHECKING, Callable, NamedTuple, Optional, Union, cast
+from typing import TYPE_CHECKING, NamedTuple, Optional, Union, cast
 
 import dagster_shared.seven as seven
 from dagster_shared.error import DagsterError
@@ -1251,15 +1251,23 @@ def _submit_backfill_request(
     )
 
 
-def is_under_min_interval(state: InstigatorState, remote_sensor: RemoteSensor) -> bool:
+def is_under_min_interval(
+    state: InstigatorState,
+    remote_sensor: RemoteSensor,
+    minimum_allowed_min_interval: Optional[int] = None,
+) -> bool:
     elapsed = get_elapsed(state)
     if elapsed is None:
         return False
 
-    if not remote_sensor.min_interval_seconds:
+    min_interval = remote_sensor.min_interval_seconds or 0
+    if minimum_allowed_min_interval is not None:
+        min_interval = max(min_interval, minimum_allowed_min_interval)
+
+    if not min_interval:
         return False
 
-    return elapsed < remote_sensor.min_interval_seconds
+    return elapsed < min_interval
 
 
 def get_elapsed(state: InstigatorState) -> Optional[float]:

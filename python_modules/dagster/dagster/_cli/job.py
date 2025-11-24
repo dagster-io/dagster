@@ -2,8 +2,8 @@ import os
 import re
 import sys
 import textwrap
-from collections.abc import Iterator, Mapping, Sequence
-from typing import Any, Callable, Optional, TypeVar
+from collections.abc import Callable, Iterator, Mapping, Sequence
+from typing import Any, Optional, TypeVar
 
 import click
 from dagster_shared.cli import python_pointer_options, workspace_options

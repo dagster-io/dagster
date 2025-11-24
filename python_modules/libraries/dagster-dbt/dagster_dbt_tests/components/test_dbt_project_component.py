@@ -2,10 +2,10 @@ import os
 import shutil
 import sys
 import tempfile
-from collections.abc import Iterator, Mapping
+from collections.abc import Callable, Iterator, Mapping
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Any, Callable, Optional
+from typing import Any, Optional
 from unittest.mock import patch
 
 import dagster as dg
@@ -27,7 +27,7 @@ from dagster.components.resolved.context import ResolutionContext
 from dagster.components.resolved.core_models import AssetAttributesModel, OpSpec
 from dagster.components.testing.test_cases import TestOpCustomization, TestTranslation
 from dagster.components.testing.utils import create_defs_folder_sandbox
-from dagster_dbt import DbtProject, DbtProjectComponent
+from dagster_dbt import DbtCliResource, DbtProject, DbtProjectComponent
 from dagster_dbt.cli.app import project_app_typer_click_object
 from dagster_dbt.components.dbt_project.component import (
     _set_resolution_context,
@@ -601,3 +601,128 @@ def test_basic_component_non_dev_mode(tmp_dbt_path: Path) -> None:
 
             expected_key = "DbtProjectComponent[jaffle_shop]"
             assert expected_key in load_context.accessed_defs_state_info.info_mapping
+
+
+def test_subclass_with_op_config_schema(dbt_path: Path) -> None:
+    """Test that we can subclass DbtProjectComponent and set a custom op_config_schema."""
+
+    @dataclass
+    class CustomConfigDbtProjectComponent(DbtProjectComponent):
+        @property
+        def op_config_schema(self) -> type[dg.Config]:
+            class CustomConfig(dg.Config):
+                full_refresh: bool = False
+                custom_param: str = "default"
+
+            return CustomConfig
+
+        def execute(self, context: dg.AssetExecutionContext, dbt: "DbtCliResource") -> Iterator:
+            # Access the config from the context
+            config = context.op_config
+            context.log.info(f"full_refresh: {config['full_refresh']}")
+            context.log.info(f"custom_param: {config['custom_param']}")
+
+            # Use the config to modify execution behavior
+            if config["full_refresh"]:
+                # In a real implementation, you might modify the dbt CLI args here
+                context.log.info("Running with full refresh")
+
+            # Call the parent execute method
+            yield from super().execute(context, dbt)
+
+    defs = build_component_defs_for_test(
+        CustomConfigDbtProjectComponent,
+        {"project": str(dbt_path), "select": "raw_customers"},
+    )
+
+    # Verify the component was created with the correct config schema
+    assets_def = defs.resolve_assets_def(AssetKey("raw_customers"))
+
+    # Check that the config schema is set on the underlying assets_def
+    assert assets_def.op.config_schema is not None
+
+    # Test that we can materialize with custom config
+    with instance_for_test() as instance:
+        result = defs.get_implicit_global_asset_job_def().execute_in_process(
+            instance=instance,
+            asset_selection=[AssetKey("raw_customers")],
+            run_config={
+                "ops": {
+                    assets_def.op.name: {
+                        "config": {
+                            "full_refresh": True,
+                            "custom_param": "test_value",
+                        }
+                    }
+                }
+            },
+        )
+        assert result.success
+
+
+def test_subclass_with_op_config_schema_and_custom_get_asset_spec(dbt_path: Path) -> None:
+    """Test subclassing with both op_config_schema and get_asset_spec overrides."""
+
+    @dataclass
+    class AdvancedCustomDbtProjectComponent(DbtProjectComponent):
+        @property
+        def op_config_schema(self) -> type[dg.Config]:
+            class AdvancedConfig(dg.Config):
+                add_metadata_url: bool = True
+                base_url: str = "https://example.com"
+
+            return AdvancedConfig
+
+        def get_asset_spec(
+            self, manifest: Mapping[str, Any], unique_id: str, project: Optional[DbtProject]
+        ) -> dg.AssetSpec:
+            base_spec = super().get_asset_spec(manifest, unique_id, project)
+            dbt_props = self.get_resource_props(manifest, unique_id)
+
+            # Add custom metadata to the asset spec
+            return base_spec.merge_attributes(
+                metadata={
+                    "custom_metadata": "added_via_subclass",
+                    "model_name": dbt_props["name"],
+                }
+            )
+
+        def execute(self, context: dg.AssetExecutionContext, dbt: "DbtCliResource") -> Iterator:
+            config = context.op_config
+            if config["add_metadata_url"]:
+                context.log.info(f"Would add URL metadata: {config['base_url']}")
+
+            yield from super().execute(context, dbt)
+
+    defs = build_component_defs_for_test(
+        AdvancedCustomDbtProjectComponent,
+        {"project": str(dbt_path), "select": "stg_customers"},
+    )
+
+    assets_def = defs.resolve_assets_def(AssetKey("stg_customers"))
+    asset_spec = assets_def.get_asset_spec(AssetKey("stg_customers"))
+
+    # Verify custom metadata from get_asset_spec override
+    assert asset_spec.metadata["custom_metadata"] == "added_via_subclass"
+    assert asset_spec.metadata["model_name"] == "stg_customers"
+
+    # Verify config schema is set
+    assert assets_def.op.config_schema is not None
+
+    # Test execution with custom config
+    with instance_for_test() as instance:
+        result = defs.get_implicit_global_asset_job_def().execute_in_process(
+            instance=instance,
+            asset_selection=[AssetKey("stg_customers")],
+            run_config={
+                "ops": {
+                    assets_def.op.name: {
+                        "config": {
+                            "add_metadata_url": True,
+                            "base_url": "https://custom.example.com",
+                        }
+                    }
+                }
+            },
+        )
+        assert result.success

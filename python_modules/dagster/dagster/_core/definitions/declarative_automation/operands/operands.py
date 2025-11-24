@@ -14,6 +14,7 @@ from dagster._core.definitions.declarative_automation.automation_context import 
 from dagster._core.definitions.declarative_automation.operands.subset_automation_condition import (
     SubsetAutomationCondition,
 )
+from dagster._core.definitions.freshness import FreshnessState
 from dagster._core.definitions.partitions.snap.snap import PartitionsSnap
 from dagster._core.definitions.partitions.subset.key_ranges import KeyRangesPartitionsSubset
 from dagster._record import record
@@ -190,6 +191,21 @@ class NewlyUpdatedCondition(SubsetAutomationCondition):
             return context.get_empty_subset()
         return await context.asset_graph_view.compute_updated_since_temporal_context_subset(
             key=context.key, temporal_context=context.previous_temporal_context
+        )
+
+
+@whitelist_for_serdes
+@record
+class FreshnessResultCondition(SubsetAutomationCondition[AssetKey]):
+    state: FreshnessState
+
+    @property
+    def name(self) -> str:
+        return f"freshness_result(state={self.state})"
+
+    async def compute_subset(self, context: AutomationContext[AssetKey]) -> EntitySubset[AssetKey]:  # pyright: ignore[reportIncompatibleMethodOverride]
+        return await context.asset_graph_view.compute_subset_with_freshness_state(
+            key=context.key, state=self.state
         )
 
 

@@ -1,7 +1,5 @@
 from collections.abc import Mapping, Sequence
-from typing import TYPE_CHECKING, Any, Union
-
-from typing_extensions import TypeAlias
+from typing import TYPE_CHECKING, Any, TypeAlias, Union
 
 from dagster._annotations import public
 

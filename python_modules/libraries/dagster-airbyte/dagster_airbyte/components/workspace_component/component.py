@@ -1,8 +1,8 @@
 from collections import defaultdict
-from collections.abc import Iterable, Sequence
+from collections.abc import Callable, Iterable, Sequence
 from functools import cached_property
 from pathlib import Path
-from typing import Annotated, Callable, Optional, Union
+from typing import Annotated, Optional, Union
 
 import dagster as dg
 import pydantic
@@ -28,7 +28,12 @@ from dagster_shared.serdes.serdes import deserialize_value
 from dagster_airbyte.components.workspace_component.scaffolder import (
     AirbyteWorkspaceComponentScaffolder,
 )
-from dagster_airbyte.resources import AirbyteCloudWorkspace, AirbyteWorkspace, BaseAirbyteWorkspace
+from dagster_airbyte.resources import (
+    DEFAULT_POLL_INTERVAL_SECONDS,
+    AirbyteCloudWorkspace,
+    AirbyteWorkspace,
+    BaseAirbyteWorkspace,
+)
 from dagster_airbyte.translator import (
     AirbyteConnection,
     AirbyteConnectionTableProps,
@@ -62,6 +67,55 @@ class BaseAirbyteWorkspaceModel(dg.Model, dg.Resolvable):
         pydantic.Field(
             default=15,
             description="Time (in seconds) after which the requests to Airbyte are declared timed out.",
+        ),
+    ]
+    max_items_per_page: Annotated[
+        int,
+        pydantic.Field(
+            default=100,
+            description=(
+                "The maximum number of items per page. "
+                "Used for paginated resources like connections, destinations, etc. "
+            ),
+        ),
+    ]
+    poll_interval: Annotated[
+        float,
+        pydantic.Field(
+            default=DEFAULT_POLL_INTERVAL_SECONDS,
+            description="The time (in seconds) that will be waited between successive polls.",
+        ),
+    ]
+    poll_timeout: Annotated[
+        Optional[float],
+        pydantic.Field(
+            default=None,
+            description=(
+                "The maximum time that will wait before this operation is timed "
+                "out. By default, this will never time out."
+            ),
+        ),
+    ]
+    cancel_on_termination: Annotated[
+        bool,
+        pydantic.Field(
+            default=True,
+            description=(
+                "Whether to cancel a sync in Airbyte if the Dagster runner is terminated. "
+                "This may be useful to disable if using Airbyte sources that cannot be cancelled and "
+                "resumed easily, or if your Dagster deployment may experience runner interruptions "
+                "that do not impact your Airbyte deployment."
+            ),
+        ),
+    ]
+    poll_previous_running_sync: Annotated[
+        bool,
+        pydantic.Field(
+            default=False,
+            description=(
+                "If set to True, Dagster will check for previous running sync for the same connection "
+                "and begin polling it instead of starting a new sync."
+            ),
         ),
     ]
 

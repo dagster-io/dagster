@@ -1,4 +1,4 @@
-import {Box, Colors, FontFamily, IconWrapper} from '@dagster-io/ui-components';
+import {BaseIcon, Box, Colors, FontFamily} from '@dagster-io/ui-components';
 import * as React from 'react';
 import styled from 'styled-components';
 
@@ -59,6 +59,7 @@ import dlthub from './kindtag-images/tool-dlthub-color.svg';
 import docker from './kindtag-images/tool-docker-color.svg';
 import doris from './kindtag-images/tool-doris-color.svg';
 import doubao from './kindtag-images/tool-doubao-color.svg';
+import dremio from './kindtag-images/tool-dremio-color.svg';
 import druid from './kindtag-images/tool-druid-color.svg';
 import dspy from './kindtag-images/tool-dspy-color.svg';
 import duckdb from './kindtag-images/tool-duckdb-color.svg';
@@ -208,6 +209,7 @@ import wechat from './kindtag-images/tool-wechat-color.svg';
 import x from './kindtag-images/tool-x-color.svg';
 import xgboost from './kindtag-images/tool-xgboost-color.svg';
 import youtube from './kindtag-images/tool-youtube-color.svg';
+import zendesk from './kindtag-images/tool-zendesk-color.svg';
 import view from './kindtag-images/view.svg';
 import yaml from './kindtag-images/yaml.svg';
 
@@ -411,6 +413,7 @@ export type KnownTagType =
   | 'wechat'
   | 'x'
   | 'youtube'
+  | 'zendesk'
   | 'typescript'
   | 'javascript'
   | 'scala'
@@ -443,6 +446,7 @@ export type KnownTagType =
   | 'clickhouse'
   | 'cockroachdb'
   | 'doris'
+  | 'dremio'
   | 'druid'
   | 'elasticsearch'
   | 'flink'
@@ -1164,6 +1168,10 @@ export const KNOWN_TAGS: Record<KnownTagType, KnownTag> = {
     icon: youtube,
     content: 'YouTube',
   },
+  zendesk: {
+    icon: zendesk,
+    content: 'Zendesk',
+  },
   typescript: {
     icon: typescript,
     content: 'TypeScript',
@@ -1316,6 +1324,10 @@ export const KNOWN_TAGS: Record<KnownTagType, KnownTag> = {
     icon: doris,
     content: 'Doris',
   },
+  dremio: {
+    icon: dremio,
+    content: 'Dremio',
+  },
   druid: {
     icon: druid,
     content: 'Druid',
@@ -1440,6 +1452,7 @@ export const OpTags = React.memo(({tags, style, reduceColor, reduceText}: OpTags
         const known = KNOWN_TAGS[coerceToStandardLabel(tag.label) as KnownTagType];
         const blackAndWhite = known && 'blackAndWhite' in known && known.blackAndWhite;
         const text = known?.content || tag.label;
+        const knownIcon = known && 'icon' in known ? known : undefined;
 
         return (
           <Box
@@ -1452,17 +1465,15 @@ export const OpTags = React.memo(({tags, style, reduceColor, reduceText}: OpTags
               fontWeight: reduceColor ? 500 : 600,
             }}
           >
-            {known && 'icon' in known && (
-              <OpTagIconWrapper
-                role="img"
-                $size={16}
-                $img={extractIconSrc(known)}
-                $color={blackAndWhite ? Colors.accentPrimary() : null}
-                $rotation={null}
-                aria-label={tag.label}
+            {knownIcon ? (
+              <BaseIcon
+                size={16}
+                img={extractIconSrc(knownIcon)}
+                color={blackAndWhite ? Colors.accentPrimary() : undefined}
+                name={tag.label}
               />
-            )}
-            {known && 'icon' in known && reduceText ? undefined : text}
+            ) : null}
+            {knownIcon && reduceText ? undefined : text}
           </Box>
         );
       })}
@@ -1473,29 +1484,19 @@ export const OpTags = React.memo(({tags, style, reduceColor, reduceText}: OpTags
 export const TagIcon = React.memo(({label}: {label: string}) => {
   const known = KNOWN_TAGS[coerceToStandardLabel(label) as KnownTagType];
   const blackAndWhite = known && 'blackAndWhite' in known && known.blackAndWhite;
-  if (known && 'icon' in known) {
-    return (
-      <OpTagIconWrapper
-        role="img"
-        $size={16}
-        $img={extractIconSrc(known)}
-        $color={blackAndWhite ? Colors.accentPrimary() : null}
-        $rotation={null}
-        aria-label={label}
-      />
-    );
+  if (!known || !('icon' in known)) {
+    return null;
   }
-  return null;
-});
 
-const OpTagIconWrapper = styled(IconWrapper)`
-  mask-size: contain;
-  mask-repeat: no-repeat;
-  mask-position: center;
-  -webkit-mask-size: contain;
-  -webkit-mask-repeat: no-repeat;
-  -webkit-mask-position: center;
-`;
+  return (
+    <BaseIcon
+      size={16}
+      img={extractIconSrc(known)}
+      color={blackAndWhite ? Colors.accentPrimary() : undefined}
+      name={label}
+    />
+  );
+});
 
 const OpTagsContainer = styled.div`
   gap: 6px;

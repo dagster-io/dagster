@@ -1,11 +1,10 @@
 import base64
-from collections.abc import Mapping, Sequence
+from collections.abc import Callable, Mapping, Sequence
 from datetime import datetime
 from enum import Enum
-from typing import Callable, Literal, NamedTuple, Optional, Union
+from typing import Literal, NamedTuple, Optional, TypeAlias, Union
 
 from dagster_shared.seven import json
-from typing_extensions import TypeAlias
 
 import dagster._check as check
 from dagster._annotations import PublicAttr, public

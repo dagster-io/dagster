@@ -1,8 +1,8 @@
 import os
 import textwrap
-from collections.abc import Sequence
+from collections.abc import Callable, Sequence
 from pathlib import Path
-from typing import Any, Callable, Optional, TypeVar, Union
+from typing import Any, Optional, TypeVar, Union
 
 import click
 
@@ -131,3 +131,21 @@ PATH_OPTIONS = {
 }
 
 dg_path_options = make_option_group(PATH_OPTIONS)
+
+VENV_OPTIONS = {
+    not_none(option.name): option
+    for option in [
+        click.Option(
+            ["--use-active-venv"],
+            type=click.BOOL,
+            is_flag=True,
+            default=False,
+            help=(
+                "Use the active virtual environment as defined by $VIRTUAL_ENV for all projects "
+                "instead of attempting to resolve individual project virtual environments."
+            ),
+        ),
+    ]
+}
+
+dg_venv_options = make_option_group(VENV_OPTIONS)

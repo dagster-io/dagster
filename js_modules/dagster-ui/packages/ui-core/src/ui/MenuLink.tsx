@@ -1,11 +1,4 @@
-import {
-  Box,
-  Colors,
-  CommonMenuItemProps,
-  IconWrapper,
-  MenuItem,
-  iconWithColor,
-} from '@dagster-io/ui-components';
+import {Box, Colors, CommonMenuItemProps, MenuItem, iconWithColor} from '@dagster-io/ui-components';
 import * as React from 'react';
 import {Link, LinkProps} from 'react-router-dom';
 import styled from 'styled-components';
@@ -51,11 +44,11 @@ const StyledMenuLink = styled(Link)`
    * Use margin instead of align-items: center because the contents of the menu item may wrap 
    * in unusual circumstances.
    */
-  ${IconWrapper} {
+  .iconGlobal {
     margin-top: 2px;
   }
 
-  ${IconWrapper}:first-child {
+  .iconGlobal:first-child {
     margin-left: -4px;
   }
 

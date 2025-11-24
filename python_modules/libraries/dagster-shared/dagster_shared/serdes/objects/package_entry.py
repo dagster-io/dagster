@@ -3,9 +3,7 @@ import textwrap
 from abc import ABC, abstractmethod
 from collections.abc import Sequence
 from itertools import groupby
-from typing import Any, Literal, Optional, TypedDict, overload
-
-from typing_extensions import TypeAlias
+from typing import Any, Literal, Optional, TypeAlias, TypedDict, overload
 
 from dagster_shared.record import record
 from dagster_shared.serdes.serdes import whitelist_for_serdes

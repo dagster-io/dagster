@@ -1,10 +1,11 @@
 import sys
 import threading
 from abc import abstractmethod
-from collections.abc import Mapping, Sequence
+from collections import defaultdict
+from collections.abc import Callable, Mapping, Sequence
 from contextlib import AbstractContextManager
-from functools import cached_property
-from typing import TYPE_CHECKING, Any, Callable, Optional, Union, cast
+from functools import cached_property, partial
+from typing import TYPE_CHECKING, Any, Optional, Union, cast
 
 from dagster_shared.libraries import DagsterLibraryRegistry
 from dagster_shared.serdes.objects.models.defs_state_info import DefsStateInfo
@@ -17,11 +18,7 @@ from dagster._core.definitions.reconstruct import ReconstructableJob, Reconstruc
 from dagster._core.definitions.repository_definition import RepositoryDefinition
 from dagster._core.definitions.selector import JobSubsetSelector
 from dagster._core.definitions.timestamp import TimestampWithTimezone
-from dagster._core.errors import (
-    DagsterInvalidSubsetError,
-    DagsterInvariantViolationError,
-    DagsterUserCodeProcessError,
-)
+from dagster._core.errors import DagsterInvalidSubsetError, DagsterUserCodeProcessError
 from dagster._core.execution.api import create_execution_plan
 from dagster._core.execution.plan.state import KnownExecutionState
 from dagster._core.instance import DagsterInstance
@@ -317,14 +314,16 @@ class CodeLocation(AbstractContextManager):
 
     @property
     @abstractmethod
-    def repository_code_pointer_dict(self) -> Mapping[str, CodePointer]:
+    def repository_code_pointer_dict(self) -> Mapping[str, Optional[CodePointer]]:
         pass
 
-    def get_repository_python_origin(self, repository_name: str) -> "RepositoryPythonOrigin":
-        if repository_name not in self.repository_code_pointer_dict:
-            raise DagsterInvariantViolationError(f"Unable to find repository {repository_name}.")
+    def get_repository_python_origin(
+        self, repository_name: str
+    ) -> Optional["RepositoryPythonOrigin"]:
+        code_pointer = self.repository_code_pointer_dict.get(repository_name)
+        if not code_pointer:
+            return None
 
-        code_pointer = self.repository_code_pointer_dict[repository_name]
         return RepositoryPythonOrigin(
             executable_path=self.executable_path or sys.executable,
             code_pointer=code_pointer,
@@ -413,7 +412,7 @@ class InProcessCodeLocation(CodeLocation):
         return self._origin.entry_point
 
     @property
-    def repository_code_pointer_dict(self) -> Mapping[str, CodePointer]:
+    def repository_code_pointer_dict(self) -> Mapping[str, Optional[CodePointer]]:
         return self._repository_code_pointer_dict
 
     def _get_reconstructable_repository(self, repository_name: str) -> ReconstructableRepository:
@@ -739,7 +738,8 @@ class GrpcServerCodeLocation(CodeLocation):
 
             self._container_context = list_repositories_response.container_context
 
-            self._job_snaps = {}
+            self._job_snaps_by_name = defaultdict(dict)
+            self._job_snaps_by_snapshot_id = {}
 
             self.remote_repositories = {}
 
@@ -755,21 +755,25 @@ class GrpcServerCodeLocation(CodeLocation):
                         code_location=self,
                     ),
                     auto_materialize_use_sensors=instance.auto_materialize_use_sensors,
-                    ref_to_data_fn=self._job_ref_to_snap,
+                    ref_to_data_fn=partial(self._job_ref_to_snap, repo_name),
                 )
                 for job_snap in job_snaps.values():
-                    self._job_snaps[job_snap.snapshot_id] = job_snap
+                    self._job_snaps_by_name[repo_name][job_snap.name] = job_snap
+                    self._job_snaps_by_snapshot_id[job_snap.snapshot_id] = job_snap
 
         except:
             self.cleanup()
             raise
 
-    def _job_ref_to_snap(self, job_ref: "JobRefSnap") -> "JobDataSnap":
+    def _job_ref_to_snap(self, repository_name: str, job_ref: "JobRefSnap") -> "JobDataSnap":
         from dagster._core.remote_representation.external_data import JobDataSnap
 
-        snapshot = self._job_snaps[job_ref.snapshot_id]
+        # key by name to ensure that we are resilient to snapshot ID instability
+        snapshot = self._job_snaps_by_name[repository_name][job_ref.name]
         parent_snapshot = (
-            self._job_snaps[job_ref.parent_snapshot_id] if job_ref.parent_snapshot_id else None
+            self._job_snaps_by_snapshot_id.get(job_ref.parent_snapshot_id)
+            if job_ref.parent_snapshot_id
+            else None
         )
         return JobDataSnap(
             name=job_ref.name,
@@ -795,8 +799,8 @@ class GrpcServerCodeLocation(CodeLocation):
         return self._container_context
 
     @property
-    def repository_code_pointer_dict(self) -> Mapping[str, CodePointer]:
-        return cast("Mapping[str, CodePointer]", self._repository_code_pointer_dict)
+    def repository_code_pointer_dict(self) -> Mapping[str, Optional[CodePointer]]:
+        return cast("Mapping[str, Optional[CodePointer]]", self._repository_code_pointer_dict)
 
     @property
     def executable_path(self) -> Optional[str]:

@@ -213,6 +213,13 @@ def test_airbyte_sync_and_poll_client_job_status(
     test_job_endpoint = f"jobs/{TEST_JOB_ID}"
     test_job_api_url = f"{rest_api_url}/{test_job_endpoint}"
 
+    # Mock get_jobs_for_connection call (called by sync_and_poll to check for existing running jobs)
+    base_api_mocks.add(
+        method=responses.GET,
+        url=f"{rest_api_url}/jobs",
+        json={"data": []},  # Return no existing jobs
+        status=200,
+    )
     # Create mock responses to mock full sync and poll behavior to test statuses, used only in this test
     base_api_mocks.add(
         method=responses.POST,
@@ -236,9 +243,7 @@ def test_airbyte_sync_and_poll_client_job_status(
     with optional_pytest_raise(
         error_expected=error_expected, exception_cls=Failure, exception_message=exception_message
     ):
-        result = client.sync_and_poll(
-            connection_id=TEST_CONNECTION_ID, poll_interval=0, cancel_on_termination=False
-        )
+        result = client.sync_and_poll(connection_id=TEST_CONNECTION_ID)
 
     if not error_expected:
         assert result == AirbyteOutput(
@@ -276,6 +281,13 @@ def test_airbyte_sync_and_poll_client_poll_process(
 
     # Create mock responses to mock full sync and poll behavior, used only in this test
     def _mock_interaction():
+        # Mock get_jobs_for_connection call (called by sync_and_poll to check for existing running jobs)
+        base_api_mocks.add(
+            method=responses.GET,
+            url=f"{rest_api_url}/jobs",
+            json={"data": []},  # Return no existing jobs
+            status=200,
+        )
         # initial state
         base_api_mocks.add(
             method=responses.POST,
@@ -308,7 +320,7 @@ def test_airbyte_sync_and_poll_client_poll_process(
             ),
             status=200,
         )
-        return client.sync_and_poll(connection_id=TEST_CONNECTION_ID, poll_interval=0.1)
+        return client.sync_and_poll(connection_id=TEST_CONNECTION_ID)
 
     with optional_pytest_raise(
         error_expected=error_expected, exception_cls=Failure, exception_message="Job failed"
@@ -341,11 +353,39 @@ def test_airbyte_sync_and_poll_client_cancel_on_termination(
     rest_api_url: str,
     config_api_url: str,
 ) -> None:
-    client = resource.get_client()
+    # Create a new resource with the specific cancel_on_termination value
+    if isinstance(resource, AirbyteCloudWorkspace):
+        test_resource = AirbyteCloudWorkspace(
+            workspace_id=resource.workspace_id,
+            client_id=resource.client_id,
+            client_secret=resource.client_secret,
+            max_items_per_page=resource.max_items_per_page,
+            poll_interval=resource.poll_interval,
+            cancel_on_termination=cancel_on_termination,
+        )
+    else:
+        test_resource = AirbyteWorkspace(
+            rest_api_base_url=resource.rest_api_base_url,
+            configuration_api_base_url=resource.configuration_api_base_url,
+            workspace_id=resource.workspace_id,
+            client_id=resource.client_id,
+            client_secret=resource.client_secret,
+            max_items_per_page=resource.max_items_per_page,
+            poll_interval=resource.poll_interval,
+            cancel_on_termination=cancel_on_termination,
+        )
+    client = test_resource.get_client()
 
     test_job_endpoint = f"jobs/{TEST_JOB_ID}"
     test_job_api_url = f"{rest_api_url}/{test_job_endpoint}"
 
+    # Mock get_jobs_for_connection call (called by sync_and_poll to check for existing running jobs)
+    base_api_mocks.add(
+        method=responses.GET,
+        url=f"{rest_api_url}/jobs",
+        json={"data": []},  # Return no existing jobs
+        status=200,
+    )
     # Create mock responses to mock full sync and poll behavior to test statuses, used only in this test
     base_api_mocks.add(
         method=responses.POST,
@@ -375,11 +415,7 @@ def test_airbyte_sync_and_poll_client_cancel_on_termination(
         )
 
     with pytest.raises(Failure, match="unexpected state"):
-        client.sync_and_poll(
-            connection_id=TEST_CONNECTION_ID,
-            poll_interval=0,
-            cancel_on_termination=cancel_on_termination,
-        )
+        client.sync_and_poll(connection_id=TEST_CONNECTION_ID)
 
     assert_api_call(
         base_url=rest_api_url,
@@ -387,6 +423,133 @@ def test_airbyte_sync_and_poll_client_cancel_on_termination(
         endpoint=test_job_endpoint,
         method=last_call_method,
     )
+
+
+@pytest.mark.parametrize(
+    "poll_previous_running_sync, existing_jobs_count, error_expected, exception_message",
+    [
+        (True, 0, False, None),  # No existing jobs - should start new sync
+        (True, 1, False, None),  # One existing job - should resume polling
+        (True, 2, True, "Found multiple running jobs"),  # Multiple existing jobs - should fail
+        (False, 0, False, None),  # No existing jobs - should start new sync
+        (False, 1, True, "already running"),  # One existing job - should fail
+        (False, 2, True, "already running"),  # Multiple existing jobs - should fail
+    ],
+    ids=[
+        "poll_true_no_existing_jobs",
+        "poll_true_one_existing_job",
+        "poll_true_multiple_existing_jobs",
+        "poll_false_no_existing_jobs",
+        "poll_false_one_existing_job",
+        "poll_false_multiple_existing_jobs",
+    ],
+)
+def test_airbyte_sync_and_poll_poll_previous_running_sync(
+    poll_previous_running_sync: bool,
+    existing_jobs_count: int,
+    error_expected: bool,
+    exception_message: str,
+    base_api_mocks: responses.RequestsMock,
+    resource: Union[AirbyteCloudWorkspace, AirbyteWorkspace],
+    rest_api_url: str,
+    config_api_url: str,
+) -> None:
+    """Tests the poll_previous_running_sync functionality in sync_and_poll."""
+    # Create a new resource with the specific poll_previous_running_sync value
+    if isinstance(resource, AirbyteCloudWorkspace):
+        test_resource = AirbyteCloudWorkspace(
+            workspace_id=resource.workspace_id,
+            client_id=resource.client_id,
+            client_secret=resource.client_secret,
+            max_items_per_page=resource.max_items_per_page,
+            poll_interval=resource.poll_interval,
+            poll_previous_running_sync=poll_previous_running_sync,
+        )
+    else:
+        test_resource = AirbyteWorkspace(
+            rest_api_base_url=resource.rest_api_base_url,
+            configuration_api_base_url=resource.configuration_api_base_url,
+            workspace_id=resource.workspace_id,
+            client_id=resource.client_id,
+            client_secret=resource.client_secret,
+            max_items_per_page=resource.max_items_per_page,
+            poll_interval=resource.poll_interval,
+            poll_previous_running_sync=poll_previous_running_sync,
+        )
+    client = test_resource.get_client()
+
+    # Mock the connection details request
+    base_api_mocks.add(
+        method=responses.POST,
+        url=f"{config_api_url}/connections/get",
+        json=SAMPLE_CONNECTION_DETAILS,
+        status=200,
+    )
+
+    # Create existing running jobs based on test parameters
+    existing_jobs_data = []
+    for i in range(existing_jobs_count):
+        existing_jobs_data.append(get_job_details_sample(status=AirbyteJobStatusType.RUNNING))
+        if i > 0:  # Give different job IDs to multiple jobs
+            existing_jobs_data[-1]["jobId"] = TEST_JOB_ID + i
+
+    # Mock get_jobs_for_connection call
+    base_api_mocks.add(
+        method=responses.GET,
+        url=f"{rest_api_url}/jobs",
+        json={"data": existing_jobs_data},
+        status=200,
+    )
+
+    if existing_jobs_count == 0 or (poll_previous_running_sync and existing_jobs_count == 1):
+        # If no existing jobs, we'll start a new sync
+        if existing_jobs_count == 0:
+            base_api_mocks.add(
+                method=responses.POST,
+                url=f"{rest_api_url}/jobs",
+                json=get_job_details_sample(status=AirbyteJobStatusType.PENDING),
+                status=200,
+            )
+
+        # Add job polling responses for successful case
+        base_api_mocks.add(
+            method=responses.GET,
+            url=f"{rest_api_url}/jobs/{TEST_JOB_ID}",
+            json=get_job_details_sample(status=AirbyteJobStatusType.RUNNING),
+            status=200,
+        )
+        base_api_mocks.add(
+            method=responses.GET,
+            url=f"{rest_api_url}/jobs/{TEST_JOB_ID}",
+            json=get_job_details_sample(status=AirbyteJobStatusType.SUCCEEDED),
+            status=200,
+        )
+
+    with optional_pytest_raise(
+        error_expected=error_expected, exception_cls=Failure, exception_message=exception_message
+    ):
+        result = client.sync_and_poll(connection_id=TEST_CONNECTION_ID)
+
+        if not error_expected:
+            assert result == AirbyteOutput(
+                job_details=get_job_details_sample(AirbyteJobStatusType.SUCCEEDED),
+                connection_details=SAMPLE_CONNECTION_DETAILS,
+            )
+
+            # Verify that the correct job was polled
+            if poll_previous_running_sync and existing_jobs_count == 1:
+                # Should have resumed polling existing job, not started a new one
+                # Check that no POST to /jobs was made (no new sync started)
+                post_jobs_calls = [
+                    call
+                    for call in base_api_mocks.calls
+                    if call.request.method == "POST" and "/jobs" in call.request.url
+                ]
+                # Only the access token POST should be there, no sync start
+                assert (
+                    len(post_jobs_calls) == 0
+                    or "/applications/token" in post_jobs_calls[0].request.url
+                )
 
 
 def test_fivetran_airbyte_cloud_sync_and_poll_materialization_method(

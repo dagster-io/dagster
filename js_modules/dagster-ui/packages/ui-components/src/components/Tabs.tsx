@@ -2,7 +2,6 @@ import * as React from 'react';
 import styled, {css} from 'styled-components';
 
 import {Colors} from './Color';
-import {IconWrapper} from './Icon';
 import {FontFamily} from './styles';
 
 export interface TabStyleProps {
@@ -74,7 +73,7 @@ export const tabCSS = css<TabStyleProps>`
   ${({disabled}) =>
     disabled
       ? css`
-          & ${IconWrapper} {
+          & .iconGlobal {
             background-color: ${Colors.textDisabled()};
           }
         `

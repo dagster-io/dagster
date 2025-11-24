@@ -8,7 +8,7 @@ from typing_extensions import Self
 
 import dagster._check as check
 from dagster._annotations import public
-from dagster._core.definitions.asset_key import T_EntityKey
+from dagster._core.definitions.asset_key import EntityKey, T_EntityKey
 from dagster._core.definitions.declarative_automation.automation_condition import (
     AutomationCondition,
     AutomationResult,
@@ -92,6 +92,32 @@ class SinceCondition(BuiltinAutomationCondition[T_EntityKey]):
     @property
     def children(self) -> Sequence[AutomationCondition[T_EntityKey]]:
         return [self.trigger_condition, self.reset_condition]
+
+    def get_node_unique_id(
+        self,
+        *,
+        parent_unique_id: Optional[str],
+        index: Optional[int],
+        target_key: Optional[EntityKey],
+    ) -> str:
+        # since conditions should have stable cursoring logic regardless of where they
+        # exist in the broader condition tree, as they're always evaluated over the entire
+        # subset
+        return self._get_stable_unique_id(target_key)
+
+    def get_backcompat_node_unique_ids(
+        self,
+        *,
+        parent_unique_id: Optional[str] = None,
+        index: Optional[int] = None,
+        target_key: Optional[EntityKey] = None,
+    ) -> Sequence[str]:
+        return [
+            # get the standard globally-aware unique id for backcompat purposes
+            super().get_node_unique_id(
+                parent_unique_id=parent_unique_id, index=index, target_key=target_key
+            )
+        ]
 
     async def evaluate(  # pyright: ignore[reportIncompatibleMethodOverride]
         self, context: AutomationContext[T_EntityKey]

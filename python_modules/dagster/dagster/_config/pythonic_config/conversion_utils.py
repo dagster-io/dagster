@@ -2,14 +2,13 @@ import inspect
 import sys
 from collections.abc import Mapping
 from enum import Enum
-from typing import Annotated, Any, Literal, Optional, TypeVar, Union
+from typing import Annotated, Any, Literal, Optional, TypeVar, Union, get_args, get_origin
 
 from dagster_shared.dagster_model.pydantic_compat_layer import (
     ModelFieldCompat,
     PydanticUndefined,
     model_fields,
 )
-from typing_extensions import get_args, get_origin
 
 import dagster._check as check
 from dagster._config import (

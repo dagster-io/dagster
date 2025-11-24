@@ -1,8 +1,6 @@
 import inspect
 from collections.abc import AsyncIterator, Iterator, Mapping, Sequence
-from typing import Any, TypeVar, Union
-
-from typing_extensions import TypeAlias
+from typing import Any, TypeAlias, TypeVar, Union
 
 import dagster._check as check
 from dagster._core.definitions import (

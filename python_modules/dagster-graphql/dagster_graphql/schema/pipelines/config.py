@@ -1,6 +1,5 @@
 from collections import namedtuple
-from collections.abc import Sequence
-from typing import Callable
+from collections.abc import Callable, Sequence
 
 import dagster._check as check
 import graphene
@@ -132,14 +131,14 @@ class GrapheneEvaluationErrorReason(graphene.Enum):
         name = "EvaluationErrorReason"
 
 
-class GraphenePipelineConfigValidationError(graphene.Interface):
+class GrapheneConfigValidationError(graphene.Interface):
     message = graphene.NonNull(graphene.String)
     path = non_null_list(graphene.String)
     stack = graphene.NonNull(GrapheneEvaluationStack)
     reason = graphene.NonNull(GrapheneEvaluationErrorReason)
 
     class Meta:
-        name = "PipelineConfigValidationError"
+        name = "PipelineConfigValidationError"  # back-compat
 
     @staticmethod
     def from_dagster_error(
@@ -213,7 +212,7 @@ class GrapheneRuntimeMismatchConfigError(graphene.ObjectType):
     value_rep = graphene.Field(graphene.String)
 
     class Meta:
-        interfaces = (GraphenePipelineConfigValidationError,)
+        interfaces = (GrapheneConfigValidationError,)
         name = "RuntimeMismatchConfigError"
 
 
@@ -221,7 +220,7 @@ class GrapheneMissingFieldConfigError(graphene.ObjectType):
     field = graphene.NonNull(GrapheneConfigTypeField)
 
     class Meta:
-        interfaces = (GraphenePipelineConfigValidationError,)
+        interfaces = (GrapheneConfigValidationError,)
         name = "MissingFieldConfigError"
 
 
@@ -229,7 +228,7 @@ class GrapheneMissingFieldsConfigError(graphene.ObjectType):
     fields = non_null_list(GrapheneConfigTypeField)
 
     class Meta:
-        interfaces = (GraphenePipelineConfigValidationError,)
+        interfaces = (GrapheneConfigValidationError,)
         name = "MissingFieldsConfigError"
 
 
@@ -237,7 +236,7 @@ class GrapheneFieldNotDefinedConfigError(graphene.ObjectType):
     field_name = graphene.NonNull(graphene.String)
 
     class Meta:
-        interfaces = (GraphenePipelineConfigValidationError,)
+        interfaces = (GrapheneConfigValidationError,)
         name = "FieldNotDefinedConfigError"
 
 
@@ -245,7 +244,7 @@ class GrapheneFieldsNotDefinedConfigError(graphene.ObjectType):
     field_names = non_null_list(graphene.String)
 
     class Meta:
-        interfaces = (GraphenePipelineConfigValidationError,)
+        interfaces = (GrapheneConfigValidationError,)
         name = "FieldsNotDefinedConfigError"
 
 
@@ -253,7 +252,7 @@ class GrapheneSelectorTypeConfigError(graphene.ObjectType):
     incoming_fields = non_null_list(graphene.String)
 
     class Meta:
-        interfaces = (GraphenePipelineConfigValidationError,)
+        interfaces = (GrapheneConfigValidationError,)
         name = "SelectorTypeConfigError"
 
 
@@ -288,7 +287,7 @@ class GraphenePipelineConfigValidationValid(graphene.ObjectType):
 
 class GraphenePipelineConfigValidationInvalid(graphene.Interface):
     pipeline_name = graphene.NonNull(graphene.String)
-    errors = non_null_list(GraphenePipelineConfigValidationError)
+    errors = non_null_list(GrapheneConfigValidationError)
 
     class Meta:
         name = "PipelineConfigValidationInvalid"
@@ -296,7 +295,7 @@ class GraphenePipelineConfigValidationInvalid(graphene.Interface):
 
 class GrapheneRunConfigValidationInvalid(graphene.ObjectType):
     pipeline_name = graphene.NonNull(graphene.String)
-    errors = non_null_list(GraphenePipelineConfigValidationError)
+    errors = non_null_list(GrapheneConfigValidationError)
 
     class Meta:
         interfaces = (GraphenePipelineConfigValidationInvalid,)
@@ -311,7 +310,7 @@ class GrapheneRunConfigValidationInvalid(graphene.ObjectType):
         return GrapheneRunConfigValidationInvalid(
             pipeline_name=represented_pipeline.name,
             errors=[
-                GraphenePipelineConfigValidationError.from_dagster_error(
+                GrapheneConfigValidationError.from_dagster_error(
                     represented_pipeline.config_schema_snapshot.get_config_snap,
                     err,
                 )

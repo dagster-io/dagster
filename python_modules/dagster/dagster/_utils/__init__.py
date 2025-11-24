@@ -28,11 +28,14 @@ from typing import (  # noqa: UP035
     Dict,  # noqa: F401
     Generic,
     List,  # noqa: F401
+    Literal,
     NamedTuple,
     Optional,
     Set,  # noqa: F401
     Tuple,  # noqa: F401
     Type,  # noqa: F401
+    TypeAlias,
+    TypeGuard,
     TypeVar,
     Union,
     cast,
@@ -51,7 +54,6 @@ from dagster_shared.utils.hash import (
     make_hashable as make_hashable,
 )
 from filelock import FileLock
-from typing_extensions import Literal, TypeAlias, TypeGuard
 
 import dagster._check as check
 from dagster._utils.internal_init import IHasInternalInit as IHasInternalInit

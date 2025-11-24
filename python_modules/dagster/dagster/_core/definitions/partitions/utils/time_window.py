@@ -97,6 +97,14 @@ class PersistedTimeWindow(
         return self._asdict()["start"].timestamp
 
     @property
+    def start_timestamp_with_timezone(self) -> TimestampWithTimezone:
+        return self._asdict()["start"]
+
+    @property
+    def end_timestamp_with_timezone(self) -> TimestampWithTimezone:
+        return self._asdict()["end"]
+
+    @property
     def end_timestamp(self) -> float:
         return self._asdict()["end"].timestamp
 

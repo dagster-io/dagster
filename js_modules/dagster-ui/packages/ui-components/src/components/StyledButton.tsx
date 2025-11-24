@@ -1,8 +1,6 @@
 import styled from 'styled-components';
 
 import {Colors} from './Color';
-import {IconWrapper} from './Icon';
-import {SpinnerWrapper} from './Spinner';
 import {FontFamily} from './styles';
 
 interface StyledButtonProps {
@@ -73,34 +71,34 @@ export const StyledButton = styled.button<StyledButtonProps>`
     box-shadow: ${({$strokeColor}) => `${$strokeColor} inset 0px 0px 0px 1px`};
   }
 
-  ${SpinnerWrapper} {
+  .spinnerGlobal {
     align-self: center;
     display: block;
   }
 
-  ${IconWrapper} {
+  .iconGlobal {
     color: ${({$iconColor}) => $iconColor};
     background-color: ${({$iconColor}) => $iconColor};
     align-self: center;
     display: block;
   }
 
-  ${SpinnerWrapper}:first-child,
-  ${IconWrapper}:first-child {
+  .spinnerGlobal:first-child,
+  .iconGlobal:first-child {
     margin-left: -4px;
     margin-right: 4px;
   }
 
-  ${SpinnerWrapper}:last-child,
-  ${IconWrapper}:last-child {
+  .spinnerGlobal:last-child,
+  .iconGlobal:last-child {
     margin-right: -4px;
     margin-left: 4px;
   }
 
-  ${SpinnerWrapper}:first-child:last-child {
+  .spinnerGlobal:first-child:last-child {
     margin: 2px -4px;
   }
-  ${IconWrapper}:first-child:last-child {
+  .iconGlobal:first-child:last-child {
     margin: 2px -4px;
   }
 `;

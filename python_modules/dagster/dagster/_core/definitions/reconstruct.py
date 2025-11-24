@@ -11,6 +11,7 @@ from typing import (  # noqa: UP035
     Callable,
     NamedTuple,
     Optional,
+    TypeAlias,
     TypeVar,
     Union,
     overload,
@@ -19,7 +20,6 @@ from typing import (  # noqa: UP035
 import dagster_shared.seven as seven
 from dagster_shared.serdes import NamedTupleSerializer
 from dagster_shared.utils.hash import hash_collection
-from typing_extensions import TypeAlias
 
 import dagster._check as check
 from dagster._annotations import public
@@ -153,9 +153,6 @@ class ReconstructableRepository(
             entry_point=self.entry_point,
             container_context=self.container_context,
         )
-
-    def get_python_origin_id(self) -> str:
-        return self.get_python_origin().get_id()
 
     # Allow this to be hashed for use in `lru_cache`. This is needed because:
     # - `ReconstructableJob` uses `lru_cache`
@@ -312,9 +309,6 @@ class ReconstructableJob(  # pyright: ignore[reportIncompatibleVariableOverride]
 
     def get_python_origin(self) -> JobPythonOrigin:
         return JobPythonOrigin(self.job_name, self.repository.get_python_origin())
-
-    def get_python_origin_id(self) -> str:
-        return self.get_python_origin().get_id()
 
     def get_module(self) -> Optional[str]:
         """Return the module the job is found in, the origin is a module code pointer."""
@@ -568,7 +562,7 @@ T_LoadableDefinition = TypeVar("T_LoadableDefinition", bound=LoadableDefinition)
 
 
 def _is_list_of_assets(
-    definition: LoadableDefinition,
+    definition: object,
 ) -> bool:
     from dagster._core.definitions.assets.definition.assets_definition import AssetsDefinition
     from dagster._core.definitions.source_asset import SourceAsset
@@ -578,7 +572,7 @@ def _is_list_of_assets(
     )
 
 
-def _check_is_loadable(definition: T_LoadableDefinition) -> T_LoadableDefinition:
+def _check_is_loadable(definition: object) -> LoadableDefinition:
     from dagster._core.definitions.definitions_class import Definitions
     from dagster._core.definitions.graph_definition import GraphDefinition
     from dagster._core.definitions.job_definition import JobDefinition
@@ -602,7 +596,7 @@ def _check_is_loadable(definition: T_LoadableDefinition) -> T_LoadableDefinition
             "Loadable attributes must be either a JobDefinition, GraphDefinition, Definitions, "
             f"or RepositoryDefinition. Got {definition!r}."
         )
-    return definition
+    return definition  # pyright: ignore[reportReturnType]
 
 
 def load_def_in_module(
@@ -644,7 +638,7 @@ def def_from_pointer(
             LazyDefinitions,
         ),
     ) or not callable(target):
-        return _check_is_loadable(target)  # type: ignore
+        return _check_is_loadable(target)
 
     # if its a function invoke it - otherwise we are pointing to a
     # artifact in module scope, likely decorator output

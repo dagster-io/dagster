@@ -1,6 +1,7 @@
 from collections.abc import Iterable, Mapping, Sequence
 from enum import Enum
 from functools import cached_property
+from types import EllipsisType
 from typing import (  # noqa: UP035
     TYPE_CHECKING,
     AbstractSet,
@@ -313,20 +314,20 @@ class AssetSpec(IHasInternalInit, IHaveNew, LegacyNamedTupleMixin):
     def replace_attributes(
         self,
         *,
-        key: CoercibleToAssetKey = ...,
-        deps: Optional[Iterable["CoercibleToAssetDep"]] = ...,
-        description: Optional[str] = ...,
-        metadata: Optional[Mapping[str, Any]] = ...,
-        skippable: bool = ...,
-        group_name: Optional[str] = ...,
-        code_version: Optional[str] = ...,
-        automation_condition: Optional[AutomationCondition] = ...,
-        owners: Optional[Sequence[str]] = ...,
-        tags: Optional[Mapping[str, str]] = ...,
-        kinds: Optional[set[str]] = ...,
-        partitions_def: Optional[PartitionsDefinition] = ...,
-        legacy_freshness_policy: Optional[LegacyFreshnessPolicy] = ...,
-        freshness_policy: Optional[FreshnessPolicy] = ...,
+        key: CoercibleToAssetKey | EllipsisType = ...,
+        deps: Optional[Iterable["CoercibleToAssetDep"]] | EllipsisType = ...,
+        description: Optional[str] | EllipsisType = ...,
+        metadata: Optional[Mapping[str, Any]] | EllipsisType = ...,
+        skippable: bool | EllipsisType = ...,
+        group_name: Optional[str] | EllipsisType = ...,
+        code_version: Optional[str] | EllipsisType = ...,
+        automation_condition: Optional[AutomationCondition] | EllipsisType = ...,
+        owners: Optional[Sequence[str]] | EllipsisType = ...,
+        tags: Optional[Mapping[str, str]] | EllipsisType = ...,
+        kinds: Optional[set[str]] | EllipsisType = ...,
+        partitions_def: Optional[PartitionsDefinition] | EllipsisType = ...,
+        legacy_freshness_policy: Optional[LegacyFreshnessPolicy] | EllipsisType = ...,
+        freshness_policy: Optional[FreshnessPolicy] | EllipsisType = ...,
     ) -> "AssetSpec":
         """Returns a new AssetSpec with the specified attributes replaced."""
         current_tags_without_kinds = {
@@ -360,11 +361,11 @@ class AssetSpec(IHasInternalInit, IHaveNew, LegacyNamedTupleMixin):
     def merge_attributes(
         self,
         *,
-        deps: Iterable["CoercibleToAssetDep"] = ...,
-        metadata: Mapping[str, Any] = ...,
-        owners: Sequence[str] = ...,
-        tags: Mapping[str, str] = ...,
-        kinds: set[str] = ...,
+        deps: Iterable["CoercibleToAssetDep"] | EllipsisType = ...,
+        metadata: Mapping[str, Any] | EllipsisType = ...,
+        owners: Sequence[str] | EllipsisType = ...,
+        tags: Mapping[str, str] | EllipsisType = ...,
+        kinds: set[str] | EllipsisType = ...,
     ) -> "AssetSpec":
         """Returns a new AssetSpec with the specified attributes merged with the current attributes.
 

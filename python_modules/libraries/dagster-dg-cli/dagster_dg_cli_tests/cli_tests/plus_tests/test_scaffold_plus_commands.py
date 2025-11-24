@@ -19,7 +19,7 @@ from dagster_test.dg_utils.utils import (
 )
 
 from dagster_dg_cli.cli.plus.constants import DgPlusAgentPlatform
-from dagster_dg_cli.cli.scaffold.github_actions import REGISTRY_INFOS
+from dagster_dg_cli.cli.plus.deploy.configure.utils import REGISTRY_INFOS
 from dagster_dg_cli.utils.plus import gql
 from dagster_dg_cli_tests.cli_tests.plus_tests.utils import (
     PYTHON_VERSION,

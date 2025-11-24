@@ -23,6 +23,7 @@ from dagster_dg_cli.cli.defs_state import (
     raise_component_state_refresh_errors,
 )
 from dagster_dg_cli.cli.plus.constants import DgPlusAgentType, DgPlusDeploymentType
+from dagster_dg_cli.cli.plus.deploy.configure.commands import deploy_configure_group
 from dagster_dg_cli.cli.plus.deploy.deploy_session import (
     build_artifact,
     finish_deploy_session,
@@ -522,3 +523,7 @@ def finish_deploy_session_command(
     statedir = _get_statedir()
 
     finish_deploy_session(dg_context, statedir, location_names)
+
+
+# Register the configure subcommand group
+deploy_group.add_command(deploy_configure_group)

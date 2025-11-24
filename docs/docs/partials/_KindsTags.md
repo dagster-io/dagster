@@ -44,6 +44,7 @@
 | `docker`              | <img src="/images/guides/build/assets/metadata-tags/kinds/icons/tool-docker-color.svg" width={20} height={20} />                         |
 | `doris`               | <img src="/images/guides/build/assets/metadata-tags/kinds/icons/tool-doris-color.svg" width={20} height={20} />                          |
 | `doubao`              | <img src="/images/guides/build/assets/metadata-tags/kinds/icons/tool-doubao-color.svg" width={20} height={20} />                         |
+| `dremio`              | <img src="/images/guides/build/assets/metadata-tags/kinds/icons/tool-dremio-color.svg" width={20} height={20} />                         |
 | `druid`               | <img src="/images/guides/build/assets/metadata-tags/kinds/icons/tool-druid-color.svg" width={20} height={20} />                          |
 | `dspy`                | <img src="/images/guides/build/assets/metadata-tags/kinds/icons/tool-dspy-color.svg" width={20} height={20} />                           |
 | `duckdb`              | <img src="/images/guides/build/assets/metadata-tags/kinds/icons/tool-duckdb-color.svg" width={20} height={20} />                         |
@@ -204,6 +205,7 @@
 | `x`                   | <img src="/images/guides/build/assets/metadata-tags/kinds/icons/tool-x-color.svg" width={20} height={20} />                              |
 | `xgboost`             | <img src="/images/guides/build/assets/metadata-tags/kinds/icons/tool-xgboost-color.svg" width={20} height={20} />                        |
 | `youtube`             | <img src="/images/guides/build/assets/metadata-tags/kinds/icons/tool-youtube-color.svg" width={20} height={20} />                        |
+| `zendesk`             | <img src="/images/guides/build/assets/metadata-tags/kinds/icons/tool-zendesk-color.svg" width={20} height={20} />                        |
 | `bronze`              | <img src="/images/guides/build/assets/metadata-tags/kinds/icons/medallion-bronze-color.svg" width={20} height={20} />                    |
 | `silver`              | <img src="/images/guides/build/assets/metadata-tags/kinds/icons/medallion-silver-color.svg" width={20} height={20} />                    |
 | `gold`                | <img src="/images/guides/build/assets/metadata-tags/kinds/icons/medallion-gold-color.svg" width={20} height={20} />                      |

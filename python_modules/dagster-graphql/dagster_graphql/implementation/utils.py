@@ -1,7 +1,7 @@
 import functools
 import sys
 from asyncio import iscoroutinefunction
-from collections.abc import Awaitable, Iterable, Iterator, Mapping, Sequence
+from collections.abc import Awaitable, Callable, Iterable, Iterator, Mapping, Sequence
 from contextlib import contextmanager
 from contextvars import ContextVar
 from datetime import datetime
@@ -9,9 +9,9 @@ from types import TracebackType
 from typing import (
     TYPE_CHECKING,
     Any,
-    Callable,
     NamedTuple,
     Optional,
+    TypeAlias,
     TypeVar,
     Union,
     cast,
@@ -47,7 +47,7 @@ from dagster._core.workspace.context import RemoteDefinition
 from dagster._core.workspace.permissions import Permissions
 from dagster._utils.caching_instance_queryer import CachingInstanceQueryer
 from dagster._utils.error import serializable_error_info_from_exc_info
-from typing_extensions import ParamSpec, TypeAlias
+from typing_extensions import ParamSpec
 
 if TYPE_CHECKING:
     from dagster._core.workspace.context import BaseWorkspaceRequestContext

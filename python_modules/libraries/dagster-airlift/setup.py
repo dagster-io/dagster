@@ -36,6 +36,8 @@ AIRFLOW_REQUIREMENTS = [
     "flask-session<0.6.0",
     # https://github.com/apache/airflow/issues/35234
     "connexion<3.0.0",
+    # https://github.com/apache/airflow/discussions/57769#discussioncomment-14861217
+    "fastapi<0.118",
 ]
 
 CLI_REQUIREMENTS = ["click", "structlog"]
@@ -52,7 +54,6 @@ setup(
         "https://github.com/dagster-io/dagster/tree/master/python_modules/libraries/dagster-airlift"
     ),
     classifiers=[
-        "Programming Language :: Python :: 3.9",
         "Programming Language :: Python :: 3.10",
         "Programming Language :: Python :: 3.11",
         "Programming Language :: Python :: 3.12",

@@ -1,9 +1,9 @@
 import asyncio
 import copy
-from collections.abc import Iterator, Mapping
+from collections.abc import Callable, Iterator, Mapping
 from contextlib import contextmanager
 from pathlib import Path
-from typing import Any, Callable, Optional, Union
+from typing import Any, Optional, Union
 
 import pytest
 import responses
@@ -77,6 +77,7 @@ OAUTH_AIRBYTE_CLOUD_COMPONENT_BODY_LEGACY_COMPONENT = {
             "client_id": "{{ env.AIRBYTE_CLIENT_ID }}",
             "client_secret": "{{ env.AIRBYTE_CLIENT_SECRET }}",
             "workspace_id": "{{ env.AIRBYTE_WORKSPACE_ID }}",
+            "max_items_per_page": 5,
         },
     },
 }
@@ -87,6 +88,7 @@ OAUTH_AIRBYTE_CLOUD_COMPONENT_BODY = {
             "client_id": "{{ env.AIRBYTE_CLIENT_ID }}",
             "client_secret": "{{ env.AIRBYTE_CLIENT_SECRET }}",
             "workspace_id": "{{ env.AIRBYTE_WORKSPACE_ID }}",
+            "max_items_per_page": 5,
         },
     },
 }
@@ -99,6 +101,7 @@ OAUTH_AIRBYTE_OSS_COMPONENT_BODY = {
             "client_id": "{{ env.AIRBYTE_CLIENT_ID }}",
             "client_secret": "{{ env.AIRBYTE_CLIENT_SECRET }}",
             "workspace_id": "{{ env.AIRBYTE_WORKSPACE_ID }}",
+            "max_items_per_page": 5,
         },
     },
 }
@@ -111,6 +114,7 @@ BASIC_AIRBYTE_OSS_COMPONENT_BODY = {
             "username": "{{ env.AIRBYTE_USERNAME }}",
             "password": "{{ env.AIRBYTE_PASSWORD }}",
             "workspace_id": "{{ env.AIRBYTE_WORKSPACE_ID }}",
+            "max_items_per_page": 5,
         },
     },
 }
@@ -121,6 +125,7 @@ NO_AUTH_AIRBYTE_OSS_COMPONENT_BODY = {
             "rest_api_base_url": "{{ env.AIRBYTE_REST_API_BASE_URL }}",
             "configuration_api_base_url": "{{ env.AIRBYTE_CONFIGURATION_API_BASE_URL }}",
             "workspace_id": "{{ env.AIRBYTE_WORKSPACE_ID }}",
+            "max_items_per_page": 5,
         },
     },
 }

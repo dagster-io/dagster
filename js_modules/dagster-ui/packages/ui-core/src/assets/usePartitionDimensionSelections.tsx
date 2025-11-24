@@ -16,13 +16,13 @@ import {
   spanTextToSelectionsOrError,
 } from '../partitions/SpanRepresentation';
 
-type DimensionQueryState = {
+export type DimensionQueryState = {
   name: string;
   rangeText: string | undefined;
   isFromPartitionQueryStringParam: boolean;
 };
 
-function buildSerializer(assetHealth: Pick<PartitionHealthData, 'dimensions'>) {
+export function buildSerializer(assetHealth: Pick<PartitionHealthData, 'dimensions'>) {
   const serializer: QueryPersistedStateConfig<DimensionQueryState[]> = {
     defaults: {},
     encode: (state) => {
@@ -30,26 +30,31 @@ function buildSerializer(assetHealth: Pick<PartitionHealthData, 'dimensions'>) {
     },
     decode: (qs) => {
       const results: Record<string, {text: string; isFromPartitionQueryStringParam: boolean}> = {};
-      for (const key in qs) {
+      const {partition, ...remaining} = qs;
+
+      // Set `partition` values first, then `_range` values. We need to ensure that the order
+      // of the parameters in the `qs` object doesn't affect how `results` is populated.
+      if (typeof partition === 'string') {
+        const partitions = partition.split('|');
+        partitions.forEach((partitionText, i) => {
+          const name = assetHealth?.dimensions[i]?.name;
+          if (name) {
+            results[name] = {text: partitionText, isFromPartitionQueryStringParam: true};
+          }
+        });
+      }
+
+      // E.g. `default_range`
+      for (const key in remaining) {
         if (key.endsWith('_range')) {
           const name = key.replace(/_range$/, '');
           const value = qs[key];
           if (typeof value === 'string') {
             results[name] = {text: value, isFromPartitionQueryStringParam: false};
           }
-        } else if (key === 'partition') {
-          const value = qs[key];
-          if (typeof value === 'string') {
-            const partitions = value.split('|');
-            partitions.forEach((partitionText, i) => {
-              const name = assetHealth?.dimensions[i]?.name;
-              if (name) {
-                results[name] = {text: partitionText, isFromPartitionQueryStringParam: true};
-              }
-            });
-          }
         }
       }
+
       return Object.entries(results).map(([name, {text, isFromPartitionQueryStringParam}]) => ({
         name,
         rangeText: text,

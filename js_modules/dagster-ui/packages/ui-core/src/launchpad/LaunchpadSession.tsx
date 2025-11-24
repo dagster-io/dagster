@@ -35,7 +35,7 @@ import {OpSelector} from './OpSelector';
 import {RUN_PREVIEW_VALIDATION_FRAGMENT, RunPreview} from './RunPreview';
 import {SessionSettingsBar} from './SessionSettingsBar';
 import {TagContainer, TagEditor} from './TagEditor';
-import {scaffoldPipelineConfig} from './scaffoldType';
+import {scaffoldConfig} from './scaffoldType';
 import {LaunchpadType} from './types';
 import {
   LaunchpadSessionPartitionSetsFragment,
@@ -274,7 +274,14 @@ const LaunchpadSession = (props: LaunchpadSessionProps) => {
   };
 
   const onScaffoldMissingConfig = () => {
-    const config = runConfigSchema ? scaffoldPipelineConfig(runConfigSchema) : {};
+    const config = runConfigSchema ? scaffoldConfig(runConfigSchema) : {};
+
+    // Unmergeable scaffolded config. Don't do anything with this.
+    if (!config || typeof config !== 'object') {
+      showCustomAlert({title: 'Invalid YAML', body: YAML_SYNTAX_INVALID});
+      return;
+    }
+
     try {
       onSaveSession({runConfigYaml: mergeYaml(config, currentSession.runConfigYaml)});
     } catch {
@@ -389,7 +396,14 @@ const LaunchpadSession = (props: LaunchpadSessionProps) => {
         query: PREVIEW_CONFIG_QUERY,
         variables: {
           runConfigData: configYamlOrEmpty,
-          pipeline: pipelineSelector,
+          // for backfills (which have onSaveConfig set), asset checks are not explicitly
+          // selected, so we pass in null to align with the backfill daemon implementation
+          pipeline: props.onSaveConfig
+            ? {
+                ...pipelineSelector,
+                assetCheckSelection: null,
+              }
+            : pipelineSelector,
           mode: currentSession.mode || 'default',
         },
       });
@@ -418,6 +432,7 @@ const LaunchpadSession = (props: LaunchpadSessionProps) => {
       rootDefaultYaml,
       state.previewLoading,
       state.previewDefaultsToExpand,
+      props.onSaveConfig,
     ],
   );
 

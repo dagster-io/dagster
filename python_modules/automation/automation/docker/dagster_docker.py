@@ -1,7 +1,7 @@
 import contextlib
 import os
-from collections.abc import Iterator
-from typing import Any, Callable, NamedTuple, Optional
+from collections.abc import Callable, Iterator
+from typing import Any, NamedTuple, Optional
 
 import dagster._check as check
 import yaml

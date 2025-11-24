@@ -38,6 +38,10 @@ metadata:
   label: 'metadata'
   permalink: '/integrations/metadata'
   description: 'Metadata integrations.'
+migration:
+  label: 'migration'
+  permalink: '/integrations/migration'
+  description: 'Migration integrations.'
 other:
   label: 'other'
   permalink: '/integrations/other'

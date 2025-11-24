@@ -3,11 +3,11 @@ import signal
 import subprocess
 import sys
 import time
-from collections.abc import Generator
+from collections.abc import Callable, Generator
 from contextlib import contextmanager
 from pathlib import Path
 from tempfile import TemporaryDirectory
-from typing import Any, Callable, Optional
+from typing import Any, Optional
 
 import psutil
 import pytest

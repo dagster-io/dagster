@@ -9,13 +9,14 @@ from typing import (  # noqa: UP035
     Generic,
     NamedTuple,
     Optional,
+    TypeAlias,
     Union,
     cast,
 )
 
 from dagster_shared.serdes import whitelist_for_serdes
 from dagster_shared.utils.hash import hash_collection
-from typing_extensions import TypeAlias, TypeVar
+from typing_extensions import TypeVar
 
 import dagster._check as check
 from dagster._annotations import PublicAttr, public

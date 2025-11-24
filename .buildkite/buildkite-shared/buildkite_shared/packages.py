@@ -1,7 +1,8 @@
 import logging
 import os
+from collections.abc import Callable
 from pathlib import Path
-from typing import Callable, Optional
+from typing import Optional
 
 import pkg_resources
 from buildkite_shared.environment import is_feature_branch, run_all_tests

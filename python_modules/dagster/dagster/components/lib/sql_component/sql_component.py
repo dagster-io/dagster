@@ -4,7 +4,7 @@ from pathlib import Path
 from typing import Annotated, Any, Optional, Union
 
 from dagster_shared import check
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, ConfigDict, Field
 
 from dagster._annotations import preview, public
 from dagster._core.definitions.result import MaterializeResult
@@ -24,9 +24,8 @@ class SqlComponent(ExecutableComponent, ABC):
     implement instructions on where to load the SQL content from.
     """
 
-    class Config:
-        # Necessary to allow connection to be a SQLClient, which is an ABC
-        arbitrary_types_allowed = True
+    # Necessary to allow connection to be a SQLClient, which is an ABC
+    model_config = ConfigDict(arbitrary_types_allowed=True)
 
     connection: Annotated[
         Annotated[
@@ -83,6 +82,7 @@ ResolvedSqlTemplate = Annotated[
 ]
 
 
+@public
 class TemplatedSqlComponent(SqlComponent):
     """A component which executes templated SQL from a string or file."""
 

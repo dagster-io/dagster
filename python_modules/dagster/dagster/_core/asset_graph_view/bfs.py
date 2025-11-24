@@ -1,7 +1,7 @@
-from collections.abc import Iterable, Sequence
+from collections.abc import Callable, Iterable, Sequence
 from functools import total_ordering
 from heapq import heapify, heappop, heappush
-from typing import TYPE_CHECKING, Callable, NamedTuple
+from typing import TYPE_CHECKING, NamedTuple
 
 import dagster._check as check
 from dagster._core.asset_graph_view.asset_graph_view import AssetGraphView

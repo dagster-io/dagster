@@ -1,6 +1,6 @@
-from collections.abc import Mapping, Sequence
+from collections.abc import Callable, Mapping, Sequence
 from datetime import datetime
-from typing import Any, Callable, Optional, Union
+from typing import Any, Optional, Union
 
 import dagster._check as check
 from dagster._annotations import public

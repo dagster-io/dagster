@@ -1,7 +1,7 @@
 import os
-from collections.abc import Mapping
+from collections.abc import Callable, Mapping
 from enum import Enum
-from typing import Any, Callable, Optional, TypedDict
+from typing import Any, Optional, TypedDict
 
 from typing_extensions import NotRequired
 
@@ -374,7 +374,7 @@ class CommandStepBuilder:
         if self._requires_docker:
             sidecars.append(
                 {
-                    "image": "docker:20.10.16-dind",
+                    "image": "public.ecr.aws/docker/library/docker:20.10.16-dind",
                     "command": ["dockerd-entrypoint.sh"],
                     "resources": {
                         "requests": {

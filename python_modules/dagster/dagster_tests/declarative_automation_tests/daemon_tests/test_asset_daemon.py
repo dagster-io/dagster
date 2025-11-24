@@ -6,6 +6,7 @@ from typing import Any, Optional, cast
 from unittest import mock
 
 import dagster as dg
+import dagster._check as check
 import pytest
 from dagster import AutoMaterializeRule, AutomationCondition, DagsterInstance
 from dagster._core.definitions.asset_daemon_cursor import AssetDaemonCursor
@@ -449,6 +450,12 @@ daemon_sensor_scenario = AssetDaemonScenario(
                 default_status=DefaultSensorStatus.STOPPED,
                 minimum_interval_seconds=15,
             ),
+            dg.AutomationConditionSensorDefinition(
+                name="auto_materialize_sensor_no_assets",
+                target=AssetSelection.groups("nonexistant"),
+                default_status=DefaultSensorStatus.STOPPED,
+                minimum_interval_seconds=15,
+            ),
             # default sensor picks up "C"
         ]
     ).with_all_eager(3),
@@ -480,6 +487,48 @@ def _assert_sensor_state(
     )
 
     assert len(ticks) == expected_num_ticks
+
+
+def test_auto_materialize_sensor_enforced_minimum_interval():
+    with get_daemon_instance(paused=False) as instance:
+        with environ({"DAGSTER_ASSET_DAEMON_MINIMUM_ALLOWED_MIN_INTERVAL": "60"}):
+            result = daemon_sensor_scenario.evaluate_daemon(instance)
+
+            sensor_states = instance.schedule_storage.all_instigator_state(  # pyright: ignore[reportOptionalMemberAccess]
+                instigator_type=InstigatorType.SENSOR
+            )
+            assert len(sensor_states) == 1
+            _assert_sensor_state(
+                instance,
+                "auto_materialize_sensor_a",
+                expected_num_ticks=1,
+                expected_status=InstigatorStatus.DECLARED_IN_CODE,
+            )
+
+            # would run a tick based on interval in code, but minimum allowed interval is set via env var to 30 seconds
+            result = result.with_current_time_advanced(seconds=59)
+            result = result.evaluate_tick()
+            daemon_sensor_scenario.evaluate_daemon(instance)
+            sensor_states = instance.schedule_storage.all_instigator_state(  # pyright: ignore[reportOptionalMemberAccess]
+                instigator_type=InstigatorType.SENSOR
+            )
+
+            _assert_sensor_state(
+                instance,
+                "auto_materialize_sensor_a",
+                expected_num_ticks=1,
+                expected_status=InstigatorStatus.DECLARED_IN_CODE,
+            )
+
+            result = result.with_current_time_advanced(seconds=1)
+            result = result.evaluate_tick()
+
+            _assert_sensor_state(
+                instance,
+                "auto_materialize_sensor_a",
+                expected_num_ticks=2,
+                expected_status=InstigatorStatus.DECLARED_IN_CODE,
+            )
 
 
 def test_auto_materialize_sensor_no_transition():
@@ -573,7 +622,7 @@ def test_auto_materialize_sensor_transition():
             instigator_type=InstigatorType.SENSOR
         )
 
-        assert len(sensor_states) == 3  # sensor states for each sensor were created
+        assert len(sensor_states) == 4  # sensor states for each sensor were created
 
         # Only sensor that was set with default status RUNNING turned on and ran
         _assert_sensor_state(
@@ -594,16 +643,33 @@ def test_auto_materialize_sensor_transition():
             expected_num_ticks=1,
             expected_status=InstigatorStatus.RUNNING,
         )
+        _assert_sensor_state(
+            instance,
+            "auto_materialize_sensor_no_assets",
+            expected_num_ticks=0,
+            expected_status=InstigatorStatus.RUNNING,
+        )
+
+        asset_graph = daemon_sensor_scenario.initial_spec.asset_graph
+        defs = daemon_sensor_scenario.initial_spec.defs
 
         for sensor_state in sensor_states:
-            # cursor was propagated to each sensor, so all subsequent evaluation IDs are higher
-            assert (
-                asset_daemon_cursor_from_instigator_serialized_cursor(
+            if sensor_state.instigator_name == "auto_materialize_sensor_no_assets":
+                assert cast("SensorInstigatorData", sensor_state.instigator_data).cursor is None
+            else:
+                asset_daemon_cursor = asset_daemon_cursor_from_instigator_serialized_cursor(
                     cast("SensorInstigatorData", sensor_state.instigator_data).cursor,
                     None,
-                ).evaluation_id
-                > pre_sensor_evaluation_id
-            )
+                )
+
+                assert asset_daemon_cursor.evaluation_id > pre_sensor_evaluation_id
+
+                assert (
+                    asset_daemon_cursor.previous_condition_cursors_by_key.keys()
+                    == check.not_none(
+                        defs.get_sensor_def(sensor_state.instigator_name).asset_selection
+                    ).resolve(asset_graph)
+                )
 
 
 # this scenario simulates the true default case in which we have an implicit default sensor
@@ -737,7 +803,7 @@ def test_auto_materialize_sensor_ticks(num_threads):
                 instigator_type=InstigatorType.SENSOR
             )
 
-            assert len(sensor_states) == 3  # sensor states for each sensor were created
+            assert len(sensor_states) == 4  # sensor states for each sensor were created
 
             # Only sensor that was set with default status RUNNING turned on and ran
             _assert_sensor_state(
@@ -778,7 +844,7 @@ def test_auto_materialize_sensor_ticks(num_threads):
             sensor_states = instance.schedule_storage.all_instigator_state(  # pyright: ignore[reportOptionalMemberAccess]
                 instigator_type=InstigatorType.SENSOR
             )
-            assert len(sensor_states) == 3
+            assert len(sensor_states) == 4
 
             # No new tick yet for A since only 15 seconds have passed
             _assert_sensor_state(
@@ -809,7 +875,7 @@ def test_auto_materialize_sensor_ticks(num_threads):
                 instigator_type=InstigatorType.SENSOR
             )
 
-            assert len(sensor_states) == 3
+            assert len(sensor_states) == 4
             _assert_sensor_state(
                 instance,
                 "auto_materialize_sensor_a",
