@@ -1,4 +1,5 @@
 import pyarrow as pa
+
 from dagster import AssetExecutionContext, asset
 
 

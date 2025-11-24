@@ -1,6 +1,7 @@
 import pyarrow as pa
-from dagster import AssetExecutionContext, asset
 from dagster_iceberg.config import UpsertOptions
+
+from dagster import AssetExecutionContext, asset
 
 
 @asset(
