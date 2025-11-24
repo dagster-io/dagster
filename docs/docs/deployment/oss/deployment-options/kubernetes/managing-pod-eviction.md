@@ -14,18 +14,15 @@ When Dagster is run in Kubernetes environments, pod evictions can occur due to r
     ```
 - Configure job-specific timeouts in your Dagster configuration to ensure runs don't hang indefinitely:
 
-    ```python
-    @job(
-        config={
-            "execution": {
-                "config": {
-                    "max_concurrent": 1,
-                    "timeout_seconds": 7200  # 2 hours
-                }
-            }
-        }
-    )
-    ```
+
+from dagster_k8s import k8s_job_executor
+
+@job(
+    executor_def=k8s_job_executor.configured({
+        "job_wait_timeout": 7200  # 2 hours
+    })
+)
+
 - Configure Dagster [run monitoring](/deployment/execution/run-monitoring) to detect and restart crashed run workers
 
 
