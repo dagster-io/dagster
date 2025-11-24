@@ -22,29 +22,53 @@ Once you have set up your project repository, pushing changes to the `main` bran
 
 :::note Prerequisites
 
-Before following the steps in this section, you must first [create a Dagster project](/guides/build/projects/creating-projects).
+Before following the steps in this section, you must:
+- Install the [GitHub `gh` CLI](https://github.com/cli/cli#installation) and authenticate to GitHub with `gh auth login`
+- [Create a Dagster project](/guides/build/projects/creating-projects)
+- Log in to Dagster with `dg plus login`
 
 :::
 
-1. Change to the project directory:
+1. Change to the project root directory:
 
 
     ```shell
     cd <project-directory>
     ```
 
-2. Initialize a Git repository:
+2. Initialize a Git repository in the project directory:
 
 
     ```shell
     git init .
     ```
 
-3. Use the `dg` CLI to scaffold deployment configuration files:
+3. Create a remote repository on GitHub to connect with the local project repository. Be sure to select `Push an existing local repository to github.com` when prompted:
+
+
+    ```shell
+    gh repo create
+    ```
+
+4. Use the `dg` CLI to scaffold deployment configuration files:
 
 
     ```shell
     dg plus deploy configure serverless --git-provider github
+    ```
+
+5. Create a Dagster Cloud API token and set it as a GitHub Action secret for the project:
+
+
+    ```shell
+    dg plus create ci-api-token --description 'Used in my-project GitHub Actions' | gh secret set DAGSTER_CLOUD_API_TOKEN
+    ```
+
+6. Commit and push your changes to deploy to Dagster Plus:
+
+
+    ```shell
+    git add . && git commit -m "Deploy to Dagster+" && git push origin main
     ```
 
 :::info
@@ -87,7 +111,7 @@ Before following the steps in this section, you must first [create a Dagster pro
     dg plus deploy configure serverless --git-provider gitlab
     ```
 
-4. Update the `build.yaml` file with your Docker registry.
+TK - need steps for configuring GitLab CI/CD file here
 
 :::info
 
