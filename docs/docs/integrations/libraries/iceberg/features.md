@@ -6,8 +6,6 @@ sidebar_position: 200
 
 <p>{frontMatter.description}</p>
 
-# Features
-
 ## Supported catalog backends
 
 `dagster-iceberg` supports most catalog backends that are available through `pyiceberg`. See overview and configuration options [here](https://py.iceberg.apache.org/configuration/#catalogs).

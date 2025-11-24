@@ -86,6 +86,7 @@ For partitioning to function correctly, the partition dimension must correspond 
 </Tabs>
 
 ### Partition field naming
+
 Partition fields are named using the column name that they correspond to, with a configurable prefix applied (defaults to `"part-"`). This prefixing is done in order to comply with changes introduced in pyiceberg 0.10.0 which require that partition field names do not exactly match any existing column names.
 
 For example, an asset that is partitioned using hourly partitions on a column `ingestion_time` will be assigned a corresponding partition field name of `part-ingestion_time`.
@@ -178,6 +179,7 @@ Use asset metadata to set table properties:
 <CodeExample path="docs_snippets/docs_snippets/integrations/iceberg/setting_table_properties.py" language="python" />
 
 ## Write modes
+
 The Iceberg I/O manager supports three write modes: 
 - `overwrite` (**default**):  every asset materialization will overwrite the backing Iceberg table. Partitioned assets only overwrite partitions of the Iceberg table that were part of the asset materialization.
 - `append`: results returned from each asset materialization will be inserted into the backing Iceberg table, respecting partitions when appropriate. **Not currently supported in the Spark I/O manager**.
@@ -188,7 +190,9 @@ The write mode is set using the `write_mode` metadata key, which can be set usin
 ### Setting write mode in definition metadata
 
 <CodeExample path="docs_snippets/docs_snippets/integrations/iceberg/write_mode_append.py" language="python" />
+
 ### Overriding definition metadata write mode with output metadata
+
 Setting write mode in output metadata overrides any write mode settings in the asset definition metadata:
 
 <CodeExample path="docs_snippets/docs_snippets/integrations/iceberg/write_mode_override.py" language="python" />
