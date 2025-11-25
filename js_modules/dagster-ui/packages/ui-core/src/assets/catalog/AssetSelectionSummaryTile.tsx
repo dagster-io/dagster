@@ -119,7 +119,9 @@ const AssetSelectionSummaryTileWithHealthStatus = React.memo(
           {statusJsx ? (
             <div className={styles.footer}>{statusJsx}</div>
           ) : assetCount !== undefined ? (
-            <div className={styles.assetCount}>{numberFormatter.format(assetCount)} assets</div>
+            <div className={styles.assetCount}>
+              {numberFormatter.format(assetCount)} `${assetCount === 1 ? 'asset' : 'assets'}`
+            </div>
           ) : null}
         </Box>
       </Link>
