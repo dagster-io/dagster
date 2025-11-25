@@ -52,14 +52,14 @@ services:
       - -h
       - "0.0.0.0"
       - -p
-      - "3000"
+      - "3100"
       - -w
       - workspace.yaml
     container_name: docker_example_webserver
     expose:
-      - "3000"
+      - "3100"
     ports:
-      - "3000:3000"
+      - "3100:3100"
     environment:
       DAGSTER_POSTGRES_USER: "postgres_user"
       DAGSTER_POSTGRES_PASSWORD: "postgres_password"
