@@ -169,6 +169,7 @@ def _resolve_config_with_prompts(
     dg_context: DgContext,
     cli_config,
     pex_deploy: Optional[bool] = None,
+    registry_url: Optional[str] = None,
 ) -> DgPlusDeployConfigureOptions:
     """Resolve all configuration for deployment-config commands, prompting for missing values.
 
@@ -200,15 +201,8 @@ def _resolve_config_with_prompts(
     # Resolve git root
     resolved_git_root = resolve_git_root(git_root, resolved_git_provider)
 
-    # Resolve Python version
-    if resolved_agent_type == DgPlusAgentType.SERVERLESS:
-        # Required for serverless
-        resolved_python_version = resolve_python_version(python_version)
-    else:
-        # Optional for hybrid (used for Dockerfile creation)
-        resolved_python_version = (
-            resolve_python_version(python_version) if python_version is not None else None
-        )
+    # Resolve Python version (required for both serverless and hybrid Dockerfile creation)
+    resolved_python_version = resolve_python_version(python_version)
 
     # Resolve pex_deploy for serverless (prompt if not provided)
     resolved_pex_deploy = None
@@ -235,6 +229,7 @@ def _resolve_config_with_prompts(
         git_provider=resolved_git_provider,
         use_editable_dagster=use_editable_dagster,
         pex_deploy=resolved_pex_deploy,
+        registry_url=registry_url,
     )
 
 
@@ -381,6 +376,10 @@ def deploy_configure_serverless(
     help="Agent platform (k8s, ecs, or docker)",
 )
 @click.option(
+    "--registry-url",
+    help="Container registry URL for Docker images (e.g., 123456789012.dkr.ecr.us-east-1.amazonaws.com/my-repo)",
+)
+@click.option(
     "--python-version",
     type=click.Choice(["3.9", "3.10", "3.11", "3.12", "3.13"]),
     help="Python version used to deploy the project",
@@ -412,6 +411,7 @@ def deploy_configure_serverless(
 def deploy_configure_hybrid(
     git_provider: Optional[str],
     agent_platform: Optional[str],
+    registry_url: Optional[str],
     python_version: Optional[str],
     organization: Optional[str],
     deployment: Optional[str],
@@ -445,6 +445,7 @@ def deploy_configure_hybrid(
         git_provider=resolved_git_provider,
         dg_context=dg_context,
         cli_config=cli_config,
+        registry_url=registry_url,
     )
 
     configure_build_artifacts_impl(config)
