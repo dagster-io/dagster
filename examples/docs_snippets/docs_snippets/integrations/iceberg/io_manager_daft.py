@@ -1,9 +1,9 @@
 import daft as da
 import pandas as pd
-from dagster import Definitions, asset
-
 from dagster_iceberg.config import IcebergCatalogConfig
 from dagster_iceberg.io_manager.daft import DaftIcebergIOManager
+
+from dagster import Definitions, asset
 
 # Replace with your actual catalog and warehouse paths, or use environment variables to set these values at runtime.
 CATALOG_URI = "sqlite:////path/to/your/catalog.db"

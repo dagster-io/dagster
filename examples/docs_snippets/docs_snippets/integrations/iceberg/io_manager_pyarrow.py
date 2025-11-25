@@ -1,9 +1,9 @@
 import pandas as pd
 import pyarrow as pa
-from dagster import Definitions, asset
-
 from dagster_iceberg.config import IcebergCatalogConfig
 from dagster_iceberg.io_manager.arrow import PyArrowIcebergIOManager
+
+from dagster import Definitions, asset
 
 CATALOG_URI = "sqlite:////home/vscode/workspace/.tmp/examples/select_columns/catalog.db"
 CATALOG_WAREHOUSE = (
