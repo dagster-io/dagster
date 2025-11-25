@@ -1,1 +1,1 @@
-uvx create-dagster@latest project my-project && cd my-project/src
+uvx create-dagster project my-project && cd my-project/src
