@@ -40,10 +40,10 @@ Follow the steps below to create a GitHub or GitLab CI/CD configuration file in 
     gh repo create
     ```
 
-4.  Use the `dg` CLI to scaffold deployment configuration files (`build.yaml`, Dockerfile, and GitHub Actions workflow file):
+4.  Use the [`dg plus deploy configure` CLI](/api/clis/dg-cli/dg-plus#configure) to scaffold deployment configuration files (`build.yaml`, Dockerfile, and GitHub Actions workflow file):
 
     ```shell
-    dg plus deploy configure hybrid --git-provider github
+    dg plus deploy configure --git-provider github
     ```
 
 5.  Create a Dagster Cloud API token and set it as a GitHub Action secret for the project:
@@ -81,10 +81,10 @@ During the deployment, the agent will attempt to load your code and update the m
 
 3.  TODO - create remote repo on GitLab
 
-4.  Use the `dg` CLI to scaffold deployment configuration files (`build.yaml`, Dockerfile, and GitLab CI/CD configuration file):
+4.  Use the [`dg plus deploy configure` CLI](/api/clis/dg-cli/dg-plus#configure) to scaffold deployment configuration files (`build.yaml`, Dockerfile, and GitLab CI/CD configuration file):
 
     ```shell
-    dg plus deploy configure hybrid --git-provider gitlab
+    dg plus deploy configure --git-provider gitlab
     ```
 
 5.  TODO - create a Dagster Cloud API token and set it as a secret for the GitLab repo:

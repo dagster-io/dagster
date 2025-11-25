@@ -43,10 +43,10 @@ Once you have set up your project repository, pushing changes to the `main` bran
    gh repo create
    ```
 
-4. Use the [`dg plus deploy configure`](/api/clis/dg-cli/dg-plus#configure) CLI to scaffold deployment configuration files (`build.yaml`, Dockerfile, and GitHub Actions workflow file):
+4. Use the [`dg plus deploy configure`](/api/clis/dg-cli/dg-plus#configure) CLI to scaffold a GitHub Actions workflow file:
 
    ```shell
-   dg plus deploy configure serverless --git-provider github
+   dg plus deploy configure --git-provider github
    ```
 
 5. Create a Dagster Cloud API token and set it as a GitHub Action secret for the project:
@@ -80,10 +80,10 @@ Once you have set up your project repository, pushing changes to the `main` bran
 
 3. TODO - create remote repo on GitLab
 
-4. Use the [`dg plus deploy configure` CLI](/api/clis/dg-cli/dg-plus#configure) to scaffold deployment configuration files (`build.yaml`, Dockerfile, and GitLab CI/CD configuration file):
+4. Use the [`dg plus deploy configure` CLI](/api/clis/dg-cli/dg-plus#configure) to scaffold a GitLab CI/CD configuration file:
 
    ```shell
-   dg plus deploy configure serverless --git-provider gitlab
+   dg plus deploy configure --git-provider gitlab
    ```
 
 5. TODO - create a Dagster Cloud API token and set it as a secret for the GitLab repo:
