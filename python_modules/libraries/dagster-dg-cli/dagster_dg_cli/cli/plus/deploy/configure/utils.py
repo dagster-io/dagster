@@ -24,8 +24,8 @@ class GitProvider(Enum):
 
 
 @record
-class DeploymentScaffoldConfig:
-    """Configuration for deployment scaffolding."""
+class DgPlusDeployConfigureOptions:
+    """Configuration options for Dagster Plus deployment configuration scaffolding."""
 
     dg_context: DgContext
     cli_config: DgRawCliConfig
@@ -35,10 +35,34 @@ class DeploymentScaffoldConfig:
     organization_name: Optional[str]
     deployment_name: str
     git_root: Optional[Path]
-    python_version: str
     skip_confirmation_prompt: bool
     git_provider: Optional[GitProvider]
     use_editable_dagster: bool
+    python_version: Optional[str]
+    pex_deploy: Optional[bool] = None  # Only used for serverless
+
+
+def detect_agent_type_and_platform(
+    plus_config: Optional[DagsterPlusCliConfig],
+) -> tuple[Optional[DgPlusAgentType], Optional[DgPlusAgentPlatform]]:
+    """Attempt to detect agent type and platform from Dagster Plus deployment.
+
+    Returns:
+        Tuple of (agent_type, platform). Both will be None if detection fails.
+    """
+    if not plus_config:
+        return None, None
+
+    try:
+        from dagster_dg_cli.utils.plus.build import get_agent_type_and_platform_from_graphql
+        from dagster_dg_cli.utils.plus.gql_client import DagsterPlusGraphQLClient
+
+        gql_client = DagsterPlusGraphQLClient.from_config(plus_config)
+        detected_type, detected_platform = get_agent_type_and_platform_from_graphql(gql_client)
+        return detected_type, detected_platform
+    except Exception:
+        # If detection fails (no config, GraphQL error, etc.), return None
+        return None, None
 
 
 def get_cli_version_or_main() -> str:
