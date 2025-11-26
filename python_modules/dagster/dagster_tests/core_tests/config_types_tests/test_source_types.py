@@ -49,7 +49,7 @@ def test_int_source():
     with environ({"DAGSTER_TEST_ENV_VAR": "four"}):
         assert not process_config(dg.IntSource, {"env": "DAGSTER_TEST_ENV_VAR"}).success
         assert (
-            'Value "four" stored in env variable "DAGSTER_TEST_ENV_VAR" cannot '
+            'Value stored in env variable "DAGSTER_TEST_ENV_VAR" cannot '
             "be coerced into an int."
             in process_config(dg.IntSource, {"env": "DAGSTER_TEST_ENV_VAR"}).errors[0].message  # pyright: ignore[reportOptionalSubscript]
         )
