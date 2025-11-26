@@ -6,7 +6,7 @@ import dagster as dg
     partitions_def=dg.DailyPartitionsDefinition("2024-01-01"),
 )
 def example_asset(context: dg.AssetExecutionContext):
-    context.log.info(context.partition_key)
+    context.log.info(f"{context.partition_key} was a nice day!")
 
 
 partitioned_asset_job = dg.define_asset_job("partitioned_job", selection=[example_asset])
