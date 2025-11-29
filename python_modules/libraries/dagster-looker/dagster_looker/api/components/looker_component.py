@@ -29,6 +29,7 @@ from dagster_looker.api.dagster_looker_api_translator import (
     RequestStartPdtBuild
 )
 from dagster_looker.api.resource import LookerApiDefsLoader, LookerFilter, LookerResource
+from dagster_looker.api.assets import build_looker_pdt_assets_definitions
 
 
 class LookerInstanceArgs(Model, Resolvable):
@@ -255,9 +256,6 @@ class LookerComponent(StateBackedComponent, Resolvable):
 
         # If PDT builds are configured, build corresponding executable asset definitions
         if self.pdt_builds:
-            from dagster_looker.api.dagster_looker_api_translator import RequestStartPdtBuild
-            from dagster_looker.api.assets import build_looker_pdt_assets_definitions
-
             requests_for_looker = [
                 RequestStartPdtBuild(**pdt_config.model_dump())
                 for pdt_config in self.pdt_builds
