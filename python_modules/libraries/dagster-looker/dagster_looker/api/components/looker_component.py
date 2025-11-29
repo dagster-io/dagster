@@ -1,7 +1,7 @@
 from dataclasses import dataclass, field
 from functools import cached_property
 from pathlib import Path
-from typing import Annotated, Optional, List
+from typing import Annotated, Optional
 
 import dagster as dg
 from dagster._annotations import beta, public
@@ -14,8 +14,9 @@ from dagster.components.utils.defs_state import (
     ResolvedDefsStateConfig,
 )
 from dagster_shared.serdes.serdes import deserialize_value
-from pydantic import Field, BaseModel
+from pydantic import Field
 
+from dagster_looker.api.assets import build_looker_pdt_assets_definitions
 from dagster_looker.api.components.translation import (
     ResolvedMultilayerTranslationFn,
     create_looker_component_translator,
@@ -26,10 +27,9 @@ from dagster_looker.api.dagster_looker_api_translator import (
     LookerInstanceData,
     LookerStructureData,
     LookerStructureType,
-    RequestStartPdtBuild
+    RequestStartPdtBuild,
 )
 from dagster_looker.api.resource import LookerApiDefsLoader, LookerFilter, LookerResource
-from dagster_looker.api.assets import build_looker_pdt_assets_definitions
 
 
 class LookerInstanceArgs(Model, Resolvable):
@@ -59,12 +59,14 @@ class LookerFilterArgs(Model, Resolvable):
         description="If True, only load explores that are used in dashboards. If False, load all explores.",
     )
 
+
 class PdtBuildConfig(Model):
     model_name: str
     view_name: str
     force_rebuild: Optional[str] = None
     force_full_incremental: Optional[str] = None
     workspace: Optional[str] = "production"
+
 
 @beta
 @public
@@ -257,15 +259,11 @@ class LookerComponent(StateBackedComponent, Resolvable):
         # If PDT builds are configured, build corresponding executable asset definitions
         if self.pdt_builds:
             requests_for_looker = [
-                RequestStartPdtBuild(**pdt_config.model_dump())
-                for pdt_config in self.pdt_builds
+                RequestStartPdtBuild(**pdt_config.model_dump()) for pdt_config in self.pdt_builds
             ]
-            
-            pdt_assets = build_looker_pdt_assets_definitions(
-                self.resource_key,
-                requests_for_looker
-            )
-            
+
+            pdt_assets = build_looker_pdt_assets_definitions(self.resource_key, requests_for_looker)
+
             return dg.Definitions(assets=[*specs, *pdt_assets])
 
         return dg.Definitions(assets=specs)
