@@ -86,7 +86,7 @@ You can also specify a `resource_key` if your Looker resource has a custom name 
 type: dagster_looker.LookerComponent
 attributes:
   looker_resource:
-    base_url: [https://your-company.looker.com](https://your-company.looker.com)
+    base_url: "{{ env.LOOKER_BASE_URL }}"
     client_id: "{{ env.LOOKER_CLIENT_ID }}"
     client_secret: "{{ env.LOOKER_CLIENT_SECRET }}"
   resource_key: "looker"
