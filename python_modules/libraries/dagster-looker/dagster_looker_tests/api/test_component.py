@@ -14,6 +14,8 @@ from dagster._utils.test.definitions import scoped_definitions_load_context
 from dagster.components.testing import create_defs_folder_sandbox
 from dagster.components.testing.test_cases import TestTranslation
 from dagster_looker.api.components import LookerComponent
+from unittest.mock import MagicMock
+from dagster import resource, build_init_resource_context
 
 BASIC_LOOKER_COMPONENT_BODY = {
     "type": "dagster_looker.LookerComponent",
@@ -40,9 +42,14 @@ def setup_looker_component(
         with (
             scoped_definitions_load_context(),
             sandbox.load_component_and_build_defs(defs_path=defs_path) as (component, defs),
+
         ):
+            merged_defs = Definitions.merge(
+                defs, 
+                Definitions(resources={"looker": mock_looker_resource})
+            )
             assert isinstance(component, LookerComponent)
-            yield component, defs
+            yield component, merged_defs
 
 
 @pytest.mark.parametrize(
@@ -120,3 +127,33 @@ class TestLookerTranslation(TestTranslation):
 
                 assets_def = defs.resolve_assets_def(key)
                 assert assertion(assets_def.get_asset_spec(key))
+
+@resource
+def mock_looker_resource(looker_api_mocks: Any):
+    return MagicMock()
+def test_pdt_assets_configuration(looker_api_mocks):
+    """Test that PDT assets are created from YAML configuration."""
+    
+    body = copy.deepcopy(BASIC_LOOKER_COMPONENT_BODY)
+    body["attributes"]["pdt_builds"] = [
+        {
+            "model_name": "my_model",
+            "view_name": "my_pdt_view",
+            "force_rebuild": "true"
+        },
+        {
+            "model_name": "sales_model",
+            "view_name": "monthly_report",
+            "workspace": "dev"
+        }
+    ]
+
+    with setup_looker_component(defs_yaml_contents=body) as (component, defs):
+        all_keys = defs.resolve_asset_graph().get_all_asset_keys()
+    
+        assert AssetKey(["view", "my_pdt_view"]) in all_keys
+        
+        assert AssetKey(["view", "monthly_report"]) in all_keys
+
+        assert component.resource_key == "looker" 
+        assert len(component.pdt_builds) == 2

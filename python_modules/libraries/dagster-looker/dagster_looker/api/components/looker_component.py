@@ -1,7 +1,7 @@
 from dataclasses import dataclass, field
 from functools import cached_property
 from pathlib import Path
-from typing import Annotated, Optional
+from typing import Annotated, Optional, List
 
 import dagster as dg
 from dagster._annotations import beta, public
@@ -14,7 +14,7 @@ from dagster.components.utils.defs_state import (
     ResolvedDefsStateConfig,
 )
 from dagster_shared.serdes.serdes import deserialize_value
-from pydantic import Field
+from pydantic import Field, BaseModel
 
 from dagster_looker.api.components.translation import (
     ResolvedMultilayerTranslationFn,
@@ -26,6 +26,7 @@ from dagster_looker.api.dagster_looker_api_translator import (
     LookerInstanceData,
     LookerStructureData,
     LookerStructureType,
+    RequestStartPdtBuild
 )
 from dagster_looker.api.resource import LookerApiDefsLoader, LookerFilter, LookerResource
 
@@ -57,6 +58,12 @@ class LookerFilterArgs(Model, Resolvable):
         description="If True, only load explores that are used in dashboards. If False, load all explores.",
     )
 
+class PdtBuildConfig(Model):
+    model_name: str
+    view_name: str
+    force_rebuild: Optional[str] = None
+    force_full_incremental: Optional[str] = None
+    workspace: Optional[str] = "production"
 
 @beta
 @public
@@ -111,6 +118,23 @@ class LookerComponent(StateBackedComponent, Resolvable):
         ),
     ] = None
     translation: Optional[ResolvedMultilayerTranslationFn] = None
+    resource_key: str = "looker"
+    pdt_builds: Annotated[
+        Optional[list[PdtBuildConfig]],
+        Resolver.default(
+            model_field_type=PdtBuildConfig,
+            description="Configuration for starting PDT builds.",
+            examples=[
+                [
+                    {
+                        "model_name": "my_model",
+                        "view_name": "my_pdt_view",
+                        "force_rebuild": "true",
+                    }
+                ]
+            ],
+        ),
+    ] = None
     defs_state: ResolvedDefsStateConfig = field(
         default_factory=DefsStateConfigArgs.legacy_code_server_snapshots
     )
@@ -228,5 +252,22 @@ class LookerComponent(StateBackedComponent, Resolvable):
         instance_data = LookerInstanceData.from_state(sdk, state)
 
         specs = self._load_asset_specs(instance_data)
+
+        # If PDT builds are configured, build corresponding executable asset definitions
+        if self.pdt_builds:
+            from dagster_looker.api.dagster_looker_api_translator import RequestStartPdtBuild
+            from dagster_looker.api.assets import build_looker_pdt_assets_definitions
+
+            requests_for_looker = [
+                RequestStartPdtBuild(**pdt_config.model_dump())
+                for pdt_config in self.pdt_builds
+            ]
+            
+            pdt_assets = build_looker_pdt_assets_definitions(
+                self.resource_key,
+                requests_for_looker
+            )
+            
+            return dg.Definitions(assets=[*specs, *pdt_assets])
 
         return dg.Definitions(assets=specs)
