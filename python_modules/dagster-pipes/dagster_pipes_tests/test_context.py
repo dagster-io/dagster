@@ -113,6 +113,7 @@ def test_single_asset_context():
 
     assert context.is_asset_step
     assert context.asset_key == "foo"
+    assert context.asset_identifier == ["foo"]
     assert context.asset_keys == ["foo"]
     assert context.code_version == "beta"
     assert context.code_version_by_asset_key == {"foo": "beta"}
@@ -181,6 +182,7 @@ def test_single_partition_context():
     partition_key_range = PipesPartitionKeyRange(start="foo", end="foo")
 
     context = _make_external_execution_context(
+        asset_keys=["bar"],
         partition_key="foo",
         partition_key_range=partition_key_range,
         partition_time_window=None,
@@ -188,6 +190,7 @@ def test_single_partition_context():
 
     assert context.is_partition_step
     assert context.partition_key == "foo"
+    assert context.asset_identifier == ["bar", "foo"]
     assert context.partition_key_range == partition_key_range
     assert context.partition_time_window is None
 
