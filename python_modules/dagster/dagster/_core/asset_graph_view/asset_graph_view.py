@@ -238,9 +238,12 @@ class AssetGraphView(LoadingContext):
             self.asset_graph.has(key), f"Asset graph does not contain {key.to_user_string()}"
         )
 
-        serializable_subset = self._with_current_partitions_def(
-            asset_graph_subset.get_asset_subset(key, self.asset_graph)
-        )
+        serializable_subset = asset_graph_subset.get_asset_subset(key)
+
+        if not serializable_subset:
+            return self.get_empty_subset(key=key)
+
+        serializable_subset = self._with_current_partitions_def(serializable_subset)
 
         return EntitySubset(
             self, key=key, value=_ValidatedEntitySubsetValue(serializable_subset.value)
@@ -626,12 +629,8 @@ class AssetGraphView(LoadingContext):
     async def _compute_backfill_in_progress_asset_subset(
         self, key: AssetKey
     ) -> EntitySubset[AssetKey]:
-        value = (
-            self._queryer.get_active_backfill_in_progress_asset_graph_subset()
-            .get_asset_subset(asset_key=key, asset_graph=self.asset_graph)
-            .value
-        )
-        return EntitySubset(self, key=key, value=_ValidatedEntitySubsetValue(value))
+        asset_graph_subset = self._queryer.get_active_backfill_in_progress_asset_graph_subset()
+        return self.get_entity_subset_from_asset_graph_subset(asset_graph_subset, key)
 
     async def _compute_execution_failed_unpartitioned(self, key: AssetKey) -> bool:
         from dagster._core.event_api import AssetRecordsFilter
