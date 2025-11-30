@@ -1694,9 +1694,9 @@ def param_invariant(condition: Any, param_name: str, desc: Optional[str] = None)
 def invariant(condition: Any, desc: Optional[str] = None) -> bool:
     if not condition:
         if desc:
-            raise CheckError(f"Invariant failed. Description: {desc}")
+            raise CheckInvariantError(f"Invariant failed. Description: {desc}")
         else:
-            raise CheckError("Invariant failed.")
+            raise CheckInvariantError("Invariant failed.")
 
     return True
 
@@ -1709,7 +1709,7 @@ def failed(desc: str) -> NoReturn:
     if not isinstance(desc, str):
         raise CheckError("desc argument must be a string")
 
-    raise CheckError(f"Failure condition: {desc}")
+    raise CheckInvariantError(f"Failure condition: {desc}")
 
 
 def not_implemented(desc: str) -> NoReturn:
@@ -1725,6 +1725,10 @@ def not_implemented(desc: str) -> NoReturn:
 
 
 class CheckError(Exception):
+    pass
+
+
+class CheckInvariantError(CheckError):
     pass
 
 
