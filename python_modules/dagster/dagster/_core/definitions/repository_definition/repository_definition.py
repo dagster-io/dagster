@@ -28,6 +28,7 @@ from dagster._core.definitions.sensor_definition import SensorDefinition
 from dagster._core.definitions.source_asset import SourceAsset
 from dagster._core.definitions.utils import check_valid_name
 from dagster._core.errors import DagsterInvariantViolationError
+from dagster._core.execution.context.system import StepExecutionContext
 from dagster._core.instance import DagsterInstance
 from dagster._serdes import whitelist_for_serdes
 from dagster._utils.cached_method import cached_method
@@ -363,6 +364,7 @@ class RepositoryDefinition:
         partition_key: Optional[str] = None,
         metadata: Optional[dict[str, Any]] = None,
         resource_config: Optional[Any] = None,
+        step_context: Optional[StepExecutionContext] = None,
     ) -> object:
         """Load the contents of an asset as a Python object.
 
@@ -381,6 +383,8 @@ class RepositoryDefinition:
                 (is equivalent to setting the metadata argument in `In` or `AssetIn`).
             resource_config (Optional[Any]): A dictionary of resource configurations to be passed
                 to the :py:class:`IOManager`.
+            step_context (Optional[StepExecutionContext]): The step context to use for loading the asset.
+                Can be provided when calling load_asset_value from a Dagster step.
 
         Returns:
             The contents of an asset as a Python object.
@@ -398,6 +402,7 @@ class RepositoryDefinition:
                 partition_key=partition_key,
                 metadata=metadata,
                 resource_config=resource_config,
+                step_context=step_context,
             )
 
     @public
