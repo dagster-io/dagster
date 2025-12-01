@@ -69,7 +69,6 @@ export const HierarchicalSidebar = React.memo(
                 const parentPath = pathParts.slice(0, i).join('/');
                 nextOpenNodes.add(parentPath);
               }
-              console.log(nextOpenNodes);
               return nextOpenNodes;
             });
           }
