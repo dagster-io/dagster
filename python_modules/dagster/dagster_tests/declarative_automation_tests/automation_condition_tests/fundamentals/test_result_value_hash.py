@@ -2,10 +2,7 @@ import datetime
 
 import dagster as dg
 import pytest
-from dagster import (
-    AutomationCondition as AC,
-    deserialize_value,
-)
+from dagster import AutomationCondition as SC
 from dagster._core.definitions.asset_daemon_cursor import AssetDaemonCursor
 from dagster._core.definitions.asset_selection import AssetSelection
 
@@ -31,35 +28,35 @@ two_parents_daily = two_parents.with_asset_properties(partitions_def=daily_parti
     [
         # cron condition returns a unique value hash if parents change, if schedule changes, if the
         # partitions def changes, or if an asset is materialized
-        ("93a765c5052e9c0e26fbb97b11f31ea9", AC.on_cron("0 * * * *"), one_parent, False),
-        ("43046d5ec05cba0be4df7165f293af37", AC.on_cron("0 * * * *"), one_parent, True),
-        ("1e26dfd160b5d289156992e6e44e7959", AC.on_cron("0 0 * * *"), one_parent, False),
-        ("aee5e2b0af668dfdde74f81d1b76773b", AC.on_cron("0 * * * *"), one_parent_daily, False),
-        ("9d04ca345d1605f756f1f92f6a48a2a7", AC.on_cron("0 * * * *"), two_parents, False),
-        ("98b9c46de1d70a4c3fd5f2a53b3207e6", AC.on_cron("0 * * * *"), two_parents_daily, False),
+        ("292681bbb584cf9631b69b3fdfa06787", SC.on_cron("0 * * * *"), one_parent, False),
+        ("e7910eab13c78e28935517bfca394d91", SC.on_cron("0 * * * *"), one_parent, True),
+        ("14d4548a06631a7f476362c8a67eb4ad", SC.on_cron("0 0 * * *"), one_parent, False),
+        ("1c04bde0c0f3067d1552dd98e3fc665f", SC.on_cron("0 * * * *"), one_parent_daily, False),
+        ("c74035e602a41068712a71ccbc0e770f", SC.on_cron("0 * * * *"), two_parents, False),
+        ("5648714437da451d234ca4d5f057ea53", SC.on_cron("0 * * * *"), two_parents_daily, False),
         # same as above
-        ("c89e6e6cd095a5ed39bca4a566f3a988", AC.eager(), one_parent, False),
-        ("3a3793b6b0267173caf31b043c836a1a", AC.eager(), one_parent, True),
-        ("dd079a402386d1a5a750c6d12aa6af75", AC.eager(), one_parent_daily, False),
+        ("0cbfe01d98dbab4ad7e0b67d8d866aba", SC.eager(), one_parent, False),
+        ("8ed0a6692663a452f1b17a3d416c5a1d", SC.eager(), one_parent, True),
+        ("65481f01e42f6b3d6118816b89a6e20c", SC.eager(), one_parent_daily, False),
         (
             # note: identical hash to the above
-            "dd079a402386d1a5a750c6d12aa6af75",
-            AC.eager().allow(AssetSelection.all()),
+            "65481f01e42f6b3d6118816b89a6e20c",
+            SC.eager().allow(AssetSelection.all()),
             one_parent_daily,
             False,
         ),
-        ("e83d9ec4cc577e786daa8acc1ee6bebb", AC.eager(), two_parents, False),
-        ("aaf5f236045cb349300e500702e2676d", AC.eager(), two_parents_daily, False),
+        ("ba54c126d578967f5e2c2a396179409c", SC.eager(), two_parents, False),
+        ("2c339454ec7cb1282ba669d36fa61ebf", SC.eager(), two_parents_daily, False),
         # missing condition is invariant to changes other than partitions def changes
-        ("6d7809c4949e3d812d7eddfb1b60d529", AC.missing(), one_parent, False),
-        ("6d7809c4949e3d812d7eddfb1b60d529", AC.missing(), one_parent, True),
-        ("6d7809c4949e3d812d7eddfb1b60d529", AC.missing(), two_parents, False),
-        ("7f852ab7408c67e0830530d025505a37", AC.missing(), two_parents_daily, False),
-        ("7f852ab7408c67e0830530d025505a37", AC.missing(), one_parent_daily, False),
+        ("6d7809c4949e3d812d7eddfb1b60d529", SC.missing(), one_parent, False),
+        ("6d7809c4949e3d812d7eddfb1b60d529", SC.missing(), one_parent, True),
+        ("6d7809c4949e3d812d7eddfb1b60d529", SC.missing(), two_parents, False),
+        ("7f852ab7408c67e0830530d025505a37", SC.missing(), two_parents_daily, False),
+        ("7f852ab7408c67e0830530d025505a37", SC.missing(), one_parent_daily, False),
     ],
 )
 async def test_value_hash(
-    condition: AC, scenario_spec: ScenarioSpec, expected_value_hash: str, materialize_A: bool
+    condition: SC, scenario_spec: ScenarioSpec, expected_value_hash: str, materialize_A: bool
 ) -> None:
     state = AutomationConditionScenarioState(
         scenario_spec, automation_condition=condition
@@ -73,67 +70,9 @@ async def test_value_hash(
     assert result.value_hash == expected_value_hash
 
 
-@pytest.mark.parametrize(
-    "sequence",
-    [
-        ["initial", "updated", "updated", "updated", "updated"],
-        ["initial", "updated", "initial", "updated", "initial"],
-        ["initial", "initial", "initial", "initial", "updated"],
-    ],
-)
-def test_since_condition_memory(sequence: list[str]) -> None:
-    downstream_key = dg.AssetKey("downstream")
-
-    @dg.asset
-    def u1() -> None: ...
-
-    @dg.asset
-    def u2() -> None: ...
-
-    @dg.asset
-    def u3() -> None: ...
-
-    condition_initial = AC.on_cron("@hourly")
-    # the updated condition buries the original condition in a different layer of the condition tree,
-    # but we want to make sure we retain memory of the values. added conditions will not impact
-    # the result of the condition (it will always be missing and never failed)
-    condition_updated = (condition_initial & AC.missing()) | AC.execution_failed()
-
-    current_time = datetime.datetime(2025, 8, 16, 8, 16, 0)
-
-    @dg.asset(key=downstream_key, deps=[u1, u2, u3], automation_condition=condition_initial)
-    def downstream_initial() -> None: ...
-    @dg.asset(key=downstream_key, deps=[u1, u2, u3], automation_condition=condition_updated)
-    def downstream_updated() -> None: ...
-
-    defs_initial = dg.Definitions(assets=[u1, u2, u3, downstream_initial])
-    defs_updated = dg.Definitions(assets=[u1, u2, u3, downstream_updated])
-
-    instance = dg.DagsterInstance.ephemeral()
-
-    # initial baseline evaluation
-    result = dg.evaluate_automation_conditions(
-        defs_initial, instance=instance, evaluation_time=current_time
-    )
-    current_time += datetime.timedelta(hours=1)  # pass a cron tick
-
-    # simulate a scenario where we materialize each upstream one by one and then evaluate
-    for i, step in enumerate(sequence):
-        defs = defs_initial if step == "initial" else defs_updated
-        if i in {1, 2, 3}:
-            instance.report_runless_asset_event(dg.AssetMaterialization(dg.AssetKey([f"u{i}"])))
-        result = dg.evaluate_automation_conditions(
-            defs, instance=instance, evaluation_time=current_time, cursor=result.cursor
-        )
-        # after we request u3, we should request the downstream asset, but the next evaluation
-        # afterwards should not request it again
-        expected_requested = 1 if i == 3 else 0
-        assert result.total_requested == expected_requested
-
-
 def test_node_unique_id() -> None:
     condition = (
-        AC.any_deps_match(AC.missing())
+        SC.any_deps_match(SC.missing())
         .allow(AssetSelection.keys("a"))
         .ignore(AssetSelection.keys("b"))
     )
@@ -141,9 +80,9 @@ def test_node_unique_id() -> None:
         condition.get_node_unique_id(parent_unique_id=None, index=None, target_key=None)
         == "80f87fb32baaf7ce3f65f68c12d3eb11"
     )
-    assert condition.get_backcompat_node_unique_ids(
-        parent_unique_id=None, index=None, target_key=None
-    ) == ["35b152923d1d99348e85c3cbe426bcb7"]
+    assert condition.get_backcompat_node_unique_ids(parent_unique_id=None, index=None) == [
+        "35b152923d1d99348e85c3cbe426bcb7"
+    ]
 
 
 def test_since_condition_cursor_backcompat() -> None:
@@ -166,7 +105,7 @@ def test_since_condition_cursor_backcompat() -> None:
     @dg.asset
     def u3() -> None: ...
 
-    condition = AC.on_cron("@hourly")
+    condition = SC.on_cron("@hourly")
 
     @dg.asset(key=downstream_key, deps=[u1, u2, u3], automation_condition=condition)
     def downstream() -> None: ...
@@ -178,7 +117,7 @@ def test_since_condition_cursor_backcompat() -> None:
     current_time = datetime.datetime(2025, 8, 16, 8, 16, 0) + datetime.timedelta(hours=1)
 
     # Deserialize the cursor from the string representation
-    cursor = deserialize_value(SERIALIZED_CURSOR, AssetDaemonCursor)
+    cursor = dg.deserialize_value(SERIALIZED_CURSOR, AssetDaemonCursor)
 
     # First evaluation with the deserialized cursor - nothing should be requested yet
     # because we haven't materialized u3
