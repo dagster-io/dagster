@@ -45,6 +45,7 @@ from urllib3.exceptions import ReadTimeoutError
 
 from dagster_k8s.client import (
     DEFAULT_WAIT_BETWEEN_ATTEMPTS,
+    DEFAULT_WAIT_TIMEOUT,
     DagsterKubernetesClient,
     WaitForPodState,
 )
@@ -450,6 +451,7 @@ class PipesK8sClient(PipesClient, TreatAsResourceParam):
         base_pod_spec: Optional[Mapping[str, Any]] = None,
         ignore_containers: Optional[set] = None,
         enable_multi_container_logs: bool = False,
+        pod_wait_timeout: float = DEFAULT_WAIT_TIMEOUT,
     ) -> PipesClientCompletedInvocation:
         """Publish a kubernetes pod and wait for it to complete, enriched with the pipes protocol.
 
@@ -485,6 +487,8 @@ class PipesK8sClient(PipesClient, TreatAsResourceParam):
             ignore_containers (Optional[Set]): Ignore certain containers from waiting for termination. Defaults to
                 None.
             enable_multi_container_logs (bool): Whether or not to enable multi-container log consumption.
+            pod_wait_timeout (float): How long to wait for the pod to terminate before raising an exception.
+                Defaults to 24h. Set to 0 to disable.
 
         Returns:
             PipesClientCompletedInvocation: Wrapper containing results reported by the external
@@ -531,6 +535,7 @@ class PipesK8sClient(PipesClient, TreatAsResourceParam):
                         wait_for_state=WaitForPodState.Terminated,
                         ignore_containers=ignore_containers,
                         wait_time_between_attempts=self.poll_interval,
+                        wait_timeout=pod_wait_timeout,
                     )
             finally:
                 client.core_api.delete_namespaced_pod(pod_name, namespace)

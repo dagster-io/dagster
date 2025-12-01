@@ -1,8 +1,8 @@
 import pandas as pd
-from dagster import Definitions, asset
-
 from dagster_iceberg.config import IcebergCatalogConfig
 from dagster_iceberg.io_manager.pandas import PandasIcebergIOManager
+
+from dagster import Definitions, asset
 
 CATALOG_URI = "sqlite:////home/vscode/workspace/.tmp/examples/select_columns/catalog.db"
 CATALOG_WAREHOUSE = (

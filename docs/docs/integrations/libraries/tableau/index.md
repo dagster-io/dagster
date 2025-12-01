@@ -2,7 +2,7 @@
 title: Dagster & Tableau (Component)
 sidebar_label: Tableau
 description: The dagster-tableau library provides a TableauComponent, which can be used to represent Tableau assets as assets in Dagster.
-tags: [dagster-supported, bi]
+tags: [dagster-supported, bi, component]
 source: https://github.com/dagster-io/dagster/tree/master/python_modules/libraries/dagster-tableau
 pypi: https://pypi.org/project/dagster-tableau
 sidebar_custom_props:

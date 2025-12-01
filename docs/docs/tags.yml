@@ -54,3 +54,7 @@ dagster-plus-feature:
   label: 'dagster-plus-feature'
   permalink: '/features/dagster-plus-feature'
   description: 'Dagster+ features.'
+component:
+  label: 'Dagster Component integration'
+  permalink: '/integrations/component'
+  description: 'Dagster Component version of integration.'

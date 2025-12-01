@@ -180,9 +180,7 @@ def test_int_env_var_non_int_value() -> None:
     with environ({"AN_INT": "NOT_AN_INT"}):
         with pytest.raises(
             dg.DagsterInvalidConfigError,
-            match=(
-                'Value "NOT_AN_INT" stored in env variable "AN_INT" cannot be coerced into an int.'
-            ),
+            match=('Value stored in env variable "AN_INT" cannot be coerced into an int.'),
         ):
             defs.resolve_implicit_global_asset_job_def().execute_in_process(
                 run_config=dg.RunConfig(
