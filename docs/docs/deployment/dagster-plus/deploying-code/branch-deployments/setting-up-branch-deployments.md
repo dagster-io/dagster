@@ -240,7 +240,11 @@ You can set up GitLab to automatically create branch deployments for new merge r
 
 **Step 3.1: Add GitLab CI/CD script to your project**
 
-TK - scaffold GitLab CI/CD script
+To set up continuous integration using GitLab CI/CD, you can use the [`dg plus deploy configure CLI command`](/api/clis/dg-cli/dg-plus#deploy) to generate the GitLab workflow YAML file:
+
+```shell
+dg plus deploy configure --git-provider gitlab
+```
 
 **Step 3.2: Add the agent registry to build.yaml**
 
