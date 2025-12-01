@@ -11,9 +11,10 @@ from dagster_shared.serdes.serdes import (
     PackableValue,
     SerializableNonScalarKeyMapping,
     UnpackContext,
+    UnpackedValue,
     WhitelistMap,
+    inner_unpack_value,
     pack_value,
-    unpack_value,
     whitelist_for_serdes,
 )
 
@@ -53,8 +54,8 @@ class ObserveRequestTimestampSerializer(FieldSerializer):
         unpacked_value: JsonSerializableValue,
         whitelist_map: WhitelistMap,
         context: UnpackContext,
-    ) -> PackableValue:
-        return unpack_value(unpacked_value, dict, whitelist_map, context)
+    ) -> UnpackedValue:
+        return inner_unpack_value(unpacked_value, whitelist_map, context)
 
 
 @whitelist_for_serdes(
