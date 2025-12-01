@@ -20,6 +20,18 @@ The following examples assume the registry URL and image tag are stored in the `
 
 :::
 
+**Step 3.1: Generate a Dagster+ agent token**
+
+The first step is to generate a token for the Dagster+ agent. The Dagster+ agent will use this token to authenticate to the agent API.
+
+1. Sign in to your Dagster+ instance.
+2. Click the **user menu (your profile icon) > Organization Settings**.
+3. On the **Organization Settings** page, click the **Tokens** tab.
+4. Click the **Create agent token** button.
+5. After the token has been created, click **Reveal token** and copy the token.
+
+Keep the token somewhere handy, as you'll need it to complete the setup.
+
 **Step 3.1 Create a branch deployment associated with the branch**
 
 Execute the following command within your CI/CD process:

@@ -1,7 +1,8 @@
 ---
-description: Implement CI/CD for your Dagster+ Hybrid deployment with GitHub or a non-GitHub CI/CD provider.
-title: CI/CD in Dagster+ Hybrid
-sidebar_position: 7220
+title: Configuring CI/CD in Dagster+
+sidebar_label: CI/CD
+description: Implement CI/CD for your Dagster+ Serverless or Hybrid deployment with GitHub, GitLab, or another CI/CD provider.
+sidebar_position: 20
 tags: [dagster-plus-feature]
 ---
 
@@ -9,16 +10,20 @@ import UpdateGitHubActionVersion from '@site/docs/partials/_UpdateGitHubActionVe
 import GitHubPrereqs from '@site/docs/partials/_GitHubPrereqs.md';
 import GitLabPrereqs from '@site/docs/partials/_GitLabPrereqs.md';
 
-:::note
 
-This guide only applies to [Dagster+ Hybrid deployments](/deployment/dagster-plus/hybrid). For Serverless guidance, see [CI/CD in Serverless](/deployment/dagster-plus/deploying-code/ci-cd/ci-cd-in-serverless).
+Follow the steps below to create a GitHub or GitLab CI/CD configuration file in your project to deploy and synchronize your code to Dagster+. You can also use other Git providers, or a local Git repository to run your own CI/CD process.
+
+:::info A note on Dagster+ Serverless
+
+When you sign up for Dagster+ Serverless, you are guided through creating a GitHub or GitLab repository that contains basic Dagster project code and a CI/CD workflow file consistent with Dagster+ best practices.
+
+Once you have set up your project repository, pushing changes to the `main` branch will automatically deploy them to your `prod` Serverless [full deployment](/deployment/dagster-plus/deploying-code/full-deployments). Pull or merge requests will create ephemeral [branch deployments](/deployment/dagster-plus/deploying-code/branch-deployments) that you can preview and test in the Dagster+ UI.
+
+**To add another Dagster project to your Serverless deployment**, follow the steps below to create a GitHub or GitLab CI/CD configuration file in your project to deploy and synchronize your code to Dagster+ Serverless. You can also use other Git providers, or a local Git repository with the [`dagster-cloud` CLI](/api/clis/dagster-cloud-cli) to run your own CI/CD process.
 
 :::
 
-Follow the steps below to create a GitHub or GitLab CI/CD configuration file in your project to deploy and synchronize your code to Dagster+ Hybrid. You can also use other Git providers, or a local Git repository with the [`dg plus` CLI](/api/clis/dg-cli/dg-plus) to run your own CI/CD process.
-
-<Tabs>
-   <TabItem value="github" label="GitHub">
+## GitHub
 
 <GitHubPrereqs />
 
@@ -62,8 +67,7 @@ During the deployment, the agent will attempt to load your code and update the m
 
 <UpdateGitHubActionVersion />
 
-   </TabItem>
-   <TabItem value="gitlab" label="GitLab">
+## GitLab
 
 <GitLabPrereqs />
 
@@ -95,8 +99,54 @@ During the deployment, the agent will attempt to load your code and update the m
     git add . && git commit -m "Deploy to Dagster+" && git push origin main
     ```
 
-   </TabItem>
-   <TabItem value="other" label="Other Git providers or local development">
+## Other Git providers or local development
+
+<Tabs>
+<TabItem value="serverless" label="Dagster+ Serverless">
+
+:::info Prerequisites
+
+Before following the steps in this section, you must first [create a Dagster project](/guides/build/projects/creating-projects).
+
+:::
+
+If you don't want to use our automated GitHub/GitLab process, you can use the [`dagster-cloud` command-line CLI](/api/clis/dagster-cloud-cli) in another CI environment or locally.
+
+1. First, [create a new project with the `create-dagster project` command](/guides/build/projects/creating-projects) and activate the project virtual environment.
+
+2. Next, install the [`dagster-cloud` CLI](/api/clis/dagster-cloud-cli/installing-and-configuring) and use the `configure` command to authenticate it to your Dagster+ organization:
+
+   ```shell
+   pip install dagster-cloud
+   dagster-cloud configure
+   ```
+
+You can also configure the `dagster-cloud` tool non-interactively; for more information, see [the `dagster-cloud` installation and configuration docs](/api/clis/dagster-cloud-cli/installing-and-configuring). TODO - replace with `dg` equivalent
+
+3. Finally, deploy your project to Dagster+ using the `serverless` command:
+
+```shell
+dagster-cloud serverless deploy-python-executable ./my-project \
+  --location-name example \
+  --package-name quickstart_etl \
+  --python-version 3.12
+```
+
+:::note Windows variant
+
+If you are using Windows, you will need to replace the `deploy-python-executable` command with `deploy`:
+
+```shell
+dagster-cloud serverless deploy ./my-project \
+  --location-name example \
+  --package-name quickstart_etl \
+  --python-version 3.12
+```
+
+:::
+
+</TabItem>
+<TabItem value="hybrid" label="Dagster+ Hybrid">
 
 If you are using a non-GitHub CI/CD provider, your system should use the [`dg deploy` command](/api/clis/dg-cli/dg-plus#deploy) to deploy code locations to Dagster+.
 
@@ -155,5 +205,5 @@ Creating branch deployments using the CLI requires some additional steps. For mo
 
 :::
 
-   </TabItem>
+</TabItem>
 </Tabs>

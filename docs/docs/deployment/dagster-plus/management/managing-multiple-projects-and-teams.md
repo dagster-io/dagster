@@ -31,7 +31,7 @@ Refer to the following table for more information, including the pros and cons o
 
 ### Deployment configuration
 
-Whether you use a single repository or multiple, you can use a [`build.yaml` file](/deployment/dagster-plus/management/build-yaml) to define the code locations to deploy. For each repository, follow the [steps appropriate to your CI/CD provider](/deployment/dagster-plus/deploying-code/ci-cd/ci-cd-in-hybrid) and include only the code locations that are relevant to the repository in your CI/CD workflow.
+Whether you use a single repository or multiple, you can use a [`build.yaml` file](/deployment/dagster-plus/management/build-yaml) to define the code locations to deploy. For each repository, follow the [steps appropriate to your CI/CD provider](/deployment/dagster-plus/deploying-code/configuring-ci-cd) and include only the code locations that are relevant to the repository in your CI/CD workflow.
 
 :::note
 

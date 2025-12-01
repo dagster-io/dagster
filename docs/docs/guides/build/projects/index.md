@@ -35,7 +35,7 @@ While Dagster is flexible about how you organize your code, we provide an opinio
 
 ### Deploying projects
 
-To make your Dagster project deployable to Dagster+, you will need to create additional configuration files. For more information, see the [Dagster+ CI/CD guides](/deployment/dagster-plus/deploying-code/ci-cd).
+To make your Dagster project deployable to Dagster+, you will need to create additional configuration files. For more information, see the [Dagster+ CI/CD guide](/deployment/dagster-plus/deploying-code/configuring-ci-cd).
 
 ## Workspaces
 

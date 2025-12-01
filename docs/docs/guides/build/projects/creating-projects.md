@@ -194,6 +194,4 @@ See [Running Dagster locally](/deployment/oss/deployment-options/running-dagster
 ## Step 5: Deploy your project to production (Optional)
 
 * **OSS:** Follow the steps in the [OSS deployment docs](/deployment/oss/deployment-options) to set up a production OSS deployment. You will need to add your project code to the Docker container used in the deployment.
-* **Dagster+ Serverless:** Follow the steps in the [CI/CD in Dagster+ Serverless guide](/deployment/dagster-plus/deploying-code/ci-cd/ci-cd-in-serverless).
-* **Dagster+ Hybrid:** Follow the steps in the [CI/CD in Dagster+ Hybrid guide](/deployment/dagster-plus/deploying-code/ci-cd/ci-cd-in-hybrid).
-
+* **Dagster+ Serverless or Hybrid:** Follow the steps in [Configuring CI/CD in Dagster+](/deployment/dagster-plus/deploying-code/configuring-ci-cd).
