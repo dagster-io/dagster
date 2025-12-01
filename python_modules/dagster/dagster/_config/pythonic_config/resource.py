@@ -724,7 +724,9 @@ class PartialResource(
                 k: v for k, v in resource_pointers.items() if (not _is_fully_configured(v))
             },
             config_schema=infer_schema_from_config_class(
-                resource_cls, fields_to_omit=set(resource_pointers.keys())
+                resource_cls,
+                fields_to_omit=set(resource_pointers.keys()),
+                default=_data_without_resources,
             ),
             resource_fn=resource_fn,
             description=resource_cls.__doc__,

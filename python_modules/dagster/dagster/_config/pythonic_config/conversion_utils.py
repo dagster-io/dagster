@@ -148,7 +148,8 @@ def _convert_pydantic_field(
             config=config_type,
             description=pydantic_field.description,
             is_required=pydantic_field.is_required()
-            and not is_closed_python_optional_type(field_type),
+            and not is_closed_python_optional_type(field_type)
+            and default_to_pass == FIELD_NO_DEFAULT_PROVIDED,
             default_value=default_to_pass,
         )
 
