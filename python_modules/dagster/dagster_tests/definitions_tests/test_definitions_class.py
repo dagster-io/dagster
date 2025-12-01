@@ -17,17 +17,22 @@ from dagster import (
     multiprocess_executor,
 )
 from dagster._check import CheckError
+from dagster._core.definitions.assets.definition.asset_spec import (
+    SYSTEM_METADATA_KEY_UPSTREAM_DEP_MARKER_ASSET,
+)
 from dagster._core.definitions.assets.definition.cacheable_assets_definition import (
     AssetsDefinitionCacheableData,
     CacheableAssetsDefinition,
 )
 from dagster._core.definitions.external_asset import create_external_asset_from_source_asset
+from dagster._core.definitions.metadata import TableMetadataSet
 from dagster._core.definitions.metadata.metadata_value import MetadataValue
 from dagster._core.definitions.partitions.context import PartitionLoadingContext
 from dagster._core.types.pagination import PaginatedResults
 from dagster._utils.test.definitions import scoped_definitions_load_context
 from dagster.components.core.component_tree import ComponentTree
 from dagster_shared.error import SerializableErrorInfo
+from toposort import CircularDependencyError
 
 
 def get_all_assets_from_defs(defs: Definitions):
@@ -749,8 +754,6 @@ def test_job_with_reserved_name():
 
 
 def test_asset_cycle():
-    from toposort import CircularDependencyError
-
     @dg.asset
     def a(s, c):
         return s + c
@@ -951,6 +954,215 @@ def test_executor_conflict_on_merge_same_value():
     defs2 = dg.Definitions(executor=in_process_executor)
 
     assert Definitions.merge(defs1, defs2).executor == dg.in_process_executor
+
+
+def test_spec_remapping_asset_key_collision():
+    """Upstream dep asset with same key as real asset should be removed."""
+    # Create an upstream dep asset
+    marker_asset = dg.AssetSpec(
+        "shared_asset",
+        metadata={SYSTEM_METADATA_KEY_UPSTREAM_DEP_MARKER_ASSET: True},
+    )
+
+    # Create an asset that depends on the upstream dep
+    dependent_asset = dg.AssetSpec("dependent", deps=["shared_asset"])
+
+    # Create a real asset with the same key
+    real_asset = dg.AssetSpec("shared_asset", description="I am the real asset")
+
+    defs = dg.Definitions(assets=[real_asset, marker_asset, dependent_asset])
+
+    all_specs = defs.resolve_all_asset_specs()
+    specs_by_key = {spec.key: spec for spec in all_specs}
+
+    # The upstream dep should be removed, only the real asset remains
+    assert dg.AssetKey("shared_asset") in specs_by_key
+    assert specs_by_key[dg.AssetKey("shared_asset")].description == "I am the real asset"
+
+    # The upstream dep metadata should not be present
+    assert (
+        SYSTEM_METADATA_KEY_UPSTREAM_DEP_MARKER_ASSET
+        not in specs_by_key[dg.AssetKey("shared_asset")].metadata
+    )
+
+    # The dependent asset should still exist with its dep
+    assert dg.AssetKey("dependent") in specs_by_key
+    dep_keys = {dep.asset_key for dep in specs_by_key[dg.AssetKey("dependent")].deps}
+    assert dg.AssetKey("shared_asset") in dep_keys
+
+
+def test_spec_remapping_table_name_collision():
+    """Upstream dep asset with matching table_name should be removed and deps remapped."""
+    # Create an upstream dep asset with table_name
+    marker_asset = dg.AssetSpec(
+        "placeholder_asset",
+        metadata={
+            SYSTEM_METADATA_KEY_UPSTREAM_DEP_MARKER_ASSET: True,
+            **TableMetadataSet(table_name="my_db.my_schema.my_table"),
+        },
+    )
+
+    # Create an asset that depends on the upstream dep
+    dependent_asset = dg.AssetSpec("dependent", deps=["placeholder_asset"])
+
+    # Create a real asset with the same table_name but different key
+    real_asset = dg.AssetSpec(
+        "actual_table_asset",
+        metadata={**TableMetadataSet(table_name="my_db.my_schema.my_table")},
+    )
+
+    defs = dg.Definitions(assets=[real_asset, marker_asset, dependent_asset])
+    all_specs = defs.resolve_all_asset_specs()
+    specs_by_key = {spec.key: spec for spec in all_specs}
+
+    # The upstream dep should be removed
+    assert dg.AssetKey("placeholder_asset") not in specs_by_key
+
+    # The real asset should exist
+    assert dg.AssetKey("actual_table_asset") in specs_by_key
+
+    # The dependent asset should have its dep remapped to the real asset
+    assert dg.AssetKey("dependent") in specs_by_key
+    dep_keys = {dep.asset_key for dep in specs_by_key[dg.AssetKey("dependent")].deps}
+    assert dg.AssetKey("actual_table_asset") in dep_keys
+    assert dg.AssetKey("placeholder_asset") not in dep_keys
+
+
+def test_spec_remapping_no_collision():
+    """Upstream dep asset with no match should be preserved."""
+    # Create an upstream dep asset with no matching real asset
+    marker_asset = dg.AssetSpec(
+        "external_dep",
+        metadata={SYSTEM_METADATA_KEY_UPSTREAM_DEP_MARKER_ASSET: True},
+    )
+
+    # Create an asset that depends on the upstream dep
+    dependent_asset = dg.AssetSpec("dependent", deps=["external_dep"])
+
+    # Create another unrelated asset
+    other_asset = dg.AssetSpec("other_asset")
+
+    defs = dg.Definitions(assets=[marker_asset, dependent_asset, other_asset])
+    all_specs = defs.resolve_all_asset_specs()
+    specs_by_key = {spec.key: spec for spec in all_specs}
+
+    # The upstream dep should be preserved since there's no match
+    assert dg.AssetKey("external_dep") in specs_by_key
+
+    # The dependent asset should still reference the upstream dep
+    assert dg.AssetKey("dependent") in specs_by_key
+    dep_keys = {dep.asset_key for dep in specs_by_key[dg.AssetKey("dependent")].deps}
+    assert dg.AssetKey("external_dep") in dep_keys
+
+
+def test_spec_remapping_multiple_collisions():
+    """Multiple assets with same table_name should raise an error if there's a marker asset that matches the table_name."""
+    # Create an upstream dep asset with table_name
+    marker_asset = dg.AssetSpec(
+        "placeholder",
+        metadata={
+            SYSTEM_METADATA_KEY_UPSTREAM_DEP_MARKER_ASSET: True,
+            **TableMetadataSet(table_name="shared_table"),
+        },
+    )
+
+    dependent_asset = dg.AssetSpec("dependent", deps=["placeholder"])
+
+    # Create two assets with the same table_name - first one should win
+    first_asset = dg.AssetSpec(
+        "first_asset",
+        metadata={**TableMetadataSet(table_name="shared_table")},
+    )
+    second_asset = dg.AssetSpec(
+        "second_asset",
+        metadata={**TableMetadataSet(table_name="shared_table")},
+    )
+
+    # ok to share table name without a marker asset
+    defs_ok = dg.Definitions(assets=[first_asset, second_asset, dependent_asset])
+    assert len(defs_ok.resolve_all_asset_specs()) == 4  # 1 extra for stub asset
+
+    defs_err = dg.Definitions.merge(defs_ok, dg.Definitions(assets=[marker_asset]))
+    with pytest.raises(
+        dg.DagsterInvalidDefinitionError,
+        match="shared_table",
+    ):
+        defs_err.resolve_all_asset_specs()
+
+
+def test_spec_remapping_with_assets_definition():
+    """Test that upstream dep reconciliation works with AssetsDefinition objects."""
+    # Create an upstream dep asset
+    upstream_dep = dg.AssetSpec(
+        "placeholder",
+        metadata={
+            SYSTEM_METADATA_KEY_UPSTREAM_DEP_MARKER_ASSET: True,
+            **TableMetadataSet(table_name="shared_table"),
+        },
+    )
+
+    # Create an @asset decorated function that depends on the upstream dep
+    @dg.asset(deps=["placeholder"])
+    def downstream_asset():
+        pass
+
+    # Create a real asset with the same key
+    real_source = dg.AssetSpec(
+        "actual_table_asset",
+        description="Real source",
+        metadata={**TableMetadataSet(table_name="shared_table")},
+    )
+
+    defs = dg.Definitions(assets=[real_source, upstream_dep, downstream_asset])
+    all_specs = defs.resolve_all_asset_specs()
+    specs_by_key = {spec.key: spec for spec in all_specs}
+
+    node = defs.resolve_asset_graph().get(dg.AssetKey("downstream_asset"))
+    assert node.parent_keys == {dg.AssetKey("actual_table_asset")}
+
+    # The real asset should be present, not the upstream dep
+    assert dg.AssetKey("actual_table_asset") in specs_by_key
+    assert specs_by_key[dg.AssetKey("actual_table_asset")].description == "Real source"
+
+    assert dg.AssetKey("placeholder") not in specs_by_key
+
+
+def test_spec_remapping_with_asset_check_definition():
+    """Test that upstream dep reconciliation works with AssetsDefinition objects."""
+    # Create an upstream dep asset
+    marker_asset = dg.AssetSpec(
+        "placeholder",
+        metadata={
+            SYSTEM_METADATA_KEY_UPSTREAM_DEP_MARKER_ASSET: True,
+            **TableMetadataSet(table_name="shared_table"),
+        },
+    )
+
+    # Create an @asset decorated function that depends on the upstream dep
+    @dg.asset_check(asset=dg.AssetKey("placeholder"))
+    def downstream_check() -> dg.AssetCheckResult:
+        return dg.AssetCheckResult(passed=True)
+
+    # Create a real asset with the same key
+    real_source = dg.AssetSpec(
+        "external_source",
+        description="Real source",
+        metadata={**TableMetadataSet(table_name="shared_table")},
+    )
+
+    defs = dg.Definitions(assets=[real_source, marker_asset], asset_checks=[downstream_check])
+    all_specs = defs.resolve_all_asset_specs()
+    specs_by_key = {spec.key: spec for spec in all_specs}
+
+    # The real asset should be present, not the upstream dep
+    assert dg.AssetKey("external_source") in specs_by_key
+    assert specs_by_key[dg.AssetKey("external_source")].description == "Real source"
+
+    # check key should have been updated
+    node = defs.resolve_asset_graph().get(
+        dg.AssetCheckKey(dg.AssetKey("external_source"), "downstream_check")
+    )
+    assert node.parent_entity_keys == {dg.AssetKey("external_source")}
 
 
 def test_get_all_asset_specs():
