@@ -10,7 +10,6 @@ import UpdateGitHubActionVersion from '@site/docs/partials/_UpdateGitHubActionVe
 import GitHubPrereqs from '@site/docs/partials/_GitHubPrereqs.md';
 import GitLabPrereqs from '@site/docs/partials/_GitLabPrereqs.md';
 
-
 Follow the steps below to create a GitHub or GitLab CI/CD configuration file in your project to deploy and synchronize your code to Dagster+. You can also use other Git providers, or a local Git repository to run your own CI/CD process.
 
 :::info A note on Dagster+ Serverless
@@ -33,17 +32,18 @@ Once you have set up your project repository, pushing changes to the `main` bran
     cd <project-directory>
     ```
 
-2. Activate the virtual environment:
-    - **MacOS/Unix:**
-        ```shell
-        source .venv/bin/activate
-        ```
-    - **Windows:**
-        ```shell
-        .venv\Scripts\activate
-        ```
+2.  Activate the virtual environment:
 
-3. Initialize a Git repository in the project directory:
+    <Tabs>
+      <TabItem value="macos" label="MacOS/Unix">
+        ```shell source .venv/bin/activate ```
+      </TabItem>
+      <TabItem value="windows" label="Windows">
+        ```shell .venv\Scripts\activate ```
+      </TabItem>
+    </Tabs>
+
+3.  Initialize a Git repository in the project directory:
 
     ```shell
     git init .
@@ -87,15 +87,16 @@ During the deployment, the agent will attempt to load your code and update the m
     cd <project-directory>
     ```
 
-2. Activate the virtual environment:
+2.  Activate the virtual environment:
+
     - **MacOS/Unix:**
-        ```shell
-        source .venv/bin/activate
-        ```
+      ```shell
+      source .venv/bin/activate
+      ```
     - **Windows:**
-        ```shell
-        .venv\Scripts\activate
-        ```
+      ```shell
+      .venv\Scripts\activate
+      ```
 
 3.  Initialize a Git repository in the project directory:
 
@@ -103,7 +104,7 @@ During the deployment, the agent will attempt to load your code and update the m
     git init .
     ```
 
-4. Commit and push your changes:
+4.  Commit and push your changes:
 
     ```shell
     git add . && git commit -m "Initial commit"
@@ -127,7 +128,7 @@ During the deployment, the agent will attempt to load your code and update the m
     dg plus create ci-api-token --description 'Used in Dagster project GitHub Actions'
     ```
 
-8. Set the Dagster Cloud API token as a CI/CD variable in the GitLab repo:
+8.  Set the Dagster Cloud API token as a CI/CD variable in the GitLab repo:
     - Navigate to the project page in GitLab.
     - In the left sidebar, click **Settings** > **CI/CD**.
     - On the settings page, click **Variables**.
