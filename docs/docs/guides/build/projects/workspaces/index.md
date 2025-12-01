@@ -1,9 +1,11 @@
 ---
 title: Workspaces
-description: TK
+description: Dagster workspaces can be used to organize multiple projects.
 sidebar_position: 400
 canonicalUrl: '/guides/build/projects/workspaces'
 slug: '/guides/build/projects/workspaces'
 ---
 
-TK
+import DocCardList from '@theme/DocCardList';
+
+<DocCardList />
