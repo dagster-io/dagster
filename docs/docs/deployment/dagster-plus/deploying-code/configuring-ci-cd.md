@@ -33,31 +33,41 @@ Once you have set up your project repository, pushing changes to the `main` bran
     cd <project-directory>
     ```
 
-2.  If you haven't already done so, initialize a Git repository in the project directory:
+2. Activate the virtual environment:
+    - **MacOS/Unix:**
+        ```shell
+        source .venv/bin/activate
+        ```
+    - **Windows:**
+        ```shell
+        .venv\Scripts\activate
+        ```
+
+3. Initialize a Git repository in the project directory:
 
     ```shell
     git init .
     ```
 
-3.  If you haven't already done so, create a remote repository on GitHub to connect with the local project repository. Be sure to select `Push an existing local repository to github.com` when prompted:
+4.  Create a remote repository on GitHub to connect with the local project repository. Be sure to select `Push an existing local repository to github.com` when prompted:
 
     ```shell
     gh repo create
     ```
 
-4.  Use the [`dg plus deploy configure` CLI](/api/clis/dg-cli/dg-plus#configure) to scaffold deployment configuration files (`build.yaml`, Dockerfile, and GitHub Actions workflow file):
+5.  Use the [`dg plus deploy configure` CLI command](/api/clis/dg-cli/dg-plus#configure) to scaffold deployment configuration files for your deployment type, including a GitHub Actions workflow file:
 
     ```shell
     dg plus deploy configure --git-provider github
     ```
 
-5.  Create a Dagster Cloud API token and set it as a GitHub Action secret for the project:
+6.  Create a Dagster Cloud API token and set it as a GitHub Action secret for the project:
 
     ```shell
     dg plus create ci-api-token --description 'Used in my-project GitHub Actions' | gh secret set DAGSTER_CLOUD_API_TOKEN
     ```
 
-6.  Commit and push your changes to deploy to Dagster Plus:
+7.  Commit and push your changes to deploy to Dagster+:
 
     ```shell
     git add . && git commit -m "Deploy to Dagster+" && git push origin main
@@ -77,27 +87,53 @@ During the deployment, the agent will attempt to load your code and update the m
     cd <project-directory>
     ```
 
-2.  If you haven't already done so, initialize a Git repository in the project directory:
+2. Activate the virtual environment:
+    - **MacOS/Unix:**
+        ```shell
+        source .venv/bin/activate
+        ```
+    - **Windows:**
+        ```shell
+        .venv\Scripts\activate
+        ```
+
+3.  Initialize a Git repository in the project directory:
 
     ```shell
     git init .
     ```
 
-3.  TODO - create remote repo on GitLab
+4. Commit and push your changes:
 
-4.  Use the [`dg plus deploy configure` CLI](/api/clis/dg-cli/dg-plus#configure) to scaffold deployment configuration files (`build.yaml`, Dockerfile, and GitLab CI/CD configuration file):
+    ```shell
+    git add . && git commit -m "Initial commit"
+    ```
+
+5.  Create a remote repository on GitLab and push your changes to it. You can either do so in the GitLab UI by navigating to the [new project creation page](https://gitlab.com/projects/new#blank_project), or on the command line by running the following command, replacing USERNAME with your GitLab username or organization workspace:
+
+    ```shell
+    git push --set-upstream git@gitlab.com:USERNAME/$(git rev-parse --show-toplevel | xargs basename).git $(git rev-parse --abbrev-ref HEAD)
+    ```
+
+6.  Use the [`dg plus deploy configure` CLI command](/api/clis/dg-cli/dg-plus#configure) to scaffold deployment configuration files for your deployment type, including a GitLab CI/CD configuration file:
 
     ```shell
     dg plus deploy configure --git-provider gitlab
     ```
 
-5.  TODO - create a Dagster Cloud API token and set it as a secret for the GitLab repo:
-
-6.  Commit and push your changes to deploy to Dagster Plus:
+7.  Create a Dagster Cloud API token:
 
     ```shell
-    git add . && git commit -m "Deploy to Dagster+" && git push origin main
+    dg plus create ci-api-token --description 'Used in Dagster project GitHub Actions'
     ```
+
+8. Set the Dagster Cloud API token as a CI/CD variable in the GitLab repo:
+    - Navigate to the project page in GitLab.
+    - In the left sidebar, click **Settings** > **CI/CD**.
+    - On the settings page, click **Variables**.
+    - Update settings for the variable as needed, then add the variable by clicking **Add variable**. Set the key to `DAGSTER_CLOUD_API_TOKEN`.
+
+After following these steps, commiting and pushing additional changes to your Dagster project in GitLab will deploy them to your Dagster+ organization.
 
 ## Other Git providers or local development
 
@@ -121,7 +157,7 @@ If you don't want to use our automated GitHub/GitLab process, you can use the [`
    dagster-cloud configure
    ```
 
-You can also configure the `dagster-cloud` tool non-interactively; for more information, see [the `dagster-cloud` installation and configuration docs](/api/clis/dagster-cloud-cli/installing-and-configuring). TODO - replace with `dg` equivalent
+You can also configure the `dagster-cloud` tool non-interactively; for more information, see [the `dagster-cloud` installation and configuration docs](/api/clis/dagster-cloud-cli/installing-and-configuring). {/* TODO - replace with `dg` equivalent */}
 
 3. Finally, deploy your project to Dagster+ using the `serverless` command:
 
