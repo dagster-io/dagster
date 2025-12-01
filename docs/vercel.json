@@ -1439,7 +1439,7 @@
     },
     {
       "source": "/dagster-plus/references/ci-cd-file-reference",
-      "destination": "/deployment/dagster-plus/deploying-code/ci-cd"
+      "destination": "/deployment/dagster-plus/deploying-code/configuring-ci-cd"
     },
     {
       "source": "/dagster-plus/managing-deployments/dagster-cloud-yaml",
@@ -3276,27 +3276,27 @@
     },
     {
       "source": "/dagster-plus/features/ci-cd",
-      "destination": "/deployment/dagster-plus/deploying-code/ci-cd"
+      "destination": "/deployment/dagster-plus/deploying-code/configuring-ci-cd"
     },
     {
       "source": "/deployment/dagster-plus/ci-cd",
-      "destination": "/deployment/dagster-plus/deploying-code/ci-cd"
+      "destination": "/deployment/dagster-plus/deploying-code/configuring-ci-cd"
     },
     {
       "source": "/deployment/dagster-plus/ci-cd/ci-cd-in-serverless",
-      "destination": "/deployment/dagster-plus/deploying-code/ci-cd/ci-cd-in-serverless"
+      "destination": "/deployment/dagster-plus/deploying-code/configuring-ci-cd"
     },
     {
       "source": "/deployment/dagster-plus/ci-cd/ci-cd-in-hybrid",
-      "destination": "/deployment/dagster-plus/deploying-code/ci-cd/ci-cd-in-hybrid"
+      "destination": "/deployment/dagster-plus/deploying-code/configuring-ci-cd"
     },
     {
       "source": "/deployment/dagster-plus/ci-cd/ci-cd-file-reference",
-      "destination": "/deployment/dagster-plus/deploying-code/ci-cd"
+      "destination": "/deployment/dagster-plus/deploying-code/configuring-ci-cd"
     },
     {
       "source": "/dagster-plus/features/ci-cd/:path*",
-      "destination": "/deployment/dagster-plus/deploying-code/ci-cd/:path*"
+      "destination": "/deployment/dagster-plus/deploying-code/configuring-ci-cd"
     },
     {
       "source": "/dagster-plus/deployment/deployment-types",
@@ -3383,12 +3383,8 @@
       "destination": "/deployment/dagster-plus/management/customizing-agent-settings"
     },
     {
-      "source": "/deployment/dagster-plus/ci-cd/configuring-ci-cd",
-      "destination": "/deployment/dagster-plus/deploying-code/ci-cd/ci-cd-in-hybrid"
-    },
-    {
       "source": "/deployment/dagster-plus/serverless/ci-cd-in-serverless",
-      "destination": "/deployment/dagster-plus/deploying-code/ci-cd/ci-cd-in-serverless"
+      "destination": "/deployment/dagster-plus/deploying-code/configuring-ci-cd"
     },
     {
       "source": "/guides/labs/dg/dagster-dg-cli",
