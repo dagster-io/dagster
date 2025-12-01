@@ -572,6 +572,9 @@ def default_metadata_from_dbt_resource_props(
             dbt_resource_props.get("database"),
             dbt_resource_props.get("schema"),
             dbt_resource_props.get("alias"),
+            dbt_resource_props.get("name")
+            if dbt_resource_props["resource_type"] == "source"
+            else None,
         ]
         if relation_part
     ]

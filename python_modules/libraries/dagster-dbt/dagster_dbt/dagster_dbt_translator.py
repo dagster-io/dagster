@@ -15,6 +15,9 @@ from dagster import (
     PartitionMapping,
 )
 from dagster._annotations import beta, public
+from dagster._core.definitions.assets.definition.asset_spec import (
+    SYSTEM_METADATA_KEY_UPSTREAM_DEP_ASSET,
+)
 from dagster._core.definitions.metadata.source_code import (
     CodeReferencesMetadataSet,
     CodeReferencesMetadataValue,
@@ -175,6 +178,10 @@ class DagsterDbtTranslator:
         else:
             owners_resource_props = resource_props
 
+        kinds = {"dbt", manifest.get("metadata", {}).get("adapter_type", "dbt")}
+        if resource_props["resource_type"] == "source":
+            kinds.discard("dbt")
+
         spec = AssetSpec(
             key=self.get_asset_key(resource_props),
             deps=deps,
@@ -186,7 +193,7 @@ class DagsterDbtTranslator:
             automation_condition=self.get_automation_condition(resource_props),
             owners=self.get_owners(owners_resource_props),
             tags=self.get_tags(resource_props),
-            kinds={"dbt", manifest.get("metadata", {}).get("adapter_type", "dbt")},
+            kinds=kinds,
             partitions_def=self.get_partitions_def(resource_props),
         )
 
@@ -380,7 +387,13 @@ class DagsterDbtTranslator:
                     def get_metadata(self, dbt_resource_props: Mapping[str, Any]) -> Mapping[str, Any]:
                         return {"custom": "metadata"}
         """
-        return default_metadata_from_dbt_resource_props(dbt_resource_props)
+        default_metadata = default_metadata_from_dbt_resource_props(dbt_resource_props)
+        if dbt_resource_props["resource_type"] == "source":
+            return {
+                **default_metadata,
+                **{SYSTEM_METADATA_KEY_UPSTREAM_DEP_ASSET: True},
+            }
+        return default_metadata
 
     @public
     def get_tags(self, dbt_resource_props: Mapping[str, Any]) -> Mapping[str, str]:
