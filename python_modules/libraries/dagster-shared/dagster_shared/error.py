@@ -31,7 +31,10 @@ class DagsterUnresolvableSymbolError(DagsterError):
 # but that is a significant refactor. Currently we're just moving SerializableErrorInfo so that we
 # can use it with the dg packages`.
 @whitelist_for_serdes
-@record(kw_only=False)
+@record(
+    kw_only=False,
+    checked=False,
+)
 class SerializableErrorInfo(LegacyNamedTupleMixin):
     # serdes log
     # * added cause - default to None in constructor to allow loading old entries
