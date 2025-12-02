@@ -1,3 +1,4 @@
+import sys
 from collections.abc import Iterator, Mapping, Sequence
 from typing import Any, Optional, Union
 
@@ -58,7 +59,7 @@ class DbtCloudCliInvocation:
         # Write dbt Cloud run logs to stdout
         logs = self.run_handler.get_run_logs()
         if logs:
-            print(logs, flush=True)  # noqa: T201
+            sys.stdout.write(logs)
 
         if "run_results.json" in self.run_handler.list_run_artifacts():
             run_results = DbtCloudJobRunResults.from_run_results_json(
