@@ -1,5 +1,4 @@
-// eslint-disable-next-line no-restricted-imports
-import {Colors, Icon, IconName, IconNames, IconWrapper} from '@dagster-io/ui-components';
+import {BaseIcon, Icon, IconName, IconNames, IconSize} from '@dagster-io/ui-components';
 
 import {KNOWN_TAGS, KnownTagType, extractIconSrc} from '../graph/OpTags';
 
@@ -9,27 +8,15 @@ export type InsightsIconType = IconName | IntegrationIconName;
 interface InsightsIconProps {
   name: InsightsIconType;
   color?: string;
-  size?: number;
+  size?: IconSize;
 }
 
 export const InsightsIcon = (props: InsightsIconProps) => {
-  const {name, color = Colors.accentPrimary(), size = 16} = props;
+  const {name, ...rest} = props;
   if (IconNames.includes(name as IconName)) {
-    return (
-      <Icon name={name as IconName} style={{marginLeft: 0}} color={color} size={size as any} />
-    );
-  } else {
-    const known = KNOWN_TAGS[props.name as IntegrationIconName];
-    return (
-      <IconWrapper
-        role="img"
-        $size={size}
-        $img={extractIconSrc(known)}
-        $color={color}
-        $rotation={null}
-        style={{marginLeft: 0}}
-        aria-label={props.name}
-      />
-    );
+    return <Icon {...rest} name={name as IconName} />;
   }
+
+  const known = KNOWN_TAGS[props.name as IntegrationIconName];
+  return <BaseIcon {...rest} img={extractIconSrc(known)} name={name} />;
 };

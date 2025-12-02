@@ -2,7 +2,7 @@
 title: Dagster & Airbyte (Component)
 sidebar_label: Airbyte Cloud & OSS (Component)
 description: The dagster-airbyte library provides an AirbyteWorkspaceComponent, which can be used to represent Airbyte connections as assets in Dagster.
-tags: [dagster-supported, etl]
+tags: [dagster-supported, etl, component]
 source: https://github.com/dagster-io/dagster/tree/master/python_modules/libraries/dagster-airbyte
 pypi: https://pypi.org/project/dagster-airbyte/
 sidebar_custom_props:

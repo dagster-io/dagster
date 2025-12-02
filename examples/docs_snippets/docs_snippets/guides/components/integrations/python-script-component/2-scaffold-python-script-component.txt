@@ -1,0 +1,3 @@
+dg scaffold defs dagster.PythonScriptComponent generate_revenue_report
+
+Creating defs at /.../my-project/src/my_project/defs/generate_revenue_report.

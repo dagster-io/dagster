@@ -374,7 +374,7 @@ class CommandStepBuilder:
         if self._requires_docker:
             sidecars.append(
                 {
-                    "image": "docker:20.10.16-dind",
+                    "image": "public.ecr.aws/docker/library/docker:20.10.16-dind",
                     "command": ["dockerd-entrypoint.sh"],
                     "resources": {
                         "requests": {

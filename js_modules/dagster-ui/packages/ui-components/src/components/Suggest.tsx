@@ -14,7 +14,7 @@ import styled, {createGlobalStyle} from 'styled-components';
 
 import {Box} from './Box';
 import {Colors} from './Color';
-import {Icon, IconName, IconWrapper} from './Icon';
+import {Icon, IconName} from './Icon';
 import {TextInputContainerStyles, TextInputStyles} from './TextInput';
 import {Container, Inner, Row} from './VirtualizedTable';
 
@@ -22,7 +22,7 @@ export const GlobalSuggestStyle = createGlobalStyle`
   .dagster-suggest-input.bp5-input-group {
     ${TextInputContainerStyles}
 
-    &:disabled ${IconWrapper}:first-child {
+    &:disabled .iconGlobal:first-child {
       background-color: ${Colors.accentGray()};
     }
 

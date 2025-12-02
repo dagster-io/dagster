@@ -2,7 +2,7 @@
 title: Dagster & Tableau (Component)
 sidebar_label: Tableau
 description: The dagster-tableau library provides a TableauComponent, which can be used to represent Tableau assets as assets in Dagster.
-tags: [dagster-supported, bi]
+tags: [dagster-supported, bi, component]
 source: https://github.com/dagster-io/dagster/tree/master/python_modules/libraries/dagster-tableau
 pypi: https://pypi.org/project/dagster-tableau
 sidebar_custom_props:
@@ -93,7 +93,55 @@ attributes:
   <CliInvocationExample path="docs_snippets/docs_snippets/guides/components/integrations/tableau-component/7-list-defs.txt" />
 </WideContent>
 
-## 4. Customize Tableau asset metadata
+## 4. Enable data source refresh
+
+You can enable refreshing data sources by adding the `enable_published_datasource_refresh` or `enable_embedded_datasource_refresh` keys. To enable refresh for all data sources of a given type, set the value to `True`:
+
+```yaml
+type: dagster_tableau.TableauComponent
+
+attributes:
+  workspace:
+    type: cloud
+    connected_app_client_id: '{{ env.TABLEAU_CLIENT_ID }}'
+    connected_app_secret_id: '{{ env.TABLEAU_SECRET_ID }}'
+    connected_app_secret_value: '{{ env.TABLEAU_SECRET_VALUE }}'
+    username: '{{ env.TABLEAU_USERNAME }}'
+    site_name: my_site
+    pod_name: my_pod
+  enable_published_datasource_refresh: true
+  enable_embedded_datasource_refresh: true
+```
+
+To enable refreshing specific published data sources, set `enable_published_datasource_refresh` to a list of published data source names or ids. To enable refreshing embedded data sources for specific workbooks, set `enable_embedded_datasource_refresh` to a list of workbook names or ids:
+
+```yaml
+type: dagster_tableau.TableauComponent
+
+attributes:
+  workspace:
+    type: cloud
+    connected_app_client_id: '{{ env.TABLEAU_CLIENT_ID }}'
+    connected_app_secret_id: '{{ env.TABLEAU_SECRET_ID }}'
+    connected_app_secret_value: '{{ env.TABLEAU_SECRET_VALUE }}'
+    username: '{{ env.TABLEAU_USERNAME }}'
+    site_name: my_site
+    pod_name: my_pod
+  enable_published_datasource_refresh:
+    - sales_data
+    - marketing_data
+  enable_embedded_datasource_refresh:
+    - sales_workbook
+    - marketing_workbook
+```
+
+:::note
+
+Only data sources with extracts can be refreshed. For more information, see [Refreshing Data Sources](https://help.tableau.com/current/pro/desktop/en-us/refreshing_data.htm) in the Tableau documentation.
+
+:::
+
+## 5. Customize Tableau asset metadata
 
 You can customize the metadata and grouping of Tableau assets using the `translation` key:
 

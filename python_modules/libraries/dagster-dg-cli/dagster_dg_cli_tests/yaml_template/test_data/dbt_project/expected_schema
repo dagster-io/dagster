@@ -37,6 +37,7 @@ attributes:  # Optional: Attributes details
       #
   select: <string>  # Optional: The dbt selection string for models in the project you want to include.
   exclude: <string>  # Optional: The dbt selection string for models in the project you want to exclude.
+  selector: <string>  # Optional: The dbt selector for models in the project you want to include.
   translation:  # Optional: 
     deps: <one of: array of string, string>  # Optional: The asset keys for the upstream assets that this asset depends on.
     description: <string>  # Optional: Human-readable description of the asset.

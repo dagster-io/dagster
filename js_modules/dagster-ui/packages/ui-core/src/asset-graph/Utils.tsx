@@ -86,14 +86,14 @@ export const buildGraphData = (assetNodes: AssetNode[]) => {
       // Skip add edges for self-dependencies (eg: assets relying on older partitions of themselves)
       return;
     }
-    data.downstream[upstreamGraphId] = {
-      ...(data.downstream[upstreamGraphId] || {}),
-      [downstreamGraphId]: true,
-    };
-    data.upstream[downstreamGraphId] = {
-      ...(data.upstream[downstreamGraphId] || {}),
-      [upstreamGraphId]: true,
-    };
+    if (!data.downstream[upstreamGraphId]) {
+      data.downstream[upstreamGraphId] = {};
+    }
+    if (!data.upstream[downstreamGraphId]) {
+      data.upstream[downstreamGraphId] = {};
+    }
+    data.downstream[upstreamGraphId][downstreamGraphId] = true;
+    data.upstream[downstreamGraphId][upstreamGraphId] = true;
   };
 
   assetNodes.forEach((definition: AssetNode) => {

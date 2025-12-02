@@ -1,4 +1,4 @@
 type: dagster_dbt.DbtProjectComponent
 
 attributes:
-  project: '{{ project_root }}/dbt/jdbt'
+  project: '{{ context.project_root }}/dbt/jdbt'

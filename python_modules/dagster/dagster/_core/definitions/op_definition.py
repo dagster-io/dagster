@@ -1,4 +1,5 @@
 import inspect
+import re
 from collections.abc import Iterator, Mapping, Sequence, Set
 from typing import (  # noqa: UP035
     TYPE_CHECKING,
@@ -36,7 +37,7 @@ from dagster._core.definitions.resource_requirement import (
     ResourceRequirement,
 )
 from dagster._core.definitions.result import MaterializeResult, ObserveResult
-from dagster._core.definitions.utils import DEFAULT_IO_MANAGER_KEY, check_valid_chars
+from dagster._core.definitions.utils import DEFAULT_IO_MANAGER_KEY
 from dagster._core.errors import (
     DagsterInvalidDefinitionError,
     DagsterInvalidInvocationError,
@@ -611,12 +612,19 @@ def _is_result_object_type(ttype):
     return ttype in (MaterializeResult, ObserveResult, AssetCheckResult)
 
 
+VALID_POOL_NAME_REGEX_STR = r"^[A-Za-z0-9_\/]+$"  # standard name regex with slashes
+VALID_POOL_NAME_REGEX = re.compile(VALID_POOL_NAME_REGEX_STR)
+
+
 def _validate_pool(pool, tags):
     check.opt_str_param(pool, "pool")
     if not pool:
         return None
 
-    check_valid_chars(pool)
+    if not VALID_POOL_NAME_REGEX.match(pool):
+        raise DagsterInvalidDefinitionError(
+            f'Pool "{pool}" is not a valid pool name. It must match the regex {VALID_POOL_NAME_REGEX_STR}.'
+        )
 
     tags = check.opt_mapping_param(tags, "tags")
     tag_concurrency_key = tags.get(GLOBAL_CONCURRENCY_TAG)

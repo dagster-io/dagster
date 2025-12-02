@@ -1250,7 +1250,7 @@ def _unpack_object(val: dict, whitelist_map: WhitelistMap, context: UnpackContex
 
     if "__mapping_items__" in val:
         return {
-            cast("Any", _unpack_value(k, whitelist_map, context)): _unpack_value(
+            cast("Any", inner_unpack_value(k, whitelist_map, context)): inner_unpack_value(
                 v, whitelist_map, context
             )
             for k, v in val["__mapping_items__"]
@@ -1264,7 +1264,6 @@ def unpack_value(
     val: JsonSerializableValue,
     as_type: tuple[type[T_PackableValue], type[U_PackableValue]],
     whitelist_map: WhitelistMap = ...,
-    context: Optional[UnpackContext] = ...,
 ) -> Union[T_PackableValue, U_PackableValue]: ...
 
 
@@ -1273,7 +1272,6 @@ def unpack_value(
     val: JsonSerializableValue,
     as_type: type[T_PackableValue],
     whitelist_map: WhitelistMap = ...,
-    context: Optional[UnpackContext] = ...,
 ) -> T_PackableValue: ...
 
 
@@ -1282,7 +1280,6 @@ def unpack_value(
     val: JsonSerializableValue,
     as_type: None = ...,
     whitelist_map: WhitelistMap = ...,
-    context: Optional[UnpackContext] = ...,
 ) -> PackableValue: ...
 
 
@@ -1292,7 +1289,6 @@ def unpack_value(
         Union[type[T_PackableValue], tuple[type[T_PackableValue], type[U_PackableValue]]]
     ] = None,
     whitelist_map: WhitelistMap = _WHITELIST_MAP,
-    context: Optional[UnpackContext] = None,
 ) -> Union[PackableValue, T_PackableValue, Union[T_PackableValue, U_PackableValue]]:
     """Convert a JSON-serializable complex of dicts, lists, and scalars into domain objects.
 
@@ -1303,13 +1299,17 @@ def unpack_value(
     - {"__class__": "<class>", ...}: becomes an instance of the class, where `class` is a
         NamedTuple, dataclass or pydantic model
     """
-    context = UnpackContext() if context is None else context
-    unpacked_value = _unpack_value(
-        val,
-        whitelist_map,
-        context,
-    )
-    unpacked_value = context.finalize_unpack(unpacked_value)
+    with (
+        disable_dagster_warnings(),
+        check.EvalContext.contextual_namespace(whitelist_map.object_type_map),
+    ):
+        context = UnpackContext()
+        unpacked_value = inner_unpack_value(
+            val,
+            whitelist_map,
+            context,
+        )
+        unpacked_value = context.finalize_unpack(unpacked_value)
     if as_type and not isinstance(unpacked_value, as_type):
         raise DeserializationError(
             f"Unpacked object was not expected type {as_type}, got {type(val)}"
@@ -1317,16 +1317,16 @@ def unpack_value(
     return unpacked_value
 
 
-def _unpack_value(
+def inner_unpack_value(
     val: JsonSerializableValue,
     whitelist_map: WhitelistMap,
     context: UnpackContext,
 ) -> UnpackedValue:
     if isinstance(val, list):
-        return [_unpack_value(item, whitelist_map, context) for item in val]
+        return [inner_unpack_value(item, whitelist_map, context) for item in val]
 
     if isinstance(val, dict):
-        unpacked_vals = {k: _unpack_value(v, whitelist_map, context) for k, v in val.items()}
+        unpacked_vals = {k: inner_unpack_value(v, whitelist_map, context) for k, v in val.items()}
         return _unpack_object(unpacked_vals, whitelist_map, context)
 
     return val

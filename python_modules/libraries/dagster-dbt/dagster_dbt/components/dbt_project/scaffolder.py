@@ -56,7 +56,7 @@ class DbtProjectComponentScaffolder(Scaffolder[DbtScaffoldParams]):
             params = {"project": {"repo_url": request.params.git_url, **repo_relative_path}}
         elif request.params.project_path is not None:
             # project_path represents a local directory
-            project_root_tmpl = "{{ project_root }}"
+            project_root_tmpl = "{{ context.project_root }}"
             rel_path = os.path.relpath(request.params.project_path, start=project_root)
             path_str = f"{project_root_tmpl}/{rel_path}"
             params = {"project": path_str}

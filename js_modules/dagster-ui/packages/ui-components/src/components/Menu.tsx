@@ -9,7 +9,7 @@ import * as React from 'react';
 import styled from 'styled-components';
 
 import {Colors} from './Color';
-import {Icon, IconName, IconWrapper} from './Icon';
+import {Icon, IconName} from './Icon';
 
 interface Props extends React.ComponentProps<typeof BlueprintMenu> {}
 
@@ -143,7 +143,7 @@ const StyledMenuItem = styled(BlueprintMenuItem)<StyledMenuItemProps>`
    * Use margin instead of align-items: center because the contents of the menu item may wrap 
    * in unusual circumstances.
    */
-  ${IconWrapper} {
+  .iconGlobal {
     margin-top: 2px;
   }
 
@@ -152,20 +152,20 @@ const StyledMenuItem = styled(BlueprintMenuItem)<StyledMenuItemProps>`
     background-color: ${Colors.backgroundBlue()};
     color: ${Colors.textDefault()};
 
-    ${IconWrapper} {
+    .iconGlobal {
       background-color: ${Colors.textDefault()};
     }
   }
 
-  &.bp5-disabled ${IconWrapper} {
+  &.bp5-disabled .iconGlobal {
     opacity: 0.5;
   }
 
-  &.bp5-active ${IconWrapper} {
+  &.bp5-active .iconGlobal {
     color: ${Colors.textDefault()};
   }
 
-  ${IconWrapper}:first-child {
+  .iconGlobal:first-child {
     margin-left: -4px;
   }
 

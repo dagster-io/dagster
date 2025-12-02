@@ -15,6 +15,7 @@ from dagster._core.definitions.asset_key import (
     AssetCheckKey,
     AssetKey,
     CoercibleToAssetKey,
+    EntityKey,
     T_EntityKey,
 )
 from dagster._core.definitions.declarative_automation.serialized_objects import (
@@ -136,7 +137,9 @@ class AutomationCondition(ABC, Generic[T_EntityKey]):
         self, *, parent_unique_id: Optional[str] = None, index: Optional[int] = None
     ) -> AutomationConditionSnapshot:
         """Returns a serializable snapshot of the entire AutomationCondition tree."""
-        unique_id = self.get_node_unique_id(parent_unique_id=parent_unique_id, index=index)
+        unique_id = self.get_node_unique_id(
+            parent_unique_id=parent_unique_id, index=index, target_key=None
+        )
         node_snapshot = self.get_node_snapshot(unique_id)
         children = [
             child.get_snapshot(parent_unique_id=unique_id, index=i)
@@ -144,12 +147,22 @@ class AutomationCondition(ABC, Generic[T_EntityKey]):
         ]
         return AutomationConditionSnapshot(node_snapshot=node_snapshot, children=children)
 
-    def get_node_unique_id(self, *, parent_unique_id: Optional[str], index: Optional[int]) -> str:
+    def get_node_unique_id(
+        self,
+        *,
+        parent_unique_id: Optional[str],
+        index: Optional[int],
+        target_key: Optional[EntityKey],
+    ) -> str:
         """Returns a unique identifier for this condition within the broader condition tree."""
         return non_secure_md5_hash_str(f"{parent_unique_id}{index}{self.name}".encode())
 
     def get_backcompat_node_unique_ids(
-        self, *, parent_unique_id: Optional[str] = None, index: Optional[int] = None
+        self,
+        *,
+        parent_unique_id: Optional[str] = None,
+        index: Optional[int] = None,
+        target_key: Optional[EntityKey] = None,
     ) -> Sequence[str]:
         """Used for backwards compatibility when condition unique id logic changes."""
         return []
@@ -159,6 +172,7 @@ class AutomationCondition(ABC, Generic[T_EntityKey]):
         *,
         parent_unique_ids: Sequence[Optional[str]],
         child_indices: Sequence[Optional[int]],
+        target_key: Optional[EntityKey],
     ) -> Sequence[str]:
         unique_ids = []
         for parent_unique_id in parent_unique_ids:
@@ -166,10 +180,14 @@ class AutomationCondition(ABC, Generic[T_EntityKey]):
                 unique_ids.extend(
                     [
                         self.get_node_unique_id(
-                            parent_unique_id=parent_unique_id, index=child_index
+                            parent_unique_id=parent_unique_id,
+                            index=child_index,
+                            target_key=target_key,
                         ),
                         *self.get_backcompat_node_unique_ids(
-                            parent_unique_id=parent_unique_id, index=child_index
+                            parent_unique_id=parent_unique_id,
+                            index=child_index,
+                            target_key=target_key,
                         ),
                     ]
                 )
@@ -180,7 +198,7 @@ class AutomationCondition(ABC, Generic[T_EntityKey]):
     ) -> str:
         """Returns a unique identifier for the entire subtree."""
         node_unique_id = self.get_node_unique_id(
-            parent_unique_id=parent_node_unique_id, index=index
+            parent_unique_id=parent_node_unique_id, index=index, target_key=None
         )
         child_unique_ids = [
             child.get_unique_id(parent_node_unique_id=node_unique_id, index=i)
@@ -844,6 +862,31 @@ class BuiltinAutomationCondition(AutomationCondition[T_EntityKey]):
     def with_label(self, label: Optional[str]) -> Self:
         """Returns a copy of this AutomationCondition with a human-readable label."""
         return copy(self, label=label)
+
+    def _get_stable_unique_id(self, target_key: Optional[EntityKey]) -> str:
+        """Returns an identifier that is stable regardless of where it exists in the broader condition tree.
+        This should only be used for conditions that don't change their output based on what conditions are
+        evaluated before them (i.e. they explicitly set their candidate subset to the entire subset).
+        """
+        from dagster._core.definitions.declarative_automation.operators import (
+            NewlyTrueCondition,
+            SinceCondition,
+        )
+
+        child_ids = [
+            child._get_stable_unique_id(target_key)  # noqa
+            if isinstance(
+                child, (SinceCondition, NewlyTrueCondition)
+            )  # temporary forwards compat hack
+            else child.get_node_unique_id(
+                parent_unique_id=None,
+                index=i,
+                target_key=target_key,
+            )
+            for i, child in enumerate(self.children)
+        ]
+        parts = [self.name, *child_ids, target_key.to_user_string() if target_key else ""]
+        return non_secure_md5_hash_str("".join(parts).encode())
 
 
 @public

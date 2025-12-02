@@ -312,7 +312,7 @@ const AssetUpdate = ({
       <div>
         {event && run ? (
           <Box flex={{gap: 4, direction: 'row', alignItems: 'center'}}>
-            <div>with run</div>
+            <div>in run</div>
             <AssetRunLink
               runId={run.id}
               assetKey={assetKey}

@@ -22,7 +22,7 @@ from dagster_dg_cli.cli.plus.deploy.configure.commands import (
     resolve_python_version,
 )
 from dagster_dg_cli.cli.plus.deploy.configure.configure_ci import configure_ci_impl
-from dagster_dg_cli.cli.plus.deploy.configure.utils import DeploymentScaffoldConfig, GitProvider
+from dagster_dg_cli.cli.plus.deploy.configure.utils import DgPlusDeployConfigureOptions, GitProvider
 from dagster_dg_cli.utils.plus.build import get_agent_type_and_platform_from_graphql
 from dagster_dg_cli.utils.plus.gql_client import DagsterPlusGraphQLClient
 
@@ -31,7 +31,7 @@ def _resolve_config_for_github_actions(
     git_root: Optional[Path],
     dg_context: DgContext,
     cli_config,
-) -> DeploymentScaffoldConfig:
+) -> DgPlusDeployConfigureOptions:
     """Resolve config for legacy github-actions command.
 
     This command prompts in the legacy order: org, deployment, agent type (no platform).
@@ -69,7 +69,7 @@ def _resolve_config_for_github_actions(
     # Use default Python version
     resolved_python_version = resolve_python_version(None)
 
-    return DeploymentScaffoldConfig(
+    return DgPlusDeployConfigureOptions(
         dg_context=dg_context,
         cli_config=cli_config,
         plus_config=plus_config,

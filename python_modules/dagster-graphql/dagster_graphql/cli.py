@@ -140,7 +140,7 @@ PREDEFINED_QUERIES = {
     )
     + "\n\nExamples:"
     "\n\n1. dagster-graphql"
-    f"\n\n2. dagster-graphql -y path/to/{DEFAULT_WORKSPACE_YAML_FILENAME}"
+    f"\n\n2. dagster-graphql -w path/to/{DEFAULT_WORKSPACE_YAML_FILENAME}"
     "\n\n3. dagster-graphql -f path/to/file.py -a define_repo"
     "\n\n4. dagster-graphql -m some_module -a define_repo"
     "\n\n5. dagster-graphql -f path/to/file.py -a define_pipeline"
@@ -150,9 +150,7 @@ PREDEFINED_QUERIES = {
 @click.option(
     "--text", "-t", type=click.STRING, help="GraphQL document to execute passed as a string"
 )
-@click.option(
-    "--file", "-f", type=click.File(), help="GraphQL document to execute passed as a file"
-)
+@click.option("--file", type=click.File(), help="GraphQL document to execute passed as a file")
 @click.option(
     "--predefined",
     "-p",
@@ -210,7 +208,7 @@ def ui(
         query = PREDEFINED_QUERIES[predefined]
     else:
         raise click.UsageError(
-            "Must select one and only one of text (-t), file (-f), or predefined (-p) "
+            "Must select one and only one of text (-t), file (--file), or predefined (-p) "
             "to select GraphQL document to execute."
         )
 

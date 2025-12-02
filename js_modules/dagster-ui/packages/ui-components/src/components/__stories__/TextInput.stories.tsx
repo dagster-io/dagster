@@ -76,3 +76,12 @@ export const NextToButton = () => {
     </Box>
   );
 };
+
+export const Disabled = () => {
+  return (
+    <Box flex={{direction: 'column', gap: 8}} style={{width: '300px'}}>
+      <TextInput icon="layers" placeholder="Disabled input…" value="" disabled />
+      <TextInput icon="layers" placeholder="Enabled input…" value="" />
+    </Box>
+  );
+};

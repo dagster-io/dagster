@@ -6,40 +6,36 @@ sidebar_position: 200
 
 <p>{frontMatter.description}</p>
 
-## Using Spark
+## Supported catalog backends
 
-Spark is currently the most feature-rich compute engine for Iceberg operations.
+`dagster-iceberg` supports most catalog backends that are available through `pyiceberg`. See overview and configuration options [here](https://py.iceberg.apache.org/configuration/#catalogs).
 
-### Configuration
+## Configuration
+
+`dagster-iceberg` supports setting configuration values using a `.pyiceberg.yaml` configuration file and environment variables. For more information, see the [PyIceberg documentation](https://py.iceberg.apache.org/configuration/#setting-configuration-values).
+
+You may also pass your catalog configuration through use of the `IcebergCatalogConfig` object, e.g:
+
+<CodeExample path="docs_snippets/docs_snippets/integrations/iceberg/configuring_pyiceberg.py" language="python" />
+
+### Spark
 
 Spark configuration can be set directly on the <PyObject section="libraries" object="io_manager.spark.SparkIcebergIOManager" module="dagster_iceberg" /> or in the `spark-defaults.conf` file. Properties set directly on the I/O manager take precedence over those set in the `spark-defaults.conf` file. To set properties directly, pass a dictionary of configurations to set in the `spark_config` argument of the I/O manager:
 
 <CodeExample path="docs_snippets/docs_snippets/integrations/iceberg/configuring_spark.py" language="python" />
 
-## Using PyIceberg
+## Implemented engines
 
-The following engines are implemented using PyIceberg:
+The following engines are currently implemented.
 
-- [Apache Arrow](https://arrow.apache.org/docs/python/index.html)
-- [Daft](https://www.getdaft.io)
-- [pandas](https://pandas.pydata.org)
-- [Polars](https://pola.rs)
+- [arrow](https://arrow.apache.org/docs/python/index.html)
+- [daft](https://www.getdaft.io/)
+- [pandas](https://pandas.pydata.org/)
+- [polars](https://pola.rs/)
 
-### Supported catalogs
+## PyIceberg Features
 
-`dagster-iceberg` supports [all catalogs available through PyIceberg](https://py.iceberg.apache.org/configuration/#catalogs).
-
-### Configuration
-
-`dagster-iceberg` supports setting configuration values using a `.pyiceberg.yaml` configuration file and environment variables. For more information, see the [PyIceberg documentation](https://py.iceberg.apache.org/configuration/#setting-configuration-values).
-
-You can also pass your catalog configuration using <PyObject section="libraries" object="config.IcebergCatalogConfig" module="dagster_iceberg" />:
-
-<CodeExample path="docs_snippets/docs_snippets/integrations/iceberg/configuring_pyiceberg.py" language="python" />
-
-### PyIceberg features
-
-The table below indicates PyIceberg features are currently available in `dagster-iceberg`:
+The table below shows which PyIceberg features are currently available.
 
 | Feature                  | Supported | Link                                                                                                  | Comment                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                         |
 | ------------------------ | --------- | ----------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
@@ -50,3 +46,4 @@ The table below indicates PyIceberg features are currently available in `dagster
 | Partition evolution      | ✅        | https://py.iceberg.apache.org/api/#partition-evolution                                                | Create, Update, Delete partitions by updating the Dagster partitions definition.                                                                                                                                                                                                                                                                                                                                                                                                                                                                |
 | Table properties         | ✅        | https://py.iceberg.apache.org/api/#table-properties                                                   | Added as metadata on an asset. NB: config options are not checked explicitly because users can add any key-value pair to a table. Available properties [here](https://py.iceberg.apache.org/configuration/#tables).                                                                                                                                                                                                                                                                                                                             |
 | Snapshot properties      | ✅        | https://py.iceberg.apache.org/api/#snapshot-properties                                                | Useful for correlating Dagster runs to snapshots by adding tags to snapshot. Not configurable by end-user.                                                                                                                                                                                                                                                                                                                                                                                                                                      |
+| Upsert                   | ✅        | https://py.iceberg.apache.org/api/#upsert                                                             | Update existing rows and insert new rows in a single operation. Configure via `write_mode: "upsert"` and `upsert_options` in asset metadata.                                                                                                                                                                                                                                                                                                                                                                                                    |

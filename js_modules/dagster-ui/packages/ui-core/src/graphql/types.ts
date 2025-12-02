@@ -851,6 +851,7 @@ export type AutomationConditionEvaluationNode = {
   numCandidates: Maybe<Scalars['Int']['output']>;
   numTrue: Scalars['Int']['output'];
   operatorType: Scalars['String']['output'];
+  sinceMetadata: Maybe<SinceConditionMetadata>;
   startTimestamp: Maybe<Scalars['Float']['output']>;
   uniqueId: Scalars['String']['output'];
   userLabel: Maybe<Scalars['String']['output']>;
@@ -1281,6 +1282,11 @@ export type DefinitionTag = {
   key: Scalars['String']['output'];
   value: Scalars['String']['output'];
 };
+
+export enum DefinitionsSource {
+  CODE_SERVER = 'CODE_SERVER',
+  CONNECTION = 'CONNECTION',
+}
 
 export type DefsKeyStateInfo = {
   __typename: 'DefsKeyStateInfo';
@@ -5548,6 +5554,14 @@ export type ShutdownRepositoryLocationSuccess = {
   repositoryLocationName: Scalars['String']['output'];
 };
 
+export type SinceConditionMetadata = {
+  __typename: 'SinceConditionMetadata';
+  resetEvaluationId: Maybe<Scalars['Int']['output']>;
+  resetTimestamp: Maybe<Scalars['Float']['output']>;
+  triggerEvaluationId: Maybe<Scalars['Int']['output']>;
+  triggerTimestamp: Maybe<Scalars['Float']['output']>;
+};
+
 export type Solid = {
   __typename: 'Solid';
   definition: CompositeSolidDefinition | SolidDefinition;
@@ -6146,6 +6160,7 @@ export type Workspace = {
 
 export type WorkspaceLocationEntry = {
   __typename: 'WorkspaceLocationEntry';
+  definitionsSource: DefinitionsSource;
   defsStateInfo: Maybe<DefsStateInfo>;
   displayMetadata: Array<RepositoryMetadata>;
   featureFlags: Array<FeatureFlag>;
@@ -7808,6 +7823,12 @@ export const buildAutomationConditionEvaluationNode = (
     numTrue: overrides && overrides.hasOwnProperty('numTrue') ? overrides.numTrue! : 5212,
     operatorType:
       overrides && overrides.hasOwnProperty('operatorType') ? overrides.operatorType! : 'modi',
+    sinceMetadata:
+      overrides && overrides.hasOwnProperty('sinceMetadata')
+        ? overrides.sinceMetadata!
+        : relationshipsToOmit.has('SinceConditionMetadata')
+          ? ({} as SinceConditionMetadata)
+          : buildSinceConditionMetadata({}, relationshipsToOmit),
     startTimestamp:
       overrides && overrides.hasOwnProperty('startTimestamp') ? overrides.startTimestamp! : 5.42,
     uniqueId: overrides && overrides.hasOwnProperty('uniqueId') ? overrides.uniqueId! : 'sit',
@@ -15478,6 +15499,31 @@ export const buildShutdownRepositoryLocationSuccess = (
   };
 };
 
+export const buildSinceConditionMetadata = (
+  overrides?: Partial<SinceConditionMetadata>,
+  _relationshipsToOmit: Set<string> = new Set(),
+): {__typename: 'SinceConditionMetadata'} & SinceConditionMetadata => {
+  const relationshipsToOmit: Set<string> = new Set(_relationshipsToOmit);
+  relationshipsToOmit.add('SinceConditionMetadata');
+  return {
+    __typename: 'SinceConditionMetadata',
+    resetEvaluationId:
+      overrides && overrides.hasOwnProperty('resetEvaluationId')
+        ? overrides.resetEvaluationId!
+        : 8424,
+    resetTimestamp:
+      overrides && overrides.hasOwnProperty('resetTimestamp') ? overrides.resetTimestamp! : 5.31,
+    triggerEvaluationId:
+      overrides && overrides.hasOwnProperty('triggerEvaluationId')
+        ? overrides.triggerEvaluationId!
+        : 2168,
+    triggerTimestamp:
+      overrides && overrides.hasOwnProperty('triggerTimestamp')
+        ? overrides.triggerTimestamp!
+        : 6.12,
+  };
+};
+
 export const buildSolid = (
   overrides?: Partial<Solid>,
   _relationshipsToOmit: Set<string> = new Set(),
@@ -16596,6 +16642,10 @@ export const buildWorkspaceLocationEntry = (
   relationshipsToOmit.add('WorkspaceLocationEntry');
   return {
     __typename: 'WorkspaceLocationEntry',
+    definitionsSource:
+      overrides && overrides.hasOwnProperty('definitionsSource')
+        ? overrides.definitionsSource!
+        : DefinitionsSource.CODE_SERVER,
     defsStateInfo:
       overrides && overrides.hasOwnProperty('defsStateInfo')
         ? overrides.defsStateInfo!

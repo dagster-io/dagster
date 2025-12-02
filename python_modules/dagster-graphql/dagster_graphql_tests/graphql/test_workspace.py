@@ -25,6 +25,7 @@ fragment locationEntryFragment on WorkspaceLocationEntry {
   __typename
   id
   name
+  definitionsSource
   locationOrLoadError {
     __typename
     ... on RepositoryLocation {
@@ -175,6 +176,7 @@ class TestLoadWorkspace(BaseTestSuite):
             assert all([node["__typename"] == "WorkspaceLocationEntry" for node in nodes]), str(
                 nodes
             )
+            assert all([node["definitionsSource"] == "CODE_SERVER" for node in nodes]), str(nodes)
 
             success_nodes = [
                 node["locationOrLoadError"]

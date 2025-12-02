@@ -1,4 +1,4 @@
-import {Box, Colors, Icon, IconWrapper} from '@dagster-io/ui-components';
+import {Box, Colors, Icon} from '@dagster-io/ui-components';
 import * as React from 'react';
 import {NavLink} from 'react-router-dom';
 import {AppTopNavRightOfLogo} from 'shared/app/AppTopNav/AppTopNavRightOfLogo.oss';
@@ -168,15 +168,15 @@ const NavButton = styled.button`
   background: ${Colors.navBackground()};
   display: block;
 
-  ${IconWrapper} {
+  .iconGlobal {
     transition: background 100ms linear;
   }
 
-  :hover ${IconWrapper} {
+  :hover .iconGlobal {
     background: ${Colors.navTextHover()};
   }
 
-  :active ${IconWrapper} {
+  :active .iconGlobal {
     background: ${Colors.navTextHover()};
   }
 

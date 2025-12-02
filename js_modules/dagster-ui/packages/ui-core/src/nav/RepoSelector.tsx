@@ -4,7 +4,6 @@ import {
   Checkbox,
   Colors,
   Icon,
-  IconWrapper,
   Spinner,
   Table,
   Tooltip,
@@ -192,21 +191,21 @@ const ReloadButtonInner = styled.button`
     cursor: default;
   }
 
-  :disabled ${IconWrapper} {
+  :disabled .iconGlobal {
     background-color: ${Colors.textDisabled()};
     transition: background-color 100ms;
   }
 
-  ${IconWrapper} {
+  .iconGlobal {
     background-color: ${Colors.textLight()};
     transition: background-color 100ms;
   }
 
-  :hover:not(:disabled) ${IconWrapper} {
+  :hover:not(:disabled) .iconGlobal {
     background-color: ${Colors.textLighter()};
   }
 
-  :focus ${IconWrapper} {
+  :focus .iconGlobal {
     background-color: ${Colors.linkDefault()};
   }
 `;

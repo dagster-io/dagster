@@ -735,7 +735,7 @@ class TestSensors(NonLaunchableGraphQLContextTestMatrix):
             )
         unknown_repo_selector = {**unknown_instigator_selector}
         unknown_repo_selector["repositoryName"] = "doesnt_exist"
-        with pytest.raises(UserFacingGraphQLError, match="GrapheneRepositoryNotFound"):
+        with pytest.raises(UserFacingGraphQLError, match="GrapheneSensorNotFoundError"):
             execute_dagster_graphql(
                 graphql_context,
                 SENSOR_DRY_RUN_MUTATION,

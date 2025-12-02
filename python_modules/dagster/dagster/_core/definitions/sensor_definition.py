@@ -554,6 +554,37 @@ def split_run_requests(
     return run_requests_for_backfill_daemon, run_requests_for_single_runs
 
 
+def resolve_jobs_from_targets_for_with_attributes(
+    sensor_def: "SensorDefinition", new_jobs: Optional[Sequence[ExecutableDefinition]]
+) -> tuple[Optional[str], Optional[ExecutableDefinition], Optional[Sequence[ExecutableDefinition]]]:
+    """Utility function to resolve job/jobs/job_name parameters for with_attributes method.
+
+    Returns a tuple of (job_name, job, jobs) to pass to dagster_internal_init.
+    """
+    if new_jobs is not None:
+        new_jobs_seq = new_jobs if len(new_jobs) > 1 else None
+        new_job = new_jobs[0] if len(new_jobs) == 1 else None
+        job_name = None
+    elif sensor_def.has_jobs:
+        new_job = sensor_def.job if len(sensor_def.jobs) == 1 else None
+        new_jobs_seq = sensor_def.jobs if len(sensor_def.jobs) > 1 else None
+        job_name = None
+    elif sensor_def._targets:  # noqa: SLF001
+        check.invariant(
+            len(sensor_def._targets) == 1 and not sensor_def._targets[0].has_job_def,  # noqa: SLF001
+            "Expected only one target by job name string.",
+        )
+        job_name = sensor_def._targets[0].job_name  # noqa: SLF001
+        new_job = None
+        new_jobs_seq = None
+    else:
+        job_name = None
+        new_job = None
+        new_jobs_seq = None
+
+    return job_name, new_job, new_jobs_seq
+
+
 @public
 @beta_param(param="owners")
 class SensorDefinition(IHasInternalInit):
@@ -597,27 +628,7 @@ class SensorDefinition(IHasInternalInit):
         metadata: Optional[RawMetadataMapping] = None,
     ) -> "SensorDefinition":
         """Returns a copy of this sensor with the attributes replaced."""
-        # unfortunate re-derivation of how inputs map to _targets
-        if jobs is not None:
-            new_jobs = jobs if len(jobs) > 1 else None
-            new_job = jobs[0] if len(jobs) == 1 else None
-            job_name = None
-        elif self.has_jobs:
-            new_job = self.job if len(self.jobs) == 1 else None
-            new_jobs = self.jobs if len(self.jobs) > 1 else None
-            job_name = None
-        elif self._targets:
-            check.invariant(
-                len(self._targets) == 1 and not self._targets[0].has_job_def,
-                "Expected only one target by job name string.",
-            )
-            job_name = self._targets[0].job_name
-            new_job = None
-            new_jobs = None
-        else:
-            job_name = None
-            new_job = None
-            new_jobs = None
+        job_name, new_job, new_jobs = resolve_jobs_from_targets_for_with_attributes(self, jobs)
 
         return SensorDefinition.dagster_internal_init(
             name=self.name,

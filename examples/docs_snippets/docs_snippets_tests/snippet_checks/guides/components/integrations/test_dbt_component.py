@@ -136,7 +136,7 @@ def test_components_docs_dbt_project(
                 type: dagster_dbt.DbtProjectComponent
 
                 attributes:
-                  project: '{{ project_root }}/dbt'
+                  project: '{{ context.project_root }}/dbt'
                   select: "customers"
                 """
             ),
@@ -156,7 +156,7 @@ def test_components_docs_dbt_project(
                 type: dagster_dbt.DbtProjectComponent
 
                 attributes:
-                  project: '{{ project_root }}/dbt'
+                  project: '{{ context.project_root }}/dbt'
                   select: "customers"
                   translation:
                     group_name: dbt_models
@@ -194,7 +194,7 @@ def test_components_docs_dbt_project(
 
                 attributes:
                   execution:
-                    path: my_script.py
+                    path: export_customers.py
                   assets:
                     - key: customers_export
                       deps:
@@ -233,7 +233,7 @@ def test_components_docs_dbt_project(
 
                 template_vars_module: .template_vars
                 attributes:
-                  project: '{{ project_root }}/dbt'
+                  project: '{{ context.project_root }}/dbt'
                   select: "customers"
                   translation:
                     group_name: dbt_models
@@ -257,7 +257,7 @@ def test_components_docs_dbt_project(
 
                 template_vars_module: .template_vars
                 attributes:
-                  project: '{{ project_root }}/dbt'
+                  project: '{{ context.project_root }}/dbt'
                   select: "customers"
                   translation:
                     group_name: dbt_models
@@ -280,4 +280,99 @@ def test_components_docs_dbt_project(
         context.run_command_and_snippet_output(
             cmd="dg list defs",
             snippet_path=f"{context.get_next_snip_number()}-list-defs.txt",
+        )
+
+        # Create a custom subclass of DbtProjectComponent
+        context.create_file(
+            Path("src") / "my_project" / "lib" / "custom_dbt_component.py",
+            contents=textwrap.dedent(
+                """\
+                import json
+                from collections.abc import Iterator, Mapping
+                from datetime import timedelta
+                from typing import Any, Optional
+
+                import dagster as dg
+                from dagster_dbt import DbtCliResource, DbtProject, DbtProjectComponent
+
+
+                class CustomDbtProjectComponent(DbtProjectComponent):
+                    \"\"\"Custom DbtProjectComponent with op config and metadata customization.\"\"\"
+
+                    @property
+                    def op_config_schema(self) -> type[dg.Config]:
+                        class CustomDbtConfig(dg.Config):
+                            full_refresh: bool = False
+
+                        return CustomDbtConfig
+
+                    def get_asset_spec(
+                        self, manifest: Mapping[str, Any], unique_id: str, project: Optional[DbtProject]
+                    ) -> dg.AssetSpec:
+                        base_spec = super().get_asset_spec(manifest, unique_id, project)
+                        dbt_props = self.get_resource_props(manifest, unique_id)
+
+                        # Add a custom metadata field with the model name
+                        return base_spec.merge_attributes(
+                            metadata={
+                                "dbt_model_name": dbt_props["name"],
+                            }
+                        )
+
+                    def execute(
+                        self, context: dg.AssetExecutionContext, dbt: DbtCliResource
+                    ) -> Iterator:
+                        dbt_vars = {
+                            # custom time range that includes 3 hours of lookback to ensure we don't miss any data
+                            "min_date": (context.partition_time_window.start - timedelta(hours=3)).isoformat(),
+                            "max_date": context.partition_time_window.end.isoformat(),
+                        }
+                        # Build CLI args based on config
+                        args = (
+                            ["build", "--full-refresh"]
+                            if context.op_config.get("full_refresh", False)
+                            else ["build", "--vars", json.dumps(dbt_vars)]
+                        )
+                        yield from dbt.cli(args, context=context).stream()
+                """
+            ),
+            snippet_path=f"{context.get_next_snip_number()}-custom_dbt_component.py",
+        )
+
+        # Create a new component using the custom subclass
+        context.create_file(
+            Path("src") / "my_project" / "defs" / "dbt_ingest" / "defs.yaml",
+            contents=textwrap.dedent(
+                """\
+                type: my_project.lib.custom_dbt_component.CustomDbtProjectComponent
+
+                template_vars_module: .template_vars
+                attributes:
+                  project: '{{ context.project_root }}/dbt'
+                  select: "customers"
+                post_processing:
+                  assets:
+                    - target: "*"
+                      attributes:
+                        partitions_def: "{{ daily_partitions_def }}"
+                """
+            ),
+            snippet_path=f"{context.get_next_snip_number()}-custom-dbt-defs.yaml",
+        )
+
+        # Touch __init__.py file to make lib a package
+        context.run_command_and_snippet_output(
+            cmd="touch src/my_project/lib/__init__.py",
+            snippet_path=f"{context.get_next_snip_number()}-touch-init.txt",
+            ignore_output=True,
+        )
+
+        context.run_command_and_snippet_output(
+            cmd="dg list defs",
+            snippet_path=f"{context.get_next_snip_number()}-list-custom-defs.txt",
+        )
+
+        # Test running with the custom component
+        _run_command(
+            cmd="dg launch --assets '*' --partition '2023-01-01'",
         )

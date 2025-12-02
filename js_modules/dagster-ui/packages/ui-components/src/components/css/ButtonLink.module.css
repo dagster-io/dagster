@@ -1,0 +1,38 @@
+.buttonLink {
+  --button-link-color: var(--color-link-default);
+  --button-link-hover-color: var(--color-link-default);
+  --button-link-active-color: var(--color-link-default);
+
+  background: transparent;
+  border: 0;
+  color: var(--button-link-color);
+  cursor: pointer;
+  font-size: inherit;
+  line-height: 1;
+  padding: 8px;
+  margin: -8px;
+  text-align: left;
+  transition: 30ms color linear;
+}
+
+.buttonLink:disabled {
+  cursor: default;
+  opacity: 0.7;
+}
+
+.buttonLink:hover {
+  color: var(--button-link-hover-color);
+}
+
+.buttonLink:active {
+  color: var(--button-link-active-color);
+}
+
+.buttonLink:focus:not(:focus-visible) {
+  outline: none;
+}
+
+.textDecorationAlways,
+.textDecorationHover:hover:not(:disabled) {
+  text-decoration: underline;
+}

@@ -85,6 +85,21 @@ For partitioning to function correctly, the partition dimension must correspond 
   </TabItem>
 </Tabs>
 
+### Partition field naming
+
+Partition fields are named using the column name that they correspond to, with a configurable prefix applied (defaults to `"part-"`). This prefixing is done in order to comply with changes introduced in pyiceberg 0.10.0 which require that partition field names do not exactly match any existing column names.
+
+For example, an asset that is partitioned using hourly partitions on a column `ingestion_time` will be assigned a corresponding partition field name of `part-ingestion_time`.
+
+The user may configure the prefix in the IO manager configuration via the `IcebergCatalogConfig`:
+
+<CodeExample
+  path="docs_snippets/docs_snippets/integrations/iceberg/partition_field_naming_config.py"
+  language="python"
+/>
+
+Users may also configure the prefix at launch time via run config if the IO manager is set up using `configure_at_launch()` (see the [resource configuration docs](/guides/build/external-resources/configuring-resources#configuring-resources-at-launch-time) for more details on this pattern).
+
 ## Storing tables in multiple schemas
 
 You may want to have different assets stored in different Iceberg schemas. The Iceberg I/O manager allows you to specify the schema in several ways.
@@ -119,7 +134,36 @@ In the above example:
 
 ## Using different compute engines to read from and write to Iceberg
 
-`dagster-iceberg` supports several compute engines out-of-the-box. You can [find examples of how to use each engine in the API docs](/api/libraries/dagster-iceberg#io-managers).
+`dagster-iceberg` supports several compute engines out-of-the-box. You can [find detailed examples of how to use each engine in the API docs](/api/libraries/dagster-iceberg#io-managers).
+
+<Tabs>
+  <TabItem value="pyarrow" label="PyArrow Tables">
+    The `Iceberg` package relies heavily on Apache Arrow for efficient data transfer, so PyArrow is natively supported.
+
+    You can use `PyArrowIcebergIOManager` to read and write iceberg tables:
+
+    <CodeExample path="docs_snippets/docs_snippets/integrations/iceberg/io_manager_pyarrow.py" language="python" />
+
+  </TabItem>
+  <TabItem value="pandas" label="Pandas DataFrames">
+     You can use `PandasIcebergIOManager` to read and write iceberg tables using Pandas:
+
+    <CodeExample path="docs_snippets/docs_snippets/integrations/iceberg/io_manager_pandas.py" language="python" />
+
+  </TabItem>
+  <TabItem value="polars" label="Polars DataFrames">
+     You can use the `PolarsIcebergIOManager` to read and write iceberg tables using Polars using a full lazily optimized query engine:
+
+    <CodeExample path="docs_snippets/docs_snippets/integrations/iceberg/io_manager_polars.py" language="python" />
+
+  </TabItem>
+  <TabItem value="daft" label="Daft DataFrames">
+     You can use the `DaftIcebergIOManager` to read and write iceberg tables using Daft using a full lazily optimized query engine:
+
+    <CodeExample path="docs_snippets/docs_snippets/integrations/iceberg/io_manager_daft.py" language="python" />
+
+  </TabItem>
+</Tabs>
 
 ## Executing custom SQL commands
 
@@ -136,6 +180,59 @@ PyIceberg tables support table properties to configure table behavior. You can f
 Use asset metadata to set table properties:
 
 <CodeExample path="docs_snippets/docs_snippets/integrations/iceberg/setting_table_properties.py" language="python" />
+
+## Write modes
+
+The Iceberg I/O manager supports three write modes:
+
+- `overwrite` (**default**): every asset materialization will overwrite the backing Iceberg table. Partitioned assets only overwrite partitions of the Iceberg table that were part of the asset materialization.
+- `append`: results returned from each asset materialization will be inserted into the backing Iceberg table, respecting partitions when appropriate. **Not currently supported in the Spark I/O manager**.
+- `upsert`: asset materialization results will be merged into the backing Iceberg table using [pyiceberg's native implementation](https://py.iceberg.apache.org/api/#upsert), updating any existing records that match on a configurable join key, and inserting records that do not exist in the target table. Insert and update actions can be turned on or off via configuration; for example, you may only want to insert any new records but not update any matching records, or vice versa (see [Using upsert mode](#using-upsert-mode) for usage details). **Not currently supported in the Spark I/O manager**.
+
+The write mode is set using the `write_mode` metadata key, which can be set using asset definition at deployment time, or at runtime within the asset definition body by using output metadata (see the examples in the next section).
+
+### Setting write mode in definition metadata
+
+<CodeExample path="docs_snippets/docs_snippets/integrations/iceberg/write_mode_append.py" language="python" />
+
+### Overriding definition metadata write mode with output metadata
+
+Setting write mode in output metadata overrides any write mode settings in the asset definition metadata:
+
+<CodeExample path="docs_snippets/docs_snippets/integrations/iceberg/write_mode_override.py" language="python" />
+
+### Using upsert mode
+
+**Note:** only supported in non-spark IO managers
+
+The Iceberg I/O manager supports upsert operations, which allow you to update existing rows and insert new rows in a single operation. This is useful for maintaining slowly changing dimensions or incrementally updating tables.
+
+#### Options
+
+Upsert options can be set at deployment time via asset definition metadata, or dynamically at runtime via output metadata. Upsert options set at runtime via `context.add_output_metadata()` take precedence over those set in definition metadata.
+
+**Required**:
+
+- `join_cols`: **list[str]** - list of columns that make up the join key for the upsert operation
+
+**Optional**:
+
+- `when_matched_update_all`: **bool** - Whether to update rows in the target table that join with the dataframe being upserted (default True)
+- `when_not_matched_insert_all`: **bool** - Whether to insert all rows from the upsert dataframe that do not join with the target table (default True)
+
+Any `upsert_options` set when `write_mode` is not set to `upsert` will be ignored, with a debug log message indicating the options were ignored. This allows a user to set the `write_mode` to `upsert` with `upsert_options` in the asset definition metadata while still being able to override the write mode in the output metadata.
+
+To use upsert mode, set the `write_mode` to `"upsert"` and provide `upsert_options` in the asset or output metadata:
+
+<CodeExample path="docs_snippets/docs_snippets/integrations/iceberg/upsert_mode_basic.py" language="python" />
+
+Upsert options set in definition metadata can be overridden at runtime using output metadata:
+
+<CodeExample path="docs_snippets/docs_snippets/integrations/iceberg/upsert_mode_dynamic.py" language="python" />
+
+The `UpsertOptions` `BaseModel` subclass can be used to represent upsert options metadata to provide deployment-time type validation:
+
+<CodeExample path="docs_snippets/docs_snippets/integrations/iceberg/upsert_mode_typed.py" language="python" />
 
 ## Allowing updates to schema and partitions
 

@@ -154,9 +154,6 @@ class ReconstructableRepository(
             container_context=self.container_context,
         )
 
-    def get_python_origin_id(self) -> str:
-        return self.get_python_origin().get_id()
-
     # Allow this to be hashed for use in `lru_cache`. This is needed because:
     # - `ReconstructableJob` uses `lru_cache`
     # - `ReconstructableJob` has a `ReconstructableRepository` attribute
@@ -312,9 +309,6 @@ class ReconstructableJob(  # pyright: ignore[reportIncompatibleVariableOverride]
 
     def get_python_origin(self) -> JobPythonOrigin:
         return JobPythonOrigin(self.job_name, self.repository.get_python_origin())
-
-    def get_python_origin_id(self) -> str:
-        return self.get_python_origin().get_id()
 
     def get_module(self) -> Optional[str]:
         """Return the module the job is found in, the origin is a module code pointer."""

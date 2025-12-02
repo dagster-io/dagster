@@ -144,6 +144,10 @@ def set_auto_materialize_paused(instance: DagsterInstance, paused: bool):
     )
 
 
+def _get_minimum_allowed_asset_daemon_interval() -> Optional[int]:
+    return int(os.getenv("DAGSTER_ASSET_DAEMON_MINIMUM_ALLOWED_MIN_INTERVAL", "0"))
+
+
 def _get_pre_sensor_auto_materialize_cursor(
     instance: DagsterInstance, full_asset_graph: Optional[BaseAssetGraph]
 ) -> AssetDaemonCursor:
@@ -597,7 +601,11 @@ class AssetDaemon(DagsterDaemon):
                     ),
                 )
                 instance.add_instigator_state(auto_materialize_state)
-            elif is_under_min_interval(auto_materialize_state, sensor):
+            elif is_under_min_interval(
+                auto_materialize_state,
+                sensor,
+                minimum_allowed_min_interval=_get_minimum_allowed_asset_daemon_interval(),
+            ):
                 continue
 
             self.instrument_elapsed(
@@ -644,9 +652,35 @@ class AssetDaemon(DagsterDaemon):
 
         result = {}
 
-        initial_cursor = asset_daemon_cursor_to_instigator_serialized_cursor(pre_sensor_cursor)
-
         for sensor, repo in sensors_and_repos:
+            selection = sensor.asset_selection
+            if not selection:
+                continue
+
+            repo_asset_graph = repo.asset_graph
+            resolved_keys = selection.resolve(repo_asset_graph) | selection.resolve_checks(
+                repo_asset_graph
+            )
+
+            serialized_cursor = None
+
+            if len(resolved_keys) > 0:
+                # filter down the cursor to just the keys targeted by the sensor
+                condition_cursors = [
+                    condition_cursor
+                    for condition_cursor in (pre_sensor_cursor.previous_condition_cursors or [])
+                    if condition_cursor.key in resolved_keys
+                ]
+
+                cursor_to_use = dataclasses.replace(
+                    pre_sensor_cursor,
+                    previous_condition_cursors=condition_cursors,
+                )
+
+                serialized_cursor = asset_daemon_cursor_to_instigator_serialized_cursor(
+                    cursor_to_use
+                )
+
             new_auto_materialize_state = InstigatorState(
                 sensor.get_remote_origin(),
                 InstigatorType.SENSOR,
@@ -657,7 +691,7 @@ class AssetDaemon(DagsterDaemon):
                 ),
                 SensorInstigatorData(
                     min_interval=sensor.min_interval_seconds,
-                    cursor=initial_cursor,
+                    cursor=serialized_cursor,
                     last_sensor_start_timestamp=get_current_timestamp(),
                     sensor_type=sensor.sensor_type,
                 ),
@@ -745,7 +779,11 @@ class AssetDaemon(DagsterDaemon):
             auto_materialize_instigator_state = check.not_none(
                 instance.get_instigator_state(sensor.get_remote_origin_id(), sensor.selector_id)
             )
-            if is_under_min_interval(auto_materialize_instigator_state, sensor):
+            if is_under_min_interval(
+                auto_materialize_instigator_state,
+                sensor,
+                minimum_allowed_min_interval=_get_minimum_allowed_asset_daemon_interval(),
+            ):
                 # check the since we might have been queued before processing
                 return
             else:
@@ -806,6 +844,7 @@ class AssetDaemon(DagsterDaemon):
                 f"Checking {num_target_entities} assets/checks and"
                 f" {num_auto_observe_assets} observable source"
                 f" asset{'' if num_auto_observe_assets == 1 else 's'}{print_group_name}"
+                f" in thread {threading.current_thread().name}"
             )
 
             if sensor:
@@ -952,6 +991,27 @@ class AssetDaemon(DagsterDaemon):
                 log_message="Automation condition daemon caught an error",
             )
 
+    def _add_auto_materialize_asset_evaluations_in_chunks(
+        self,
+        instance: DagsterInstance,
+        evaluation_id: int,
+        evaluations: list[AutomationConditionEvaluationWithRunIds],
+        logger: logging.Logger,
+        print_group_name: str,
+    ):
+        schedule_storage = check.not_none(instance.schedule_storage)
+        if schedule_storage.supports_auto_materialize_asset_evaluations:
+            chunk_size = int(os.getenv("DAGSTER_ASSET_DAEMON_ASSET_EVALUATIONS_CHUNK_SIZE", "500"))
+            for i in range(0, len(evaluations), chunk_size):
+                chunk = evaluations[i : i + chunk_size]
+                self._logger.info(
+                    f"Adding {len(chunk)} asset evaluations for evaluation {evaluation_id}{print_group_name}"
+                )
+                schedule_storage.add_auto_materialize_asset_evaluations(
+                    evaluation_id,
+                    chunk,
+                )
+
     async def _evaluate_auto_materialize_tick(
         self,
         tick_context: AutoMaterializeLaunchContext,
@@ -1044,11 +1104,22 @@ class AssetDaemon(DagsterDaemon):
                 evaluation.key: evaluation.with_run_ids(set()) for evaluation in evaluations
             }
 
+            self._logger.info(
+                "Tick produced"
+                f" {len(run_requests)} run{'s' if len(run_requests) != 1 else ''} and"
+                f" {len(evaluations_by_key)} asset"
+                f" evaluation{'s' if len(evaluations_by_key) != 1 else ''} for evaluation ID"
+                f" {evaluation_id}{print_group_name}"
+            )
+
             # Write the asset evaluations without run IDs first
             if schedule_storage.supports_auto_materialize_asset_evaluations:
-                schedule_storage.add_auto_materialize_asset_evaluations(
+                self._add_auto_materialize_asset_evaluations_in_chunks(
+                    instance,
                     evaluation_id,
                     list(evaluations_by_key.values()),
+                    self._logger,
+                    print_group_name,
                 )
                 check_for_debug_crash(debug_crash_flags, "ASSET_EVALUATIONS_ADDED")
 
@@ -1058,11 +1129,7 @@ class AssetDaemon(DagsterDaemon):
             ]
 
             self._logger.info(
-                "Tick produced"
-                f" {len(run_requests)} run{'s' if len(run_requests) != 1 else ''} and"
-                f" {len(evaluations_by_key)} asset"
-                f" evaluation{'s' if len(evaluations_by_key) != 1 else ''} for evaluation ID"
-                f" {evaluation_id}{print_group_name}"
+                f"Submitting {len(run_requests)} run{'s' if len(run_requests) != 1 else ''} for evaluation {evaluation_id}{print_group_name}"
             )
 
             # Fetch all data that requires the code server before writing the cursor, to minimize
@@ -1140,6 +1207,7 @@ class AssetDaemon(DagsterDaemon):
             debug_crash_flags=debug_crash_flags,
             remote_sensor=sensor,
             run_request_execution_data_cache=run_request_execution_data_cache,
+            print_group_name=print_group_name,
         )
 
         if schedule_storage.supports_auto_materialize_asset_evaluations:
@@ -1228,6 +1296,7 @@ class AssetDaemon(DagsterDaemon):
         debug_crash_flags: SingleInstigatorDebugCrashFlags,
         remote_sensor: Optional[RemoteSensor],
         run_request_execution_data_cache: dict[JobSubsetSelector, RunRequestExecutionData],
+        print_group_name: str,
     ):
         updated_evaluation_keys = set()
         check_after_runs_num = instance.get_tick_termination_check_interval()
@@ -1286,9 +1355,12 @@ class AssetDaemon(DagsterDaemon):
             evaluations_by_key[asset_key] for asset_key in updated_evaluation_keys
         ]
         if evaluations_to_update:
-            schedule_storage = check.not_none(instance.schedule_storage)
-            schedule_storage.add_auto_materialize_asset_evaluations(
-                evaluation_id, evaluations_to_update
+            self._add_auto_materialize_asset_evaluations_in_chunks(
+                instance,
+                evaluation_id,
+                evaluations_to_update,
+                self._logger,
+                print_group_name,
             )
 
         check_for_debug_crash(debug_crash_flags, "RUN_IDS_ADDED_TO_EVALUATIONS")
