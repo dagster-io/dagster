@@ -1,7 +1,8 @@
 ---
-description: Configure branch deployments for a Dagster project in Dagster+ using GitHub, GitLab, or the dagster-cloud CLI.
+description: Configure branch deployments for a Dagster project in Dagster+ Serverless or Hybrid using GitHub or GitLab.
 sidebar_position: 7310
-title: Configuring branch deployments
+sidebar_label: Configuring branch deployments
+title: Configuring branch deployments with GitHub or GitLab
 tags: [dagster-plus-feature]
 ---
 
@@ -18,11 +19,11 @@ Output created from a branch deployment -- such as a database, table, etc. -- wo
 
 :::
 
-## Configuring branch deployments for Dagster+ Serverless
+## Dagster+ Serverless
 
 Branch deployments are automatically configured for Serverless deployments when you configure CI/CD. For more information, see the [CI/CD configuration guide](/deployment/dagster-plus/deploying-code/configuring-ci-cd).
 
-## Configuring branch deployments for Dagster+ Hybrid
+## Dagster+ Hybrid
 
 :::info Prerequisites
 
@@ -42,7 +43,7 @@ Follow the [CI/CD configuration guide](/deployment/dagster-plus/deploying-code/c
 While you can use your existing production agent for branch deployments on Dagster+ Hybrid, we recommend creating a dedicated branch deployment agent. This ensures that your production instance isn't negatively impacted by the workload associated with branch deployments.
 
 <Tabs>
-  <TabItem value="ecs" label="Amazon ECS">
+<TabItem value="ecs" label="Amazon ECS">
 
 1. **Deploy an ECS agent to serve your branch deployments.**
 
@@ -64,8 +65,8 @@ While you can use your existing production agent for branch deployments on Dagst
 
 ![Show this in the UI](/images/dagster-plus/features/branch-deployments/aws-iam-user-keys.png)
 
-  </TabItem>
-  <TabItem value="docker" label="Docker">
+</TabItem>
+<TabItem value="docker" label="Docker">
 
 1. Set up a new Docker agent. For instructions, see the [Docker agent setup guide](/deployment/dagster-plus/hybrid/docker).
 2. After the agent is set up, modify the `dagster.yaml` file as follows:
@@ -82,8 +83,8 @@ While you can use your existing production agent for branch deployments on Dagst
   title="dagster.yaml"
 />
 
-  </TabItem>
-  <TabItem value="k8s" label="Kubernetes" default>
+</TabItem>
+<TabItem value="k8s" label="Kubernetes" default>
 
 1. Set up a new Kubernetes agent. For instructions, see the [Kubernetes agent setup guide](/deployment/dagster-plus/hybrid/kubernetes).
 
@@ -91,7 +92,7 @@ While you can use your existing production agent for branch deployments on Dagst
 
 <CodeExample path="docs_snippets/docs_snippets/dagster-plus/deployment/branch-deployments/helm.yaml" language="yaml" />
 
-  </TabItem>
+</TabItem>
 </Tabs>
 
 ### Step 3: Update `build.yaml` with the branch deployment agent
@@ -101,7 +102,7 @@ While you can use your existing production agent for branch deployments on Dagst
 ### Step 4: Add secrets to your Git provider
 
 <Tabs>
-  <TabItem value="github" label="GitHub">
+<TabItem value="github" label="GitHub">
 
 1. In your GitHub repository, click the **Settings** tab.
 2. In the **Security** section of the sidebar, click **Secrets > Actions**.
@@ -113,27 +114,27 @@ While you can use your existing production agent for branch deployments on Dagst
 Repeat steps 3-6 for each of the secrets required for the registry used by the agent you created in step 1. See below for more details:
 
 <Tabs>
-  <TabItem value="docker" label="Docker">
+<TabItem value="docker" label="Docker">
 
 - `DAGSTER_CLOUD_URL` - Your Dagster+ base URL (`https://my_org.dagster.cloud`)
 - `DOCKERHUB_USERNAME` - Your DockerHub username
 - `DOCKERHUB_TOKEN` - A DockerHub [access token](https://docs.docker.com/docker-hub/access-tokens/#create-an-access-token)
 
-  </TabItem>
-  <TabItem value="ecr" label="Amazon ECR">
+</TabItem>
+<TabItem value="ecr" label="Amazon ECR">
 
 - `DAGSTER_CLOUD_URL` - Your Dagster+ base URL (`https://my_org.dagster.cloud`)
 - `AWS_ACCESS_KEY` - The **Access key ID** of the AWS IAM user you created in step 3
 - `AWS_SECRET_ACCESS_KEY` - The **Secret access key** of the AWS IAM user you created in step 3
 - `AWS_REGION` - The AWS region where your ECR registry is located
 
-  </TabItem>
-  <TabItem value="gcr" label="Google Container Registry (GCR)">
+</TabItem>
+<TabItem value="gcr" label="Google Container Registry (GCR)">
 
 - `DAGSTER_CLOUD_URL` - Your Dagster+ base URL (`https://my_org.dagster.cloud`)
 - `GCR_JSON_KEY` - Your GCR JSON credentials
 
-  </TabItem>
+</TabItem>
 </Tabs>
 </TabItem>
 <TabItem value="gitlab" label="GitLab">
@@ -149,27 +150,27 @@ Repeat steps 3-6 for each of the secrets required for the registry used by the a
 Repeat steps 3-6 for each of the secrets required for the registry used by the agent you created in step 1. See below for more details:
 
 <Tabs>
-  <TabItem value="docker" label="Docker">
+<TabItem value="docker" label="Docker">
 
 - `DAGSTER_CLOUD_URL` - Your Dagster+ base URL (`https://my_org.dagster.cloud`)
 - `DOCKERHUB_USERNAME` - Your DockerHub username
 - `DOCKERHUB_TOKEN` - A DockerHub [access token](https://docs.docker.com/docker-hub/access-tokens/#create-an-access-token)
 
-  </TabItem>
-  <TabItem value="ecr" label="Amazon ECR">
+</TabItem>
+<TabItem value="ecr" label="Amazon ECR">
 
 - `DAGSTER_CLOUD_URL` - Your Dagster+ base URL (`https://my_org.dagster.cloud`)
 - `AWS_ACCESS_KEY` - The **Access key ID** of the AWS IAM user you created in step 3
 - `AWS_SECRET_ACCESS_KEY` - The **Secret access key** of the AWS IAM user you created in step 3
 - `AWS_REGION` - The AWS region where your ECR registry is located
 
-  </TabItem>
-  <TabItem value="gcr" label="Google Container Registry (GCR)">
+</TabItem>
+<TabItem value="gcr" label="Google Container Registry (GCR)">
 
 - `DAGSTER_CLOUD_URL` - Your Dagster+ base URL (`https://my_org.dagster.cloud`)
 - `GCR_JSON_KEY` - Your GCR JSON credentials
 
-  </TabItem>
+</TabItem>
 </Tabs>
 
 </TabItem>
@@ -180,14 +181,14 @@ Repeat steps 3-6 for each of the secrets required for the registry used by the a
 Once configured, branch deployments can be accessed:
 
 <Tabs>
-  <TabItem value="From a GitHub pull request">
+<TabItem value="From a GitHub pull request">
 
 Every pull request in the repository contains a **View in Cloud** link, which will open a branch deployment - or a preview of the changes - in Dagster+.
 
 ![View in Cloud preview link highlighted in a GitHub pull request](/images/dagster-plus/features/branch-deployments/github-cloud-preview-link.png)
 
-  </TabItem>
-  <TabItem value="In Dagster+">
+</TabItem>
+<TabItem value="In Dagster+">
 
 :::note
 
@@ -199,7 +200,7 @@ You can also access branch deployments directly in Dagster+ from the **deploymen
 
 ![Highlighted branch deployment in the Dagster+ deployment switcher](/images/dagster-plus/full-deployments/deployment-switcher.png)
 
-  </TabItem>
+</TabItem>
 </Tabs>
 
 ## Changing the base deployment

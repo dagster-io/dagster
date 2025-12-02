@@ -1,9 +1,12 @@
 ---
-title: Configuring branch deployments manually (advanced)
-description: TK
+title: Configuring branch deployments manually with the dagster-cloud CLI (advanced)
+sidebar_label: Configuring branch deployments manually (advanced)
+description: Configure branch deployments for a Dagster project in Dagster+ Serverless or Hybrid using the dagster-cloud CLI.
+tags: [dagster-plus-feature]
+sidebar_position: 7320
 ---
 
-You can manually execute `dagster-cloud` CLI commands to deploy and manage branch deployments. This is a more advanced option than the other methods.
+You can manually execute `dagster-cloud` CLI commands to deploy and manage branch deployments. This is a more advanced option than configuring branch deployments with GitHub or GitLab.
 
 This approach may be a good fit if:
 
@@ -13,19 +16,24 @@ This approach may be a good fit if:
 
 Whenever the state of your branch is updated, Dagster+ expects the following steps to occur:
 
-1. A new image containing your code and requirements is built on the branch. Refer to [Managing code locations](/guides/build/projects) to learn more.
-
+1. A new image containing your code and requirements is built on the branch.
 2. The new image is pushed to a Docker registry accessible to your agent.
 
 The details of how this is accomplished depend on your specific CI/CD solution.
 
 :::note
 
-The following examples assume the registry URL and image tag are stored in the `LOCATION_REGISTRY_URL` and `IMAGE_TAG` environment variables.
+The following guide assumes the registry URL and image tag are stored in the `LOCATION_REGISTRY_URL` and `IMAGE_TAG` environment variables.
 
 :::
 
-## Step 1: Generate a Dagster+ agent token\*\*
+## Prerequisites
+
+To complete the steps in this guide, you will need:
+- [Organization Admin permissions](/deployment/dagster-plus/authentication-and-access-control/rbac/user-roles-permissions#agent-tokens) in Dagster+
+- To install the [`dagster-cloud` CLI](/api/clis/dagster-cloud-cli/installing-and-configuring) wherever you will be running your CI/CD process
+
+## Step 1: Generate a Dagster+ agent token
 
 The first step is to generate a token for the Dagster+ agent. The Dagster+ agent will use this token to authenticate to the agent API.
 
