@@ -24,6 +24,7 @@ from dagster import (
 from dagster._check import CheckError
 from dagster._core.assets import AssetDetails
 from dagster._core.definitions.asset_checks.asset_check_evaluation import (
+    AssetCheckEvaluation,
     AssetCheckEvaluationPlanned,
     AssetCheckEvaluationTargetMaterializationData,
 )
@@ -45,6 +46,7 @@ from dagster._core.definitions.events import (
 )
 from dagster._core.definitions.job_base import InMemoryJob
 from dagster._core.definitions.partitions.context import partition_loading_context
+from dagster._core.definitions.partitions.definition import StaticPartitionsDefinition
 from dagster._core.definitions.partitions.snap import PartitionsSnap
 from dagster._core.definitions.partitions.subset import AllPartitionsSubset
 from dagster._core.event_api import EventLogCursor
@@ -72,7 +74,10 @@ from dagster._core.remote_origin import (
     RemoteJobOrigin,
     RemoteRepositoryOrigin,
 )
-from dagster._core.storage.asset_check_execution_record import AssetCheckExecutionRecordStatus
+from dagster._core.storage.asset_check_execution_record import (
+    AssetCheckExecutionRecordStatus,
+    AssetCheckPartitionStatusCacheValue,
+)
 from dagster._core.storage.event_log import InMemoryEventLogStorage, SqlEventLogStorage
 from dagster._core.storage.event_log.base import EventLogStorage
 from dagster._core.storage.event_log.migration import (
@@ -477,6 +482,9 @@ class TestEventLogStorage:
 
     def can_set_concurrency_defaults(self):
         return False
+
+    def can_test_asset_checks(self) -> bool:
+        return True
 
     def supports_offset_cursor_queries(self):
         return True
@@ -5867,6 +5875,9 @@ class TestEventLogStorage:
         self,
         storage: EventLogStorage,
     ):
+        if not self.can_test_asset_checks():
+            pytest.skip("Asset check tests not supported for this storage type")
+
         run_id_1, run_id_2, run_id_3 = [make_new_run_id() for _ in range(3)]
         check_key_1 = dg.AssetCheckKey(dg.AssetKey(["my_asset"]), "my_check")
         check_key_2 = dg.AssetCheckKey(dg.AssetKey(["my_asset"]), "my_check_2")
@@ -6040,6 +6051,9 @@ class TestEventLogStorage:
         assert len(latest_checks) == 0
 
     def test_duplicate_asset_check_planned_events(self, storage: EventLogStorage):
+        if not self.can_test_asset_checks():
+            pytest.skip("Asset check tests not supported for this storage type")
+
         run_id = make_new_run_id()
         for _ in range(2):
             storage.store_event(
@@ -6993,10 +7007,8 @@ class TestEventLogStorage:
         ).results == ["baz"]
 
     def test_asset_check_partition_storage(self, storage: EventLogStorage):
-        """Test that partitioned asset check events are stored in asset_check_partitions table."""
-        from dagster._core.storage.asset_check_execution_record import (
-            AssetCheckExecutionRecordStatus,
-        )
+        if not self.can_test_asset_checks():
+            pytest.skip("Asset check tests not supported for this storage type")
 
         asset_key = dg.AssetKey(["test_asset"])
         check_name = "test_check"
@@ -7083,11 +7095,8 @@ class TestEventLogStorage:
         assert record.last_planned_run_id == run_id
 
     def test_asset_check_cached_value(self, storage: EventLogStorage):
-        """Test get_asset_check_cached_value and update_asset_check_cached_value methods."""
-        from dagster._core.definitions.partitions.definition import StaticPartitionsDefinition
-        from dagster._core.storage.asset_check_execution_record import (
-            AssetCheckPartitionStatusCacheValue,
-        )
+        if not self.can_test_asset_checks():
+            pytest.skip("Asset check tests not supported for this storage type")
 
         asset_key = dg.AssetKey(["test_asset"])
         check_key = dg.AssetCheckKey(asset_key=asset_key, name="test_check")
@@ -7108,9 +7117,8 @@ class TestEventLogStorage:
         assert retrieved_value.latest_storage_id == cache_value.latest_storage_id
 
     def test_asset_check_partition_records_filtering(self, storage: EventLogStorage):
-        """Test get_asset_check_partition_records with after_storage_id filtering."""
-        from dagster._core.events import DagsterEvent
-
+        if not self.can_test_asset_checks():
+            pytest.skip("Asset check tests not supported for this storage type")
         asset_key = dg.AssetKey(["test_asset"])
         check_key = dg.AssetCheckKey(asset_key=asset_key, name="test_check")
 
@@ -7176,11 +7184,8 @@ class TestEventLogStorage:
         assert combined_records[0].partition_key == "c"
 
     def test_asset_check_summary_records_from_summary_tables(self, storage: EventLogStorage):
-        from dagster._core.definitions.asset_checks.asset_check_evaluation import (
-            AssetCheckEvaluation,
-        )
-        from dagster._core.definitions.asset_checks.asset_check_spec import AssetCheckSeverity
-        from dagster._core.events import DagsterEvent
+        if not self.can_test_asset_checks():
+            pytest.skip("Asset check tests not supported for this storage type")
 
         # Create multiple check keys
         check_keys = [
