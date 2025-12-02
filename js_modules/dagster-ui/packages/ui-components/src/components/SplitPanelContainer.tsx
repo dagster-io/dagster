@@ -13,6 +13,10 @@ interface SplitPanelContainerProps {
   firstMinSize?: number;
   secondMinSize?: number;
   second: React.ReactNode | null; // Note: pass null to hide / animate away the second panel
+
+  // Prevents an extra 1px line when the split is 0% or 100%. Should only be used when
+  // there is another mechanism for re-opening the hidden panel. (Eg: expand/collapse button)
+  hideHandleWhenCollapsed?: boolean;
 }
 
 export type SplitPanelContainerHandle = {
@@ -90,12 +94,15 @@ export const SplitPanelContainer = forwardRef<SplitPanelContainerHandle, SplitPa
       }
     }
 
+    const hideHandle =
+      props.hideHandleWhenCollapsed && (firstSize <= 0 || firstSize >= 100) && !resizing;
+
     return (
       <Container axis={axis} className="split-panel-container" resizing={resizing}>
         <div className="split-panel" style={firstPaneStyles}>
           {first}
         </div>
-        {first && second ? (
+        {first && second && !hideHandle ? (
           <PanelDivider
             axis={axis}
             resizing={resizing}
