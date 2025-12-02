@@ -184,7 +184,7 @@ def scaffold_code_location_command(context, name: str):
     help="Controls whether the project name can conflict with an existing PyPI package.",
 )
 @superseded(
-    additional_warn_text="Use 'dg scaffold' instead.",
+    additional_warn_text="Use 'create-dagster project' instead.",
     emit_runtime_warning=True,
 )
 def scaffold_command(
