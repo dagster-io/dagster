@@ -2,7 +2,7 @@
 title: Dagster & Sigma (Component)
 sidebar_label: Sigma
 description: The dagster-sigma library provides a SigmaComponent, which can be used to represent Sigma assets as assets in Dagster.
-tags: [dagster-supported, bi]
+tags: [dagster-supported, bi, component]
 source: https://github.com/dagster-io/dagster/tree/master/python_modules/libraries/dagster-sigma
 pypi: https://pypi.org/project/dagster-sigma
 sidebar_custom_props:

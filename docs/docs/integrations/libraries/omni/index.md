@@ -2,7 +2,7 @@
 title: Dagster & Omni (Component)
 sidebar_label: Omni
 description: The dagster-omni library provides an OmniComponent, which can be used to represent Omni documents as assets in Dagster.
-tags: [dagster-supported, bi]
+tags: [dagster-supported, bi, component]
 source: https://github.com/dagster-io/dagster/tree/master/python_modules/libraries/dagster-omni
 pypi: https://pypi.org/project/dagster-omni
 sidebar_custom_props:

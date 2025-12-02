@@ -227,11 +227,16 @@ class Component(ABC):
                 pass
 
     See Also:
-        - :py:class:`dagster.Definitions`: The object returned by ``build_defs()``
-        - :py:class:`dagster.ComponentLoadContext`: Context provided to ``build_defs()``
-        - :py:class:`dagster.components.resolved.base.Resolvable`: Base for configurable components
-        - :py:class:`dagster.Model`: Recommended base class for component schemas
-        - :py:func:`dagster.scaffold_with`: Decorator for custom scaffolding
+        * :py:class:`dagster.Definitions`
+            The object returned by ``build_defs()``
+        * :py:class:`dagster.ComponentLoadContext`
+            Context provided to ``build_defs()``
+        * :py:class:`dagster.components.resolved.base.Resolvable`
+            Base for configurable components
+        * :py:class:`dagster.Model`
+            Recommended base class for component schemas
+        * :py:func:`dagster.scaffold_with`
+            Decorator for custom scaffolding
 
     """
 
@@ -275,10 +280,29 @@ class Component(ABC):
     @classmethod
     def load(cls, attributes: Optional[BaseModel], context: "ComponentLoadContext") -> Self:
         if issubclass(cls, Resolvable):
+            from dagster.components.resolved.scopes import DeprecatedScope, LoadContextScope
+
+            # Wrap the context to expose it in templates
+            template_ctx = LoadContextScope(context)
+
             context_with_injected_scope = context.with_rendering_scope(
                 {
-                    "load_component_at_path": context.load_component_at_path,
-                    "build_defs_at_path": context.build_defs_at_path,
+                    # New namespaced access
+                    "context": template_ctx,
+                    # Backward compatibility - deprecated, will be removed in 1.13.0
+                    "project_root": DeprecatedScope(
+                        "project_root", "context.project_root", template_ctx.project_root
+                    ),
+                    "load_component_at_path": DeprecatedScope(
+                        "load_component_at_path",
+                        "context.load_component",
+                        context.load_component_at_path,
+                    ),
+                    "build_defs_at_path": DeprecatedScope(
+                        "build_defs_at_path",
+                        "context.build_defs",
+                        context.build_defs_at_path,
+                    ),
                 }
             )
             return (

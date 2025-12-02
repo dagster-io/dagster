@@ -18,11 +18,7 @@ from dagster._core.definitions.reconstruct import ReconstructableJob, Reconstruc
 from dagster._core.definitions.repository_definition import RepositoryDefinition
 from dagster._core.definitions.selector import JobSubsetSelector
 from dagster._core.definitions.timestamp import TimestampWithTimezone
-from dagster._core.errors import (
-    DagsterInvalidSubsetError,
-    DagsterInvariantViolationError,
-    DagsterUserCodeProcessError,
-)
+from dagster._core.errors import DagsterInvalidSubsetError, DagsterUserCodeProcessError
 from dagster._core.execution.api import create_execution_plan
 from dagster._core.execution.plan.state import KnownExecutionState
 from dagster._core.instance import DagsterInstance
@@ -318,14 +314,16 @@ class CodeLocation(AbstractContextManager):
 
     @property
     @abstractmethod
-    def repository_code_pointer_dict(self) -> Mapping[str, CodePointer]:
+    def repository_code_pointer_dict(self) -> Mapping[str, Optional[CodePointer]]:
         pass
 
-    def get_repository_python_origin(self, repository_name: str) -> "RepositoryPythonOrigin":
-        if repository_name not in self.repository_code_pointer_dict:
-            raise DagsterInvariantViolationError(f"Unable to find repository {repository_name}.")
+    def get_repository_python_origin(
+        self, repository_name: str
+    ) -> Optional["RepositoryPythonOrigin"]:
+        code_pointer = self.repository_code_pointer_dict.get(repository_name)
+        if not code_pointer:
+            return None
 
-        code_pointer = self.repository_code_pointer_dict[repository_name]
         return RepositoryPythonOrigin(
             executable_path=self.executable_path or sys.executable,
             code_pointer=code_pointer,
@@ -414,7 +412,7 @@ class InProcessCodeLocation(CodeLocation):
         return self._origin.entry_point
 
     @property
-    def repository_code_pointer_dict(self) -> Mapping[str, CodePointer]:
+    def repository_code_pointer_dict(self) -> Mapping[str, Optional[CodePointer]]:
         return self._repository_code_pointer_dict
 
     def _get_reconstructable_repository(self, repository_name: str) -> ReconstructableRepository:
@@ -801,8 +799,8 @@ class GrpcServerCodeLocation(CodeLocation):
         return self._container_context
 
     @property
-    def repository_code_pointer_dict(self) -> Mapping[str, CodePointer]:
-        return cast("Mapping[str, CodePointer]", self._repository_code_pointer_dict)
+    def repository_code_pointer_dict(self) -> Mapping[str, Optional[CodePointer]]:
+        return cast("Mapping[str, Optional[CodePointer]]", self._repository_code_pointer_dict)
 
     @property
     def executable_path(self) -> Optional[str]:

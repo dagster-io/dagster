@@ -145,12 +145,7 @@ export const CalculateUnsyncedDialog = React.memo(
                             });
                           }}
                         />
-                        <Box
-                          as="label"
-                          htmlFor={`checkbox-${key}`}
-                          flex={{alignItems: 'center', gap: 4}}
-                          style={{cursor: 'pointer'}}
-                        >
+                        <Box flex={{alignItems: 'center', gap: 4}} style={{cursor: 'pointer'}}>
                           <Box style={{overflow: 'hidden'}}>
                             <MiddleTruncate text={displayNameForAssetKey(item)} />
                           </Box>

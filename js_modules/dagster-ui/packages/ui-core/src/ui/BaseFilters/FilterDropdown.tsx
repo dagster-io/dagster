@@ -3,7 +3,6 @@ import {
   Button,
   Colors,
   Icon,
-  IconWrapper,
   Menu,
   MenuItem,
   Popover,
@@ -381,7 +380,7 @@ export const FilterDropdownButton = React.memo(({filters, label}: FilterDropdown
 });
 
 const DropdownMenuContainer = styled.div`
-  ${IconWrapper} {
+  .iconGlobal {
     margin-left: 0 !important;
   }
 `;

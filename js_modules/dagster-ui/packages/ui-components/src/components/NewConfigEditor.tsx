@@ -27,6 +27,7 @@ import {
 } from './configeditor/codemirror-yaml/mode';
 import {ConfigEditorHelpContext} from './configeditor/types/ConfigEditorHelpContext';
 import {ConfigSchema} from './configeditor/types/ConfigSchema';
+import {FontFamily} from './styles';
 
 export {isHelpContextEqual} from './configeditor/isHelpContextEqual';
 export {ConfigEditorHelp} from './configeditor/ConfigEditorHelp';
@@ -68,6 +69,30 @@ const ConfigEditorStyle = createGlobalStyle`
     height: initial;
     position: absolute;
     inset: 0;
+  }
+
+  .dagster.CodeMirror-hints {
+    background-color: ${Colors.backgroundDefault()};
+    box-shadow: 2px 3px 5px ${Colors.shadowDefault()};
+    border: none;
+    font-family: ${FontFamily.monospace};
+    font-size: 14px;
+    z-index: 100;
+    border-radius: 8px;
+    overflow: hidden;
+    padding: 2px;
+    margin-top: 2px;
+  }
+
+  .dagster .CodeMirror-hint {
+    border-radius: 6px;
+    padding: 4px 8px;
+    color: ${Colors.textDefault()};
+  }
+
+  .dagster .CodeMirror-hint-active {
+    background-color: ${Colors.backgroundBlue()};
+    color: ${Colors.textDefault()};
   }
 `;
 

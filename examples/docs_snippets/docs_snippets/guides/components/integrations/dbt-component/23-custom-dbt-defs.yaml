@@ -1,0 +1,11 @@
+type: my_project.lib.custom_dbt_component.CustomDbtProjectComponent
+
+template_vars_module: .template_vars
+attributes:
+  project: '{{ context.project_root }}/dbt'
+  select: "customers"
+post_processing:
+  assets:
+    - target: "*"
+      attributes:
+        partitions_def: "{{ daily_partitions_def }}"

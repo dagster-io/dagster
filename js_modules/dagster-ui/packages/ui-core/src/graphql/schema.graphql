@@ -1797,6 +1797,7 @@ type WorkspaceLocationEntry {
   defsStateInfo: DefsStateInfo
   permissions: [Permission!]!
   featureFlags: [FeatureFlag!]!
+  definitionsSource: DefinitionsSource!
 }
 
 union RepositoryLocationOrLoadError = RepositoryLocation | PythonError
@@ -1815,6 +1816,11 @@ type Permission {
 type FeatureFlag {
   name: String!
   enabled: Boolean!
+}
+
+enum DefinitionsSource {
+  CODE_SERVER
+  CONNECTION
 }
 
 type ReloadWorkspaceMutation {
@@ -4015,6 +4021,14 @@ type AutomationConditionEvaluationNode {
   isPartitioned: Boolean!
   childUniqueIds: [String!]!
   operatorType: String!
+  sinceMetadata: SinceConditionMetadata
+}
+
+type SinceConditionMetadata {
+  triggerEvaluationId: Int
+  triggerTimestamp: Float
+  resetEvaluationId: Int
+  resetTimestamp: Float
 }
 
 type Mutation {

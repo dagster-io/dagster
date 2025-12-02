@@ -26,8 +26,16 @@ from dagster.components.utils.translation import (
 from dagster_shared import check
 from dagster_shared.serdes.objects.models.defs_state_info import DefsStateManagementType
 
-from dagster_dbt.asset_decorator import dbt_assets
-from dagster_dbt.asset_utils import DBT_DEFAULT_EXCLUDE, DBT_DEFAULT_SELECT, get_node
+from dagster_dbt.asset_utils import (
+    DAGSTER_DBT_EXCLUDE_METADATA_KEY,
+    DAGSTER_DBT_SELECT_METADATA_KEY,
+    DAGSTER_DBT_SELECTOR_METADATA_KEY,
+    DBT_DEFAULT_EXCLUDE,
+    DBT_DEFAULT_SELECT,
+    DBT_DEFAULT_SELECTOR,
+    build_dbt_specs,
+    get_node,
+)
 from dagster_dbt.components.dbt_project.scaffolder import DbtProjectComponentScaffolder
 from dagster_dbt.core.resource import DbtCliResource
 from dagster_dbt.dagster_dbt_translator import (
@@ -192,6 +200,13 @@ class DbtProjectComponent(StateBackedComponent, dg.Resolvable):
             examples=["tag:skip_dagster"],
         ),
     ] = DBT_DEFAULT_EXCLUDE
+    selector: Annotated[
+        str,
+        Resolver.default(
+            description="The dbt selector for models in the project you want to include.",
+            examples=["custom_selector"],
+        ),
+    ] = DBT_DEFAULT_SELECTOR
     translation: Annotated[
         Optional[TranslationFn[Mapping[str, Any]]],
         TranslationFnResolver(template_vars_for_translation_fn=lambda data: {"node": data}),
@@ -217,9 +232,36 @@ class DbtProjectComponent(StateBackedComponent, dg.Resolvable):
     @property
     def defs_state_config(self) -> DefsStateConfig:
         return DefsStateConfig(
-            key=f"{self.__class__.__name__}[{self._project_manager.defs_state_discriminator}]",
+            key=f"DbtProjectComponent[{self._project_manager.defs_state_discriminator}]",
             management_type=DefsStateManagementType.LOCAL_FILESYSTEM,
             refresh_if_dev=self.prepare_if_dev,
+        )
+
+    @property
+    def op_config_schema(self) -> Optional[type[dg.Config]]:
+        return None
+
+    @property
+    def config_cls(self) -> Optional[type[dg.Config]]:
+        """Internal property that returns the config schema for the op.
+
+        Delegates to op_config_schema for backwards compatibility and consistency
+        with other component types.
+        """
+        return self.op_config_schema
+
+    def _get_op_spec(self, project: DbtProject) -> OpSpec:
+        default = self.op or OpSpec(name=project.name)
+        # always inject required tags
+        return default.model_copy(
+            update=dict(
+                tags={
+                    **(default.tags or {}),
+                    **({DAGSTER_DBT_SELECT_METADATA_KEY: self.select} if self.select else {}),
+                    **({DAGSTER_DBT_EXCLUDE_METADATA_KEY: self.exclude} if self.exclude else {}),
+                    **({DAGSTER_DBT_SELECTOR_METADATA_KEY: self.selector} if self.selector else {}),
+                }
+            )
         )
 
     @cached_property
@@ -332,15 +374,27 @@ class DbtProjectComponent(StateBackedComponent, dg.Resolvable):
 
         res_ctx = context.resolution_context
 
-        @dbt_assets(
-            manifest=project.manifest_path,
-            project=project,
-            name=self.op.name if self.op else project.name,
-            op_tags=self.op.tags if self.op else None,
-            dagster_dbt_translator=self.translator,
+        asset_specs, check_specs = build_dbt_specs(
+            translator=validate_translator(self.translator),
+            manifest=validate_manifest(project.manifest_path),
             select=self.select,
             exclude=self.exclude,
-            backfill_policy=self.op.backfill_policy if self.op else None,
+            selector=self.selector,
+            project=project,
+            io_manager_key=None,
+        )
+        op_spec = self._get_op_spec(project)
+
+        @dg.multi_asset(
+            specs=asset_specs,
+            check_specs=check_specs,
+            can_subset=True,
+            name=op_spec.name,
+            op_tags=op_spec.tags,
+            backfill_policy=op_spec.backfill_policy,
+            pool=op_spec.pool,
+            config_schema=self.config_cls.to_fields_dict() if self.config_cls else None,
+            allow_arbitrary_check_specs=self.translator.settings.enable_source_tests_as_checks,
         )
         def _fn(context: dg.AssetExecutionContext):
             with _set_resolution_context(res_ctx):

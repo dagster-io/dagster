@@ -17,6 +17,7 @@ from dagster._core.workspace.workspace import (
     CodeLocationEntry,
     CodeLocationLoadStatus,
     CurrentWorkspace,
+    DefinitionsSource,
 )
 
 
@@ -143,6 +144,7 @@ def _make_location_entry(defs_attr: str, instance: DagsterInstance):
         display_metadata={},
         update_timestamp=time.time(),
         version_key="test",
+        definitions_source=DefinitionsSource.CODE_SERVER,
     )
 
 

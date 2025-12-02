@@ -60,12 +60,14 @@ If release name contains chart name it will be used as a full name.
 {{- if $_.Values.dagsterWebserver.pathPrefix }} --path-prefix {{ $_.Values.dagsterWebserver.pathPrefix }} {{- end -}}
 {{- with $_.Values.dagsterWebserver.logLevel }} --log-level {{ . }} {{- end -}}
 {{- if .webserverReadOnly }} --read-only {{- end -}}
+{{- with $_.Values.dagsterWebserver.logFormat }} --log-format {{ . }} {{- end -}}
 {{- end -}}
 
 {{- define "dagster.dagsterDaemon.daemonCommand" -}}
 {{- $userDeployments := index .Values "dagster-user-deployments" -}}
 dagster-daemon run
 {{- if $userDeployments.enabled }} -w /dagster-workspace/workspace.yaml {{- end -}}
+{{- with .Values.dagsterDaemon.logFormat }} --log-format {{ . }} {{- end -}}
 {{- end -}}
 
 {{- define "dagster.webserver.fullname" -}}

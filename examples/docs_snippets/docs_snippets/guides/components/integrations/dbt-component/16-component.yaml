@@ -2,8 +2,8 @@ type: dagster.PythonScriptComponent
 
 attributes:
   execution:
-    path: my_script.py
+    path: export_customers.py
   assets:
     - key: customers_export
       deps:
-        - "{{ load_component_at_path('dbt_ingest').asset_key_for_model('customers') }}"
+        - "{{ context.load_component('dbt_ingest').asset_key_for_model('customers') }}"

@@ -86,13 +86,16 @@ def reset_schedule(
 ) -> "GrapheneScheduleStateResult":
     from dagster_graphql.schema.instigation import GrapheneInstigationState
     from dagster_graphql.schema.schedules import GrapheneScheduleStateResult
+    from dagster_graphql.schema.schedules.schedules import GrapheneScheduleNotFoundError
 
     check.inst_param(schedule_selector, "schedule_selector", ScheduleSelector)
 
-    location = graphene_info.context.get_code_location(schedule_selector.location_name)
-    repository = location.get_repository(schedule_selector.repository_name)
+    schedule = graphene_info.context.get_schedule(schedule_selector)
+    if not schedule:
+        raise UserFacingGraphQLError(
+            GrapheneScheduleNotFoundError(schedule_name=schedule_selector.schedule_name)
+        )
 
-    schedule = repository.get_schedule(schedule_selector.schedule_name)
     stored_state = graphene_info.context.instance.reset_schedule(schedule)
     schedule_state = schedule.get_current_instigator_state(stored_state)
 

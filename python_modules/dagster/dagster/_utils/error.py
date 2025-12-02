@@ -177,7 +177,7 @@ def serializable_error_info_from_exc_info(
 def unwrap_user_code_error(error_info: SerializableErrorInfo) -> SerializableErrorInfo:
     """Extracts the underlying error from the passed error, if it is a DagsterUserCodeLoadError."""
     if error_info.cls_name == "DagsterUserCodeLoadError":
-        return unwrap_user_code_error(error_info.cause)
+        return unwrap_user_code_error(check.not_none(error_info.cause))
     return error_info
 
 

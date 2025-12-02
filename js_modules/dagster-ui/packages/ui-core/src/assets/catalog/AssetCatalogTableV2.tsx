@@ -1,6 +1,7 @@
 import {
   Body,
   Box,
+  Button,
   Colors,
   Icon,
   MenuItem,
@@ -8,12 +9,15 @@ import {
   Popover,
   Select,
   Skeleton,
-  Subtitle1,
+  SplitPanelContainer,
+  SplitPanelContainerHandle,
   Tag,
+  Tooltip,
   UnstyledButton,
+  getFirstPanelSizeFromStorage,
   ifPlural,
 } from '@dagster-io/ui-components';
-import React, {useCallback, useEffect, useMemo, useState} from 'react';
+import React, {useCallback, useEffect, useMemo, useRef, useState} from 'react';
 import {useRouteMatch} from 'react-router-dom';
 import {useSetRecoilState} from 'recoil';
 import {CreateCatalogViewButton} from 'shared/assets/CreateCatalogViewButton.oss';
@@ -24,6 +28,7 @@ import {AssetCatalogInsights} from 'shared/assets/insights/AssetCatalogInsights.
 import {useFavoriteAssets} from 'shared/assets/useFavoriteAssets.oss';
 
 import {AssetCatalogAssetGraph} from './AssetCatalogAssetGraph';
+import {AssetCatalogTableSidebar} from './AssetCatalogTableSidebar';
 import {
   AssetCatalogV2VirtualizedTable,
   AssetCatalogV2VirtualizedTableProps,
@@ -34,6 +39,7 @@ import {isHealthGroupBy, useAssetCatalogGroupAndSortBy} from './useAssetCatalogG
 import {useFullScreen} from '../../app/AppTopNav/AppTopNavContext';
 import {PythonErrorInfo} from '../../app/PythonErrorInfo';
 import {currentPageAtom, useTrackEvent} from '../../app/analytics';
+import {useFeatureFlags} from '../../app/useFeatureFlags';
 import {useAssetsHealthData} from '../../asset-data/AssetHealthDataProvider';
 import {tokenForAssetKey} from '../../asset-graph/Utils';
 import {useAssetSelectionInput} from '../../asset-selection/input/useAssetSelectionInput';
@@ -48,6 +54,8 @@ import {AssetsEmptyState} from '../AssetsEmptyState';
 import {LaunchAssetExecutionButton} from '../LaunchAssetExecutionButton';
 import {asAssetKeyInput} from '../asInput';
 import {AssetTableFragment} from '../types/AssetTableFragment.types';
+
+const SPLIT_PANEL_IDENTIFIER = 'asset-catalog-table';
 
 export const AssetCatalogTableV2 = React.memo(() => {
   const {assets, loading: assetsLoading, error} = useAllAssets();
@@ -230,6 +238,8 @@ export const AssetCatalogTableV2 = React.memo(() => {
             grouped={groupedAndSorted}
             loading={loading}
             selectionLoading={selectionLoading}
+            selection={assetSelection}
+            onChangeSelection={setAssetSelection}
             healthDataLoading={healthDataLoading}
             tabs={tabs}
             sortBy={sortBy}
@@ -285,6 +295,8 @@ type TableProps<T extends string, TAsset extends {key: {path: string[]}}> = {
   onToggleFactory: (id: string) => (values: {checked: boolean; shiftKey: boolean}) => void;
   onToggleGroup: (group: T) => (checked: boolean) => void;
   selectionLoading: boolean;
+  selection: string;
+  onChangeSelection: (selection: string) => void;
   groupBy: AssetHealthGroupBy;
   setGroupBy: (groupBy: (typeof GROUP_BY_ITEMS)[number]['key']) => void;
   allGroups?: T[];
@@ -305,12 +317,17 @@ const Table = React.memo(
     onToggleFactory,
     onToggleGroup,
     selectionLoading,
+    selection,
+    onChangeSelection,
     groupBy,
     setGroupBy,
     allGroups: _allGroups,
     SORT_ITEMS,
     ITEMS_BY_KEY,
   }: TableProps<T, TAsset>) => {
+    const splitContainerRef = useRef<SplitPanelContainerHandle>(null);
+    const {flagAssetCatalogSidebar} = useFeatureFlags();
+
     const scope = useMemo(() => {
       const selected = (assets ?? []).filter((a) =>
         checkedDisplayKeys.has(tokenForAssetKey(a.key)),
@@ -326,127 +343,171 @@ const Table = React.memo(
       return _allGroups ?? (Object.keys(grouped) as T[]);
     }, [_allGroups, grouped]);
 
+    const [sidebarExpanded, setSidebarExpanded] = useState(
+      () => getFirstPanelSizeFromStorage(SPLIT_PANEL_IDENTIFIER, 25) > 0,
+    );
+    const table = (
+      <Box flex={{direction: 'column'}} style={{height: '100%', overflow: 'hidden'}}>
+        <Box
+          flex={{direction: 'row', alignItems: 'center', justifyContent: 'space-between'}}
+          padding={{horizontal: 24, vertical: 12}}
+          border="bottom"
+        >
+          <Box flex={{direction: 'row', alignItems: 'center', gap: 8}}>
+            {flagAssetCatalogSidebar ? (
+              <Tooltip content={sidebarExpanded ? 'Hide sidebar' : 'Show sidebar'}>
+                <Button
+                  icon={<Icon name={sidebarExpanded ? 'panel_show_right' : 'panel_hide_right'} />}
+                  onClick={() => {
+                    splitContainerRef.current?.changeSize(sidebarExpanded ? 0 : 25);
+                    setSidebarExpanded(!sidebarExpanded);
+                  }}
+                />
+              </Tooltip>
+            ) : null}
+            <Body>
+              {loading ? (
+                <Skeleton $width={200} $height={21} />
+              ) : (
+                <>
+                  {numberFormatter.format(assets?.length ?? 0)} asset
+                  {ifPlural(assets?.length ?? 0, '', 's')}
+                </>
+              )}
+            </Body>
+            {checkedDisplayKeys.size > 0 ? (
+              <Popover
+                interactionKind="hover"
+                placement="bottom-start"
+                content={
+                  <SelectedAssetsPopoverContent
+                    checkedDisplayKeys={checkedDisplayKeys}
+                    grouped={grouped}
+                  />
+                }
+              >
+                <Tag intent="primary">
+                  {numberFormatter.format(checkedDisplayKeys.size)} selected
+                </Tag>
+              </Popover>
+            ) : null}
+          </Box>
+          <Box flex={{direction: 'row', alignItems: 'center', gap: 8}}>
+            <Box flex={{direction: 'row', alignItems: 'center', gap: 4}}>
+              <Body color={Colors.textLight()}>Group by</Body>
+              <Select<(typeof GROUP_BY_ITEMS)[number]>
+                popoverProps={{
+                  position: 'bottom-right',
+                }}
+                filterable={false}
+                activeItem={GROUP_BY_ITEMS.find((item) => item.key === groupBy)}
+                items={GROUP_BY_ITEMS}
+                itemRenderer={(item, props) => {
+                  return (
+                    <MenuItem
+                      active={props.modifiers.active}
+                      onClick={props.handleClick}
+                      key={item.key}
+                      icon={item.icon}
+                      text={item.text}
+                      style={{width: '300px'}}
+                    />
+                  );
+                }}
+                onItemSelect={(item) => setGroupBy(item.key)}
+              >
+                <UnstyledButton $outlineOnHover style={{display: 'flex', padding: '6px 4px'}}>
+                  {GROUP_BY_ITEMS.find((item) => item.key === groupBy)?.text}
+                  <Icon name="arrow_drop_down" />
+                </UnstyledButton>
+              </Select>
+            </Box>
+            <Box flex={{direction: 'row', alignItems: 'center', gap: 4}}>
+              <Body color={Colors.textLight()}>Sort by</Body>
+              <Select<(typeof SORT_ITEMS)[number]>
+                popoverProps={{
+                  position: 'bottom-right',
+                }}
+                filterable={false}
+                activeItem={ITEMS_BY_KEY[sortBy]}
+                items={SORT_ITEMS}
+                itemRenderer={(item, props) => {
+                  return (
+                    <MenuItem
+                      active={props.modifiers.active}
+                      onClick={props.handleClick}
+                      key={item.key}
+                      text={item.text}
+                      style={{width: '300px'}}
+                    />
+                  );
+                }}
+                onItemSelect={(item) => setSortBy(item.key)}
+              >
+                <UnstyledButton $outlineOnHover style={{display: 'flex', padding: '6px 4px'}}>
+                  {ITEMS_BY_KEY[sortBy].text}
+                  <Icon name="arrow_drop_down" />
+                </UnstyledButton>
+              </Select>
+            </Box>
+            {loading ? (
+              <Skeleton $width={300} $height={21} />
+            ) : (
+              <LaunchAssetExecutionButton
+                scope={scope}
+                additionalDropdownOptions={extraDropdownOptions}
+              />
+            )}
+          </Box>
+        </Box>
+        <div style={{flex: 1, overflow: 'hidden'}}>
+          <AssetCatalogV2VirtualizedTable
+            allGroups={allGroups}
+            grouped={grouped}
+            loading={loading}
+            healthDataLoading={healthDataLoading}
+            checkedDisplayKeys={checkedDisplayKeys}
+            onToggleFactory={onToggleFactory}
+            onToggleGroup={onToggleGroup}
+            id={`asset-catalog-table-${groupBy}`}
+          />
+        </div>
+      </Box>
+    );
+
+    const sidebar = sidebarExpanded ? (
+      <AssetCatalogTableSidebar selection={selection} onChangeSelection={onChangeSelection} />
+    ) : (
+      <div />
+    );
+
+    if (!flagAssetCatalogSidebar) {
+      return (
+        <>
+          <IndeterminateLoadingBar
+            $loading={
+              loading || (healthDataLoading && isHealthGroupBy(groupBy)) || selectionLoading
+            }
+          />
+          {tabs}
+          {table}
+        </>
+      );
+    }
     return (
       <>
         <IndeterminateLoadingBar
           $loading={loading || (healthDataLoading && isHealthGroupBy(groupBy)) || selectionLoading}
         />
         {tabs}
-        <Box flex={{direction: 'column'}} style={{height: '100%', overflow: 'hidden'}}>
-          <Box
-            flex={{direction: 'row', alignItems: 'center', justifyContent: 'space-between'}}
-            padding={{horizontal: 24, vertical: 12}}
-            border="bottom"
-          >
-            <Box flex={{direction: 'row', alignItems: 'center', gap: 8}}>
-              <Subtitle1>
-                {loading ? (
-                  <Skeleton $width={200} $height={21} />
-                ) : (
-                  <>
-                    {numberFormatter.format(assets?.length ?? 0)} asset
-                    {ifPlural(assets?.length ?? 0, '', 's')}
-                  </>
-                )}
-              </Subtitle1>
-              {checkedDisplayKeys.size > 0 ? (
-                <Popover
-                  interactionKind="hover"
-                  placement="bottom-start"
-                  content={
-                    <SelectedAssetsPopoverContent
-                      checkedDisplayKeys={checkedDisplayKeys}
-                      grouped={grouped}
-                    />
-                  }
-                >
-                  <Tag intent="primary">
-                    {numberFormatter.format(checkedDisplayKeys.size)} selected
-                  </Tag>
-                </Popover>
-              ) : null}
-            </Box>
-            <Box flex={{direction: 'row', alignItems: 'center', gap: 8}}>
-              <Box flex={{direction: 'row', alignItems: 'center', gap: 4}}>
-                <Body color={Colors.textLight()}>Group by</Body>
-                <Select<(typeof GROUP_BY_ITEMS)[number]>
-                  popoverProps={{
-                    position: 'bottom-right',
-                  }}
-                  filterable={false}
-                  activeItem={GROUP_BY_ITEMS.find((item) => item.key === groupBy)}
-                  items={GROUP_BY_ITEMS}
-                  itemRenderer={(item, props) => {
-                    return (
-                      <MenuItem
-                        active={props.modifiers.active}
-                        onClick={props.handleClick}
-                        key={item.key}
-                        icon={item.icon}
-                        text={item.text}
-                        style={{width: '300px'}}
-                      />
-                    );
-                  }}
-                  onItemSelect={(item) => setGroupBy(item.key)}
-                >
-                  <UnstyledButton $outlineOnHover style={{display: 'flex', padding: '6px 4px'}}>
-                    {GROUP_BY_ITEMS.find((item) => item.key === groupBy)?.text}
-                    <Icon name="arrow_drop_down" />
-                  </UnstyledButton>
-                </Select>
-              </Box>
-              <Box flex={{direction: 'row', alignItems: 'center', gap: 4}}>
-                <Body color={Colors.textLight()}>Sort by</Body>
-                <Select<(typeof SORT_ITEMS)[number]>
-                  popoverProps={{
-                    position: 'bottom-right',
-                  }}
-                  filterable={false}
-                  activeItem={ITEMS_BY_KEY[sortBy]}
-                  items={SORT_ITEMS}
-                  itemRenderer={(item, props) => {
-                    return (
-                      <MenuItem
-                        active={props.modifiers.active}
-                        onClick={props.handleClick}
-                        key={item.key}
-                        text={item.text}
-                        style={{width: '300px'}}
-                      />
-                    );
-                  }}
-                  onItemSelect={(item) => setSortBy(item.key)}
-                >
-                  <UnstyledButton $outlineOnHover style={{display: 'flex', padding: '6px 4px'}}>
-                    {ITEMS_BY_KEY[sortBy].text}
-                    <Icon name="arrow_drop_down" />
-                  </UnstyledButton>
-                </Select>
-              </Box>
-              {loading ? (
-                <Skeleton $width={300} $height={21} />
-              ) : (
-                <LaunchAssetExecutionButton
-                  scope={scope}
-                  additionalDropdownOptions={extraDropdownOptions}
-                />
-              )}
-            </Box>
-          </Box>
-          <div style={{flex: 1, overflow: 'hidden'}}>
-            <AssetCatalogV2VirtualizedTable
-              allGroups={allGroups}
-              grouped={grouped}
-              loading={loading}
-              healthDataLoading={healthDataLoading}
-              checkedDisplayKeys={checkedDisplayKeys}
-              onToggleFactory={onToggleFactory}
-              onToggleGroup={onToggleGroup}
-              id={`asset-catalog-table-${groupBy}`}
-            />
-          </div>
-        </Box>
+        <SplitPanelContainer
+          ref={splitContainerRef}
+          identifier={SPLIT_PANEL_IDENTIFIER}
+          first={sidebar}
+          firstInitialPercent={25}
+          second={table}
+          hideHandleWhenCollapsed
+        />
       </>
     );
   },

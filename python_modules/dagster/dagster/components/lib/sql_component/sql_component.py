@@ -82,6 +82,7 @@ ResolvedSqlTemplate = Annotated[
 ]
 
 
+@public
 class TemplatedSqlComponent(SqlComponent):
     """A component which executes templated SQL from a string or file."""
 

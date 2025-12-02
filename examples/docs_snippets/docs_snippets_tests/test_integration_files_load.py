@@ -14,6 +14,9 @@ EXCLUDED_FILES = {
     f"{snippets_folder}/hashicorp.py",
     f"{snippets_folder}/meltano.py",
     f"{snippets_folder}/lakefs.py",
+    f"{snippets_folder}/salesforce.py",
+    f"{snippets_folder}/sftp.py",
+    f"{snippets_folder}/sharepoint.py",
     # FIXME: need to enable the following once we have a way to run their init/compile script in CI
     f"{snippets_folder}/dbt.py",
     f"{snippets_folder}/sdf.py",
@@ -31,6 +34,7 @@ EXCLUDED_FILES = {
     f"{snippets_folder}/fivetran/create_fivetran_all_assets_job.py",
     f"{snippets_folder}/fivetran/create_fivetran_selection_job.py",
     f"{snippets_folder}/fivetran/schedule_fivetran_jobs.py",
+    f"{snippets_folder}/fivetran/resync_fivetran_assets.py",
     f"{snippets_folder}/airbyte_cloud/customize_airbyte_cloud_asset_defs.py",
     f"{snippets_folder}/airbyte_cloud/customize_airbyte_cloud_translator_asset_spec.py",
     f"{snippets_folder}/airbyte_cloud/define_downstream_dependencies.py",
@@ -133,6 +137,8 @@ EXCLUDED_FILES = {
     # FIXME: serverless pipes files require Databricks environment/credentials
     f"{snippets_folder}/databricks/dagster_code_serverless.py",
     f"{snippets_folder}/databricks/databricks_code_serverless.py",
+    f"{snippets_folder}/iceberg/io_manager_daft.py",
+    f"{snippets_folder}/iceberg/partition_field_naming_config.py",
 }
 
 

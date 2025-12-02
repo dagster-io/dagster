@@ -4,7 +4,7 @@ import warnings
 from collections.abc import Iterator, Mapping, Sequence
 from contextlib import closing, contextmanager
 from datetime import datetime
-from typing import Any, Optional, Union
+from typing import Any, Optional, Union, cast
 
 import dagster._check as check
 from cryptography.hazmat.backends import default_backend
@@ -21,6 +21,14 @@ from dagster._core.storage.event_log.sql_event_log import SqlDbConnection
 from dagster._utils.cached_method import cached_method
 from dagster.components.lib.sql_component.sql_client import SQLClient
 from pydantic import Field, model_validator, validator
+from snowflake import snowpark
+from snowflake.core import Root
+from snowflake.core.database import Database
+from snowflake.core.pipe import Pipe
+from snowflake.core.schema import Schema
+from snowflake.core.stage import Stage
+from snowflake.core.table import Table
+from snowflake.core.view import View
 
 from dagster_snowflake.constants import (
     SNOWFLAKE_PARTNER_CONNECTION_IDENTIFIER,
@@ -581,6 +589,277 @@ class SnowflakeResource(ConfigurableResource, IAttachDifferentObjectToOpContext,
     def connect_and_execute(self, sql: str) -> None:
         with self.get_connection() as conn:
             conn.cursor().execute(sql)
+
+    @contextmanager
+    def create_snowpark_session(self) -> Iterator[snowpark.Session]:
+        """Create a Snowpark session as a context manager.
+
+        This method creates a Snowpark session using the connection parameters configured
+        in the SnowflakeResource. The session is automatically closed when exiting the
+        context manager.
+
+        Yields:
+            snowpark.Session: A Snowpark session object that can be used to interact with
+                Snowflake using the Snowpark API.
+
+        Examples:
+            .. code-block:: python
+
+                @op
+                def process_data(snowflake: SnowflakeResource):
+                    with snowflake.create_snowpark_session() as session:
+                        df = session.table("my_table")
+                        result = df.filter(df["amount"] > 100).collect()
+                        return result
+        """
+        session = snowpark.Session.builder.configs(cast("dict", self._connection_args)).create()
+        try:
+            yield session
+        finally:
+            session.close()
+
+    def get_databases(self, database_like: str) -> list[Database]:
+        """Get a list of databases in Snowflake that match the specified pattern.
+
+        Retrieves Database objects from Snowflake that match the provided LIKE pattern.
+        Uses SQL wildcard characters (% and _) for pattern matching.
+
+        Args:
+            database_like (str): A LIKE pattern to filter database names. Use '%' for any
+                sequence of characters and '_' for any single character. Case-insensitive.
+
+        Returns:
+            list[Database]: List of Database objects that match the pattern.
+
+        Examples:
+            .. code-block:: python
+
+                @op
+                def list_test_databases(snowflake: SnowflakeResource):
+                    # Get all databases starting with 'TEST'
+                    databases = snowflake.get_databases("TEST%")
+
+                    for db in databases:
+                        print(f"Found database: {db.name}")
+
+                    return [db.name for db in databases]
+        """
+        with self.create_snowpark_session() as session:
+            dbs = Root(session).databases
+            result: list[Database] = []
+
+            for db in dbs.iter(like=database_like):
+                result.append(db)
+
+            return result
+
+    def get_schemas(
+        self,
+        database_like: str,
+        schema_like: str,
+    ) -> list[Schema]:
+        """Get a list of schemas in Snowflake databases that match the specified patterns.
+
+        Retrieves Schema objects from Snowflake databases that match the provided LIKE patterns.
+        Searches across all matching databases and returns all matching schemas.
+
+        Args:
+            database_like (str): A LIKE pattern to filter database names.
+            schema_like (str): A LIKE pattern to filter schema names within matching databases.
+
+        Returns:
+            list[Schema]: List of Schema objects that match the patterns.
+
+        Examples:
+            .. code-block:: python
+
+                @op
+                def list_public_schemas(snowflake: SnowflakeResource):
+                    # Get all PUBLIC schemas in databases starting with 'PROD'
+                    schemas = snowflake.get_schemas("PROD%", "PUBLIC")
+
+                    for schema in schemas:
+                        print(f"Found schema: {schema.name}")
+
+                    return [schema.name for schema in schemas]
+        """
+        with self.create_snowpark_session() as session:
+            dbs = Root(session).databases
+            result: list[Schema] = []
+
+            for db in dbs.iter(like=database_like):
+                schemas = dbs[db.name].schemas
+                for schema in schemas.iter(like=schema_like):
+                    result.append(schema)
+
+            return result
+
+    def get_tables(
+        self,
+        database_like: str,
+        schema_like: str,
+        name_like: str,
+    ) -> list[Table]:
+        """Get a list of tables in Snowflake that match the specified patterns.
+
+        Retrieves Table objects from Snowflake that match the provided LIKE patterns.
+        Searches across all matching databases and schemas.
+
+        Args:
+            database_like (str): A LIKE pattern to filter database names.
+            schema_like (str): A LIKE pattern to filter schema names.
+            name_like (str): A LIKE pattern to filter table names.
+
+        Returns:
+            list[Table]: List of Table objects that match the patterns.
+
+        Examples:
+            .. code-block:: python
+
+                @op
+                def find_customer_tables(snowflake: SnowflakeResource):
+                    # Get all tables with 'CUSTOMER' in the name
+                    tables = snowflake.get_tables("PROD%", "%", "%CUSTOMER%")
+
+                    for table in tables:
+                        print(f"Found table: {table.name}")
+
+                    return [table.name for table in tables]
+        """
+        with self.create_snowpark_session() as session:
+            dbs = Root(session).databases
+            result: list[Table] = []
+
+            for db in dbs.iter(like=database_like):
+                schemas = dbs[db.name].schemas
+                for schema in schemas.iter(like=schema_like):
+                    tables = schemas[schema.name].tables
+                    for table in tables.iter(like=name_like):
+                        result.append(table)
+
+            return result
+
+    def get_views(self, database_like: str, schema_like: str, name_like: str) -> list[View]:
+        """Get a list of views in Snowflake that match the specified patterns.
+
+        Retrieves View objects from Snowflake that match the provided LIKE patterns.
+        Searches across all matching databases and schemas.
+
+        Args:
+            database_like (str): A LIKE pattern to filter database names.
+            schema_like (str): A LIKE pattern to filter schema names.
+            name_like (str): A LIKE pattern to filter view names.
+
+        Returns:
+            list[View]: List of View objects that match the patterns.
+
+        Examples:
+            .. code-block:: python
+
+                @op
+                def find_reporting_views(snowflake: SnowflakeResource):
+                    # Get all views with 'REPORT' in the name
+                    views = snowflake.get_views("DW%", "REPORTING", "%REPORT%")
+
+                    for view in views:
+                        print(f"Found view: {view.name}")
+
+                    return [view.name for view in views]
+        """
+        with self.create_snowpark_session() as session:
+            dbs = Root(session).databases
+            result: list[View] = []
+
+            for db in dbs.iter(like=database_like):
+                schemas = dbs[db.name].schemas
+                for schema in schemas.iter(like=schema_like):
+                    views = schemas[schema.name].views
+                    for view in views.iter(like=name_like):
+                        result.append(view)
+
+            return result
+
+    def get_pipes(self, database_like: str, schema_like: str, name_like: str) -> list[Pipe]:
+        """Get a list of pipes in Snowflake that match the specified patterns.
+
+        Retrieves Pipe objects from Snowflake that match the provided LIKE patterns.
+        Pipes are used for continuous data loading from external stages.
+        Searches across all matching databases and schemas.
+
+        Args:
+            database_like (str): A LIKE pattern to filter database names.
+            schema_like (str): A LIKE pattern to filter schema names.
+            name_like (str): A LIKE pattern to filter pipe names.
+
+        Returns:
+            list[Pipe]: List of Pipe objects that match the patterns.
+
+        Examples:
+            .. code-block:: python
+
+                @op
+                def find_data_pipes(snowflake: SnowflakeResource):
+                    # Get all pipes used for S3 data loading
+                    pipes = snowflake.get_pipes("PROD%", "ETL", "%S3%")
+
+                    for pipe in pipes:
+                        print(f"Found pipe: {pipe.name}")
+
+                    return [pipe.name for pipe in pipes]
+        """
+        with self.create_snowpark_session() as session:
+            dbs = Root(session).databases
+            result: list[Pipe] = []
+
+            for db in dbs.iter(like=database_like):
+                schemas = dbs[db.name].schemas
+                for schema in schemas.iter(like=schema_like):
+                    pipes = schemas[schema.name].pipes
+                    for pipe in pipes.iter(like=name_like):
+                        result.append(pipe)
+
+            return result
+
+    def get_stages(self, database_like: str, schema_like: str, name_like: str) -> list[Stage]:
+        """Get a list of stages in Snowflake that match the specified patterns.
+
+        Retrieves Stage objects from Snowflake that match the provided LIKE patterns.
+        Stages are used for storing data files for loading and unloading operations.
+        Searches across all matching databases and schemas.
+
+        Args:
+            database_like (str): A LIKE pattern to filter database names.
+            schema_like (str): A LIKE pattern to filter schema names.
+            name_like (str): A LIKE pattern to filter stage names.
+
+        Returns:
+            list[Stage]: List of Stage objects that match the patterns.
+
+        Examples:
+            .. code-block:: python
+
+                @op
+                def find_loading_stages(snowflake: SnowflakeResource):
+                    # Get all stages used for data loading
+                    stages = snowflake.get_stages("DW%", "STAGING", "%LOAD%")
+
+                    for stage in stages:
+                        print(f"Found stage: {stage.name}")
+
+                    return [stage.name for stage in stages]
+        """
+        with self.create_snowpark_session() as session:
+            dbs = Root(session).databases
+            result: list[Stage] = []
+
+            for db in dbs.iter(like=database_like):
+                schemas = dbs[db.name].schemas
+                for schema in schemas.iter(like=schema_like):
+                    stages = schemas[schema.name].stages
+                    for stage in stages.iter(like=name_like):
+                        result.append(stage)
+
+            return result
 
 
 class SnowflakeConnection:

@@ -128,7 +128,9 @@ class StepFailureData(
                 "User code error is missing cause. User code errors are expected to have a"
                 " causes, which are the errors thrown from user code.",
             )
-            return self.error.message.strip() + ":\n\n" + user_code_error.to_string()
+            return (
+                self.error.message.strip() + ":\n\n" + check.not_none(user_code_error).to_string()
+            )
         else:
             return self.error.to_string()
 

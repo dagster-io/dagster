@@ -44,6 +44,11 @@ def always_fails():
     raise Exception("always_fails failed")
 
 
+@dg.asset
+def downstream_of_always_fails(always_fails):
+    return always_fails + 1
+
+
 @dg.asset(output_required=False)
 def always_skips():
     if False:
@@ -267,4 +272,5 @@ def get_assets_and_checks():
         always_skips,
         sometimes_skips,
         always_skips_partitioned,
+        downstream_of_always_fails,
     ]

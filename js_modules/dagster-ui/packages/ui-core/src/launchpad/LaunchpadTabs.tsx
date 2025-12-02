@@ -1,4 +1,4 @@
-import {Box, ButtonLink, Colors, Icon, IconWrapper} from '@dagster-io/ui-components';
+import {Box, ButtonLink, Colors, Icon} from '@dagster-io/ui-components';
 import * as React from 'react';
 import styled, {css} from 'styled-components';
 
@@ -241,11 +241,11 @@ const RemoveButton = styled.button`
   cursor: pointer;
   padding: 0;
 
-  ${IconWrapper} {
+  .iconGlobal {
     transition: background-color 100ms;
   }
 
-  &:hover ${IconWrapper} {
+  &:hover .iconGlobal {
     background-color: ${Colors.accentPrimaryHover()};
   }
 `;

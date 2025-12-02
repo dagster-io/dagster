@@ -84,6 +84,29 @@ If you want to customize the sync of your connectors, you can use the <PyObject 
   language="python"
 />
 
+### Perform historical resyncs of Fivetran assets
+
+In addition to incremental syncs, you can perform full historical resyncs of your Fivetran connector tables using the <PyObject section="libraries" module="dagster_fivetran" object="FivetranWorkspace" displayText="resync_and_poll()" /> method. This is useful when you need to backfill historical data or reload data after schema changes.
+
+You can resync specific tables by providing `resync_parameters`, or resync all tables in a connector by omitting this parameter:
+
+<CodeExample path="docs_snippets/docs_snippets/integrations/fivetran/resync_fivetran_assets.py" language="python" />
+
+To resync all tables in a connector, simply call `resync_and_poll()` without the `resync_parameters` argument:
+
+<CodeExample
+  startAfter="start_resync_all"
+  endBefore="end_resync_all"
+  path="docs_snippets/docs_snippets/integrations/fivetran/resync_fivetran_assets.py"
+  language="python"
+/>
+
+:::note
+
+Historical resyncs can be time-consuming and resource-intensive operations. Be mindful of the cost implications when resyncing large datasets.
+
+:::
+
 ### Customize asset definition metadata for Fivetran assets
 
 By default, Dagster will generate asset specs for each Fivetran asset and populate default metadata. You can further customize asset properties by passing an instance of the custom <PyObject section="libraries" module="dagster_fivetran" object="DagsterFivetranTranslator" /> to the <PyObject section="libraries" module="dagster_fivetran" object="load_fivetran_asset_specs" /> function.

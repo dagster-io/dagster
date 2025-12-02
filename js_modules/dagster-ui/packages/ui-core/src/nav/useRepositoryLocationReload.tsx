@@ -12,7 +12,7 @@ import {
 import {showSharedToaster} from '../app/DomUtils';
 import {useInvalidateConfigsForRepo} from '../app/ExecutionSessionStorage';
 import {PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorFragment';
-import {UNAUTHORIZED_ERROR_FRAGMENT} from '../app/PythonErrorInfo';
+import {UNAUTHORIZED_ERROR_FRAGMENT} from '../app/UnauthorizedErrorFragment';
 import {PythonErrorFragment} from '../app/types/PythonErrorFragment.types';
 import {RepositoryLocationLoadStatus} from '../graphql/types';
 

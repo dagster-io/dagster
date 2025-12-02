@@ -26,6 +26,7 @@ from contextlib import contextmanager
 from dataclasses import dataclass
 from typing import Any, Optional, Union
 
+from dagster._annotations import public
 from dagster._core.definitions.definitions_class import Definitions
 from dagster._utils import alter_sys_path
 from dagster.components.component.component import Component
@@ -120,6 +121,7 @@ def random_importable_name(length: int = 8) -> str:
     return "sandbox_module_" + first_char + remaining
 
 
+@public
 @dataclass
 class DefsFolderSandbox:
     """A sandbox for testing components.
@@ -158,6 +160,7 @@ class DefsFolderSandbox:
         with self.build_component_tree() as tree:
             yield tree.build_defs()
 
+    @public
     @contextmanager
     def load_component_and_build_defs(
         self, defs_path: Path
@@ -184,10 +187,11 @@ class DefsFolderSandbox:
                     assert defs.get_asset_def("my_asset").key == AssetKey("my_asset")
         """
         with self.build_component_tree() as tree:
-            component = tree.load_component_at_path(defs_path)
-            defs = tree.build_defs_at_path(defs_path)
+            component = tree.load_component(defs_path)
+            defs = tree.build_defs(defs_path)
             yield component, defs
 
+    @public
     def scaffold_component(
         self,
         component_cls: Any,
@@ -281,35 +285,32 @@ class DefsFolderSandbox:
             sys.path.remove(injected_path)
 
 
+@public
 @contextmanager
 def create_defs_folder_sandbox(
     *,
     project_name: Optional[str] = None,
 ) -> Iterator[DefsFolderSandbox]:
     """Create a lightweight sandbox to scaffold and instantiate components. Useful
-    for those authoring component types.
+    for those authoring custom components.
 
-    Scaffold defs sandbox creates a temporary project that mimics the defs folder portion
-    of a real dagster project. It then yields a DefsFolderSandbox object which can be used to
+    This function creates a temporary project that mimics the ``defs`` folder portion
+    of a real Dagster project. It then yields a :py:class:`DefsFolderSandbox` object which can be used to
     scaffold and load components.
 
-    DefsFolderSandbox has a few properties useful for different types of tests:
+    :py:class:`DefsFolderSandbox` has a few properties useful for different types of tests:
 
-    * defs_folder_path: The absolute path to the defs folder. The user can inspect and
-    load files from scaffolded components.
-      e.g. (defs_folder_path / "my_component" / "defs.yaml").exists()
+    * ``defs_folder_path``: The absolute path to the ``defs`` folder. The user can inspect and load files from scaffolded components, e.g. ``(defs_folder_path / "my_component" / "defs.yaml").exists()``
+    * ``project_name``: If not provided, a random name is generated.
 
-    * project_name: If not provided, a random name is generated.
-
-    Once the sandbox is created the user has the option to load all definitions using the `load`
-    method on DefsFolderSandbox, or the `load_component_at_path` mathod.
+    Once the sandbox is created, you can load all definitions using the ``load`` method on :py:class:`DefsFolderSandbox`, or with the ``load_component_at_path`` method.
 
     This sandbox does not provide complete environmental isolation, but does provide some isolation guarantees
     to do its best to isolate the test from and restore the environment after the test.
 
-    * A file structure like this is created: <<temp folder>> / src / <<project_name>> / defs
-    * <<temp folder>> / src is placed in sys.path during the loading process
-    * Any modules loaded during the process that descend from defs module are evicted from sys.modules on cleanup.
+    * A file structure like this is created: ``<<temp folder>> / src / <<project_name>> / defs``
+    * ``<<temp folder>> / src`` is placed in ``sys.path`` during the loading process
+    * Any modules loaded during the process that descend from defs module are evicted from ``sys.modules`` on cleanup.
 
     Args:
         project_name: Optional name for the project (default: random name).
@@ -321,12 +322,12 @@ def create_defs_folder_sandbox(
 
     .. code-block:: python
 
-        with scaffold_defs_sandbox() as sandbox:
+        with create_defs_folder_sandbox() as sandbox:
             defs_path = sandbox.scaffold_component(component_cls=MyComponent)
             assert (defs_path / "defs.yaml").exists()
             assert (defs_path / "my_component_config_file.yaml").exists()  # produced by MyComponentScaffolder
 
-        with scaffold_defs_sandbox() as sandbox:
+        with create_defs_folder_sandbox() as sandbox:
             defs_path = sandbox.scaffold_component(
                 component_cls=MyComponent,
                 defs_yaml_contents={"type": "MyComponent", "attributes": {"asset_key": "my_asset"}},

@@ -8,6 +8,7 @@ from collections.abc import Sequence
 from typing import TYPE_CHECKING, Optional, Union
 
 import dagster._check as check
+from dagster._annotations import deprecated
 from dagster._time import get_current_timestamp
 from dagster._utils.warnings import beta_warning
 
@@ -115,6 +116,7 @@ class EventMethods:
         """End watch event logs."""
         return self._event_storage_impl.end_watch(run_id, cb)
 
+    @deprecated(breaking_version="2.0")
     def get_event_records(
         self,
         event_records_filter: "EventRecordsFilter",

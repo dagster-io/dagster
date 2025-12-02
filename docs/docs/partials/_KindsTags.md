@@ -205,6 +205,7 @@
 | `x`                   | <img src="/images/guides/build/assets/metadata-tags/kinds/icons/tool-x-color.svg" width={20} height={20} />                              |
 | `xgboost`             | <img src="/images/guides/build/assets/metadata-tags/kinds/icons/tool-xgboost-color.svg" width={20} height={20} />                        |
 | `youtube`             | <img src="/images/guides/build/assets/metadata-tags/kinds/icons/tool-youtube-color.svg" width={20} height={20} />                        |
+| `zendesk`             | <img src="/images/guides/build/assets/metadata-tags/kinds/icons/tool-zendesk-color.svg" width={20} height={20} />                        |
 | `bronze`              | <img src="/images/guides/build/assets/metadata-tags/kinds/icons/medallion-bronze-color.svg" width={20} height={20} />                    |
 | `silver`              | <img src="/images/guides/build/assets/metadata-tags/kinds/icons/medallion-silver-color.svg" width={20} height={20} />                    |
 | `gold`                | <img src="/images/guides/build/assets/metadata-tags/kinds/icons/medallion-gold-color.svg" width={20} height={20} />                      |
