@@ -191,6 +191,16 @@ dagster-cloud serverless deploy ./my-project \
 
 If you are using a non-GitHub CI/CD provider, your system should use the [`dg deploy` command](/api/clis/dg-cli/dg-plus#deploy) to deploy code locations to Dagster+.
 
+:::info Prerequisites
+
+Before following the steps in this section, you must:
+
+- [Create a Dagster project](/guides/build/projects/creating-projects)
+- Scaffold deployment configuration files (Dockerfile, `build.yaml`, `containter_context.yaml`) in the project root directory with `dg plus deploy configure`
+- Log in to your Dagster organization with `dg plus login`
+
+:::
+
 {/* TODO add step 2 below for running `dg` equivalent of `dagster-cloud ci check --project-dir=. */}
 
 1.  Set the build environment variables. Note that all variables are required:
@@ -199,40 +209,21 @@ If you are using a non-GitHub CI/CD provider, your system should use the [`dg de
     - `DAGSTER_BUILD_STATEDIR`: A path to a blank or non-existent temporary directory on the build machine that will be used to store local state during the build.
 2.  Initialize the build session:
 
-    ```
+    ```shell
     dg plus deploy start --deployment=DEPLOYMENT_NAME --project-dir=.
     ```
 
     This reads the `build.yaml` configuration and initializes the DAGSTER_BUILD_STATEDIR.
 
-3.  Build and upload Docker images for your code locations.
+3.  Build and upload Docker images for your code locations:
 
-    The Docker image should contain a Python environment with `dagster`, `dagster-cloud`, and your code. For reference, see the [example Dockerfile](https://github.com/dagster-io/dagster-cloud-hybrid-quickstart/blob/main/Dockerfile) in our template repository. The example uses `pip install .` to install the code including the dependencies specified in [`setup.py`](https://github.com/dagster-io/dagster-cloud-hybrid-quickstart/blob/main/setup.py).
-
-    It is a good idea to use a unique image tag for each Docker build. You can build one image per code location or a shared image for multiple code locations. As an example image tag, you can use the git commit SHA:
-
-    ```
-    export IMAGE_TAG=`git log --format=format:%H -n 1`
+    ```shell
+    dg plus deploy build-and-push
     ```
 
-    Use this tag to build and upload your Docker image, for example:
+    This command will upload to the registry specified in `build.yaml`. The upload step is specific to your Docker container registry and will require authentication. For more information and a full list of command options, see the [`dg plus deploy build-and-push` API docs](/api/clis/dg-cli/dg-plus#build-and-push).
 
-    ```
-    docker build . -t ghcr.io/org/dagster-cloud-image:$IMAGE_TAG
-    docker push ghcr.io/org/dagster-cloud-image:$IMAGE_TAG
-    ```
-
-    The upload step is specific to your Docker container registry and will require authentication. The only requirement is that the registry you upload to must match the registry specified in `build.yaml`.
-
-4.  Update the build session with the Docker image tag. For each code location you want to deploy, run the following command passing the `IMAGE_TAG` used in the previous step:
-
-    ```
-    dg plus deploy set-build-output --location-name=code-location-a --image-tag=IMAGE_TAG
-    ```
-
-    This command does not deploy the code location but just updates the local state in `DAGSTER_BUILD_STATEDIR`.
-
-5.  Deploy to Dagster+:
+4.  Deploy to Dagster+:
 
     ```
     dg plus deploy
