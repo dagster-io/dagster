@@ -406,6 +406,15 @@ schedules:
 
 # end_marker_schedules
 
+# start_marker_backfills
+
+backfills:
+  use_threads: true
+  num_workers: 8
+  num_submit_workers: 4
+
+# end_marker_backfills
+
 auto_materialize:
   run_tags:
     key: value
