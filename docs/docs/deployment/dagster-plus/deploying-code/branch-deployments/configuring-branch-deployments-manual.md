@@ -25,7 +25,7 @@ The following examples assume the registry URL and image tag are stored in the `
 
 :::
 
-## Step 1: Generate a Dagster+ agent token**
+## Step 1: Generate a Dagster+ agent token\*\*
 
 The first step is to generate a token for the Dagster+ agent. The Dagster+ agent will use this token to authenticate to the agent API.
 

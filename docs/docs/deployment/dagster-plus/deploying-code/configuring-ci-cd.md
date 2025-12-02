@@ -36,14 +36,10 @@ Once you have set up your project repository, pushing changes to the `main` bran
 
     <Tabs>
       <TabItem value="macos" label="MacOS/Unix">
-        ```shell
-        source .venv/bin/activate
-        ```
+        ```shell source .venv/bin/activate ```
       </TabItem>
       <TabItem value="windows" label="Windows">
-        ```shell
-        .venv\Scripts\activate
-        ```
+        ```shell .venv\Scripts\activate ```
       </TabItem>
     </Tabs>
 

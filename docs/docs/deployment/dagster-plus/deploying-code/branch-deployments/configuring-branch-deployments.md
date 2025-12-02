@@ -44,50 +44,52 @@ While you can use your existing production agent for branch deployments on Dagst
 <Tabs>
   <TabItem value="ecs" label="Amazon ECS">
 
-  1. **Deploy an ECS agent to serve your branch deployments.**
-      - To create a new agent, follow the [ECS agent](/deployment/dagster-plus/hybrid/amazon-ecs/new-vpc) setup guide, making sure to set the **Enable branch deployments** parameter if using the CloudFormation template.
-      - To upgrade an existing agent, follow the [upgrade guide](/deployment/dagster-plus/hybrid/amazon-ecs/existing-vpc) to ensure your template is up-to-date. Then, turn on the **Enable branch deployments** parameter.
+1. **Deploy an ECS agent to serve your branch deployments.**
 
-  2. Create a private [Amazon Elastic Registry (ECR) repository](https://console.aws.amazon.com/ecr/repositories). For instructions, see the [AWS ECR documentation](https://docs.aws.amazon.com/AmazonECR/latest/userguide/repository-create.html).
+   - To create a new agent, follow the [ECS agent](/deployment/dagster-plus/hybrid/amazon-ecs/new-vpc) setup guide, making sure to set the **Enable branch deployments** parameter if using the CloudFormation template.
+   - To upgrade an existing agent, follow the [upgrade guide](/deployment/dagster-plus/hybrid/amazon-ecs/existing-vpc) to ensure your template is up-to-date. Then, turn on the **Enable branch deployments** parameter.
 
-  3. After you have created a new ECR repository, navigate back to the list of [ECR repositories](https://console.aws.amazon.com/ecr/repositories). In the list, locate the repository and its **URI**. Copy the URI to a separate text file, as you'll need it in a later step.
+2. Create a private [Amazon Elastic Registry (ECR) repository](https://console.aws.amazon.com/ecr/repositories). For instructions, see the [AWS ECR documentation](https://docs.aws.amazon.com/AmazonECR/latest/userguide/repository-create.html).
 
-  ![Show this in the UI](/images/dagster-plus/features/branch-deployments/aws-ecr-uri.png)
+3. After you have created a new ECR repository, navigate back to the list of [ECR repositories](https://console.aws.amazon.com/ecr/repositories). In the list, locate the repository and its **URI**. Copy the URI to a separate text file, as you'll need it in a later step.
 
-  4. [Create an IAM user.](https://docs.aws.amazon.com/IAM/latest/UserGuide/id_users_create.html) This user must:
+![Show this in the UI](/images/dagster-plus/features/branch-deployments/aws-ecr-uri.png)
 
-      - Have push access to the ECR repository, and
-      - Have programmatic access to AWS using an [access key](https://docs.aws.amazon.com/IAM/latest/UserGuide/id_credentials_access-keys.html)
+4. [Create an IAM user.](https://docs.aws.amazon.com/IAM/latest/UserGuide/id_users_create.html) This user must:
 
-  5. After the user is created, save the **Access key ID** and **Secret access key** values shown on the confirmation page:
+   - Have push access to the ECR repository, and
+   - Have programmatic access to AWS using an [access key](https://docs.aws.amazon.com/IAM/latest/UserGuide/id_credentials_access-keys.html)
 
-  ![Show this in the UI](/images/dagster-plus/features/branch-deployments/aws-iam-user-keys.png)
+5. After the user is created, save the **Access key ID** and **Secret access key** values shown on the confirmation page:
+
+![Show this in the UI](/images/dagster-plus/features/branch-deployments/aws-iam-user-keys.png)
 
   </TabItem>
   <TabItem value="docker" label="Docker">
 
-  1. Set up a new Docker agent. For instructions, see the [Docker agent setup guide](/deployment/dagster-plus/hybrid/docker).
-  2. After the agent is set up, modify the `dagster.yaml` file as follows:
+1. Set up a new Docker agent. For instructions, see the [Docker agent setup guide](/deployment/dagster-plus/hybrid/docker).
+2. After the agent is set up, modify the `dagster.yaml` file as follows:
 
-      - Set the `dagster_cloud_api.branch_deployments` field to `true`
-      - Remove any `deployment` field(s)
+   - Set the `dagster_cloud_api.branch_deployments` field to `true`
+   - Remove any `deployment` field(s)
+
 
     For example:
 
-  <CodeExample
-    path="docs_snippets/docs_snippets/dagster-plus/deployment/branch-deployments/dagster.yaml"
-    language="yaml"
-    title="dagster.yaml"
-  />
+<CodeExample
+  path="docs_snippets/docs_snippets/dagster-plus/deployment/branch-deployments/dagster.yaml"
+  language="yaml"
+  title="dagster.yaml"
+/>
 
   </TabItem>
   <TabItem value="k8s" label="Kubernetes" default>
 
-  1. Set up a new Kubernetes agent. For instructions, see the [Kubernetes agent setup guide](/deployment/dagster-plus/hybrid/kubernetes).
+1. Set up a new Kubernetes agent. For instructions, see the [Kubernetes agent setup guide](/deployment/dagster-plus/hybrid/kubernetes).
 
-  2. After the agent is set up, modify your Helm values file to include the following:
+2. After the agent is set up, modify your Helm values file to include the following:
 
-  <CodeExample path="docs_snippets/docs_snippets/dagster-plus/deployment/branch-deployments/helm.yaml" language="yaml" />
+<CodeExample path="docs_snippets/docs_snippets/dagster-plus/deployment/branch-deployments/helm.yaml" language="yaml" />
 
   </TabItem>
 </Tabs>
@@ -101,35 +103,35 @@ While you can use your existing production agent for branch deployments on Dagst
 <Tabs>
   <TabItem value="github" label="GitHub">
 
-  1. In your GitHub repository, click the **Settings** tab.
-  2. In the **Security** section of the sidebar, click **Secrets > Actions**.
-  3. Click **New repository secret**.
-  4. In the **Name** field, enter the name of the secret. For example, `DAGSTER_CLOUD_URL`
-  5. In the **Value** field, paste the value of the secret.
-  6. Click **Add secret**.
+1. In your GitHub repository, click the **Settings** tab.
+2. In the **Security** section of the sidebar, click **Secrets > Actions**.
+3. Click **New repository secret**.
+4. In the **Name** field, enter the name of the secret. For example, `DAGSTER_CLOUD_URL`
+5. In the **Value** field, paste the value of the secret.
+6. Click **Add secret**.
 
 Repeat steps 3-6 for each of the secrets required for the registry used by the agent you created in step 1. See below for more details:
 
 <Tabs>
   <TabItem value="docker" label="Docker">
 
-  - `DAGSTER_CLOUD_URL` - Your Dagster+ base URL (`https://my_org.dagster.cloud`)
-  - `DOCKERHUB_USERNAME` - Your DockerHub username
-  - `DOCKERHUB_TOKEN` - A DockerHub [access token](https://docs.docker.com/docker-hub/access-tokens/#create-an-access-token)
+- `DAGSTER_CLOUD_URL` - Your Dagster+ base URL (`https://my_org.dagster.cloud`)
+- `DOCKERHUB_USERNAME` - Your DockerHub username
+- `DOCKERHUB_TOKEN` - A DockerHub [access token](https://docs.docker.com/docker-hub/access-tokens/#create-an-access-token)
 
   </TabItem>
   <TabItem value="ecr" label="Amazon ECR">
 
-  - `DAGSTER_CLOUD_URL` - Your Dagster+ base URL (`https://my_org.dagster.cloud`)
-  - `AWS_ACCESS_KEY` - The **Access key ID** of the AWS IAM user you created in step 3
-  - `AWS_SECRET_ACCESS_KEY` - The **Secret access key** of the AWS IAM user you created in step 3
-  - `AWS_REGION` - The AWS region where your ECR registry is located
+- `DAGSTER_CLOUD_URL` - Your Dagster+ base URL (`https://my_org.dagster.cloud`)
+- `AWS_ACCESS_KEY` - The **Access key ID** of the AWS IAM user you created in step 3
+- `AWS_SECRET_ACCESS_KEY` - The **Secret access key** of the AWS IAM user you created in step 3
+- `AWS_REGION` - The AWS region where your ECR registry is located
 
   </TabItem>
   <TabItem value="gcr" label="Google Container Registry (GCR)">
 
-  - `DAGSTER_CLOUD_URL` - Your Dagster+ base URL (`https://my_org.dagster.cloud`)
-  - `GCR_JSON_KEY` - Your GCR JSON credentials
+- `DAGSTER_CLOUD_URL` - Your Dagster+ base URL (`https://my_org.dagster.cloud`)
+- `GCR_JSON_KEY` - Your GCR JSON credentials
 
   </TabItem>
 </Tabs>
@@ -138,34 +140,34 @@ Repeat steps 3-6 for each of the secrets required for the registry used by the a
 
 1. In your GitLab repository, click **Settings** > **CI/CD**.
 2. On the settings page, click **Variables**.
-3. Under **Project variables**, click **Add variable**. 
+3. Under **Project variables**, click **Add variable**.
 4. In the **Key** field, enter the name of the secret. For example, `DAGSTER_CLOUD_URL`.
 5. In the **Value** field, paste the value of the secret.
 6. Update the type, environments, visibility, flags, and description fields as needed.
-6. Click **Add variable**.
+7. Click **Add variable**.
 
 Repeat steps 3-6 for each of the secrets required for the registry used by the agent you created in step 1. See below for more details:
 
 <Tabs>
   <TabItem value="docker" label="Docker">
 
-  - `DAGSTER_CLOUD_URL` - Your Dagster+ base URL (`https://my_org.dagster.cloud`)
-  - `DOCKERHUB_USERNAME` - Your DockerHub username
-  - `DOCKERHUB_TOKEN` - A DockerHub [access token](https://docs.docker.com/docker-hub/access-tokens/#create-an-access-token)
+- `DAGSTER_CLOUD_URL` - Your Dagster+ base URL (`https://my_org.dagster.cloud`)
+- `DOCKERHUB_USERNAME` - Your DockerHub username
+- `DOCKERHUB_TOKEN` - A DockerHub [access token](https://docs.docker.com/docker-hub/access-tokens/#create-an-access-token)
 
   </TabItem>
   <TabItem value="ecr" label="Amazon ECR">
 
-  - `DAGSTER_CLOUD_URL` - Your Dagster+ base URL (`https://my_org.dagster.cloud`)
-  - `AWS_ACCESS_KEY` - The **Access key ID** of the AWS IAM user you created in step 3
-  - `AWS_SECRET_ACCESS_KEY` - The **Secret access key** of the AWS IAM user you created in step 3
-  - `AWS_REGION` - The AWS region where your ECR registry is located
+- `DAGSTER_CLOUD_URL` - Your Dagster+ base URL (`https://my_org.dagster.cloud`)
+- `AWS_ACCESS_KEY` - The **Access key ID** of the AWS IAM user you created in step 3
+- `AWS_SECRET_ACCESS_KEY` - The **Secret access key** of the AWS IAM user you created in step 3
+- `AWS_REGION` - The AWS region where your ECR registry is located
 
   </TabItem>
   <TabItem value="gcr" label="Google Container Registry (GCR)">
 
-  - `DAGSTER_CLOUD_URL` - Your Dagster+ base URL (`https://my_org.dagster.cloud`)
-  - `GCR_JSON_KEY` - Your GCR JSON credentials
+- `DAGSTER_CLOUD_URL` - Your Dagster+ base URL (`https://my_org.dagster.cloud`)
+- `GCR_JSON_KEY` - Your GCR JSON credentials
 
   </TabItem>
 </Tabs>
@@ -180,9 +182,9 @@ Once configured, branch deployments can be accessed:
 <Tabs>
   <TabItem value="From a GitHub pull request">
 
-  Every pull request in the repository contains a **View in Cloud** link, which will open a branch deployment - or a preview of the changes - in Dagster+.
+Every pull request in the repository contains a **View in Cloud** link, which will open a branch deployment - or a preview of the changes - in Dagster+.
 
-  ![View in Cloud preview link highlighted in a GitHub pull request](/images/dagster-plus/features/branch-deployments/github-cloud-preview-link.png)
+![View in Cloud preview link highlighted in a GitHub pull request](/images/dagster-plus/features/branch-deployments/github-cloud-preview-link.png)
 
   </TabItem>
   <TabItem value="In Dagster+">
