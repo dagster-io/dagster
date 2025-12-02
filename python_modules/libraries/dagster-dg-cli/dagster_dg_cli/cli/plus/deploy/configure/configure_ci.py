@@ -16,7 +16,7 @@ from dagster_dg_cli.cli.plus.deploy.configure.utils import (
     REGISTRY_INFOS,
     SERVERLESS_GITHUB_ACTION_FILE,
     SERVERLESS_GITLAB_CI_FILE,
-    DeploymentScaffoldConfig,
+    DgPlusDeployConfigureOptions,
     GitProvider,
     get_cli_version_or_main,
     get_git_web_url,
@@ -26,7 +26,7 @@ from dagster_dg_cli.utils.plus.build import get_dockerfile_path
 
 
 def _get_build_fragment_for_locations(
-    config: DeploymentScaffoldConfig, registry_urls: list[str]
+    config: DgPlusDeployConfigureOptions, registry_urls: list[str]
 ) -> str:
     """Generate the build fragment for GitHub Actions workflow."""
     if config.git_root is None:
@@ -71,7 +71,7 @@ def _get_registry_fragment(
     return "\n".join(output), additional_secrets_hints
 
 
-def validate_registry_urls(config: DeploymentScaffoldConfig) -> list[str]:
+def validate_registry_urls(config: DgPlusDeployConfigureOptions) -> list[str]:
     """Validate that registry URLs are configured for all projects."""
     project_contexts = get_project_contexts(config.dg_context, config.cli_config)
 
@@ -89,7 +89,7 @@ def validate_registry_urls(config: DeploymentScaffoldConfig) -> list[str]:
     return cast("list[str]", registry_urls)
 
 
-def validate_dockerfiles_exist(config: DeploymentScaffoldConfig) -> None:
+def validate_dockerfiles_exist(config: DgPlusDeployConfigureOptions) -> None:
     """Validate that Dockerfiles exist for all projects."""
     project_contexts = get_project_contexts(config.dg_context, config.cli_config)
 
@@ -101,7 +101,7 @@ def validate_dockerfiles_exist(config: DeploymentScaffoldConfig) -> None:
             )
 
 
-def configure_github_actions_impl(config: DeploymentScaffoldConfig) -> None:
+def configure_github_actions_impl(config: DgPlusDeployConfigureOptions) -> None:
     """Core implementation for scaffolding GitHub Actions workflow."""
     import typer
 
@@ -142,6 +142,14 @@ def configure_github_actions_impl(config: DeploymentScaffoldConfig) -> None:
             get_cli_version_or_main(),
         )
     )
+
+    # Set ENABLE_FAST_DEPLOYS for serverless deployments
+    if config.agent_type == DgPlusAgentType.SERVERLESS:
+        enable_fast_deploys_value = "true" if config.pex_deploy else "false"
+        template = template.replace(
+            "TEMPLATE_ENABLE_FAST_DEPLOYS",
+            enable_fast_deploys_value,
+        )
 
     registry_urls = None
     if config.agent_type == DgPlusAgentType.HYBRID:
@@ -185,7 +193,7 @@ def configure_github_actions_impl(config: DeploymentScaffoldConfig) -> None:
 
 
 def _get_build_fragment_for_locations_gitlab(
-    config: DeploymentScaffoldConfig, registry_urls: list[str]
+    config: DgPlusDeployConfigureOptions, registry_urls: list[str]
 ) -> str:
     """Generate the build fragment for GitLab CI workflow."""
     if config.git_root is None:
@@ -207,7 +215,7 @@ def _get_build_fragment_for_locations_gitlab(
     return "\n".join(output)
 
 
-def configure_gitlab_ci_impl(config: DeploymentScaffoldConfig) -> None:
+def configure_gitlab_ci_impl(config: DgPlusDeployConfigureOptions) -> None:
     """Core implementation for scaffolding GitLab CI workflow."""
     import typer
 
@@ -245,6 +253,14 @@ def configure_gitlab_ci_impl(config: DeploymentScaffoldConfig) -> None:
         )
     )
 
+    # Set ENABLE_FAST_DEPLOYS for serverless deployments
+    if config.agent_type == DgPlusAgentType.SERVERLESS:
+        enable_fast_deploys_value = "true" if config.pex_deploy else "false"
+        template = template.replace(
+            "TEMPLATE_ENABLE_FAST_DEPLOYS",
+            enable_fast_deploys_value,
+        )
+
     registry_urls = None
     if config.agent_type == DgPlusAgentType.HYBRID:
         # Validate in the correct order: registry URLs first, then Dockerfiles
@@ -281,7 +297,7 @@ def configure_gitlab_ci_impl(config: DeploymentScaffoldConfig) -> None:
     )
 
 
-def configure_ci_impl(config: DeploymentScaffoldConfig) -> None:
+def configure_ci_impl(config: DgPlusDeployConfigureOptions) -> None:
     """Scaffold CI/CD workflow based on git provider."""
     if config.git_provider == GitProvider.GITHUB:
         configure_github_actions_impl(config)

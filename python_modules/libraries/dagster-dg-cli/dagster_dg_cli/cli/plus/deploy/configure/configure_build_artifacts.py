@@ -4,17 +4,22 @@ import textwrap
 
 import click
 
+from dagster_dg_cli.cli.plus.constants import DgPlusAgentType
 from dagster_dg_cli.cli.plus.deploy.configure.utils import (
-    DeploymentScaffoldConfig,
+    DgPlusDeployConfigureOptions,
     get_project_contexts,
     get_scaffolded_container_context_yaml,
 )
 from dagster_dg_cli.utils.plus.build import create_deploy_dockerfile, get_dockerfile_path
 
 
-def configure_build_artifacts_impl(config: DeploymentScaffoldConfig) -> None:
+def configure_build_artifacts_impl(config: DgPlusDeployConfigureOptions) -> None:
     """Core implementation for configuring build artifacts."""
     import yaml
+
+    # For serverless with PEX deploys, skip scaffolding build artifacts
+    if config.agent_type == DgPlusAgentType.SERVERLESS and config.pex_deploy:
+        return
 
     scaffolded_container_context_yaml = (
         get_scaffolded_container_context_yaml(config.agent_platform)
@@ -97,6 +102,12 @@ def configure_build_artifacts_impl(config: DeploymentScaffoldConfig) -> None:
                 f"A Dockerfile already exists at {dockerfile_path}. Overwrite it?",
             )
         if create:
+            # python_version should always be resolved, but check for safety
+            if config.python_version is None:
+                raise click.ClickException(
+                    "python_version is required for creating Dockerfiles. "
+                    "Please specify --python-version."
+                )
             create_deploy_dockerfile(
                 dockerfile_path,
                 config.python_version,

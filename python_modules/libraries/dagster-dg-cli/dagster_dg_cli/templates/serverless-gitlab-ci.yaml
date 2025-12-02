@@ -1,9 +1,15 @@
 variables:
+  # The organization name in Dagster Cloud
   DAGSTER_CLOUD_ORGANIZATION: TEMPLATE_ORGANIZATION_NAME
+  # The API token from https://dagster.cloud/ should be stored in a CI/CD Variable called DAGSTER_CLOUD_API_TOKEN
   DAGSTER_CLOUD_API_TOKEN: $DAGSTER_CLOUD_API_TOKEN
+  # Path to the root folder containing the dagster project
   DAGSTER_PROJECT_DIR: TEMPLATE_PROJECT_DIR
+  # State directory for deploy session
   DAGSTER_BUILD_STATEDIR: /tmp/dagster-build-state-$CI_PIPELINE_ID
-  ENABLE_FAST_DEPLOYS: "true"
+  # Enable PEX-based fast deploys (set to "false" to use Docker builds instead)
+  ENABLE_FAST_DEPLOYS: "TEMPLATE_ENABLE_FAST_DEPLOYS"
+  # Python version used to deploy the project
   PYTHON_VERSION: "3.10"
 
 stages:
