@@ -217,3 +217,94 @@ def test_ecs_pipes_waiter_config(pipes_ecs_client: PipesECSClient):
         )
         mat = instance.get_latest_materialization_event(ecs_asset.key)
         assert mat and mat.asset_materialization
+
+
+def test_pipes_ecs_task_launch_failure(pipes_ecs_client: PipesECSClient):
+    """
+    Test that PipesECSClient raises RuntimeError with failure details when task fails to launch.
+    """
+    original_run_task = pipes_ecs_client._client.run_task
+
+    def mock_run_task(**kwargs):
+        return {
+            "tasks": [],
+            "failures": [
+                {
+                    "arn": "task-arn-123",
+                    "reason": "RESOURCE:CPU",
+                    "detail": "Insufficient CPU resources available",
+                }
+            ],
+        }
+
+    pipes_ecs_client._client.run_task = mock_run_task
+    try:
+        with instance_for_test() as instance:
+            with pytest.raises(RuntimeError) as exc_info:
+                materialize(
+                    [ecs_asset], instance=instance, resources={"pipes_ecs_client": pipes_ecs_client}
+                )
+
+            error_message = str(exc_info.value)
+            assert "Failed to launch ECS task" in error_message
+            assert "RESOURCE:CPU" in error_message
+            assert "Insufficient CPU resources available" in error_message
+    finally:
+        pipes_ecs_client._client.run_task = original_run_task
+
+
+def test_pipes_ecs_task_launch_failure_multiple_failures(pipes_ecs_client: PipesECSClient):
+    """
+    Test handling of multiple failure entries with optional fields.
+    """
+    original_run_task = pipes_ecs_client._client.run_task
+
+    def mock_run_task(**kwargs):
+        return {
+            "tasks": [],
+            "failures": [
+                {"arn": "task-1", "reason": "RESOURCE:CPU", "detail": "CPU unavailable"},
+                {"arn": "task-2", "reason": "RESOURCE:MEMORY", "detail": "Memory unavailable"},
+                {"reason": "Capacity provider error"},
+            ],
+        }
+
+    pipes_ecs_client._client.run_task = mock_run_task
+    try:
+        with instance_for_test() as instance:
+            with pytest.raises(RuntimeError) as exc_info:
+                materialize(
+                    [ecs_asset], instance=instance, resources={"pipes_ecs_client": pipes_ecs_client}
+                )
+
+            error_message = str(exc_info.value)
+            assert "Failed to launch ECS task" in error_message
+            assert "RESOURCE:CPU" in error_message
+            assert "RESOURCE:MEMORY" in error_message
+            assert "Capacity provider error" in error_message
+    finally:
+        pipes_ecs_client._client.run_task = original_run_task
+
+
+def test_pipes_ecs_task_launch_failure_no_failure_details(pipes_ecs_client: PipesECSClient):
+    """
+    Test handling when failures list is empty.
+    """
+    original_run_task = pipes_ecs_client._client.run_task
+
+    def mock_run_task(**kwargs):
+        return {"tasks": [], "failures": []}
+
+    pipes_ecs_client._client.run_task = mock_run_task
+    try:
+        with instance_for_test() as instance:
+            with pytest.raises(RuntimeError) as exc_info:
+                materialize(
+                    [ecs_asset], instance=instance, resources={"pipes_ecs_client": pipes_ecs_client}
+                )
+
+            error_message = str(exc_info.value)
+            assert "Failed to launch ECS task" in error_message
+            assert "No failure details available" in error_message
+    finally:
+        pipes_ecs_client._client.run_task = original_run_task

@@ -172,6 +172,32 @@ class PipesECSClient(PipesClient, TreatAsResourceParam):
                     f"Expected to get a single task from response, got multiple: {response['tasks']}"
                 )
 
+            if not response["tasks"]:
+                # Task failed to launch - check failures for details
+                failures = response.get("failures", [])
+                failure_messages = []
+                for failure in failures:
+                    arn = failure.get("arn")
+                    reason = failure.get("reason")
+                    detail = failure.get("detail")
+
+                    failure_message = (
+                        "Task"
+                        + (f" {arn}" if arn else "")
+                        + " failed."
+                        + (f" Failure reason: {reason}" if reason else "")
+                        + (f" Failure details: {detail}" if detail else "")
+                    )
+                    failure_messages.append(failure_message)
+
+                failure_message = (
+                    "\n".join(failure_messages)
+                    if failure_messages
+                    else "Task failed."
+                )
+
+                raise RuntimeError(f"Failed to launch ECS task:\n{failure_message}")
+
             task = response["tasks"][0]
             task_arn = task["taskArn"]  # pyright: ignore (reportTypedDictNotRequiredAccess)
             task_id = task_arn.split("/")[-1]
