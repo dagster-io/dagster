@@ -1,0 +1,4 @@
+- docker build TEMPLATE_LOCATION_PATH -t TEMPLATE_IMAGE_REGISTRY:$IMAGE_TAG
+- docker push TEMPLATE_IMAGE_REGISTRY:$IMAGE_TAG
+
+- python -m uv run dg plus deploy set-build-output --location-name=TEMPLATE_LOCATION_NAME --image-tag=$IMAGE_TAG

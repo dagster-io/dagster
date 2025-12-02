@@ -455,8 +455,8 @@ def test_scaffold_github_actions_command_success_hybrid(
 
     assert "https://github.com/hooli/example-repo/settings/secrets/actions" in result.output
 
-    if registry_info.secrets_hints:
-        for hint in registry_info.secrets_hints:
+    if registry_info.github_fragment_info.secrets_hints:
+        for hint in registry_info.github_fragment_info.secrets_hints:
             assert hint in result.output
 
     validate_github_actions_workflow(Path(".github/workflows/dagster-plus-deploy.yml"))

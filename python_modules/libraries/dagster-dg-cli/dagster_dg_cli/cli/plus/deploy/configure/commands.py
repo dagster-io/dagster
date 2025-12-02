@@ -124,7 +124,7 @@ def resolve_git_provider(
         if should_scaffold_ci:
             provider_choice = click.prompt(
                 "Git provider",
-                type=click.Choice(["github"]),  # Will add gitlab later
+                type=click.Choice(["github", "gitlab"]),
                 default="github",
             )
             return GitProvider(provider_choice)
@@ -233,8 +233,8 @@ def deploy_configure_group():
 @click.command(name="serverless", cls=DgClickCommand)
 @click.option(
     "--git-provider",
-    type=click.Choice(["github"]),
-    help="Git provider for CI/CD scaffolding (only github is supported currently)",
+    type=click.Choice(["github", "gitlab"]),
+    help="Git provider for CI/CD scaffolding",
 )
 @click.option(
     "--python-version",
@@ -305,8 +305,8 @@ def deploy_configure_serverless(
 @click.command(name="hybrid", cls=DgClickCommand)
 @click.option(
     "--git-provider",
-    type=click.Choice(["github"]),
-    help="Git provider for CI/CD scaffolding (only github is supported currently)",
+    type=click.Choice(["github", "gitlab"]),
+    help="Git provider for CI/CD scaffolding",
 )
 @click.option(
     "--agent-platform",
