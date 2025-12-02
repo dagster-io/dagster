@@ -108,7 +108,9 @@ _CHECK_SUBPROCESS_INTERVAL = 5
 )
 @workspace_options
 @deprecated(
-    breaking_version="2.0", subject="--dagit-port and --dagit-host args", emit_runtime_warning=False
+    breaking_version="1.13",
+    additional_warn_text="Use 'dg dev' instead.",
+    emit_runtime_warning=True,
 )
 def dev_command(
     code_server_log_level: str,

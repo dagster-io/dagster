@@ -4,6 +4,7 @@ import click
 from dagster_shared.cli import python_pointer_options
 
 import dagster._check as check
+from dagster._annotations import deprecated
 from dagster._cli.job import get_run_config_from_cli_opts
 from dagster._cli.utils import (
     assert_no_remaining_opts,
@@ -52,6 +53,11 @@ def asset_cli():
 )
 @run_config_option(name="config", command_name="materialize")
 @python_pointer_options
+@deprecated(
+    breaking_version="1.13",
+    additional_warn_text="Use 'dg launch --assets <selection>' instead.",
+    emit_runtime_warning=True,
+)
 def asset_materialize_command(
     select: str,
     partition: Optional[str],

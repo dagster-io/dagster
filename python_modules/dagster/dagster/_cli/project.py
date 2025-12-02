@@ -5,6 +5,7 @@ from typing import NamedTuple, Optional, Union
 
 import click
 
+from dagster._annotations import deprecated
 from dagster._generate import download_example_from_github, generate_project, generate_repository
 from dagster._generate.download import AVAILABLE_EXAMPLES
 from dagster.version import __version__ as dagster_version
@@ -181,6 +182,11 @@ def scaffold_code_location_command(context, name: str):
     is_flag=True,
     default=False,
     help="Controls whether the project name can conflict with an existing PyPI package.",
+)
+@deprecated(
+    breaking_version="1.13",
+    additional_warn_text="Use 'dg scaffold' instead.",
+    emit_runtime_warning=True,
 )
 def scaffold_command(
     name: str,
