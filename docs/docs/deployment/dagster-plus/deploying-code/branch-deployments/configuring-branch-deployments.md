@@ -74,8 +74,7 @@ While you can use your existing production agent for branch deployments on Dagst
    - Set the `dagster_cloud_api.branch_deployments` field to `true`
    - Remove any `deployment` field(s)
 
-
-    For example:
+   For example:
 
 <CodeExample
   path="docs_snippets/docs_snippets/dagster-plus/deployment/branch-deployments/dagster.yaml"

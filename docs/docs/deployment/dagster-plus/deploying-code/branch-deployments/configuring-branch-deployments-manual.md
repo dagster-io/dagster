@@ -30,6 +30,7 @@ The following guide assumes the registry URL and image tag are stored in the `LO
 ## Prerequisites
 
 To complete the steps in this guide, you will need:
+
 - [Organization Admin permissions](/deployment/dagster-plus/authentication-and-access-control/rbac/user-roles-permissions#agent-tokens) in Dagster+
 - To install the [`dagster-cloud` CLI](/api/clis/dagster-cloud-cli/installing-and-configuring) wherever you will be running your CI/CD process
 
