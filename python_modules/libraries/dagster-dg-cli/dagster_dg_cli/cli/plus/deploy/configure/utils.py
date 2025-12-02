@@ -40,6 +40,7 @@ class DgPlusDeployConfigureOptions:
     use_editable_dagster: bool
     python_version: Optional[str]
     pex_deploy: Optional[bool] = None  # Only used for serverless
+    registry_url: Optional[str] = None  # Only used for hybrid
 
 
 def detect_agent_type_and_platform(
@@ -376,3 +377,179 @@ REGISTRY_INFOS = [
         ),
     ),
 ]
+
+
+def _build_ecr_url(account_id: str, region: str, repo_name: str) -> str:
+    """Build an AWS ECR registry URL."""
+    return f"{account_id}.dkr.ecr.{region}.amazonaws.com/{repo_name}"
+
+
+def _build_gcr_url(project_id: str, image_name: str) -> str:
+    """Build a Google Container Registry URL."""
+    return f"gcr.io/{project_id}/{image_name}"
+
+
+def _build_azure_acr_url(registry_name: str, image_name: str) -> str:
+    """Build an Azure Container Registry URL."""
+    return f"{registry_name}.azurecr.io/{image_name}"
+
+
+def _build_dockerhub_url(username: str, repo_name: str) -> str:
+    """Build a DockerHub registry URL."""
+    return f"docker.io/{username}/{repo_name}"
+
+
+def _build_ghcr_url(owner: str, image_name: str) -> str:
+    """Build a GitHub Container Registry URL."""
+    return f"ghcr.io/{owner}/{image_name}"
+
+
+def _prompt_for_ecr_details() -> str:
+    """Prompt for ECR registry details and return the constructed URL."""
+    import click
+
+    account_id = click.prompt("AWS Account ID (12-digit number)")
+    region = click.prompt("AWS Region", default="us-east-1")
+    repo_name = click.prompt("Repository name")
+    return _build_ecr_url(account_id, region, repo_name)
+
+
+def _prompt_for_gcr_details() -> str:
+    """Prompt for GCR registry details and return the constructed URL."""
+    import click
+
+    project_id = click.prompt("GCP Project ID")
+    image_name = click.prompt("Image name")
+    return _build_gcr_url(project_id, image_name)
+
+
+def _prompt_for_azure_acr_details() -> str:
+    """Prompt for Azure ACR registry details and return the constructed URL."""
+    import click
+
+    registry_name = click.prompt("Azure Container Registry name (without .azurecr.io)")
+    image_name = click.prompt("Image name")
+    return _build_azure_acr_url(registry_name, image_name)
+
+
+def _prompt_for_dockerhub_details() -> str:
+    """Prompt for DockerHub registry details and return the constructed URL."""
+    import click
+
+    username = click.prompt("DockerHub username or organization")
+    repo_name = click.prompt("Repository name")
+    return _build_dockerhub_url(username, repo_name)
+
+
+def _prompt_for_ghcr_details() -> str:
+    """Prompt for GHCR registry details and return the constructed URL."""
+    import click
+
+    owner = click.prompt("GitHub owner (username or organization)")
+    image_name = click.prompt("Image name")
+    return _build_ghcr_url(owner, image_name)
+
+
+def prompt_for_registry_url(skip_prompt: bool = False) -> Optional[str]:
+    """Prompt user to configure container registry URL with interactive options.
+
+    Args:
+        skip_prompt: If True, skip the prompt and return None (keeping placeholder).
+
+    Returns:
+        The registry URL if provided, or None if skipped.
+    """
+    import click
+
+    if skip_prompt:
+        return None
+
+    click.echo("\nConfigure container registry for Docker image storage:")
+    click.echo("  [1] AWS ECR")
+    click.echo("  [2] Google Container Registry (GCR)")
+    click.echo("  [3] Azure Container Registry")
+    click.echo("  [4] DockerHub")
+    click.echo("  [5] GitHub Container Registry (GHCR)")
+    click.echo("  [6] Enter URL directly")
+    click.echo("  [7] Skip (configure later)")
+
+    choice = click.prompt(
+        "\nRegistry type",
+        type=click.Choice(["1", "2", "3", "4", "5", "6", "7"]),
+        default="7",
+    )
+
+    if choice == "1":
+        return _prompt_for_ecr_details()
+    elif choice == "2":
+        return _prompt_for_gcr_details()
+    elif choice == "3":
+        return _prompt_for_azure_acr_details()
+    elif choice == "4":
+        return _prompt_for_dockerhub_details()
+    elif choice == "5":
+        return _prompt_for_ghcr_details()
+    elif choice == "6":
+        click.echo("\nExamples:")
+        click.echo("  ECR:       123456789012.dkr.ecr.us-east-1.amazonaws.com/my-repo")
+        click.echo("  GCR:       gcr.io/my-project/my-image")
+        click.echo("  Azure:     myregistry.azurecr.io/my-image")
+        click.echo("  DockerHub: docker.io/myuser/my-image")
+        click.echo("  GHCR:      ghcr.io/myorg/my-image")
+        return click.prompt("\nRegistry URL")
+    else:  # choice == "7"
+        return None
+
+
+def get_registry_info_for_url(registry_url: str) -> Optional[ContainerRegistryInfo]:
+    """Get the ContainerRegistryInfo for a given registry URL.
+
+    Args:
+        registry_url: The registry URL to match.
+
+    Returns:
+        The matching ContainerRegistryInfo, or None if no match found.
+    """
+    for registry_info in REGISTRY_INFOS:
+        if registry_info.match(registry_url):
+            return registry_info
+    return None
+
+
+def display_registry_secrets_hints(
+    registry_url: Optional[str], git_provider: Optional[GitProvider]
+) -> None:
+    """Display required CI/CD secrets for the detected registry type.
+
+    Args:
+        registry_url: The registry URL to detect type from.
+        git_provider: The git provider (GitHub or GitLab) for provider-specific hints.
+    """
+    import click
+
+    if not registry_url or registry_url == "...":
+        return
+
+    if not git_provider:
+        return
+
+    registry_info = get_registry_info_for_url(registry_url)
+    if not registry_info:
+        click.echo(
+            f"\nNote: Could not detect registry type for '{registry_url}'. "
+            "You may need to configure CI/CD secrets manually."
+        )
+        return
+
+    fragment_info = registry_info.get_fragment_info(git_provider)
+    if not fragment_info.secrets_hints:
+        # Some registries (like GHCR on GitHub) don't need additional secrets
+        click.echo(f"\nRegistry '{registry_info.name}' detected. No additional secrets required.")
+        return
+
+    provider_name = "GitHub" if git_provider == GitProvider.GITHUB else "GitLab"
+    click.echo(
+        f"\nTo enable CI/CD with {registry_info.name}, configure these {provider_name} secrets:"
+    )
+    for hint in fragment_info.secrets_hints:
+        click.echo(f"  {hint}")
