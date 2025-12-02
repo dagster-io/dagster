@@ -84,12 +84,4 @@ Inventory snapshots component:
   language="yaml"
 />
 
-Configure separate pool limits for each domain:
-
-```bash
-# Configure pool limits for each snapshot group
-dagster instance concurrency set sales-snapshots 1
-dagster instance concurrency set inventory-snapshots 1
-```
-
-This approach allows snapshots from different business domains to run in parallel while preventing concurrent execution within each domain, reducing the risk of corruption while maintaining reasonable performance.
+Configure separate [pool limits for each domain](/guides/operate/managing-concurrency#limit-the-number-of-assets-or-ops-actively-executing-across-all-runs). This approach allows snapshots from different business domains to run in parallel while preventing concurrent execution within each domain, reducing the risk of corruption while maintaining reasonable performance.
