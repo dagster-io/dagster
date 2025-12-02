@@ -108,12 +108,11 @@ class DbtCloudWorkspaceClient(DagsterModel):
                 )
                 response.raise_for_status()
 
-                # Check Content-Type header to determine response format
-                content_type = response.headers.get("Content-Type", "")
-                if "application/json" in content_type:
+                # Try to parse as JSON first
+                try:
                     return response.json()
-                else:
-                    # Return text for non-JSON responses (logs, etc.)
+                except Exception:
+                    # If JSON parsing fails, return as text wrapped in a dict
                     return {"text": response.text}
             except RequestException as e:
                 self._log.error(
