@@ -19,7 +19,7 @@ You can also apply filters to show only new and changed assets in the UI. This m
 
 :::note
 
-The default behavior is to compare the branch deployment against the **current** state of the [base deployment](/deployment/dagster-plus/deploying-code/branch-deployments/setting-up-branch-deployments#changing-the-base-deployment). Depending on deployment and development cadence, the code deployed in the base deployment can get ahead of the branch causing changes to appear that are from the base getting ahead of the branch.
+The default behavior is to compare the branch deployment against the **current** state of the [base deployment](/deployment/dagster-plus/deploying-code/branch-deployments/configuring-branch-deployments#changing-the-base-deployment). Depending on deployment and development cadence, the code deployed in the base deployment can get ahead of the branch causing changes to appear that are from the base getting ahead of the branch.
 
 To address this, the `dagster-cloud` CLI command `branch-deployment create-or-update` has an option `--snapshot-base-condition` that can be set to either `on-create` to snapshot the base only when the branch is first created or `on-update` to refresh the base snapshot anytime the branch is updated.
 

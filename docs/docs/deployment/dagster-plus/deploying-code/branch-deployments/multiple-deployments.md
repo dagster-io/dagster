@@ -106,7 +106,7 @@ For more information about agent queue routing or code location configuration, r
 
 :::info
 
-The [base deployment](/deployment/dagster-plus/deploying-code/branch-deployments/setting-up-branch-deployments#changing-the-base-deployment) of a branch deployment does not affect which agents will serve the branch deployment.
+The [base deployment](/deployment/dagster-plus/deploying-code/branch-deployments/configuring-branch-deployments#changing-the-base-deployment) of a branch deployment does not affect which agents will serve the branch deployment.
 
 :::
 

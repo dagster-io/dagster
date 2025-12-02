@@ -242,7 +242,7 @@ If you are using a non-GitHub CI/CD provider, your system should use the [`dg de
 
 :::note
 
-Creating branch deployments using the CLI requires some additional steps. For more information, see [Setting up branch deployments](/deployment/dagster-plus/deploying-code/branch-deployments/setting-up-branch-deployments).
+Creating branch deployments using the CLI requires some additional steps. For more information, see [Setting up branch deployments](/deployment/dagster-plus/deploying-code/branch-deployments/configuring-branch-deployments).
 
 :::
 
