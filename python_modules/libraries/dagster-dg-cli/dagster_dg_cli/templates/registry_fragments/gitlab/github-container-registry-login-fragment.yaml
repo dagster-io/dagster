@@ -1,0 +1,2 @@
+# GitHub Container Registry - Login
+- echo "$GITHUB_TOKEN" | docker login --username "$GITHUB_USERNAME" --password-stdin ghcr.io

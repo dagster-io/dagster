@@ -92,7 +92,7 @@ def test_scaffold_build_artifacts_container_context_no_running_agent(
         },
     )
     runner = setup_populated_git_workspace
-    result = runner.invoke("scaffold", "build-artifacts")
+    result = runner.invoke("scaffold", "build-artifacts", input="7\n\n")
     assert result.exit_code == 0, result.output + " " + str(result.exception)
     assert result.exit_code == 0, result.output + " " + str(result.exception)
     assert not (Path.cwd() / "container_context.yaml").exists()
@@ -119,7 +119,7 @@ def test_scaffold_build_artifacts_container_context_platforms(
 ):
     mock_hybrid_response(agent_class=agent_class_name)
     runner = setup_populated_git_workspace
-    result = runner.invoke("scaffold", "build-artifacts")
+    result = runner.invoke("scaffold", "build-artifacts", input="7\n\n")
     assert result.exit_code == 0, result.output + " " + str(result.exception)
     assert result.exit_code == 0, result.output + " " + str(result.exception)
 
@@ -153,7 +153,7 @@ def test_scaffold_build_artifacts_command_workspace(
     assert not (Path.cwd() / "foo" / "Dockerfile").exists()
 
     runner = setup_populated_git_workspace
-    result = runner.invoke("scaffold", "build-artifacts")
+    result = runner.invoke("scaffold", "build-artifacts", input="7\n\n")
     assert result.exit_code == 0, result.output + " " + str(result.exception)
 
     assert (Path.cwd() / "build.yaml").exists()
@@ -174,7 +174,7 @@ def test_scaffold_build_artifacts_command_workspace(
     result = runner.invoke(
         "scaffold",
         "build-artifacts",
-        input="N\nN\nN\nN\nN\nN\nN\nN\nN\nN\nN\n",
+        input="7\nN\nN\nN\nN\nN\nN\nN\nN\nN\nN\nN\n",
     )
     assert result.exit_code == 0, result.output + " " + str(result.exception)
     assert "Build config already exists" in result.output
@@ -187,7 +187,7 @@ def test_scaffold_build_artifacts_command_workspace(
     result = runner.invoke(
         "scaffold",
         "build-artifacts",
-        input="Y\nY\nY\nY\nY\nY\nY\nY\nY\nY\nY\n",
+        input="7\nY\nY\nY\nY\nY\nY\nY\nY\nY\nY\nY\n",
     )
     assert result.exit_code == 0, result.output + " " + str(result.exception)
 
@@ -214,7 +214,7 @@ def test_scaffold_build_artifacts_command_project(
         assert not Path("Dockerfile").exists()
 
         runner = setup_populated_git_workspace
-        result = runner.invoke("scaffold", "build-artifacts", "-y")
+        result = runner.invoke("scaffold", "build-artifacts", "-y", input="7\n\n")
         assert result.exit_code == 0, result.output + " " + str(result.exception)
 
         assert Path("build.yaml").exists()
@@ -232,7 +232,7 @@ def test_scaffold_build_artifacts_command_project(
         result = runner.invoke(
             "scaffold",
             "build-artifacts",
-            input="N\nN\nN\nN\nN\nN\nN\nN\nN\nN\nN\n",
+            input="7\nN\nN\nN\nN\nN\nN\nN\nN\nN\nN\n",
         )
         assert result.exit_code == 0, result.output + " " + str(result.exception)
         assert "Build config already exists" in result.output
@@ -245,7 +245,7 @@ def test_scaffold_build_artifacts_command_project(
         result = runner.invoke(
             "scaffold",
             "build-artifacts",
-            input="Y\nY\nY\nY\nY\nY\nY\nY\nY\nY\nY\n",
+            input="7\nY\nY\nY\nY\nY\nY\nY\nY\nY\nY\nY\n",
         )
         assert result.exit_code == 0, result.output + " " + str(result.exception)
         assert "Build config already exists" in result.output
@@ -430,9 +430,9 @@ def test_scaffold_github_actions_command_success_hybrid(
     mock_hybrid_response()
 
     runner = setup_populated_git_workspace
-    result = runner.invoke("scaffold", "build-artifacts")
+    result = runner.invoke("scaffold", "build-artifacts", input=f"6\n{registry_url}\n")
     assert result.exit_code == 0, result.output + " " + str(result.exception)
-    Path("build.yaml").write_text(yaml.dump({"registry": registry_url}))
+    assert f"registry: '{registry_url}'" in Path("build.yaml").read_text()
 
     result = runner.invoke("scaffold", "github-actions")
     assert result.exit_code == 0, result.output + " " + str(result.exception)
@@ -455,8 +455,8 @@ def test_scaffold_github_actions_command_success_hybrid(
 
     assert "https://github.com/hooli/example-repo/settings/secrets/actions" in result.output
 
-    if registry_info.secrets_hints:
-        for hint in registry_info.secrets_hints:
+    if registry_info.github_fragment_info.secrets_hints:
+        for hint in registry_info.github_fragment_info.secrets_hints:
             assert hint in result.output
 
     validate_github_actions_workflow(Path(".github/workflows/dagster-plus-deploy.yml"))
@@ -484,7 +484,7 @@ def test_scaffold_github_actions_command_success_project_hybrid(
         assert "Dockerfile not found" in result.output
 
         result = runner.invoke(
-            "scaffold", "build-artifacts", "--python-version", PYTHON_VERSION, input="\n"
+            "scaffold", "build-artifacts", "--python-version", PYTHON_VERSION, input="7\n\n"
         )
         assert result.exit_code == 0, result.output + " " + str(result.exception)
 
@@ -511,9 +511,8 @@ def test_scaffold_github_actions_command_no_plus_config_hybrid(
 
         runner = setup_populated_git_workspace
 
-        result = runner.invoke("scaffold", "build-artifacts")
+        result = runner.invoke("scaffold", "build-artifacts", input=f"6\n{FAKE_ECR_URL}\n")
         assert result.exit_code == 0, result.output + " " + str(result.exception)
-        Path("build.yaml").write_text(yaml.dump({"registry": FAKE_ECR_URL}))
 
         result = runner.invoke(
             "scaffold",
@@ -548,10 +547,8 @@ def test_scaffold_github_actions_git_root_above_workspace(
             ["git", "remote", "add", "origin", "git@github.com:hooli/example-repo.git"],
             check=False,
         )
-        result = runner.invoke("scaffold", "build-artifacts")
+        result = runner.invoke("scaffold", "build-artifacts", input=f"6\n{FAKE_ECR_URL}\n")
         assert result.exit_code == 0, result.output + " " + str(result.exception)
-
-        Path("build.yaml").write_text(yaml.dump({"registry": FAKE_ECR_URL}))
 
         result = runner.invoke(
             "scaffold",
@@ -590,10 +587,8 @@ def test_scaffold_github_actions_git_root_above_project(
                 ["git", "remote", "add", "origin", "git@github.com:hooli/example-repo.git"],
                 check=False,
             )
-            result = runner.invoke("scaffold", "build-artifacts")
+            result = runner.invoke("scaffold", "build-artifacts", input=f"6\n{FAKE_ECR_URL}\n")
             assert result.exit_code == 0, result.output + " " + str(result.exception)
-
-            Path("build.yaml").write_text(yaml.dump({"registry": FAKE_ECR_URL}))
 
             result = runner.invoke(
                 "scaffold",

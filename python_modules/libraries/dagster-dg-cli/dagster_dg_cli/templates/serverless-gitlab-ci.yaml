@@ -1,0 +1,56 @@
+variables:
+  # The organization name in Dagster Cloud
+  DAGSTER_CLOUD_ORGANIZATION: TEMPLATE_ORGANIZATION_NAME
+  # The API token from https://dagster.cloud/ should be stored in a CI/CD Variable called DAGSTER_CLOUD_API_TOKEN
+  DAGSTER_CLOUD_API_TOKEN: $DAGSTER_CLOUD_API_TOKEN
+  # Path to the root folder containing the dagster project
+  DAGSTER_PROJECT_DIR: TEMPLATE_PROJECT_DIR
+  # State directory for deploy session
+  DAGSTER_BUILD_STATEDIR: /tmp/dagster-build-state-$CI_PIPELINE_ID
+  # Enable PEX-based fast deploys (set to "false" to use Docker builds instead)
+  ENABLE_FAST_DEPLOYS: "TEMPLATE_ENABLE_FAST_DEPLOYS"
+  # Python version used to deploy the project
+  PYTHON_VERSION: "3.10"
+
+stages:
+  - deploy
+
+workflow:
+  rules:
+    - if: $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH
+    - if: $CI_PIPELINE_SOURCE == 'merge_request_event'
+
+dagster-cloud-serverless-deploy:
+  stage: deploy
+  image: docker:latest
+  services:
+    - docker:dind
+  interruptible: true
+  before_script:
+    # Install Python and uv for running dg CLI
+    - apk add --no-cache python3 py3-pip
+    - pip install --break-system-packages uv
+    - uv pip install dagster dagster-dg-cli dagster-cloud
+  script:
+    - cd $DAGSTER_PROJECT_DIR
+    - >
+      python -m uv run dg plus deploy start
+      --deployment=TEMPLATE_DEFAULT_DEPLOYMENT_NAME
+      --yes
+
+    # Sync all projects (workspace or single project)
+    - find . -maxdepth 3 -name "pyproject.toml" -type f -execdir python -m uv sync \;
+
+    # Refresh state for any StateBackedComponents in the project
+    - python -m uv run dg plus deploy refresh-defs-state
+
+    # Build and push (PEX or Docker based on project configuration)
+    - python -m uv run dg plus deploy build-and-push --agent-type=serverless --python-version $PYTHON_VERSION
+
+    # Deploy all code locations in this build session to Dagster Cloud
+    - python -m uv run dg plus deploy finish
+  after_script:
+    # Generate a summary - this runs always() so the summary is generated on success and failure
+    - pip install --break-system-packages uv 2>/dev/null || true
+    - cd $DAGSTER_PROJECT_DIR
+    - python -m uv run dagster-cloud ci status --output-format=markdown || true
