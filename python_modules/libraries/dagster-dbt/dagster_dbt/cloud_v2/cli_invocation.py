@@ -54,6 +54,12 @@ class DbtCloudCliInvocation:
         self, timeout: Optional[float] = None
     ) -> Iterator[Union[AssetCheckEvaluation, AssetCheckResult, AssetMaterialization, Output]]:
         run = self.run_handler.wait(timeout=timeout)
+
+        # Write dbt Cloud run logs to stdout
+        logs = self.run_handler.get_run_logs()
+        if logs:
+            print(logs, flush=True)  # noqa: T201
+
         if "run_results.json" in self.run_handler.list_run_artifacts():
             run_results = DbtCloudJobRunResults.from_run_results_json(
                 run_results_json=self.run_handler.get_run_results()

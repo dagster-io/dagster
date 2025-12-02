@@ -283,20 +283,29 @@ class DbtCloudWorkspaceClient(DagsterModel):
         total_count = resp["extra"]["pagination"]["total_count"]
         return data, total_count
 
-    def get_run_details(self, run_id: int) -> Mapping[str, Any]:
+    def get_run_details(
+        self, run_id: int, include_related: Optional[Sequence[str]] = None
+    ) -> Mapping[str, Any]:
         """Retrieves the details of a given dbt Cloud Run.
 
         Args:
-            run_id (str): The dbt Cloud Run ID. You can retrieve this value from the
+            run_id (int): The dbt Cloud Run ID. You can retrieve this value from the
                 URL of the given run in the dbt Cloud UI.
+            include_related (Optional[Sequence[str]]): List of related fields to pull with the run.
+                Valid values are "trigger", "job", "debug_logs", and "run_steps".
 
         Returns:
             Dict[str, Any]: Parsed json data representing the API response.
         """
+        params = {}
+        if include_related:
+            params["include_related"] = ",".join(include_related)
+
         return self._make_request(
             method="get",
             endpoint=f"runs/{run_id}",
             base_url=self.api_v2_url,
+            params=params,
         )["data"]
 
     def poll_run(
@@ -355,18 +364,46 @@ class DbtCloudWorkspaceClient(DagsterModel):
             )["data"],
         )
 
-    def get_run_artifact(self, run_id: int, path: str) -> Mapping[str, Any]:
+    def get_run_artifact(
+        self, run_id: int, path: str, return_text: bool = False
+    ) -> Mapping[str, Any]:
         """Retrieves an artifact at the given path for a given dbt Cloud Run.
 
+        Args:
+            run_id (int): The dbt Cloud Run ID.
+            path (str): The path to the artifact (e.g., "logs/dbt.log", "run_results.json").
+            return_text (bool): If True, returns the raw text content instead of parsing as JSON.
+                Useful for log files.
+
         Returns:
-            Dict[str, Any]: Parsed json data representing the API response.
+            Dict[str, Any]: Parsed json data representing the API response, or the raw text if
+                return_text is True.
         """
-        return self._make_request(
-            method="get",
-            endpoint=f"runs/{run_id}/artifacts/{path}",
-            base_url=self.api_v2_url,
-            session_attr="_get_artifact_session",
-        )
+        url = f"{self.api_v2_url}/runs/{run_id}/artifacts/{path}"
+
+        num_retries = 0
+        while True:
+            try:
+                session = self._get_artifact_session()
+                response = session.request(
+                    method="get",
+                    url=url,
+                    timeout=self.request_timeout,
+                )
+                response.raise_for_status()
+                if return_text:
+                    return {"text": response.text}
+                return response.json()
+            except RequestException as e:
+                self._log.error(
+                    f"Request to dbt Cloud API failed for url {url} with method get : {e}"
+                )
+                if num_retries == self.request_max_retries:
+                    break
+                num_retries += 1
+                time.sleep(self.request_retry_delay)
+
+        raise Failure(f"Max retries ({self.request_max_retries}) exceeded with url: {url}.")
 
     def get_run_results_json(self, run_id: int) -> Mapping[str, Any]:
         """Retrieves the run_results.json artifact of a given dbt Cloud Run.
@@ -383,6 +420,35 @@ class DbtCloudWorkspaceClient(DagsterModel):
             Dict[str, Any]: Parsed json data representing the API response.
         """
         return self.get_run_artifact(run_id=run_id, path="manifest.json")
+
+    def get_run_logs(self, run_id: int) -> str:
+        """Retrieves the stdout/stderr logs from a given dbt Cloud Run.
+
+        This method fetches logs from the run_steps field by calling get_run_details
+        with include_related=["run_steps"]. Each step contains a logs field with
+        the stdout/stderr output for that step.
+
+        Args:
+            run_id (int): The dbt Cloud Run ID.
+
+        Returns:
+            str: The concatenated log text content from all run steps.
+        """
+        run_details = self.get_run_details(run_id=run_id, include_related=["run_steps"])
+
+        logs_parts = []
+        run_steps = run_details.get("run_steps", [])
+
+        for step in run_steps:
+            step_name = step.get("name", "Unknown Step")
+            step_logs = step.get("logs", "")
+
+            if step_logs:
+                logs_parts.append(f"=== Step: {step_name} ===")
+                logs_parts.append(step_logs)
+                logs_parts.append("")  # Empty line between steps
+
+        return "\n".join(logs_parts) if logs_parts else ""
 
     def get_project_details(self, project_id: int) -> Mapping[str, Any]:
         """Retrieves the details of a given dbt Cloud Project.
