@@ -1371,15 +1371,15 @@
     },
     {
       "source": "/dagster-plus/managing-deployments/branch-deployments/using-branch-deployments-with-github",
-      "destination": "/deployment/dagster-plus/deploying-code/branch-deployments/setting-up-branch-deployments"
+      "destination": "/deployment/dagster-plus/deploying-code/branch-deployments/configuring-branch-deployments"
     },
     {
       "source": "/dagster-plus/managing-deployments/branch-deployments/using-branch-deployments-with-gitlab",
-      "destination": "/deployment/dagster-plus/deploying-code/branch-deployments/setting-up-branch-deployments"
+      "destination": "/deployment/dagster-plus/deploying-code/branch-deployments/configuring-branch-deployments"
     },
     {
       "source": "/dagster-plus/managing-deployments/branch-deployments/using-branch-deployments",
-      "destination": "/deployment/dagster-plus/deploying-code/branch-deployments/setting-up-branch-deployments"
+      "destination": "/deployment/dagster-plus/deploying-code/branch-deployments/configuring-branch-deployments"
     },
     {
       "source": "/dagster-plus/managing-deployments/branch-deployments/change-tracking",
@@ -2972,7 +2972,7 @@
     },
     {
       "source": "/dagster-cloud/managing-deployments/branch-deployments/using-branch-deployments-with-github",
-      "destination": "/deployment/dagster-plus/deploying-code/branch-deployments/setting-up-branch-deployments"
+      "destination": "/deployment/dagster-plus/deploying-code/branch-deployments/configuring-branch-deployments"
     },
     {
       "source": "/deployment/dagster-plus/ci-cd/branch-deployments",
@@ -2992,11 +2992,11 @@
     },
     {
       "source": "/deployment/dagster-plus/ci-cd/branch-deployments/setting-up-branch-deployments",
-      "destination": "/deployment/dagster-plus/deploying-code/branch-deployments/setting-up-branch-deployments"
+      "destination": "/deployment/dagster-plus/deploying-code/branch-deployments/configuring-branch-deployments"
     },
     {
       "source": "/deployment/dagster-plus/ci-cd/branch-deployments/using-branch-deployments-with-the-cli",
-      "destination": "/deployment/dagster-plus/deploying-code/branch-deployments/setting-up-branch-deployments"
+      "destination": "/deployment/dagster-plus/deploying-code/branch-deployments/configuring-branch-deployments"
     },
     {
       "source": "/dagster-cloud/managing-deployments/alerts/slack",
@@ -3004,7 +3004,7 @@
     },
     {
       "source": "/dagster-cloud/managing-deployments/branch-deployments/using-branch-deployments-with-gitlab",
-      "destination": "/deployment/dagster-plus/deploying-code/branch-deployments/setting-up-branch-deployments"
+      "destination": "/deployment/dagster-plus/deploying-code/branch-deployments/configuring-branch-deployments"
     },
     {
       "source": "/dagster-cloud/managing-deployments/setting-up-alerts",
@@ -3817,6 +3817,10 @@
     {
       "source": "/guides/build/projects/multiple-projects",
       "destination": "/guides/build/projects/workspaces/creating-workspaces"
+    },
+    {
+      "source": "/deployment/dagster-plus/deploying-code/branch-deployments/setting-up-branch-deployments",
+      "destination": "/deployment/dagster-plus/deploying-code/branch-deployments/configuring-branch-deployments"
     }
   ],
   "trailingSlash": false
