@@ -1,4 +1,4 @@
-In the `build.yaml` file, replace `build.registry` with the registry used by the [agent you created in step 1](#step-1-generate-a-dagster-agent-token).
+In the `build.yaml` file, replace `build.registry` with the registry used by the [agent you created in step 2](#step-2).
 
 For example:
 

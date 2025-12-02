@@ -1,3 +1,8 @@
+---
+title: Configuring branch deployments manually (advanced)
+description: TK
+---
+
 You can manually execute `dagster-cloud` CLI commands to deploy and manage branch deployments. This is a more advanced option than the other methods.
 
 This approach may be a good fit if:
@@ -20,7 +25,7 @@ The following examples assume the registry URL and image tag are stored in the `
 
 :::
 
-**Step 3.1: Generate a Dagster+ agent token**
+## Step 1: Generate a Dagster+ agent token**
 
 The first step is to generate a token for the Dagster+ agent. The Dagster+ agent will use this token to authenticate to the agent API.
 
@@ -32,7 +37,7 @@ The first step is to generate a token for the Dagster+ agent. The Dagster+ agent
 
 Keep the token somewhere handy, as you'll need it to complete the setup.
 
-**Step 3.1 Create a branch deployment associated with the branch**
+## Step 2: Create a branch deployment associated with the branch
 
 Execute the following command within your CI/CD process:
 
@@ -86,7 +91,7 @@ BRANCH_DEPLOYMENT_NAME=$(
 )
 ```
 
-**Step 3.2 Deploy your code to the branch deployment**
+## Step 3: Deploy your code to the branch deployment
 
 Execute the following command within your CI/CD process:
 

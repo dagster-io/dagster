@@ -1,6 +1,6 @@
 ---
 description: Dagster+ branch deployments compare asset definitions in the branch deployment against the asset definitions in the base deployment, helping your team identify how changes in a pull request will impact data assets.
-sidebar_position: 7320
+sidebar_position: 7330
 title: Change tracking in branch deployments
 tags: [dagster-plus-feature]
 ---

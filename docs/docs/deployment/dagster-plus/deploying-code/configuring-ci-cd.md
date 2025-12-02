@@ -136,7 +136,11 @@ During the deployment, the agent will attempt to load your code and update the m
     - Navigate to the project page in GitLab.
     - In the left sidebar, click **Settings** > **CI/CD**.
     - On the settings page, click **Variables**.
-    - Update settings for the variable as needed, then add the variable by clicking **Add variable**. Set the key to `DAGSTER_CLOUD_API_TOKEN`.
+    - Under **Project variables**, click **Add variable**.
+    - In the **Key** field, enter `DAGSTER_CLOUD_API_TOKEN`
+    - In the **Value** field, paste the Dagster Cloud API token.
+    - Optionally update the variable type, environments, visibility, flags, and description fields as needed.
+    - Click **Add variable**.
 
 After following these steps, commiting and pushing additional changes to your Dagster project in GitLab will deploy them to your Dagster+ organization.
 
