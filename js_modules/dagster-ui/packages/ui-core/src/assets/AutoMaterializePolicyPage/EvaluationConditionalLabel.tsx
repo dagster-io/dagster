@@ -1,5 +1,6 @@
 import {
   Box,
+  ButtonLink,
   CaptionMono,
   Code,
   Colors,
@@ -8,61 +9,36 @@ import {
   MiddleTruncate,
   Tooltip,
 } from '@dagster-io/ui-components';
-import {useContext} from 'react';
 import styled from 'styled-components';
 
 import {EvaluationHistoryStackItem} from './types';
-import {NewEvaluationNodeFragment} from './types/GetEvaluationsQuery.types';
-import {TimeContext} from '../../app/time/TimeContext';
-import {DEFAULT_TIME_FORMAT} from '../../app/time/TimestampFormat';
-import {timestampToString} from '../../app/time/timestampToString';
+import {SinceMetadataFragment} from './types/GetEvaluationsQuery.types';
+import {EntityKey} from '../../graphql/types';
+import {useFormatDateTime} from '../../ui/useFormatDateTime';
 
 interface Props {
   segments: string[];
 }
 
 export const EvaluationSinceLabel = ({
-  evaluation,
+  sinceMetadata,
+  triggerCondition,
+  resetCondition,
+  entityKey,
   pushHistory,
 }: {
-  evaluation: NewEvaluationNodeFragment;
+  triggerCondition?: string;
+  resetCondition?: string;
+  sinceMetadata: SinceMetadataFragment;
+  entityKey: EntityKey;
   pushHistory?: (item: EvaluationHistoryStackItem) => void;
 }) => {
-  const {
-    timezone: [userTimezone],
-    hourCycle: [userHourCycle],
-  } = useContext(TimeContext);
+  const formatDateTime = useFormatDateTime();
 
-  const locale = navigator.language;
-  const {expandedLabel, sinceMetadata, entityKey} = evaluation;
-
-  if (!sinceMetadata || expandedLabel.length !== 3 || expandedLabel[1] !== 'SINCE') {
-    throw new Error(
-      'sinceMetadata must be set and expandedLabel must be of the form [condition, SINCE, condition]',
-    );
-  }
-
-  if (!sinceMetadata.triggerTimestamp || !sinceMetadata.resetTimestamp) {
-    throw new Error('sinceMetadata must have both triggerTimestamp and resetTimestamp set');
-  }
-
-  const [triggerCondition, _operator, resetCondition] = expandedLabel;
   const triggerLabel = triggerCondition?.slice(1, -1) || ''; // remove parentheses
   const resetLabel = resetCondition?.slice(1, -1) || ''; // remove parentheses
-  const triggerTime = timestampToString({
-    timestamp: {unix: sinceMetadata.triggerTimestamp},
-    locale,
-    timezone: userTimezone,
-    timeFormat: DEFAULT_TIME_FORMAT,
-    hourCycle: userHourCycle,
-  });
-  const resetTime = timestampToString({
-    timestamp: {unix: sinceMetadata.resetTimestamp},
-    locale,
-    timezone: userTimezone,
-    timeFormat: DEFAULT_TIME_FORMAT,
-    hourCycle: userHourCycle,
-  });
+  const triggerTime = formatDateTime(new Date(sinceMetadata.triggerTimestamp || 0), {});
+  const resetTime = formatDateTime(new Date(sinceMetadata.resetTimestamp || 0), {});
 
   const assetKey =
     entityKey && entityKey.__typename === 'AssetCheckhandle' ? entityKey.assetKey : entityKey;
@@ -77,9 +53,13 @@ export const EvaluationSinceLabel = ({
       <EvaluationSinceMetadata
         assetKey={assetKey}
         checkName={checkName}
-        detailLabel={`${triggerLabel} was last True at ${triggerTime}`}
-        evaluationId={sinceMetadata.triggerEvaluationId || 0}
-        timestamp={sinceMetadata.triggerTimestamp || 0}
+        detailLabel={
+          sinceMetadata.triggerTimestamp
+            ? `${triggerLabel} was last True at ${triggerTime}`
+            : `${triggerLabel} has not yet occurred.`
+        }
+        evaluationId={sinceMetadata.triggerEvaluationId}
+        timestamp={sinceMetadata.triggerTimestamp}
         pushHistory={pushHistory}
       />
       <Operator>SINCE</Operator>
@@ -89,9 +69,13 @@ export const EvaluationSinceLabel = ({
       <EvaluationSinceMetadata
         assetKey={assetKey}
         checkName={checkName}
-        detailLabel={`${resetLabel} last occurred ${resetTime}`}
-        evaluationId={sinceMetadata.resetEvaluationId || 0}
-        timestamp={sinceMetadata.resetTimestamp || 0}
+        detailLabel={
+          sinceMetadata.resetTimestamp
+            ? `${resetLabel} last occurred ${resetTime}`
+            : `${resetLabel} has not yet occured.`
+        }
+        evaluationId={sinceMetadata.resetEvaluationId}
+        timestamp={sinceMetadata.resetTimestamp}
         pushHistory={pushHistory}
       />
     </Box>
@@ -103,16 +87,17 @@ export const EvaluationSinceMetadata = ({
   checkName,
   detailLabel,
   evaluationId,
+  timestamp,
   pushHistory,
 }: {
   assetKey: {path: string[]};
   checkName?: string;
   detailLabel: string;
-  evaluationId: number;
-  timestamp: number;
+  evaluationId: number | null;
+  timestamp: number | null;
   pushHistory?: (item: EvaluationHistoryStackItem) => void;
 }) => {
-  if (!pushHistory) {
+  if (!pushHistory || !evaluationId || !timestamp) {
     return (
       <Tooltip content={detailLabel}>
         <Icon name="info" color={Colors.accentGray()} style={{verticalAlign: 'middle'}} />
@@ -121,9 +106,8 @@ export const EvaluationSinceMetadata = ({
   }
   return (
     <Tooltip content={detailLabel}>
-      <a
-        onClick={(e) => {
-          e?.stopPropagation();
+      <ButtonLink
+        onClick={() => {
           pushHistory({
             assetKeyPath: assetKey.path,
             assetCheckName: checkName,
@@ -132,7 +116,7 @@ export const EvaluationSinceMetadata = ({
         }}
       >
         <Icon name="link" color={Colors.accentGray()} style={{verticalAlign: 'middle'}} />
-      </a>
+      </ButtonLink>
     </Tooltip>
   );
 };

@@ -358,6 +358,14 @@ export type PartitionedAssetConditionEvaluationNodeFragment = {
     | {__typename: 'AssetKey'; path: Array<string>};
 };
 
+export type SinceMetadataFragment = {
+  __typename: 'SinceConditionMetadata';
+  triggerEvaluationId: number | null;
+  triggerTimestamp: number | null;
+  resetEvaluationId: number | null;
+  resetTimestamp: number | null;
+};
+
 export type NewEvaluationNodeFragment = {
   __typename: 'AutomationConditionEvaluationNode';
   uniqueId: string;
@@ -2226,9 +2234,9 @@ export type GetAssetEvaluationDetailsQuery = {
   }>;
 };
 
-export const GetEvaluationsQueryVersion = 'c04ea7c1c264130969c56e6d327673e8321b8afc95e6f6b567557495dd24353b';
+export const GetEvaluationsQueryVersion = '4eb403a42b1bb779b1feec6194349cca0142d417169e95f70c1e238e61d7cb19';
 
-export const GetSlimEvaluationsQueryVersion = '7e23e13e926df379d0c34b19fc8c596f0436741d4a6be131437262c544a733f0';
+export const GetSlimEvaluationsQueryVersion = '96e56c9cf54a559d037df2f6e7f677672ba86af76daf4ff1644dc8063d3d775e';
 
 export const GetEvaluationsSpecificPartitionQueryVersion = '76a87a5537dcf49c1ffe23adecc103ed34fb89dbfa907a233d398a5d63217150';
 

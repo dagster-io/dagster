@@ -338,8 +338,21 @@ const EvaluationLabel = ({
   if (userLabel) {
     return <EvaluationUserLabel userLabel={userLabel} expandedLabel={expandedLabel} />;
   }
-  if (evaluation.sinceMetadata) {
-    return <EvaluationSinceLabel evaluation={evaluation} pushHistory={pushHistory} />;
+  if (
+    evaluation.sinceMetadata &&
+    expandedLabel.length === 3 &&
+    expandedLabel[1] === 'SINCE' &&
+    evaluation.sinceMetadata
+  ) {
+    return (
+      <EvaluationSinceLabel
+        pushHistory={pushHistory}
+        entityKey={evaluation.entityKey}
+        sinceMetadata={evaluation.sinceMetadata}
+        triggerCondition={expandedLabel[0]}
+        resetCondition={expandedLabel[2]}
+      />
+    );
   }
   return <EvaluationConditionalLabel segments={expandedLabel} />;
 };
