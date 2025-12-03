@@ -225,7 +225,7 @@ Before following the steps in this section, you must:
 
 4.  Deploy to Dagster+:
 
-    ```
+    ```shell
     dg plus deploy
     ```
 
