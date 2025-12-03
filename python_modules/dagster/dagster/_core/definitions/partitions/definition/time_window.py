@@ -1,7 +1,7 @@
 import functools
 import hashlib
 import re
-from collections.abc import Iterable, Sequence
+from collections.abc import Iterable, Iterator, Sequence
 from datetime import date, datetime
 from functools import cached_property
 from typing import TYPE_CHECKING, Optional, Union, cast
@@ -958,10 +958,52 @@ class TimeWindowPartitionsDefinition(PartitionsDefinition, IHaveNew):
         while curr_time.timestamp() < start_timestamp:
             curr_time = next(iterator)
 
+        if not ignore_exclusions and self.exclusions:
+            excluded_timestamps = {
+                excl.timestamp
+                for excl in self.exclusions
+                if isinstance(excl, TimestampWithTimezone)
+            }
+
+            exclusion_cron_iterators: list[tuple[Iterator[datetime], datetime]] = []
+            for exclusion in self.exclusions:
+                if isinstance(exclusion, str):
+                    excl_iter = cron_string_iterator(
+                        start_timestamp=start_timestamp,
+                        cron_string=exclusion,
+                        execution_timezone=self.timezone,
+                    )
+                    excl_time = next(excl_iter)
+                    while excl_time.timestamp() < start_timestamp:
+                        excl_time = next(excl_iter)
+                    exclusion_cron_iterators.append((excl_iter, excl_time))
+        else:
+            excluded_timestamps = set()
+            exclusion_cron_iterators = []
+
         while True:
             next_time = next(iterator)
-            if not self.is_window_start_excluded(curr_time) or ignore_exclusions:
+
+            is_excluded = False
+            if not ignore_exclusions and self.exclusions:
+                curr_timestamp = curr_time.timestamp()
+
+                if curr_timestamp in excluded_timestamps:
+                    is_excluded = True
+                else:
+                    for idx, (excl_iter, last_excl_time) in enumerate(exclusion_cron_iterators):
+                        curr_excl_time = last_excl_time
+                        while curr_excl_time.timestamp() < curr_timestamp:
+                            curr_excl_time = next(excl_iter)
+                            exclusion_cron_iterators[idx] = (excl_iter, curr_excl_time)
+
+                        if curr_excl_time.timestamp() == curr_timestamp:
+                            is_excluded = True
+                            break
+
+            if not is_excluded:
                 yield TimeWindow(curr_time, next_time)
+
             curr_time = next_time
 
     def _reverse_iterate_time_windows(
@@ -986,10 +1028,54 @@ class TimeWindowPartitionsDefinition(PartitionsDefinition, IHaveNew):
         while curr_time.timestamp() > end_timestamp:
             curr_time = next(iterator)
 
+        # Initialize exclusion checking
+        if not ignore_exclusions and self.exclusions:
+            # Build set of excluded timestamps
+            excluded_timestamps = {
+                excl.timestamp
+                for excl in self.exclusions
+                if isinstance(excl, TimestampWithTimezone)
+            }
+
+            exclusion_cron_iterators: list[tuple[Iterator[datetime], datetime]] = []
+            for exclusion in self.exclusions:
+                if isinstance(exclusion, str):
+                    excl_iter = reverse_cron_string_iterator(
+                        end_timestamp=end_timestamp,
+                        cron_string=exclusion,
+                        execution_timezone=self.timezone,
+                    )
+                    excl_time = next(excl_iter)
+                    while excl_time.timestamp() > end_timestamp:
+                        excl_time = next(excl_iter)
+                    exclusion_cron_iterators.append((excl_iter, excl_time))
+        else:
+            excluded_timestamps = set()
+            exclusion_cron_iterators = []
+
         while True:
             prev_time = next(iterator)
-            if not self.is_window_start_excluded(prev_time) or ignore_exclusions:
+
+            is_excluded = False
+            if not ignore_exclusions and self.exclusions:
+                prev_timestamp = prev_time.timestamp()
+
+                if prev_timestamp in excluded_timestamps:
+                    is_excluded = True
+                else:
+                    for idx, (excl_iter, last_excl_time) in enumerate(exclusion_cron_iterators):
+                        curr_excl_time = last_excl_time
+                        while curr_excl_time.timestamp() > prev_timestamp:
+                            curr_excl_time = next(excl_iter)
+                            exclusion_cron_iterators[idx] = (excl_iter, curr_excl_time)
+
+                        if curr_excl_time.timestamp() == prev_timestamp:
+                            is_excluded = True
+                            break
+
+            if not is_excluded:
                 yield TimeWindow(prev_time, curr_time)
+
             curr_time = prev_time
 
     def get_partition_key_for_timestamp(self, timestamp: float, end_closed: bool = False) -> str:
