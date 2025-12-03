@@ -1,6 +1,5 @@
 ---
-title: dbt patterns
-sidebar_label: dbt patterns
+title: dbt patterns and best practices
 description: Best practices and advanced patterns for dbt.
 sidebar_position: 50
 ---
@@ -39,7 +38,7 @@ Configure the snapshots component with concurrency control:
   language="yaml"
 />
 
-### 2. Configuring concurrency pools
+### 2. Configure concurrency pools
 
 Configure your Dagster instance to create pools with maximum concurrency of 1. Add this configuration to your `dagster.yaml` (for Dagster Open Source) or deployment settings (for Dagster+):
 
@@ -56,17 +55,17 @@ Then set the pool limit for the snapshot pool:
 dagster instance concurrency set dbt-snapshots 1
 ```
 
-### 3. Managing multiple snapshot groups
+### 3. Manage multiple snapshot groups with Dagster components
 
-For large projects with many snapshots, you can create multiple snapshot groups while still preventing concurrency issues within each group. Create separate components for different business domains:
+For large projects with many snapshots, you can create multiple snapshot groups while still preventing concurrency issues within each group. Create separate [Dagster components](/guides/build/components/creating-new-components/creating-and-registering-a-component) for different business domains:
 
-```bash
-# Create component for regular models
+
+# Create component for sales snapshots
 dg scaffold defs dagster_dbt.DbtProjectComponent dbt_snapshots_sales
 
-# Create component for snapshots
+# Create component for inventory snapshots
 dg scaffold defs dagster_dbt.DbtProjectComponent dbt_snapshots_inventory
-```
+
 
 Sales snapshots component:
 
