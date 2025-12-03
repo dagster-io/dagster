@@ -1854,7 +1854,7 @@ __metadata:
     eslint-webpack-plugin: "npm:3.1.1"
     file-loader: "npm:^6.2.0"
     graphql: "npm:^16.8.1"
-    next: "npm:^15.4.8"
+    next: "npm:^15.5.7"
     prettier: "npm:^3.3.3"
     react: "npm:^18.3.1"
     react-dom: "npm:^18.3.1"
@@ -1866,7 +1866,7 @@ __metadata:
     styled-components: "npm:^5.3.3"
     typescript: "npm:5.9.2"
     uuid: "npm:^9.0.0"
-    validator: "npm:^13.15.20"
+    validator: "npm:^13.15.22"
     web-vitals: "npm:^2.1.3"
     webpack: "npm:^5.94.0"
     webpack-bundle-analyzer: "npm:^4.7.0"
@@ -1929,7 +1929,7 @@ __metadata:
     eslint-config-prettier: "npm:^10.1.1"
     eslint-plugin-prettier: "npm:^5.2.3"
     highlight.js: "npm:^11.11.1"
-    next: "npm:^15.4.8"
+    next: "npm:^15.5.7"
     prettier: "npm:^3.5.3"
     react: "npm:^18.3.1"
     react-dom: "npm:^18.3.1"
@@ -15285,7 +15285,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"next@npm:^15.4.8":
+"next@npm:^15.5.7":
   version: 15.5.7
   resolution: "next@npm:15.5.7"
   dependencies:
@@ -20089,10 +20089,10 @@ __metadata:
   languageName: node
   linkType: hard
 
-"validator@npm:^13.15.20":
-  version: 13.15.20
-  resolution: "validator@npm:13.15.20"
-  checksum: 10/498f9b201dda7b09207bbc13606e6f90595987eab9e3a60fc5b8d8d96141c9351192aea56d392c78640e2462770eedccf545cf13b2ef43e87d73a755ba485c5d
+"validator@npm:^13.15.22":
+  version: 13.15.23
+  resolution: "validator@npm:13.15.23"
+  checksum: 10/03e4a37c04c4e8337b0c91e529bdb6376de6b52ef683616e2e909276be73903e6054203d274ed35e88e3498ec68764125b194338dd2ee893818d3008fbad1ba7
   languageName: node
   linkType: hard
 
