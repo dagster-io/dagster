@@ -59,13 +59,13 @@ dagster instance concurrency set dbt-snapshots 1
 
 For large projects with many snapshots, you can create multiple snapshot groups while still preventing concurrency issues within each group. Create separate [Dagster components](/guides/build/components/creating-new-components/creating-and-registering-a-component) for different business domains:
 
-
 # Create component for sales snapshots
+
 dg scaffold defs dagster_dbt.DbtProjectComponent dbt_snapshots_sales
 
 # Create component for inventory snapshots
-dg scaffold defs dagster_dbt.DbtProjectComponent dbt_snapshots_inventory
 
+dg scaffold defs dagster_dbt.DbtProjectComponent dbt_snapshots_inventory
 
 Sales snapshots component:
 

@@ -1,4 +1,5 @@
 concurrency:
   pools:
-    default_limit: 1
+    snapshot_pool:
+      limit: 1
     granularity: 'op'
