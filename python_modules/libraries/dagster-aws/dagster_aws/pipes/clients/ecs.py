@@ -174,7 +174,7 @@ class PipesECSClient(PipesClient, TreatAsResourceParam):
 
             if not response["tasks"]:
                 # Task failed to launch - check failures for details
-                failures = response.get("failures", [])
+                failures = response["failures"]
                 failure_messages = []
                 for failure in failures:
                     arn = failure.get("arn")
@@ -190,11 +190,7 @@ class PipesECSClient(PipesClient, TreatAsResourceParam):
                     )
                     failure_messages.append(failure_message)
 
-                failure_message = (
-                    "\n".join(failure_messages)
-                    if failure_messages
-                    else "Task failed."
-                )
+                failure_message = "\n".join(failure_messages) if failure_messages else "Task failed."
 
                 raise RuntimeError(f"Failed to launch ECS task:\n{failure_message}")
 

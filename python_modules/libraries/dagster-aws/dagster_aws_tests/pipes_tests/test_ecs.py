@@ -305,6 +305,6 @@ def test_pipes_ecs_task_launch_failure_no_failure_details(pipes_ecs_client: Pipe
 
             error_message = str(exc_info.value)
             assert "Failed to launch ECS task" in error_message
-            assert "No failure details available" in error_message
+            assert "Task failed" in error_message
     finally:
         pipes_ecs_client._client.run_task = original_run_task
