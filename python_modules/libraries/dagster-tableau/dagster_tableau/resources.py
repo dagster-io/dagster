@@ -578,6 +578,11 @@ class BaseTableauWorkspace(ConfigurableResource):
 
     _client: Optional[Union[TableauCloudClient, TableauServerClient]] = PrivateAttr(default=None)
 
+    @property
+    @cached_method
+    def _log(self) -> logging.Logger:
+        return get_dagster_logger()
+
     @abstractmethod
     def build_client(self) -> None:
         raise NotImplementedError()
@@ -602,23 +607,25 @@ class BaseTableauWorkspace(ConfigurableResource):
             TableauWorkspaceData: A snapshot of the Tableau workspace's content.
         """
         with self.get_client() as client:
-            workbook_ids = [workbook.id for workbook in client.get_workbooks()]
-
+            all_workbooks = list(client.get_workbooks())
             workbooks: list[TableauContentData] = []
             sheets: list[TableauContentData] = []
             dashboards: list[TableauContentData] = []
             data_sources: list[TableauContentData] = []
             data_source_ids: set[str] = set()
-            for workbook_id in workbook_ids:
+            for wb in all_workbooks:
+                workbook_id = wb.id
+                workbook_name = wb.name
                 workbook = client.get_workbook(workbook_id=workbook_id)
                 workbook_data_list = check.is_list(
                     workbook["data"]["workbooks"],  # pyright: ignore[reportIndexIssue]
                     additional_message=f"Invalid data for Tableau workbook for id {workbook_id}.",
                 )
                 if not workbook_data_list:
-                    raise Exception(
-                        f"Could not retrieve data for Tableau workbook for id {workbook_id}."
+                    self._log.warning(
+                        f"No data retrieved for Tableau workbook {workbook_name} with id {workbook_id}. Skipping."
                     )
+                    continue
                 workbook_data = workbook_data_list[0]
                 workbooks.append(
                     TableauContentData(

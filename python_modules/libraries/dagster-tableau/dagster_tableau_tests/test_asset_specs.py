@@ -104,13 +104,6 @@ def test_invalid_workbook(
     ):
         resource.get_or_fetch_workspace_data()
 
-    # Test empty workbook
-    get_workbook.return_value = {"data": {"workbooks": []}}
-    with pytest.raises(
-        Exception, match=f"Could not retrieve data for Tableau workbook for id {workbook_id}."
-    ):
-        resource.get_or_fetch_workspace_data()
-
 
 @responses.activate
 @pytest.mark.parametrize(
