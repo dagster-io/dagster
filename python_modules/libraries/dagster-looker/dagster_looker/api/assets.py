@@ -1,7 +1,7 @@
 from collections.abc import Sequence
 from typing import TYPE_CHECKING, Optional, Union, cast
 
-from dagster import AssetExecutionContext, AssetsDefinition, Failure, multi_asset
+from dagster import AssetExecutionContext, AssetsDefinition, Failure, multi_asset, DagsterLogManager
 from dagster._annotations import beta
 from dagster._utils.warnings import deprecation_warning
 
@@ -14,8 +14,39 @@ from dagster_looker.api.dagster_looker_api_translator import (
     RequestStartPdtBuild,
 )
 
-if TYPE_CHECKING:
-    from dagster_looker.api.resource import LookerResource
+from dagster_looker.api.resource import LookerResource
+
+def core_looker_pdt_execution(
+    looker: LookerResource,
+    request: RequestStartPdtBuild,
+    log: DagsterLogManager,
+    run_id: Optional[str],
+) -> None:
+    log.info(
+        f"Starting pdt build for Looker view `{request.view_name}` "
+        f"in Looker model `{request.model_name}`."
+    )
+
+    materialize_pdt = looker.get_sdk().start_pdt_build(
+        model_name=request.model_name,
+        view_name=request.view_name,
+        force_rebuild=request.force_rebuild,
+        force_full_incremental=request.force_full_incremental,
+        workspace=request.workspace,
+        source=f"Dagster run {run_id}" if run_id else request.source,
+    )
+
+    if not materialize_pdt.materialization_id:
+        raise Failure("No materialization id was returned from Looker API.")
+
+    check_pdt = looker.get_sdk().check_pdt_build(
+        materialization_id=materialize_pdt.materialization_id
+    )
+
+    log.info(
+        f"Materialization id: {check_pdt.materialization_id}, "
+        f"response text: {check_pdt.resp_text}"
+    )
 
 
 @beta
@@ -54,54 +85,30 @@ def build_looker_pdt_assets_definitions(
     result = []
     for request_start_pdt_build in request_start_pdt_builds:
 
+       for request in request_start_pdt_builds:
+        spec = translator.get_asset_spec(
+            LookerApiTranslatorStructureData(
+                structure_data=LookerStructureData(
+                    structure_type=LookerStructureType.VIEW,
+                    data=LookmlView(
+                        view_name=request.view_name,
+                        sql_table_name=None,
+                    ),
+                ),
+                instance_data=None,
+            )
+        )
+
         @multi_asset(
-            specs=[
-                translator.get_asset_spec(
-                    LookerApiTranslatorStructureData(
-                        structure_data=LookerStructureData(
-                            structure_type=LookerStructureType.VIEW,
-                            data=LookmlView(
-                                view_name=request_start_pdt_build.view_name,
-                                sql_table_name=None,
-                            ),
-                        ),
-                        instance_data=None,
-                    )
-                )
-            ],
-            name=f"{request_start_pdt_build.model_name}_{request_start_pdt_build.view_name}",
+            specs=[spec],
+            name=f"{request.model_name}_{request.view_name}",
             required_resource_keys={resource_key},
         )
+        
         def pdts(context: AssetExecutionContext):
             looker = cast("LookerResource", getattr(context.resources, resource_key))
+            core_looker_pdt_execution(looker, request, context.log, context.run_id)
 
-            context.log.info(
-                f"Starting pdt build for Looker view `{request_start_pdt_build.view_name}` "
-                f"in Looker model `{request_start_pdt_build.model_name}`."
-            )
-
-            materialize_pdt = looker.get_sdk().start_pdt_build(
-                model_name=request_start_pdt_build.model_name,
-                view_name=request_start_pdt_build.view_name,
-                force_rebuild=request_start_pdt_build.force_rebuild,
-                force_full_incremental=request_start_pdt_build.force_full_incremental,
-                workspace=request_start_pdt_build.workspace,
-                source=f"Dagster run {context.run_id}"
-                if context.run_id
-                else request_start_pdt_build.source,
-            )
-
-            if not materialize_pdt.materialization_id:
-                raise Failure("No materialization id was returned from Looker API.")
-
-            check_pdt = looker.get_sdk().check_pdt_build(
-                materialization_id=materialize_pdt.materialization_id
-            )
-
-            context.log.info(
-                f"Materialization id: {check_pdt.materialization_id}, "
-                f"response text: {check_pdt.resp_text}"
-            )
 
         result.append(pdts)
 

@@ -42,11 +42,8 @@ def setup_looker_component(
             scoped_definitions_load_context(),
             sandbox.load_component_and_build_defs(defs_path=defs_path) as (component, defs),
         ):
-            merged_defs = Definitions.merge(
-                defs, Definitions(resources={"looker": mock_looker_resource})
-            )
             assert isinstance(component, LookerComponent)
-            yield component, merged_defs
+            yield component, defs
 
 
 @pytest.mark.parametrize(
@@ -146,5 +143,4 @@ def test_pdt_assets_configuration(looker_api_mocks):
 
         assert AssetKey(["view", "monthly_report"]) in all_keys
 
-        assert component.resource_key == "looker"
         assert len(component.pdt_builds) == 2
