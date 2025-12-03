@@ -140,8 +140,9 @@ class OpDefinition(NodeDefinition, IHasInternalInit):
 
         ins = check.opt_mapping_param(ins, "ins")
         input_defs = [
-            inp.to_definition(name) for name, inp in sorted(ins.items(), key=lambda inp: inp[0])
-        ]  # sort so that input definition order is deterministic
+            inp if isinstance(inp, InputDefinition) else inp.to_definition(name)
+            for name, inp in sorted(ins.items(), key=lambda inp: inp[0])
+        ]   # sort so that input definition order is deterministic
 
         if isinstance(compute_fn, DecoratedOpFunction):
             resolved_input_defs: Sequence[InputDefinition] = resolve_checked_op_fn_inputs(
