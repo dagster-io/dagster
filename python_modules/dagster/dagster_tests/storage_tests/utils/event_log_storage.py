@@ -7194,48 +7194,6 @@ class TestEventLogStorage:
             dg.AssetCheckKey(dg.AssetKey(["asset_2"]), "check_1"),
         ]
 
-        def _verify_summary_records(tested_check_keys):
-            """Helper to verify legacy and optimized results are equivalent."""
-            # Determine which object to mock: for LegacyEventLogStorage, we need to mock the underlying storage
-            from dagster._core.storage.legacy_storage import LegacyEventLogStorage
-
-            mock_target = (
-                storage._storage.event_log_storage  # noqa: SLF001
-                if isinstance(storage, LegacyEventLogStorage)
-                else storage
-            )
-
-            # Get results using legacy implementation
-            with mock.patch.object(mock_target, "has_secondary_index") as mock_has_index:
-                mock_has_index.return_value = False
-                legacy_results = storage.get_asset_check_summary_records(tested_check_keys)
-
-            # Get results using optimized implementation
-            with mock.patch.object(mock_target, "has_secondary_index") as mock_has_index:
-                mock_has_index.return_value = True
-                optimized_results = storage.get_asset_check_summary_records(tested_check_keys)
-
-            assert len(legacy_results) == len(optimized_results)
-            for check_key, record in legacy_results.items():
-                assert check_key in optimized_results
-                optimized_record = optimized_results[check_key]
-
-                # Compare key fields
-                assert record.asset_check_key == optimized_record.asset_check_key
-                assert record.last_run_id == optimized_record.last_run_id
-                if record.last_check_execution_record:
-                    assert optimized_record.last_check_execution_record is not None
-                    assert (
-                        record.last_check_execution_record.id
-                        == optimized_record.last_check_execution_record.id
-                    )
-                if record.last_completed_check_execution_record:
-                    assert optimized_record.last_completed_check_execution_record is not None
-                    assert (
-                        record.last_completed_check_execution_record.id
-                        == optimized_record.last_completed_check_execution_record.id
-                    )
-
         run_ids = {check_key: make_new_run_id() for check_key in check_keys}
         planned_entries = []
         evaluation_entries = []
@@ -7289,6 +7247,38 @@ class TestEventLogStorage:
             )
             evaluation_entries.append(evaluation_log_entry)
 
-        for entry in planned_entries + evaluation_entries:
+        # Store all planned events first
+        for entry in planned_entries:
             storage.store_event(entry)
-            _verify_summary_records(check_keys)
+
+        # Verify summary records after planned events
+        summary_records = storage.get_asset_check_summary_records(check_keys)
+        assert len(summary_records) == len(check_keys)
+        for check_key in check_keys:
+            assert check_key in summary_records
+            record = summary_records[check_key]
+            assert record.asset_check_key == check_key
+            assert record.last_run_id == run_ids[check_key]
+            # Should have a planned execution record but no completed execution yet
+            assert record.last_check_execution_record is not None
+            assert record.last_completed_check_execution_record is None
+
+        # Store all evaluation events
+        for entry in evaluation_entries:
+            storage.store_event(entry)
+
+        # Verify summary records after evaluations
+        summary_records = storage.get_asset_check_summary_records(check_keys)
+        assert len(summary_records) == len(check_keys)
+        for i, check_key in enumerate(check_keys):
+            assert check_key in summary_records
+            record = summary_records[check_key]
+            assert record.asset_check_key == check_key
+            assert record.last_run_id == run_ids[check_key]
+            # Should have both planned and completed execution records
+            assert record.last_check_execution_record is not None
+            assert record.last_completed_check_execution_record is not None
+            # Verify the passed/failed status matches what we set (even indices pass)
+            assert record.last_completed_check_execution_record.status.value == (
+                "SUCCEEDED" if i % 2 == 0 else "FAILED"
+            )
