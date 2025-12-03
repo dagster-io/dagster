@@ -757,13 +757,34 @@ class TimeWindowPartitionsDefinition(PartitionsDefinition, IHaveNew):
     def get_partition_keys_in_time_window(self, time_window: TimeWindow) -> Sequence[str]:
         result: list[str] = []
         time_window_end_timestamp = time_window.end.timestamp()
-        for partition_time_window in self._iterate_time_windows(time_window.start.timestamp()):
-            if partition_time_window.start.timestamp() < time_window_end_timestamp:
-                result.append(
-                    dst_safe_strftime(
-                        partition_time_window.start, self.timezone, self.fmt, self.cron_schedule
-                    )
+
+        exclusion_timestamps = set()
+
+        for exclusion in self.exclusions or []:
+            if isinstance(exclusion, TimestampWithTimezone):
+                exclusion_timestamps.add(exclusion.timestamp)
+            elif isinstance(exclusion, str):
+                exclusion_iterator = cron_string_iterator(
+                    start_timestamp=time_window.start.timestamp(),
+                    cron_string=exclusion,
+                    execution_timezone=self.timezone,
                 )
+                curr_time = next(exclusion_iterator)
+
+                while curr_time.timestamp() < time_window_end_timestamp:
+                    exclusion_timestamps.add(curr_time.timestamp())
+                    curr_time = next(exclusion_iterator)
+
+        for partition_time_window in self._iterate_time_windows(
+            time_window.start.timestamp(), ignore_exclusions=True
+        ):
+            if partition_time_window.start.timestamp() < time_window_end_timestamp:
+                if partition_time_window.start.timestamp() not in exclusion_timestamps:
+                    result.append(
+                        dst_safe_strftime(
+                            partition_time_window.start, self.timezone, self.fmt, self.cron_schedule
+                        )
+                    )
             else:
                 break
         return result
@@ -960,7 +981,7 @@ class TimeWindowPartitionsDefinition(PartitionsDefinition, IHaveNew):
 
         while True:
             next_time = next(iterator)
-            if not self.is_window_start_excluded(curr_time) or ignore_exclusions:
+            if ignore_exclusions or not self.is_window_start_excluded(curr_time):
                 yield TimeWindow(curr_time, next_time)
             curr_time = next_time
 
