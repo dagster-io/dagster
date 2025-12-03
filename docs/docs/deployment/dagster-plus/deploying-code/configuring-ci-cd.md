@@ -14,11 +14,11 @@ Follow the steps below to create a GitHub or GitLab CI/CD configuration file in 
 
 :::info A note on Dagster+ Serverless
 
-When you sign up for Dagster+ Serverless, you are guided through creating a GitHub or GitLab repository that contains basic Dagster project code and a CI/CD workflow file consistent with Dagster+ best practices.
+When you sign up for Dagster+ Serverless, you create a GitHub or GitLab repository that contains basic Dagster project code and a CI/CD workflow file consistent with Dagster+ best practices.
 
-Once you have set up your project repository, pushing changes to the `main` branch will automatically deploy them to your `prod` Serverless [full deployment](/deployment/dagster-plus/deploying-code/full-deployments). Pull or merge requests will create ephemeral [branch deployments](/deployment/dagster-plus/deploying-code/branch-deployments) that you can preview and test in the Dagster+ UI.
+Pushing changes to the `main` branch of that project repository will automatically deploy them to Dagster+. Pull or merge requests will create ephemeral [branch deployments](/deployment/dagster-plus/deploying-code/branch-deployments) that you can preview and test in the Dagster+ UI.
 
-**To add another Dagster project to your Serverless deployment**, follow the steps below to create a GitHub or GitLab CI/CD configuration file in your project to deploy and synchronize your code to Dagster+ Serverless. You can also use other Git providers, or a local Git repository with the [`dagster-cloud` CLI](/api/clis/dagster-cloud-cli) to run your own CI/CD process.
+**To add another Dagster project to your Serverless deployment**, follow the steps in this guide to scaffold a GitHub or GitLab CI/CD configuration file in your new project to deploy and synchronize your code to Dagster+ Serverless. You can also use other Git providers or a local Git repository with the `dagster-cloud` CLI to run your own CI/CD process.
 
 :::
 
@@ -140,7 +140,7 @@ During the deployment, the agent will attempt to load your code and update the m
 
 After following these steps, commiting and pushing additional changes to your Dagster project in GitLab will deploy them to your Dagster+ organization.
 
-## Other Git providers or local development
+## Other Git providers or local Git repository
 
 <Tabs>
 <TabItem value="serverless" label="Dagster+ Serverless">

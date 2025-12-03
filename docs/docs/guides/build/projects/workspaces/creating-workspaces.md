@@ -18,6 +18,14 @@ When a `dg` command runs in a workspace, it will create a subprocess for each pr
 
 ![Diagram showing the virtual environments used by a workspace and 2 projects](/images/guides/build/projects-and-components/setting-up-a-workspace/workspace-venvs.png)
 
+:::info Dagster+ deployment configuration in a workspace
+
+If you are a Dagster+ user, you can scaffold deployment configuration files for the workspace and all projects contained in it by running `dg plus deploy configure` in the workspace root directory.
+
+For a full list of options, including Git provider specification, see the [`dg plus deploy configure` API docs](/api/clis/dg-cli/dg-plus#configure).
+
+:::
+
 ## Creating a new workspace and first project
 
 To scaffold a new workspace called `dagster-workspace`, run `uvx create-dagster@latest workspace` and respond yes to the prompt to run `uv sync` after scaffolding:
