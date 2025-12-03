@@ -185,6 +185,7 @@ import sqlmesh from './kindtag-images/tool-sqlmesh-color.svg';
 import sqlserver from './kindtag-images/tool-sqlserver-color.svg';
 import starrocks from './kindtag-images/tool-starrocks-color.svg';
 import stepfunctions from './kindtag-images/tool-stepfunctions-color.svg';
+import metaxy from './kindtag-images/tool-metaxy.svg';
 import stitch from './kindtag-images/tool-stitch-color.svg';
 import stripe from './kindtag-images/tool-stripe-color.svg';
 import supabase from './kindtag-images/tool-supabase-color.svg';
@@ -376,6 +377,7 @@ export type KnownTagType =
   | 'meta'
   | 'microsoft'
   | 'mistral'
+  | 'metaxy'
   | 'montecarlo'
   | 'openmetadata'
   | 'oracle'
@@ -1022,6 +1024,10 @@ export const KNOWN_TAGS: Record<KnownTagType, KnownTag> = {
   mistral: {
     icon: mistral,
     content: 'Mistral',
+  },
+  metaxy: {
+    icon: metaxy,
+    content: 'Metaxy',
   },
   montecarlo: {
     icon: montecarlo,
