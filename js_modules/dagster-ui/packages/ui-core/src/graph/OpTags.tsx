@@ -112,6 +112,7 @@ import matplotlib from './kindtag-images/tool-matplotlib-color.svg';
 import meltano from './kindtag-images/tool-meltano-color.svg';
 import meta from './kindtag-images/tool-meta-color.svg';
 import metabase from './kindtag-images/tool-metabase-color.svg';
+import metaxy from './kindtag-images/tool-metaxy.svg';
 import microsoft from './kindtag-images/tool-microsoft-color.svg';
 import minio from './kindtag-images/tool-minio-color.svg';
 import mistral from './kindtag-images/tool-mistral-color.svg';
@@ -376,6 +377,7 @@ export type KnownTagType =
   | 'meta'
   | 'microsoft'
   | 'mistral'
+  | 'metaxy'
   | 'montecarlo'
   | 'openmetadata'
   | 'oracle'
@@ -1022,6 +1024,10 @@ export const KNOWN_TAGS: Record<KnownTagType, KnownTag> = {
   mistral: {
     icon: mistral,
     content: 'Mistral',
+  },
+  metaxy: {
+    icon: metaxy,
+    content: 'Metaxy',
   },
   montecarlo: {
     icon: montecarlo,
