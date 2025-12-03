@@ -92,7 +92,7 @@ class DbtCloudWorkspaceClient(DagsterModel):
         data: Optional[Mapping[str, Any]] = None,
         params: Optional[Mapping[str, Any]] = None,
         session_attr: str = "_get_session",
-    ) -> Mapping[str, Any]:
+    ) -> requests.Response:
         url = f"{base_url}/{endpoint}" if endpoint else base_url
 
         num_retries = 0
@@ -107,13 +107,7 @@ class DbtCloudWorkspaceClient(DagsterModel):
                     timeout=self.request_timeout,
                 )
                 response.raise_for_status()
-
-                # Try to parse as JSON first
-                try:
-                    return response.json()
-                except Exception:
-                    # If JSON parsing fails, return as text wrapped in a dict
-                    return {"text": response.text}
+                return response
             except RequestException as e:
                 self._log.error(
                     f"Request to dbt Cloud API failed for url {url} with method {method} : {e}"
@@ -149,7 +143,7 @@ class DbtCloudWorkspaceClient(DagsterModel):
         """
         if not description:
             description = "A job that runs dbt models, sources, and tests."
-        return self._make_request(
+        response = self._make_request(
             method="post",
             endpoint="jobs",
             base_url=self.api_v2_url,
@@ -161,7 +155,8 @@ class DbtCloudWorkspaceClient(DagsterModel):
                 "description": description,
                 "job_type": "other",
             },
-        )["data"]
+        )
+        return response.json()["data"]
 
     def list_jobs(
         self,
@@ -191,7 +186,7 @@ class DbtCloudWorkspaceClient(DagsterModel):
                 "limit": DAGSTER_DBT_CLOUD_LIST_JOBS_INDIVIDUAL_REQUEST_LIMIT,
                 "offset": len(results),
             },
-        )["data"]:
+        ).json()["data"]:
             results.extend(jobs)
             if len(jobs) < DAGSTER_DBT_CLOUD_LIST_JOBS_INDIVIDUAL_REQUEST_LIMIT:
                 break
@@ -207,7 +202,7 @@ class DbtCloudWorkspaceClient(DagsterModel):
             method="get",
             endpoint=f"jobs/{job_id}",
             base_url=self.api_v2_url,
-        )["data"]
+        ).json()["data"]
 
     def destroy_job(self, job_id: int) -> Mapping[str, Any]:
         """Destroys a given dbt Cloud job.
@@ -219,7 +214,7 @@ class DbtCloudWorkspaceClient(DagsterModel):
             method="delete",
             endpoint=f"jobs/{job_id}",
             base_url=self.api_v2_url,
-        )["data"]
+        ).json()["data"]
 
     def trigger_job_run(
         self, job_id: int, steps_override: Optional[Sequence[str]] = None
@@ -243,7 +238,7 @@ class DbtCloudWorkspaceClient(DagsterModel):
             data={"steps_override": steps_override, "cause": DAGSTER_ADHOC_TRIGGER_CAUSE}
             if steps_override
             else {"cause": DAGSTER_ADHOC_TRIGGER_CAUSE},
-        )["data"]
+        ).json()["data"]
 
     def get_runs_batch(
         self,
@@ -284,7 +279,7 @@ class DbtCloudWorkspaceClient(DagsterModel):
                 "finished_at__range": f"""["{finished_at_lower_bound.isoformat()}", "{finished_at_upper_bound.isoformat()}"]""",
                 "order_by": "finished_at",
             },
-        )
+        ).json()
         data = cast("Sequence[Mapping[str, Any]]", resp["data"])
         total_count = resp["extra"]["pagination"]["total_count"]
         return data, total_count
@@ -312,7 +307,7 @@ class DbtCloudWorkspaceClient(DagsterModel):
             endpoint=f"runs/{run_id}",
             base_url=self.api_v2_url,
             params=params,
-        )["data"]
+        ).json()["data"]
 
     def poll_run(
         self,
@@ -367,7 +362,7 @@ class DbtCloudWorkspaceClient(DagsterModel):
                 endpoint=f"runs/{run_id}/artifacts",
                 base_url=self.api_v2_url,
                 session_attr="_get_artifact_session",
-            )["data"],
+            ).json()["data"],
         )
 
     def get_run_artifact(self, run_id: int, path: str) -> Mapping[str, Any]:
@@ -375,19 +370,17 @@ class DbtCloudWorkspaceClient(DagsterModel):
 
         Args:
             run_id (int): The dbt Cloud Run ID.
-            path (str): The path to the artifact (e.g., "logs/dbt.log", "run_results.json").
+            path (str): The path to the artifact (e.g., "run_results.json", "manifest.json").
 
         Returns:
-            Dict[str, Any]: Parsed json data representing the API response. For JSON artifacts
-                (e.g., run_results.json, manifest.json), returns the parsed JSON structure.
-                For text artifacts (e.g., logs), returns {"text": "..."} with the raw text content.
+            Dict[str, Any]: Parsed json data representing the artifact.
         """
         return self._make_request(
             method="get",
             endpoint=f"runs/{run_id}/artifacts/{path}",
             base_url=self.api_v2_url,
             session_attr="_get_artifact_session",
-        )
+        ).json()
 
     def get_run_results_json(self, run_id: int) -> Mapping[str, Any]:
         """Retrieves the run_results.json artifact of a given dbt Cloud Run.
@@ -448,7 +441,7 @@ class DbtCloudWorkspaceClient(DagsterModel):
             method="get",
             endpoint=f"projects/{project_id}",
             base_url=self.api_v2_url,
-        )["data"]
+        ).json()["data"]
 
     def get_environment_details(self, environment_id: int) -> Mapping[str, Any]:
         """Retrieves the details of a given dbt Cloud Environment.
@@ -464,7 +457,7 @@ class DbtCloudWorkspaceClient(DagsterModel):
             method="get",
             endpoint=f"environments/{environment_id}",
             base_url=self.api_v2_url,
-        )["data"]
+        ).json()["data"]
 
     def get_account_details(self) -> Mapping[str, Any]:
         """Retrieves the details of the account associated to the dbt Cloud workspace.
@@ -476,7 +469,7 @@ class DbtCloudWorkspaceClient(DagsterModel):
             method="get",
             endpoint=None,
             base_url=self.api_v2_url,
-        )["data"]
+        ).json()["data"]
 
     def verify_connection(self) -> None:
         """Verifies the connection to the dbt Cloud REST API."""
