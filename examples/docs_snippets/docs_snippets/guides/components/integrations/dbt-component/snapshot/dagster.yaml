@@ -1,5 +1,5 @@
 concurrency:
   pools:
-    snapshot_pool:
+    dbt-snapshots:
       limit: 1
-    granularity: 'op'
+      granularity: 'op'
