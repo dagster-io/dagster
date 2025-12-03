@@ -37,8 +37,16 @@ export const EvaluationSinceLabel = ({
 
   const triggerLabel = triggerCondition?.slice(1, -1) || ''; // remove parentheses
   const resetLabel = resetCondition?.slice(1, -1) || ''; // remove parentheses
-  const triggerTime = formatDateTime(new Date(sinceMetadata.triggerTimestamp || 0), {});
-  const resetTime = formatDateTime(new Date(sinceMetadata.resetTimestamp || 0), {});
+  const triggerTime = sinceMetadata.triggerTimestamp
+    ? formatDateTime(new Date(1000 * sinceMetadata.triggerTimestamp), {
+        timeStyle: 'long',
+      })
+    : null;
+  const resetTime = sinceMetadata.resetTimestamp
+    ? formatDateTime(new Date(1000 * sinceMetadata.resetTimestamp), {
+        timeStyle: 'long',
+      })
+    : null;
 
   const assetKey =
     entityKey && entityKey.__typename === 'AssetCheckhandle' ? entityKey.assetKey : entityKey;
@@ -54,7 +62,7 @@ export const EvaluationSinceLabel = ({
         assetKey={assetKey}
         checkName={checkName}
         detailLabel={
-          sinceMetadata.triggerTimestamp
+          triggerTime
             ? `${triggerLabel} was last True at ${triggerTime}`
             : `${triggerLabel} has not yet occurred.`
         }
@@ -70,7 +78,7 @@ export const EvaluationSinceLabel = ({
         assetKey={assetKey}
         checkName={checkName}
         detailLabel={
-          sinceMetadata.resetTimestamp
+          resetTime
             ? `${resetLabel} last occurred ${resetTime}`
             : `${resetLabel} has not yet occured.`
         }

@@ -338,12 +338,7 @@ const EvaluationLabel = ({
   if (userLabel) {
     return <EvaluationUserLabel userLabel={userLabel} expandedLabel={expandedLabel} />;
   }
-  if (
-    evaluation.sinceMetadata &&
-    expandedLabel.length === 3 &&
-    expandedLabel[1] === 'SINCE' &&
-    evaluation.sinceMetadata
-  ) {
+  if (evaluation.sinceMetadata && expandedLabel.length === 3 && expandedLabel[1] === 'SINCE') {
     return (
       <EvaluationSinceLabel
         pushHistory={pushHistory}
