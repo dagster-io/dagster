@@ -46,10 +46,10 @@ sudo py-spy record -f speedscope --idle -- dagster definitions validate
         For more information on applying this type of configuration to your Kubernetes pod in Dagster OSS, see [Customizing your Kubernetes deployment](/deployment/oss/deployment-options/kubernetes/customizing-your-deployment#instance-level-kubernetes-configuration).
     </TabItem>
     <TabItem value="hybrid" label="Dagster+ Hybrid with Kubernetes agent">
-        For example, you can set the following in your `dagster_cloud.yaml` file for your code location if you're running a Kubernetes agent to make both your code servers and run pods able to work with py-spy:
+        For example, you can set the following in your `build.yaml` file for your code location if you're running a Kubernetes agent to make both your code servers and run pods able to work with py-spy:
 
         ```
-        # dagster_cloud.yaml
+        # build.yaml
         locations:
         - location_name: cloud-examples
             image: dagster/dagster-cloud-examples:latest

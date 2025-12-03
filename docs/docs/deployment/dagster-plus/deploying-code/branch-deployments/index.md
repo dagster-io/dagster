@@ -15,7 +15,7 @@ Branch deployments automatically create ephemeral preview deployments of your Da
 
 ## Supported platforms
 
-Branch deployments can be used with any Git or CI provider. However, setup is easiest with the Dagster GitHub Actions or Dagster GitLab CI/CD workflow, as parts of the process are automated. For more information, see [Setting up branch deployments](/deployment/dagster-plus/deploying-code/branch-deployments/setting-up-branch-deployments).
+Branch deployments can be used with any Git or CI provider. However, setup is easiest with the Dagster GitHub Actions or Dagster GitLab CI/CD workflow, as parts of the process are automated. For more information, see [Setting up branch deployments](/deployment/dagster-plus/deploying-code/branch-deployments/configuring-branch-deployments).
 
 ## Change tracking
 

@@ -257,6 +257,9 @@ def deploy_configure_group(
     If no subcommand is specified, will attempt to auto-detect the agent type from your
     Dagster Plus deployment. If detection fails, you will be prompted to choose between
     serverless or hybrid.
+
+    If run in a `workspace <https://docs.dagster.io/guides/build/projects/workspaces/creating-workspaces>`__,
+    will scaffold configuration files for the workspace and all projects contained in it.
     """
     # If a subcommand was invoked, let Click handle it
     if ctx.invoked_subcommand is not None:
