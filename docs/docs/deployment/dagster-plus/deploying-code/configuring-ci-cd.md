@@ -164,12 +164,12 @@ If you don't want to use our automated GitHub/GitLab process, you can use the [`
 
 You can also configure the `dagster-cloud` tool non-interactively; for more information, see [the `dagster-cloud` installation and configuration docs](/api/clis/dagster-cloud-cli/installing-and-configuring). {/* TODO - replace with `dg` equivalent */}
 
-3. Finally, deploy your project to Dagster+ using the `serverless` command:
+3. Finally, deploy your project to Dagster+ using the `serverless` command, replacing `YOUR_PACKAGE_NAME` with the name of your Dagster package:
 
 ```shell
 dagster-cloud serverless deploy-python-executable ./my-project \
   --location-name example \
-  --package-name quickstart_etl \
+  --package-name YOUR_PACKAGE_NAME \
   --python-version 3.12
 ```
 
@@ -180,7 +180,7 @@ If you are using Windows, you will need to replace the `deploy-python-executable
 ```shell
 dagster-cloud serverless deploy ./my-project \
   --location-name example \
-  --package-name quickstart_etl \
+  --package-name YOUR_PACKAGE_NAME \
   --python-version 3.12
 ```
 
