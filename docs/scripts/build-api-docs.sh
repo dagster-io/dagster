@@ -25,6 +25,11 @@ uv_activate_venv() {
   uv pip install tox
 }
 
+cp_integrations_api_docs() {
+  cp -r sphinx/_build/mdx/sections/api/apidocs/libraries/dagster-airbyte.mdx docs/integrations/libraries/airbyte
+  cp -r sphinx/_build/mdx/sections/api/apidocs/libraries/dagster-airlift.mdx docs/integrations/libraries/airlift
+}
+
 # https://vercel.com/docs/projects/environment-variables/system-environment-variables#VERCEL
 if [ "$VERCEL" = "1" ]; then
   echo "Detected Vercel environment. Running Vercel-specific commands and configurations."
@@ -37,7 +42,7 @@ if [ "$VERCEL" = "1" ]; then
   echo "Running sphinx-mdx and copying files to \`docs/api\`"
   tox -e sphinx-mdx-vercel
   cp -rf sphinx/_build/mdx/sections/api/apidocs/dagster docs/api
-  cp -rf sphinx/_build/mdx/sections/api/apidocs/libraries docs/api
+  cp_integrations_api_docs
   cp -rf sphinx/_build/mdx/sections/api/apidocs/clis docs/api
 
   # Parallelize production sphinx-inv build -- see tox.ini
@@ -49,7 +54,7 @@ else
   echo "Running sphinx-mdx and copying files to \`docs/api\`"
   tox -e sphinx-mdx-local
   cp -rf sphinx/_build/mdx/sections/api/apidocs/dagster docs/api
-  cp -rf sphinx/_build/mdx/sections/api/apidocs/libraries docs/api
+  cp_integrations_api_docs
   cp -rf sphinx/_build/mdx/sections/api/apidocs/clis docs/api
 
   
