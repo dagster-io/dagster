@@ -174,7 +174,7 @@ class PipesECSClient(PipesClient, TreatAsResourceParam):
 
             if not response["tasks"]:
                 # Task failed to launch - check failures for details
-                failures = response["failures"]
+                failures = response.get("failures", [])
                 failure_messages = []
                 for failure in failures:
                     arn = failure.get("arn")
