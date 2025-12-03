@@ -398,34 +398,64 @@ class DbtCloudWorkspaceClient(DagsterModel):
         """
         return self.get_run_artifact(run_id=run_id, path="manifest.json")
 
-    def get_run_logs(self, run_id: int) -> str:
+    def get_run_logs(self, run_id: int, max_retries: int = 3, retry_delay: float = 2.0) -> str:
         """Retrieves the stdout/stderr logs from a given dbt Cloud Run.
 
         This method fetches logs from the run_steps field by calling get_run_details
         with include_related=["run_steps"]. Each step contains a logs field with
         the stdout/stderr output for that step.
 
+        Note: There can be a slight delay between when a run completes and when the logs
+        are fully populated in the API. This method will retry a few times if it detects
+        completed steps with empty logs.
+
         Args:
             run_id (int): The dbt Cloud Run ID.
+            max_retries (int): Maximum number of times to retry fetching logs if empty. Defaults to 3.
+            retry_delay (float): Time in seconds to wait between retries. Defaults to 2.0.
 
         Returns:
             str: The concatenated log text content from all run steps.
         """
-        run_details = self.get_run_details(run_id=run_id, include_related=["run_steps"])
+        for attempt in range(max_retries):
+            run_details = self.get_run_details(run_id=run_id, include_related=["run_steps"])
 
-        logs_parts = []
-        run_steps = run_details.get("run_steps", [])
+            logs_parts = []
+            run_steps = run_details.get("run_steps", [])
+            completed_steps_with_empty_logs = 0
 
-        for step in run_steps:
-            step_name = step.get("name", "Unknown Step")
-            step_logs = step.get("logs", "")
+            for step in run_steps:
+                step_name = step.get("name", "Unknown Step")
+                step_logs = step.get("logs", "")
+                step_status = step.get("status_humanized", "unknown")
 
-            if step_logs:
-                logs_parts.append(f"=== Step: {step_name} ===")
-                logs_parts.append(step_logs)
-                logs_parts.append("")  # Empty line between steps
+                # Track completed steps with empty logs
+                if step_status == "Success" and not step_logs:
+                    completed_steps_with_empty_logs += 1
 
-        return "\n".join(logs_parts) if logs_parts else ""
+                if step_logs:
+                    logs_parts.append(f"=== Step: {step_name} ===")
+                    logs_parts.append(step_logs)
+                    logs_parts.append("")  # Empty line between steps
+
+            # If we have completed steps with empty logs and retries left, wait and try again
+            if completed_steps_with_empty_logs > 0 and attempt < max_retries - 1:
+                self._log.warning(
+                    f"Found {completed_steps_with_empty_logs} completed steps with empty logs for run {run_id}. "
+                    f"Retrying in {retry_delay} seconds..."
+                )
+                time.sleep(retry_delay)
+                continue
+
+            # Either we got all logs or we're out of retries
+            if completed_steps_with_empty_logs > 0:
+                self._log.warning(
+                    f"Still missing logs for {completed_steps_with_empty_logs} completed steps after {max_retries} attempts"
+                )
+
+            return "\n".join(logs_parts) if logs_parts else ""
+
+        return ""
 
     def get_project_details(self, project_id: int) -> Mapping[str, Any]:
         """Retrieves the details of a given dbt Cloud Project.
