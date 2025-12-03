@@ -1,6 +1,7 @@
-import {Box, Colors, Icon} from '@dagster-io/ui-components';
+import {Box, Colors, Tooltip, Icon} from '@dagster-io/ui-components';
 import * as React from 'react';
 import styled from 'styled-components';
+import {NewEvaluationNodeFragment} from './types/GetEvaluationsQuery.types';
 
 export type ConditionType = 'group' | 'leaf';
 
