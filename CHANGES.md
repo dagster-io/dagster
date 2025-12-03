@@ -1,5 +1,27 @@
 # Changelog
 
+## 1.12.4 (core) / 0.28.4 (libraries)
+
+### New
+
+- CI workflows for Gitlab projects can now be scaffolded using `dg plus deploy configure`.
+- "/" characters are now allowed in concurrency pool names.
+- Pod wait timeout for K8sPipeClient can now be specified (Thanks, [@abhinavDhulipala](https://github.com/abhinavDhulipala)!)
+- New `kind` tag icon for Zendesk (Thanks, [@kporter13](https://github.com/kporter13)!)
+
+### Bugfixes
+
+- Fixed an issue where passing in JSON serializable enums to JsonMetadataValue would sometimes result in an error.
+- Fixed an issue that would cause `SensorDefinition` subclasses (e.g. `AutomationConditionSensorDefinition`, `RunStatusSensorDefinition`) to be converted to having the wrong `sensor_type` property when produced from a `Component`.
+- feat: tableau-component: datasource_refresh and fixes.
+- [dagster-tableau] Fixed a KeyError that occurred when using `workbook_selector_fn` to filter assets. Now dependencies are only accessed if they exist in the workspace data. (Thanks, [@miriamcastel](https://github.com/miriamcastel)!)
+- [dagster-dbt] Fixed a `FileExistsError` on Windows when reloading `dbt` project definitions by ensuring the local project directory creation handles pre-existing directories (Thanks, [@Jongwan93](https://github.com/Jongwan93)!)
+- Fixed an issue where the `Flower` config map was included in the Helm chart even when `Flower` was disabled (Thanks, [@LoHertel](https://github.com/LoHertel)!)
+
+### Documentation
+
+- Updated `dagster-iceberg` docs to include recently-added features. (Thanks, [@zyd14](https://github.com/zyd14)!)
+
 ## 1.12.3 (core) / 0.28.3 (libraries)
 
 ### New
