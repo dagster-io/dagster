@@ -43,6 +43,6 @@ export function useWipeDialog(
               onClick={() => setShowing(true)}
             />,
           ]
-        : ([] as JSX.Element[]),
+        : [],
   };
 }
