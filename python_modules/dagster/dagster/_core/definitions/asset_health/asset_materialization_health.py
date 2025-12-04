@@ -313,6 +313,7 @@ class AssetHealthMaterializationDegradedPartitionedMeta:
     num_failed_partitions: int
     num_missing_partitions: int
     total_num_partitions: int
+    failed_run_id: Optional[str]
 
 
 @whitelist_for_serdes
@@ -320,6 +321,7 @@ class AssetHealthMaterializationDegradedPartitionedMeta:
 class AssetHealthMaterializationHealthyPartitionedMeta:
     num_missing_partitions: int
     total_num_partitions: int
+    latest_run_id: Optional[str]
 
 
 @whitelist_for_serdes
@@ -421,6 +423,7 @@ async def get_materialization_status_and_metadata(
             meta = AssetHealthMaterializationHealthyPartitionedMeta(
                 num_missing_partitions=num_missing,
                 total_num_partitions=total_num_partitions,
+                latest_run_id=asset_materialization_health_state.latest_terminal_run_id,
             )
         else:
             # captures the case when asset is not partitioned, or the asset is partitioned and all partitions are materialized
@@ -441,6 +444,7 @@ async def get_materialization_status_and_metadata(
                 num_failed_partitions=asset_materialization_health_state.num_failed_partitions,
                 num_missing_partitions=num_missing,
                 total_num_partitions=total_num_partitions,
+                failed_run_id=asset_materialization_health_state.latest_terminal_run_id,
             )
         else:
             meta = AssetHealthMaterializationDegradedNotPartitionedMeta(
