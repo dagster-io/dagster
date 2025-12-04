@@ -63,7 +63,7 @@ export const useAssetPermissions = (assetKeys: AssetKeyInput[], locationName: st
       hasReportRunlessAssetEventPermission,
       loading,
     };
-  }, [data, loading, locationLoading, fallbackPermissions, assetKeys.length]);
+  }, [data, loading, locationLoading, fallbackPermissions, assetKeys]);
 };
 
 export const ASSETS_PERMISSIONS_QUERY = gql`
