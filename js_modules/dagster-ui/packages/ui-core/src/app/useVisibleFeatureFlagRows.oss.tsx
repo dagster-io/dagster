@@ -36,7 +36,7 @@ export const useVisibleFeatureFlagRows = (): FeatureFlagRow[] => [
     flagType: FeatureFlag.flagNavigationUpdate,
   },
   {
-    key: 'Use new hierarchical asset catalog sidebar',
+    key: 'Use new catalog layout (beta)',
     flagType: FeatureFlag.flagAssetCatalogSidebar,
   },
 ];
