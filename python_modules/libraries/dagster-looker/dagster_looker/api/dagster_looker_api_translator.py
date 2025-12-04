@@ -13,6 +13,7 @@ from dagster._record import record
 from dagster._utils.log import get_dagster_logger
 from looker_sdk.sdk.api40.methods import Looker40SDK
 from looker_sdk.sdk.api40.models import Dashboard, DashboardFilter, LookmlModelExplore, User
+from dagster.components import Model, Resolvable
 
 logger = get_dagster_logger("dagster_looker")
 
@@ -67,8 +68,8 @@ class LookerInstanceData:
         )
 
 
-@record
-class RequestStartPdtBuild:
+
+class RequestStartPdtBuild(Model, Resolvable):
     """A request to start a PDT build. See https://developers.looker.com/api/explorer/4.0/types/DerivedTable/RequestStartPdtBuild?sdk=py
     for documentation on all available fields.
 

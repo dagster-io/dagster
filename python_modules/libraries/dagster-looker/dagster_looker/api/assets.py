@@ -11,7 +11,7 @@ from dagster_looker.api.dagster_looker_api_translator import (
     LookerStructureData,
     LookerStructureType,
     LookmlView,
-    RequestStartPdtBuild,
+    RequestStartPdtBuild
 )
 
 from dagster_looker.api.resource import LookerResource
