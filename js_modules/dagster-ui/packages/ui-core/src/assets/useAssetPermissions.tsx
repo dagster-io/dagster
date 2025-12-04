@@ -4,18 +4,19 @@ import {gql, useQuery} from '../apollo-client';
 import {usePermissionsForLocation} from '../app/Permissions';
 import {AssetKeyInput} from '../graphql/types';
 import {
-  AssetPermissionsQuery,
-  AssetPermissionsQueryVariables,
+  AssetsPermissionsQuery,
+  AssetsPermissionsQueryVariables,
 } from './types/useAssetPermissions.types';
 
-export const useAssetPermissions = (assetKey: AssetKeyInput, locationName: string) => {
+export const useAssetPermissions = (assetKeys: AssetKeyInput[], locationName: string) => {
   const {permissions: locationPermissions, loading: locationLoading} =
     usePermissionsForLocation(locationName);
 
-  const {data, loading} = useQuery<AssetPermissionsQuery, AssetPermissionsQueryVariables>(
-    ASSET_PERMISSIONS_QUERY,
+  const {data, loading} = useQuery<AssetsPermissionsQuery, AssetsPermissionsQueryVariables>(
+    ASSETS_PERMISSIONS_QUERY,
     {
-      variables: {assetKey: {path: assetKey.path}},
+      variables: {assetKeys: assetKeys.map((key) => ({path: key.path}))},
+      skip: assetKeys.length === 0,
     },
   );
 
@@ -26,34 +27,52 @@ export const useAssetPermissions = (assetKey: AssetKeyInput, locationName: strin
   }, [canLaunchPipelineExecution, canWipeAssets, canReportRunlessAssetEvents]);
 
   return useMemo(() => {
-    if (data?.assetNodeOrError.__typename === 'AssetNode') {
+    // If no asset keys provided, fall back to location permissions
+    if (assetKeys.length === 0) {
       return {
-        hasMaterializePermission: data.assetNodeOrError.hasMaterializePermission,
-        hasWipePermission: data.assetNodeOrError.hasWipePermission,
-        hasReportRunlessAssetEventPermission:
-          data.assetNodeOrError.hasReportRunlessAssetEventPermission,
-        loading,
+        hasMaterializePermission: fallbackPermissions.canLaunchPipelineExecution,
+        hasWipePermission: fallbackPermissions.canWipeAssets,
+        hasReportRunlessAssetEventPermission: fallbackPermissions.canReportRunlessAssetEvents,
+        loading: locationLoading,
       };
     }
 
+    // Collect permissions from all assets
+    const assetNodes = data?.assetNodes || [];
+
+    // If we don't have data for all assets yet, use fallback
+    if (assetNodes.length !== assetKeys.length) {
+      return {
+        hasMaterializePermission: fallbackPermissions.canLaunchPipelineExecution,
+        hasWipePermission: fallbackPermissions.canWipeAssets,
+        hasReportRunlessAssetEventPermission: fallbackPermissions.canReportRunlessAssetEvents,
+        loading: loading || locationLoading,
+      };
+    }
+
+    // Permission is allowed only if ALL assets allow it
+    const hasMaterializePermission = assetNodes.every((node) => node.hasMaterializePermission);
+    const hasWipePermission = assetNodes.every((node) => node.hasWipePermission);
+    const hasReportRunlessAssetEventPermission = assetNodes.every(
+      (node) => node.hasReportRunlessAssetEventPermission,
+    );
+
     return {
-      hasMaterializePermission: fallbackPermissions.canLaunchPipelineExecution,
-      hasWipePermission: fallbackPermissions.canWipeAssets,
-      hasReportRunlessAssetEventPermission: fallbackPermissions.canReportRunlessAssetEvents,
-      loading: loading || locationLoading,
+      hasMaterializePermission,
+      hasWipePermission,
+      hasReportRunlessAssetEventPermission,
+      loading,
     };
-  }, [data, loading, locationLoading, fallbackPermissions]);
+  }, [data, loading, locationLoading, fallbackPermissions, assetKeys]);
 };
 
-export const ASSET_PERMISSIONS_QUERY = gql`
-  query AssetPermissionsQuery($assetKey: AssetKeyInput!) {
-    assetNodeOrError(assetKey: $assetKey) {
-      ... on AssetNode {
-        id
-        hasMaterializePermission
-        hasWipePermission
-        hasReportRunlessAssetEventPermission
-      }
+export const ASSETS_PERMISSIONS_QUERY = gql`
+  query AssetsPermissionsQuery($assetKeys: [AssetKeyInput!]!) {
+    assetNodes(assetKeys: $assetKeys) {
+      id
+      hasMaterializePermission
+      hasWipePermission
+      hasReportRunlessAssetEventPermission
     }
   }
 `;

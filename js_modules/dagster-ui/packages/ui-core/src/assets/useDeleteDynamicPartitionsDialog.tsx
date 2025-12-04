@@ -32,7 +32,7 @@ export function useDeleteDynamicPartitionsDialog(
   );
 
   const {hasWipePermission} = useAssetPermissions(
-    opts?.assetKey || {path: []},
+    opts?.assetKey ? [opts.assetKey] : [],
     opts?.repoAddress.location || '',
   );
 
