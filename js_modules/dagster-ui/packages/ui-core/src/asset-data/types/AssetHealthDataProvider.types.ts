@@ -17,6 +17,8 @@ export type AssetHealthQuery = {
           latestMaterializationTimestamp: number | null;
           latestFailedToMaterializeTimestamp: number | null;
           freshnessStatusChangedTimestamp: number | null;
+          latestCheckWarningTimestamp: number | null;
+          latestCheckFailureTimestamp: number | null;
           key: {__typename: 'AssetKey'; path: Array<string>};
           assetHealth: {
             __typename: 'AssetHealth';
@@ -83,6 +85,8 @@ export type AssetHealthFragment = {
   latestMaterializationTimestamp: number | null;
   latestFailedToMaterializeTimestamp: number | null;
   freshnessStatusChangedTimestamp: number | null;
+  latestCheckWarningTimestamp: number | null;
+  latestCheckFailureTimestamp: number | null;
   key: {__typename: 'AssetKey'; path: Array<string>};
   assetHealth: {
     __typename: 'AssetHealth';
@@ -171,4 +175,4 @@ export type AssetHealthFreshnessMetaFragment = {
   lastMaterializedTimestamp: number | null;
 };
 
-export const AssetHealthQueryVersion = 'ff7311f69faa34a94e386cd735beccef7a4d933078bc9b5caf9b95e638637e05';
+export const AssetHealthQueryVersion = 'f9de7794062a9fc175b768f0308660eefc507c460eeab7dc500bce5b980337cf';

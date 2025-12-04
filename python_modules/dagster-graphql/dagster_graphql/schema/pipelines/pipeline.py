@@ -3,6 +3,7 @@ from typing import TYPE_CHECKING, AbstractSet, Optional  # noqa: UP035
 
 import dagster._check as check
 import graphene
+from dagster._core.definitions.asset_health.asset_check_health import AssetCheckHealthState
 from dagster._core.definitions.asset_health.asset_freshness_health import AssetFreshnessHealthState
 from dagster._core.definitions.asset_health.asset_materialization_health import (
     MinimalAssetMaterializationHealthState,
@@ -292,6 +293,8 @@ class GrapheneAsset(graphene.ObjectType):
     hasDefinitionOrRecord = graphene.NonNull(graphene.Boolean)
     latestFailedToMaterializeTimestamp = graphene.Float()
     freshnessStatusChangedTimestamp = graphene.Float()
+    latestCheckWarningTimestamp = graphene.Float()
+    latestCheckFailureTimestamp = graphene.Float()
 
     class Meta:
         name = "Asset"
@@ -532,6 +535,30 @@ class GrapheneAsset(graphene.ObjectType):
             ts = freshness_state_record.updated_at.timestamp() if freshness_state_record else None
 
         return ts * 1000 if ts else None  # FE prefers timestamp in milliseconds
+
+    async def resolve_latestCheckWarningTimestamp(
+        self, graphene_info: ResolveInfo
+    ) -> Optional[float]:
+        check_health_state = await AssetCheckHealthState.gen(graphene_info.context, self._asset_key)
+        if (
+            check_health_state is not None
+            and check_health_state.latest_warning_check_timestamp is not None
+        ):
+            return (
+                check_health_state.latest_warning_check_timestamp * 1000
+            )  # FE prefers timestamp in milliseconds
+
+    async def resolve_latestCheckFailureTimestamp(
+        self, graphene_info: ResolveInfo
+    ) -> Optional[float]:
+        check_health_state = await AssetCheckHealthState.gen(graphene_info.context, self._asset_key)
+        if (
+            check_health_state is not None
+            and check_health_state.latest_failing_check_timestamp is not None
+        ):
+            return (
+                check_health_state.latest_failing_check_timestamp * 1000
+            )  # FE prefers timestamp in milliseconds
 
 
 class GrapheneEventConnection(graphene.ObjectType):
