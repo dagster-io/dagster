@@ -35,7 +35,7 @@ setup(
     python_requires=">=3.10,<3.14",
     install_requires=[
         "boto3",
-        f"dagster{pin}",
+        "dagster==1.12.4",
         "packaging",
         "requests",
     ],
