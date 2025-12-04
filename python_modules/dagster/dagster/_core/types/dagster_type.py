@@ -897,6 +897,7 @@ def resolve_dagster_type(dagster_type: object) -> DagsterType:
     )
     from dagster._core.types.python_set import DagsterSetApi, PythonSet
     from dagster._core.types.python_tuple import DagsterTupleApi, PythonTuple
+    from dagster._core.types.generic_resolver import try_resolve_generic
     from dagster._core.types.transform_typing import transform_typing_type
     from dagster._utils.typing_api import is_typing_type
 
@@ -926,6 +927,10 @@ def resolve_dagster_type(dagster_type: object) -> DagsterType:
     elif dagster_type == ObserveResult:
         # ObserveResult does not include a value
         dagster_type = Nothing
+
+    resolved_from_generic = try_resolve_generic(dagster_type)
+    if resolved_from_generic is not None:
+        return resolved_from_generic
 
     # Then, check to see if it is part of python's typing library
     if is_typing_type(dagster_type):

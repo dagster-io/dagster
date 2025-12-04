@@ -25,9 +25,11 @@ import pandera.pandas as pa_pd
 # Try polars support
 try:
     import pandera.polars as pa_pl
+    import pandera.typing.polars as pa_pl_typing
     import polars as pl
 except ImportError:
     pa_pl = None
+    pa_pl_typing = None
     pl = None
 
 if TYPE_CHECKING:
@@ -53,6 +55,8 @@ from dagster import (
 )
 from dagster._annotations import beta
 from dagster._core.definitions.metadata import MetadataValue
+from dagster._core.errors import DagsterInvalidDefinitionError
+from dagster._core.types.generic_resolver import register_generic_type_resolver
 from dagster_shared.libraries import DagsterLibraryRegistry
 
 from dagster_pandera.version import __version__
@@ -85,6 +89,56 @@ DagsterPanderaSchemaModel: TypeAlias = type[
 DagsterPanderaColumn: TypeAlias = Union[pa_pd.Column, "pandera.polars.Column"]
 
 DagsterLibraryRegistry.register("dagster-pandera", __version__)
+
+
+def _register_pandera_polars_generic_types() -> None:
+    if not (pa_pl_typing and pl):
+        return
+
+    def _build_resolver(*, is_lazy: bool):
+        runtime_type = pl.LazyFrame if is_lazy else pl.DataFrame
+
+        def _resolver(type_args):
+            if len(type_args) != 1:
+                raise DagsterInvalidDefinitionError(
+                    "Pandera Polars generics expect a single schema type argument."
+                )
+
+            schema_cls = type_args[0]
+            if not isinstance(schema_cls, type) or not issubclass(schema_cls, pa.DataFrameModel):
+                raise DagsterInvalidDefinitionError(
+                    "Pandera Polars generics must be parametrized with a pandera.DataFrameModel subclass."
+                )
+
+            base_type = pandera_schema_to_dagster_type(schema_cls)
+
+            def _type_check(context, value):
+                materialized_value = value
+                if is_lazy and hasattr(materialized_value, "collect"):
+                    materialized_value = materialized_value.collect()
+                return base_type.type_check(context, materialized_value)
+
+            generic_label = "LazyFrame" if is_lazy else "DataFrame"
+            key = f"PanderaPolars[{schema_cls.__module__}.{schema_cls.__name__}:{generic_label}]"
+
+            return DagsterType(
+                type_check_fn=_type_check,
+                key=key,
+                description=base_type.description,
+                loader=base_type.loader,
+                required_resource_keys=set(base_type.required_resource_keys),
+                kind=base_type.kind,
+                typing_type=runtime_type,
+                metadata=base_type.metadata,
+            )
+
+        return _resolver
+
+    register_generic_type_resolver(pa_pl_typing.DataFrame, _build_resolver(is_lazy=False))
+    register_generic_type_resolver(pa_pl_typing.LazyFrame, _build_resolver(is_lazy=True))
+
+
+_register_pandera_polars_generic_types()
 
 # ########################
 # ##### PANDERA SCHEMA TO DAGSTER TYPE
