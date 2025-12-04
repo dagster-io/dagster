@@ -34,11 +34,13 @@ export type AssetHealthQuery = {
                   numMissingPartitions: number;
                   numFailedPartitions: number;
                   totalNumPartitions: number;
+                  failedRunId: string | null;
                 }
               | {
                   __typename: 'AssetHealthMaterializationHealthyPartitionedMeta';
                   numMissingPartitions: number;
                   totalNumPartitions: number;
+                  latestRunId: string | null;
                 }
               | null;
             assetChecksStatusMetadata:
@@ -100,11 +102,13 @@ export type AssetHealthFragment = {
           numMissingPartitions: number;
           numFailedPartitions: number;
           totalNumPartitions: number;
+          failedRunId: string | null;
         }
       | {
           __typename: 'AssetHealthMaterializationHealthyPartitionedMeta';
           numMissingPartitions: number;
           totalNumPartitions: number;
+          latestRunId: string | null;
         }
       | null;
     assetChecksStatusMetadata:
@@ -137,12 +141,14 @@ export type AssetHealthMaterializationDegradedPartitionedMetaFragment = {
   numMissingPartitions: number;
   numFailedPartitions: number;
   totalNumPartitions: number;
+  failedRunId: string | null;
 };
 
 export type AssetHealthMaterializationHealthyPartitionedMetaFragment = {
   __typename: 'AssetHealthMaterializationHealthyPartitionedMeta';
   numMissingPartitions: number;
   totalNumPartitions: number;
+  latestRunId: string | null;
 };
 
 export type AssetHealthMaterializationDegradedNotPartitionedMetaFragment = {
@@ -174,4 +180,4 @@ export type AssetHealthFreshnessMetaFragment = {
   lastMaterializedTimestamp: number | null;
 };
 
-export const AssetHealthQueryVersion = 'ff7311f69faa34a94e386cd735beccef7a4d933078bc9b5caf9b95e638637e05';
+export const AssetHealthQueryVersion = '415aacb9e120af636888a75e032d65e4d64c64d8c0729700e739154a9a5ddeec';
