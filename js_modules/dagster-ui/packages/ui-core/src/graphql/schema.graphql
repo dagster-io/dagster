@@ -4025,9 +4025,9 @@ type AutomationConditionEvaluationNode {
 }
 
 type SinceConditionMetadata {
-  triggerEvaluationId: Int
+  triggerEvaluationId: ID
   triggerTimestamp: Float
-  resetEvaluationId: Int
+  resetEvaluationId: ID
   resetTimestamp: Float
 }
 

@@ -5556,9 +5556,9 @@ export type ShutdownRepositoryLocationSuccess = {
 
 export type SinceConditionMetadata = {
   __typename: 'SinceConditionMetadata';
-  resetEvaluationId: Maybe<Scalars['Int']['output']>;
+  resetEvaluationId: Maybe<Scalars['ID']['output']>;
   resetTimestamp: Maybe<Scalars['Float']['output']>;
-  triggerEvaluationId: Maybe<Scalars['Int']['output']>;
+  triggerEvaluationId: Maybe<Scalars['ID']['output']>;
   triggerTimestamp: Maybe<Scalars['Float']['output']>;
 };
 
@@ -15510,13 +15510,13 @@ export const buildSinceConditionMetadata = (
     resetEvaluationId:
       overrides && overrides.hasOwnProperty('resetEvaluationId')
         ? overrides.resetEvaluationId!
-        : 8424,
+        : 'c8e7ab7b-aed5-4c32-81a4-f5360700738c',
     resetTimestamp:
       overrides && overrides.hasOwnProperty('resetTimestamp') ? overrides.resetTimestamp! : 5.31,
     triggerEvaluationId:
       overrides && overrides.hasOwnProperty('triggerEvaluationId')
         ? overrides.triggerEvaluationId!
-        : 2168,
+        : '2f6e3f88-605f-4ca0-9629-9e9354410433',
     triggerTimestamp:
       overrides && overrides.hasOwnProperty('triggerTimestamp')
         ? overrides.triggerTimestamp!
