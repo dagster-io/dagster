@@ -1832,7 +1832,7 @@ class CodeLocationUpdatedData(
     NamedTuple(
         "_CodeLocationUpdatedData",
         [
-            ("location_name", str),
+            ("code_location_name", str),
             ("new_version_key", Optional[str]),
             ("metadata", Mapping[str, MetadataValue]),
         ],
@@ -1840,13 +1840,13 @@ class CodeLocationUpdatedData(
 ):
     def __new__(
         cls,
-        location_name: str,
+        code_location_name: str,
         new_version_key: Optional[str] = None,
         metadata: Optional[Mapping[str, MetadataValue]] = None,
     ):
         return super().__new__(
             cls,
-            location_name=check.str_param(location_name, "location_name"),
+            code_location_name=check.str_param(code_location_name, "code_location_name"),
             new_version_key=check.opt_str_param(new_version_key, "new_version_key"),
             metadata=normalize_metadata(
                 check.opt_mapping_param(metadata, "metadata", key_type=str)
