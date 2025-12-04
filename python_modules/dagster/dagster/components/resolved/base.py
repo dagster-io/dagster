@@ -12,6 +12,7 @@ from dagster_shared.utils import safe_is_subclass
 from dagster_shared.yaml_utils import try_parse_yaml_with_source_position
 from pydantic import BaseModel, PydanticSchemaGenerationError, create_model
 from pydantic.fields import Field, FieldInfo
+from pydantic_core import PydanticUndefined
 
 from dagster import _check as check
 from dagster._annotations import public
@@ -160,6 +161,8 @@ class Resolvable:
 # must be a string to make sure it is json serializable
 _Unset: Final[str] = "__DAGSTER_UNSET_DEFAULT__"
 
+_Undefined: Final[object] = object()
+
 
 def derive_model_type(
     target_type: type[Resolvable],
@@ -178,9 +181,16 @@ def derive_model_type(
 
             field_infos = []
             if annotation_info.field_info:
-                field_infos.append(annotation_info.field_info)
+                field_info = annotation_info.field_info
+                if annotation_info.has_default():
+                    attributes = field_info._attributes_set  # noqa
+                    attributes.pop("default", None)
+                    attributes.pop("default_factory", None)
+                    field_info = FieldInfo(**attributes)  # type: ignore
 
-            if annotation_info.has_default:
+                field_infos.append(field_info)
+
+            if annotation_info.has_default():
                 # if the annotation has a serializable default
                 # value, propagate it to the inner schema, otherwise
                 # use a marker value that will cause the kwarg
@@ -265,8 +275,11 @@ def _is_resolvable_type(annotation):
 class AnnotationInfo:
     type: Any
     default: Any
-    has_default: bool
+    default_factory: Any
     field_info: Optional[FieldInfo]
+
+    def has_default(self) -> bool:
+        return self.default is not _Undefined or self.default_factory is not _Undefined
 
 
 def _get_annotations(
@@ -276,21 +289,25 @@ def _get_annotations(
     init_kwargs = _get_init_kwargs(resolved_type)
     if is_dataclass(resolved_type):
         for f in fields(resolved_type):
-            has_default = f.default is not MISSING or f.default_factory is not MISSING
             annotations[f.name] = AnnotationInfo(
                 type=f.type,
-                default=f.default,
-                has_default=has_default,
+                default=f.default if f.default is not MISSING else _Undefined,
+                default_factory=f.default_factory
+                if f.default_factory is not MISSING
+                else _Undefined,
                 field_info=None,
             )
         return annotations
     elif safe_is_subclass(resolved_type, BaseModel):
         for name, field_info in resolved_type.model_fields.items():
-            has_default = not field_info.is_required()
             annotations[name] = AnnotationInfo(
                 type=field_info.rebuild_annotation(),
-                default=field_info.default,
-                has_default=has_default,
+                default=field_info.default
+                if field_info.default is not PydanticUndefined
+                else _Undefined,
+                default_factory=field_info.default_factory
+                if field_info.default_factory is not PydanticUndefined
+                else _Undefined,
                 field_info=field_info,
             )
         return annotations
@@ -299,8 +316,8 @@ def _get_annotations(
         for name, ttype in get_record_annotations(resolved_type).items():
             annotations[name] = AnnotationInfo(
                 type=ttype,
-                default=defaults[name] if name in defaults else None,
-                has_default=name in defaults,
+                default=defaults[name] if name in defaults else _Undefined,
+                default_factory=_Undefined,
                 field_info=None,
             )
         return annotations
@@ -344,8 +361,8 @@ def _get_init_kwargs(
 
         fields[name] = AnnotationInfo(
             type=param.annotation,
-            default=param.default,
-            has_default=param.default is not param.empty,
+            default=param.default if param.default is not param.empty else _Unset,
+            default_factory=None,
             field_info=None,
         )
     return fields
