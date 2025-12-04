@@ -726,3 +726,35 @@ def test_subclass_with_op_config_schema_and_custom_get_asset_spec(dbt_path: Path
             },
         )
         assert result.success
+
+
+def test_upstream_source_specs() -> None:
+    """Test that DbtProjectComponent creates upstream dep specs for sources."""
+    from dagster._core.definitions.assets.definition.asset_spec import (
+        SYSTEM_METADATA_KEY_UPSTREAM_DEP_ASSET,
+    )
+    from dagster_dbt_tests.dbt_projects import test_metadata_path
+
+    defs = build_component_defs_for_test(
+        DbtProjectComponent,
+        {
+            "project": str(test_metadata_path),
+            "select": "stg_customers",  # This model depends on source 'jaffle_shop.raw_customers'
+        },
+    )
+
+    # Get all asset specs from the definitions
+    all_specs = defs.resolve_all_asset_specs()
+    specs_by_key = {spec.key: spec for spec in all_specs}
+
+    # The source should have an upstream dep spec with the marker metadata
+    # Source key is typically [source_name, table_name] = ['jaffle_shop', 'raw_customers']
+    # but this project has custom key ['raw_source_customers']
+    source_key = AssetKey("raw_source_customers")
+    assert source_key in specs_by_key, f"Source key {source_key} not found in {specs_by_key.keys()}"
+
+    source_spec = specs_by_key[source_key]
+    assert source_spec.metadata.get(SYSTEM_METADATA_KEY_UPSTREAM_DEP_ASSET) is True, (
+        f"Source spec should have SYSTEM_METADATA_KEY_UPSTREAM_DEP_ASSET=True, "
+        f"got metadata: {source_spec.metadata}"
+    )

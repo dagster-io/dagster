@@ -374,15 +374,18 @@ class DbtProjectComponent(StateBackedComponent, dg.Resolvable):
 
         res_ctx = context.resolution_context
 
+        manifest = validate_manifest(project.manifest_path)
+
         asset_specs, check_specs = build_dbt_specs(
             translator=validate_translator(self.translator),
-            manifest=validate_manifest(project.manifest_path),
+            manifest=manifest,
             select=self.select,
             exclude=self.exclude,
             selector=self.selector,
             project=project,
             io_manager_key=None,
         )
+
         op_spec = self._get_op_spec(project)
 
         @dg.multi_asset(
@@ -400,7 +403,11 @@ class DbtProjectComponent(StateBackedComponent, dg.Resolvable):
             with _set_resolution_context(res_ctx):
                 yield from self.execute(context=context, dbt=DbtCliResource(project))
 
-        return dg.Definitions(assets=[_fn])
+        upstream_source_specs = [
+            self.get_asset_spec(manifest, source["unique_id"], project)
+            for source in manifest["sources"].values()
+        ]
+        return dg.Definitions(assets=[_fn, *upstream_source_specs])
 
     def get_cli_args(self, context: dg.AssetExecutionContext) -> list[str]:
         # create a resolution scope that includes the partition key and range, if available
