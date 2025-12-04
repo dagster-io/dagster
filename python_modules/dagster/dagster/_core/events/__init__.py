@@ -105,6 +105,7 @@ EventSpecificData = Union[
     "FreshnessStateChange",
     "AssetHealthChangedData",
     "AssetWipedData",
+    "CodeLocationUpdatedData",
 ]
 
 
@@ -365,6 +366,8 @@ def _validate_event_specific_data(
         check.inst_param(event_specific_data, "event_specific_data", AssetCheckEvaluation)
     elif event_type == DagsterEventType.RUN_ENQUEUED:
         check.opt_inst_param(event_specific_data, "event_specific_data", RunEnqueuedData)
+    elif event_type == DagsterEventType.CODE_LOCATION_UPDATED:
+        check.opt_inst_param(event_specific_data, "event_specific_data", CodeLocationUpdatedData)
 
     return event_specific_data
 
@@ -1819,6 +1822,33 @@ class AssetHealthChangedData:
 class AssetWipedData:
     asset_key: AssetKey
     partition_keys: Optional[Sequence[str]]
+
+
+@whitelist_for_serdes(
+    storage_field_names={"metadata": "metadata_entries"},
+    field_serializers={"metadata": MetadataFieldSerializer},
+)
+class CodeLocationUpdatedData(
+    NamedTuple(
+        "_CodeLocationUpdatedData",
+        [
+            ("location_name", str),
+            ("metadata", Mapping[str, MetadataValue]),
+        ],
+    )
+):
+    def __new__(
+        cls,
+        location_name: str,
+        metadata: Optional[Mapping[str, MetadataValue]] = None,
+    ):
+        return super().__new__(
+            cls,
+            location_name=check.str_param(location_name, "location_name"),
+            metadata=normalize_metadata(
+                check.opt_mapping_param(metadata, "metadata", key_type=str)
+            ),
+        )
 
 
 @whitelist_for_serdes
