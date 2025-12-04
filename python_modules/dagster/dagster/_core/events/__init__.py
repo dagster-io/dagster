@@ -907,6 +907,15 @@ class DagsterEvent(
         return cast("AssetWipedData", self.event_specific_data)
 
     @property
+    def code_location_updated_data(self) -> "CodeLocationUpdatedData":
+        _assert_type(
+            "code_location_updated_data",
+            DagsterEventType.CODE_LOCATION_UPDATED,
+            self.event_type,
+        )
+        return cast("CodeLocationUpdatedData", self.event_specific_data)
+
+    @property
     def step_expectation_result_data(self) -> "StepExpectationResultData":
         _assert_type(
             "step_expectation_result_data",
@@ -1828,30 +1837,11 @@ class AssetWipedData:
     storage_field_names={"metadata": "metadata_entries"},
     field_serializers={"metadata": MetadataFieldSerializer},
 )
-class CodeLocationUpdatedData(
-    NamedTuple(
-        "_CodeLocationUpdatedData",
-        [
-            ("code_location_name", str),
-            ("new_version_key", Optional[str]),
-            ("metadata", Mapping[str, MetadataValue]),
-        ],
-    )
-):
-    def __new__(
-        cls,
-        code_location_name: str,
-        new_version_key: Optional[str] = None,
-        metadata: Optional[Mapping[str, MetadataValue]] = None,
-    ):
-        return super().__new__(
-            cls,
-            code_location_name=check.str_param(code_location_name, "code_location_name"),
-            new_version_key=check.opt_str_param(new_version_key, "new_version_key"),
-            metadata=normalize_metadata(
-                check.opt_mapping_param(metadata, "metadata", key_type=str)
-            ),
-        )
+@record
+class CodeLocationUpdatedData:
+    code_location_name: str
+    new_version_key: Optional[str]
+    metadata: Mapping[str, MetadataValue]
 
 
 @whitelist_for_serdes
