@@ -1,11 +1,12 @@
 import os
 import shutil
 from pathlib import Path
-from typing import Annotated, Any, NamedTuple, Optional
+from typing import Annotated, Any, Optional
 
 import click
 import typer
 import yaml
+from dagster._cli.project import check_if_pypi_package_conflict_exists
 from dagster._core.code_pointer import load_python_file
 from dagster._core.definitions.module_loaders.load_assets_from_modules import (
     find_objects_in_module_of_types,
@@ -168,37 +169,8 @@ def copy_scaffold(
     dagster_project_dir.joinpath("scaffold").rename(dagster_project_dir.joinpath(project_name))
 
 
-FLAGGED_PACKAGE_KEYWORDS = ["dagster", "dbt"]
-
-
-class PackageConflictCheckResult(NamedTuple):
-    request_error_msg: Optional[str]
-    conflict_exists: bool = False
-
-
-def _check_if_pypi_package_conflict_exists(project_name: str) -> PackageConflictCheckResult:
-    """Checks if the project name contains any flagged keywords. If so, raises a warning if a PyPI
-    package with the same name exists. This is to prevent import errors from occurring due to a
-    project name that conflicts with an imported package.
-    Raises an error regardless of hyphen or underscore (i.e. dagster_dbt vs dagster-dbt). Both
-    are invalid and cause import errors.
-    """
-    # defer for import performance
-    import requests
-
-    if any(keyword in project_name for keyword in FLAGGED_PACKAGE_KEYWORDS):
-        try:
-            res = requests.get(f"https://pypi.org/pypi/{project_name}/json")
-            if res.status_code == 200:
-                return PackageConflictCheckResult(request_error_msg=None, conflict_exists=True)
-        except Exception as e:
-            return PackageConflictCheckResult(request_error_msg=str(e))
-
-    return PackageConflictCheckResult(request_error_msg=None, conflict_exists=False)
-
-
 def _check_and_error_on_package_conflicts(project_name: str) -> None:
-    package_check_result = _check_if_pypi_package_conflict_exists(project_name)
+    package_check_result = check_if_pypi_package_conflict_exists(project_name)
     if package_check_result.request_error_msg:
         console.print(
             f"An error occurred while checking if project name '{project_name}' conflicts with"
