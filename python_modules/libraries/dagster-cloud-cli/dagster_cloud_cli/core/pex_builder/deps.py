@@ -15,6 +15,7 @@ from dataclasses import dataclass
 from typing import Optional
 
 import click
+from dagster_shared.utils import find_uv_workspace_root
 from packaging import version
 
 try:
@@ -388,45 +389,18 @@ def get_setup_py_deps(code_directory: str, python_interpreter: str) -> list[str]
     return lines
 
 
-def _read_pyproject_toml(directory: str) -> Optional[dict]:
-    """Read and parse pyproject.toml from a directory. Returns None if not found."""
-    pyproject_path = os.path.join(directory, "pyproject.toml")
-    if not os.path.exists(pyproject_path):
-        return None
-    with open(pyproject_path, "rb") as f:
-        return tomllib.load(f)
-
-
-def _find_uv_workspace_root(start_dir: str) -> Optional[tuple[str, dict]]:
-    """Walk up directories to find a uv workspace root.
-
-    Returns (workspace_root_path, workspace_config) or None if not found.
-    """
-    current = os.path.abspath(start_dir)
-    while True:
-        data = _read_pyproject_toml(current)
-        if data:
-            workspace_config = data.get("tool", {}).get("uv", {}).get("workspace", {})
-            if workspace_config:
-                return current, workspace_config
-        parent = os.path.dirname(current)
-        if parent == current:
-            return None
-        current = parent
-
-
 def _resolve_uv_workspace_dep(dep_name: str, code_directory: str) -> Optional[str]:
     """Find the relative path to a uv workspace member by package name.
 
     Returns a relative path like "../shared-lib" or None if not found.
     Assumes the directory name matches the package name.
     """
-    result = _find_uv_workspace_root(code_directory)
+    result = find_uv_workspace_root(code_directory)
     if not result:
         return None
 
     workspace_root, _ = result
-    candidate = os.path.join(workspace_root, dep_name)
+    candidate = os.path.join(str(workspace_root), dep_name)
     if os.path.isdir(candidate):
         return os.path.relpath(candidate, code_directory)
 

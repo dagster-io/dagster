@@ -138,6 +138,7 @@ def configure_build_artifacts_impl(config: DgPlusDeployConfigureOptions) -> None
                 dockerfile_path,
                 config.python_version,
                 config.use_editable_dagster,
+                project_context.package_name,
             )
             click.echo(f"Dockerfile created at {dockerfile_path}.")
 
