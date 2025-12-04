@@ -577,7 +577,7 @@ class TimeWindowPartitionsSubset(
         # note that we rarely serialize subsets on the user code side of a serialization boundary,
         # and so this conversion is rarely necessary.
         partitions_def = self.partitions_def
-        if type(self.partitions_def) != TimeWindowPartitionsSubset:
+        if type(self.partitions_def) != TimeWindowPartitionsDefinition:
             partitions_def = TimeWindowPartitionsSnap.from_def(
                 partitions_def
             ).get_partitions_definition()
