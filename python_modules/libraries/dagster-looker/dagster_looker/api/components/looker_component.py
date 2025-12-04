@@ -232,12 +232,11 @@ class LookerComponent(StateBackedComponent, Resolvable):
 
         # Fetch the instance data
         instance_data = loader.fetch_looker_instance_data()
-        
+
         # Convert to state format and serialize
         state = instance_data.to_state(sdk)
         state_path.write_text(dg.serialize_value(state))
 
-    # 🟢 הפונקציה החדשה שעונה להערה של Owen: שימוש ב-self.looker_resource
     def _build_pdt_assets_definition(
         self, request: RequestStartPdtBuild
     ) -> dg.AssetsDefinition:
