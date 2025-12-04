@@ -265,7 +265,7 @@ const Criteria = React.memo(
             </Body>
           );
         case 'AssetHealthMaterializationDegradedNotPartitionedMeta':
-          return (
+          const toReturn = metadata.failedRunId ? (
             <Body>
               <Link
                 to={`/runs/${metadata.failedRunId}`}
@@ -274,7 +274,8 @@ const Criteria = React.memo(
                 Materialization failed in run {metadata.failedRunId.split('-').shift()}
               </Link>
             </Body>
-          );
+          ) : null;
+          return toReturn;
         case 'AssetHealthMaterializationDegradedPartitionedMeta':
           return (
             <Body>
