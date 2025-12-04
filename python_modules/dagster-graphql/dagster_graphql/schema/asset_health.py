@@ -91,6 +91,7 @@ class GrapheneAssetHealthMaterializationDegradedPartitionedMeta(graphene.ObjectT
     numFailedPartitions = graphene.NonNull(graphene.Int)
     numMissingPartitions = graphene.NonNull(graphene.Int)
     totalNumPartitions = graphene.NonNull(graphene.Int)
+    failedRunId = graphene.NonNull(graphene.String)
 
     class Meta:
         name = "AssetHealthMaterializationDegradedPartitionedMeta"
@@ -99,6 +100,7 @@ class GrapheneAssetHealthMaterializationDegradedPartitionedMeta(graphene.ObjectT
 class GrapheneAssetHealthMaterializationHealthyPartitionedMeta(graphene.ObjectType):
     numMissingPartitions = graphene.NonNull(graphene.Int)
     totalNumPartitions = graphene.NonNull(graphene.Int)
+    latestRunId = graphene.NonNull(graphene.String)
 
     class Meta:
         name = "AssetHealthMaterializationHealthyPartitionedMeta"
@@ -132,12 +134,14 @@ class GrapheneAssetHealthMaterializationMeta(graphene.Union):
             return GrapheneAssetHealthMaterializationHealthyPartitionedMeta(
                 numMissingPartitions=metadata.num_missing_partitions,
                 totalNumPartitions=metadata.total_num_partitions,
+                latestRunId=metadata.latest_run_id,
             )
         elif isinstance(metadata, AssetHealthMaterializationDegradedPartitionedMeta):
             return GrapheneAssetHealthMaterializationDegradedPartitionedMeta(
                 numFailedPartitions=metadata.num_failed_partitions,
                 numMissingPartitions=metadata.num_missing_partitions,
                 totalNumPartitions=metadata.total_num_partitions,
+                failedRunId=metadata.failed_run_id,
             )
         else:
             raise ValueError(f"Unknown metadata class: {type(metadata)}")
