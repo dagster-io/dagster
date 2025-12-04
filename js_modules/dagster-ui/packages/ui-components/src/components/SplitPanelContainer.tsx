@@ -70,6 +70,8 @@ export const SplitPanelContainer = forwardRef<SplitPanelContainerHandle, SplitPa
 
     const firstPaneStyles: React.CSSProperties = {flexShrink: 0};
 
+    const dividerReservedSpace = first && second ? DIVIDER_THICKNESS : 0;
+
     // Note: The divider appears after the first panel, so making the first panel 100% wide
     // hides the divider offscreen. To prevent this, we subtract the divider depth.
     if (axis === 'horizontal') {
@@ -79,7 +81,7 @@ export const SplitPanelContainer = forwardRef<SplitPanelContainerHandle, SplitPa
       } else {
         firstPaneStyles.minWidth = firstMinSize;
         firstPaneStyles.width = `calc(${firstSize / 100} * (100% - ${
-          DIVIDER_THICKNESS + (second ? secondMinSize : 0)
+          dividerReservedSpace + (second ? secondMinSize : 0)
         }px))`;
       }
     } else {
@@ -89,7 +91,7 @@ export const SplitPanelContainer = forwardRef<SplitPanelContainerHandle, SplitPa
       } else {
         firstPaneStyles.minHeight = firstMinSize;
         firstPaneStyles.height = `calc(${firstSize / 100} * (100% - ${
-          DIVIDER_THICKNESS + (second ? secondMinSize : 0)
+          dividerReservedSpace + (second ? secondMinSize : 0)
         }px))`;
       }
     }
