@@ -91,7 +91,7 @@ class GrapheneAssetHealthMaterializationDegradedPartitionedMeta(graphene.ObjectT
     numFailedPartitions = graphene.NonNull(graphene.Int)
     numMissingPartitions = graphene.NonNull(graphene.Int)
     totalNumPartitions = graphene.NonNull(graphene.Int)
-    failedRunId = graphene.NonNull(graphene.String)
+    failedRunId = graphene.String()
 
     class Meta:
         name = "AssetHealthMaterializationDegradedPartitionedMeta"
@@ -100,14 +100,14 @@ class GrapheneAssetHealthMaterializationDegradedPartitionedMeta(graphene.ObjectT
 class GrapheneAssetHealthMaterializationHealthyPartitionedMeta(graphene.ObjectType):
     numMissingPartitions = graphene.NonNull(graphene.Int)
     totalNumPartitions = graphene.NonNull(graphene.Int)
-    latestRunId = graphene.NonNull(graphene.String)
+    latestRunId = graphene.String()
 
     class Meta:
         name = "AssetHealthMaterializationHealthyPartitionedMeta"
 
 
 class GrapheneAssetHealthMaterializationDegradedNotPartitionedMeta(graphene.ObjectType):
-    failedRunId = graphene.NonNull(graphene.String)
+    failedRunId = graphene.String()
 
     class Meta:
         name = "AssetHealthMaterializationDegradedNotPartitionedMeta"

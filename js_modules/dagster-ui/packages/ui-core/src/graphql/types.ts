@@ -430,12 +430,12 @@ export type AssetHealthFreshnessMeta = {
 
 export type AssetHealthMaterializationDegradedNotPartitionedMeta = {
   __typename: 'AssetHealthMaterializationDegradedNotPartitionedMeta';
-  failedRunId: Scalars['String']['output'];
+  failedRunId: Maybe<Scalars['String']['output']>;
 };
 
 export type AssetHealthMaterializationDegradedPartitionedMeta = {
   __typename: 'AssetHealthMaterializationDegradedPartitionedMeta';
-  failedRunId: Scalars['String']['output'];
+  failedRunId: Maybe<Scalars['String']['output']>;
   numFailedPartitions: Scalars['Int']['output'];
   numMissingPartitions: Scalars['Int']['output'];
   totalNumPartitions: Scalars['Int']['output'];
@@ -443,7 +443,7 @@ export type AssetHealthMaterializationDegradedPartitionedMeta = {
 
 export type AssetHealthMaterializationHealthyPartitionedMeta = {
   __typename: 'AssetHealthMaterializationHealthyPartitionedMeta';
-  latestRunId: Scalars['String']['output'];
+  latestRunId: Maybe<Scalars['String']['output']>;
   numMissingPartitions: Scalars['Int']['output'];
   totalNumPartitions: Scalars['Int']['output'];
 };

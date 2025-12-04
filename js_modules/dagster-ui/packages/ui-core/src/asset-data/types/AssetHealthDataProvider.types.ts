@@ -27,7 +27,7 @@ export type AssetHealthQuery = {
             materializationStatusMetadata:
               | {
                   __typename: 'AssetHealthMaterializationDegradedNotPartitionedMeta';
-                  failedRunId: string;
+                  failedRunId: string | null;
                 }
               | {
                   __typename: 'AssetHealthMaterializationDegradedPartitionedMeta';
@@ -91,7 +91,10 @@ export type AssetHealthFragment = {
     assetChecksStatus: Types.AssetHealthStatus;
     freshnessStatus: Types.AssetHealthStatus;
     materializationStatusMetadata:
-      | {__typename: 'AssetHealthMaterializationDegradedNotPartitionedMeta'; failedRunId: string}
+      | {
+          __typename: 'AssetHealthMaterializationDegradedNotPartitionedMeta';
+          failedRunId: string | null;
+        }
       | {
           __typename: 'AssetHealthMaterializationDegradedPartitionedMeta';
           numMissingPartitions: number;
@@ -144,7 +147,7 @@ export type AssetHealthMaterializationHealthyPartitionedMetaFragment = {
 
 export type AssetHealthMaterializationDegradedNotPartitionedMetaFragment = {
   __typename: 'AssetHealthMaterializationDegradedNotPartitionedMeta';
-  failedRunId: string;
+  failedRunId: string | null;
 };
 
 export type AssetHealthCheckDegradedMetaFragment = {
