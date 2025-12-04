@@ -8,6 +8,7 @@
 - "/" characters are now allowed in concurrency pool names.
 - Pod wait timeout for K8sPipeClient can now be specified (Thanks, [@abhinavDhulipala](https://github.com/abhinavDhulipala)!)
 - New `kind` tag icon for Zendesk (Thanks, [@kporter13](https://github.com/kporter13)!)
+- [dagster-tableau] Added `enable_embedded_datasource_refresh` and `enable_published_datsource_refresh` options to the `TableauComponent`, which allow creating materializable assets for the associated datasource types.
 
 ### Bugfixes
 
