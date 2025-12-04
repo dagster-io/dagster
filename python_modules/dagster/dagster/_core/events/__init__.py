@@ -1840,7 +1840,7 @@ class AssetWipedData:
 @record
 class CodeLocationUpdatedData:
     code_location_name: str
-    new_version_key: Optional[str]
+    new_version_key: str
     metadata: Mapping[str, MetadataValue]
 
 
