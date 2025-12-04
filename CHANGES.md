@@ -15,7 +15,6 @@
 - Fixed an issue that would cause `SensorDefinition` subclasses (e.g. `AutomationConditionSensorDefinition`, `RunStatusSensorDefinition`) to be converted to having the wrong `sensor_type` property when produced from a `Component`.
 - feat: tableau-component: datasource_refresh and fixes.
 - Fixed an issue where the `Flower` config map was included in the Helm chart even when `Flower` was disabled (Thanks, [@LoHertel](https://github.com/LoHertel)!)
-
 - [dagster-dbt] Fixed a `FileExistsError` on Windows when reloading `dbt` project definitions by ensuring the local project directory creation handles pre-existing directories (Thanks, [@Jongwan93](https://github.com/Jongwan93)!)
 - [dagster-tableau] Fixed a KeyError that occurred when using `workbook_selector_fn` to filter assets. Now dependencies are only accessed if they exist in the workspace data. (Thanks, [@miriamcastel](https://github.com/miriamcastel)!)
 - [dagster-tableau] Fixed an issue where `workbook_selector_fn` was only applied to the first 100 workbooks.
