@@ -1,4 +1,4 @@
-import {BaseIcon, Icon, IconName, IconNames, IconSize} from '@dagster-io/ui-components';
+import {BaseIcon, Colors, Icon, IconName, IconNames, IconSize} from '@dagster-io/ui-components';
 
 import {KNOWN_TAGS, KnownTagType, extractIconSrc} from '../graph/OpTags';
 
@@ -18,5 +18,12 @@ export const InsightsIcon = (props: InsightsIconProps) => {
   }
 
   const known = KNOWN_TAGS[props.name as IntegrationIconName];
-  return <BaseIcon {...rest} img={extractIconSrc(known)} name={name} />;
+  return (
+    <BaseIcon
+      {...rest}
+      img={extractIconSrc(known)}
+      name={name}
+      style={{backgroundColor: 'transparent'}}
+    />
+  );
 };
