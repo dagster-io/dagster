@@ -1833,15 +1833,11 @@ class AssetWipedData:
     partition_keys: Optional[Sequence[str]]
 
 
-@whitelist_for_serdes(
-    storage_field_names={"metadata": "metadata_entries"},
-    field_serializers={"metadata": MetadataFieldSerializer},
-)
+@whitelist_for_serdes
 @record
 class CodeLocationUpdatedData:
     code_location_name: str
     new_version_key: str
-    metadata: Mapping[str, MetadataValue]
 
 
 @whitelist_for_serdes
