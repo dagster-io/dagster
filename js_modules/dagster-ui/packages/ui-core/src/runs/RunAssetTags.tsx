@@ -7,7 +7,9 @@ import {RunAssetsQuery, RunAssetsQueryVariables} from './types/RunAssetTags.type
 import {RunFragment} from './types/RunFragments.types';
 import {isHiddenAssetGroupJob} from '../asset-graph/Utils';
 
-export const RunAssetTags = (props: {run: RunFragment}) => {
+export const RunAssetTags = (props: {
+  run: Pick<RunFragment, 'id' | 'stepKeysToExecute' | 'pipelineName' | 'assetSelection'>;
+}) => {
   const {run} = props;
   const skip = isHiddenAssetGroupJob(run.pipelineName);
   const queryResult = useQuery<RunAssetsQuery, RunAssetsQueryVariables>(RUN_ASSETS_QUERY, {
