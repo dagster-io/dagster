@@ -19,7 +19,7 @@ import UseAirliftComponent from '@site/docs/partials/\_UseAirliftComponent.md';
 
 <p>{frontMatter.description}</p>
 
-Using [`dagster-airflift`](/api/libraries/dagster-airlift), you can:
+Using [`dagster-airflift`](/integrations/libraries/dagster-airlift), you can:
 
 - Observe Airflow instances from within Dagster
 - Accelerate the migration of Airflow DAGs to Dagster assets with opinionated tooling

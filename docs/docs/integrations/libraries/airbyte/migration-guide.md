@@ -223,5 +223,5 @@ AIRBYTE_CLIENT_SECRET=your_client_secret
 If you encounter issues during migration:
 
 1. Check the [Airbyte Component documentation](/integrations/libraries/airbyte/airbyte-component) for the latest patterns
-2. Review the [API documentation](/api/libraries/dagster-airbyte) for detailed parameter information
+2. Review the [API documentation](/integrations/libraries/airbyte/dagster-airbyte) for detailed parameter information
 3. Look at the example code in the docs snippets directory

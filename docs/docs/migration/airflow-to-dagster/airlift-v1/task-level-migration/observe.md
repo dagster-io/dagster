@@ -26,7 +26,7 @@ First, you will need to create a set of <PyObject section="assets" module="dagst
 
 The first and third tasks involve a single table each, so we will manually construct asset specs for these two tasks. We will use the <PyObject section="libraries" module="dagster_airlift" object="core.assets_with_task_mappings" displayText="assets_with_task_mappings" /> function in the `dagster-airlift` package to annotate these asset specs with the tasks that produce them. Assets which are properly annotated will be materialized by the Airlift sensor once the corresponding task completes, and these annotated specs are then provided to the `defs` argument to <PyObject section="libraries" module="dagster_airlift" object="core.build_defs_from_airflow_instance" displayText="defs_from_airflow_instance" />.
 
-The second task, `build_dbt_models`, will require building a set of `dbt` asset definitions. We will use the <PyObject section="libraries" module="dagster_dbt" object="dbt_assets" decorator /> decorator from the [`dagster-dbt`](https://docs.dagster.io/api/libraries/dagster-dbt) package to generate these definitions using Dagster's dbt integration.
+The second task, `build_dbt_models`, will require building a set of `dbt` asset definitions. We will use the <PyObject section="libraries" module="dagster_dbt" object="dbt_assets" decorator /> decorator from the [`dagster-dbt`](https://docs.dagster.io/integrations/libraries/dbt/dagster-dbt) package to generate these definitions using Dagster's dbt integration.
 
 First, install the `dbt` extra of `dagster-airlift`:
 

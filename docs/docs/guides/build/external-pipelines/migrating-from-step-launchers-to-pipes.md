@@ -82,7 +82,7 @@ In this guide, we have demonstrated how to migrate from using step launchers to 
 - [GitHub discussion](https://github.com/dagster-io/dagster/discussions/25685) on the topic
 - [Dagster + Spark](/integrations/libraries/spark) - an up to date list of Pipes Clients for various Spark providers can be found here
 - [AWS EMR Pipes tutorial](/guides/build/external-pipelines/aws/aws-emr-pipeline)
-- [PipesEMRClient API docs](/api/libraries/dagster-aws#dagster_aws.pipes.PipesEMRClient)
+- [PipesEMRClient API docs](/integrations/libraries/dagster-aws#dagster_aws.pipes.PipesEMRClient)
 
 :::note
 

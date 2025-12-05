@@ -100,11 +100,11 @@ To use a SQLite database for storage, configure `storage.sqlite` in `dagster.yam
 
 :::note
 
-To use Postgres storage, you'll need to install the [dagster-postgres](/api/libraries/dagster-postgres) library.
+To use Postgres storage, you'll need to install the [dagster-postgres](/integrations/libraries/dagster-postgres) library.
 
 :::
 
-To use a [PostgreSQL database](/api/libraries/dagster-postgres) for storage, configure `storage.postgres` in `dagster.yaml`:
+To use a [PostgreSQL database](/integrations/libraries/dagster-postgres) for storage, configure `storage.postgres` in `dagster.yaml`:
 
 <CodeExample
   path="docs_snippets/docs_snippets/deploying/dagster_instance/dagster.yaml"
@@ -119,11 +119,11 @@ To use a [PostgreSQL database](/api/libraries/dagster-postgres) for storage, con
 
 :::note
 
-To use MySQL storage, you'll need to install the [dagster-mysql](/api/libraries/dagster-mysql) library.
+To use MySQL storage, you'll need to install the [dagster-mysql](/integrations/libraries/dagster-mysql) library.
 
 :::
 
-To use a [MySQL database](/api/libraries/dagster-mysql) for storage, configure `storage.mysql` in `dagster.yaml`:
+To use a [MySQL database](/integrations/libraries/dagster-mysql) for storage, configure `storage.mysql` in `dagster.yaml`:
 
 <CodeExample
   path="docs_snippets/docs_snippets/deploying/dagster_instance/dagster.yaml"

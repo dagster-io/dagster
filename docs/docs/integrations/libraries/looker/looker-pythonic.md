@@ -125,7 +125,7 @@ Note that `super()` is called in each of the overridden methods to generate the 
 
 ## Related
 
-- [`dagster-looker` API reference](/api/libraries/dagster-looker)
+- [`dagster-looker` API reference](/integrations/libraries/looker/dagster-looker)
 - [Asset definitions](/guides/build/assets/defining-assets)
 - [Resources](/guides/build/external-resources)
 - [Using environment variables and secrets](/guides/operate/configuration/using-environment-variables-and-secrets)

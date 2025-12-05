@@ -12,7 +12,7 @@ canonicalUrl: '/integrations/libraries/sling'
 slug: '/integrations/libraries/sling'
 ---
 
-The [dagster-sling](/api/libraries/dagster-sling) library provides a `SlingReplicationCollectionComponent` which can be used to easily represent a collection of [Sling](https://slingdata.io) replications as assets in Dagster.
+The [dagster-sling](/integrations/libraries/dagster-sling) library provides a `SlingReplicationCollectionComponent` which can be used to easily represent a collection of [Sling](https://slingdata.io) replications as assets in Dagster.
 
 ## 1. Prepare a Dagster project
 

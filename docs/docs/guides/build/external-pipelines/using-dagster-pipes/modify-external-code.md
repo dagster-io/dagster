@@ -32,7 +32,7 @@ Getting external code to send information back to Dagster via Dagster Pipes requ
 
   The `with open_dagster_pipes()` is a context manager in Python, ensuring resource setup and cleanup for a specific segment of code. It's useful for tasks requiring initial setup and final teardown, like opening and closing connections. In this case, the context manager is used to initialize and close the Dagster Pipes connection.
 
-- An instance of the Dagster Pipes context via <PyObject section="libraries" module="dagster_pipes" object="PipesContext.get" />. You can access information like `partition_key` and `asset_key` via this context object. Refer to the [the API documentation](/api/libraries/dagster-pipes#dagster_pipes.PipesContext) for more information.
+- An instance of the Dagster Pipes context via <PyObject section="libraries" module="dagster_pipes" object="PipesContext.get" />. You can access information like `partition_key` and `asset_key` via this context object. Refer to the [the API documentation](/integrations/libraries/dagster-pipes#dagster_pipes.PipesContext) for more information.
 
 In our sample Python script, the changes would look like the following:
 

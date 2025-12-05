@@ -12,7 +12,7 @@ canonicalUrl: '/integrations/libraries/dbt'
 slug: '/integrations/libraries/dbt'
 ---
 
-The [`dagster-dbt` library](/api/libraries/dagster-dbt) provides a `DbtProjectComponent` which can be used to easily represent dbt models as assets in Dagster. Dagster assets understand dbt at the level of individual dbt models. This means that you can:
+The [`dagster-dbt` library](/integrations/libraries/dbt/dagster-dbt) provides a `DbtProjectComponent` which can be used to easily represent dbt models as assets in Dagster. Dagster assets understand dbt at the level of individual dbt models. This means that you can:
 
 - Use Dagster's UI or APIs to run subsets of your dbt models, seeds, and snapshots.
 - Track failures, logs, and run history for individual dbt models, seeds, and snapshots.
