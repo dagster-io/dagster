@@ -40,3 +40,26 @@ from dagster_databricks.resources import (
 from dagster_databricks.version import __version__
 
 DagsterLibraryRegistry.register("dagster-databricks", __version__)
+
+from dagster_databricks.components.databricks_workspace.component import (
+    DatabricksWorkspaceComponent as DatabricksWorkspaceComponent,   
+)
+
+__all__ = [
+    "DatabricksAssetBundleComponent",
+    "DatabricksClient",
+    "DatabricksError",
+    "DatabricksJobRunner",
+    "DatabricksConfig",
+    "DatabricksPySparkStepLauncher",
+    "databricks_pyspark_step_launcher",
+    "create_databricks_run_now_op",
+    "create_databricks_submit_run_op",
+    "PipesDatabricksClient",
+    "PipesDbfsContextInjector",
+    "PipesDbfsLogReader",
+    "PipesDbfsMessageReader",
+    "DatabricksClientResource",
+    "databricks_client",
+    "DatabricksWorkspaceComponent",
+]
