@@ -4,7 +4,8 @@
    :hidden:
    :glob:
 
-   sections/api/apidocs/dagster/*
-   sections/api/apidocs/clis/*
-   sections/api/apidocs/clis/**/*
-   sections/api/apidocs/libraries/*
+   sections/api/dagster/*
+   sections/api/clis/*
+   sections/api/clis/**/*
+   sections/api//graphql/*
+   sections/integrations/**/*

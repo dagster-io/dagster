@@ -1,6 +1,6 @@
 ---
-title: Dagster & Sigma
-sidebar_label: Sigma
+title: Dagster & PySpark
+sidebar_label: PySpark
 ---
 
 import DocCardList from '@theme/DocCardList';

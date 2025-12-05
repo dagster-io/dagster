@@ -1,6 +1,6 @@
 ---
-title: Dagster & Sigma
-sidebar_label: Sigma
+title: Dagster & Celery
+sidebar_label: Celery
 ---
 
 import DocCardList from '@theme/DocCardList';

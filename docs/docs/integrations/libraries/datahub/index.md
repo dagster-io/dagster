@@ -1,6 +1,6 @@
 ---
-title: Dagster & Sigma
-sidebar_label: Sigma
+title: Dagster & Datahub
+sidebar_label: Datahub
 ---
 
 import DocCardList from '@theme/DocCardList';

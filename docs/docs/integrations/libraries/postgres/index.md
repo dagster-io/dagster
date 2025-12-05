@@ -1,6 +1,6 @@
 ---
-title: Dagster & Sigma
-sidebar_label: Sigma
+title: Dagster & Postgres
+sidebar_label: Postgres
 ---
 
 import DocCardList from '@theme/DocCardList';

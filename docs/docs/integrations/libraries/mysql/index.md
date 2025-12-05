@@ -1,6 +1,6 @@
 ---
-title: Dagster & Sigma
-sidebar_label: Sigma
+title: Dagster & MySQL
+sidebar_label: MySQL
 ---
 
 import DocCardList from '@theme/DocCardList';

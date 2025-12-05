@@ -25,11 +25,6 @@ uv_activate_venv() {
   uv pip install tox
 }
 
-cp_integrations_api_docs() {
-  cp -r sphinx/_build/mdx/sections/api/apidocs/libraries/dagster-airbyte.mdx docs/integrations/libraries/airbyte
-  cp -r sphinx/_build/mdx/sections/api/apidocs/libraries/dagster-airlift.mdx docs/integrations/libraries/airlift
-}
-
 # https://vercel.com/docs/projects/environment-variables/system-environment-variables#VERCEL
 if [ "$VERCEL" = "1" ]; then
   echo "Detected Vercel environment. Running Vercel-specific commands and configurations."
@@ -41,9 +36,10 @@ if [ "$VERCEL" = "1" ]; then
   # Parallelize production sphinx-mdx build -- see tox.ini
   echo "Running sphinx-mdx and copying files to \`docs/api\`"
   tox -e sphinx-mdx-vercel
-  cp -rf sphinx/_build/mdx/sections/api/apidocs/dagster docs/api
-  cp_integrations_api_docs
-  cp -rf sphinx/_build/mdx/sections/api/apidocs/clis docs/api
+  cp -rf sphinx/_build/mdx/sections/api/dagster docs/api
+  cp -rf sphinx/_build/mdx/sections/integrations/libraries docs/integrations
+  cp -rf sphinx/_build/mdx/sections/api/clis docs/api
+  cp -rf sphinx/_build/mdx/sections/api/graphql docs/api
 
   # Parallelize production sphinx-inv build -- see tox.ini
   echo "Running sphinx and copying \`object.inv\` to \`static/\`"
@@ -53,11 +49,11 @@ else
   # Do not parallelize local sphinx-mdx build -- see tox.ini
   echo "Running sphinx-mdx and copying files to \`docs/api\`"
   tox -e sphinx-mdx-local
-  cp -rf sphinx/_build/mdx/sections/api/apidocs/dagster docs/api
-  cp_integrations_api_docs
-  cp -rf sphinx/_build/mdx/sections/api/apidocs/clis docs/api
+  cp -rf sphinx/_build/mdx/sections/api/dagster docs/api
+  cp -rf sphinx/_build/mdx/sections/integrations/libraries docs/integrations
+  cp -rf sphinx/_build/mdx/sections/api/clis docs/api
+  cp -rf sphinx/_build/mdx/sections/api/graphql docs/api
 
-  
   # Do not parallelize local sphinx-inv build -- see tox.ini
   echo "Running sphinx and copying \`object.inv\` to \`static/\`"
   tox -e sphinx-inv-local
