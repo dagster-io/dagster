@@ -13,6 +13,9 @@ from dagster_shared.libraries import DagsterLibraryRegistry
 from dagster_databricks.components.databricks_asset_bundle.component import (
     DatabricksAssetBundleComponent as DatabricksAssetBundleComponent,
 )
+from dagster_databricks.components.databricks_workspace.component import (
+    DatabricksWorkspaceComponent as DatabricksWorkspaceComponent,
+)
 from dagster_databricks.databricks import (
     DatabricksClient as DatabricksClient,
     DatabricksError as DatabricksError,
@@ -41,12 +44,9 @@ from dagster_databricks.version import __version__
 
 DagsterLibraryRegistry.register("dagster-databricks", __version__)
 
-from dagster_databricks.components.databricks_workspace.component import (
-    DatabricksWorkspaceComponent as DatabricksWorkspaceComponent,   
-)
-
 __all__ = [
     "DatabricksAssetBundleComponent",
+    "DatabricksWorkspaceComponent",
     "DatabricksClient",
     "DatabricksError",
     "DatabricksJobRunner",
@@ -61,5 +61,4 @@ __all__ = [
     "PipesDbfsMessageReader",
     "DatabricksClientResource",
     "databricks_client",
-    "DatabricksWorkspaceComponent",
 ]

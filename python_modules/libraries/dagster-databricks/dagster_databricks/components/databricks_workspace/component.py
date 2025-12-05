@@ -1,7 +1,7 @@
 import asyncio
 import re
 from pathlib import Path
-from typing import Any, List, Optional, Annotated
+from typing import Any, List, Optional, Annotated, Dict
 
 import dagster as dg
 from dagster import (
@@ -23,9 +23,10 @@ from dagster.components.utils.defs_state import (
 )
 from dataclasses import dataclass, field
 from dagster._annotations import beta
+from pydantic import Field
 
 from .fetcher import fetch_databricks_workspace_data
-from .schema import DatabricksFilterConfig, resolve_databricks_filter, DatabricksWorkspaceConfig
+from .schema import DatabricksFilterConfig, resolve_databricks_filter, DatabricksWorkspaceConfig, AssetSpecConfig
 from databricks.sdk import WorkspaceClient
 
 
@@ -45,10 +46,17 @@ class DatabricksWorkspaceComponent(StateBackedComponent, Resolvable):
         DatabricksWorkspaceConfig,
         Resolver.default(description="Databricks workspace connection info")
     ]
-    
+
     databricks_filter: Annotated[
         Optional[DatabricksFilterConfig],
         Resolver.default(description="Filter which Databricks jobs to include")
+    ] = None
+
+    assets_by_task_key: Annotated[
+        Optional[Dict[str, AssetSpecConfig]],
+        Resolver.default(
+            description="Optional mapping of Databricks task keys to Dagster AssetSpecs.",
+        )
     ] = None
 
     defs_state: ResolvedDefsStateConfig = field(
@@ -106,6 +114,19 @@ class DatabricksWorkspaceComponent(StateBackedComponent, Resolvable):
         else:
             task_key = getattr(task, "task_key", None)
             
+        if task_key and self.assets_by_task_key and task_key in self.assets_by_task_key:
+            user_config = self.assets_by_task_key[task_key]
+            
+            return [
+                AssetSpec(
+                    key=user_config.key,
+                    group_name=user_config.group,
+                    description=user_config.description,
+                    kinds={"databricks"},
+                    metadata={"task_key": task_key}
+                )
+            ]
+
         task_name = task_key or "unknown_task"
         key = _snake_case(task_name)
 

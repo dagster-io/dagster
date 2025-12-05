@@ -74,3 +74,51 @@ def test_databricks_workspace_loading(mock_fetcher):
             assert AssetKey(["train_model"]) in asset_keys
             
             assert len(asset_keys) == 3
+
+def test_databricks_workspace_custom_translation(mock_fetcher):
+    """Test overriding asset specs via assets_by_task_key."""
+    
+    custom_yaml = {
+        "type": "dagster_databricks.DatabricksWorkspaceComponent",
+        "attributes": {
+            "workspace": {
+                "host": "https://fake-workspace.cloud.databricks.com",
+                "token": "fake-token"
+            },
+            "databricks_filter": {
+                "include_jobs": {
+                    "job_ids": [101]
+                }
+            },
+            "assets_by_task_key": {
+                "ingest_task": {
+                    "key": "custom_ingestion_asset",
+                    "group": "etl_pipeline",
+                    "description": "Custom description override"
+                }
+            }
+        }
+    }
+
+    with create_defs_folder_sandbox() as sandbox:
+        defs_path = sandbox.scaffold_component(
+            component_cls=DatabricksWorkspaceComponent,
+            defs_yaml_contents=custom_yaml,
+        )
+
+        with (
+            scoped_definitions_load_context(),
+            sandbox.load_component_and_build_defs(defs_path=defs_path) as (component, defs),
+        ):
+            asset_graph = defs.resolve_asset_graph()
+            all_keys = asset_graph.get_all_asset_keys()
+            
+            assert AssetKey("ingest_task") not in all_keys
+            
+            custom_key = AssetKey("custom_ingestion_asset")
+            assert custom_key in all_keys
+            
+            spec = asset_graph.get(custom_key)
+            assert spec.group_name == "etl_pipeline"
+            assert spec.description == "Custom description override"
+            assert "databricks" in spec.kinds

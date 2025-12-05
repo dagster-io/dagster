@@ -1,8 +1,6 @@
 from typing import Any, Callable, List, Optional
-
-from dagster._record import record
-
 from pydantic import BaseModel
+from dagster._record import record
 
 # Type alias for raw Databricks job info
 DatabricksJobInfo = dict[str, Any]
@@ -31,3 +29,8 @@ def resolve_databricks_filter(config: DatabricksFilterConfig) -> DatabricksFilte
 class DatabricksWorkspaceConfig(BaseModel):
     host: str
     token: str
+
+class AssetSpecConfig(BaseModel):
+    key: str
+    group: Optional[str] = None
+    description: Optional[str] = None
