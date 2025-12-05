@@ -144,6 +144,10 @@ def _convert_pydantic_field(
         if isinstance(default_to_pass, Enum):
             default_to_pass = default_to_pass.name
 
+        # Extract is_secret from json_schema_extra
+        extras = pydantic_field.json_schema_extra or {}
+        is_secret = bool(extras.get("dagster__is_secret", False))
+
         return Field(
             config=config_type,
             description=pydantic_field.description,
@@ -151,6 +155,7 @@ def _convert_pydantic_field(
             and not is_closed_python_optional_type(field_type)
             and default_to_pass == FIELD_NO_DEFAULT_PROVIDED,
             default_value=default_to_pass,
+            is_secret=is_secret,
         )
 
 

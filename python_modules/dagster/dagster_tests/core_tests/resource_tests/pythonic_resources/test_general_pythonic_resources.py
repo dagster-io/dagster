@@ -13,7 +13,10 @@ from dagster import (
     InitResourceContext,
 )
 from dagster._check import CheckError
-from dagster._config.pythonic_config import ConfigurableResourceFactory
+from dagster._config.pythonic_config import (
+    ConfigurableResourceFactory,
+    infer_schema_from_config_class,
+)
 from dagster._utils.cached_method import cached_method
 from pydantic import (
     Field as PyField,
@@ -1119,3 +1122,33 @@ def test_partial_resource_checks() -> None:
         int_res=StrResource.configure_at_launch(),
         str_res=IntResource.configure_at_launch(),
     )
+
+
+def test_secret_field():
+    """Test that is_secret is extracted from json_schema_extra in ConfigurableResource."""
+
+    class MyResource(dg.ConfigurableResource):
+        api_key: str = PyField(
+            description="API key for authentication",
+            json_schema_extra={"dagster__is_secret": True},
+        )
+        host: str = PyField(description="Host URL")
+        password: str = PyField(json_schema_extra={"dagster__is_secret": True})
+
+    # Get the inferred schema
+    schema_field = infer_schema_from_config_class(MyResource)
+
+    # The schema should have the fields
+    fields_dict = schema_field.config_type.fields  # type: ignore
+
+    # Check that api_key is marked as secret
+    assert "api_key" in fields_dict
+    assert fields_dict["api_key"].is_secret is True
+
+    # Check that host is not marked as secret
+    assert "host" in fields_dict
+    assert fields_dict["host"].is_secret is False
+
+    # Check that password is marked as secret
+    assert "password" in fields_dict
+    assert fields_dict["password"].is_secret is True
