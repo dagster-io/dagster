@@ -2054,6 +2054,7 @@ type ConfigTypeField {
   configType: ConfigType!
   configTypeKey: String!
   isRequired: Boolean!
+  isSecret: Boolean!
   defaultValueAsJson: String
 }
 
@@ -2497,6 +2498,7 @@ type ConfiguredValue {
 enum ConfiguredValueType {
   VALUE
   ENV_VAR
+  SECRET
 }
 
 type NestedResourceEntry {
