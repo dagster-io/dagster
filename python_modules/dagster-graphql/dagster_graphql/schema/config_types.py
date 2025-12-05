@@ -357,6 +357,7 @@ class GrapheneConfigTypeField(graphene.ObjectType):
     config_type = graphene.NonNull(GrapheneConfigType)
     config_type_key = graphene.NonNull(graphene.String)
     is_required = graphene.NonNull(graphene.Boolean)
+    is_secret = graphene.NonNull(graphene.Boolean)
     default_value_as_json = graphene.String()
 
     class Meta:
@@ -385,6 +386,9 @@ class GrapheneConfigTypeField(graphene.ObjectType):
 
     def resolve_default_value_as_json(self, _graphene_info: ResolveInfo) -> Optional[str]:
         return self._field_snap.default_value_as_json_str
+
+    def resolve_is_secret(self, _graphene_info: ResolveInfo) -> bool:
+        return self._field_snap.is_secret or False
 
 
 class GrapheneCompositeConfigType(graphene.ObjectType):

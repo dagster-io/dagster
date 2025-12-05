@@ -22,6 +22,7 @@ from dagster_graphql.schema.util import ResolveInfo, non_null_list
 class GrapheneConfiguredValueType(graphene.Enum):
     VALUE = "VALUE"
     ENV_VAR = "ENV_VAR"
+    SECRET = "SECRET"
 
     class Meta:
         name = "ConfiguredValueType"
@@ -35,13 +36,16 @@ class GrapheneConfiguredValue(graphene.ObjectType):
     class Meta:
         name = "ConfiguredValue"
 
-    def __init__(self, key: str, resource_value_snap: ResourceValueSnap):
+    def __init__(self, key: str, resource_value_snap: ResourceValueSnap, is_secret: bool = False):
         super().__init__()
 
         self.key = key
         if isinstance(resource_value_snap, ResourceConfigEnvVarSnap):
             self.type = GrapheneConfiguredValueType.ENV_VAR
             self.value = resource_value_snap.name
+        elif is_secret:
+            self.type = GrapheneConfiguredValueType.SECRET
+            self.value = "********"
         else:
             self.type = GrapheneConfiguredValueType.VALUE
             self.value = resource_value_snap
@@ -157,8 +161,19 @@ class GrapheneResourceDetails(graphene.ObjectType):
         ]
 
     def resolve_configuredValues(self, _graphene_info):
+        # Build a map of field names to their is_secret flag
+        secret_fields = {
+            field_snap.name: field_snap.is_secret or False
+            for field_snap in self._config_field_snaps
+            if field_snap.name is not None
+        }
+
         return [
-            GrapheneConfiguredValue(key=key, resource_value_snap=value)
+            GrapheneConfiguredValue(
+                key=key,
+                resource_value_snap=value,
+                is_secret=secret_fields.get(key, False),
+            )
             for key, value in self._configured_values.items()
         ]
 
