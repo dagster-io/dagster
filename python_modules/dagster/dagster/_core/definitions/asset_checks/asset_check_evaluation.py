@@ -1,6 +1,8 @@
 from collections.abc import Mapping
 from typing import NamedTuple, Optional
 
+from dagster_shared.serdes.serdes import is_whitelisted_for_serdes_object
+
 import dagster._check as check
 from dagster._core.definitions.asset_checks.asset_check_spec import (
     AssetCheckKey,
@@ -8,6 +10,8 @@ from dagster._core.definitions.asset_checks.asset_check_spec import (
 )
 from dagster._core.definitions.events import AssetKey, MetadataValue, RawMetadataValue
 from dagster._core.definitions.metadata import normalize_metadata
+from dagster._core.definitions.partitions.subset import PartitionsSubset
+from dagster._core.errors import DagsterInvariantViolationError
 from dagster._serdes import whitelist_for_serdes
 
 
@@ -18,16 +22,36 @@ class AssetCheckEvaluationPlanned(
         [
             ("asset_key", AssetKey),
             ("check_name", str),
+            ("partition", Optional[str]),
+            ("partitions_subset", Optional["PartitionsSubset"]),
         ],
     )
 ):
     """Metadata for the event when an asset check is launched."""
 
-    def __new__(cls, asset_key: AssetKey, check_name: str):
+    def __new__(
+        cls,
+        asset_key: AssetKey,
+        check_name: str,
+        partition: Optional[str] = None,
+        partitions_subset: Optional["PartitionsSubset"] = None,
+    ):
+        if partitions_subset and partition:
+            raise DagsterInvariantViolationError(
+                "Cannot provide both partition and partitions_subset"
+            )
+        if partitions_subset:
+            check.opt_inst_param(partitions_subset, "partitions_subset", PartitionsSubset)
+            check.invariant(
+                is_whitelisted_for_serdes_object(partitions_subset),
+                "partitions_subset must be serializable",
+            )
         return super().__new__(
             cls,
             asset_key=check.inst_param(asset_key, "asset_key", AssetKey),
             check_name=check.str_param(check_name, "check_name"),
+            partition=check.opt_str_param(partition, "partition"),
+            partitions_subset=partitions_subset,
         )
 
     @property
@@ -73,6 +97,7 @@ class AssetCheckEvaluation(
             ("severity", AssetCheckSeverity),
             ("description", Optional[str]),
             ("blocking", Optional[bool]),
+            ("partition", Optional[str]),  # for future use with partitioned assets
         ],
     )
 ):
@@ -97,6 +122,8 @@ class AssetCheckEvaluation(
             A text description of the result of the check evaluation.
         blocking (Optional[bool]):
             Whether the check is blocking.
+        partition (Optional[str]):
+            The partition for which the check was evaluated, if applicable.
     """
 
     def __new__(
@@ -109,6 +136,7 @@ class AssetCheckEvaluation(
         severity: AssetCheckSeverity = AssetCheckSeverity.ERROR,
         description: Optional[str] = None,
         blocking: Optional[bool] = None,
+        partition: Optional[str] = None,
     ):
         normed_metadata = normalize_metadata(
             check.opt_mapping_param(metadata, "metadata", key_type=str),
@@ -128,6 +156,7 @@ class AssetCheckEvaluation(
             severity=check.inst_param(severity, "severity", AssetCheckSeverity),
             description=check.opt_str_param(description, "description"),
             blocking=check.opt_bool_param(blocking, "blocking"),
+            partition=check.opt_str_param(partition, "partition"),
         )
 
     @property
