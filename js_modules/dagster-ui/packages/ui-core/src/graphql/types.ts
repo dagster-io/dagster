@@ -1036,6 +1036,7 @@ export type ConfigTypeField = {
   defaultValueAsJson: Maybe<Scalars['String']['output']>;
   description: Maybe<Scalars['String']['output']>;
   isRequired: Scalars['Boolean']['output'];
+  isSecret: Scalars['Boolean']['output'];
   name: Scalars['String']['output'];
 };
 
@@ -1063,6 +1064,7 @@ export type ConfiguredValue = {
 
 export enum ConfiguredValueType {
   ENV_VAR = 'ENV_VAR',
+  SECRET = 'SECRET',
   VALUE = 'VALUE',
 }
 
@@ -8155,6 +8157,7 @@ export const buildConfigTypeField = (
     description:
       overrides && overrides.hasOwnProperty('description') ? overrides.description! : 'esse',
     isRequired: overrides && overrides.hasOwnProperty('isRequired') ? overrides.isRequired! : true,
+    isSecret: overrides && overrides.hasOwnProperty('isSecret') ? overrides.isSecret! : false,
     name: overrides && overrides.hasOwnProperty('name') ? overrides.name! : 'odit',
   };
 };
