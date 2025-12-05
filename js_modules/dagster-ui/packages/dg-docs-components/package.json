@@ -5,6 +5,7 @@
   "type": "module",
   "scripts": {
     "ts": "tsc -p .",
+    "tsgo": "tsgo -p .",
     "lint": "eslint ."
   },
   "dependencies": {
@@ -22,6 +23,7 @@
     "@eslint/js": "^9.31.0",
     "@types/node": "^22.13.13",
     "@types/react": "^18.3.9",
+    "@typescript/native-preview": "^7.0.0-dev.20251204.1",
     "eslint": "^9.31.0",
     "eslint-config-prettier": "^10.1.1",
     "eslint-plugin-prettier": "^5.2.5",
