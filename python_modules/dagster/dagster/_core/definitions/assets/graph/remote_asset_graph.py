@@ -480,6 +480,9 @@ class RemoteAssetGraph(BaseAssetGraph[TRemoteAssetNode], ABC, Generic[TRemoteAss
             remote_node.asset_check.description,
             remote_node.asset_check.automation_condition,
             {},  # metadata not yet on AssetCheckNodeSnap
+            remote_node.asset_check.partitions_def_snapshot.get_partitions_definition()
+            if remote_node.asset_check.partitions_def_snapshot
+            else None,
         )
 
     ##### COMMON ASSET GRAPH INTERFACE

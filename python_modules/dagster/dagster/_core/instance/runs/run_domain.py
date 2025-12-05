@@ -63,10 +63,7 @@ if TYPE_CHECKING:
     from dagster._core.remote_representation.code_location import CodeLocation
     from dagster._core.remote_representation.external import RemoteJob
     from dagster._core.snap import ExecutionPlanSnapshot, JobSnap
-    from dagster._core.snap.execution_plan_snapshot import (
-        ExecutionStepOutputSnap,
-        ExecutionStepSnap,
-    )
+    from dagster._core.snap.execution_plan_snapshot import ExecutionStepSnap
     from dagster._core.workspace.context import BaseWorkspaceRequestContext
 
 
@@ -802,7 +799,7 @@ class RunDomain:
                     if asset_key:
                         events.extend(
                             self.get_materialization_planned_events_for_asset(
-                                dagster_run, asset_key, job_name, step, output, asset_graph
+                                dagster_run, asset_key, job_name, step, asset_graph
                             )
                         )
 
@@ -812,7 +809,7 @@ class RunDomain:
                         )
                         events.extend(
                             self.get_materialization_planned_events_for_asset_check(
-                                dagster_run, asset_check_key, job_name, step, output, asset_graph
+                                dagster_run, asset_check_key, job_name, step, asset_graph
                             )
                         )
 
@@ -849,14 +846,13 @@ class RunDomain:
         asset_key: AssetKey,
         job_name: str,
         step: "ExecutionStepSnap",
-        output: "ExecutionStepOutputSnap",
         asset_graph: "BaseAssetGraph[BaseAssetNode]",
     ) -> Sequence["DagsterEvent"]:
         """Moved from DagsterInstance._log_materialization_planned_event_for_asset."""
         from dagster._core.events import AssetMaterializationPlannedData, DagsterEvent
 
         individual_partitions, partitions_subset = self._get_planned_partitions(
-            dagster_run, asset_key, output, asset_graph
+            dagster_run, asset_key, asset_graph
         )
 
         events = []
@@ -896,13 +892,12 @@ class RunDomain:
         asset_check_key: AssetCheckKey,
         job_name: str,
         step: "ExecutionStepSnap",
-        output: "ExecutionStepOutputSnap",
         asset_graph: "BaseAssetGraph[BaseAssetNode]",
     ) -> Sequence["DagsterEvent"]:
         from dagster._core.events import DagsterEvent
 
         individual_partitions, partitions_subset = self._get_planned_partitions(
-            dagster_run, asset_check_key, output, asset_graph
+            dagster_run, asset_check_key, asset_graph
         )
         events = []
         if not individual_partitions and not partitions_subset:
@@ -936,7 +931,6 @@ class RunDomain:
         self,
         dagster_run: DagsterRun,
         asset_key_or_check_key: Union[AssetKey, AssetCheckKey],
-        output: "ExecutionStepOutputSnap",
         asset_graph: "BaseAssetGraph[BaseAssetNode]",
     ) -> tuple[Optional[Sequence[str]], Optional["PartitionsSubset"]]:
         from dagster._core.definitions.partitions.context import partition_loading_context
@@ -998,23 +992,7 @@ class RunDomain:
                             PartitionKeyRange(partition_range_start, partition_range_end),
                         )
         elif partitions_def and partition_tag:
-            # For DynamicPartitionsDefinition and MultiPartitionsDefinition (which may contain dynamic dimensions),
-            # we need to pass the instance to check partition existence
-            from dagster._core.definitions.partitions.definition.multi import (
-                MultiPartitionsDefinition,
-            )
-
-            if isinstance(partitions_def, (DynamicPartitionsDefinition, MultiPartitionsDefinition)):
-                has_key = partitions_def.has_partition_key(
-                    partition_tag, dynamic_partitions_store=self._instance
-                )
-            else:
-                has_key = partitions_def.has_partition_key(partition_tag)
-
-            if has_key:
-                individual_partitions = [partition_tag]
-            else:
-                individual_partitions = None
+            individual_partitions = [partition_tag]
         else:
             individual_partitions = None
 

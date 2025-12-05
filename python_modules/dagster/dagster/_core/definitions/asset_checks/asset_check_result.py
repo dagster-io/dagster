@@ -173,14 +173,8 @@ class AssetCheckResult(
             target_materialization_data = None
 
         if step_context.has_partition_key:
-            assets_def = step_context.job_def.asset_layer.get_assets_def_for_node(
-                step_context.node_handle
-            )
-            assert assets_def
-            spec = assets_def_for_check.get_spec_for_check_key(check_key)
-            if spec.partitions_def is not None and spec.partitions_def.has_partition_key(
-                step_context.partition_key
-            ):
+            check_spec = assets_def_for_check.get_spec_for_check_key(check_key)
+            if check_spec.partitions_def is not None:
                 partition = step_context.partition_key
             else:
                 partition = None
