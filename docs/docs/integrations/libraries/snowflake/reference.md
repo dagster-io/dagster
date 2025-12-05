@@ -4,7 +4,7 @@ description: Store your Dagster assets in Snowflake
 sidebar_position: 300
 ---
 
-This reference page provides information for working with [`dagster-snowflake`](/api/libraries/dagster-snowflake) features that are not covered as part of the Snowflake & Dagster tutorials ([resources](/integrations/libraries/snowflake/using-snowflake-with-dagster), [I/O managers](/integrations/libraries/snowflake/using-snowflake-with-dagster-io-managers)).
+This reference page provides information for working with [`dagster-snowflake`](/integrations/libraries/snowflake/dagster-snowflake) features that are not covered as part of the Snowflake & Dagster tutorials ([resources](/integrations/libraries/snowflake/using-snowflake-with-dagster), [I/O managers](/integrations/libraries/snowflake/using-snowflake-with-dagster-io-managers)).
 
 ## Authenticating using a private key
 
@@ -57,7 +57,7 @@ Currently, the Dagster's Snowflake integration only supports encrypted private k
 
 ### Executing custom SQL commands
 
-Using a [Snowflake resource](/api/libraries/dagster-snowflake#dagster_snowflake.SnowflakeResource), you can execute custom SQL queries on a Snowflake database:
+Using a [Snowflake resource](/integrations/libraries/snowflake/dagster-snowflake#dagster_snowflake.SnowflakeResource), you can execute custom SQL queries on a Snowflake database:
 
 <CodeExample path="docs_snippets/docs_snippets/integrations/snowflake/resource.py" startAfter="start" endBefore="end" />
 

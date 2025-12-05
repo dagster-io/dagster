@@ -4,7 +4,7 @@ description: The Dagstermill package lets you run notebooks using the Dagster to
 sidebar_position: 200
 ---
 
-This reference provides a high-level look at working with Jupyter notebooks using the [`dagstermill` integration library](/api/libraries/dagstermill).
+This reference provides a high-level look at working with Jupyter notebooks using the [`dagstermill` integration library](/integrations/libraries/dagstermill).
 
 For a step-by-step implementation walkthrough, refer to the [Using notebooks with Dagster tutorial](/integrations/libraries/jupyter/using-notebooks-with-dagster).
 

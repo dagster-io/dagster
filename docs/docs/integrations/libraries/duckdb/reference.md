@@ -4,7 +4,7 @@ description: Store your Dagster assets in DuckDB
 sidebar_position: 200
 ---
 
-This reference page provides information for working with [`dagster-duckdb`](/api/libraries/dagster-duckdb) features that are not covered as part of the [Using Dagster with DuckDB tutorial](/integrations/libraries/duckdb/using-duckdb-with-dagster).
+This reference page provides information for working with [`dagster-duckdb`](/integrations/libraries/dagster-duckdb) features that are not covered as part of the [Using Dagster with DuckDB tutorial](/integrations/libraries/duckdb/using-duckdb-with-dagster).
 
 DuckDB resource:
 
@@ -23,7 +23,7 @@ DuckDB I/O manager:
 
 The DuckDB resource provides access to a [`duckdb.DuckDBPyConnection`](https://duckdb.org/docs/api/python/reference/#duckdb.DuckDBPyConnection) object. This allows you full control over how your data is stored and retrieved in your database.
 
-For further information on the DuckDB resource, see the [DuckDB resource API docs](/api/libraries/dagster-duckdb#dagster_duckdb.DuckDBResource).
+For further information on the DuckDB resource, see the [DuckDB resource API docs](/integrations/libraries/dagster-duckdb#dagster_duckdb.DuckDBResource).
 
 ### Executing custom SQL queries
 

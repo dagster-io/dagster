@@ -12,7 +12,7 @@ canonicalUrl: '/integrations/libraries/dlt'
 slug: '/integrations/libraries/dlt'
 ---
 
-The [dagster-dlt](/api/libraries/dagster-dlt) library provides a `DltLoadCollectionComponent` which can be used to easily represent a collection of dlt sources and pipelines as assets in Dagster.
+The [dagster-dlt](/integrations/libraries/dagster-dlt) library provides a `DltLoadCollectionComponent` which can be used to easily represent a collection of dlt sources and pipelines as assets in Dagster.
 
 ## 1. Prepare a Dagster project
 

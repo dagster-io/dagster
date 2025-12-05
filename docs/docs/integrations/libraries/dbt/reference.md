@@ -10,7 +10,7 @@ Using dbt Cloud? Check out the [dbt Cloud with Dagster guide](/integrations/libr
 
 :::
 
-This reference provides a high-level look at working with dbt models through Dagster's [software-defined assets](/guides/build/assets) framework using the [`dagster-dbt` integration library](/api/libraries/dagster-dbt).
+This reference provides a high-level look at working with dbt models through Dagster's [software-defined assets](/guides/build/assets) framework using the [`dagster-dbt` integration library](/integrations/libraries/dbt/dagster-dbt).
 
 For a step-by-step implementation walkthrough, refer to the [Using dbt with Dagster asset definitions tutorial](/integrations/libraries/dbt).
 
@@ -18,7 +18,7 @@ For a step-by-step implementation walkthrough, refer to the [Using dbt with Dags
 
 | Name                                                                                                    | Description                                                                                                                                                                     |
 | ------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| [`dagster-dbt project scaffold`](/api/libraries/dagster-dbt#scaffold)                                   | A CLI command to initialize a new Dagster project for an existing dbt project.                                                                                                  |
+| [`dagster-dbt project scaffold`](/integrations/libraries/dbt/dagster-dbt#scaffold)                                   | A CLI command to initialize a new Dagster project for an existing dbt project.                                                                                                  |
 | <PyObject section="libraries" module="dagster_dbt" object="dbt_assets" decorator />                     | A decorator used to define Dagster assets for dbt models defined in a dbt manifest.                                                                                             |
 | <PyObject section="libraries" module="dagster_dbt" object="DbtCliResource" />                           | A class that defines a Dagster resource used to execute dbt CLI commands.                                                                                                       |
 | <PyObject section="libraries" module="dagster_dbt" object="DbtCliInvocation" />                         | A class that defines the representation of an invoked dbt command.                                                                                                              |
@@ -55,7 +55,7 @@ Here's what's happening in this example:
 
 ## Scaffolding a Dagster project from a dbt project
 
-You can create a Dagster project that wraps your dbt project by using the [`dagster-dbt project scaffold`](/api/libraries/dagster-dbt#scaffold) command line interface.
+You can create a Dagster project that wraps your dbt project by using the [`dagster-dbt project scaffold`](/integrations/libraries/dbt/dagster-dbt#scaffold) command line interface.
 
 ```shell
 dagster-dbt project scaffold --project-name project_dagster --dbt-project-dir path/to/dbt/project
@@ -76,7 +76,7 @@ When deploying your Dagster project to production, **we recommend generating the
 
 The easiest way to handle the creation of your manifest file is to use <PyObject section="libraries" object="DbtProject" module="dagster_dbt" />.
 
-In the Dagster project created by the [`dagster-dbt project scaffold`](/api/libraries/dagster-dbt#scaffold) command, the creation of your manifest is handled at run time during development:
+In the Dagster project created by the [`dagster-dbt project scaffold`](/integrations/libraries/dbt/dagster-dbt#scaffold) command, the creation of your manifest is handled at run time during development:
 
 <CodeExample
   path="docs_snippets/docs_snippets/integrations/dbt/dbt.py"
@@ -92,7 +92,7 @@ When developing locally, you can run the following command to generate the manif
 dagster dev
 ```
 
-In production, a precompiled manifest should be used. Using <PyObject section="libraries" object="DbtProject" module="dagster_dbt" />, the manifest can be created at build time by running the [`dagster-dbt project prepare-and-package`](/api/libraries/dagster-dbt#prepare-and-package) command in your CI/CD workflow. For more information, see the [Deploying a Dagster project with a dbt project](#deploying-a-dagster-project-with-a-dbt-project) section.
+In production, a precompiled manifest should be used. Using <PyObject section="libraries" object="DbtProject" module="dagster_dbt" />, the manifest can be created at build time by running the [`dagster-dbt project prepare-and-package`](/integrations/libraries/dbt/dagster-dbt#prepare-and-package) command in your CI/CD workflow. For more information, see the [Deploying a Dagster project with a dbt project](#deploying-a-dagster-project-with-a-dbt-project) section.
 
 ## Selecting a profiles directory, profile and target for your dbt project
 
