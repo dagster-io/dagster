@@ -13,7 +13,12 @@ from dagster._core.definitions import AssetSelection
 from dagster._core.definitions.asset_checks.asset_checks_definition import AssetChecksDefinition
 from dagster._core.definitions.asset_key import AssetCheckKey
 from dagster._core.definitions.asset_selection import CoercibleToAssetSelection
-from dagster._core.definitions.assets.definition.asset_spec import AssetSpec, map_asset_specs
+from dagster._core.definitions.assets.definition.asset_dep import AssetDep
+from dagster._core.definitions.assets.definition.asset_spec import (
+    SYSTEM_METADATA_KEY_UPSTREAM_DEP_MARKER_ASSET,
+    AssetSpec,
+    map_asset_specs,
+)
 from dagster._core.definitions.assets.definition.assets_definition import (
     AssetsDefinition,
     SourceAsset,
@@ -27,7 +32,11 @@ from dagster._core.definitions.events import AssetKey, CoercibleToAssetKey
 from dagster._core.definitions.executor_definition import ExecutorDefinition
 from dagster._core.definitions.job_definition import JobDefinition, default_job_io_manager
 from dagster._core.definitions.logger_definition import LoggerDefinition
-from dagster._core.definitions.metadata import RawMetadataMapping, normalize_metadata
+from dagster._core.definitions.metadata import (
+    RawMetadataMapping,
+    TableMetadataSet,
+    normalize_metadata,
+)
 from dagster._core.definitions.metadata.metadata_value import (
     CodeLocationReconstructionMetadataValue,
     MetadataValue,
@@ -43,7 +52,7 @@ from dagster._core.definitions.schedule_definition import ScheduleDefinition
 from dagster._core.definitions.sensor_definition import SensorDefinition
 from dagster._core.definitions.unresolved_asset_job_definition import UnresolvedAssetJobDefinition
 from dagster._core.definitions.utils import dedupe_object_refs
-from dagster._core.errors import DagsterInvariantViolationError
+from dagster._core.errors import DagsterInvalidDefinitionError, DagsterInvariantViolationError
 from dagster._core.execution.build_resources import wrap_resources_for_execution
 from dagster._core.execution.with_resources import with_resources
 from dagster._core.executor.base import Executor
@@ -309,6 +318,112 @@ def _canonicalize_specs_to_assets_defs(
             result.append(AssetsDefinition(specs=specs))
 
     return result
+
+
+def _remap_spec_deps(spec: AssetSpec, key_remap: Mapping[AssetKey, AssetKey]) -> AssetSpec:
+    """Remap any deps that point to old keys to their new keys."""
+    # no need to remap deps if no deps point to old keys
+    if not any(dep.asset_key in key_remap for dep in spec.deps):
+        return spec
+
+    new_deps = [
+        AssetDep(
+            asset=key_remap.get(dep.asset_key, dep.asset_key),
+            partition_mapping=dep.partition_mapping,
+        )
+        for dep in spec.deps
+    ]
+    return spec.replace_attributes(deps=new_deps)
+
+
+def _is_upstream_dep_asset(spec: AssetSpec) -> bool:
+    return spec.metadata.get(SYSTEM_METADATA_KEY_UPSTREAM_DEP_MARKER_ASSET) is True
+
+
+def _compute_upstream_dep_key_remappings(
+    candidate_specs: list[AssetSpec], marker_specs: list[AssetSpec]
+) -> dict[AssetKey, AssetKey]:
+    """Creates a mapping of marker asset keys to a candidate asset key that shares its table name.
+    Errors if there are multiple candidate assets with the same table name.
+    """
+    candidate_table_names: dict[str, list[AssetKey]] = defaultdict(list)
+    for candidate_spec in candidate_specs:
+        table_name = TableMetadataSet.extract(candidate_spec.metadata).table_name
+        if table_name is not None:
+            candidate_table_names[table_name].append(candidate_spec.key)
+
+    key_remappings: dict[AssetKey, AssetKey] = {}
+    for marker_spec in marker_specs:
+        table_name = TableMetadataSet.extract(marker_spec.metadata).table_name
+        if table_name is not None:
+            keys = candidate_table_names.get(table_name, [])
+            if len(keys) == 1:
+                key_remappings[marker_spec.key] = keys[0]
+            elif len(keys) > 1:
+                raise DagsterInvalidDefinitionError(
+                    f"Attempted to remap upstream dep asset {marker_spec.key} to table {table_name}, "
+                    f"but multiple candidate assets found that share this table name: {keys}. "
+                    "Please ensure that each table name is associated with a single asset, or remove the upstream dep marker spec."
+                )
+
+    return key_remappings
+
+
+def _remap_upstream_dep_assets(
+    assets: TAssets, asset_checks: TAssetChecks
+) -> tuple[TAssets, TAssetChecks]:
+    if assets is None:
+        return None, asset_checks
+
+    # can only operate over AssetSpec and AssetsDefinition
+    mappable_assets = [obj for obj in assets if isinstance(obj, AssetsDefinition)]
+    mappable_asset_specs = [obj for obj in assets if isinstance(obj, AssetSpec)]
+    mappable_asset_checks = asset_checks or []
+
+    unmappable = [obj for obj in assets if not isinstance(obj, (AssetSpec, AssetsDefinition))]
+
+    # split out the marker specs from the "candidate" specs (specs that may match our markers)
+    candidate_specs: list[AssetSpec] = []
+    marker_specs: list[AssetSpec] = []
+
+    for obj in [*mappable_assets, *mappable_asset_checks]:
+        candidate_specs.extend(obj.specs)
+
+    for obj in mappable_asset_specs:
+        if _is_upstream_dep_asset(obj):
+            marker_specs.append(obj)
+        else:
+            candidate_specs.append(obj)
+
+    # if nothing to remap, return early
+    if not marker_specs:
+        return assets, asset_checks
+
+    key_remappings = _compute_upstream_dep_key_remappings(
+        candidate_specs=candidate_specs, marker_specs=marker_specs
+    )
+
+    # update all assets and asset checks
+    mapped_assets = [
+        obj.with_attributes(asset_key_replacements=key_remappings) for obj in mappable_assets
+    ]
+    mapped_asset_checks = [
+        obj.with_attributes(asset_key_replacements=key_remappings) for obj in mappable_asset_checks
+    ]
+
+    # update all specs and filter out any marker specs that are no longer needed
+    # (i.e. there's an actual asset with the same table name or same asset key)
+    candidate_keys = {spec.key for spec in candidate_specs}
+    mapped_asset_specs = [
+        _remap_spec_deps(spec, key_remappings)
+        for spec in mappable_asset_specs
+        if not (
+            _is_upstream_dep_asset(spec)
+            and (spec.key in key_remappings or spec.key in candidate_keys)
+        )
+    ]
+
+    return [*mapped_assets, *mapped_asset_specs, *unmappable], mapped_asset_checks
 
 
 @deprecated(
@@ -701,16 +816,17 @@ class Definitions(IHaveNew):
         """Definitions is implemented by wrapping RepositoryDefinition. Get that underlying object
         in order to access any functionality which is not exposed on Definitions.
         """
+        assets, asset_checks = _remap_upstream_dep_assets(self.assets, self.asset_checks)
         return _create_repository_using_definitions_args(
             name=SINGLETON_REPOSITORY_NAME,
-            assets=self.assets,
+            assets=assets,
             schedules=self.schedules,
             sensors=self.sensors,
             jobs=self.jobs,
             resources=self.resources,
             executor=self.executor,
             loggers=self.loggers,
-            asset_checks=self.asset_checks,
+            asset_checks=asset_checks,
             metadata=self.metadata,
             component_tree=self.component_tree,
         )

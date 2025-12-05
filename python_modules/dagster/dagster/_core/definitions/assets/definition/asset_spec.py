@@ -88,6 +88,12 @@ SYSTEM_METADATA_KEY_AUTO_OBSERVE_INTERVAL_MINUTES = "dagster/auto_observe_interv
 # During normalization we create a "stub" definition for `foo` and attach this metadata to it.
 SYSTEM_METADATA_KEY_AUTO_CREATED_STUB_ASSET = "dagster/auto_created_stub_asset"
 
+# SYSTEM_METADATA_KEY_UPSTREAM_DEP_ASSET marks AssetSpecs that represent upstream
+# dependencies from an integration. These can be later remapped to the appropriate
+# AssetKeys produced by other integrations during a Definitions.merge() operation
+# using additional metadata we have for this spec.
+SYSTEM_METADATA_KEY_UPSTREAM_DEP_MARKER_ASSET = "dagster/upstream_dep_asset"
+
 
 @whitelist_for_serdes
 class AssetExecutionType(Enum):

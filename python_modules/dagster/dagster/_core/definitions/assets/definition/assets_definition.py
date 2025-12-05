@@ -2041,8 +2041,8 @@ def replace_specs_on_asset(
         )
 
     remaining_ins = {
-        input_name: the_in
-        for input_name, the_in in assets_def.node_def.input_dict.items()
+        input_name: In.from_definition(input_def)
+        for input_name, input_def in assets_def.node_def.input_dict.items()
         if assets_def.node_keys_by_input_name[input_name] in remaining_original_deps_by_key
     }
     all_ins = merge_dicts(
