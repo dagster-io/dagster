@@ -13,6 +13,7 @@ from dagster import (
 )
 from dagster._record import record
 from dateutil import parser
+from requests.exceptions import RequestException
 
 from dagster_dbt.asset_utils import build_dbt_specs, get_asset_check_key_for_test
 from dagster_dbt.cloud_v2.client import DbtCloudWorkspaceClient
@@ -73,7 +74,7 @@ class DbtCloudJobRunHandler:
         """
         try:
             return self.client.get_run_logs(run_id=self.run_id)
-        except Exception as e:
+        except RequestException as e:
             logger.warning(f"Failed to retrieve logs for run {self.run_id}: {e}")
             return None
 
