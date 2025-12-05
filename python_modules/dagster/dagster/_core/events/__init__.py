@@ -105,6 +105,7 @@ EventSpecificData = Union[
     "FreshnessStateChange",
     "AssetHealthChangedData",
     "AssetWipedData",
+    "CodeLocationUpdatedData",
 ]
 
 
@@ -186,6 +187,8 @@ class DagsterEventType(str, Enum):
 
     FRESHNESS_STATE_EVALUATION = "FRESHNESS_STATE_EVALUATION"
     FRESHNESS_STATE_CHANGE = "FRESHNESS_STATE_CHANGE"
+
+    CODE_LOCATION_UPDATED = "CODE_LOCATION_UPDATED"
 
 
 EVENT_TYPE_TO_DISPLAY_STRING = {
@@ -363,6 +366,8 @@ def _validate_event_specific_data(
         check.inst_param(event_specific_data, "event_specific_data", AssetCheckEvaluation)
     elif event_type == DagsterEventType.RUN_ENQUEUED:
         check.opt_inst_param(event_specific_data, "event_specific_data", RunEnqueuedData)
+    elif event_type == DagsterEventType.CODE_LOCATION_UPDATED:
+        check.opt_inst_param(event_specific_data, "event_specific_data", CodeLocationUpdatedData)
 
     return event_specific_data
 
@@ -900,6 +905,15 @@ class DagsterEvent(
             self.event_type,
         )
         return cast("AssetWipedData", self.event_specific_data)
+
+    @property
+    def code_location_updated_data(self) -> "CodeLocationUpdatedData":
+        _assert_type(
+            "code_location_updated_data",
+            DagsterEventType.CODE_LOCATION_UPDATED,
+            self.event_type,
+        )
+        return cast("CodeLocationUpdatedData", self.event_specific_data)
 
     @property
     def step_expectation_result_data(self) -> "StepExpectationResultData":
@@ -1817,6 +1831,13 @@ class AssetHealthChangedData:
 class AssetWipedData:
     asset_key: AssetKey
     partition_keys: Optional[Sequence[str]]
+
+
+@whitelist_for_serdes
+@record
+class CodeLocationUpdatedData:
+    code_location_name: str
+    new_version_key: str
 
 
 @whitelist_for_serdes

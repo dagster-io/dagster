@@ -30,7 +30,7 @@ This can be done by running the [`dagster-dbt project prepare-and-package`](/int
 
 ### Using a CI/CD file
 
-If you are using a [CI/CD file](/deployment/dagster-plus/deploying-code/ci-cd) in a Git repository to build and push your Docker image, you'll need to add a few steps to allow the dbt project to deploy successfully.
+If you are using a [CI/CD file](/deployment/dagster-plus/deploying-code/configuring-ci-cd) in a Git repository to build and push your Docker image, you'll need to add a few steps to allow the dbt project to deploy successfully.
 
 Our example updates the CI/CD file of a project from a GitHub repository, but this could be achieved in other platform like GitLab.
 

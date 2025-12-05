@@ -92,7 +92,7 @@ dagster-quickstart
         __init__.py
 ```
 
-Refer [here](/guides/build/projects/dagster-project-file-reference) to know more above this directory structure.
+Refer [here](/guides/build/projects/project-structure/project-overview) to know more above this directory structure.
 
 ## Create Sample Data
 

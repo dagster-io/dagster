@@ -344,7 +344,7 @@
     },
     {
       "source": "/examples/multi_location",
-      "destination": "/deployment/code-locations/workspace-yaml"
+      "destination": "/guides/build/projects/workspaces"
     },
     {
       "source": "/examples/nothing",
@@ -606,7 +606,7 @@
     },
     {
       "source": "/dagster-plus/developing-testing/code-locations",
-      "destination": "/deployment/code-locations"
+      "destination": "/guides/build/projects"
     },
     {
       "source": "/migration/version-migration",
@@ -756,7 +756,7 @@
     },
     {
       "source": "/getting-started/create-new-project",
-      "destination": "/guides/build/projects/creating-a-new-project",
+      "destination": "/guides/build/projects/creating-projects",
       "permanent": false
     },
     {
@@ -946,11 +946,11 @@
     },
     {
       "source": "/concepts/code-locations",
-      "destination": "/deployment/code-locations/managing-code-locations-with-definitions"
+      "destination": "/guides/build/projects"
     },
     {
       "source": "/concepts/code-locations/workspace-files",
-      "destination": "/deployment/code-locations/workspace-yaml"
+      "destination": "/guides/build/projects/workspaces/dg-toml"
     },
     {
       "source": "/concepts/webserver/ui",
@@ -1363,7 +1363,7 @@
     },
     {
       "source": "/dagster-plus/managing-deployments/code-locations",
-      "destination": "/deployment/code-locations"
+      "destination": "/guides/build/projects"
     },
     {
       "source": "/dagster-plus/managing-deployments/branch-deployments",
@@ -1371,15 +1371,15 @@
     },
     {
       "source": "/dagster-plus/managing-deployments/branch-deployments/using-branch-deployments-with-github",
-      "destination": "/deployment/dagster-plus/deploying-code/branch-deployments/setting-up-branch-deployments"
+      "destination": "/deployment/dagster-plus/deploying-code/branch-deployments/configuring-branch-deployments"
     },
     {
       "source": "/dagster-plus/managing-deployments/branch-deployments/using-branch-deployments-with-gitlab",
-      "destination": "/deployment/dagster-plus/deploying-code/branch-deployments/setting-up-branch-deployments"
+      "destination": "/deployment/dagster-plus/deploying-code/branch-deployments/configuring-branch-deployments"
     },
     {
       "source": "/dagster-plus/managing-deployments/branch-deployments/using-branch-deployments",
-      "destination": "/deployment/dagster-plus/deploying-code/branch-deployments/setting-up-branch-deployments"
+      "destination": "/deployment/dagster-plus/deploying-code/branch-deployments/configuring-branch-deployments"
     },
     {
       "source": "/dagster-plus/managing-deployments/branch-deployments/change-tracking",
@@ -1439,11 +1439,11 @@
     },
     {
       "source": "/dagster-plus/references/ci-cd-file-reference",
-      "destination": "/deployment/dagster-plus/deploying-code/ci-cd"
+      "destination": "/deployment/dagster-plus/deploying-code/configuring-ci-cd"
     },
     {
       "source": "/dagster-plus/managing-deployments/dagster-cloud-yaml",
-      "destination": "/deployment/code-locations/dagster-cloud-yaml"
+      "destination": "/deployment/management/build-yaml"
     },
     {
       "source": "/dagster-plus/references/limits",
@@ -1947,7 +1947,7 @@
     },
     {
       "source": "/guides/labs/dg/scaffolding-a-project",
-      "destination": "/guides/build/projects/creating-a-new-project"
+      "destination": "/guides/build/projects/creating-projects"
     },
     {
       "source": "/guides/labs/components/building-pipelines-with-components/creating-a-code-location-with-components",
@@ -1999,7 +1999,7 @@
     },
     {
       "source": "/guides/labs/components/managing-multiple-code-locations",
-      "destination": "/guides/build/projects/multiple-projects"
+      "destination": "/guides/build/projects/workspaces"
     },
     {
       "source": "/guides/build/components/integrations/dlt-component-tutorial",
@@ -2972,7 +2972,7 @@
     },
     {
       "source": "/dagster-cloud/managing-deployments/branch-deployments/using-branch-deployments-with-github",
-      "destination": "/deployment/dagster-plus/deploying-code/branch-deployments/setting-up-branch-deployments"
+      "destination": "/deployment/dagster-plus/deploying-code/branch-deployments/configuring-branch-deployments"
     },
     {
       "source": "/deployment/dagster-plus/ci-cd/branch-deployments",
@@ -2992,11 +2992,11 @@
     },
     {
       "source": "/deployment/dagster-plus/ci-cd/branch-deployments/setting-up-branch-deployments",
-      "destination": "/deployment/dagster-plus/deploying-code/branch-deployments/setting-up-branch-deployments"
+      "destination": "/deployment/dagster-plus/deploying-code/branch-deployments/configuring-branch-deployments"
     },
     {
       "source": "/deployment/dagster-plus/ci-cd/branch-deployments/using-branch-deployments-with-the-cli",
-      "destination": "/deployment/dagster-plus/deploying-code/branch-deployments/setting-up-branch-deployments"
+      "destination": "/deployment/dagster-plus/deploying-code/branch-deployments/configuring-branch-deployments"
     },
     {
       "source": "/dagster-cloud/managing-deployments/alerts/slack",
@@ -3004,7 +3004,7 @@
     },
     {
       "source": "/dagster-cloud/managing-deployments/branch-deployments/using-branch-deployments-with-gitlab",
-      "destination": "/deployment/dagster-plus/deploying-code/branch-deployments/setting-up-branch-deployments"
+      "destination": "/deployment/dagster-plus/deploying-code/branch-deployments/configuring-branch-deployments"
     },
     {
       "source": "/dagster-cloud/managing-deployments/setting-up-alerts",
@@ -3040,7 +3040,7 @@
     },
     {
       "source": "/concepts/code-locations/workspaces",
-      "destination": "/deployment/code-locations/workspace-yaml"
+      "destination": "/guides/build/projects/workspaces"
     },
     {
       "source": "/concepts/asset-checks",
@@ -3276,27 +3276,27 @@
     },
     {
       "source": "/dagster-plus/features/ci-cd",
-      "destination": "/deployment/dagster-plus/deploying-code/ci-cd"
+      "destination": "/deployment/dagster-plus/deploying-code/configuring-ci-cd"
     },
     {
       "source": "/deployment/dagster-plus/ci-cd",
-      "destination": "/deployment/dagster-plus/deploying-code/ci-cd"
+      "destination": "/deployment/dagster-plus/deploying-code/configuring-ci-cd"
     },
     {
       "source": "/deployment/dagster-plus/ci-cd/ci-cd-in-serverless",
-      "destination": "/deployment/dagster-plus/deploying-code/ci-cd/ci-cd-in-serverless"
+      "destination": "/deployment/dagster-plus/deploying-code/configuring-ci-cd"
     },
     {
       "source": "/deployment/dagster-plus/ci-cd/ci-cd-in-hybrid",
-      "destination": "/deployment/dagster-plus/deploying-code/ci-cd/ci-cd-in-hybrid"
+      "destination": "/deployment/dagster-plus/deploying-code/configuring-ci-cd"
     },
     {
       "source": "/deployment/dagster-plus/ci-cd/ci-cd-file-reference",
-      "destination": "/deployment/dagster-plus/deploying-code/ci-cd"
+      "destination": "/deployment/dagster-plus/deploying-code/configuring-ci-cd"
     },
     {
       "source": "/dagster-plus/features/ci-cd/:path*",
-      "destination": "/deployment/dagster-plus/deploying-code/ci-cd/:path*"
+      "destination": "/deployment/dagster-plus/deploying-code/configuring-ci-cd"
     },
     {
       "source": "/dagster-plus/deployment/deployment-types",
@@ -3356,39 +3356,35 @@
     },
     {
       "source": "/dagster-plus/deployment/code-locations",
-      "destination": "/deployment/code-locations/dagster-plus-code-locations"
+      "destination": "/guides/build/projects"
     },
     {
       "source": "/dagster-plus/deployment/code-locations/code-location-history",
-      "destination": "/deployment/code-locations/code-location-history"
+      "destination": "/guides/build/projects/dagster-plus-project-history"
     },
     {
       "source": "/dagster-plus/deployment/code-locations/dagster-cloud-yaml",
-      "destination": "/deployment/code-locations/dagster-cloud-yaml"
+      "destination": "/deployment/management/build-yaml"
     },
     {
       "source": "/guides/deploy/code-locations",
-      "destination": "/deployment/code-locations"
+      "destination": "/guides/build/projects"
     },
     {
       "source": "/guides/deploy/code-locations/managing-code-locations-with-definitions",
-      "destination": "/deployment/code-locations/managing-code-locations-with-definitions"
+      "destination": "/guides/build/projects"
     },
     {
       "source": "/guides/deploy/code-locations/workspace-yaml",
-      "destination": "/deployment/code-locations/workspace-yaml"
+      "destination": "/guides/build/projects/workspaces/workspace-yaml"
     },
     {
       "source": "/deployment/dagster-plus/management/settings/customizing-agent-settings",
       "destination": "/deployment/dagster-plus/management/customizing-agent-settings"
     },
     {
-      "source": "/deployment/dagster-plus/ci-cd/configuring-ci-cd",
-      "destination": "/deployment/dagster-plus/deploying-code/ci-cd/ci-cd-in-hybrid"
-    },
-    {
       "source": "/deployment/dagster-plus/serverless/ci-cd-in-serverless",
-      "destination": "/deployment/dagster-plus/deploying-code/ci-cd/ci-cd-in-serverless"
+      "destination": "/deployment/dagster-plus/deploying-code/configuring-ci-cd"
     },
     {
       "source": "/guides/labs/dg/dagster-dg-cli",
@@ -3436,7 +3432,7 @@
     },
     {
       "source": "/guides/labs/dg/creating-a-project",
-      "destination": "/guides/build/projects/creating-a-new-project"
+      "destination": "/guides/build/projects/creating-projects"
     },
     {
       "source": "/guides/labs/dg/configuring-dg",
@@ -3636,7 +3632,7 @@
     },
     {
       "source": "/guides/labs/components/building-pipelines-with-components/creating-a-project-with-components",
-      "destination": "/guides/build/projects/creating-a-new-project"
+      "destination": "/guides/build/projects/creating-projects"
     },
     {
       "source": "/guides/labs/components/creating-new-component-types/creating-dg-plugin",
@@ -3773,6 +3769,58 @@
     {
       "source": "/integrations/libraries/dbt/creating-a-dbt-project-in-dagster/:path*",
       "destination": "/integrations/libraries/dbt"
+    },
+    {
+      "source": "/deployment/dagster-plus/deploying-code/ci-cd",
+      "destination": "/deployment/dagster-plus/deploying-code/configuring-ci-cd"
+    },
+    {
+      "source": "/deployment/dagster-plus/deploying-code/ci-cd/ci-cd-in-serverless",
+      "destination": "/deployment/dagster-plus/deploying-code/configuring-ci-cd"
+    },
+    {
+      "source": "/deployment/dagster-plus/deploying-code/ci-cd/ci-cd-in-hybrid",
+      "destination": "/deployment/dagster-plus/deploying-code/configuring-ci-cd"
+    },
+    {
+      "source": "/deployment/code-locations",
+      "destination": "/guides/build/projects"
+    },
+    {
+      "source": "/deployment/code-locations/code-location-history",
+      "destination": "/guides/build/projects/dagster-plus-project-history"
+    },
+    {
+      "source": "/deployment/code-locations/dg-toml",
+      "destination": "/guides/build/projects/workspaces/dg-toml"
+    },
+    {
+      "source": "/deployment/code-locations/managing-code-locations",
+      "destination": "/guides/build/projects"
+    },
+    {
+      "source": "/deployment/code-locations/workspace-yaml",
+      "destination": "/guides/build/projects/workspaces/workspace-yaml"
+    },
+    {
+      "source": "/deployment/code-locations/dagster-cloud-yaml",
+      "destination": "/deployment/dagster-plus/management/build-yaml"
+    },
+    {
+      "source": "/guides/build/projects/creating-a-new-project",
+      "destination": "/guides/build/projects/creating-projects"
+    },
+    {
+      "source": "/guides/build/projects/structuring-your-dagster-project",
+      "destination": "/guides/build/projects/project-structure/organizing-dagster-projects"
+    },
+    {
+      "source": "/guides/build/projects/multiple-projects",
+      "destination": "/guides/build/projects/workspaces/creating-workspaces"
+    },
+    {
+      "source": "/deployment/dagster-plus/deploying-code/branch-deployments/setting-up-branch-deployments",
+      "destination": "/deployment/dagster-plus/deploying-code/branch-deployments/configuring-branch-deployments"
     }
   ],
   "trailingSlash": false

@@ -13,6 +13,7 @@ from dagster import (
 )
 from dagster._record import record
 from dateutil import parser
+from requests.exceptions import RequestException
 
 from dagster_dbt.asset_utils import build_dbt_specs, get_asset_check_key_for_test
 from dagster_dbt.cloud_v2.client import DbtCloudWorkspaceClient
@@ -60,6 +61,22 @@ class DbtCloudJobRunHandler:
 
     def list_run_artifacts(self) -> Sequence[str]:
         return self.client.list_run_artifacts(run_id=self.run_id)
+
+    def get_run_logs(self) -> Optional[str]:
+        """Retrieves the stdout/stderr logs from the completed dbt Cloud run.
+
+        This method fetches logs from the run_steps by calling get_run_details
+        with include_related=["run_steps"].
+
+        Returns:
+            Optional[str]: The concatenated log text content from all run steps,
+                or None if logs are not available.
+        """
+        try:
+            return self.client.get_run_logs(run_id=self.run_id)
+        except RequestException as e:
+            logger.warning(f"Failed to retrieve logs for run {self.run_id}: {e}")
+            return None
 
 
 def get_completed_at_timestamp(result: Mapping[str, Any]) -> float:

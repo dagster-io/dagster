@@ -1,6 +1,7 @@
 import datetime
 import logging
 import re
+import shlex
 from collections.abc import Iterable, Mapping
 from functools import cached_property
 from pathlib import Path
@@ -55,6 +56,7 @@ OLD_DG_PLUGIN_ENTRY_POINT_GROUPS = [
     "dagster_dg.plugin",
     "dagster_dg_cli.plugin",
 ]
+DG_PROJECT_PYTHON_EXECUTABLE_ENV_VAR: Final = "DG_PROJECT_PYTHON_EXECUTABLE"
 
 
 def _should_capture_components_cli_stderr() -> bool:
@@ -300,12 +302,28 @@ class DgContext:
             raise DgError("`project_name` is only available in a Dagster project context")
         return self.root_path.name
 
-    @property
+    @cached_property
     def project_python_executable(self) -> Path:
         if not self.is_project:
             raise DgError(
                 "`project_python_executable` is only available in a Dagster project context"
             )
+
+        # This is a temporary "backdoor" to satisfy users who want to auto-discover non-standard virtual
+        # environments for their dg projects. Here is how it works:
+        # - If a `.env` file is present in the project root, it looks for the following variables:
+        #   - `DG_PROJECT_PYTHON_EXECUTABLE`: if this variable is set, its value is used as the python
+        #     executable path
+        # - If no `.env` file is present or if the variable is not set, fall back to default
+        #   behavior (assume .venv in project root).
+        env_path = Path(self.root_path / ".env")
+        if env_path.exists():
+            content = env_path.read_text()
+            for line in content.splitlines():
+                stripped_line = line.strip()
+                if stripped_line.startswith(f"{DG_PROJECT_PYTHON_EXECUTABLE_ENV_VAR}="):
+                    return self.root_path / shlex.split(stripped_line)[0].split("=", 1)[1]
+
         return self.root_path / get_venv_executable(Path(".venv"))
 
     @cached_property
