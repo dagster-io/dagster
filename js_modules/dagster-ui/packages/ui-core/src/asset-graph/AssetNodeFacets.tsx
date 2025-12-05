@@ -14,6 +14,7 @@ export const AllAssetNodeFacets = [
   AssetNodeFacet.Status,
   AssetNodeFacet.KindTag,
   AssetNodeFacet.Automation,
+  AssetNodeFacet.Partitions,
 ];
 
 export const AssetNodeFacetDefaults = [
@@ -23,6 +24,7 @@ export const AssetNodeFacetDefaults = [
   AssetNodeFacet.Status,
   AssetNodeFacet.KindTag,
   AssetNodeFacet.Automation,
+  AssetNodeFacet.Partitions,
 ];
 
 function validateSavedFacets(input: any) {
@@ -58,6 +60,8 @@ export function labelForFacet(facet: AssetNodeFacet) {
       return 'Sync status tags';
     case AssetNodeFacet.Automation:
       return 'Automation';
+    case AssetNodeFacet.Partitions:
+      return 'Partitions';
     default:
       assertUnreachable(facet);
   }

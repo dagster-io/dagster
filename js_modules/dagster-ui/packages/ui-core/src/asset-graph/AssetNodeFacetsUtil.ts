@@ -8,4 +8,5 @@ export enum AssetNodeFacet {
   Status = 'status',
   KindTag = 'kind-tag',
   Automation = 'automation',
+  Partitions = 'partitions',
 }
