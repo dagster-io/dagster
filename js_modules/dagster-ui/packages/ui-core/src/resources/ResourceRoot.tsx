@@ -342,6 +342,7 @@ const ResourceConfig = (props: {
                         </Tooltip>
                         {isDefault && <Tag>Default</Tag>}
                         {type === 'ENV_VAR' && <Tag intent="success">Env var</Tag>}
+                        {type === 'SECRET' && <Tag intent="warning">Secret</Tag>}
                       </Box>
                     </td>
                   </tr>
