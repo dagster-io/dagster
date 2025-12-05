@@ -57,7 +57,8 @@ def test_fetch_tableau_workspace_data(
 
     actual_workspace_data = resource.get_or_fetch_workspace_data()
     assert len(actual_workspace_data.workbooks_by_id) == 1
-    assert len(actual_workspace_data.sheets_by_id) == 2
+    # Hidden sheets are included in sheets_by_id to preserve their data source dependencies
+    assert len(actual_workspace_data.sheets_by_id) == 3
     assert len(actual_workspace_data.dashboards_by_id) == 1
     assert len(actual_workspace_data.data_sources_by_id) == 3
 
@@ -147,7 +148,7 @@ def test_translator_spec(
         all_assets = load_tableau_asset_specs(resource)
         all_assets_keys = [asset.key for asset in all_assets]
 
-        # 2 sheet, 1 dashboard and 3 data source as external assets
+        # 2 visible sheets (1 hidden sheet filtered out), 1 dashboard and 3 data sources
         assert len(all_assets) == 6
         assert len(all_assets_keys) == 6
 

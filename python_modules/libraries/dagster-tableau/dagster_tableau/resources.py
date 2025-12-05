@@ -639,7 +639,7 @@ class BaseTableauWorkspace(ConfigurableResource):
                 for sheet_data in workbook_data["sheets"]:
                     sheet_id = sheet_data["luid"]
                     sheet_metadata_id = sheet_data["id"]
-                    if sheet_id:
+                    if sheet_id or sheet_metadata_id:
                         augmented_sheet_data = {**sheet_data, "workbook": {"luid": workbook_id}}
                         sheets.append(
                             TableauContentData(
@@ -951,9 +951,18 @@ class TableauWorkspaceDefsLoader(StateBackedDefinitionsLoader[TableauWorkspaceDa
             workbook_selector_fn=self.workbook_selector_fn
         )
 
+        # Filter hidden sheets:
+        # 1. They typically lack a path.
+        # 2. They are required in workspace data to maintain data source lineage.
+        visible_sheets = [
+            sheet
+            for sheet in selected_state.sheets_by_id.values()
+            if sheet.properties.get("path") != ""
+        ]
+
         all_external_data = [
             *selected_state.data_sources_by_id.values(),
-            *selected_state.sheets_by_id.values(),
+            *visible_sheets,
             *selected_state.dashboards_by_id.values(),
         ]
 

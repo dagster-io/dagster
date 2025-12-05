@@ -83,7 +83,7 @@ SAMPLE_HIDDEN_SHEET = {
     "name": "hidden",
     "createdAt": "2024-09-06T22:33:26Z",
     "updatedAt": "2024-09-14T01:15:23Z",
-    "path": "TestWorkbook/Account",
+    "path": "",
     "parentEmbeddedDatasources": [
         {
             "parentPublishedDatasources": [

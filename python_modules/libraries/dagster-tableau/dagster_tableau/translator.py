@@ -121,7 +121,7 @@ class TableauWorkspaceData:
                 if workbook.content_type == TableauContentType.WORKBOOK
             },
             sheets_by_id={
-                sheet.properties["luid"]: sheet
+                sheet.properties["luid"] or sheet.properties["id"]: sheet
                 for sheet in content_data
                 if sheet.content_type == TableauContentType.SHEET
             },
