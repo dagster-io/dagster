@@ -237,6 +237,9 @@ class Field:
         description (str):
             A human-readable description of this config field.
 
+        is_secret (bool):
+            Whether this field contains sensitive data that should be masked in UIs. Defaults to False.
+
     Examples:
         .. code-block:: python
 
@@ -268,6 +271,7 @@ class Field:
         default_value: Any = FIELD_NO_DEFAULT_PROVIDED,
         is_required: Optional[bool] = None,
         description: Optional[str] = None,
+        is_secret: bool = False,
     ):
         from dagster._config.post_process import resolve_defaults
         from dagster._config.validate import validate_config
@@ -275,6 +279,7 @@ class Field:
         self.config_type = check.inst(self._resolve_config_arg(config), ConfigType)
 
         self._description = check.opt_str_param(description, "description")
+        self._is_secret = check.bool_param(is_secret, "is_secret")
 
         check.opt_bool_param(is_required, "is_required")
 
@@ -366,6 +371,12 @@ class Field:
     def description(self) -> Optional[str]:
         """A human-readable description of this config field, if provided."""
         return self._description
+
+    @public
+    @property
+    def is_secret(self) -> bool:
+        """Whether this field contains sensitive data that should be masked in UIs."""
+        return self._is_secret
 
     @property
     def default_value_as_json_str(self) -> str:

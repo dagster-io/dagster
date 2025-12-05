@@ -1188,3 +1188,14 @@ def test_permissive_ordering():
     assert wrap_op_in_graph_and_execute(
         test_order, run_config={"ops": {"test_order": {"config": alphabet}}}
     ).success
+
+
+def test_field_is_secret_parameter():
+    """Test that Field accepts and stores is_secret parameter."""
+    # Non-secret field
+    regular_field = dg.Field(str, description="A regular field")
+    assert regular_field.is_secret is False
+
+    # Secret field
+    secret_field = dg.Field(str, description="A secret field", is_secret=True)
+    assert secret_field.is_secret is True

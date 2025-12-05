@@ -67,10 +67,11 @@ def test_field_things():
             "opt": dg.Field(int, is_required=False),
             "opt_with_default": dg.Field(int, is_required=False, default_value=2),
             "req_with_desc": dg.Field(int, description="A desc"),
+            "secret_field": dg.Field(str, is_secret=True),
         }
     )
 
-    assert dict_snap.fields and len(dict_snap.fields) == 4
+    assert dict_snap.fields and len(dict_snap.fields) == 5
 
     field_snap_dict = {field_snap.name: field_snap for field_snap in dict_snap.fields}
 
@@ -85,6 +86,8 @@ def test_field_things():
 
     assert field_snap_dict["req_with_desc"].is_required is True
     assert field_snap_dict["req_with_desc"].description == "A desc"
+    assert field_snap_dict["secret_field"].is_secret is True
+    assert not field_snap_dict["req"].is_secret
 
 
 def test_basic_list():
