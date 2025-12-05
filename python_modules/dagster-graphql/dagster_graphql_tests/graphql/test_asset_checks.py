@@ -1443,3 +1443,237 @@ class TestAssetChecks(ExecutingGraphQLContextTestMatrix):
             {"name": "my_check", "assetKey": {"path": ["one"]}},
             {"name": "my_other_check", "assetKey": {"path": ["one"]}},
         ]
+
+    def test_partitioned_asset_check_executions(self, graphql_context: WorkspaceRequestContext):
+        """Test retrieving asset check executions for partitioned assets."""
+        run_id_one, run_id_two, run_id_three = [make_new_run_id() for _ in range(3)]
+
+        # Create runs for different partitions
+        create_run_for_test(graphql_context.instance, run_id=run_id_one)
+        create_run_for_test(graphql_context.instance, run_id=run_id_two)
+        create_run_for_test(graphql_context.instance, run_id=run_id_three)
+
+        # Store planned events for partition "a"
+        graphql_context.instance.event_log_storage.store_event(
+            _planned_event(
+                run_id_one,
+                AssetCheckEvaluationPlanned(
+                    asset_key=AssetKey(["partitioned_asset"]),
+                    check_name="partitioned_check",
+                    partition="a",
+                ),
+            )
+        )
+
+        # Store planned events for partition "b"
+        graphql_context.instance.event_log_storage.store_event(
+            _planned_event(
+                run_id_two,
+                AssetCheckEvaluationPlanned(
+                    asset_key=AssetKey(["partitioned_asset"]),
+                    check_name="partitioned_check",
+                    partition="b",
+                ),
+            )
+        )
+
+        # Query without partition filter - should get all executions
+        res = execute_dagster_graphql(
+            graphql_context,
+            GET_ASSET_CHECK_HISTORY,
+            variables={
+                "assetKey": {"path": ["partitioned_asset"]},
+                "checkName": "partitioned_check",
+            },
+        )
+
+        executions = res.data["assetCheckExecutions"]
+        assert len(executions) == 2
+        run_ids = {execution["runId"] for execution in executions}
+        assert run_ids == {run_id_one, run_id_two}
+
+        # All should be in progress
+        for execution in executions:
+            assert execution["status"] == "IN_PROGRESS"
+
+        # Store evaluation for partition "a" - passed
+        evaluation_timestamp_a = time.time()
+        graphql_context.instance.event_log_storage.store_event(
+            _evaluation_event(
+                run_id_one,
+                AssetCheckEvaluation(
+                    asset_key=AssetKey(["partitioned_asset"]),
+                    check_name="partitioned_check",
+                    passed=True,
+                    metadata={"partition": MetadataValue.text("a")},
+                    severity=AssetCheckSeverity.WARN,
+                    description="Check passed for partition a",
+                ),
+                timestamp=evaluation_timestamp_a,
+            )
+        )
+
+        # Store evaluation for partition "b" - failed
+        evaluation_timestamp_b = time.time()
+        graphql_context.instance.event_log_storage.store_event(
+            _evaluation_event(
+                run_id_two,
+                AssetCheckEvaluation(
+                    asset_key=AssetKey(["partitioned_asset"]),
+                    check_name="partitioned_check",
+                    passed=False,
+                    metadata={"partition": MetadataValue.text("b")},
+                    severity=AssetCheckSeverity.ERROR,
+                    description="Check failed for partition b",
+                ),
+                timestamp=evaluation_timestamp_b,
+            )
+        )
+
+        # Query again - should see completed evaluations
+        res = execute_dagster_graphql(
+            graphql_context,
+            GET_ASSET_CHECK_HISTORY,
+            variables={
+                "assetKey": {"path": ["partitioned_asset"]},
+                "checkName": "partitioned_check",
+            },
+        )
+
+        executions = res.data["assetCheckExecutions"]
+        # Should have completed executions (with evaluation)
+        completed_executions = [e for e in executions if e["evaluation"] is not None]
+        assert len(completed_executions) == 2
+
+        # Find partition a execution
+        exec_a = next(e for e in completed_executions if e["runId"] == run_id_one)
+        assert exec_a["status"] == "SUCCEEDED"
+        assert exec_a["evaluation"]["severity"] == "WARN"
+        assert exec_a["evaluation"]["description"] == "Check passed for partition a"
+
+        # Find partition b execution
+        exec_b = next(e for e in completed_executions if e["runId"] == run_id_two)
+        assert exec_b["status"] == "FAILED"
+        assert exec_b["evaluation"]["severity"] == "ERROR"
+        assert exec_b["evaluation"]["description"] == "Check failed for partition b"
+
+    def test_partitioned_asset_check_executions_with_partition_filter(
+        self, graphql_context: WorkspaceRequestContext
+    ):
+        """Test retrieving asset check executions with partition filter."""
+        # Define query with partition filter
+        GET_ASSET_CHECK_HISTORY_WITH_PARTITION = """
+        query GetAssetChecksQuery($assetKey: AssetKeyInput!, $checkName: String!, $partition: String) {
+            assetCheckExecutions(assetKey: $assetKey, checkName: $checkName, limit: 10, partition: $partition) {
+                runId
+                status
+                evaluation {
+                    severity
+                    description
+                }
+            }
+        }
+        """
+
+        run_id_one, run_id_two = [make_new_run_id() for _ in range(2)]
+
+        create_run_for_test(graphql_context.instance, run_id=run_id_one)
+        create_run_for_test(graphql_context.instance, run_id=run_id_two)
+
+        # Store evaluations for multiple partitions
+        graphql_context.instance.event_log_storage.store_event(
+            _planned_event(
+                run_id_one,
+                AssetCheckEvaluationPlanned(
+                    asset_key=AssetKey(["partitioned_asset"]),
+                    check_name="partitioned_check",
+                    partition="2024-01",
+                ),
+            )
+        )
+
+        graphql_context.instance.event_log_storage.store_event(
+            _evaluation_event(
+                run_id_one,
+                AssetCheckEvaluation(
+                    asset_key=AssetKey(["partitioned_asset"]),
+                    check_name="partitioned_check",
+                    passed=True,
+                    severity=AssetCheckSeverity.WARN,
+                    description="Check for January",
+                    partition="2024-01",
+                ),
+            )
+        )
+
+        graphql_context.instance.event_log_storage.store_event(
+            _planned_event(
+                run_id_two,
+                AssetCheckEvaluationPlanned(
+                    asset_key=AssetKey(["partitioned_asset"]),
+                    check_name="partitioned_check",
+                    partition="2024-02",
+                ),
+            )
+        )
+
+        graphql_context.instance.event_log_storage.store_event(
+            _evaluation_event(
+                run_id_two,
+                AssetCheckEvaluation(
+                    asset_key=AssetKey(["partitioned_asset"]),
+                    check_name="partitioned_check",
+                    passed=True,
+                    severity=AssetCheckSeverity.WARN,
+                    description="Check for February",
+                    partition="2024-02",
+                ),
+            )
+        )
+
+        # Query with partition filter for "2024-01"
+        res = execute_dagster_graphql(
+            graphql_context,
+            GET_ASSET_CHECK_HISTORY_WITH_PARTITION,
+            variables={
+                "assetKey": {"path": ["partitioned_asset"]},
+                "checkName": "partitioned_check",
+                "partition": "2024-01",
+            },
+        )
+
+        executions = res.data["assetCheckExecutions"]
+        assert len(executions) == 1
+        assert executions[0]["runId"] == run_id_one
+        assert executions[0]["evaluation"] is not None
+        assert executions[0]["evaluation"]["description"] == "Check for January"
+
+        # Query with partition filter for "2024-02"
+        res = execute_dagster_graphql(
+            graphql_context,
+            GET_ASSET_CHECK_HISTORY_WITH_PARTITION,
+            variables={
+                "assetKey": {"path": ["partitioned_asset"]},
+                "checkName": "partitioned_check",
+                "partition": "2024-02",
+            },
+        )
+
+        executions = res.data["assetCheckExecutions"]
+        assert len(executions) == 1
+        assert executions[0]["runId"] == run_id_two
+        assert executions[0]["evaluation"] is not None
+        assert executions[0]["evaluation"]["description"] == "Check for February"
+
+        # Query without partition filter - should get both
+        res = execute_dagster_graphql(
+            graphql_context,
+            GET_ASSET_CHECK_HISTORY_WITH_PARTITION,
+            variables={
+                "assetKey": {"path": ["partitioned_asset"]},
+                "checkName": "partitioned_check",
+            },
+        )
+
+        executions = res.data["assetCheckExecutions"]
+        assert len(executions) == 2
