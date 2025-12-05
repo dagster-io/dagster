@@ -68,7 +68,8 @@ def test_replace_attributes_kinds() -> None:
     assert new_spec.tags == {"c": "d", "dagster/kind/bar": ""}
 
     with pytest.raises(dg.DagsterInvalidDefinitionError):
-        spec.replace_attributes(kinds={"a", "b", "c", "d", "e"})
+        kinds = {f"kind_{i}" for i in range(11)}
+        spec.replace_attributes(kinds=kinds)
 
 
 def test_replace_attributes_deps_coercion() -> None:
