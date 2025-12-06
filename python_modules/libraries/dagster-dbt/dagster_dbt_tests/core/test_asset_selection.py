@@ -8,7 +8,7 @@ import pytest
 from dagster._core.definitions.assets.graph.asset_graph import AssetGraph
 from dagster._core.definitions.events import AssetKey
 from dagster._record import replace
-from dagster_dbt import build_dbt_asset_selection
+from dagster_dbt import DagsterDbtTranslator, build_dbt_asset_selection
 from dagster_dbt.asset_decorator import dbt_assets
 from dagster_dbt.asset_utils import DBT_DEFAULT_EXCLUDE, DBT_DEFAULT_SELECT
 from dagster_dbt.dbt_manifest_asset_selection import DbtManifestAssetSelection
@@ -290,7 +290,7 @@ def test_dbt_asset_selection_equality(
 
         assert dbt_manifest_asset_selection != replace(
             dbt_manifest_asset_selection,
-            dagster_dbt_translator=mock.MagicMock(),
+            dagster_dbt_translator=mock.MagicMock(spec=DagsterDbtTranslator),
         )
 
         assert dbt_manifest_asset_selection != replace(

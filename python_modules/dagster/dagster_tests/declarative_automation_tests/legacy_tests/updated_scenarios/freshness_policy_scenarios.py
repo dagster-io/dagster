@@ -247,7 +247,7 @@ freshness_policy_scenarios = [
         initial_spec=extended_diamond.with_asset_properties(
             auto_materialize_policy=AutoMaterializePolicy.lazy(),
         )
-        .with_asset_properties(keys=["A"], deps=["source"])
+        .with_asset_properties(keys=["A"], deps=[dg.AssetDep("source")])
         .with_asset_properties(keys=["E"], legacy_freshness_policy=freshness_30m)
         .with_asset_properties(keys=["F"], legacy_freshness_policy=freshness_60m),
         execution_fn=lambda state: state.with_runs(

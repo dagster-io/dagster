@@ -20,6 +20,7 @@ from dagster._core.definitions.partitions.subset import (
 )
 from dagster._core.definitions.partitions.utils import PersistedTimeWindow
 from dagster._core.errors import DagsterInvalidDeserializationVersionError
+from dagster._core.instance.types import DynamicPartitionsStore
 from dagster._core.test_utils import freeze_time, instance_for_test
 from dagster._serdes import deserialize_value, serialize_value
 from dagster._time import create_datetime, get_current_datetime
@@ -183,7 +184,9 @@ def test_time_window_partitions_subset_num_partitions_serialization():
 
 def test_all_partitions_subset_static_partitions_def() -> None:
     static_partitions_def = StaticPartitionsDefinition(["a", "b", "c", "d"])
-    with partition_loading_context(dynamic_partitions_store=MagicMock()) as ctx:
+    with partition_loading_context(
+        dynamic_partitions_store=MagicMock(spec=DynamicPartitionsStore)
+    ) as ctx:
         all_subset = AllPartitionsSubset(static_partitions_def, ctx)
         assert len(all_subset) == 4
         assert set(all_subset.get_partition_keys()) == {"a", "b", "c", "d"}
@@ -203,7 +206,9 @@ def test_all_partitions_subset_static_partitions_def() -> None:
 def test_all_partitions_subset_time_window_partitions_def() -> None:
     with (
         freeze_time(create_datetime(2020, 1, 6, hour=10)),
-        partition_loading_context(dynamic_partitions_store=MagicMock()) as ctx,
+        partition_loading_context(
+            dynamic_partitions_store=MagicMock(spec=DynamicPartitionsStore)
+        ) as ctx,
     ):
         time_window_partitions_def = DailyPartitionsDefinition(start_date="2020-01-01")
         all_subset = AllPartitionsSubset(time_window_partitions_def, ctx)
@@ -236,7 +241,9 @@ def test_partitions_set_short_circuiting() -> None:
     static_partitions_def = dg.StaticPartitionsDefinition(["a", "b", "c", "d"])
     default_ps = DefaultPartitionsSubset({"a", "b", "c"})
 
-    with partition_loading_context(dynamic_partitions_store=MagicMock()) as ctx:
+    with partition_loading_context(
+        dynamic_partitions_store=MagicMock(spec=DynamicPartitionsStore)
+    ) as ctx:
         all_ps = AllPartitionsSubset(static_partitions_def, ctx)
 
     # Test short-circuiting of |. Returns the same AllPartionsSubset

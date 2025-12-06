@@ -11,6 +11,7 @@ from dagster._core.definitions.partitions.subset import (
     AllPartitionsSubset,
     TimeWindowPartitionsSubset,
 )
+from dagster._core.instance.types import DynamicPartitionsStore
 from dagster._time import create_datetime
 
 
@@ -971,7 +972,7 @@ def test_get_upstream_partitions_for_all_partitions_subset() -> None:
     upstream_partitions_def = dg.DailyPartitionsDefinition(start_date="2021-05-05")
     downstream_partitions_def = dg.DailyPartitionsDefinition(start_date="2021-05-10")
     current_time = datetime(2021, 5, 31, hour=1)
-    with partition_loading_context(current_time, MagicMock()) as ctx:
+    with partition_loading_context(current_time, MagicMock(spec=DynamicPartitionsStore)) as ctx:
         downstream_subset = AllPartitionsSubset(
             partitions_def=downstream_partitions_def,
             context=ctx,
@@ -995,7 +996,7 @@ def test_get_downstream_partitions_for_all_partitions_subset() -> None:
     upstream_partitions_def = dg.DailyPartitionsDefinition(start_date="2021-05-10")
     downstream_partitions_def = dg.DailyPartitionsDefinition(start_date="2021-05-05")
     current_time = datetime(2021, 5, 31, hour=1)
-    with partition_loading_context(current_time, MagicMock()) as ctx:
+    with partition_loading_context(current_time, MagicMock(spec=DynamicPartitionsStore)) as ctx:
         upstream_subset = AllPartitionsSubset(
             partitions_def=upstream_partitions_def,
             context=ctx,

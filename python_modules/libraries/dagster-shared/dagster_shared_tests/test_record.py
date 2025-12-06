@@ -806,6 +806,9 @@ def test_replace() -> None:
     assert obj._replace(name="good") == obj
     assert obj._replace(name="foo").__class__ is obj.__class__
 
+    with pytest.raises(CheckError):
+        obj._replace(name=4)
+
     @record
     class Parent:
         one: int
@@ -822,6 +825,28 @@ def test_replace() -> None:
     assert replaced == obj
     replaced.boop()
     assert replaced.__class__ is obj.__class__
+
+    with pytest.raises(CheckError):
+        replace(obj, two="two")
+
+    p = Parent(one=1)
+    with pytest.raises(CheckError):
+        replace(p, one="one")
+
+    @record(checked=False)
+    class Unchecked:
+        name: str
+
+    u = Unchecked(name=2)  # pyright: ignore[reportArgumentType]
+    replace(u, name="unchecked")
+
+    @record(checked=False)
+    class UncheckedDefaults:
+        name: str = "unchecked"
+        age: int
+
+    ud = UncheckedDefaults(age=2)
+    replace(ud, name="steve")
 
 
 def test_defensive_checks_running():

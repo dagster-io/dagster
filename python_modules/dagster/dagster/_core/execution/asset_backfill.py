@@ -1619,14 +1619,13 @@ def _execute_asset_backfill_iteration_inner(
             f"The following assets were considered for materialization but not requested:\n\n{not_requested_str}"
         )
 
-    run_requests = [
-        rr._replace(run_config=run_config)
-        for rr in build_run_requests_with_backfill_policies(
-            asset_partitions=asset_partitions_to_request,
-            asset_graph=asset_graph,
-            dynamic_partitions_store=instance_queryer,
-        )
-    ]
+    run_requests = build_run_requests_with_backfill_policies(
+        asset_partitions=asset_partitions_to_request,
+        asset_graph=asset_graph,
+        dynamic_partitions_store=instance_queryer,
+    )
+    if run_config is not None:
+        run_requests = [rr._replace(run_config=run_config) for rr in run_requests]
 
     if request_roots:
         check.invariant(

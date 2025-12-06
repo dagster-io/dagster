@@ -280,7 +280,7 @@ partition_scenarios = [
         .evaluate_tick()
         .assert_requested_runs()
         # now stop allowing non-existent upstream partitions and rematerialize A
-        .with_asset_properties(keys=["B"], deps=["A"])
+        .with_asset_properties(keys=["B"], deps=[dg.AssetDep("A")])
         .with_runs(run_request(["A"], partition_key=hour_partition_key(state.current_time)))
         .evaluate_tick()
         # B cannot be materialized for this partition
@@ -402,7 +402,7 @@ partition_scenarios = [
         .with_asset_properties(
             keys=["C"],
             deps=[
-                "A",
+                dg.AssetDep("A"),
                 dg.AssetDep(
                     "B",
                     partition_mapping=dg.TimeWindowPartitionMapping(
@@ -430,7 +430,7 @@ partition_scenarios = [
         )
         .with_not_started_runs()
         # now stop allowing non-existent upstream partitions and rematerialize A
-        .with_asset_properties(keys=["C"], deps=["A", "B"])
+        .with_asset_properties(keys=["C"], deps=[dg.AssetDep("A"), dg.AssetDep("B")])
         .with_runs(
             run_request(["A"], partition_key=hour_partition_key(state.current_time, delta=-1))
         )
@@ -587,7 +587,8 @@ partition_scenarios = [
             partitions_def=daily_partitions_def
         )
         .with_asset_properties(
-            keys=["B"], deps=["A", dg.AssetDep("B", partition_mapping=self_partition_mapping)]
+            keys=["B"],
+            deps=[dg.AssetDep("A"), dg.AssetDep("B", partition_mapping=self_partition_mapping)],
         )
         .with_all_eager()
         .with_current_time(time_partitions_start_str)
