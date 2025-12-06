@@ -252,6 +252,7 @@ from dagster._core.definitions.events import (
 from dagster._core.definitions.executor_definition import (
     ExecutorDefinition as ExecutorDefinition,
     ExecutorRequirement as ExecutorRequirement,
+    async_executor as async_executor,
     executor as executor,
     in_process_executor as in_process_executor,
     multi_or_in_process_executor as multi_or_in_process_executor,
