@@ -17,7 +17,7 @@ For [Kubernetes agents](/deployment/dagster-plus/hybrid/kubernetes) deployed wit
 
 User code servers support a configurable time-to-live (TTL). The agent will spin down any user code servers that haven't served requests recently and will spin them back up the next time they're needed. Configuring TTL can save compute cost because user code servers will spend less time sitting idle.
 
-TTL is disabled by default for full deployments, and can be configured separately for full and [branch deployments](/deployment/dagster-plus/deploying-code/branch-deployments/setting-up-branch-deployments). TTL defaults to 24 hours for both full and branch deployments.
+TTL is disabled by default for full deployments, and can be configured separately for full and [branch deployments](/deployment/dagster-plus/deploying-code/branch-deployments/configuring-branch-deployments). TTL defaults to 24 hours for both full and branch deployments.
 
 To configure TTL:
 

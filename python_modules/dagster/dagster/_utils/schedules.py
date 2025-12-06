@@ -227,40 +227,54 @@ def _find_hourly_schedule_time(
 def _find_daily_schedule_time(
     minute: int,
     hour: int,
+    days_of_week: Optional[Sequence[int]],
     date: datetime.datetime,
     ascending: bool,
     already_on_boundary: bool,
 ) -> datetime.datetime:
-    # First move to the correct time of day today (ignoring whether it is the correct day)
-    if not already_on_boundary or (
-        date.hour != hour or date.minute != minute or date.second != 0 or date.microsecond != 0
-    ):
-        new_time = _replace_date_fields(
-            date,
-            hour,
-            minute,
-            date.day,
+    num_iterations = 0
+    while True:  # until the day of week matches if needed
+        check.invariant(
+            num_iterations < 10,  # 1 week plus a buffer
+            "Computing next schedule daily schedule time should eventually reach an intended day of week",
         )
-    else:
-        new_time = date
+        # First move to the correct time of day today (ignoring whether it is the correct day)
+        if not already_on_boundary or (
+            date.hour != hour or date.minute != minute or date.second != 0 or date.microsecond != 0
+        ):
+            new_time = _replace_date_fields(
+                date,
+                hour,
+                minute,
+                date.day,
+            )
+        else:
+            new_time = date
 
-    if ascending:
-        if already_on_boundary or new_time.timestamp() <= date.timestamp():
-            new_time = new_time + datetime.timedelta(days=1)
-    else:
-        if already_on_boundary or new_time.timestamp() >= date.timestamp():
-            new_time = new_time - datetime.timedelta(days=1)
+        if ascending:
+            if already_on_boundary or new_time.timestamp() <= date.timestamp():
+                new_time = new_time + datetime.timedelta(days=1)
+        else:
+            if already_on_boundary or new_time.timestamp() >= date.timestamp():
+                new_time = new_time - datetime.timedelta(days=1)
 
-    # If the hour or minute has changed the schedule in cronstring,
-    # double-check that it's still correct in case we crossed a DST boundary
-    if new_time.hour != hour or new_time.minute != minute:
-        new_time = _replace_date_fields(
-            new_time,
-            hour,
-            minute,
-            new_time.day,
-        )
-    return apply_fold_and_post_transition(new_time)
+        # If the hour or minute has changed the schedule in cronstring,
+        # double-check that it's still correct in case we crossed a DST boundary
+        if new_time.hour != hour or new_time.minute != minute:
+            new_time = _replace_date_fields(
+                new_time,
+                hour,
+                minute,
+                new_time.day,
+            )
+        date = apply_fold_and_post_transition(new_time)
+
+        if (not days_of_week) or (_get_crontab_day_of_week(date) in days_of_week):
+            return date
+
+        # otherwise, repeat and keep moving until the day of the week matches
+        already_on_boundary = True
+        num_iterations += 1
 
 
 def _get_crontab_day_of_week(dt: datetime.datetime) -> int:
@@ -361,7 +375,7 @@ def _find_schedule_time(
     minutes: Optional[Sequence[int]],
     hour: Optional[int],
     day_of_month: Optional[int],
-    day_of_week: Optional[int],
+    days_of_week: Optional[Sequence[int]],
     schedule_type: "ScheduleType",
     date: datetime.datetime,
     ascending: bool,
@@ -381,6 +395,7 @@ def _find_schedule_time(
         return _find_daily_schedule_time(
             minutes[0],
             check.not_none(hour),
+            days_of_week,
             date,
             ascending,
             already_on_boundary,
@@ -388,10 +403,13 @@ def _find_schedule_time(
     elif schedule_type == ScheduleType.WEEKLY:
         minutes = check.not_none(minutes)
         check.invariant(len(minutes) == 1)
+        check.invariant(
+            days_of_week is not None and len(days_of_week) == 1
+        )  # must be a single numeric day of week to be WEEKLY
         return _find_weekly_schedule_time(
             minutes[0],
             check.not_none(hour),
-            check.not_none(day_of_week),
+            check.not_none(days_of_week)[0],
             date,
             ascending,
             already_on_boundary,
@@ -661,12 +679,16 @@ def cron_string_iterator(
         cron_part != "*" for cron_part in cron_parts[0]
     )
 
+    all_numeric_days_of_week = len(cron_parts[4]) > 0 and all(
+        isinstance(cron_part, int) for cron_part in cron_parts[4]
+    )
+
     known_schedule_type: Optional[ScheduleType] = None
 
     expected_hour = None
     expected_minutes = None
     expected_day = None
-    expected_day_of_week = None
+    expected_days_of_week = None
 
     # Special-case common intervals (hourly/daily/weekly/monthly) since croniter iteration can be
     # much slower and has correctness issues on DST boundaries
@@ -679,7 +701,11 @@ def cron_string_iterator(
             known_schedule_type = ScheduleType.MONTHLY
         elif all(is_numeric[0:2]) and is_numeric[4] and all(is_wildcard[2:4]):  # weekly
             known_schedule_type = ScheduleType.WEEKLY
-        elif all(is_numeric[0:2]) and all(is_wildcard[2:]):  # daily
+        elif (
+            all(is_numeric[0:2])
+            and all(is_wildcard[2:4])
+            and (is_wildcard[4] or all_numeric_days_of_week)
+        ):  # daily
             known_schedule_type = ScheduleType.DAILY
         elif all_numeric_minutes and all(is_wildcard[1:]):  # hourly
             known_schedule_type = ScheduleType.HOURLY
@@ -693,8 +719,8 @@ def cron_string_iterator(
     if is_numeric[2]:
         expected_day = cron_parts[2][0]
 
-    if is_numeric[4]:
-        expected_day_of_week = cron_parts[4][0]
+    if all_numeric_days_of_week:
+        expected_days_of_week = cron_parts[4]
 
     if known_schedule_type:
         start_datetime = datetime.datetime.fromtimestamp(
@@ -712,7 +738,7 @@ def cron_string_iterator(
                 expected_minutes,  # pyright: ignore[reportArgumentType]
                 expected_hour,  # pyright: ignore[reportArgumentType]
                 expected_day,  # pyright: ignore[reportArgumentType]
-                expected_day_of_week,  # pyright: ignore[reportArgumentType]
+                expected_days_of_week,  # pyright: ignore[reportArgumentType]
                 known_schedule_type,
                 start_datetime,
                 ascending=not ascending,  # Going in the reverse direction
@@ -724,7 +750,7 @@ def cron_string_iterator(
                     expected_minutes,  # pyright: ignore[reportArgumentType]
                     expected_hour,  # pyright: ignore[reportArgumentType]
                     expected_day,  # pyright: ignore[reportArgumentType]
-                    expected_day_of_week,  # pyright: ignore[reportArgumentType]
+                    expected_days_of_week,  # pyright: ignore[reportArgumentType]
                     known_schedule_type,
                     next_date,
                     ascending=not ascending,  # Going in the reverse direction
@@ -736,7 +762,7 @@ def cron_string_iterator(
                 expected_minutes,  # pyright: ignore[reportArgumentType]
                 expected_hour,  # pyright: ignore[reportArgumentType]
                 expected_day,  # pyright: ignore[reportArgumentType]
-                expected_day_of_week,  # pyright: ignore[reportArgumentType]
+                expected_days_of_week,  # pyright: ignore[reportArgumentType]
                 known_schedule_type,
                 next_date,
                 ascending=ascending,

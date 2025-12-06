@@ -64,13 +64,12 @@ PROJECT_CONTEXT_COMMANDS = [
     CommandSpec(("scaffold", "defs", DEFAULT_COMPONENT_TYPE, "foot")),
 ]
 
-WORKSPACE_CONTEXT_COMMANDS = [
-    CommandSpec(("list", "project")),
-]
+WORKSPACE_CONTEXT_COMMANDS = []
 
 WORKSPACE_OR_PROJECT_CONTEXT_COMMANDS = [
     CommandSpec(("dev",)),
     CommandSpec(("check", "defs")),
+    CommandSpec(("list", "project")),
 ]
 
 # ########################
@@ -159,27 +158,6 @@ def test_no_component_library_failure(spec: CommandSpec) -> None:
         result = runner.invoke(*spec.to_cli_args())
         assert_runner_result(result, exit_0=False)
         assert "must be run inside a Dagster component library directory" in result.output
-
-
-@pytest.mark.parametrize(
-    "spec", WORKSPACE_CONTEXT_COMMANDS, ids=lambda spec: "-".join(spec.command)
-)
-def test_no_workspace_failure(spec: CommandSpec) -> None:
-    with (
-        ProxyRunner.test(use_fixed_test_components=True) as runner,
-        isolated_components_venv(runner),
-    ):
-        result = runner.invoke(*spec.to_cli_args())
-        assert_runner_result(result, exit_0=False)
-        assert "must be run inside a Dagster workspace directory" in result.output
-        assert "You may have wanted to" not in result.output
-
-        runner.invoke_create_dagster("workspace", "foo")
-        result = runner.invoke(*spec.to_cli_args())
-        assert_runner_result(result, exit_0=False)
-        assert "must be run inside a Dagster workspace directory" in result.output
-        assert "You may have wanted to" in result.output
-        assert "/foo" in result.output
 
 
 @pytest.mark.parametrize(

@@ -19,6 +19,7 @@
     "jest": "jest",
     "jest-all-silent": "yarn jest --silent --watchAll=false --maxWorkers=50%",
     "ts": "tsc -p .",
+    "tsgo": "tsgo -p .",
     "storybook": "storybook dev -p 6006",
     "build-storybook": "storybook build"
   },
@@ -80,6 +81,7 @@
     "@types/react-is": "^18.3.0",
     "@types/styled-components": "^5.1.26",
     "@types/testing-library__jest-dom": "^5.14.2",
+    "@typescript/native-preview": "^7.0.0-dev.20251203.1",
     "babel-jest": "^27.4.6",
     "babel-loader": "^9.1.2",
     "babel-plugin-macros": "^3.1.0",

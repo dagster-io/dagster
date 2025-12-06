@@ -1,0 +1,2 @@
+# Azure Container Registry - Login with service principal
+- echo "$AZURE_CLIENT_SECRET" | docker login --username "$AZURE_CLIENT_ID" --password-stdin TEMPLATE_IMAGE_REGISTRY

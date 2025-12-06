@@ -1,4 +1,5 @@
 import dataclasses
+import json
 import re
 import string
 from collections import namedtuple
@@ -1073,6 +1074,31 @@ def test_record_fwd_ref():
         # requires serdes to set contextual namespace
         return dg.deserialize_value(
             '{"__class__": "MyModel", "foos": [{"__class__": "Foo", "age": 6}]}',
+            MyModel,
+            whitelist_map=test_env,
+        )
+
+    assert _out_of_scope()
+
+
+def test_record_fwd_ref_unpack():
+    test_env = WhitelistMap.create()
+
+    @_whitelist_for_serdes(test_env)
+    @record
+    class MyModel:
+        foos: list["Foo"]
+
+    @_whitelist_for_serdes(test_env)
+    @record
+    class Foo:
+        age: int
+
+    def _out_of_scope():
+        # cant find "Foo" in definition or callsite captured scopes
+        # requires serdes to set contextual namespace
+        return unpack_value(
+            json.loads('{"__class__": "MyModel", "foos": [{"__class__": "Foo", "age": 6}]}'),
             MyModel,
             whitelist_map=test_env,
         )

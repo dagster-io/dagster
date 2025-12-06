@@ -20,7 +20,7 @@ from dagster_dg_cli.cli.plus.deploy.configure.commands import resolve_python_ver
 from dagster_dg_cli.cli.plus.deploy.configure.configure_build_artifacts import (
     configure_build_artifacts_impl,
 )
-from dagster_dg_cli.cli.plus.deploy.configure.utils import DeploymentScaffoldConfig
+from dagster_dg_cli.cli.plus.deploy.configure.utils import DgPlusDeployConfigureOptions
 from dagster_dg_cli.utils.plus.build import get_agent_type_and_platform_from_graphql
 from dagster_dg_cli.utils.plus.gql_client import DagsterPlusGraphQLClient
 
@@ -31,7 +31,7 @@ def _resolve_config_for_build_artifacts(
     use_editable_dagster: bool,
     dg_context: DgContext,
     cli_config,
-) -> DeploymentScaffoldConfig:
+) -> DgPlusDeployConfigureOptions:
     """Resolve config for legacy build-artifacts command.
 
     This command only scaffolds build artifacts (no CI/CD), and tries to detect
@@ -56,7 +56,7 @@ def _resolve_config_for_build_artifacts(
 
     resolved_python_version = resolve_python_version(python_version)
 
-    return DeploymentScaffoldConfig(
+    return DgPlusDeployConfigureOptions(
         dg_context=dg_context,
         cli_config=cli_config,
         plus_config=plus_config,

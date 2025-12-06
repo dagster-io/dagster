@@ -1,10 +1,10 @@
+import json
 from abc import ABC, abstractmethod
 from collections.abc import Callable, Mapping, Sequence
 from datetime import datetime
 from os import PathLike
 from typing import Any, Generic, Optional, Union
 
-import dagster_shared.seven as seven
 from dagster_shared.record import IHaveNew, LegacyNamedTupleMixin, record, record_custom
 from dagster_shared.serdes.serdes import (
     FieldSerializer,
@@ -668,8 +668,9 @@ class JsonMetadataValue(
 
     def __new__(cls, data: Optional[Union[Sequence[Any], Mapping[str, Any]]]):
         try:
-            # check that the value is JSON serializable
-            seven.dumps(data)
+            # check that the value is JSON serializable (and do any transformation
+            # that json.dumps would do under the hood, like enums to string values)
+            data = json.loads(json.dumps(data))
         except TypeError:
             raise DagsterInvalidMetadata("Value is not JSON serializable.")
         return super().__new__(cls, data=data)

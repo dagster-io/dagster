@@ -2,21 +2,19 @@
 
 import * as Types from '../../graphql/types';
 
-export type AssetPermissionsQueryVariables = Types.Exact<{
-  assetKey: Types.AssetKeyInput;
+export type AssetsPermissionsQueryVariables = Types.Exact<{
+  assetKeys: Array<Types.AssetKeyInput> | Types.AssetKeyInput;
 }>;
 
-export type AssetPermissionsQuery = {
+export type AssetsPermissionsQuery = {
   __typename: 'Query';
-  assetNodeOrError:
-    | {
-        __typename: 'AssetNode';
-        id: string;
-        hasMaterializePermission: boolean;
-        hasWipePermission: boolean;
-        hasReportRunlessAssetEventPermission: boolean;
-      }
-    | {__typename: 'AssetNotFoundError'};
+  assetNodes: Array<{
+    __typename: 'AssetNode';
+    id: string;
+    hasMaterializePermission: boolean;
+    hasWipePermission: boolean;
+    hasReportRunlessAssetEventPermission: boolean;
+  }>;
 };
 
-export const AssetPermissionsQueryVersion = 'ff8b09ce270b20e67a0b552f66238f6705e12b79fdbff05b24a8dc3dcbf53ef0';
+export const AssetsPermissionsQueryVersion = 'ab77e79a165269b79bdd9768a816cdccfb6fe320b2abbc6d0e2b1deb307d4590';

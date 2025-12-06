@@ -48,7 +48,7 @@ setup(
         "orjson",
         "requests",
         "rich",
-        "sqlglot[rs]",
+        "sqlglot[rs]<28.1.0",  # FW-731
         "typer>=0.9.0",
         "packaging",
     ],

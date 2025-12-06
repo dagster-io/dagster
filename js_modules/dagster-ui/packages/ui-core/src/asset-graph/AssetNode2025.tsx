@@ -31,6 +31,7 @@ import {StaleReasonsTag} from '../assets/Stale';
 import {AssetChecksStatusSummary} from '../assets/asset-checks/AssetChecksStatusSummary';
 import {assetDetailsPathForKey} from '../assets/assetDetailsPathForKey';
 import {AssetKind} from '../graph/KindTags';
+import {compactNumber} from '../ui/formatters';
 import {markdownToPlaintext} from '../ui/markdownToPlaintext';
 import {AssetNodeFragment} from './types/AssetNode.types';
 
@@ -115,6 +116,11 @@ export const AssetNodeWithLiveData = ({
                 />
               </Link>
             ) : null}
+          </AssetNodeRow>
+        )}
+        {facets.has(AssetNodeFacet.Partitions) && (
+          <AssetNodeRow label={labelForFacet(AssetNodeFacet.Partitions)}>
+            <PartitionsFacetContent definition={definition} liveData={liveData} />
           </AssetNodeRow>
         )}
         {facets.has(AssetNodeFacet.Freshness) &&
@@ -260,6 +266,40 @@ export const AssetNodeAutomationRowWithData = ({
   };
 
   return <AssetNodeRow label={labelForFacet(AssetNodeFacet.Automation)}>{content()}</AssetNodeRow>;
+};
+
+const PartitionsFacetContent = ({
+  definition,
+  liveData,
+}: {
+  definition: AssetNodeFragment;
+  liveData: LiveDataForNode | undefined;
+}) => {
+  // If asset is not partitioned, show "Not partitioned"
+  if (!definition.isPartitioned) {
+    return <span style={{color: Colors.textLighter()}}>–</span>;
+  }
+
+  const partitionStats = liveData?.partitionStats;
+  if (!partitionStats || partitionStats.numPartitions === 0) {
+    return null;
+  }
+
+  const {numMaterialized, numPartitions, numFailed} = partitionStats;
+  const filledPct = Math.round((numMaterialized / numPartitions) * 100);
+  const displayText =
+    numFailed > 0
+      ? `${filledPct}% filled (${compactNumber(numFailed)} failed)`
+      : `${filledPct}% filled`;
+
+  return (
+    <Link
+      to={assetDetailsPathForKey(definition.assetKey, {view: 'partitions'})}
+      onClick={(e) => e.stopPropagation()}
+    >
+      {displayText}
+    </Link>
+  );
 };
 
 export const AssetNodeRow = ({

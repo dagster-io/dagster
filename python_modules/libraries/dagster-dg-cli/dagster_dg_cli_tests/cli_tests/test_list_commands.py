@@ -67,6 +67,17 @@ def test_list_projects_aliases(alias: str):
         assert_runner_result(runner.invoke("list", alias, "--help"))
 
 
+def test_list_project_in_standalone_project():
+    """Test that `dg list projects` works in a standalone project (not in a workspace)."""
+    with (
+        ProxyRunner.test() as runner,
+        isolated_example_project_foo_bar(runner, in_workspace=False, uv_sync=False),
+    ):
+        result = runner.invoke("list", "project")
+        assert_runner_result(result)
+        assert result.output.strip() == "."
+
+
 # ########################
 # ##### COMPONENTS
 # ########################

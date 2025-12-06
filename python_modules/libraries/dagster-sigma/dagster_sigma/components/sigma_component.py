@@ -53,6 +53,17 @@ class SigmaOrganizationArgs(Model, Resolvable):
     )
 
 
+def resolve_sigma_organization(context: ResolutionContext, model) -> SigmaOrganization:
+    """Resolver function for SigmaOrganization that properly resolves templated strings."""
+    args = SigmaOrganizationArgs.resolve_from_model(context, model)
+    return SigmaOrganization(
+        base_url=args.base_url,
+        client_id=args.client_id,
+        client_secret=args.client_secret,
+        warn_on_lineage_fetch_error=args.warn_on_lineage_fetch_error,
+    )
+
+
 SigmaTranslatorData: TypeAlias = Union[SigmaDatasetTranslatorData, SigmaWorkbookTranslatorData]
 SigmaTranslationFn: TypeAlias = TranslationFn[SigmaTranslatorData]
 
@@ -150,6 +161,18 @@ class SigmaFilterArgs(Model, Resolvable):
     )
 
 
+def resolve_sigma_filter(context: ResolutionContext, model) -> Optional[SigmaFilter]:
+    """Resolver function for SigmaFilter that properly resolves templated strings."""
+    if model is None:
+        return None
+    args = SigmaFilterArgs.resolve_from_model(context, model)
+    return SigmaFilter(
+        workbook_folders=args.workbook_folders,
+        workbooks=args.workbooks,
+        include_unused_datasets=args.include_unused_datasets,
+    )
+
+
 @beta
 @public
 @dataclass
@@ -176,7 +199,8 @@ class SigmaComponent(StateBackedComponent, Resolvable):
 
     organization: Annotated[
         SigmaOrganization,
-        Resolver.default(
+        Resolver(
+            resolve_sigma_organization,
             model_field_type=SigmaOrganizationArgs.model(),
             description="Configuration for connecting to the Sigma organization",
             examples=[
@@ -190,7 +214,8 @@ class SigmaComponent(StateBackedComponent, Resolvable):
     ]
     sigma_filter: Annotated[
         Optional[SigmaFilter],
-        Resolver.default(
+        Resolver(
+            resolve_sigma_filter,
             model_field_type=SigmaFilterArgs.model(),
             description="Optional filter for selecting which Sigma workbooks and datasets to load",
             examples=[

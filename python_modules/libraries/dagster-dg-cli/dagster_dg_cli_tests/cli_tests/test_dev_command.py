@@ -1,9 +1,11 @@
+import shutil
 import signal
 import tempfile
 import textwrap
 from pathlib import Path
 
 import pytest
+from dagster_dg_core.context import DG_PROJECT_PYTHON_EXECUTABLE_ENV_VAR
 from dagster_dg_core.utils import activate_venv, discover_git_root, is_windows, pushd
 from dagster_shared.utils import environ
 from dagster_test.components.test_utils.test_cases import BASIC_INVALID_VALUE, BASIC_MISSING_VALUE
@@ -55,6 +57,59 @@ def test_dev_workspace_context_success(monkeypatch):
             dev_process = launch_dev_command(["--port", str(port)])
             projects = {"project-1", "project-2"}
             assert_projects_loaded_and_exit(projects, port, dev_process)
+
+
+@pytest.mark.skipif(is_windows(), reason="Temporarily skipping (signal issues in CLI)..")
+def test_dev_workspace_context_set_python_executable_from_env_file():
+    """Test that the dg dev command properly loads env files from the workspace and projects."""
+    dagster_git_repo_dir = str(discover_git_root(Path(__file__)))
+    with (
+        ProxyRunner.test() as runner,
+        isolated_example_workspace(runner, create_venv=True) as workspace_path,
+        environ({"DAGSTER_GIT_REPO_DIR": dagster_git_repo_dir}),
+    ):
+        with activate_venv(workspace_path / ".venv"):
+            result = runner.invoke_create_dagster(
+                "project",
+                "--use-editable-dagster",
+                "project-1",
+                "--uv-sync",
+            )
+            assert_runner_result(result)
+
+            # Now we move the venv to a different location to test
+            # DG_PROJECT_PYTHON_EXECUTABLE_ENV_VAR is used.
+            Path("project-1/.env").write_text(
+                f"{DG_PROJECT_PYTHON_EXECUTABLE_ENV_VAR}=../._venv/bin/python\n"
+            )
+            shutil.move("project-1/.venv", "._venv")
+
+            result = runner.invoke_create_dagster(
+                "project",
+                "--use-editable-dagster",
+                "project-2",
+                "--uv-sync",
+            )
+            assert_runner_result(result)
+
+            # test with quoted value
+            Path("project-2/.env").write_text(
+                f"{DG_PROJECT_PYTHON_EXECUTABLE_ENV_VAR}=._venv/bin/python\n"
+            )
+            shutil.move("project-2/.venv", "project-2/._venv")
+
+            port = find_free_port()
+            with (
+                tempfile.NamedTemporaryFile() as stdout_file,
+                open(stdout_file.name, "w") as stdout,
+            ):
+                dev_process = launch_dev_command(["--port", str(port)], stdout=stdout)
+                projects = {"project-1", "project-2"}
+                assert_projects_loaded_and_exit(projects, port, dev_process)
+
+                assert ("Environment variables will not be injected") not in Path(
+                    stdout_file.name
+                ).read_text()
 
 
 @pytest.mark.skipif(is_windows(), reason="Temporarily skipping (signal issues in CLI)..")

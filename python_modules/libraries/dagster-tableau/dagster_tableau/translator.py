@@ -241,6 +241,7 @@ class DagsterTableauTranslator:
                 )
             ).key
             for data_source_id in data_source_ids
+            if data_source_id in data.workspace_data.data_sources_by_id
         ]
 
         workbook_id = data.properties["workbook"]["luid"]
@@ -280,6 +281,7 @@ class DagsterTableauTranslator:
                 )
             ).key
             for sheet_id in sheet_ids
+            if sheet_id in data.workspace_data.sheets_by_id
         ]
 
         dashboard_upstream_data_source_ids = data.properties.get("data_source_ids", [])
@@ -292,6 +294,7 @@ class DagsterTableauTranslator:
                 )
             ).key
             for data_source_id in dashboard_upstream_data_source_ids
+            if data_source_id in data.workspace_data.data_sources_by_id
         ]
 
         upstream_keys = sheet_keys + data_source_keys

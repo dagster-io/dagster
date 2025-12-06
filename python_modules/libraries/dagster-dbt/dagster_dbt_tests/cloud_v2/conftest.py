@@ -654,6 +654,45 @@ SAMPLE_SUCCESS_RUN_RESPONSE = get_sample_run_response(
 )
 
 
+def get_sample_run_response_with_logs(
+    run_status: int, job_id: int = TEST_ADHOC_JOB_ID
+) -> Mapping[str, Any]:
+    """Returns a sample run response with realistic run_steps logs."""
+    return {
+        "data": {
+            **get_sample_run_data(run_status=run_status, job_id=job_id),
+            "run_steps": [
+                {
+                    "id": 1,
+                    "run_id": TEST_RUN_ID,
+                    "account_id": TEST_ACCOUNT_ID,
+                    "index": 1,
+                    "status": 10,
+                    "name": "Clone git repository",
+                    "logs": "Cloning into '/tmp/jobs/12345/target'...\nSuccessfully cloned repository.\nChecked out to abc123.",
+                    "debug_logs": "",
+                },
+                {
+                    "id": 2,
+                    "run_id": TEST_RUN_ID,
+                    "account_id": TEST_ACCOUNT_ID,
+                    "index": 2,
+                    "status": 10,
+                    "name": "Invoke dbt with `dbt build`",
+                    "logs": "15:49:32  Running dbt...\n15:49:34  Found 5 models, 13 data tests\n15:49:35  Completed successfully",
+                    "debug_logs": "",
+                },
+            ],
+        },
+        "status": {
+            "code": 200,
+            "is_success": True,
+            "user_message": "Success!",
+            "developer_message": "",
+        },
+    }
+
+
 # Taken from dbt Cloud REST API documentation
 # https://docs.getdbt.com/dbt-cloud/api-v2#/operations/List%20Runs
 def get_sample_list_runs_sample(data: Sequence[Mapping[str, Any]], count: int, total_count: int):

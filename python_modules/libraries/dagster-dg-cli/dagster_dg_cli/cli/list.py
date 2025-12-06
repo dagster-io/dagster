@@ -73,12 +73,18 @@ def DagsterOuterTable(columns: Sequence[str]) -> "Table":
 @dg_path_options
 @cli_telemetry_wrapper
 def list_project_command(target_path: Path, **global_options: object) -> None:
-    """List projects in the current workspace."""
+    """List projects in the current workspace or emit the current project directory."""
     cli_config = normalize_cli_config(global_options, click.get_current_context())
-    dg_context = DgContext.for_workspace_environment(target_path, cli_config)
+    dg_context = DgContext.for_workspace_or_project_environment(target_path, cli_config)
 
-    for project in dg_context.project_specs:
-        click.echo(project.path)
+    if dg_context.is_in_workspace:
+        # In a workspace, list all projects with their relative paths
+        for project in dg_context.project_specs:
+            click.echo(project.path)
+    elif dg_context.is_project:
+        # In a standalone project (not in a workspace), emit the current directory
+        # This allows the command to work in both contexts for CI/CD workflows
+        click.echo(".")
 
 
 # ########################

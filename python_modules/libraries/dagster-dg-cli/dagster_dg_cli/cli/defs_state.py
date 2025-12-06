@@ -168,19 +168,3 @@ def get_updated_defs_state_info_task_and_statuses(
         )
     )
     return refresh_task, statuses
-
-
-async def get_updated_defs_state_info_and_statuses(
-    project_path: Path,
-    defs_state_storage: "DefsStateStorage",
-    management_types: set["DefsStateManagementType"],
-    defs_state_keys: Optional[set[str]] = None,
-) -> tuple[Optional["DefsStateInfo"], dict[str, ComponentStateRefreshStatus]]:
-    """Refreshes the defs state for all selected components within the specified project path,
-    and returns the updated defs state info and statuses.
-    """
-    task, statuses = get_updated_defs_state_info_task_and_statuses(
-        project_path, defs_state_storage, management_types, defs_state_keys
-    )
-    await task
-    return task.result(), statuses

@@ -5,4 +5,3 @@ env:
   # highlight-start
   PYTHON_VERSION: '3.11'
   # highlight-end
-  DAGSTER_CLOUD_FILE: 'dagster_cloud.yaml'

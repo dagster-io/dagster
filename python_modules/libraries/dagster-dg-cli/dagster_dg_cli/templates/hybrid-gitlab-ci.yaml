@@ -1,0 +1,67 @@
+# Dagster Cloud Hybrid Deployment
+# See https://docs.dagster.io/dagster-cloud/getting-started
+
+variables:
+  # The organization name in Dagster Cloud
+  DAGSTER_CLOUD_ORGANIZATION: TEMPLATE_ORGANIZATION_NAME
+  # The API token from https://dagster.cloud/ should be stored in a CI/CD Variable called DAGSTER_CLOUD_API_TOKEN
+  DAGSTER_CLOUD_API_TOKEN: $DAGSTER_CLOUD_API_TOKEN
+
+  # Path to the root folder containing the dagster project
+  DAGSTER_PROJECT_DIR: TEMPLATE_PROJECT_DIR
+
+  # State directory for deploy session
+  DAGSTER_BUILD_STATEDIR: /tmp/dagster-build-state-$CI_PIPELINE_ID
+
+  # The IMAGE_TAG determines the tag for the built Docker image
+  IMAGE_TAG: $CI_COMMIT_SHORT_SHA-$CI_PIPELINE_ID
+
+stages:
+  - deploy
+
+workflow:
+  rules:
+    - if: $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH
+    - if: $CI_PIPELINE_SOURCE == 'merge_request_event'
+
+dagster-cloud-deploy:
+  stage: deploy
+  image: docker:latest
+  services:
+    - docker:dind
+  interruptible: true
+  before_script:
+    # Install Python and uv for running dg CLI
+    - apk add --no-cache python3 py3-pip
+    - pip install --break-system-packages uv
+    - uv pip install dagster dagster-dg-cli dagster-cloud
+  script:
+    # Checkout is automatic in GitLab CI
+
+    # Initialize build session
+    - cd $DAGSTER_PROJECT_DIR
+    - >
+      python -m uv run dg plus deploy start
+      --deployment=TEMPLATE_DEFAULT_DEPLOYMENT_NAME
+      --yes
+
+    # Sync all projects (workspace or single project)
+    - find . -maxdepth 3 -name "pyproject.toml" -type f -execdir python -m uv sync \;
+
+    # Refresh state for any StateBackedComponents in the project
+    - python -m uv run dg plus deploy refresh-defs-state
+
+    # Login to the container registry
+    # TEMPLATE_CONTAINER_REGISTRY_LOGIN_FRAGMENT
+
+    # For each code location, build the docker image and set the build output
+    # TEMPLATE_BUILD_LOCATION_FRAGMENT
+
+    # Deploy all code locations in this build session to Dagster Cloud
+    - python -m uv run dg plus deploy finish --path=$DAGSTER_PROJECT_DIR
+  after_script:
+    # Generate a summary - this runs always() so the summary is generated on success and failure
+    - apk add --no-cache python3 py3-pip 2>/dev/null || true
+    - pip install --break-system-packages uv 2>/dev/null || true
+    - cd $DAGSTER_PROJECT_DIR
+    - python -m uv run dagster-cloud ci status --output-format=markdown || true

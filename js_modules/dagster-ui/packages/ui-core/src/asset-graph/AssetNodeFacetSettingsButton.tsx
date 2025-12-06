@@ -66,7 +66,7 @@ const ExampleAssetNode: AssetNodeFragment = {
   isAutoCreatedStub: false,
   id: '["asset1"]',
   isObservable: false,
-  isPartitioned: false,
+  isPartitioned: true,
   isMaterializable: true,
   jobNames: ['job1'],
   opNames: ['asset1'],
@@ -110,7 +110,12 @@ const ExampleLiveData: LiveDataForNodeWithStaleData = {
     __typename: 'AssetFreshnessInfo',
     currentMinutesLate: 12,
   },
-  partitionStats: null,
+  partitionStats: {
+    numMaterialized: 90,
+    numMaterializing: 0,
+    numPartitions: 100,
+    numFailed: 2,
+  },
   opNames: [],
   assetChecks: ExampleAssetChecks,
 };

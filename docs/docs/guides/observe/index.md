@@ -16,7 +16,7 @@ Dagster+ alerts can notify you of critical events occurring in your deployment, 
 
 ### Asset catalog (Dagster+)
 
-The Dagster+ asset catalog displays assets broken out by compute kind, asset group, [code location](/deployment/code-locations), [tags](/guides/build/assets/metadata-and-tags/tags), owners, and more. You can also create flexible, shareable dashboards organized by asset, owner, tag, or business domain so every stakeholder can monitor performance and act with clarity. For more information, see the [asset catalog guide](/guides/observe/asset-catalog).
+The Dagster+ asset catalog displays assets broken out by compute kind, asset group, [code location](/guides/build/projects), [tags](/guides/build/assets/metadata-and-tags/tags), owners, and more. You can also create flexible, shareable dashboards organized by asset, owner, tag, or business domain so every stakeholder can monitor performance and act with clarity. For more information, see the [asset catalog guide](/guides/observe/asset-catalog).
 
 ### Asset freshness policies
 

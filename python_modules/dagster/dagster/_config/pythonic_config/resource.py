@@ -704,7 +704,7 @@ class PartialResource(
         resource_cls: type[ConfigurableResourceFactory[TResValue]],
         data: dict[str, Any],
     ):
-        resource_pointers, _data_without_resources = separate_resource_params(resource_cls, data)
+        resource_pointers, data_without_resources = separate_resource_params(resource_cls, data)
 
         super().__init__(data=data, resource_cls=resource_cls)  # type: ignore  # extends BaseModel, takes kwargs
 
@@ -724,7 +724,9 @@ class PartialResource(
                 k: v for k, v in resource_pointers.items() if (not _is_fully_configured(v))
             },
             config_schema=infer_schema_from_config_class(
-                resource_cls, fields_to_omit=set(resource_pointers.keys())
+                resource_cls,
+                fields_to_omit=set(resource_pointers.keys()),
+                default=data_without_resources,
             ),
             resource_fn=resource_fn,
             description=resource_cls.__doc__,

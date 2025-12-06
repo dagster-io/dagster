@@ -2,6 +2,7 @@ import React, {useCallback, useContext, useMemo, useState} from 'react';
 import {useRecoilValue} from 'recoil';
 
 import {CodeLocationFilters, flattenCodeLocationRows} from './flattenCodeLocationRows';
+import {DefinitionsSource} from '../graphql/types';
 import {useQueryPersistedState} from '../hooks/useQueryPersistedState';
 import {TruncatedTextWithFullTextOnHover} from '../nav/getLeftNavItemsForOption';
 import {codeLocationStatusAtom} from '../nav/useCodeLocationsStatus';
@@ -44,7 +45,21 @@ export const useCodeLocationPageFilters = () => {
         ? codeLocationStatusData.locationStatusesOrError.entries
         : [];
 
-    return flattenCodeLocationRows(codeLocationStatuses, locationEntries, queryString, filters);
+    // Remove `CONNECTION` entries from the code location list.
+    const codeServerEntries = new Set(
+      locationEntries
+        .filter((entry) => entry.definitionsSource !== DefinitionsSource.CONNECTION)
+        .map((entry) => entry.name),
+    );
+
+    const filteredStatuses = codeLocationStatuses.filter((status) =>
+      codeServerEntries.has(status.name),
+    );
+    const filteredLocationEntries = locationEntries.filter((entry) =>
+      codeServerEntries.has(entry.name),
+    );
+
+    return flattenCodeLocationRows(filteredStatuses, filteredLocationEntries, queryString, filters);
   }, [locationEntries, queryString, filters, codeLocationStatusData]);
 
   const statusFilter = useStaticSetFilter<CodeLocationRowStatusType>({

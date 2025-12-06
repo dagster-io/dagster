@@ -17,7 +17,7 @@ export function useWipeDialog(
   } = useContext(CloudOSSContext);
 
   const {hasWipePermission} = useAssetPermissions(
-    opts?.assetKey || {path: []},
+    opts?.assetKey ? [opts.assetKey] : [],
     opts?.repository?.location.name || '',
   );
 
@@ -43,6 +43,6 @@ export function useWipeDialog(
               onClick={() => setShowing(true)}
             />,
           ]
-        : ([] as JSX.Element[]),
+        : [],
   };
 }

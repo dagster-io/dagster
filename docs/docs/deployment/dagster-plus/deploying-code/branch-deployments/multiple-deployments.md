@@ -77,12 +77,18 @@ For more information about the Kubernetes agent setup and Helm chart values, see
 - [Dagster+ Helm chart values](https://artifacthub.io/packages/helm/dagster-cloud/dagster-cloud-agent?modal=values)
 
 </TabItem>
-<TabItem value="dagster_cloud_yaml" label="dagster_cloud.yaml (Optional queue routing configuration for code locations)">
+<TabItem value="build_yaml" label="build.yaml (Optional queue routing configuration for code locations)">
+
+:::note
+
+If you have an older Dagster+ deployment, you may have a `dagster_cloud.yaml` file instead of a `build.yaml` file.
+
+:::
 
 Whether in the context of a [full deployment](/deployment/dagster-plus/deploying-code/full-deployments) or a [branch deployment](/deployment/dagster-plus/deploying-code/branch-deployments), you can configure the code location to be served on a specific agent queue:
 
 ```yaml
-# dagster_cloud.yaml
+# build.yaml
 locations:
   - location_name: <location name>
     # The named queue that this code location will be served on. If not set, the default queue is used.
@@ -92,7 +98,7 @@ locations:
 For more information about agent queue routing or code location configuration, refer to:
 
 - [Agent queue routing](/deployment/dagster-plus/hybrid/multiple#routing-requests-to-specific-agents)
-- [dagster_cloud.yaml code location configuration reference](/deployment/code-locations/dagster-cloud-yaml)
+- [build.yaml code location configuration reference](/deployment/dagster-plus/management/build-yaml)
 
 </TabItem>
 
@@ -100,7 +106,7 @@ For more information about agent queue routing or code location configuration, r
 
 :::info
 
-The [base deployment](/deployment/dagster-plus/deploying-code/branch-deployments/setting-up-branch-deployments#changing-the-base-deployment) of a branch deployment does not affect which agents will serve the branch deployment.
+The [base deployment](/deployment/dagster-plus/deploying-code/branch-deployments/configuring-branch-deployments#changing-the-base-deployment) of a branch deployment does not affect which agents will serve the branch deployment.
 
 :::
 

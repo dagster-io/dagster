@@ -270,7 +270,7 @@ Once you have run your pipeline locally, you can optionally deploy it to product
 <Tabs>
 <TabItem value="oss" label="OSS">
 
-To deploy to OSS production, see the [OSS deployment docs](/deployment/oss). If you have already set up a production OSS deployment with an existing project, you will need to create a [`workspace.yaml` file](/deployment/code-locations/workspace-yaml) to tell your deployment where to find each project (also known as a code location).
+To deploy to OSS production, see the [OSS deployment docs](/deployment/oss). If you have already set up a production OSS deployment with an existing project, you will need to create a [`workspace.yaml` file](/guides/build/projects/workspaces/workspace-yaml) to tell your deployment where to find each project (also known as a code location).
 
 </TabItem>
 <TabItem value="hybrid" label="Dagster+ Hybrid">
@@ -279,7 +279,7 @@ To deploy to OSS production, see the [OSS deployment docs](/deployment/oss). If 
 2. In the root directory of your project, run [`dg scaffold build-artifacts`](/api/clis/dg-cli/dg-cli-reference#dg-scaffold) to create a `build.yaml` deployment configuration file and a Dockerfile.
 3. To deploy to the cloud, you can either:
    - Perform a one-time deployment with the [`dagster-cloud` CLI](/api/clis/dagster-cloud-cli)
-   - [Set up CI/CD](/deployment/dagster-plus/deploying-code/ci-cd/ci-cd-in-hybrid) for continuous deployment.
+   - [Set up CI/CD](/deployment/dagster-plus/deploying-code/configuring-ci-cd) for continuous deployment.
 
 :::tip
 
@@ -296,5 +296,5 @@ Congratulations! You've just built and run your first pipeline with Dagster. Nex
 
 - Follow the [Tutorial](/dagster-basics-tutorial) to learn how to build a more complex ETL pipeline
 - Check out our [Python primer series](https://dagster.io/blog/python-packages-primer-1) for an in-depth tour of Python modules, packages and imports
-- [Create your own Dagster project](/guides/build/projects/creating-a-new-project), [add assets](/guides/build/assets/defining-assets) and [integrations](/integrations/libraries), and [automate](/guides/automate) your pipeline
+- [Create your own Dagster project](/guides/build/projects/creating-projects), [add assets](/guides/build/assets/defining-assets) and [integrations](/integrations/libraries), and [automate](/guides/automate) your pipeline
 - Test your pipelines with [asset checks](/guides/test/asset-checks) and [debug them in real time with pdb](/guides/log-debug/debugging/debugging-pdb)

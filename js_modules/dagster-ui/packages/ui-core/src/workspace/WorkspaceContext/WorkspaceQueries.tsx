@@ -142,6 +142,7 @@ export const PARTIAL_WORKSPACE_LOCATION_NODE_FRAGMENT = gql`
       name
       enabled
     }
+    definitionsSource
     locationOrLoadError {
       ... on RepositoryLocation {
         id
@@ -299,6 +300,7 @@ export const WORKSPACE_LOCATION_NODE_FRAGMENT = gql`
       ...WorkspaceRepositoryLocation
       ...PythonErrorFragment
     }
+    definitionsSource
   }
   fragment WorkspaceRepositoryLocation on RepositoryLocation {
     id

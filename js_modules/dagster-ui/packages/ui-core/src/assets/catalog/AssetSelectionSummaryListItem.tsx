@@ -1,5 +1,6 @@
 import {
   Box,
+  Colors,
   HorizontalControls,
   ListItem,
   MiddleTruncate,
@@ -27,7 +28,13 @@ export const AssetSelectionSummaryListItemFromSelection = React.memo(
     return (
       <AssetSelectionSummaryListItemWithHealthStatus
         index={index}
-        icon={<InsightsIcon name={item.icon as InsightsIconType} size={16} />}
+        icon={
+          <InsightsIcon
+            name={item.icon as InsightsIconType}
+            size={16}
+            color={Colors.textDefault()}
+          />
+        }
         label={item.name}
         link={item.link}
         statusJsx={jsx}

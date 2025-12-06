@@ -476,12 +476,7 @@ const Table = React.memo(
     );
 
     const sidebar = sidebarExpanded ? (
-      <AssetCatalogTableSidebar
-        assets={assets}
-        loading={loading}
-        selection={selection}
-        onChangeSelection={onChangeSelection}
-      />
+      <AssetCatalogTableSidebar selection={selection} onChangeSelection={onChangeSelection} />
     ) : (
       <div />
     );
@@ -511,6 +506,7 @@ const Table = React.memo(
           first={sidebar}
           firstInitialPercent={25}
           second={table}
+          hideHandleWhenCollapsed
         />
       </>
     );

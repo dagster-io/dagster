@@ -87,7 +87,9 @@ class CommandStepBuilder:
         plugins: Optional[list[dict[str, object]]] = None,
     ):
         self._secrets = {}
-        self._kubernetes_secrets = []
+        self._k8s_secrets = []
+        self._k8s_volume_mounts = []
+        self._k8s_volumes = []
         self._docker_settings = None
 
         retry: dict[str, Any] = {
@@ -247,7 +249,15 @@ class CommandStepBuilder:
         return self
 
     def with_kubernetes_secret(self, secret: str) -> "CommandStepBuilder":
-        self._kubernetes_secrets.append(secret)
+        self._k8s_secrets.append(secret)
+        return self
+
+    def with_kubernetes_volume(self, volume: dict[str, Any]) -> "CommandStepBuilder":
+        self._k8s_volumes.append(volume)
+        return self
+
+    def with_kubernetes_volume_mount(self, volume_mount: dict[str, Any]) -> "CommandStepBuilder":
+        self._k8s_volume_mounts.append(volume_mount)
         return self
 
     def concurrency(self, limit):
@@ -369,8 +379,6 @@ class CommandStepBuilder:
             buildkite_shell = "/bin/sh -e -c"
 
         sidecars = []
-        volumes = []
-        volume_mounts = []
         if self._requires_docker:
             sidecars.append(
                 {
@@ -399,13 +407,13 @@ class CommandStepBuilder:
                     },
                 }
             )
-            volumes.append(
+            self._k8s_volumes.append(
                 {
                     "name": "docker-sock",
                     "emptyDir": {},
                 }
             )
-            volume_mounts.append(
+            self._k8s_volume_mounts.append(
                 {
                     "mountPath": "/var/run/",
                     "name": "docker-sock",
@@ -477,15 +485,15 @@ class CommandStepBuilder:
                             ),
                             *[
                                 {"secretRef": {"name": secret_name}}
-                                for secret_name in self._kubernetes_secrets
+                                for secret_name in self._k8s_secrets
                             ],
                         ],
                         "resources": self._get_resources(),
-                        "volumeMounts": volume_mounts,
+                        "volumeMounts": self._k8s_volume_mounts,
                         "securityContext": {"capabilities": {"add": ["SYS_PTRACE"]}},
                     },
                 ],
-                "volumes": volumes,
+                "volumes": self._k8s_volumes,
             },
         }
 
@@ -498,7 +506,7 @@ class CommandStepBuilder:
         if self._requires_docker is False and not on_k8s:
             raise Exception("you specified .no_docker() but you're not running on kubernetes")
 
-        if not on_k8s and self._kubernetes_secrets:
+        if not on_k8s and self._k8s_secrets:
             raise Exception(
                 "Specified a kubernetes secret on a non-kubernetes queue. Please call .on_queue(BuildkiteQueue.KUBERNETES_GKE) or .on_queue(BuildkiteQueue.KUBERNETES_EKS) if you want to run on k8s"
             )
