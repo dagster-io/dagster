@@ -1,7 +1,7 @@
 from dataclasses import dataclass, field
 from functools import cached_property
 from pathlib import Path
-from typing import Annotated, Optional
+from typing import Annotated, Optional, List
 
 import dagster as dg
 from dagster._annotations import beta, public
@@ -14,7 +14,7 @@ from dagster.components.utils.defs_state import (
     ResolvedDefsStateConfig,
 )
 from dagster_shared.serdes.serdes import deserialize_value
-from pydantic import Field
+from pydantic import Field, BaseModel
 
 from dagster_looker.api.components.translation import (
     ResolvedMultilayerTranslationFn,
@@ -26,8 +26,11 @@ from dagster_looker.api.dagster_looker_api_translator import (
     LookerInstanceData,
     LookerStructureData,
     LookerStructureType,
+    RequestStartPdtBuild,
+    LookmlView,
 )
 from dagster_looker.api.resource import LookerApiDefsLoader, LookerFilter, LookerResource
+from dagster_looker.api.assets import core_looker_pdt_execution 
 
 
 class LookerInstanceArgs(Model, Resolvable):
@@ -67,7 +70,6 @@ class LookerFilterArgs(Model, Resolvable):
         description="If True, only load explores that are used in dashboards. If False, load all explores.",
     )
 
-
 def resolve_looker_filter(context, model) -> Optional[LookerFilter]:
     """Resolver function for LookerFilter that properly resolves templated strings."""
     if model is None:
@@ -77,7 +79,6 @@ def resolve_looker_filter(context, model) -> Optional[LookerFilter]:
         dashboard_folders=args.dashboard_folders,
         only_fetch_explores_used_in_dashboards=args.only_fetch_explores_used_in_dashboards,
     )
-
 
 @beta
 @public
@@ -133,7 +134,27 @@ class LookerComponent(StateBackedComponent, Resolvable):
             ],
         ),
     ] = None
+    
     translation: Optional[ResolvedMultilayerTranslationFn] = None
+    
+    pdt_builds: Annotated[
+        Optional[list[RequestStartPdtBuild]],
+        Resolver.default(
+            model_field_type=RequestStartPdtBuild,
+            description=("A list of PDT build requests. Each request defined here will be converted "
+                         "into a materializable asset definition representing that PDT build."),
+            examples=[
+                [
+                    {
+                        "model_name": "my_model",
+                        "view_name": "my_pdt_view",
+                        "force_rebuild": "true",
+                    }
+                ]
+            ],
+        ),
+    ] = None
+
     defs_state: ResolvedDefsStateConfig = field(
         default_factory=DefsStateConfigArgs.legacy_code_server_snapshots
     )
@@ -186,6 +207,7 @@ class LookerComponent(StateBackedComponent, Resolvable):
                             }
                         )
         """
+                
         return self._base_translator.get_asset_spec(looker_structure)
 
     def _load_asset_specs(self, state: LookerInstanceData) -> list[AssetSpec]:
@@ -237,6 +259,37 @@ class LookerComponent(StateBackedComponent, Resolvable):
         state = instance_data.to_state(sdk)
         state_path.write_text(dg.serialize_value(state))
 
+    def _build_pdt_assets_definition(
+        self, request: RequestStartPdtBuild
+    ) -> dg.AssetsDefinition:
+        
+        spec = self.translator.get_asset_spec(
+            LookerApiTranslatorStructureData(
+                structure_data=LookerStructureData(
+                    structure_type=LookerStructureType.VIEW,
+                    data=LookmlView(
+                        view_name=request.view_name,
+                        sql_table_name=None,
+                    ),
+                ),
+                instance_data=None,
+            )
+        )
+
+        @dg.multi_asset(
+            specs=[spec],
+            name=f"{request.model_name}_{request.view_name}"
+        )
+        def pdt_asset(context: dg.AssetExecutionContext):
+            core_looker_pdt_execution(
+                looker=self.looker_resource,
+                request=request,
+                log=context.log,
+                run_id=context.run_id
+            )
+
+        return pdt_asset
+
     def build_defs_from_state(
         self, context: ComponentLoadContext, state_path: Optional[Path]
     ) -> dg.Definitions:
@@ -245,11 +298,16 @@ class LookerComponent(StateBackedComponent, Resolvable):
             return dg.Definitions()
 
         sdk = self.looker_resource.get_sdk()
-
         # Deserialize and convert from state format
         state = deserialize_value(state_path.read_text(), dict)
         instance_data = LookerInstanceData.from_state(sdk, state)
-
         specs = self._load_asset_specs(instance_data)
 
-        return dg.Definitions(assets=specs)
+        # If PDT builds are configured, build corresponding executable asset definitions
+        pdt_assets = []
+        if self.pdt_builds:
+            for pdt_config in self.pdt_builds:
+                request = RequestStartPdtBuild(**pdt_config.model_dump())
+                pdt_assets.append(self._build_pdt_assets_definition(request))
+        
+        return dg.Definitions(assets=[*specs, *pdt_assets])

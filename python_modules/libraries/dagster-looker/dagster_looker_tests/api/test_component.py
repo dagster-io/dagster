@@ -5,9 +5,10 @@ import copy
 from collections.abc import Callable, Iterator, Mapping
 from contextlib import contextmanager
 from typing import Any, Optional
+from unittest.mock import MagicMock
 
 import pytest
-from dagster import AssetKey
+from dagster import AssetKey, resource
 from dagster._core.definitions.assets.definition.asset_spec import AssetSpec
 from dagster._core.definitions.definitions_class import Definitions
 from dagster._utils.test.definitions import scoped_definitions_load_context
@@ -120,3 +121,26 @@ class TestLookerTranslation(TestTranslation):
 
                 assets_def = defs.resolve_assets_def(key)
                 assert assertion(assets_def.get_asset_spec(key))
+
+
+@resource
+def mock_looker_resource(looker_api_mocks: Any):
+    return MagicMock()
+
+
+def test_pdt_assets_configuration(looker_api_mocks):
+    """Test that PDT assets are created from YAML configuration."""
+    body = copy.deepcopy(BASIC_LOOKER_COMPONENT_BODY)
+    body["attributes"]["pdt_builds"] = [
+        {"model_name": "my_model", "view_name": "my_pdt_view", "force_rebuild": "true"},
+        {"model_name": "sales_model", "view_name": "monthly_report", "workspace": "dev"},
+    ]
+
+    with setup_looker_component(defs_yaml_contents=body) as (component, defs):
+        all_keys = defs.resolve_asset_graph().get_all_asset_keys()
+
+        assert AssetKey(["view", "my_pdt_view"]) in all_keys
+
+        assert AssetKey(["view", "monthly_report"]) in all_keys
+
+        assert len(component.pdt_builds) == 2
