@@ -24,6 +24,9 @@ Component
 .. autoclass:: DatabricksAssetBundleComponent
     :members:
 
+.. autoclass:: DatabricksWorkspaceComponent
+    :members:
+
 APIs
 ----
 
