@@ -1,13 +1,11 @@
 import asyncio
-from typing import Any, Dict, List, Optional
+from typing import Any, Optional
 
 import aiohttp
-
 from dagster import get_dagster_logger
 
 from dagster_databricks.components.databricks_asset_bundle.configs import Job
-
-from .schema import DatabricksFilter
+from dagster_databricks.components.databricks_workspace.schema import DatabricksFilter
 
 logger = get_dagster_logger()
 
@@ -16,7 +14,9 @@ class DatabricksFetcherError(RuntimeError):
     pass
 
 
-async def _fetch_json(session: aiohttp.ClientSession, url: str, params: Optional[Dict[str, Any]] = None) -> Dict[str, Any]:
+async def _fetch_json(
+    session: aiohttp.ClientSession, url: str, params: Optional[dict[str, Any]] = None
+) -> dict[str, Any]:
     async with session.get(url, params=params) as resp:
         text = await resp.text()
         if resp.status >= 400:
@@ -32,8 +32,12 @@ def _extract_host_and_token_from_client(workspace_client: Any) -> tuple[str, str
     candidates = []
 
     # Direct attributes
-    candidates.append((getattr(workspace_client, "host", None), getattr(workspace_client, "token", None)))
-    candidates.append((getattr(workspace_client, "_host", None), getattr(workspace_client, "_token", None)))
+    candidates.append(
+        (getattr(workspace_client, "host", None), getattr(workspace_client, "token", None))
+    )
+    candidates.append(
+        (getattr(workspace_client, "_host", None), getattr(workspace_client, "_token", None))
+    )
 
     # Common container attributes
     for attr in ("config", "_config", "client", "_client", "api_client", "_api_client"):
@@ -63,7 +67,9 @@ def _extract_host_and_token_from_client(workspace_client: Any) -> tuple[str, str
     )
 
 
-async def fetch_databricks_workspace_data(workspace_client: Any, databricks_filter: DatabricksFilter) -> List[Any]:
+async def fetch_databricks_workspace_data(
+    workspace_client: Any, databricks_filter: DatabricksFilter
+) -> list[Any]:
     """Fetch Databricks jobs and full job details asynchronously.
 
     Steps:
@@ -83,12 +89,12 @@ async def fetch_databricks_workspace_data(workspace_client: Any, databricks_filt
     timeout = aiohttp.ClientTimeout(total=60)
     async with aiohttp.ClientSession(headers=headers, timeout=timeout) as session:
         # Step A: list jobs with pagination
-        jobs_list: List[Dict[str, Any]] = []
+        jobs_list: list[dict[str, Any]] = []
         next_page_token: Optional[str] = None
         list_url = f"{host}/api/2.1/jobs/list"
 
         while True:
-            params: Dict[str, Any] = {}
+            params: dict[str, Any] = {}
             if next_page_token:
                 params["page_token"] = next_page_token
             else:
@@ -110,7 +116,7 @@ async def fetch_databricks_workspace_data(workspace_client: Any, databricks_filt
 
         sem = asyncio.Semaphore(20)
 
-        async def _fetch_full(job_info: Dict[str, Any]) -> Any:
+        async def _fetch_full(job_info: dict[str, Any]) -> Any:
             job_id = job_info.get("job_id") or job_info.get("jobId")
             if not job_id:
                 raise DatabricksFetcherError(f"Job missing job_id: {job_info}")

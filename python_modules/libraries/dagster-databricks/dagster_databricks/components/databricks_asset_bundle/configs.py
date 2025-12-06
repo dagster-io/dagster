@@ -2,7 +2,7 @@ from abc import ABC, abstractmethod
 from collections.abc import Mapping
 from functools import cached_property
 from pathlib import Path
-from typing import Any, Generic, Optional, Union, List, Dict
+from typing import Any, Generic, Optional, Union
 
 import yaml
 from dagster import (
@@ -619,9 +619,11 @@ class ResolvedDatabricksExistingClusterConfig(Resolvable, Model):
 class ResolvedDatabricksServerlessConfig(Resolvable, Model):
     is_serverless: bool = True
 
+
 @whitelist_for_serdes
 class Job(Model):
     """Represents a Databricks Job structure for serialization."""
+
     job_id: int
-    settings: Optional[Dict[str, Any]] = None
-    tasks: Optional[List[Dict[str, Any]]] = None
+    settings: Optional[dict[str, Any]] = None
+    tasks: Optional[list[dict[str, Any]]] = None
