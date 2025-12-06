@@ -4,10 +4,8 @@ from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Annotated, Any, Optional
 
-import dagster as dg
-from dagster import AssetExecutionContext, AssetSpec, Resolvable, multi_asset
+from dagster import AssetExecutionContext, AssetKey, AssetSpec, Definitions, Resolvable, multi_asset
 from dagster._annotations import beta
-from dagster._core.definitions.definitions_class import Definitions
 from dagster.components import Resolver
 from dagster.components.component.state_backed_component import StateBackedComponent
 from dagster.components.utils.defs_state import (
@@ -28,8 +26,6 @@ from dagster_databricks.components.databricks_workspace.schema import (
     DatabricksWorkspaceConfig,
     resolve_databricks_filter,
 )
-
-DatabricksJobInfo = dict[str, Any]
 
 
 def _snake_case(name: str) -> str:
@@ -72,10 +68,8 @@ class DatabricksWorkspaceComponent(StateBackedComponent, Resolvable):
     def get_state(self) -> list[Job]:
         """Fetch current workspace state (list of Jobs)."""
         client = WorkspaceClient(host=self.workspace.host, token=self.workspace.token)
-
         filter_config = self.databricks_filter or DatabricksFilterConfig()
         databricks_filter = resolve_databricks_filter(filter_config)
-
         return asyncio.run(fetch_databricks_workspace_data(client, databricks_filter))
 
     def write_state_to_path(self, state_path: Path) -> None:
@@ -83,23 +77,24 @@ class DatabricksWorkspaceComponent(StateBackedComponent, Resolvable):
         jobs = self.get_state()
         state_path.write_text(serialize_value(jobs))
 
-    def build_defs_from_state(self, context: Any, state_path: Path) -> dg.Definitions:
+    def build_defs_from_state(self, context: Any, state_path: Path) -> Definitions:
         """Build Dagster Definitions from the cached state."""
         if not state_path or not state_path.exists():
-            return dg.Definitions()
+            return Definitions()
 
         jobs_state = deserialize_value(state_path.read_text(), list[Job])
 
         databricks_assets = []
         for job in jobs_state:
             tasks = getattr(job, "tasks", []) if not isinstance(job, dict) else job.get("tasks", [])
-
             for task in tasks:
-                specs = self.get_asset_specs(task)
-
+                specs = self.get_asset_specs(job_name=job.name, task=task)
                 asset_name = specs[0].key.path[-1] if specs else f"task_{id(task)}"
 
                 @multi_asset(name=asset_name, specs=specs)
+                # TODO: Implement execution logic.
+                # This will require refactoring `submit_and_poll` from DatabricksAssetBundleComponent
+                # into a shared utility to allow execution via the workspace client.
                 def _task_multi_asset(context: AssetExecutionContext):
                     context.log.info(f"Executing Databricks task: {asset_name}")
                     return None
@@ -108,7 +103,7 @@ class DatabricksWorkspaceComponent(StateBackedComponent, Resolvable):
 
         return Definitions(assets=databricks_assets)
 
-    def get_asset_specs(self, task: Any) -> list[AssetSpec]:
+    def get_asset_specs(self, job_name: str, task: Any) -> list[AssetSpec]:
         """Return a list of AssetSpec objects for the given task."""
         if isinstance(task, dict):
             task_key = task.get("task_key")
@@ -124,18 +119,18 @@ class DatabricksWorkspaceComponent(StateBackedComponent, Resolvable):
                     group_name=user_config.group,
                     description=user_config.description,
                     kinds={"databricks"},
-                    metadata={"task_key": task_key},
+                    metadata={"task_key": task_key, "job_name": job_name},
                 )
             ]
 
-        task_name = task_key or "unknown_task"
-        key = _snake_case(task_name)
+        clean_job = _snake_case(job_name)
+        clean_task = _snake_case(task_key or "unknown")
 
         return [
             AssetSpec(
-                key=key,
-                description=f"Databricks task {task_name}",
+                key=AssetKey([clean_job, clean_task]),
+                description=f"Databricks task {clean_task} in job {job_name}",
                 kinds={"databricks"},
-                metadata={"task_key": task_key} if task_key else {},
+                metadata={"task_key": task_key, "job_name": job_name} if task_key else {},
             )
         ]

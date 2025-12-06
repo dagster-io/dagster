@@ -123,16 +123,19 @@ async def fetch_databricks_workspace_data(
 
             params = {"job_id": job_id}
 
-            async with sem:
-                full = await _fetch_json(session, get_url, params=params)
+            try:
+                async with sem:
+                    full_json = await _fetch_json(session, get_url, params=params)
 
-            # Attempt to deserialize into Job if available
-            if Job is not None:
-                try:
-                    return Job(**full)
-                except Exception as e:
-                    logger.warning(f"Could not instantiate Job class for job {job_id}: {e}")
-                    return full
+                settings = full_json.get("settings", {})
+                job_name = settings.get("name", f"job_{job_id}")
+                tasks = settings.get("tasks", [])
+
+                return Job(job_id=job_id, name=job_name, tasks=tasks)
+
+            except Exception as e:
+                logger.warning(f"Failed to process job {job_id}: {e}")
+                return None
 
         tasks = [_fetch_full(job) for job in filtered_jobs]
         results = await asyncio.gather(*tasks, return_exceptions=False)

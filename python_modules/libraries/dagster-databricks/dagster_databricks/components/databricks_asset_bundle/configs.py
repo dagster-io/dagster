@@ -625,5 +625,5 @@ class Job(Model):
     """Represents a Databricks Job structure for serialization."""
 
     job_id: int
-    settings: Optional[dict[str, Any]] = None
+    name: str = "unknown_job"
     tasks: Optional[list[dict[str, Any]]] = None

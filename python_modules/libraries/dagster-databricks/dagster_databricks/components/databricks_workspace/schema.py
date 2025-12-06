@@ -1,14 +1,15 @@
 from collections.abc import Callable
-from typing import Any, Optional
+from dataclasses import dataclass
+from typing import Any, Optional, Union
 
-from dagster._record import record
 from pydantic import BaseModel
 
-# Type alias for raw Databricks job info
-DatabricksJobInfo = dict[str, Any]
+from dagster_databricks.components.databricks_asset_bundle.configs import Job
+
+DatabricksJobInfo = Union[dict[str, Any], Job]
 
 
-@record
+@dataclass
 class DatabricksFilter:
     include_job: Callable[[DatabricksJobInfo], bool]
 
@@ -27,7 +28,13 @@ def resolve_databricks_filter(config: DatabricksFilterConfig) -> DatabricksFilte
         allowed_ids = set(config.include_jobs.job_ids)
 
         def include_job(job: DatabricksJobInfo) -> bool:
-            return job.get("job_id") in allowed_ids
+            job_id = None
+            if isinstance(job, dict):
+                job_id = job.get("job_id") or job.get("jobId")
+            elif hasattr(job, "job_id"):
+                job_id = job.job_id
+
+            return job_id in allowed_ids
     else:
 
         def include_job(job: DatabricksJobInfo) -> bool:
