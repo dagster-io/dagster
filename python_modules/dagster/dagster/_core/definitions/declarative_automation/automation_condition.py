@@ -764,6 +764,23 @@ class AutomationCondition(ABC, Generic[T_EntityKey]):
 
     @public
     @staticmethod
+    def all_deps_checks_passed() -> "DepsAutomationCondition":
+        """Returns an AutomationCondition that is true for any partition where all upstream
+        checks have passed, or will be requested on this tick.
+
+        In-tick requests are allowed to enable creating runs that target both a parent with
+        blocking checks and a child. Even though the checks have not currently passed, if
+        they fail within the run, the run machinery will prevent the child from being
+        materialized.
+        """
+        return AutomationCondition.all_deps_match(
+            AutomationCondition.all_checks_match(
+                AutomationCondition.check_passed() | AutomationCondition.will_be_requested(),
+            ).with_label("all_checks_passed")
+        ).with_label("all_deps_checks_passed")
+
+    @public
+    @staticmethod
     def all_deps_updated_since_cron(
         cron_schedule: str, cron_timezone: str = "UTC"
     ) -> "DepsAutomationCondition":
