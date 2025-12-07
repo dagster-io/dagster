@@ -1,7 +1,8 @@
 from abc import abstractmethod
 from collections.abc import Generator, Sequence
 from contextlib import contextmanager
-from typing import Optional, cast
+from enum import Enum
+from typing import Optional, cast, Union
 
 from dagster import IOManagerDefinition, OutputContext, io_manager
 from dagster._config.pythonic_config import ConfigurableIOManagerFactory
@@ -21,6 +22,12 @@ from pydantic import Field
 from dagster_gcp.bigquery.utils import setup_gcp_creds
 
 BIGQUERY_DATETIME_FORMAT = "%Y-%m-%d %H:%M:%S"
+
+
+class BigQueryWriteMode(str, Enum):
+    TRUNCATE = "truncate"
+    APPEND = "append"
+    REPLACE = "replace"
 
 
 def build_bigquery_io_manager(
@@ -153,7 +160,7 @@ def build_bigquery_io_manager(
         """
         mgr = DbIOManager(
             type_handlers=type_handlers,
-            db_client=BigQueryClient(),
+            db_client=BigQueryClient(write_mode=init_context.resource_config.get("write_mode")),
             io_manager_name="BigQueryIOManager",
             database=init_context.resource_config["project"],
             schema=init_context.resource_config.get("dataset"),
@@ -258,7 +265,21 @@ class BigQueryIOManager(ConfigurableIOManagerFactory):
         After the run completes, the file will be deleted, and ``GOOGLE_APPLICATION_CREDENTIALS`` will be
         unset. The key must be base64 encoded to avoid issues with newlines in the keys. You can retrieve
         the base64 encoded with this shell command: ``cat $GOOGLE_APPLICATION_CREDENTIALS | base64``
-    """
+   To change the write mode (default is "truncate"), you can set the ``write_mode`` configuration.
+        Supported modes: "truncate", "replace", "append".
+
+        .. code-block:: python
+
+            defs = Definitions(
+                assets=[my_table],
+                resources={
+                    "io_manager": BigQueryIOManager(
+                        project=EnvVar("GCP_PROJECT"),
+                        write_mode="replace"
+                    )
+                }
+            )
+     """
 
     project: str = Field(description="The GCP project to use.")
     dataset: Optional[str] = Field(
@@ -300,6 +321,10 @@ class BigQueryIOManager(ConfigurableIOManagerFactory):
             " queries (loading and reading from tables)."
         ),
     )
+    write_mode: BigQueryWriteMode = Field(
+        default=BigQueryWriteMode.TRUNCATE,
+        description="Write mode to use for non-partitioned table cleanup: truncate, append, or replace.",
+    )
 
     @staticmethod
     @abstractmethod
@@ -311,7 +336,7 @@ class BigQueryIOManager(ConfigurableIOManagerFactory):
 
     def create_io_manager(self, context) -> Generator:
         mgr = DbIOManager(
-            db_client=BigQueryClient(),
+            db_client=BigQueryClient(write_mode=self.write_mode),
             io_manager_name="BigQueryIOManager",
             database=self.project,
             schema=self.dataset,
@@ -326,10 +351,35 @@ class BigQueryIOManager(ConfigurableIOManagerFactory):
 
 
 class BigQueryClient(DbClient):
-    @staticmethod
-    def delete_table_slice(context: OutputContext, table_slice: TableSlice, connection) -> None:
+    def __init__(self, write_mode: Optional[Union[BigQueryWriteMode, str]] = BigQueryWriteMode.TRUNCATE):
+        # Coerce string inputs (from raw config) to the enum, fallback to TRUNCATE on invalid values
+        if isinstance(write_mode, str):
+            try:
+                write_mode = BigQueryWriteMode(write_mode)
+            except ValueError:
+                write_mode = BigQueryWriteMode.TRUNCATE
+
+        self.write_mode = write_mode
+
+    def delete_table_slice(self, context: OutputContext, table_slice: TableSlice, connection) -> None:
         try:
-            connection.query(_get_cleanup_statement(table_slice)).result()
+            # If partitioned, keep existing behavior (delete matching partitions)
+            if table_slice.partition_dimensions:
+                connection.query(_get_cleanup_statement(table_slice)).result()
+                return
+
+            # Non-partitioned tables: behavior depends on configured write_mode
+            if self.write_mode == BigQueryWriteMode.TRUNCATE:
+                connection.query(
+                    f"TRUNCATE TABLE `{table_slice.database}.{table_slice.schema}.{table_slice.table}`"
+                ).result()
+            elif self.write_mode == BigQueryWriteMode.APPEND:
+                # Do nothing; preserve existing data and append
+                return
+            elif self.write_mode == BigQueryWriteMode.REPLACE:
+                connection.query(
+                    f"DROP TABLE IF EXISTS `{table_slice.database}.{table_slice.schema}.{table_slice.table}`"
+                ).result()
         except NotFound:
             # table doesn't exist yet, so ignore the error
             pass
