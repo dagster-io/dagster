@@ -2,7 +2,7 @@ from abc import abstractmethod
 from collections.abc import Generator, Sequence
 from contextlib import contextmanager
 from enum import Enum
-from typing import Optional, cast, Union
+from typing import Optional, Union, cast
 
 from dagster import IOManagerDefinition, OutputContext, io_manager
 from dagster._config.pythonic_config import ConfigurableIOManagerFactory
@@ -265,7 +265,7 @@ class BigQueryIOManager(ConfigurableIOManagerFactory):
         After the run completes, the file will be deleted, and ``GOOGLE_APPLICATION_CREDENTIALS`` will be
         unset. The key must be base64 encoded to avoid issues with newlines in the keys. You can retrieve
         the base64 encoded with this shell command: ``cat $GOOGLE_APPLICATION_CREDENTIALS | base64``
-   To change the write mode (default is "truncate"), you can set the ``write_mode`` configuration.
+    To change the write mode (default is "truncate"), you can set the ``write_mode`` configuration.
         Supported modes: "truncate", "replace", "append".
 
         .. code-block:: python
@@ -279,7 +279,7 @@ class BigQueryIOManager(ConfigurableIOManagerFactory):
                     )
                 }
             )
-     """
+    """
 
     project: str = Field(description="The GCP project to use.")
     dataset: Optional[str] = Field(
@@ -353,6 +353,9 @@ class BigQueryIOManager(ConfigurableIOManagerFactory):
 class BigQueryClient(DbClient):
     def __init__(self, write_mode: Optional[Union[BigQueryWriteMode, str]] = BigQueryWriteMode.TRUNCATE):
         # Coerce string inputs (from raw config) to the enum, fallback to TRUNCATE on invalid values
+        if write_mode is None:
+            write_mode = BigQueryWriteMode.TRUNCATE
+            
         if isinstance(write_mode, str):
             try:
                 write_mode = BigQueryWriteMode(write_mode)

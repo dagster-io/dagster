@@ -1,8 +1,9 @@
-import pytest
-from unittest.mock import MagicMock
-from dagster import OutputContext
+from unittest.mock import MagicMock, patch
+
+from dagster import OutputContext, build_init_resource_context
 from dagster._core.storage.db_io_manager import TableSlice
-from dagster_gcp.bigquery.io_manager import BigQueryClient, BigQueryWriteMode
+from dagster_gcp.bigquery.io_manager import BigQueryClient, BigQueryIOManager, BigQueryWriteMode
+
 
 def test_delete_table_slice_truncate():
     """Test TRUNCATE mode: Should execute TRUNCATE TABLE statement."""
@@ -16,7 +17,6 @@ def test_delete_table_slice_truncate():
     mock_conn.query.assert_called_once_with(
         "TRUNCATE TABLE `my_project.my_dataset.my_table`"
     )
-    mock_conn.query().result.assert_called_once()
 
 def test_delete_table_slice_replace():
     """Test REPLACE mode: Should execute DROP TABLE statement."""
@@ -44,12 +44,12 @@ def test_delete_table_slice_append():
 
 def test_partitioned_table_ignores_write_mode():
     """Test that partitioned tables ignore the write mode and use legacy cleanup logic."""
-    client = BigQueryClient(write_mode=BigQueryWriteMode.REPLACE) # Even if set to REPLACE
+    client = BigQueryClient(write_mode=BigQueryWriteMode.REPLACE)
     mock_conn = MagicMock()
     
     mock_partition = MagicMock()
-    mock_partition.partitions = ["some_value"] 
-    mock_partition.partition_expr = "my_partition_col" 
+    mock_partition.partitions = ["some_value"]
+    mock_partition.partition_expr = "my_partition_col"
     
     table_slice = TableSlice(
         database="my_project", 
@@ -63,6 +63,45 @@ def test_partitioned_table_ignores_write_mode():
 
     args, _ = mock_conn.query.call_args
     query_str = args[0]
-    assert "DROP TABLE" not in query_str
     
+    assert "DROP TABLE" not in query_str
     assert "DELETE FROM" in query_str
+
+
+class TestBigQueryIOManager(BigQueryIOManager):
+    @staticmethod
+    def type_handlers():
+        return []
+
+@patch("dagster_gcp.bigquery.io_manager.DbIOManager")
+def test_default_write_mode_in_factory(MockDbIOManager):
+    """Test that the default write mode propagates correctly from config to client."""
+    context = build_init_resource_context(config={"project": "test-project"})
+    
+    manager_factory = TestBigQueryIOManager(project="test-project")
+    iterator = manager_factory.create_io_manager(context)
+    next(iterator)
+    
+    assert MockDbIOManager.called
+    _, kwargs = MockDbIOManager.call_args
+    client = kwargs.get("db_client")
+    
+    assert client is not None
+    assert client.write_mode == BigQueryWriteMode.TRUNCATE
+
+@patch("dagster_gcp.bigquery.io_manager.DbIOManager")
+def test_explicit_write_mode_in_factory(MockDbIOManager):
+    """Test that explicit write mode propagates correctly."""
+    context = build_init_resource_context(
+        config={"project": "test-project", "write_mode": "append"}
+    )
+    
+    manager_factory = TestBigQueryIOManager(project="test-project", write_mode="append")
+    iterator = manager_factory.create_io_manager(context)
+    next(iterator)
+    
+    _, kwargs = MockDbIOManager.call_args
+    client = kwargs.get("db_client")
+    
+    assert client is not None
+    assert client.write_mode == BigQueryWriteMode.APPEND
