@@ -1157,7 +1157,9 @@ def test_unloadable_asset_backfill(instance, workspace_context):
     asset_backfill_data = AssetBackfillData.empty(
         target_subset=AssetGraphSubset(
             partitions_subsets_by_asset_key={
-                dg.AssetKey(["does_not_exist"]): my_config.partitions_def.empty_subset()
+                dg.AssetKey(
+                    ["does_not_exist"]
+                ): my_config.partitions_def.subset_with_partition_keys(["2023-01-01"])
             }
         ),
         backfill_start_timestamp=get_current_timestamp(),
