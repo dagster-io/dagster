@@ -41,7 +41,12 @@ The **Filter** button near the top left of the page can be used to filter the li
 
 You can programmatically access audit logs with the Dagster+ [GraphQL API](/api/graphql).
 
-To access a visual GraphiQL interface, visit `https://<org>.dagster.cloud/<deployment>/graphql` in a browser. You can also query the API directly using the Python client:
+To access a visual GraphiQL interface, visit the GraphQL endpoint in a browser:
+
+- **US region:** `https://<org>.dagster.cloud/<deployment>/graphql`
+- **EU region:** `https://<org>.dagster.plus/<deployment>/graphql`
+
+You can also query the API directly using the Python client:
 
 <CodeExample
   path="docs_snippets/docs_snippets/dagster-plus/access/rbac/audit-logs.graphql"

@@ -6,6 +6,9 @@ title: Setting up Google Workspace SSO for Dagster+
 tags: [dagster-plus-feature]
 ---
 
+import EuRegionUrlNote from '@site/docs/partials/\_EuRegionUrlNote.md';
+import TestSSO from '@site/docs/partials/\_TestSSO.md';
+
 In this guide, you'll configure Google Workspace to use single sign-on (SSO) with your Dagster+ organization.
 
 <details>
@@ -59,7 +62,13 @@ To complete the steps in this guide, you'll need:
       https://<organization_name>.dagster.cloud/auth/saml/consume
       ```
 
-   2. Check the **Signed Response** box. The page should look similar to the image below. In this example, the organization's name is `hooli` and the Dagster+ domain is `https://hooli.dagster.cloud`:
+      :::info EU region
+
+      For EU region customers, the URL will be `https://<organization_name>.dagster.plus`
+
+      :::
+
+   2. Check the **Signed Response** box. The page should look similar to the image below. In this example, the organization's name is `hooli` and the Dagster+ domain is `https://hooli.dagster.cloud` (or `https://hooli.dagster.plus` in the EU region):
 
       ![Service Provider Details](/images/dagster-plus/features/authentication-and-access-control/google-workspace/service-provider-details.png)
 
@@ -97,6 +106,8 @@ Next, you'll save and upload the application's SAML metadata to Dagster+. This w
       --url https://<your_organization_name>.dagster.cloud
    ```
 
+   <EuRegionUrlNote />
+
 ## Step 4: Grant access to users \{#grant-access}
 
 In this step, you'll assign users in your Google Workspace to the Dagster+ application. This allows members of the workspace to log in to Dagster+ using their credentials when the single sign-on flow is initiated.
@@ -107,8 +118,6 @@ In this step, you'll assign users in your Google Workspace to the Dagster+ appli
 4. Click **Save**.
 
    ![Assign New Login](/images/dagster-plus/features/authentication-and-access-control/google-workspace/new-login.png)
-
-import TestSSO from '@site/docs/partials/\_TestSSO.md';
 
 <TestSSO />
 
