@@ -70,12 +70,16 @@ class DatabricksWorkspace(ConfigurableResource):
         }
 
         # Convert dependency config to TaskDependency objects
+        # NOTE: We don't include task dependencies when submitting individual tasks via Dagster
+        # because Dagster manages the asset-level dependencies. The task dependencies in the
+        # bundle config are only used when running the full workflow job in Databricks.
         task_dependencies = [
             jobs.TaskDependency(task_key=dep_config.task_key, outcome=dep_config.outcome)
             for dep_config in task.depends_on
         ]
-        task_dependency_config = {"depends_on": task_dependencies} if task_dependencies else {}
-        context.log.info(f"Task {task_key} depends on: {task_dependencies}")
+        # Don't include task_dependency_config when submitting single tasks
+        task_dependency_config = {}
+        context.log.info(f"Task {task_key} has dependencies in bundle config: {task_dependencies}, but these are not included when submitting individual tasks via Dagster")
 
         # Determine cluster configuration based on task type
         compute_config = {}
