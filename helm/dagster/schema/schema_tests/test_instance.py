@@ -27,6 +27,7 @@ from schema.charts.dagster.subschema.daemon import (
     BlockOpConcurrencyLimitedRuns,
     ConfigurableClass,
     Daemon,
+    Pools,
     QueuedRunCoordinatorConfig,
     RunCoordinator,
     RunCoordinatorConfig,
@@ -651,6 +652,39 @@ def test_queued_run_coordinator_config(
             == "dagster._core.run_coordinator.sync_in_memory_run_coordinator"
         )
         assert instance["run_coordinator"]["class"] == "SyncInMemoryRunCoordinator"
+
+
+def test_pools_config(template: HelmTemplate):
+    helm_values = DagsterHelmValues.construct(
+        dagsterDaemon=Daemon.construct(
+            runCoordinator=RunCoordinator.construct(
+                enabled=True,
+                type=RunCoordinatorType.QUEUED,
+                config=RunCoordinatorConfig.construct(
+                    queuedRunCoordinator=QueuedRunCoordinatorConfig.construct(
+                        pools=Pools(
+                            defaultLimit=10,
+                            granularity="op",
+                            opGranularityRunBuffer=5,
+                        ),
+                    )
+                ),
+            )
+        )
+    )
+    configmaps = template.render(helm_values)
+    assert len(configmaps) == 1
+
+    instance = yaml.full_load(configmaps[0].data["dagster.yaml"])
+
+    _check_valid_run_coordinator_yaml(instance)
+
+    assert instance["run_coordinator"]["module"] == "dagster.core.run_coordinator"
+    assert instance["run_coordinator"]["class"] == "QueuedRunCoordinator"
+
+    assert instance["concurrency"]["pools"]["default_limit"] == 10
+    assert instance["concurrency"]["pools"]["granularity"] == "op"
+    assert instance["concurrency"]["pools"]["op_granularity_run_buffer"] == 5
 
 
 def test_custom_run_coordinator_config(template: HelmTemplate):
