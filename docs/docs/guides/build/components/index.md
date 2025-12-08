@@ -25,4 +25,4 @@ To use Dagster Components, you'll need to [install the `dg` command line tool](/
 ## Next steps
 
 - [Tutorial](/dagster-basics-tutorial)
-- [Create a components-ready Dagster project](/guides/build/projects/creating-a-new-project)
+- [Create a components-ready Dagster project](/guides/build/projects/creating-projects)

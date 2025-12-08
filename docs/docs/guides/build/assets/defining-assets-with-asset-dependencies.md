@@ -26,7 +26,7 @@ In this example, the asset `sugary_cereals` creates a new table (`sugary_cereals
 
 ## Defining asset dependencies across code locations
 
-Assets can depend on assets in different [code locations](/deployment/code-locations). In the following example, the `code_location_1_asset` asset produces a JSON string from a file in `code_location_1`:
+Assets can depend on assets in different [code locations](/guides/build/projects). In the following example, the `code_location_1_asset` asset produces a JSON string from a file in `code_location_1`:
 
 <CodeExample
     path="docs_snippets/docs_snippets/guides/data-modeling/asset-dependencies/asset-dependencies.py"

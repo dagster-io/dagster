@@ -493,7 +493,7 @@ def get_updated_cli_invocation_params_for_context(
                 f"Executing materialization against temporary copy of DBT project at {temp_project_dir} with ephemeral selector."
             )
             selection_args = ["--selector", selector_name]
-            target_project = replace(dbt_project, project_dir=temp_project_dir)
+            target_project = replace(dbt_project, project_dir=Path(temp_project_dir))
 
         indirect_selection = (
             indirect_selection_override if indirect_selection_override else indirect_selection

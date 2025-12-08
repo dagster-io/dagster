@@ -868,17 +868,8 @@ class BuiltinAutomationCondition(AutomationCondition[T_EntityKey]):
         This should only be used for conditions that don't change their output based on what conditions are
         evaluated before them (i.e. they explicitly set their candidate subset to the entire subset).
         """
-        from dagster._core.definitions.declarative_automation.operators import (
-            NewlyTrueCondition,
-            SinceCondition,
-        )
-
         child_ids = [
-            child._get_stable_unique_id(target_key)  # noqa
-            if isinstance(
-                child, (SinceCondition, NewlyTrueCondition)
-            )  # temporary forwards compat hack
-            else child.get_node_unique_id(
+            child.get_node_unique_id(
                 parent_unique_id=None,
                 index=i,
                 target_key=target_key,

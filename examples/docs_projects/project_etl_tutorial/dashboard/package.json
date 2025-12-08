@@ -16,7 +16,7 @@
   },
   "type": "module",
   "dependencies": {
-    "@evidence-dev/bigquery": "^2.0.10",
+    "@evidence-dev/bigquery": "^2.0.11",
     "@evidence-dev/core-components": "^5.2.2",
     "@evidence-dev/csv": "^1.0.14",
     "@evidence-dev/databricks": "^1.0.8",
@@ -39,6 +39,6 @@
     "trim@<0.0.3": ">0.0.3",
     "sqlite3": "5.1.5",
     "@sveltejs/kit": "2.20.6",
-    "vite": "5.4.20"
+    "vite": "^5.4.21"
   }
 }
