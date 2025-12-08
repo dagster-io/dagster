@@ -214,7 +214,9 @@ class ScenarioSpec:
         )
 
     def with_asset_properties(
-        self, keys: Optional[Iterable[CoercibleToAssetKey]] = None, **kwargs
+        self,
+        keys: Optional[Iterable[CoercibleToAssetKey]] = None,
+        **kwargs,
     ) -> "ScenarioSpec":
         """Convenience method to update the properties of one or more assets in the scenario state."""
         new_asset_specs = []
