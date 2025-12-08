@@ -69,8 +69,7 @@ To complete the steps in this guide, you'll need:
     - **Assertion Validity Duration**: Type `60`.
       In the following example, the organization's name is `hooli` and the Dagster+ domain is `https://hooli.dagster.cloud` (or `https://hooli.dagster.plus` in the EU region):
 
-
-        ![Service Provider Details](/images/dagster-plus/features/authentication-and-access-control/pingone/service-provider-details.png)
+      ![Service Provider Details](/images/dagster-plus/features/authentication-and-access-control/pingone/service-provider-details.png)
 
     2.  When finished, click **Save and Continue.**
 
