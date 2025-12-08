@@ -69,9 +69,7 @@ def mock_databricks_cli_resolved_config():
     resolved_config = {
         "bundle": databricks_config.get("bundle", {}),
         "variables": databricks_config.get("variables", {}),
-        "resources": {
-            "jobs": {}
-        }
+        "resources": {"jobs": {}},
     }
 
     # Process jobs and resolve template variables
@@ -92,8 +90,12 @@ def mock_databricks_cli_resolved_config():
                 if "notebook_path" in notebook_task:
                     # Simulate resolution of Databricks template variables
                     notebook_path = notebook_task["notebook_path"]
-                    notebook_path = notebook_path.replace("${workspace_user}", "test_user@example.com")
-                    notebook_path = notebook_path.replace("{{workspace_user}}", "test_user@example.com")
+                    notebook_path = notebook_path.replace(
+                        "${workspace_user}", "test_user@example.com"
+                    )
+                    notebook_path = notebook_path.replace(
+                        "{{workspace_user}}", "test_user@example.com"
+                    )
                     notebook_task["notebook_path"] = notebook_path
                 resolved_task["notebook_task"] = notebook_task
 

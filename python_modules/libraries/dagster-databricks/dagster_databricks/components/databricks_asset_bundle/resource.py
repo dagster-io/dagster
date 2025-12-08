@@ -79,7 +79,9 @@ class DatabricksWorkspace(ConfigurableResource):
         ]
         # Don't include task_dependency_config when submitting single tasks
         task_dependency_config = {}
-        context.log.info(f"Task {task_key} has dependencies in bundle config: {task_dependencies}, but these are not included when submitting individual tasks via Dagster")
+        context.log.info(
+            f"Task {task_key} has dependencies in bundle config: {task_dependencies}, but these are not included when submitting individual tasks via Dagster"
+        )
 
         # Determine cluster configuration based on task type
         compute_config = {}
