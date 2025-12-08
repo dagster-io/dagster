@@ -63,6 +63,7 @@ from dagster._core.storage.tags import KIND_PREFIX
 from dagster._core.types.dagster_type import DagsterType
 from dagster._utils.tags import normalize_tags
 from dagster._utils.warnings import disable_dagster_warnings
+from dagster._core.definitions.asset_group_context import get_current_asset_group
 
 
 @overload
@@ -183,7 +184,7 @@ def asset(
     kinds: Optional[AbstractSet[str]] = None,
     pool: Optional[str] = None,
     **kwargs,
-) -> Union[AssetsDefinition, Callable[[Callable[..., Any]], AssetsDefinition]]:
+) -> Union[AssetsDefinition, Callable[[Callable[..., Any]], AssetsDefinition]:
     """Create a definition for how to compute an asset.
 
     A software-defined asset is the combination of:
