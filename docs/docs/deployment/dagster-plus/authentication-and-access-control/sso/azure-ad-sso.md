@@ -47,29 +47,18 @@ In this step, you'll configure and enable SSO for Azure AD in your Azure portal.
 
 4.  In the **Basic SAML Configuration** section, fill in the **Identifier** and **Reply URL** fields as follows:
 
-    <Tabs groupId="region">
-
-    <TabItem value="us" label="US" >
 
     Copy and paste the following URL, replacing `<organization_name>` with your Dagster+ organization name:
 
-        ```
-        https://<organization_name>.dagster.cloud/auth/saml/consume
-        ```
+    ```shell
+    https://<organization_name>.dagster.cloud/auth/saml/consume
+    ```
 
-        </TabItem>
+    :::info
 
-    <TabItem value="eu" label="EU">
-  
-  Copy and paste the following URL, replacing `<organization_name>` with your Dagster+ organization name:
+    For EU region customers, the URL will be `https://<organization_name>.dagster.plus/auth/saml/consume`
 
-        ```
-        https://<organization_name>.dagster.plus/auth/saml/consume
-        ```
-
-        </TabItem>
-
-    </Tabs>
+    :::
 
 5.  Click **Set additional URLs**.
 6.  In the **Sign-on URL** field, copy and paste the URL you entered in the **Identifier** and **Reply URL** fields.
