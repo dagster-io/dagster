@@ -36,7 +36,7 @@ class MinimalAssetMaterializationHealthState(LoadableBy[AssetKey]):
     num_currently_materialized_partitions: int
     partitions_snap: Optional[PartitionsSnap]
     latest_failed_to_materialize_timestamp: Optional[float] = None
-    latest_failed_run_id: Optional[str] = None
+    latest_failed_to_materialize_run_id: Optional[str] = None
 
     @property
     def health_status(self) -> AssetHealthStatus:
@@ -65,7 +65,7 @@ class MinimalAssetMaterializationHealthState(LoadableBy[AssetKey]):
             num_currently_materialized_partitions=asset_materialization_health_state.currently_materialized_subset.size,
             partitions_snap=asset_materialization_health_state.partitions_snap,
             latest_failed_to_materialize_timestamp=asset_materialization_health_state.latest_failed_to_materialize_timestamp,
-            latest_failed_run_id=asset_materialization_health_state.latest_failed_run_id,
+            latest_failed_to_materialize_run_id=asset_materialization_health_state.latest_failed_to_materialize_run_id,
         )
 
     @classmethod
@@ -106,7 +106,7 @@ class AssetMaterializationHealthState(LoadableBy[AssetKey]):
     latest_terminal_run_id: Optional[str]
     latest_materialization_timestamp: Optional[float] = None
     latest_failed_to_materialize_timestamp: Optional[float] = None
-    latest_failed_run_id: Optional[str] = None
+    latest_failed_to_materialize_run_id: Optional[str] = None
 
     @property
     def partitions_def(self) -> Optional[PartitionsDefinition]:
@@ -197,7 +197,7 @@ class AssetMaterializationHealthState(LoadableBy[AssetKey]):
                 latest_terminal_run_id=last_run_id,
                 latest_materialization_timestamp=latest_materialization_timestamp,
                 latest_failed_to_materialize_timestamp=latest_failed_to_materialize_timestamp,
-                latest_failed_run_id=last_failed_run_id,
+                latest_failed_to_materialize_run_id=last_failed_run_id,
             )
 
         if asset_record is None:
@@ -208,7 +208,7 @@ class AssetMaterializationHealthState(LoadableBy[AssetKey]):
                 latest_terminal_run_id=None,
                 latest_materialization_timestamp=None,
                 latest_failed_to_materialize_timestamp=None,
-                latest_failed_run_id=None,
+                latest_failed_to_materialize_run_id=None,
             )
 
         asset_entry = asset_record.asset_entry
@@ -222,6 +222,11 @@ class AssetMaterializationHealthState(LoadableBy[AssetKey]):
             if asset_entry.last_failed_to_materialize_record
             else None
         )
+        latest_failed_run_id = (
+            asset_entry.last_failed_to_materialize_record.run_id
+            if asset_entry.last_failed_to_materialize_record
+            else None
+        )
         if asset_entry.last_run_id is None:
             return AssetMaterializationHealthState(
                 materialized_subset=SerializableEntitySubset(key=asset_key, value=False),
@@ -230,7 +235,7 @@ class AssetMaterializationHealthState(LoadableBy[AssetKey]):
                 latest_terminal_run_id=None,
                 latest_materialization_timestamp=latest_materialization_timestamp,
                 latest_failed_to_materialize_timestamp=latest_failed_to_materialize_timestamp,
-                latest_failed_run_id=None,
+                latest_failed_to_materialize_run_id=latest_failed_run_id,
             )
 
         has_ever_materialized = asset_entry.last_materialization is not None
@@ -248,9 +253,7 @@ class AssetMaterializationHealthState(LoadableBy[AssetKey]):
             latest_terminal_run_id=latest_terminal_run_id,
             latest_materialization_timestamp=latest_materialization_timestamp,
             latest_failed_to_materialize_timestamp=latest_failed_to_materialize_timestamp,
-            latest_failed_run_id=asset_entry.last_failed_to_materialize_record.run_id
-            if asset_entry.last_failed_to_materialize_record
-            else None,
+            latest_failed_to_materialize_run_id=latest_failed_run_id,
         )
 
     @classmethod
