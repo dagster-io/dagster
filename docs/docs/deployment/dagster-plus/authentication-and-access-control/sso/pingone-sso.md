@@ -54,23 +54,21 @@ To complete the steps in this guide, you'll need:
 
     1.  Fill in the following:
 
-        - **ACS URLs** and **Entity ID**: Copy and paste the following URL, replacing `<organization_name>` with your Dagster+ organization name:
+    - **ACS URLs** and **Entity ID**: Copy and paste the following URL, replacing `<organization_name>` with your Dagster+ organization name:
 
-         <Tabs groupId="region">
-         <TabItem value="us" label="US">
-          ```
-          https://<organization_name>.dagster.cloud/auth/saml/consume
-          ```
-         </TabItem>
-         <TabItem value="eu" label="EU">
-         ```
-          https://<organization_name>.dagster.plus/auth/saml/consume
-          ```
-         </TabItem>
-         </Tabs>
+      ```shell
+      https://<organization_name>.dagster.cloud/auth/saml/consume
+      ```
 
-        - **Assertion Validity Duration**: Type `60`.
-          In the following example, the organization's name is `hooli` and the Dagster+ domain is `https://hooli.dagster.cloud` (or `https://hooli.dagster.plus` in the EU region):
+      :::info EU region
+
+      For EU region customers, the URL will be `https://<organization_name>.dagster.plus/auth/saml/consume`
+
+      :::
+
+    - **Assertion Validity Duration**: Type `60`.
+      In the following example, the organization's name is `hooli` and the Dagster+ domain is `https://hooli.dagster.cloud` (or `https://hooli.dagster.plus` in the EU region):
+
 
         ![Service Provider Details](/images/dagster-plus/features/authentication-and-access-control/pingone/service-provider-details.png)
 

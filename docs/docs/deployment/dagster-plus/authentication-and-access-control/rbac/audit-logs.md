@@ -42,6 +42,7 @@ The **Filter** button near the top left of the page can be used to filter the li
 You can programmatically access audit logs with the Dagster+ [GraphQL API](/api/graphql).
 
 To access a visual GraphiQL interface, visit the GraphQL endpoint in a browser:
+
 - **US region:** `https://<org>.dagster.cloud/<deployment>/graphql`
 - **EU region:** `https://<org>.dagster.plus/<deployment>/graphql`
 

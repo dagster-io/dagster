@@ -61,7 +61,7 @@ Next, you'll save and upload the application's SAML metadata to Dagster+. This w
      --url https://<organization_name>.dagster.cloud
    ```
 
-  <EuRegionUrlNote />
+<EuRegionUrlNote />
 
 ## Step 4: Grant access to users \{#grant-access}
 
