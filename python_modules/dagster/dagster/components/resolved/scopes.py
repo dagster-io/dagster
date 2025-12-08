@@ -83,6 +83,7 @@ class DgScope(WrappedObjectScope):
 
         accessible_attributes = {
             "AutomationCondition",
+            "FreshnessPolicy",
             "DailyPartitionsDefinition",
             "WeeklyPartitionsDefinition",
             "MonthlyPartitionsDefinition",
@@ -92,6 +93,24 @@ class DgScope(WrappedObjectScope):
         }
 
         super().__init__(dg, accessible_attributes)
+
+
+class DatetimeScope(WrappedObjectScope):
+    """Provides access to Python datetime utilities within templates.
+
+    Available via `{{ datetime.* }}` in component YAML files.
+
+    Examples:
+        {{ datetime.datetime.now() }}
+        {{ datetime.timedelta(days=7) }}
+    """
+
+    def __init__(self):
+        import datetime
+
+        accessible_attributes = {"datetime", "timedelta"}
+
+        super().__init__(datetime, accessible_attributes)
 
 
 class LoadContextScope(WrappedObjectScope):
