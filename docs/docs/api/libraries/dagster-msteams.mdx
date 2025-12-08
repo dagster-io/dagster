@@ -1,0 +1,249 @@
+---
+title: 'microsoft teams (dagster-msteams)'
+title_meta: 'microsoft teams (dagster-msteams) API Documentation - Build Better Data Pipelines | Python Reference Documentation for Dagster'
+description: 'microsoft teams (dagster-msteams) Dagster API | Comprehensive Python API documentation for Dagster, the data orchestration platform. Learn how to build, test, and maintain data pipelines with our detailed guides and examples.'
+last_update:
+  date: '2025-12-05'
+custom_edit_url: null
+---
+
+<div class="section" id="microsoft-teams-dagster-msteams">
+
+# Microsoft Teams (dagster-msteams)
+
+<div class="section" id="resource">
+
+## Resource
+
+<dl>
+    <dt><Link class="anchor" id='dagster_msteams.MSTeamsResource'>dagster_msteams.MSTeamsResource ResourceDefinition <a href='https://github.com/dagster-io/dagster/blob/master/python_modules/libraries/dagster-msteams/dagster_msteams/resources.py#L10' className='source-link' target='_blank' rel='noopener noreferrer'>[source]</a><a href="#dagster_msteams.MSTeamsResource" class="hash-link"></a></Link></dt>
+    <dd>
+
+        <div className='lineblock'> </div>
+
+    This resource is for connecting to Microsoft Teams.
+
+    Provides a <cite>dagster_msteams.TeamsClient</cite> which can be used to
+    interface with the MS Teams API.
+
+    By configuring this resource, you can post messages to MS Teams from any Dagster op,
+    asset, schedule, or sensor:
+
+
+
+    Examples:
+
+        ```python
+        import os
+
+        from dagster import op, job, Definitions, EnvVar
+        from dagster_msteams import Card, MSTeamsResource
+
+
+        @op
+        def teams_op(msteams: MSTeamsResource):
+            card = Card()
+            card.add_attachment(text_message="Hello There !!")
+            msteams.get_client().post_message(payload=card.payload)
+
+
+        @job
+        def teams_job():
+            teams_op()
+
+        Definitions(
+            jobs=[teams_job],
+            resources={
+                "msteams": MSTeamsResource(
+                    hook_url=EnvVar("TEAMS_WEBHOOK_URL")
+                )
+            }
+        )
+        ```
+
+    </dd>
+
+</dl>
+</div>
+
+<div class="section" id="sensors">
+
+## Sensors
+
+<dl>
+    <dt><Link class="anchor" id='dagster_msteams.teams_on_failure'>dagster_msteams.teams_on_failure HookDefinition <a href='https://github.com/dagster-io/dagster/blob/master/python_modules/libraries/dagster-msteams/dagster_msteams/hooks.py#L27' className='source-link' target='_blank' rel='noopener noreferrer'>[source]</a><a href="#dagster_msteams.teams_on_failure" class="hash-link"></a></Link></dt>
+    <dd>
+
+    Create a hook on step failure events that will message the given MS Teams webhook URL.
+
+    Parameters:
+      - <strong>message_fn</strong> (<em>Optional</em><em>(</em><em>Callable</em><em>[</em><em>[</em>[*HookContext*](../dagster/hooks.mdx#dagster.HookContext)<em>]</em><em>, </em><em>str</em><em>]</em><em>)</em>) – Function which takes in the HookContext outputs the message you want to send.
+      - <strong>dagit_base_url</strong> – <span className="flag flag-warning">deprecated</span>  (Optional[str]): The base url of your webserver instance. Specify this to allow messages to include deeplinks to the specific run that triggered the hook.
+      - <strong>webserver_base_url</strong> – (Optional[str]): The base url of your webserver instance. Specify this to allow messages to include deeplinks to the specific run that triggered the hook.
+
+
+
+
+    Examples:
+
+        ```python
+        @teams_on_failure(webserver_base_url="http://localhost:3000")
+        @job(...)
+        def my_job():
+            pass
+        ```
+        ```python
+        def my_message_fn(context: HookContext) -> str:
+            return f"Op {context.op.name} failed!"
+
+        @op
+        def a_op(context):
+            pass
+
+        @job(...)
+        def my_job():
+            a_op.with_hooks(hook_defs={teams_on_failure("#foo", my_message_fn)})
+        ```
+
+    </dd>
+
+</dl>
+<dl>
+    <dt><Link class="anchor" id='dagster_msteams.teams_on_success'>dagster_msteams.teams_on_success HookDefinition <a href='https://github.com/dagster-io/dagster/blob/master/python_modules/libraries/dagster-msteams/dagster_msteams/hooks.py#L95' className='source-link' target='_blank' rel='noopener noreferrer'>[source]</a><a href="#dagster_msteams.teams_on_success" class="hash-link"></a></Link></dt>
+    <dd>
+
+    Create a hook on step success events that will message the given MS Teams webhook URL.
+
+    Parameters:
+      - <strong>message_fn</strong> (<em>Optional</em><em>(</em><em>Callable</em><em>[</em><em>[</em>[*HookContext*](../dagster/hooks.mdx#dagster.HookContext)<em>]</em><em>, </em><em>str</em><em>]</em><em>)</em>) – Function which takes in the HookContext outputs the message you want to send.
+      - <strong>dagit_base_url</strong> – <span className="flag flag-warning">deprecated</span>  (Optional[str]): The base url of your webserver instance. Specify this to allow messages to include deeplinks to the specific run that triggered the hook.
+
+
+
+
+    Examples:
+
+        ```python
+        @teams_on_success(webserver_base_url="http://localhost:3000")
+        @job(...)
+        def my_job():
+            pass
+        ```
+        ```python
+        def my_message_fn(context: HookContext) -> str:
+            return f"Op {context.op.name} failed!"
+
+        @op
+        def a_op(context):
+            pass
+
+        @job(...)
+        def my_job():
+            a_op.with_hooks(hook_defs={teams_on_success("#foo", my_message_fn)})
+        ```
+
+    </dd>
+
+</dl>
+<dl>
+    <dt><Link class="anchor" id='dagster_msteams.make_teams_on_run_failure_sensor'>dagster_msteams.make_teams_on_run_failure_sensor <a href='https://github.com/dagster-io/dagster/blob/master/python_modules/libraries/dagster-msteams/dagster_msteams/sensors.py#L33' className='source-link' target='_blank' rel='noopener noreferrer'>[source]</a><a href="#dagster_msteams.make_teams_on_run_failure_sensor" class="hash-link"></a></Link></dt>
+    <dd>
+
+    Create a sensor on run failures that will message the given MS Teams webhook URL.
+
+    Parameters:
+      - <strong>hook_url</strong> (<em>str</em>) – MS Teams incoming webhook URL.
+      - <strong>message_fn</strong> (<em>Optional</em><em>(</em><em>Callable</em><em>[</em><em>[</em>[*RunFailureSensorContext*](../dagster/schedules-sensors.mdx#dagster.RunFailureSensorContext)<em>]</em><em>, </em><em>str</em><em>]</em><em>)</em>) – Function which takes in the `RunFailureSensorContext` and outputs the message you want to send. Defaults to a text message that contains error message, job name, and run ID.
+      - <strong>http_proxy</strong> – (Optional[str]): Proxy for requests using http protocol.
+      - <strong>https_proxy</strong> – (Optional[str]): Proxy for requests using https protocol.
+      - <strong>timeout</strong> – (Optional[float]): Connection timeout in seconds. Defaults to 60.
+      - <strong>verify</strong> – (Optional[bool]): Whether to verify the servers TLS certificate.
+      - <strong>name</strong> – (Optional[str]): The name of the sensor. Defaults to “teams_on_run_failure”.
+      - <strong>dagit_base_url</strong> – <span className="flag flag-warning">deprecated</span>  (Optional[str]): The base url of your webserver instance. Specify this to allow messages to include deeplinks to the failed run.
+      - <strong>default_status</strong> (<em>DefaultSensorStatus</em>) – Whether the sensor starts as running or not. The default status can be overridden from Dagit or via the GraphQL API.
+      - <strong>monitored_jobs</strong> (<em>Optional</em><em>[</em><em>List</em><em>[</em><em>Union</em><em>[</em>[*JobDefinition*](../dagster/jobs.mdx#dagster.JobDefinition)<em>, </em>[*GraphDefinition*](../dagster/graphs.mdx#dagster.GraphDefinition)<em>, </em><em>UnresolvedAssetJobDefinition</em><em>, </em>[*RepositorySelector*](../dagster/schedules-sensors.mdx#dagster.RepositorySelector)<em>, </em>[*JobSelector*](../dagster/schedules-sensors.mdx#dagster.JobSelector)<em>]</em><em>]</em><em>]</em>) – Jobs in the current repository that will be monitored by this sensor. Defaults to None, which means the alert will be sent when any job in the repository matches the requested run_status. To monitor jobs in external repositories, use RepositorySelector and JobSelector.
+      - <strong>monitor_all_code_locations</strong> (<em>bool</em>) – If set to True, the sensor will monitor all runs in the Dagster deployment. If set to True, an error will be raised if you also specify monitored_jobs or job_selection. Defaults to False.
+      - <strong>webserver_base_url</strong> – (Optional[str]): The base url of your webserver instance. Specify this to allow messages to include deeplinks to the failed run.
+      - <strong>monitor_all_repositories</strong> (<em>bool</em>) – <span className="flag flag-warning">deprecated</span>  If set to True, the sensor will monitor all runs in the Dagster instance. If set to True, an error will be raised if you also specify monitored_jobs or job_selection. Defaults to False.
+
+
+
+
+    Examples:
+
+        ```python
+        teams_on_run_failure = make_teams_on_run_failure_sensor(
+            hook_url=os.getenv("TEAMS_WEBHOOK_URL")
+        )
+
+        @repository
+        def my_repo():
+            return [my_job + teams_on_run_failure]
+        ```
+        ```python
+        def my_message_fn(context: RunFailureSensorContext) -> str:
+            return "Job {job_name} failed! Error: {error}".format(
+                job_name=context.dagster_run.job_name,
+                error=context.failure_event.message,
+            )
+
+        teams_on_run_failure = make_teams_on_run_failure_sensor(
+            hook_url=os.getenv("TEAMS_WEBHOOK_URL"),
+            message_fn=my_message_fn,
+            webserver_base_url="http://localhost:3000",
+        )
+        ```
+
+    </dd>
+
+</dl>
+</div>
+
+<div class="section" id="legacy">
+
+## Legacy
+
+<dl>
+    <dt><Link class="anchor" id='dagster_msteams.msteams_resource'>dagster_msteams.msteams_resource ResourceDefinition <a href='https://github.com/dagster-io/dagster/blob/master/python_modules/libraries/dagster-msteams/dagster_msteams/resources.py#L79' className='source-link' target='_blank' rel='noopener noreferrer'>[source]</a><a href="#dagster_msteams.msteams_resource" class="hash-link"></a></Link></dt>
+    <dd>
+
+        <div className='lineblock'> </div>
+
+    This resource is for connecting to Microsoft Teams.
+
+    The resource object is a <cite>dagster_msteams.TeamsClient</cite>.
+
+    By configuring this resource, you can post messages to MS Teams from any Dagster solid:
+
+
+
+    Examples:
+
+        ```python
+        import os
+
+        from dagster import op, job
+        from dagster_msteams import Card, msteams_resource
+
+
+        @op(required_resource_keys={"msteams"})
+        def teams_op(context):
+            card = Card()
+            card.add_attachment(text_message="Hello There !!")
+            context.resources.msteams.post_message(payload=card.payload)
+
+
+        @job(resource_defs={"msteams": msteams_resource})
+        def teams_job():
+            teams_op()
+
+
+        teams_job.execute_in_process(
+            {"resources": {"msteams": {"config": {"hook_url": os.getenv("TEAMS_WEBHOOK_URL")}}}}
+        )
+        ```
+
+    </dd>
+
+</dl>
+</div></div>

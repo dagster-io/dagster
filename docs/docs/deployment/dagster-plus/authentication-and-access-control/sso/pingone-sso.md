@@ -6,6 +6,9 @@ title: Setting up PingOne SSO for Dagster+
 tags: [dagster-plus-feature]
 ---
 
+import EuRegionUrlNote from '@site/docs/partials/\_EuRegionUrlNote.md';
+import TestSSO from '@site/docs/partials/\_TestSSO.md';
+
 In this guide, you'll configure PingOne to use single sign-on (SSO) with your Dagster+ organization.
 
 <details>
@@ -51,16 +54,22 @@ To complete the steps in this guide, you'll need:
 
     1.  Fill in the following:
 
-        - **ACS URLs** and **Entity ID**: Copy and paste the following URL, replacing `<organization_name>` with your Dagster+ organization name:
+    - **ACS URLs** and **Entity ID**: Copy and paste the following URL, replacing `<organization_name>` with your Dagster+ organization name:
 
-          ```
-          https://<organization_name>.dagster.cloud/auth/saml/consume
-          ```
+      ```shell
+      https://<organization_name>.dagster.cloud/auth/saml/consume
+      ```
 
-        - **Assertion Validity Duration**: Type `60`.
-          In the following example, the organization's name is `hooli` and the Dagster+ domain is `https://hooli.dagster.cloud`:
+      :::info EU region
 
-        ![Service Provider Details](/images/dagster-plus/features/authentication-and-access-control/pingone/service-provider-details.png)
+      For EU region customers, the URL will be `https://<organization_name>.dagster.plus/auth/saml/consume`
+
+      :::
+
+    - **Assertion Validity Duration**: Type `60`.
+      In the following example, the organization's name is `hooli` and the Dagster+ domain is `https://hooli.dagster.cloud` (or `https://hooli.dagster.plus` in the EU region):
+
+      ![Service Provider Details](/images/dagster-plus/features/authentication-and-access-control/pingone/service-provider-details.png)
 
     2.  When finished, click **Save and Continue.**
 
@@ -99,6 +108,8 @@ Next, you'll save and upload the application's SAML metadata to Dagster+. This w
      --url https://<organization_name>.dagster.cloud
    ```
 
+   <EuRegionUrlNote />
+
 ## Step 4: Grant access to users \{#grant-access}
 
 Next, you'll assign users to the Dagster+ application in PingOne. This will allow them to log in using their PingOne credentials when the single sign-on flow is initiated.
@@ -109,8 +120,6 @@ Next, you'll assign users to the Dagster+ application in PingOne. This will allo
    ![Assign New Login](/images/dagster-plus/features/authentication-and-access-control/pingone/new-login.png)
 
 3. Edit the policy as needed to grant users access to the application.
-
-import TestSSO from '@site/docs/partials/\_TestSSO.md';
 
 <TestSSO />
 

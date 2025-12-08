@@ -1,0 +1,87 @@
+---
+title: 'deltalake + pandas (dagster-deltalake-pandas)'
+title_meta: 'deltalake + pandas (dagster-deltalake-pandas) API Documentation - Build Better Data Pipelines | Python Reference Documentation for Dagster'
+description: 'deltalake + pandas (dagster-deltalake-pandas) Dagster API | Comprehensive Python API documentation for Dagster, the data orchestration platform. Learn how to build, test, and maintain data pipelines with our detailed guides and examples.'
+last_update:
+  date: '2025-12-05'
+custom_edit_url: null
+---
+
+<div class="section" id="deltalake-pandas-dagster-deltalake-pandas">
+
+# Deltalake + Pandas (dagster-deltalake-pandas)
+
+This library provides an integration with the [Delta Lake](https://delta.io) storage framework.
+
+Related guides:
+
+- [Using Dagster with Delta Lake guide](https://docs.dagster.io/integrations/libraries/deltalake)
+- [DeltaLake I/O manager reference](https://docs.dagster.io/integrations/libraries/deltalake/reference)
+
+<dl>
+    <dt><Link class="anchor" id='dagster_deltalake_pandas.DeltaLakePandasIOManager'>dagster_deltalake_pandas.DeltaLakePandasIOManager IOManagerDefinition <a href='https://github.com/dagster-io/dagster/blob/master/python_modules/libraries/dagster-deltalake-pandas/dagster_deltalake_pandas/deltalake_pandas_type_handler.py#L25' className='source-link' target='_blank' rel='noopener noreferrer'>[source]</a><a href="#dagster_deltalake_pandas.DeltaLakePandasIOManager" class="hash-link"></a></Link></dt>
+    <dd>
+
+        <div className='lineblock'> </div>
+
+    Base class for an IO manager definition that reads inputs from and writes outputs to Delta Lake.
+
+
+
+    Examples:
+
+        ```python
+        from dagster_deltalake import DeltaLakeIOManager
+        from dagster_deltalake_pandas import DeltaLakePandasTypeHandler
+
+        class MyDeltaLakeIOManager(DeltaLakeIOManager):
+            @staticmethod
+            def type_handlers() -> Sequence[DbTypeHandler]:
+                return [DeltaLakePandasTypeHandler()]
+
+        @asset(
+            key_prefix=["my_schema"]  # will be used as the schema (parent folder) in Delta Lake
+        )
+        def my_table() -> pd.DataFrame:  # the name of the asset will be the table name
+            ...
+
+        Definitions(
+            assets=[my_table],
+            resources={"io_manager": MyDeltaLakeIOManager()}
+        )
+        ```
+    If you do not provide a schema, Dagster will determine a schema based on the assets and ops using
+    the I/O Manager. For assets, the schema will be determined from the asset key, as in the above example.
+    For ops, the schema can be specified by including a “schema” entry in output metadata. If none
+    of these is provided, the schema will default to “public”.
+
+        ```python
+        @op(
+            out={"my_table": Out(metadata={"schema": "my_schema"})}
+        )
+        def make_my_table() -> pd.DataFrame:
+            ...
+        ```
+    To only use specific columns of a table as input to a downstream op or asset, add the metadata “columns” to the
+    In or AssetIn.
+
+        ```python
+        @asset(
+            ins={"my_table": AssetIn("my_table", metadata={"columns": ["a"]})}
+        )
+        def my_table_a(my_table: pd.DataFrame):
+            # my_table will just contain the data from column "a"
+            ...
+        ```
+
+    </dd>
+
+</dl>
+<dl>
+    <dt><Link class="anchor" id='dagster_deltalake_pandas.DeltaLakePandasTypeHandler'>`class` dagster_deltalake_pandas.DeltaLakePandasTypeHandler <a href='https://github.com/dagster-io/dagster/blob/master/python_modules/libraries/dagster-deltalake-pandas/dagster_deltalake_pandas/deltalake_pandas_type_handler.py#L11' className='source-link' target='_blank' rel='noopener noreferrer'>[source]</a><a href="#dagster_deltalake_pandas.DeltaLakePandasTypeHandler" class="hash-link"></a></Link></dt>
+    <dd>
+
+    </dd>
+
+</dl>
+</div>

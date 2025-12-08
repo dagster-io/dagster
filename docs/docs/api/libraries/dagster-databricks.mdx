@@ -1,0 +1,402 @@
+---
+title: 'databricks (dagster-databricks)'
+title_meta: 'databricks (dagster-databricks) API Documentation - Build Better Data Pipelines | Python Reference Documentation for Dagster'
+description: 'databricks (dagster-databricks) Dagster API | Comprehensive Python API documentation for Dagster, the data orchestration platform. Learn how to build, test, and maintain data pipelines with our detailed guides and examples.'
+last_update:
+  date: '2025-12-05'
+custom_edit_url: null
+---
+
+<div class="section" id="databricks-dagster-databricks">
+
+# Databricks (dagster-databricks)
+
+The `dagster_databricks` package provides these main pieces of functionality:
+
+- A resource, `databricks_pyspark_step_launcher`, which will execute a op within a Databricks context on a cluster, such that the `pyspark` resource uses the cluster’s Spark instance.
+- An op factory, `create_databricks_run_now_op`, which creates an op that launches an existing Databricks job using the [Run Now API](https://docs.databricks.com/api/workspace/jobs/runnow).
+- A op factory, `create_databricks_submit_run_op`, which creates an op that submits a one-time run of a set of tasks on Databricks using the [Submit Run API](https://docs.databricks.com/api/workspace/jobs/submit).
+
+Note that, for the `databricks_pyspark_step_launcher`, either S3 or Azure Data Lake Storage config
+
+<strong>must</strong> be specified for ops to succeed, and the credentials for this storage must also be stored as a
+Databricks Secret and stored in the resource config so that the Databricks cluster can access storage.
+
+<div class="section" id="component">
+
+## Component
+
+<dl>
+    <dt><Link class="anchor" id='dagster_databricks.DatabricksAssetBundleComponent'>`class` dagster_databricks.DatabricksAssetBundleComponent <a href='https://github.com/dagster-io/dagster/blob/master/python_modules/libraries/dagster-databricks/dagster_databricks/components/databricks_asset_bundle/component.py#L73' className='source-link' target='_blank' rel='noopener noreferrer'>[source]</a><a href="#dagster_databricks.DatabricksAssetBundleComponent" class="hash-link"></a></Link></dt>
+    <dd>
+
+        :::info[preview]
+        This API is currently in preview, and may have breaking changes in patch version releases. This API is not considered ready for production use.
+
+
+        :::
+
+    <dl>
+        <dt><Link class="anchor" id='dagster_databricks.DatabricksAssetBundleComponent.get_asset_spec'>get_asset_spec <a href='https://github.com/dagster-io/dagster/blob/master/python_modules/libraries/dagster-databricks/dagster_databricks/components/databricks_asset_bundle/component.py#L192' className='source-link' target='_blank' rel='noopener noreferrer'>[source]</a><a href="#dagster_databricks.DatabricksAssetBundleComponent.get_asset_spec" class="hash-link"></a></Link></dt>
+        <dd>
+
+        Generates an AssetSpec for a given Databricks task.
+
+        This method can be overridden in a subclass to customize how Databricks Asset Bundle
+        tasks are converted to Dagster asset specs. By default, it creates an asset spec with
+        metadata about the task type, configuration, and dependencies.
+
+        Parameters: <strong>task</strong> – The DatabricksBaseTask containing information about the Databricks job taskReturns: An AssetSpec that represents the Databricks task as a Dagster asset
+
+
+        Example:
+
+        Override this method to add custom tags or modify the asset key:
+
+            ```python
+            from dagster_databricks import DatabricksAssetBundleComponent
+            from dagster import AssetSpec
+
+            class CustomDatabricksAssetBundleComponent(DatabricksAssetBundleComponent):
+                def get_asset_spec(self, task):
+                    base_spec = super().get_asset_spec(task)
+                    return base_spec.replace_attributes(
+                        tags={
+                            **base_spec.tags,
+                            "job_name": task.job_name,
+                            "environment": "production"
+                        }
+                    )
+            ```
+
+        </dd>
+
+    </dl>
+
+    </dd>
+
+</dl>
+<div class="section" id="apis">
+
+### APIs
+
+<div class="section" id="resources">
+
+#### Resources
+
+<dl>
+    <dt><Link class="anchor" id='dagster_databricks.DatabricksClientResource'>dagster_databricks.DatabricksClientResource ResourceDefinition <a href='https://github.com/dagster-io/dagster/blob/master/python_modules/libraries/dagster-databricks/dagster_databricks/resources.py#L31' className='source-link' target='_blank' rel='noopener noreferrer'>[source]</a><a href="#dagster_databricks.DatabricksClientResource" class="hash-link"></a></Link></dt>
+    <dd>
+
+        <div className='lineblock'> </div>
+
+    Resource which provides a Python client for interacting with Databricks within an
+    op or asset.
+
+
+    </dd>
+
+</dl>
+<dl>
+    <dt><Link class="anchor" id='dagster_databricks.DatabricksClient'>`class` dagster_databricks.DatabricksClient <a href='https://github.com/dagster-io/dagster/blob/master/python_modules/libraries/dagster-databricks/dagster_databricks/databricks.py#L229' className='source-link' target='_blank' rel='noopener noreferrer'>[source]</a><a href="#dagster_databricks.DatabricksClient" class="hash-link"></a></Link></dt>
+    <dd>
+
+    A thin wrapper over the Databricks REST API.
+
+    <dl>
+        <dt><Link class="anchor" id='dagster_databricks.DatabricksClient.workspace_client'>`property` workspace_client <a href='https://github.com/dagster-io/dagster/blob/master/python_modules/libraries/dagster-databricks/dagster_databricks/databricks.py#L257' className='source-link' target='_blank' rel='noopener noreferrer'>[source]</a><a href="#dagster_databricks.DatabricksClient.workspace_client" class="hash-link"></a></Link></dt>
+        <dd>
+
+        Retrieve a reference to the underlying Databricks Workspace client. For more information,
+        see the [Databricks SDK for Python](https://docs.databricks.com/dev-tools/sdk-python.html).
+
+        <strong>Examples:</strong>
+
+            ```python
+            from dagster import op
+            from databricks.sdk import WorkspaceClient
+
+            @op(required_resource_keys={"databricks_client"})
+            def op1(context):
+                # Initialize the Databricks Jobs API
+                client = context.resources.databricks_client.api_client
+
+                # Example 1: Run a Databricks job with some parameters.
+                client.jobs.run_now(...)
+
+                # Example 2: Trigger a one-time run of a Databricks workload.
+                client.jobs.submit(...)
+
+                # Example 3: Get an existing run.
+                client.jobs.get_run(...)
+
+                # Example 4: Cancel a run.
+                client.jobs.cancel_run(...)
+            ```
+        Returns: The authenticated Databricks SDK Workspace Client.Return type: WorkspaceClient
+
+        </dd>
+
+    </dl>
+
+    </dd>
+
+</dl>
+</div>
+
+<div class="section" id="ops">
+
+#### Ops
+
+<dl>
+    <dt><Link class="anchor" id='dagster_databricks.create_databricks_run_now_op'>dagster_databricks.create_databricks_run_now_op <a href='https://github.com/dagster-io/dagster/blob/master/python_modules/libraries/dagster-databricks/dagster_databricks/ops.py#L24' className='source-link' target='_blank' rel='noopener noreferrer'>[source]</a><a href="#dagster_databricks.create_databricks_run_now_op" class="hash-link"></a></Link></dt>
+    <dd>
+
+    Creates an op that launches an existing databricks job.
+
+    As config, the op accepts a blob of the form described in Databricks’ Job API:
+    [https://docs.databricks.com/api/workspace/jobs/runnow](https://docs.databricks.com/api/workspace/jobs/runnow). The only required field is
+    `job_id`, which is the ID of the job to be executed. Additional fields can be used to specify
+    override parameters for the Databricks Job.
+
+    Parameters:
+      - <strong>databricks_job_id</strong> (<em>int</em>) – The ID of the Databricks Job to be executed.
+      - <strong>databricks_job_configuration</strong> (<em>dict</em>) – Configuration for triggering a new job run of a Databricks Job. See [https://docs.databricks.com/api/workspace/jobs/runnow](https://docs.databricks.com/api/workspace/jobs/runnow) for the full configuration.
+      - <strong>poll_interval_seconds</strong> (<em>float</em>) – How often to poll the Databricks API to check whether the Databricks job has finished running.
+      - <strong>max_wait_time_seconds</strong> (<em>float</em>) – How long to wait for the Databricks job to finish running before raising an error.
+      - <strong>name</strong> (<em>Optional</em><em>[</em><em>str</em><em>]</em>) – The name of the op. If not provided, the name will be _databricks_run_now_op.
+      - <strong>databricks_resource_key</strong> (<em>str</em>) – The name of the resource key used by this op. If not provided, the resource key will be “databricks”.
+
+
+    Returns: An op definition to run the Databricks Job.Return type: [OpDefinition](../dagster/ops.mdx#dagster.OpDefinition)
+
+
+    Example:
+
+        ```python
+        from dagster import job
+        from dagster_databricks import create_databricks_run_now_op, DatabricksClientResource
+
+        DATABRICKS_JOB_ID = 1234
+
+
+        run_now_op = create_databricks_run_now_op(
+            databricks_job_id=DATABRICKS_JOB_ID,
+            databricks_job_configuration={
+                "python_params": [
+                    "--input",
+                    "schema.db.input_table",
+                    "--output",
+                    "schema.db.output_table",
+                ],
+            },
+        )
+
+        @job(
+            resource_defs={
+                "databricks": DatabricksClientResource(
+                    host=EnvVar("DATABRICKS_HOST"),
+                    token=EnvVar("DATABRICKS_TOKEN")
+                )
+            }
+        )
+        def do_stuff():
+            run_now_op()
+        ```
+
+    </dd>
+
+</dl>
+<dl>
+    <dt><Link class="anchor" id='dagster_databricks.create_databricks_submit_run_op'>dagster_databricks.create_databricks_submit_run_op <a href='https://github.com/dagster-io/dagster/blob/master/python_modules/libraries/dagster-databricks/dagster_databricks/ops.py#L137' className='source-link' target='_blank' rel='noopener noreferrer'>[source]</a><a href="#dagster_databricks.create_databricks_submit_run_op" class="hash-link"></a></Link></dt>
+    <dd>
+
+    Creates an op that submits a one-time run of a set of tasks on Databricks.
+
+    As config, the op accepts a blob of the form described in Databricks’ Job API:
+    [https://docs.databricks.com/api/workspace/jobs/submit](https://docs.databricks.com/api/workspace/jobs/submit).
+
+    Parameters:
+      - <strong>databricks_job_configuration</strong> (<em>dict</em>) – Configuration for submitting a one-time run of a set of tasks on Databricks. See [https://docs.databricks.com/api/workspace/jobs/submit](https://docs.databricks.com/api/workspace/jobs/submit) for the full configuration.
+      - <strong>poll_interval_seconds</strong> (<em>float</em>) – How often to poll the Databricks API to check whether the Databricks job has finished running.
+      - <strong>max_wait_time_seconds</strong> (<em>float</em>) – How long to wait for the Databricks job to finish running before raising an error.
+      - <strong>name</strong> (<em>Optional</em><em>[</em><em>str</em><em>]</em>) – The name of the op. If not provided, the name will be _databricks_submit_run_op.
+      - <strong>databricks_resource_key</strong> (<em>str</em>) – The name of the resource key used by this op. If not provided, the resource key will be “databricks”.
+
+
+    Returns: An op definition to submit a one-time run of a set of tasks on Databricks.Return type: [OpDefinition](../dagster/ops.mdx#dagster.OpDefinition)
+
+
+    Example:
+
+        ```python
+        from dagster import job
+        from dagster_databricks import create_databricks_submit_run_op, DatabricksClientResource
+
+
+        submit_run_op = create_databricks_submit_run_op(
+            databricks_job_configuration={
+                "new_cluster": {
+                    "spark_version": '2.1.0-db3-scala2.11',
+                    "num_workers": 2
+                },
+                "notebook_task": {
+                    "notebook_path": "/Users/dagster@example.com/PrepareData",
+                },
+            }
+        )
+
+        @job(
+            resource_defs={
+                "databricks": DatabricksClientResource(
+                    host=EnvVar("DATABRICKS_HOST"),
+                    token=EnvVar("DATABRICKS_TOKEN")
+                )
+            }
+        )
+        def do_stuff():
+            submit_run_op()
+        ```
+
+    </dd>
+
+</dl>
+</div>
+
+<div class="section" id="step-launcher">
+
+#### Step Launcher
+
+<dl>
+    <dt><Link class="anchor" id='dagster_databricks.databricks_pyspark_step_launcher'>dagster_databricks.databricks_pyspark_step_launcher ResourceDefinition <a href='https://github.com/dagster-io/dagster/blob/master/python_modules/libraries/dagster-databricks/dagster_databricks/databricks_pyspark_step_launcher.py#L74' className='source-link' target='_blank' rel='noopener noreferrer'>[source]</a><a href="#dagster_databricks.databricks_pyspark_step_launcher" class="hash-link"></a></Link></dt>
+    <dd>
+
+        <div className='lineblock'> </div>
+
+        :::warning[superseded]
+        This API has been superseded.
+         While there is no plan to remove this functionality, for new projects, we recommend using Dagster Pipes. For more information, see https://docs.dagster.io/guides/build/external-pipelines.
+
+        :::
+
+    Resource for running ops as a Databricks Job.
+
+    When this resource is used, the op will be executed in Databricks using the ‘Run Submit’
+    API. Pipeline code will be zipped up and copied to a directory in DBFS along with the op’s
+    execution context.
+
+    Use the ‘run_config’ configuration to specify the details of the Databricks cluster used, and
+    the ‘storage’ key to configure persistent storage on that cluster. Storage is accessed by
+    setting the credentials in the Spark context, as documented [here for S3](https://docs.databricks.com/data/data-sources/aws/amazon-s3.html#alternative-1-set-aws-keys-in-the-spark-context) and [here for ADLS](https://docs.microsoft.com/en-gb/azure/databricks/data/data-sources/azure/azure-datalake-gen2#--access-directly-using-the-storage-account-access-key).
+
+
+    </dd>
+
+</dl>
+</div>
+
+<div class="section" id="pipes">
+
+#### Pipes
+
+<dl>
+    <dt><Link class="anchor" id='dagster_databricks.PipesDatabricksClient'>`class` dagster_databricks.PipesDatabricksClient <a href='https://github.com/dagster-io/dagster/blob/master/python_modules/libraries/dagster-databricks/dagster_databricks/pipes.py#L152' className='source-link' target='_blank' rel='noopener noreferrer'>[source]</a><a href="#dagster_databricks.PipesDatabricksClient" class="hash-link"></a></Link></dt>
+    <dd>
+
+    Pipes client for databricks.
+
+    Parameters:
+      - <strong>client</strong> (<em>WorkspaceClient</em>) – A databricks <cite>WorkspaceClient</cite> object.
+      - <strong>(</strong><strong>Optional</strong><strong>[</strong><strong>Mapping</strong><strong>[</strong><strong>str</strong> (<em>env</em>) – An optional dict of environment variables to pass to the databricks job.
+      - <strong>str</strong><strong>]</strong><strong>]</strong> – An optional dict of environment variables to pass to the databricks job.
+      - <strong>context_injector</strong> (<em>Optional</em><em>[</em>[*PipesContextInjector*](../dagster/pipes.mdx#dagster.PipesContextInjector)<em>]</em>) – A context injector to use to inject context into the k8s container process. Defaults to [`PipesDbfsContextInjector`](#dagster_databricks.PipesDbfsContextInjector).
+      - <strong>message_reader</strong> (<em>Optional</em><em>[</em>[*PipesMessageReader*](../dagster/pipes.mdx#dagster.PipesMessageReader)<em>]</em>) – A message reader to use to read messages from the databricks job. Defaults to [`PipesDbfsMessageReader`](#dagster_databricks.PipesDbfsMessageReader).
+      - <strong>poll_interval_seconds</strong> (<em>float</em>) – How long to sleep between checking the status of the job run. Defaults to 5.
+      - <strong>forward_termination</strong> (<em>bool</em>) – Whether to cancel the Databricks job if the orchestration process is interrupted or canceled. Defaults to True.
+
+
+
+    </dd>
+
+</dl>
+<dl>
+    <dt><Link class="anchor" id='dagster_databricks.PipesDbfsContextInjector'>`class` dagster_databricks.PipesDbfsContextInjector <a href='https://github.com/dagster-io/dagster/blob/master/python_modules/libraries/dagster-databricks/dagster_databricks/pipes.py#L367' className='source-link' target='_blank' rel='noopener noreferrer'>[source]</a><a href="#dagster_databricks.PipesDbfsContextInjector" class="hash-link"></a></Link></dt>
+    <dd>
+
+    A context injector that injects context into a Databricks job by writing a JSON file to DBFS.
+
+    Parameters: <strong>client</strong> (<em>WorkspaceClient</em>) – A databricks <cite>WorkspaceClient</cite> object.
+
+    </dd>
+
+</dl>
+<dl>
+    <dt><Link class="anchor" id='dagster_databricks.PipesDbfsMessageReader'>`class` dagster_databricks.PipesDbfsMessageReader <a href='https://github.com/dagster-io/dagster/blob/master/python_modules/libraries/dagster-databricks/dagster_databricks/pipes.py#L404' className='source-link' target='_blank' rel='noopener noreferrer'>[source]</a><a href="#dagster_databricks.PipesDbfsMessageReader" class="hash-link"></a></Link></dt>
+    <dd>
+
+    Message reader that reads messages by periodically reading message chunks from an
+    automatically-generated temporary directory on DBFS.
+
+    If <cite>log_readers</cite> is passed, this reader will also start the passed readers
+    when the first message is received from the external process.
+
+    Parameters:
+      - <strong>interval</strong> (<em>float</em>) – interval in seconds between attempts to download a chunk
+      - <strong>client</strong> (<em>WorkspaceClient</em>) – A databricks <cite>WorkspaceClient</cite> object.
+      - <strong>cluster_log_root</strong> (<em>Optional</em><em>[</em><em>str</em><em>]</em>) – The root path on DBFS where the cluster logs are written. If set, this will be used to read stderr/stdout logs.
+      - <strong>include_stdio_in_messages</strong> (<em>bool</em>) – Whether to send stdout/stderr to Dagster via Pipes messages. Defaults to False.
+      - <strong>log_readers</strong> (<em>Optional</em><em>[</em><em>Sequence</em><em>[</em><em>PipesLogReader</em><em>]</em><em>]</em>) – A set of log readers for logs on DBFS.
+
+
+
+    </dd>
+
+</dl>
+<dl>
+    <dt><Link class="anchor" id='dagster_databricks.PipesDbfsLogReader'>`class` dagster_databricks.PipesDbfsLogReader <a href='https://github.com/dagster-io/dagster/blob/master/python_modules/libraries/dagster-databricks/dagster_databricks/pipes.py#L475' className='source-link' target='_blank' rel='noopener noreferrer'>[source]</a><a href="#dagster_databricks.PipesDbfsLogReader" class="hash-link"></a></Link></dt>
+    <dd>
+
+    Reader that reads a log file from DBFS.
+
+    Parameters:
+      - <strong>interval</strong> (<em>float</em>) – interval in seconds between attempts to download a log chunk
+      - <strong>remote_log_name</strong> (<em>Literal</em><em>[</em><em>"stdout"</em><em>, </em><em>"stderr"</em><em>]</em>) – The name of the log file to read.
+      - <strong>target_stream</strong> (<em>TextIO</em>) – The stream to which to forward log chunks that have been read.
+      - <strong>client</strong> (<em>WorkspaceClient</em>) – A databricks <cite>WorkspaceClient</cite> object.
+      - <strong>debug_info</strong> (<em>Optional</em><em>[</em><em>str</em><em>]</em>) – An optional message containing debug information about the log reader.
+
+
+
+    </dd>
+
+</dl>
+</div>
+
+<div class="section" id="other">
+
+#### Other
+
+<dl>
+    <dt><Link class="anchor" id='dagster_databricks.DatabricksError'>`class` dagster_databricks.DatabricksError <a href='https://github.com/dagster-io/dagster/blob/master/python_modules/libraries/dagster-databricks/dagster_databricks/databricks.py#L33' className='source-link' target='_blank' rel='noopener noreferrer'>[source]</a><a href="#dagster_databricks.DatabricksError" class="hash-link"></a></Link></dt>
+    <dd>
+
+    </dd>
+
+</dl>
+</div>
+
+<div class="section" id="legacy">
+
+#### Legacy
+
+<dl>
+    <dt><Link class="anchor" id='dagster_databricks.databricks_client'>dagster_databricks.databricks_client ResourceDefinition <a href='https://github.com/dagster-io/dagster/blob/master/python_modules/libraries/dagster-databricks/dagster_databricks/resources.py#L113' className='source-link' target='_blank' rel='noopener noreferrer'>[source]</a><a href="#dagster_databricks.databricks_client" class="hash-link"></a></Link></dt>
+    <dd>
+
+        <div className='lineblock'> </div>
+
+
+    </dd>
+
+</dl>
+</div></div></div></div>

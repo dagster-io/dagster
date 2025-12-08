@@ -1,0 +1,104 @@
+---
+title: 'omni (dagster-omni)'
+title_meta: 'omni (dagster-omni) API Documentation - Build Better Data Pipelines | Python Reference Documentation for Dagster'
+description: 'omni (dagster-omni) Dagster API | Comprehensive Python API documentation for Dagster, the data orchestration platform. Learn how to build, test, and maintain data pipelines with our detailed guides and examples.'
+last_update:
+  date: '2025-12-05'
+custom_edit_url: null
+---
+
+<div class="section" id="omni-dagster-omni">
+
+# Omni (dagster-omni)
+
+Dagster allows you to represent your Omni documents as assets, with dependencies on the data
+assets (e.g. database tables) that they depend on. This allows you to understand how changes to
+upstream data may interact with end product dashboards.
+
+<div class="section" id="omnicomponent">
+
+## OmniComponent
+
+<dl>
+    <dt><Link class="anchor" id='dagster_omni.OmniComponent'>`class` dagster_omni.OmniComponent <a href='https://github.com/dagster-io/dagster/blob/master/python_modules/libraries/dagster-omni/dagster_omni/component.py#L27' className='source-link' target='_blank' rel='noopener noreferrer'>[source]</a><a href="#dagster_omni.OmniComponent" class="hash-link"></a></Link></dt>
+    <dd>
+
+        :::info[preview]
+        This API is currently in preview, and may have breaking changes in patch version releases. This API is not considered ready for production use.
+
+
+        :::
+
+    Pulls in the contents of an Omni workspace into Dagster assets.
+
+
+
+    Example:
+
+        ```yaml
+        # defs.yaml
+
+        type: dagster_omni.OmniComponent
+        attributes:
+          workspace:
+            base_url: https://your-company.omniapp.co
+            api_key: "{{ env.OMNI_API_KEY }}"
+        ```
+    <dl>
+        <dt><Link class="anchor" id='dagster_omni.OmniComponent.get_asset_spec'>get_asset_spec <a href='https://github.com/dagster-io/dagster/blob/master/python_modules/libraries/dagster-omni/dagster_omni/component.py#L99' className='source-link' target='_blank' rel='noopener noreferrer'>[source]</a><a href="#dagster_omni.OmniComponent.get_asset_spec" class="hash-link"></a></Link></dt>
+        <dd>
+
+        Generates an AssetSpec for a given Omni document.
+
+        This method can be overridden in a subclass to customize how Omni documents
+        (workbooks, queries) are converted to Dagster asset specs. By default, it applies
+        any configured translation function to the base asset spec.
+
+        Parameters:
+          - <strong>context</strong> – The component load context provided by Dagster
+          - <strong>data</strong> – The OmniTranslatorData containing information about the Omni document
+
+
+        Returns: An AssetSpec that represents the Omni document as a Dagster asset, or None
+        if the document should not be represented as an asset
+
+
+        Example:
+
+        Override this method to add custom metadata based on document properties:
+
+            ```python
+            from dagster_omni import OmniComponent
+            import dagster as dg
+
+            class CustomOmniComponent(OmniComponent):
+                def get_asset_spec(self, context, data):
+                    base_spec = super().get_asset_spec(context, data)
+                    if base_spec:
+                        return base_spec.replace_attributes(
+                            metadata={
+                                **base_spec.metadata,
+                                "omni_type": type(data.obj).__name__,
+                                "workspace": data.workspace_data.workspace_id
+                            }
+                        )
+                    return None
+            ```
+
+        </dd>
+
+    </dl>
+
+    </dd>
+
+</dl>
+The main class for interacting with Omni is the `OmniComponent`. This class is responsible for connecting to your Omni instance,
+fetching information about your documents, and building Dagster asset definitions from that information.
+
+`OmniComponent` is a `StateBackedComponent`, which means that it only fetches updated information from the Omni API when you tell
+it to, and you will need to redeploy your code location after updating your metadata in order to see those changes.
+
+The simplest way to update the stored state of your `OmniComponent` is to use the `dg utils refresh-component-state` command. When
+deploying your code location, this command should be executed in your CI/CD workflow (e.g. github actions).
+
+</div></div>

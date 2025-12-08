@@ -1,0 +1,52 @@
+---
+title: 'great expectations (dagster-ge)'
+title_meta: 'great expectations (dagster-ge) API Documentation - Build Better Data Pipelines | Python Reference Documentation for Dagster'
+description: 'great expectations (dagster-ge) Dagster API | Comprehensive Python API documentation for Dagster, the data orchestration platform. Learn how to build, test, and maintain data pipelines with our detailed guides and examples.'
+last_update:
+  date: '2025-12-05'
+custom_edit_url: null
+---
+
+<div class="section" id="great-expectations-dagster-ge">
+# Great Expectations (dagster-ge)
+
+<dl>
+
+    <dt><Link class="anchor" id='dagster_ge.ge_validation_op_factory'>dagster_ge.ge_validation_op_factory <a href='https://github.com/dagster-io/dagster/blob/master/python_modules/libraries/dagster-ge/dagster_ge/factory.py#L54' className='source-link' target='_blank' rel='noopener noreferrer'>[source]</a><a href="#dagster_ge.ge_validation_op_factory" class="hash-link"></a></Link></dt>
+    <dd>
+        :::info[beta]
+        This API is currently in beta, and may have breaking changes in minor version releases, with behavior changes in patch releases.
+
+
+        :::
+
+    Generates ops for interacting with Great Expectations.
+
+    Parameters:
+
+    - - <strong>name</strong> (<em>str</em>) – the name of the op
+      - <strong>datasource_name</strong> (<em>str</em>) – the name of your DataSource, see your great_expectations.yml
+      - <strong>data_connector_name</strong> (<em>str</em>) – the name of the data connector for this datasource. This should point to a RuntimeDataConnector. For information on how to set this up, see: [https://docs.greatexpectations.io/docs/guides/connecting_to_your_data/how_to_create_a_batch_of_data_from_an_in_memory_spark_or_pandas_dataframe](https://docs.greatexpectations.io/docs/guides/connecting_to_your_data/how_to_create_a_batch_of_data_from_an_in_memory_spark_or_pandas_dataframe)
+      - <strong>data_asset_name</strong> (<em>str</em>) – the name of the data asset that this op will be validating.
+      - <strong>suite_name</strong> (<em>str</em>) – the name of your expectation suite, see your great_expectations.yml
+      - <strong>batch_identifier_fn</strong> (<em>dict</em>) – A dicitonary of batch identifiers to uniquely identify this batch of data. To learn more about batch identifiers, see: [https://docs.greatexpectations.io/docs/reference/datasources#batches](https://docs.greatexpectations.io/docs/reference/datasources#batches).
+      - <strong>input_dagster_type</strong> ([*DagsterType*](../dagster/types.mdx#dagster.DagsterType)) – the Dagster type used to type check the input to the op. Defaults to <cite>dagster_pandas.DataFrame</cite>.
+      - <strong>runtime_method_type</strong> (<em>str</em>) – how GE should interperet the op input. One of (“batch_data”, “path”, “query”). Defaults to “batch_data”, which will interperet the input as an in-memory object.
+        <strong>extra_kwargs</strong> (<em>Optional</em><em>[</em><em>dict</em><em>]</em>) –
+
+        adds extra kwargs to the invocation of <cite>ge_data_context</cite>’s <cite>get_validator</cite> method. If not set, input will be:
+
+        >
+
+            ```default
+            {     "datasource_name": datasource_name,     "data_connector_name": data_connector_name,     "data_asset_name": data_asset_name,     "runtime_parameters": {         "<runtime_method_type>": <op input>     },     "batch_identifiers": batch_identifiers,     "expectation_suite_name": suite_name, }
+            ```
+
+
+    Returns: An op that takes in a set of data and yields both an expectation with relevant metadata and
+    an output with all the metadata (for user processing)
+
+</dd>
+
+</dl>
+</div>

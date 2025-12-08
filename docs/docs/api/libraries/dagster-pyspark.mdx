@@ -1,0 +1,83 @@
+---
+title: 'pyspark (dagster-pyspark)'
+title_meta: 'pyspark (dagster-pyspark) API Documentation - Build Better Data Pipelines | Python Reference Documentation for Dagster'
+description: 'pyspark (dagster-pyspark) Dagster API | Comprehensive Python API documentation for Dagster, the data orchestration platform. Learn how to build, test, and maintain data pipelines with our detailed guides and examples.'
+last_update:
+  date: '2025-12-05'
+custom_edit_url: null
+---
+
+<div class="section" id="pyspark-dagster-pyspark">
+
+# Pyspark (dagster-pyspark)
+
+<dl>
+    <dt><Link class="anchor" id='dagster_pyspark.PySparkResource'>dagster_pyspark.PySparkResource ResourceDefinition <a href='https://github.com/dagster-io/dagster/blob/master/python_modules/libraries/dagster-pyspark/dagster_pyspark/resources.py#L23' className='source-link' target='_blank' rel='noopener noreferrer'>[source]</a><a href="#dagster_pyspark.PySparkResource" class="hash-link"></a></Link></dt>
+    <dd>
+
+        <div className='lineblock'> </div>
+
+    This resource provides access to a PySpark Session for executing PySpark code within Dagster.
+
+
+
+    Example:
+
+        ```python
+        @op
+        def my_op(pyspark: PySparkResource)
+            spark_session = pyspark.spark_session
+            dataframe = spark_session.read.json("examples/src/main/resources/people.json")
+
+
+        @job(
+            resource_defs={
+                "pyspark": PySparkResource(
+                    spark_config={
+                        "spark.executor.memory": "2g"
+                    }
+                )
+            }
+        )
+        def my_spark_job():
+            my_op()
+        ```
+
+    </dd>
+
+</dl>
+<div class="section" id="legacy">
+
+## Legacy
+
+<dl>
+    <dt><Link class="anchor" id='dagster_pyspark.pyspark_resource'>dagster_pyspark.pyspark_resource ResourceDefinition <a href='https://github.com/dagster-io/dagster/blob/master/python_modules/libraries/dagster-pyspark/dagster_pyspark/resources.py#L67' className='source-link' target='_blank' rel='noopener noreferrer'>[source]</a><a href="#dagster_pyspark.pyspark_resource" class="hash-link"></a></Link></dt>
+    <dd>
+
+        <div className='lineblock'> </div>
+
+    This resource provides access to a PySpark SparkSession for executing PySpark code within Dagster.
+
+
+
+    Example:
+
+        ```python
+        @op(required_resource_keys={"pyspark"})
+        def my_op(context):
+            spark_session = context.resources.pyspark.spark_session
+            dataframe = spark_session.read.json("examples/src/main/resources/people.json")
+
+        my_pyspark_resource = pyspark_resource.configured(
+            {"spark_conf": {"spark.executor.memory": "2g"}}
+        )
+
+        @job(resource_defs={"pyspark": my_pyspark_resource})
+        def my_spark_job():
+            my_op()
+        ```
+
+    </dd>
+
+</dl>
+</div></div>

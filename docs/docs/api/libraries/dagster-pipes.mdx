@@ -1,0 +1,1177 @@
+---
+title: 'pipes (dagster-pipes)'
+title_meta: 'pipes (dagster-pipes) API Documentation - Build Better Data Pipelines | Python Reference Documentation for Dagster'
+description: 'pipes (dagster-pipes) Dagster API | Comprehensive Python API documentation for Dagster, the data orchestration platform. Learn how to build, test, and maintain data pipelines with our detailed guides and examples.'
+last_update:
+  date: '2025-12-05'
+custom_edit_url: null
+---
+
+<div class="section" id="pipes-dagster-pipes">
+
+# Pipes (dagster-pipes)
+
+The `dagster-pipes` library is intended for inclusion in an external process that integrates with Dagster using the [Pipes](https://docs.dagster.io/guides/build/external-pipelines) protocol. This could be in an environment like Databricks, Kubernetes, or Docker. Using this library, you can write code in the external process that streams metadata back to Dagster.
+
+For a detailed look at the Pipes process, including how to customize it, refer to the [Dagster Pipes details and customization guide](https://docs.dagster.io/guides/build/external-pipelines/dagster-pipes-details-and-customization).
+
+<strong>Looking to set up a Pipes client in Dagster?</strong> Refer to the [Dagster Pipes API
+reference](https://docs.dagster.io/api/libraries/dagster-pipes).
+
+<strong>Note</strong>: This library isn’t included with `dagster` and must be [installed
+separately](https://pypi.org/project/dagster-pipes).
+
+<div class="section" id="context">
+
+## Context
+
+<dl>
+    <dt><Link class="anchor" id='dagster_pipes.open_dagster_pipes'>dagster_pipes.open_dagster_pipes <a href='https://github.com/dagster-io/dagster/blob/master/python_modules/dagster-pipes/dagster_pipes/__init__.py#L1548' className='source-link' target='_blank' rel='noopener noreferrer'>[source]</a><a href="#dagster_pipes.open_dagster_pipes" class="hash-link"></a></Link></dt>
+    <dd>
+
+    Initialize the Dagster Pipes context.
+
+    This function should be called near the entry point of a pipes process. It will load injected
+    context information from Dagster and spin up the machinery for streaming messages back to
+    Dagster.
+
+    If the process was not launched by Dagster, this function will emit a warning and return a
+    <cite>MagicMock</cite> object. This should make all operations on the context no-ops and prevent your code
+    from crashing.
+
+    Parameters:
+      - <strong>context_loader</strong> (<em>Optional</em><em>[</em>[*PipesContextLoader*](#dagster_pipes.PipesContextLoader)<em>]</em>) – The context loader to use. Defaults to [`PipesDefaultContextLoader`](#dagster_pipes.PipesDefaultContextLoader).
+      - <strong>message_writer</strong> (<em>Optional</em><em>[</em>[*PipesMessageWriter*](#dagster_pipes.PipesMessageWriter)<em>]</em>) – The message writer to use. Defaults to [`PipesDefaultMessageWriter`](#dagster_pipes.PipesDefaultMessageWriter).
+      - <strong>params_loader</strong> (<em>Optional</em><em>[</em>[*PipesParamsLoader*](#dagster_pipes.PipesParamsLoader)<em>]</em>) – The params loader to use. Defaults to [`PipesEnvVarParamsLoader`](#dagster_pipes.PipesEnvVarParamsLoader).
+
+
+    Returns: The initialized context.Return type: [PipesContext](#dagster_pipes.PipesContext)
+
+    </dd>
+
+</dl>
+<dl>
+    <dt><Link class="anchor" id='dagster_pipes.PipesContext'>`class` dagster_pipes.PipesContext <a href='https://github.com/dagster-io/dagster/blob/master/python_modules/dagster-pipes/dagster_pipes/__init__.py#L1590' className='source-link' target='_blank' rel='noopener noreferrer'>[source]</a><a href="#dagster_pipes.PipesContext" class="hash-link"></a></Link></dt>
+    <dd>
+
+    The context for a Dagster Pipes process.
+
+    This class is analogous to [`OpExecutionContext`](../dagster/execution.mdx#dagster.OpExecutionContext) on the Dagster side of the Pipes
+    connection. It provides access to information such as the asset key(s) and partition key(s) in
+    scope for the current step. It also provides methods for logging and emitting results that will
+    be streamed back to Dagster.
+
+    This class should not be directly instantiated by the user. Instead it should be initialized by
+    calling [`open_dagster_pipes()`](#dagster_pipes.open_dagster_pipes), which will return the singleton instance of this class.
+    After <cite>open_dagster_pipes()</cite> has been called, the singleton instance can also be retrieved by
+    calling [`PipesContext.get()`](#dagster_pipes.PipesContext.get).
+
+    <dl>
+        <dt><Link class="anchor" id='dagster_pipes.PipesContext.get'>`classmethod` get <a href='https://github.com/dagster-io/dagster/blob/master/python_modules/dagster-pipes/dagster_pipes/__init__.py#L1616' className='source-link' target='_blank' rel='noopener noreferrer'>[source]</a><a href="#dagster_pipes.PipesContext.get" class="hash-link"></a></Link></dt>
+        <dd>
+        Get the singleton instance of the context. Raises an error if the context has not been initialized.
+        </dd>
+
+    </dl>
+    <dl>
+        <dt><Link class="anchor" id='dagster_pipes.PipesContext.is_initialized'>`classmethod` is_initialized <a href='https://github.com/dagster-io/dagster/blob/master/python_modules/dagster-pipes/dagster_pipes/__init__.py#L1606' className='source-link' target='_blank' rel='noopener noreferrer'>[source]</a><a href="#dagster_pipes.PipesContext.is_initialized" class="hash-link"></a></Link></dt>
+        <dd>
+        bool: Whether the context has been initialized.
+        </dd>
+
+    </dl>
+    <dl>
+        <dt><Link class="anchor" id='dagster_pipes.PipesContext.set'>`classmethod` set <a href='https://github.com/dagster-io/dagster/blob/master/python_modules/dagster-pipes/dagster_pipes/__init__.py#L1611' className='source-link' target='_blank' rel='noopener noreferrer'>[source]</a><a href="#dagster_pipes.PipesContext.set" class="hash-link"></a></Link></dt>
+        <dd>
+        Set the singleton instance of the context.
+        </dd>
+
+    </dl>
+    <dl>
+        <dt><Link class="anchor" id='dagster_pipes.PipesContext.close'>close <a href='https://github.com/dagster-io/dagster/blob/master/python_modules/dagster-pipes/dagster_pipes/__init__.py#L1654' className='source-link' target='_blank' rel='noopener noreferrer'>[source]</a><a href="#dagster_pipes.PipesContext.close" class="hash-link"></a></Link></dt>
+        <dd>
+        Close the pipes connection. This will flush all buffered messages to the orchestration
+        process and cause any further attempt to write a message to raise an error. This method is
+        idempotent– subsequent calls after the first have no effect.
+        </dd>
+
+    </dl>
+    <dl>
+        <dt><Link class="anchor" id='dagster_pipes.PipesContext.get_extra'>get_extra <a href='https://github.com/dagster-io/dagster/blob/master/python_modules/dagster-pipes/dagster_pipes/__init__.py#L1802' className='source-link' target='_blank' rel='noopener noreferrer'>[source]</a><a href="#dagster_pipes.PipesContext.get_extra" class="hash-link"></a></Link></dt>
+        <dd>
+
+        Get the value of an extra provided by the user. Raises an error if the extra is not defined.
+
+        Parameters: <strong>key</strong> (<em>str</em>) – The key of the extra.Returns: The value of the extra.Return type: Any
+
+        </dd>
+
+    </dl>
+    <dl>
+        <dt><Link class="anchor" id='dagster_pipes.PipesContext.log_external_stream'>log_external_stream <a href='https://github.com/dagster-io/dagster/blob/master/python_modules/dagster-pipes/dagster_pipes/__init__.py#L1912' className='source-link' target='_blank' rel='noopener noreferrer'>[source]</a><a href="#dagster_pipes.PipesContext.log_external_stream" class="hash-link"></a></Link></dt>
+        <dd>
+
+        </dd>
+
+    </dl>
+    <dl>
+        <dt><Link class="anchor" id='dagster_pipes.PipesContext.report_asset_check'>report_asset_check <a href='https://github.com/dagster-io/dagster/blob/master/python_modules/dagster-pipes/dagster_pipes/__init__.py#L1861' className='source-link' target='_blank' rel='noopener noreferrer'>[source]</a><a href="#dagster_pipes.PipesContext.report_asset_check" class="hash-link"></a></Link></dt>
+        <dd>
+
+        Report to Dagster that an asset check has been performed. Streams a payload containing
+        check result information back to Dagster. If no assets or associated checks are in scope, raises an error.
+
+        Parameters:
+          - <strong>check_name</strong> (<em>str</em>) – The name of the check.
+          - <strong>passed</strong> (<em>bool</em>) – Whether the check passed.
+          - <strong>severity</strong> (<em>PipesAssetCheckSeverity</em>) – The severity of the check. Defaults to “ERROR”.
+          - <strong>metadata</strong> (<em>Optional</em><em>[</em><em>Mapping</em><em>[</em><em>str</em><em>, </em><em>Union</em><em>[</em><em>PipesMetadataRawValue</em><em>, </em><em>PipesMetadataValue</em><em>]</em><em>]</em><em>]</em>) – Metadata for the check. Defaults to None.
+          - <strong>asset_key</strong> (<em>Optional</em><em>[</em><em>str</em><em>]</em>) – The asset key for the check. If only a single asset is in scope, default to that asset’s key. If multiple assets are in scope, this must be set explicitly or an error will be raised.
+
+
+
+        </dd>
+
+    </dl>
+    <dl>
+        <dt><Link class="anchor" id='dagster_pipes.PipesContext.report_asset_materialization'>report_asset_materialization <a href='https://github.com/dagster-io/dagster/blob/master/python_modules/dagster-pipes/dagster_pipes/__init__.py#L1820' className='source-link' target='_blank' rel='noopener noreferrer'>[source]</a><a href="#dagster_pipes.PipesContext.report_asset_materialization" class="hash-link"></a></Link></dt>
+        <dd>
+
+        Report to Dagster that an asset has been materialized. Streams a payload containing
+        materialization information back to Dagster. If no assets are in scope, raises an error.
+
+        Parameters:
+          - <strong>metadata</strong> (<em>Optional</em><em>[</em><em>Mapping</em><em>[</em><em>str</em><em>, </em><em>Union</em><em>[</em><em>PipesMetadataRawValue</em><em>, </em><em>PipesMetadataValue</em><em>]</em><em>]</em><em>]</em>) – Metadata for the materialized asset. Defaults to None.
+          - <strong>data_version</strong> (<em>Optional</em><em>[</em><em>str</em><em>]</em>) – The data version for the materialized asset. Defaults to None.
+          - <strong>asset_key</strong> (<em>Optional</em><em>[</em><em>str</em><em>]</em>) – The asset key for the materialized asset. If only a single asset is in scope, default to that asset’s key. If multiple assets are in scope, this must be set explicitly or an error will be raised.
+
+
+
+        </dd>
+
+    </dl>
+    <dl>
+        <dt><Link class="anchor" id='dagster_pipes.PipesContext.report_custom_message'>report_custom_message <a href='https://github.com/dagster-io/dagster/blob/master/python_modules/dagster-pipes/dagster_pipes/__init__.py#L1903' className='source-link' target='_blank' rel='noopener noreferrer'>[source]</a><a href="#dagster_pipes.PipesContext.report_custom_message" class="hash-link"></a></Link></dt>
+        <dd>
+
+        Send a JSON serializable payload back to the orchestration process. Can be retrieved there
+        using <cite>get_custom_messages</cite>.
+
+        Parameters: <strong>payload</strong> (<em>Any</em>) – JSON serializable data.
+
+        </dd>
+
+    </dl>
+    <dl>
+        <dt><Link class="anchor" id='dagster_pipes.PipesContext.asset_key'>`property` asset_key <a href='https://github.com/dagster-io/dagster/blob/master/python_modules/dagster-pipes/dagster_pipes/__init__.py#L1688' className='source-link' target='_blank' rel='noopener noreferrer'>[source]</a><a href="#dagster_pipes.PipesContext.asset_key" class="hash-link"></a></Link></dt>
+        <dd>
+
+        The AssetKey for the currently scoped asset. Raises an error if 0 or multiple assets
+        are in scope.
+
+        Type: str
+
+        </dd>
+
+    </dl>
+    <dl>
+        <dt><Link class="anchor" id='dagster_pipes.PipesContext.asset_keys'>`property` asset_keys <a href='https://github.com/dagster-io/dagster/blob/master/python_modules/dagster-pipes/dagster_pipes/__init__.py#L1697' className='source-link' target='_blank' rel='noopener noreferrer'>[source]</a><a href="#dagster_pipes.PipesContext.asset_keys" class="hash-link"></a></Link></dt>
+        <dd>
+
+        The AssetKeys for the currently scoped assets. Raises an error if no
+        assets are in scope.
+
+        Type: Sequence[str]
+
+        </dd>
+
+    </dl>
+    <dl>
+        <dt><Link class="anchor" id='dagster_pipes.PipesContext.code_version'>`property` code_version <a href='https://github.com/dagster-io/dagster/blob/master/python_modules/dagster-pipes/dagster_pipes/__init__.py#L1726' className='source-link' target='_blank' rel='noopener noreferrer'>[source]</a><a href="#dagster_pipes.PipesContext.code_version" class="hash-link"></a></Link></dt>
+        <dd>
+
+        The code version for the currently scoped asset. Raises an error if 0 or
+        multiple assets are in scope.
+
+        Type: Optional[str]
+
+        </dd>
+
+    </dl>
+    <dl>
+        <dt><Link class="anchor" id='dagster_pipes.PipesContext.code_version_by_asset_key'>`property` code_version_by_asset_key <a href='https://github.com/dagster-io/dagster/blob/master/python_modules/dagster-pipes/dagster_pipes/__init__.py#L1737' className='source-link' target='_blank' rel='noopener noreferrer'>[source]</a><a href="#dagster_pipes.PipesContext.code_version_by_asset_key" class="hash-link"></a></Link></dt>
+        <dd>
+
+        Mapping of asset key to code version for the currently
+        scoped assets. Raises an error if no assets are in scope.
+
+        Type: Mapping[str, Optional[str]]
+
+        </dd>
+
+    </dl>
+    <dl>
+        <dt><Link class="anchor" id='dagster_pipes.PipesContext.extras'>`property` extras <a href='https://github.com/dagster-io/dagster/blob/master/python_modules/dagster-pipes/dagster_pipes/__init__.py#L1813' className='source-link' target='_blank' rel='noopener noreferrer'>[source]</a><a href="#dagster_pipes.PipesContext.extras" class="hash-link"></a></Link></dt>
+        <dd>
+
+        Key-value map for all extras provided by the user.
+
+        Type: Mapping[str, Any]
+
+        </dd>
+
+    </dl>
+    <dl>
+        <dt><Link class="anchor" id='dagster_pipes.PipesContext.is_asset_step'>`property` is_asset_step <a href='https://github.com/dagster-io/dagster/blob/master/python_modules/dagster-pipes/dagster_pipes/__init__.py#L1683' className='source-link' target='_blank' rel='noopener noreferrer'>[source]</a><a href="#dagster_pipes.PipesContext.is_asset_step" class="hash-link"></a></Link></dt>
+        <dd>
+
+        Whether the current step targets assets.
+
+        Type: bool
+
+        </dd>
+
+    </dl>
+    <dl>
+        <dt><Link class="anchor" id='dagster_pipes.PipesContext.is_closed'>`property` is_closed <a href='https://github.com/dagster-io/dagster/blob/master/python_modules/dagster-pipes/dagster_pipes/__init__.py#L1668' className='source-link' target='_blank' rel='noopener noreferrer'>[source]</a><a href="#dagster_pipes.PipesContext.is_closed" class="hash-link"></a></Link></dt>
+        <dd>
+
+        Whether the context has been closed.
+
+        Type: bool
+
+        </dd>
+
+    </dl>
+    <dl>
+        <dt><Link class="anchor" id='dagster_pipes.PipesContext.is_partition_step'>`property` is_partition_step <a href='https://github.com/dagster-io/dagster/blob/master/python_modules/dagster-pipes/dagster_pipes/__init__.py#L1747' className='source-link' target='_blank' rel='noopener noreferrer'>[source]</a><a href="#dagster_pipes.PipesContext.is_partition_step" class="hash-link"></a></Link></dt>
+        <dd>
+
+        Whether the current step is scoped to one or more partitions.
+
+        Type: bool
+
+        </dd>
+
+    </dl>
+    <dl>
+        <dt><Link class="anchor" id='dagster_pipes.PipesContext.job_name'>`property` job_name <a href='https://github.com/dagster-io/dagster/blob/master/python_modules/dagster-pipes/dagster_pipes/__init__.py#L1790' className='source-link' target='_blank' rel='noopener noreferrer'>[source]</a><a href="#dagster_pipes.PipesContext.job_name" class="hash-link"></a></Link></dt>
+        <dd>
+
+        The job name for the currently executing run. Returns None if the run is
+        not derived from a job.
+
+        Type: Optional[str]
+
+        </dd>
+
+    </dl>
+    <dl>
+        <dt><Link class="anchor" id='dagster_pipes.PipesContext.log'>`property` log <a href='https://github.com/dagster-io/dagster/blob/master/python_modules/dagster-pipes/dagster_pipes/__init__.py#L1917' className='source-link' target='_blank' rel='noopener noreferrer'>[source]</a><a href="#dagster_pipes.PipesContext.log" class="hash-link"></a></Link></dt>
+        <dd>
+
+        A logger that streams log messages back to Dagster.
+
+        Type: logging.Logger
+
+        </dd>
+
+    </dl>
+    <dl>
+        <dt><Link class="anchor" id='dagster_pipes.PipesContext.partition_key'>`property` partition_key <a href='https://github.com/dagster-io/dagster/blob/master/python_modules/dagster-pipes/dagster_pipes/__init__.py#L1752' className='source-link' target='_blank' rel='noopener noreferrer'>[source]</a><a href="#dagster_pipes.PipesContext.partition_key" class="hash-link"></a></Link></dt>
+        <dd>
+
+        The partition key for the currently scoped partition. Raises an error if 0 or
+        multiple partitions are in scope.
+
+        Type: str
+
+        </dd>
+
+    </dl>
+    <dl>
+        <dt><Link class="anchor" id='dagster_pipes.PipesContext.partition_key_range'>`property` partition_key_range <a href='https://github.com/dagster-io/dagster/blob/master/python_modules/dagster-pipes/dagster_pipes/__init__.py#L1762' className='source-link' target='_blank' rel='noopener noreferrer'>[source]</a><a href="#dagster_pipes.PipesContext.partition_key_range" class="hash-link"></a></Link></dt>
+        <dd>
+
+        The partition key range for the currently scoped partition or
+        partitions. Raises an error if no partitions are in scope.
+
+        Type: PipesPartitionKeyRange
+
+        </dd>
+
+    </dl>
+    <dl>
+        <dt><Link class="anchor" id='dagster_pipes.PipesContext.partition_time_window'>`property` partition_time_window <a href='https://github.com/dagster-io/dagster/blob/master/python_modules/dagster-pipes/dagster_pipes/__init__.py#L1772' className='source-link' target='_blank' rel='noopener noreferrer'>[source]</a><a href="#dagster_pipes.PipesContext.partition_time_window" class="hash-link"></a></Link></dt>
+        <dd>
+
+        The partition time window for the currently scoped partition
+        or partitions. Returns None if partitions in scope are not temporal. Raises an error if no
+        partitions are in scope.
+
+        Type: Optional[PipesTimeWindow]
+
+        </dd>
+
+    </dl>
+    <dl>
+        <dt><Link class="anchor" id='dagster_pipes.PipesContext.provenance'>`property` provenance <a href='https://github.com/dagster-io/dagster/blob/master/python_modules/dagster-pipes/dagster_pipes/__init__.py#L1705' className='source-link' target='_blank' rel='noopener noreferrer'>[source]</a><a href="#dagster_pipes.PipesContext.provenance" class="hash-link"></a></Link></dt>
+        <dd>
+
+        The provenance for the currently scoped asset. Raises an
+        error if 0 or multiple assets are in scope.
+
+        Type: Optional[PipesDataProvenance]
+
+        </dd>
+
+    </dl>
+    <dl>
+        <dt><Link class="anchor" id='dagster_pipes.PipesContext.provenance_by_asset_key'>`property` provenance_by_asset_key <a href='https://github.com/dagster-io/dagster/blob/master/python_modules/dagster-pipes/dagster_pipes/__init__.py#L1716' className='source-link' target='_blank' rel='noopener noreferrer'>[source]</a><a href="#dagster_pipes.PipesContext.provenance_by_asset_key" class="hash-link"></a></Link></dt>
+        <dd>
+
+        Mapping of asset key to provenance for the
+        currently scoped assets. Raises an error if no assets are in scope.
+
+        Type: Mapping[str, Optional[PipesDataProvenance]]
+
+        </dd>
+
+    </dl>
+    <dl>
+        <dt><Link class="anchor" id='dagster_pipes.PipesContext.retry_number'>`property` retry_number <a href='https://github.com/dagster-io/dagster/blob/master/python_modules/dagster-pipes/dagster_pipes/__init__.py#L1797' className='source-link' target='_blank' rel='noopener noreferrer'>[source]</a><a href="#dagster_pipes.PipesContext.retry_number" class="hash-link"></a></Link></dt>
+        <dd>
+
+        The retry number for the currently executing run.
+
+        Type: int
+
+        </dd>
+
+    </dl>
+    <dl>
+        <dt><Link class="anchor" id='dagster_pipes.PipesContext.run_id'>`property` run_id <a href='https://github.com/dagster-io/dagster/blob/master/python_modules/dagster-pipes/dagster_pipes/__init__.py#L1785' className='source-link' target='_blank' rel='noopener noreferrer'>[source]</a><a href="#dagster_pipes.PipesContext.run_id" class="hash-link"></a></Link></dt>
+        <dd>
+
+        The run ID for the currently executing pipeline run.
+
+        Type: str
+
+        </dd>
+
+    </dl>
+
+    </dd>
+
+</dl>
+</div>
+
+<div class="section" id="advanced">
+
+## Advanced
+
+Most Pipes users won’t need to use the APIs in the following sections unless they are customizing the Pipes protocol.
+
+Refer to the [Dagster Pipes details and customization guide](https://docs.dagster.io/guides/build/external-pipelines/dagster-pipes-details-and-customization) for more information.
+
+<div class="section" id="context-loaders">
+
+### Context loaders
+
+Context loaders load the context payload from the location specified in the bootstrap payload.
+
+<dl>
+    <dt><Link class="anchor" id='dagster_pipes.PipesContextLoader'>`class` dagster_pipes.PipesContextLoader <a href='https://github.com/dagster-io/dagster/blob/master/python_modules/dagster-pipes/dagster_pipes/__init__.py#L507' className='source-link' target='_blank' rel='noopener noreferrer'>[source]</a><a href="#dagster_pipes.PipesContextLoader" class="hash-link"></a></Link></dt>
+    <dd>
+
+    <dl>
+        <dt><Link class="anchor" id='dagster_pipes.PipesContextLoader.load_context'>`abstractmethod` load_context <a href='https://github.com/dagster-io/dagster/blob/master/python_modules/dagster-pipes/dagster_pipes/__init__.py#L508' className='source-link' target='_blank' rel='noopener noreferrer'>[source]</a><a href="#dagster_pipes.PipesContextLoader.load_context" class="hash-link"></a></Link></dt>
+        <dd>
+
+        A <cite>@contextmanager</cite> that loads context data injected by the orchestration process.
+
+        This method should read and yield the context data from the location specified by the passed in
+        <cite>PipesParams</cite>.
+
+        Parameters: <strong>params</strong> (<em>PipesParams</em>) – The params provided by the context injector in the orchestration
+        process.Yields: <em>PipesContextData</em> – The context data.
+
+        </dd>
+
+    </dl>
+
+    </dd>
+
+</dl>
+<dl>
+    <dt><Link class="anchor" id='dagster_pipes.PipesDefaultContextLoader'>`class` dagster_pipes.PipesDefaultContextLoader <a href='https://github.com/dagster-io/dagster/blob/master/python_modules/dagster-pipes/dagster_pipes/__init__.py#L744' className='source-link' target='_blank' rel='noopener noreferrer'>[source]</a><a href="#dagster_pipes.PipesDefaultContextLoader" class="hash-link"></a></Link></dt>
+    <dd>
+
+    Context loader that loads context data from either a file or directly from the provided params.
+
+    The location of the context data is configured by the params received by the loader. If the params
+    include a key <cite>path</cite>, then the context data will be loaded from a file at the specified path. If
+    the params instead include a key <cite>data</cite>, then the corresponding value should be a dict
+    representing the context data.
+
+    <dl>
+        <dt><Link class="anchor" id='dagster_pipes.PipesDefaultContextLoader.load_context'>load_context <a href='https://github.com/dagster-io/dagster/blob/master/python_modules/dagster-pipes/dagster_pipes/__init__.py#L756' className='source-link' target='_blank' rel='noopener noreferrer'>[source]</a><a href="#dagster_pipes.PipesDefaultContextLoader.load_context" class="hash-link"></a></Link></dt>
+        <dd>
+
+        A <cite>@contextmanager</cite> that loads context data injected by the orchestration process.
+
+        This method should read and yield the context data from the location specified by the passed in
+        <cite>PipesParams</cite>.
+
+        Parameters: <strong>params</strong> (<em>PipesParams</em>) – The params provided by the context injector in the orchestration
+        process.Yields: <em>PipesContextData</em> – The context data.
+
+        </dd>
+
+    </dl>
+    <dl>
+        <dt><Link class="anchor" id='dagster_pipes.PipesDefaultContextLoader.DIRECT_KEY'>DIRECT_KEY `=` 'data'<a href="#dagster_pipes.PipesDefaultContextLoader.DIRECT_KEY" class="hash-link"></a></Link></dt>
+        <dd>
+
+        </dd>
+
+    </dl>
+    <dl>
+        <dt><Link class="anchor" id='dagster_pipes.PipesDefaultContextLoader.FILE_PATH_KEY'>FILE_PATH_KEY `=` 'path'<a href="#dagster_pipes.PipesDefaultContextLoader.FILE_PATH_KEY" class="hash-link"></a></Link></dt>
+        <dd>
+
+        </dd>
+
+    </dl>
+
+    </dd>
+
+</dl>
+<dl>
+    <dt><Link class="anchor" id='dagster_pipes.PipesS3ContextLoader'>`class` dagster_pipes.PipesS3ContextLoader <a href='https://github.com/dagster-io/dagster/blob/master/python_modules/dagster-pipes/dagster_pipes/__init__.py#L1194' className='source-link' target='_blank' rel='noopener noreferrer'>[source]</a><a href="#dagster_pipes.PipesS3ContextLoader" class="hash-link"></a></Link></dt>
+    <dd>
+
+    Context loader that reads context from a JSON file on S3.
+
+    Parameters: <strong>client</strong> (<em>Any</em>) – A boto3.client(“s3”) object.
+    <dl>
+        <dt><Link class="anchor" id='dagster_pipes.PipesS3ContextLoader.load_context'>load_context <a href='https://github.com/dagster-io/dagster/blob/master/python_modules/dagster-pipes/dagster_pipes/__init__.py#L1204' className='source-link' target='_blank' rel='noopener noreferrer'>[source]</a><a href="#dagster_pipes.PipesS3ContextLoader.load_context" class="hash-link"></a></Link></dt>
+        <dd>
+
+        A <cite>@contextmanager</cite> that loads context data injected by the orchestration process.
+
+        This method should read and yield the context data from the location specified by the passed in
+        <cite>PipesParams</cite>.
+
+        Parameters: <strong>params</strong> (<em>PipesParams</em>) – The params provided by the context injector in the orchestration
+        process.Yields: <em>PipesContextData</em> – The context data.
+
+        </dd>
+
+    </dl>
+
+    </dd>
+
+</dl>
+<dl>
+    <dt><Link class="anchor" id='dagster_pipes.PipesGCSContextLoader'>`class` dagster_pipes.PipesGCSContextLoader <a href='https://github.com/dagster-io/dagster/blob/master/python_modules/dagster-pipes/dagster_pipes/__init__.py#L1274' className='source-link' target='_blank' rel='noopener noreferrer'>[source]</a><a href="#dagster_pipes.PipesGCSContextLoader" class="hash-link"></a></Link></dt>
+    <dd>
+
+    Context loader that reads context from a JSON file on GCS.
+
+    Parameters: <strong>client</strong> (<em>google.cloud.storage.Client</em>) – A google.cloud.storage.Client object.
+    <dl>
+        <dt><Link class="anchor" id='dagster_pipes.PipesGCSContextLoader.load_context'>load_context <a href='https://github.com/dagster-io/dagster/blob/master/python_modules/dagster-pipes/dagster_pipes/__init__.py#L1284' className='source-link' target='_blank' rel='noopener noreferrer'>[source]</a><a href="#dagster_pipes.PipesGCSContextLoader.load_context" class="hash-link"></a></Link></dt>
+        <dd>
+
+        A <cite>@contextmanager</cite> that loads context data injected by the orchestration process.
+
+        This method should read and yield the context data from the location specified by the passed in
+        <cite>PipesParams</cite>.
+
+        Parameters: <strong>params</strong> (<em>PipesParams</em>) – The params provided by the context injector in the orchestration
+        process.Yields: <em>PipesContextData</em> – The context data.
+
+        </dd>
+
+    </dl>
+
+    </dd>
+
+</dl>
+<dl>
+    <dt><Link class="anchor" id='dagster_pipes.PipesDbfsContextLoader'>`class` dagster_pipes.PipesDbfsContextLoader <a href='https://github.com/dagster-io/dagster/blob/master/python_modules/dagster-pipes/dagster_pipes/__init__.py#L1424' className='source-link' target='_blank' rel='noopener noreferrer'>[source]</a><a href="#dagster_pipes.PipesDbfsContextLoader" class="hash-link"></a></Link></dt>
+    <dd>
+
+    Context loader that reads context from a JSON file on DBFS.
+
+    <dl>
+        <dt><Link class="anchor" id='dagster_pipes.PipesDbfsContextLoader.load_context'>load_context <a href='https://github.com/dagster-io/dagster/blob/master/python_modules/dagster-pipes/dagster_pipes/__init__.py#L1427' className='source-link' target='_blank' rel='noopener noreferrer'>[source]</a><a href="#dagster_pipes.PipesDbfsContextLoader.load_context" class="hash-link"></a></Link></dt>
+        <dd>
+
+        A <cite>@contextmanager</cite> that loads context data injected by the orchestration process.
+
+        This method should read and yield the context data from the location specified by the passed in
+        <cite>PipesParams</cite>.
+
+        Parameters: <strong>params</strong> (<em>PipesParams</em>) – The params provided by the context injector in the orchestration
+        process.Yields: <em>PipesContextData</em> – The context data.
+
+        </dd>
+
+    </dl>
+
+    </dd>
+
+</dl>
+<dl>
+    <dt><Link class="anchor" id='dagster_pipes.PipesAzureBlobStorageContextLoader'>`class` dagster_pipes.PipesAzureBlobStorageContextLoader <a href='https://github.com/dagster-io/dagster/blob/master/python_modules/dagster-pipes/dagster_pipes/__init__.py#L1348' className='source-link' target='_blank' rel='noopener noreferrer'>[source]</a><a href="#dagster_pipes.PipesAzureBlobStorageContextLoader" class="hash-link"></a></Link></dt>
+    <dd>
+
+    Context loader that reads context from a JSON file on AzureBlobStorage.
+
+    Parameters: <strong>client</strong> (<em>Any</em>) – An azure.storage.blob.BlobServiceClient object.
+    <dl>
+        <dt><Link class="anchor" id='dagster_pipes.PipesAzureBlobStorageContextLoader.load_context'>load_context <a href='https://github.com/dagster-io/dagster/blob/master/python_modules/dagster-pipes/dagster_pipes/__init__.py#L1358' className='source-link' target='_blank' rel='noopener noreferrer'>[source]</a><a href="#dagster_pipes.PipesAzureBlobStorageContextLoader.load_context" class="hash-link"></a></Link></dt>
+        <dd>
+
+        A <cite>@contextmanager</cite> that loads context data injected by the orchestration process.
+
+        This method should read and yield the context data from the location specified by the passed in
+        <cite>PipesParams</cite>.
+
+        Parameters: <strong>params</strong> (<em>PipesParams</em>) – The params provided by the context injector in the orchestration
+        process.Yields: <em>PipesContextData</em> – The context data.
+
+        </dd>
+
+    </dl>
+
+    </dd>
+
+</dl>
+</div>
+
+<div class="section" id="params-loaders">
+
+### Params loaders
+
+Params loaders load the bootstrap payload from some globally accessible key-value store.
+
+<dl>
+    <dt><Link class="anchor" id='dagster_pipes.PipesParamsLoader'>`class` dagster_pipes.PipesParamsLoader <a href='https://github.com/dagster-io/dagster/blob/master/python_modules/dagster-pipes/dagster_pipes/__init__.py#L607' className='source-link' target='_blank' rel='noopener noreferrer'>[source]</a><a href="#dagster_pipes.PipesParamsLoader" class="hash-link"></a></Link></dt>
+    <dd>
+
+    Object that loads params passed from the orchestration process by the context injector and
+    message reader. These params are used to respectively bootstrap the
+    [`PipesContextLoader`](#dagster_pipes.PipesContextLoader) and [`PipesMessageWriter`](#dagster_pipes.PipesMessageWriter).
+
+    <dl>
+        <dt><Link class="anchor" id='dagster_pipes.PipesParamsLoader.is_dagster_pipes_process'>`abstractmethod` is_dagster_pipes_process <a href='https://github.com/dagster-io/dagster/blob/master/python_modules/dagster-pipes/dagster_pipes/__init__.py#L613' className='source-link' target='_blank' rel='noopener noreferrer'>[source]</a><a href="#dagster_pipes.PipesParamsLoader.is_dagster_pipes_process" class="hash-link"></a></Link></dt>
+        <dd>
+        Whether or not this process has been provided with provided with information to create
+        a PipesContext or should instead return a mock.
+        </dd>
+
+    </dl>
+    <dl>
+        <dt><Link class="anchor" id='dagster_pipes.PipesParamsLoader.load_context_params'>`abstractmethod` load_context_params <a href='https://github.com/dagster-io/dagster/blob/master/python_modules/dagster-pipes/dagster_pipes/__init__.py#L619' className='source-link' target='_blank' rel='noopener noreferrer'>[source]</a><a href="#dagster_pipes.PipesParamsLoader.load_context_params" class="hash-link"></a></Link></dt>
+        <dd>
+        PipesParams: Load params passed by the orchestration-side context injector.
+        </dd>
+
+    </dl>
+    <dl>
+        <dt><Link class="anchor" id='dagster_pipes.PipesParamsLoader.load_messages_params'>`abstractmethod` load_messages_params <a href='https://github.com/dagster-io/dagster/blob/master/python_modules/dagster-pipes/dagster_pipes/__init__.py#L623' className='source-link' target='_blank' rel='noopener noreferrer'>[source]</a><a href="#dagster_pipes.PipesParamsLoader.load_messages_params" class="hash-link"></a></Link></dt>
+        <dd>
+        PipesParams: Load params passed by the orchestration-side message reader.
+        </dd>
+
+    </dl>
+
+    </dd>
+
+</dl>
+<dl>
+    <dt><Link class="anchor" id='dagster_pipes.PipesEnvVarParamsLoader'>`class` dagster_pipes.PipesEnvVarParamsLoader <a href='https://github.com/dagster-io/dagster/blob/master/python_modules/dagster-pipes/dagster_pipes/__init__.py#L1101' className='source-link' target='_blank' rel='noopener noreferrer'>[source]</a><a href="#dagster_pipes.PipesEnvVarParamsLoader" class="hash-link"></a></Link></dt>
+    <dd>
+    Params loader that extracts params from environment variables.
+    </dd>
+
+</dl>
+<dl>
+    <dt><Link class="anchor" id='dagster_pipes.PipesCliArgsParamsLoader'>`class` dagster_pipes.PipesCliArgsParamsLoader <a href='https://github.com/dagster-io/dagster/blob/master/python_modules/dagster-pipes/dagster_pipes/__init__.py#L1128' className='source-link' target='_blank' rel='noopener noreferrer'>[source]</a><a href="#dagster_pipes.PipesCliArgsParamsLoader" class="hash-link"></a></Link></dt>
+    <dd>
+
+    Params loader that extracts params from known CLI arguments.
+
+    <dl>
+        <dt><Link class="anchor" id='dagster_pipes.PipesCliArgsParamsLoader.is_dagster_pipes_process'>is_dagster_pipes_process <a href='https://github.com/dagster-io/dagster/blob/master/python_modules/dagster-pipes/dagster_pipes/__init__.py#L1134' className='source-link' target='_blank' rel='noopener noreferrer'>[source]</a><a href="#dagster_pipes.PipesCliArgsParamsLoader.is_dagster_pipes_process" class="hash-link"></a></Link></dt>
+        <dd>
+        Whether or not this process has been provided with provided with information to create
+        a PipesContext or should instead return a mock.
+        </dd>
+
+    </dl>
+    <dl>
+        <dt><Link class="anchor" id='dagster_pipes.PipesCliArgsParamsLoader.load_context_params'>load_context_params <a href='https://github.com/dagster-io/dagster/blob/master/python_modules/dagster-pipes/dagster_pipes/__init__.py#L1138' className='source-link' target='_blank' rel='noopener noreferrer'>[source]</a><a href="#dagster_pipes.PipesCliArgsParamsLoader.load_context_params" class="hash-link"></a></Link></dt>
+        <dd>
+        PipesParams: Load params passed by the orchestration-side context injector.
+        </dd>
+
+    </dl>
+    <dl>
+        <dt><Link class="anchor" id='dagster_pipes.PipesCliArgsParamsLoader.load_messages_params'>load_messages_params <a href='https://github.com/dagster-io/dagster/blob/master/python_modules/dagster-pipes/dagster_pipes/__init__.py#L1142' className='source-link' target='_blank' rel='noopener noreferrer'>[source]</a><a href="#dagster_pipes.PipesCliArgsParamsLoader.load_messages_params" class="hash-link"></a></Link></dt>
+        <dd>
+        PipesParams: Load params passed by the orchestration-side message reader.
+        </dd>
+
+    </dl>
+
+    </dd>
+
+</dl>
+<dl>
+    <dt><Link class="anchor" id='dagster_pipes.PipesMappingParamsLoader'>`class` dagster_pipes.PipesMappingParamsLoader <a href='https://github.com/dagster-io/dagster/blob/master/python_modules/dagster-pipes/dagster_pipes/__init__.py#L1082' className='source-link' target='_blank' rel='noopener noreferrer'>[source]</a><a href="#dagster_pipes.PipesMappingParamsLoader" class="hash-link"></a></Link></dt>
+    <dd>
+
+    Params loader that extracts params from a Mapping provided at init time.
+
+    <dl>
+        <dt><Link class="anchor" id='dagster_pipes.PipesMappingParamsLoader.is_dagster_pipes_process'>is_dagster_pipes_process <a href='https://github.com/dagster-io/dagster/blob/master/python_modules/dagster-pipes/dagster_pipes/__init__.py#L1088' className='source-link' target='_blank' rel='noopener noreferrer'>[source]</a><a href="#dagster_pipes.PipesMappingParamsLoader.is_dagster_pipes_process" class="hash-link"></a></Link></dt>
+        <dd>
+        Whether or not this process has been provided with provided with information to create
+        a PipesContext or should instead return a mock.
+        </dd>
+
+    </dl>
+    <dl>
+        <dt><Link class="anchor" id='dagster_pipes.PipesMappingParamsLoader.load_context_params'>load_context_params <a href='https://github.com/dagster-io/dagster/blob/master/python_modules/dagster-pipes/dagster_pipes/__init__.py#L1092' className='source-link' target='_blank' rel='noopener noreferrer'>[source]</a><a href="#dagster_pipes.PipesMappingParamsLoader.load_context_params" class="hash-link"></a></Link></dt>
+        <dd>
+        PipesParams: Load params passed by the orchestration-side context injector.
+        </dd>
+
+    </dl>
+    <dl>
+        <dt><Link class="anchor" id='dagster_pipes.PipesMappingParamsLoader.load_messages_params'>load_messages_params <a href='https://github.com/dagster-io/dagster/blob/master/python_modules/dagster-pipes/dagster_pipes/__init__.py#L1096' className='source-link' target='_blank' rel='noopener noreferrer'>[source]</a><a href="#dagster_pipes.PipesMappingParamsLoader.load_messages_params" class="hash-link"></a></Link></dt>
+        <dd>
+        PipesParams: Load params passed by the orchestration-side message reader.
+        </dd>
+
+    </dl>
+
+    </dd>
+
+</dl>
+</div>
+
+<div class="section" id="message-writers">
+
+### Message writers
+
+Message writers write messages to the location specified in the bootstrap payload.
+
+<dl>
+    <dt><Link class="anchor" id='dagster_pipes.PipesMessageWriter'>`class` dagster_pipes.PipesMessageWriter <a href='https://github.com/dagster-io/dagster/blob/master/python_modules/dagster-pipes/dagster_pipes/__init__.py#L556' className='source-link' target='_blank' rel='noopener noreferrer'>[source]</a><a href="#dagster_pipes.PipesMessageWriter" class="hash-link"></a></Link></dt>
+    <dd>
+
+    <dl>
+        <dt><Link class="anchor" id='dagster_pipes.PipesMessageWriter.get_opened_extras'>get_opened_extras <a href='https://github.com/dagster-io/dagster/blob/master/python_modules/dagster-pipes/dagster_pipes/__init__.py#L585' className='source-link' target='_blank' rel='noopener noreferrer'>[source]</a><a href="#dagster_pipes.PipesMessageWriter.get_opened_extras" class="hash-link"></a></Link></dt>
+        <dd>
+
+        Return arbitary reader-specific information to be passed back to the orchestration
+        process under the <cite>extras</cite> key of the initialization payload.
+
+        Returns: A dict of arbitrary data to be passed back to the orchestration process.Return type: PipesExtras
+
+        </dd>
+
+    </dl>
+    <dl>
+        <dt><Link class="anchor" id='dagster_pipes.PipesMessageWriter.get_opened_payload'>`final` get_opened_payload <a href='https://github.com/dagster-io/dagster/blob/master/python_modules/dagster-pipes/dagster_pipes/__init__.py#L574' className='source-link' target='_blank' rel='noopener noreferrer'>[source]</a><a href="#dagster_pipes.PipesMessageWriter.get_opened_payload" class="hash-link"></a></Link></dt>
+        <dd>
+
+        Return a payload containing information about the external process to be passed back to
+        the orchestration process. This should contain information that cannot be known before
+        the external process is launched.
+
+        This method should not be overridden by users. Instead, users should
+        override <cite>get_opened_extras</cite> to inject custom data.
+
+
+        </dd>
+
+    </dl>
+    <dl>
+        <dt><Link class="anchor" id='dagster_pipes.PipesMessageWriter.open'>`abstractmethod` open <a href='https://github.com/dagster-io/dagster/blob/master/python_modules/dagster-pipes/dagster_pipes/__init__.py#L557' className='source-link' target='_blank' rel='noopener noreferrer'>[source]</a><a href="#dagster_pipes.PipesMessageWriter.open" class="hash-link"></a></Link></dt>
+        <dd>
+
+        A <cite>@contextmanager</cite> that initializes a channel for writing messages back to Dagster.
+
+        This method should takes the params passed by the orchestration-side
+        `PipesMessageReader` and use them to construct and yield a
+        [`PipesMessageWriterChannel`](#dagster_pipes.PipesMessageWriterChannel).
+
+        Parameters: <strong>params</strong> (<em>PipesParams</em>) – The params provided by the message reader in the orchestration
+        process.Yields: <em>PipesMessageWriterChannel</em> – Channel for writing messagse back to Dagster.
+
+        </dd>
+
+    </dl>
+
+    </dd>
+
+</dl>
+<dl>
+    <dt><Link class="anchor" id='dagster_pipes.PipesDefaultMessageWriter'>`class` dagster_pipes.PipesDefaultMessageWriter <a href='https://github.com/dagster-io/dagster/blob/master/python_modules/dagster-pipes/dagster_pipes/__init__.py#L926' className='source-link' target='_blank' rel='noopener noreferrer'>[source]</a><a href="#dagster_pipes.PipesDefaultMessageWriter" class="hash-link"></a></Link></dt>
+    <dd>
+
+    Message writer that writes messages to either a file or the stdout or stderr stream.
+
+    The write location is configured by the params received by the writer. If the params include a
+    key <cite>path</cite>, then messages will be written to a file at the specified path. If the params instead
+    include a key <cite>stdio</cite>, then messages then the corresponding value must specify either <cite>stderr</cite>
+    or <cite>stdout</cite>, and messages will be written to the selected stream.
+
+    <dl>
+        <dt><Link class="anchor" id='dagster_pipes.PipesDefaultMessageWriter.open'>open <a href='https://github.com/dagster-io/dagster/blob/master/python_modules/dagster-pipes/dagster_pipes/__init__.py#L942' className='source-link' target='_blank' rel='noopener noreferrer'>[source]</a><a href="#dagster_pipes.PipesDefaultMessageWriter.open" class="hash-link"></a></Link></dt>
+        <dd>
+
+        A <cite>@contextmanager</cite> that initializes a channel for writing messages back to Dagster.
+
+        This method should takes the params passed by the orchestration-side
+        `PipesMessageReader` and use them to construct and yield a
+        [`PipesMessageWriterChannel`](#dagster_pipes.PipesMessageWriterChannel).
+
+        Parameters: <strong>params</strong> (<em>PipesParams</em>) – The params provided by the message reader in the orchestration
+        process.Yields: <em>PipesMessageWriterChannel</em> – Channel for writing messagse back to Dagster.
+
+        </dd>
+
+    </dl>
+    <dl>
+        <dt><Link class="anchor" id='dagster_pipes.PipesDefaultMessageWriter.BUFFERED_STDIO_KEY'>BUFFERED_STDIO_KEY `=` 'buffered_stdio'<a href="#dagster_pipes.PipesDefaultMessageWriter.BUFFERED_STDIO_KEY" class="hash-link"></a></Link></dt>
+        <dd>
+
+        </dd>
+
+    </dl>
+    <dl>
+        <dt><Link class="anchor" id='dagster_pipes.PipesDefaultMessageWriter.FILE_PATH_KEY'>FILE_PATH_KEY `=` 'path'<a href="#dagster_pipes.PipesDefaultMessageWriter.FILE_PATH_KEY" class="hash-link"></a></Link></dt>
+        <dd>
+
+        </dd>
+
+    </dl>
+    <dl>
+        <dt><Link class="anchor" id='dagster_pipes.PipesDefaultMessageWriter.INCLUDE_STDIO_IN_MESSAGES_KEY'>INCLUDE_STDIO_IN_MESSAGES_KEY `=` 'include_stdio_in_messages'<a href="#dagster_pipes.PipesDefaultMessageWriter.INCLUDE_STDIO_IN_MESSAGES_KEY" class="hash-link"></a></Link></dt>
+        <dd>
+
+        </dd>
+
+    </dl>
+    <dl>
+        <dt><Link class="anchor" id='dagster_pipes.PipesDefaultMessageWriter.STDERR'>STDERR `=` 'stderr'<a href="#dagster_pipes.PipesDefaultMessageWriter.STDERR" class="hash-link"></a></Link></dt>
+        <dd>
+
+        </dd>
+
+    </dl>
+    <dl>
+        <dt><Link class="anchor" id='dagster_pipes.PipesDefaultMessageWriter.STDIO_KEY'>STDIO_KEY `=` 'stdio'<a href="#dagster_pipes.PipesDefaultMessageWriter.STDIO_KEY" class="hash-link"></a></Link></dt>
+        <dd>
+
+        </dd>
+
+    </dl>
+    <dl>
+        <dt><Link class="anchor" id='dagster_pipes.PipesDefaultMessageWriter.STDOUT'>STDOUT `=` 'stdout'<a href="#dagster_pipes.PipesDefaultMessageWriter.STDOUT" class="hash-link"></a></Link></dt>
+        <dd>
+
+        </dd>
+
+    </dl>
+
+    </dd>
+
+</dl>
+<dl>
+    <dt><Link class="anchor" id='dagster_pipes.PipesBlobStoreMessageWriter'>`class` dagster_pipes.PipesBlobStoreMessageWriter <a href='https://github.com/dagster-io/dagster/blob/master/python_modules/dagster-pipes/dagster_pipes/__init__.py#L633' className='source-link' target='_blank' rel='noopener noreferrer'>[source]</a><a href="#dagster_pipes.PipesBlobStoreMessageWriter" class="hash-link"></a></Link></dt>
+    <dd>
+
+    <dl>
+        <dt><Link class="anchor" id='dagster_pipes.PipesBlobStoreMessageWriter.make_channel'>`abstractmethod` make_channel <a href='https://github.com/dagster-io/dagster/blob/master/python_modules/dagster-pipes/dagster_pipes/__init__.py#L668' className='source-link' target='_blank' rel='noopener noreferrer'>[source]</a><a href="#dagster_pipes.PipesBlobStoreMessageWriter.make_channel" class="hash-link"></a></Link></dt>
+        <dd>
+
+        </dd>
+
+    </dl>
+    <dl>
+        <dt><Link class="anchor" id='dagster_pipes.PipesBlobStoreMessageWriter.open'>open <a href='https://github.com/dagster-io/dagster/blob/master/python_modules/dagster-pipes/dagster_pipes/__init__.py#L642' className='source-link' target='_blank' rel='noopener noreferrer'>[source]</a><a href="#dagster_pipes.PipesBlobStoreMessageWriter.open" class="hash-link"></a></Link></dt>
+        <dd>
+
+        Construct and yield a [`PipesBlobStoreMessageWriterChannel`](#dagster_pipes.PipesBlobStoreMessageWriterChannel).
+
+        Parameters: <strong>params</strong> (<em>PipesParams</em>) – The params provided by the message reader in the orchestration
+        process.Yields: <em>PipesBlobStoreMessageWriterChannel</em> – Channel that periodically uploads message chunks to
+        a blob store.
+
+        </dd>
+
+    </dl>
+    <dl>
+        <dt><Link class="anchor" id='dagster_pipes.PipesBlobStoreMessageWriter.INCLUDE_STDIO_IN_MESSAGES_KEY'>INCLUDE_STDIO_IN_MESSAGES_KEY `=` 'include_stdio_in_messages'<a href="#dagster_pipes.PipesBlobStoreMessageWriter.INCLUDE_STDIO_IN_MESSAGES_KEY" class="hash-link"></a></Link></dt>
+        <dd>
+        Message writer channel that periodically uploads message chunks to some blob store endpoint.
+        </dd>
+
+    </dl>
+
+    </dd>
+
+</dl>
+<dl>
+    <dt><Link class="anchor" id='dagster_pipes.PipesS3MessageWriter'>`class` dagster_pipes.PipesS3MessageWriter <a href='https://github.com/dagster-io/dagster/blob/master/python_modules/dagster-pipes/dagster_pipes/__init__.py#L1212' className='source-link' target='_blank' rel='noopener noreferrer'>[source]</a><a href="#dagster_pipes.PipesS3MessageWriter" class="hash-link"></a></Link></dt>
+    <dd>
+
+    Message writer that writes messages by periodically writing message chunks to an S3 bucket.
+
+    Parameters:
+      - <strong>client</strong> (<em>Any</em>) – A boto3.client(“s3”) object.
+      - <strong>interval</strong> (<em>float</em>) – interval in seconds between upload chunk uploads
+
+
+    <dl>
+        <dt><Link class="anchor" id='dagster_pipes.PipesS3MessageWriter.make_channel'>make_channel <a href='https://github.com/dagster-io/dagster/blob/master/python_modules/dagster-pipes/dagster_pipes/__init__.py#L1227' className='source-link' target='_blank' rel='noopener noreferrer'>[source]</a><a href="#dagster_pipes.PipesS3MessageWriter.make_channel" class="hash-link"></a></Link></dt>
+        <dd>
+
+        </dd>
+
+    </dl>
+
+    </dd>
+
+</dl>
+<dl>
+    <dt><Link class="anchor" id='dagster_pipes.PipesGCSMessageWriter'>`class` dagster_pipes.PipesGCSMessageWriter <a href='https://github.com/dagster-io/dagster/blob/master/python_modules/dagster-pipes/dagster_pipes/__init__.py#L1292' className='source-link' target='_blank' rel='noopener noreferrer'>[source]</a><a href="#dagster_pipes.PipesGCSMessageWriter" class="hash-link"></a></Link></dt>
+    <dd>
+
+    Message writer that writes messages by periodically writing message chunks to a GCS bucket.
+
+    Parameters:
+      - <strong>client</strong> (<em>google.cloud.storage.Client</em>) – A google.cloud.storage.Client object.
+      - <strong>interval</strong> (<em>float</em>) – interval in seconds between upload chunk uploads
+
+
+    <dl>
+        <dt><Link class="anchor" id='dagster_pipes.PipesGCSMessageWriter.make_channel'>make_channel <a href='https://github.com/dagster-io/dagster/blob/master/python_modules/dagster-pipes/dagster_pipes/__init__.py#L1304' className='source-link' target='_blank' rel='noopener noreferrer'>[source]</a><a href="#dagster_pipes.PipesGCSMessageWriter.make_channel" class="hash-link"></a></Link></dt>
+        <dd>
+
+        </dd>
+
+    </dl>
+
+    </dd>
+
+</dl>
+<dl>
+    <dt><Link class="anchor" id='dagster_pipes.PipesDbfsMessageWriter'>`class` dagster_pipes.PipesDbfsMessageWriter <a href='https://github.com/dagster-io/dagster/blob/master/python_modules/dagster-pipes/dagster_pipes/__init__.py#L1435' className='source-link' target='_blank' rel='noopener noreferrer'>[source]</a><a href="#dagster_pipes.PipesDbfsMessageWriter" class="hash-link"></a></Link></dt>
+    <dd>
+
+    Message writer that writes messages by periodically writing message chunks to a directory on DBFS.
+
+    <dl>
+        <dt><Link class="anchor" id='dagster_pipes.PipesDbfsMessageWriter.get_opened_extras'>get_opened_extras <a href='https://github.com/dagster-io/dagster/blob/master/python_modules/dagster-pipes/dagster_pipes/__init__.py#L1448' className='source-link' target='_blank' rel='noopener noreferrer'>[source]</a><a href="#dagster_pipes.PipesDbfsMessageWriter.get_opened_extras" class="hash-link"></a></Link></dt>
+        <dd>
+
+        Return arbitary reader-specific information to be passed back to the orchestration
+        process under the <cite>extras</cite> key of the initialization payload.
+
+        Returns: A dict of arbitrary data to be passed back to the orchestration process.Return type: PipesExtras
+
+        </dd>
+
+    </dl>
+    <dl>
+        <dt><Link class="anchor" id='dagster_pipes.PipesDbfsMessageWriter.make_channel'>make_channel <a href='https://github.com/dagster-io/dagster/blob/master/python_modules/dagster-pipes/dagster_pipes/__init__.py#L1438' className='source-link' target='_blank' rel='noopener noreferrer'>[source]</a><a href="#dagster_pipes.PipesDbfsMessageWriter.make_channel" class="hash-link"></a></Link></dt>
+        <dd>
+
+        </dd>
+
+    </dl>
+
+    </dd>
+
+</dl>
+<dl>
+    <dt><Link class="anchor" id='dagster_pipes.PipesAzureBlobStorageMessageWriter'>`class` dagster_pipes.PipesAzureBlobStorageMessageWriter <a href='https://github.com/dagster-io/dagster/blob/master/python_modules/dagster-pipes/dagster_pipes/__init__.py#L1367' className='source-link' target='_blank' rel='noopener noreferrer'>[source]</a><a href="#dagster_pipes.PipesAzureBlobStorageMessageWriter" class="hash-link"></a></Link></dt>
+    <dd>
+
+    Message writer that writes messages by periodically writing message chunks to an
+        AzureBlobStorage container.
+
+    Parameters:
+      - <strong>client</strong> (<em>Any</em>) – An azure.storage.blob.BlobServiceClient object.
+      - <strong>interval</strong> (<em>float</em>) – interval in seconds between upload chunk uploads.
+
+
+    <dl>
+        <dt><Link class="anchor" id='dagster_pipes.PipesAzureBlobStorageMessageWriter.make_channel'>make_channel <a href='https://github.com/dagster-io/dagster/blob/master/python_modules/dagster-pipes/dagster_pipes/__init__.py#L1380' className='source-link' target='_blank' rel='noopener noreferrer'>[source]</a><a href="#dagster_pipes.PipesAzureBlobStorageMessageWriter.make_channel" class="hash-link"></a></Link></dt>
+        <dd>
+
+        </dd>
+
+    </dl>
+
+    </dd>
+
+</dl>
+</div>
+
+<div class="section" id="message-writer-channels">
+
+### Message writer channels
+
+Message writer channels are objects that write messages back to the Dagster orchestration process.
+
+<dl>
+    <dt><Link class="anchor" id='dagster_pipes.PipesMessageWriterChannel'>`class` dagster_pipes.PipesMessageWriterChannel <a href='https://github.com/dagster-io/dagster/blob/master/python_modules/dagster-pipes/dagster_pipes/__init__.py#L595' className='source-link' target='_blank' rel='noopener noreferrer'>[source]</a><a href="#dagster_pipes.PipesMessageWriterChannel" class="hash-link"></a></Link></dt>
+    <dd>
+
+    Object that writes messages back to the Dagster orchestration process.
+
+    <dl>
+        <dt><Link class="anchor" id='dagster_pipes.PipesMessageWriterChannel.write_message'>`abstractmethod` write_message <a href='https://github.com/dagster-io/dagster/blob/master/python_modules/dagster-pipes/dagster_pipes/__init__.py#L598' className='source-link' target='_blank' rel='noopener noreferrer'>[source]</a><a href="#dagster_pipes.PipesMessageWriterChannel.write_message" class="hash-link"></a></Link></dt>
+        <dd>
+
+        Write a message to the orchestration process.
+
+        Parameters: <strong>message</strong> (<em>PipesMessage</em>) – The message to write.
+
+        </dd>
+
+    </dl>
+
+    </dd>
+
+</dl>
+<dl>
+    <dt><Link class="anchor" id='dagster_pipes.PipesBlobStoreMessageWriterChannel'>`class` dagster_pipes.PipesBlobStoreMessageWriterChannel <a href='https://github.com/dagster-io/dagster/blob/master/python_modules/dagster-pipes/dagster_pipes/__init__.py#L672' className='source-link' target='_blank' rel='noopener noreferrer'>[source]</a><a href="#dagster_pipes.PipesBlobStoreMessageWriterChannel" class="hash-link"></a></Link></dt>
+    <dd>
+
+    Message writer channel that periodically uploads message chunks to some blob store endpoint.
+
+    <dl>
+        <dt><Link class="anchor" id='dagster_pipes.PipesBlobStoreMessageWriterChannel.buffered_upload_loop'>buffered_upload_loop <a href='https://github.com/dagster-io/dagster/blob/master/python_modules/dagster-pipes/dagster_pipes/__init__.py#L692' className='source-link' target='_blank' rel='noopener noreferrer'>[source]</a><a href="#dagster_pipes.PipesBlobStoreMessageWriterChannel.buffered_upload_loop" class="hash-link"></a></Link></dt>
+        <dd>
+
+        </dd>
+
+    </dl>
+    <dl>
+        <dt><Link class="anchor" id='dagster_pipes.PipesBlobStoreMessageWriterChannel.flush_messages'>flush_messages <a href='https://github.com/dagster-io/dagster/blob/master/python_modules/dagster-pipes/dagster_pipes/__init__.py#L683' className='source-link' target='_blank' rel='noopener noreferrer'>[source]</a><a href="#dagster_pipes.PipesBlobStoreMessageWriterChannel.flush_messages" class="hash-link"></a></Link></dt>
+        <dd>
+
+        </dd>
+
+    </dl>
+    <dl>
+        <dt><Link class="anchor" id='dagster_pipes.PipesBlobStoreMessageWriterChannel.upload_messages_chunk'>`abstractmethod` upload_messages_chunk <a href='https://github.com/dagster-io/dagster/blob/master/python_modules/dagster-pipes/dagster_pipes/__init__.py#L689' className='source-link' target='_blank' rel='noopener noreferrer'>[source]</a><a href="#dagster_pipes.PipesBlobStoreMessageWriterChannel.upload_messages_chunk" class="hash-link"></a></Link></dt>
+        <dd>
+
+        </dd>
+
+    </dl>
+    <dl>
+        <dt><Link class="anchor" id='dagster_pipes.PipesBlobStoreMessageWriterChannel.write_message'>write_message <a href='https://github.com/dagster-io/dagster/blob/master/python_modules/dagster-pipes/dagster_pipes/__init__.py#L680' className='source-link' target='_blank' rel='noopener noreferrer'>[source]</a><a href="#dagster_pipes.PipesBlobStoreMessageWriterChannel.write_message" class="hash-link"></a></Link></dt>
+        <dd>
+
+        Write a message to the orchestration process.
+
+        Parameters: <strong>message</strong> (<em>PipesMessage</em>) – The message to write.
+
+        </dd>
+
+    </dl>
+
+    </dd>
+
+</dl>
+<dl>
+    <dt><Link class="anchor" id='dagster_pipes.PipesBufferedFilesystemMessageWriterChannel'>`class` dagster_pipes.PipesBufferedFilesystemMessageWriterChannel <a href='https://github.com/dagster-io/dagster/blob/master/python_modules/dagster-pipes/dagster_pipes/__init__.py#L722' className='source-link' target='_blank' rel='noopener noreferrer'>[source]</a><a href="#dagster_pipes.PipesBufferedFilesystemMessageWriterChannel" class="hash-link"></a></Link></dt>
+    <dd>
+
+    Message writer channel that periodically writes message chunks to an endpoint mounted on the filesystem.
+
+    Parameters: <strong>interval</strong> (<em>float</em>) – interval in seconds between chunk uploads
+    <dl>
+        <dt><Link class="anchor" id='dagster_pipes.PipesBufferedFilesystemMessageWriterChannel.upload_messages_chunk'>upload_messages_chunk <a href='https://github.com/dagster-io/dagster/blob/master/python_modules/dagster-pipes/dagster_pipes/__init__.py#L733' className='source-link' target='_blank' rel='noopener noreferrer'>[source]</a><a href="#dagster_pipes.PipesBufferedFilesystemMessageWriterChannel.upload_messages_chunk" class="hash-link"></a></Link></dt>
+        <dd>
+
+        </dd>
+
+    </dl>
+
+    </dd>
+
+</dl>
+<dl>
+    <dt><Link class="anchor" id='dagster_pipes.PipesFileMessageWriterChannel'>`class` dagster_pipes.PipesFileMessageWriterChannel <a href='https://github.com/dagster-io/dagster/blob/master/python_modules/dagster-pipes/dagster_pipes/__init__.py#L991' className='source-link' target='_blank' rel='noopener noreferrer'>[source]</a><a href="#dagster_pipes.PipesFileMessageWriterChannel" class="hash-link"></a></Link></dt>
+    <dd>
+
+    Message writer channel that writes one message per line to a file.
+
+    <dl>
+        <dt><Link class="anchor" id='dagster_pipes.PipesFileMessageWriterChannel.write_message'>write_message <a href='https://github.com/dagster-io/dagster/blob/master/python_modules/dagster-pipes/dagster_pipes/__init__.py#L997' className='source-link' target='_blank' rel='noopener noreferrer'>[source]</a><a href="#dagster_pipes.PipesFileMessageWriterChannel.write_message" class="hash-link"></a></Link></dt>
+        <dd>
+
+        Write a message to the orchestration process.
+
+        Parameters: <strong>message</strong> (<em>PipesMessage</em>) – The message to write.
+
+        </dd>
+
+    </dl>
+
+    </dd>
+
+</dl>
+<dl>
+    <dt><Link class="anchor" id='dagster_pipes.PipesStreamMessageWriterChannel'>`class` dagster_pipes.PipesStreamMessageWriterChannel <a href='https://github.com/dagster-io/dagster/blob/master/python_modules/dagster-pipes/dagster_pipes/__init__.py#L1002' className='source-link' target='_blank' rel='noopener noreferrer'>[source]</a><a href="#dagster_pipes.PipesStreamMessageWriterChannel" class="hash-link"></a></Link></dt>
+    <dd>
+
+    Message writer channel that writes one message per line to a <cite>TextIO</cite> stream.
+
+    <dl>
+        <dt><Link class="anchor" id='dagster_pipes.PipesStreamMessageWriterChannel.write_message'>write_message <a href='https://github.com/dagster-io/dagster/blob/master/python_modules/dagster-pipes/dagster_pipes/__init__.py#L1008' className='source-link' target='_blank' rel='noopener noreferrer'>[source]</a><a href="#dagster_pipes.PipesStreamMessageWriterChannel.write_message" class="hash-link"></a></Link></dt>
+        <dd>
+
+        Write a message to the orchestration process.
+
+        Parameters: <strong>message</strong> (<em>PipesMessage</em>) – The message to write.
+
+        </dd>
+
+    </dl>
+
+    </dd>
+
+</dl>
+<dl>
+    <dt><Link class="anchor" id='dagster_pipes.PipesS3MessageWriterChannel'>`class` dagster_pipes.PipesS3MessageWriterChannel <a href='https://github.com/dagster-io/dagster/blob/master/python_modules/dagster-pipes/dagster_pipes/__init__.py#L1241' className='source-link' target='_blank' rel='noopener noreferrer'>[source]</a><a href="#dagster_pipes.PipesS3MessageWriterChannel" class="hash-link"></a></Link></dt>
+    <dd>
+
+    Message writer channel for writing messages by periodically writing message chunks to an S3 bucket.
+
+    Parameters:
+      - <strong>client</strong> (<em>Any</em>) – A boto3.client(“s3”) object.
+      - <strong>bucket</strong> (<em>str</em>) – The name of the S3 bucket to write to.
+      - <strong>key_prefix</strong> (<em>Optional</em><em>[</em><em>str</em><em>]</em>) – An optional prefix to use for the keys of written blobs.
+      - <strong>interval</strong> (<em>float</em>) – interval in seconds between upload chunk uploads
+
+
+    <dl>
+        <dt><Link class="anchor" id='dagster_pipes.PipesS3MessageWriterChannel.upload_messages_chunk'>upload_messages_chunk <a href='https://github.com/dagster-io/dagster/blob/master/python_modules/dagster-pipes/dagster_pipes/__init__.py#L1260' className='source-link' target='_blank' rel='noopener noreferrer'>[source]</a><a href="#dagster_pipes.PipesS3MessageWriterChannel.upload_messages_chunk" class="hash-link"></a></Link></dt>
+        <dd>
+
+        </dd>
+
+    </dl>
+
+    </dd>
+
+</dl>
+<dl>
+    <dt><Link class="anchor" id='dagster_pipes.PipesGCSMessageWriterChannel'>`class` dagster_pipes.PipesGCSMessageWriterChannel <a href='https://github.com/dagster-io/dagster/blob/master/python_modules/dagster-pipes/dagster_pipes/__init__.py#L1318' className='source-link' target='_blank' rel='noopener noreferrer'>[source]</a><a href="#dagster_pipes.PipesGCSMessageWriterChannel" class="hash-link"></a></Link></dt>
+    <dd>
+
+    Message writer channel for writing messages by periodically writing message chunks to a GCS bucket.
+
+    Parameters:
+      - <strong>client</strong> (<em>google.cloud.storage.Client</em>) – A google.cloud.storage.Client object.
+      - <strong>bucket</strong> (<em>str</em>) – The name of the GCS bucket to write to.
+      - <strong>key_prefix</strong> (<em>Optional</em><em>[</em><em>str</em><em>]</em>) – An optional prefix to use for the keys of written blobs.
+      - <strong>interval</strong> (<em>float</em>) – interval in seconds between upload chunk uploads
+
+
+    <dl>
+        <dt><Link class="anchor" id='dagster_pipes.PipesGCSMessageWriterChannel.upload_messages_chunk'>upload_messages_chunk <a href='https://github.com/dagster-io/dagster/blob/master/python_modules/dagster-pipes/dagster_pipes/__init__.py#L1338' className='source-link' target='_blank' rel='noopener noreferrer'>[source]</a><a href="#dagster_pipes.PipesGCSMessageWriterChannel.upload_messages_chunk" class="hash-link"></a></Link></dt>
+        <dd>
+
+        </dd>
+
+    </dl>
+
+    </dd>
+
+</dl>
+<dl>
+    <dt><Link class="anchor" id='dagster_pipes.PipesAzureBlobStorageMessageWriterChannel'>`class` dagster_pipes.PipesAzureBlobStorageMessageWriterChannel <a href='https://github.com/dagster-io/dagster/blob/master/python_modules/dagster-pipes/dagster_pipes/__init__.py#L1394' className='source-link' target='_blank' rel='noopener noreferrer'>[source]</a><a href="#dagster_pipes.PipesAzureBlobStorageMessageWriterChannel" class="hash-link"></a></Link></dt>
+    <dd>
+
+    Message writer channel for writing messages by periodically writing message chunks to an
+        AzureBlobStorage container.
+
+    Parameters:
+      - <strong>client</strong> (<em>Any</em>) – An azure.storage.blob.BlobServiceClient object.
+      - <strong>bucket</strong> (<em>str</em>) – The name of the AzureBlobStorage container to write to.
+      - <strong>key_prefix</strong> (<em>Optional</em><em>[</em><em>str</em><em>]</em>) – An optional prefix to use for the keys of written blobs.
+      - <strong>interval</strong> (<em>float</em>) – interval in seconds between upload chunk uploads
+
+
+    <dl>
+        <dt><Link class="anchor" id='dagster_pipes.PipesAzureBlobStorageMessageWriterChannel.upload_messages_chunk'>upload_messages_chunk <a href='https://github.com/dagster-io/dagster/blob/master/python_modules/dagster-pipes/dagster_pipes/__init__.py#L1413' className='source-link' target='_blank' rel='noopener noreferrer'>[source]</a><a href="#dagster_pipes.PipesAzureBlobStorageMessageWriterChannel.upload_messages_chunk" class="hash-link"></a></Link></dt>
+        <dd>
+
+        </dd>
+
+    </dl>
+
+    </dd>
+
+</dl>
+</div>
+
+<div class="section" id="utilities">
+
+### Utilities
+
+<dl>
+    <dt><Link class="anchor" id='dagster_pipes.encode_env_var'>dagster_pipes.encode_env_var <a href='https://github.com/dagster-io/dagster/blob/master/python_modules/dagster-pipes/dagster_pipes/__init__.py#L419' className='source-link' target='_blank' rel='noopener noreferrer'>[source]</a><a href="#dagster_pipes.encode_env_var" class="hash-link"></a></Link></dt>
+    <dd>
+
+    Encode value by serializing to JSON, compressing with zlib, and finally encoding with base64.
+    <cite>base64_encode(compress(to_json(value)))</cite> in function notation.
+
+    Parameters: <strong>value</strong> (<em>Any</em>) – The value to encode. Must be JSON-serializable.Returns: The encoded value.Return type: str
+
+    </dd>
+
+</dl>
+<dl>
+    <dt><Link class="anchor" id='dagster_pipes.decode_env_var'>dagster_pipes.decode_env_var <a href='https://github.com/dagster-io/dagster/blob/master/python_modules/dagster-pipes/dagster_pipes/__init__.py#L435' className='source-link' target='_blank' rel='noopener noreferrer'>[source]</a><a href="#dagster_pipes.decode_env_var" class="hash-link"></a></Link></dt>
+    <dd>
+
+    Decode a value by decoding from base64, decompressing with zlib, and finally deserializing from
+    JSON. <cite>from_json(decompress(base64_decode(value)))</cite> in function notation.
+
+    Parameters: <strong>value</strong> (<em>Any</em>) – The value to decode.Returns: The decoded value.Return type: Any
+
+    </dd>
+
+</dl>
+<dl>
+    <dt><Link class="anchor" id='dagster_pipes.DagsterPipesError'>`class` dagster_pipes.DagsterPipesError <a href='https://github.com/dagster-io/dagster/blob/master/python_modules/dagster-pipes/dagster_pipes/__init__.py#L239' className='source-link' target='_blank' rel='noopener noreferrer'>[source]</a><a href="#dagster_pipes.DagsterPipesError" class="hash-link"></a></Link></dt>
+    <dd>
+
+    </dd>
+
+</dl>
+<dl>
+    <dt><Link class="anchor" id='dagster_pipes.DagsterPipesWarning'>`class` dagster_pipes.DagsterPipesWarning <a href='https://github.com/dagster-io/dagster/blob/master/python_modules/dagster-pipes/dagster_pipes/__init__.py#L243' className='source-link' target='_blank' rel='noopener noreferrer'>[source]</a><a href="#dagster_pipes.DagsterPipesWarning" class="hash-link"></a></Link></dt>
+    <dd>
+
+    </dd>
+
+</dl>
+</div></div></div>

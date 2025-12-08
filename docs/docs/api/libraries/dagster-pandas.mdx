@@ -1,0 +1,135 @@
+---
+title: 'pandas (dagster-pandas)'
+title_meta: 'pandas (dagster-pandas) API Documentation - Build Better Data Pipelines | Python Reference Documentation for Dagster'
+description: 'pandas (dagster-pandas) Dagster API | Comprehensive Python API documentation for Dagster, the data orchestration platform. Learn how to build, test, and maintain data pipelines with our detailed guides and examples.'
+last_update:
+  date: '2025-12-05'
+custom_edit_url: null
+---
+
+<div class="section" id="pandas-dagster-pandas">
+
+# Pandas (dagster-pandas)
+
+The <cite>dagster_pandas</cite> library provides utilities for using pandas with Dagster and for implementing
+validation on pandas <cite>DataFrames</cite>. A good place to start with <cite>dagster_pandas</cite> is the [validation
+guide](https://docs.dagster.io/integrations/libraries/pandas).
+
+<dl>
+    <dt><Link class="anchor" id='dagster_pandas.create_dagster_pandas_dataframe_type'>dagster_pandas.create_dagster_pandas_dataframe_type <a href='https://github.com/dagster-io/dagster/blob/master/python_modules/libraries/dagster-pandas/dagster_pandas/data_frame.py#L138' className='source-link' target='_blank' rel='noopener noreferrer'>[source]</a><a href="#dagster_pandas.create_dagster_pandas_dataframe_type" class="hash-link"></a></Link></dt>
+    <dd>
+
+        :::info[beta]
+        This API is currently in beta, and may have breaking changes in minor version releases, with behavior changes in patch releases.
+
+
+        :::
+
+    Constructs a custom pandas dataframe dagster type.
+
+    Parameters:
+      - <strong>name</strong> (<em>str</em>) – Name of the dagster pandas type.
+      - <strong>description</strong> (<em>Optional</em><em>[</em><em>str</em><em>]</em>) – A markdown-formatted string, displayed in tooling.
+      - <strong>columns</strong> (<em>Optional</em><em>[</em><em>List</em><em>[</em>[*PandasColumn*](#dagster_pandas.PandasColumn)<em>]</em><em>]</em>) – A list of `PandasColumn` objects which express dataframe column schemas and constraints.
+      - <strong>metadata_fn</strong> (<em>Optional</em><em>[</em><em>Callable</em><em>[</em><em>[</em><em>]</em><em>, </em><em>Union</em><em>[</em><em>Dict</em><em>[</em><em>str</em><em>, </em><em>Union</em><em>[</em><em>str</em><em>, </em><em>float</em><em>, </em><em>int</em><em>, </em><em>Dict</em><em>, </em>[*MetadataValue*](../dagster/metadata.mdx#dagster.MetadataValue)<em>]</em><em>]</em>) – A callable which takes your dataframe and returns a dict with string label keys and MetadataValue values.
+      - <strong>dataframe_constraints</strong> (<em>Optional</em><em>[</em><em>List</em><em>[</em><em>DataFrameConstraint</em><em>]</em><em>]</em>) – A list of objects that inherit from `DataFrameConstraint`. This allows you to express dataframe-level constraints.
+      - <strong>loader</strong> (<em>Optional</em><em>[</em>[*DagsterTypeLoader*](../dagster/types.mdx#dagster.DagsterTypeLoader)<em>]</em>) – An instance of a class that inherits from [`DagsterTypeLoader`](../dagster/types.mdx#dagster.DagsterTypeLoader). If None, we will default to using <cite>dataframe_loader</cite>.
+
+
+
+    </dd>
+
+</dl>
+<dl>
+    <dt><Link class="anchor" id='dagster_pandas.RowCountConstraint'>`class` dagster_pandas.RowCountConstraint <a href='https://github.com/dagster-io/dagster/blob/master/python_modules/libraries/dagster-pandas/dagster_pandas/constraints.py#L337' className='source-link' target='_blank' rel='noopener noreferrer'>[source]</a><a href="#dagster_pandas.RowCountConstraint" class="hash-link"></a></Link></dt>
+    <dd>
+
+        :::info[beta]
+        This API is currently in beta, and may have breaking changes in minor version releases, with behavior changes in patch releases.
+
+
+        :::
+
+    A dataframe constraint that validates the expected count of rows.
+
+    Parameters:
+      - <strong>num_allowed_rows</strong> (<em>int</em>) – The number of allowed rows in your dataframe.
+      - <strong>error_tolerance</strong> (<em>Optional</em><em>[</em><em>int</em><em>]</em>) – The acceptable threshold if you are not completely certain. Defaults to 0.
+
+
+
+    </dd>
+
+</dl>
+<dl>
+    <dt><Link class="anchor" id='dagster_pandas.StrictColumnsConstraint'>`class` dagster_pandas.StrictColumnsConstraint <a href='https://github.com/dagster-io/dagster/blob/master/python_modules/libraries/dagster-pandas/dagster_pandas/constraints.py#L297' className='source-link' target='_blank' rel='noopener noreferrer'>[source]</a><a href="#dagster_pandas.StrictColumnsConstraint" class="hash-link"></a></Link></dt>
+    <dd>
+
+        :::info[beta]
+        This API is currently in beta, and may have breaking changes in minor version releases, with behavior changes in patch releases.
+
+
+        :::
+
+    A dataframe constraint that validates column existence and ordering.
+
+    Parameters:
+      - <strong>strict_column_list</strong> (<em>List</em><em>[</em><em>str</em><em>]</em>) – The exact list of columns that your dataframe must have.
+      - <strong>enforce_ordering</strong> (<em>Optional</em><em>[</em><em>bool</em><em>]</em>) – If true, will enforce that the ordering of column names must match. Default is False.
+
+
+
+    </dd>
+
+</dl>
+<dl>
+    <dt><Link class="anchor" id='dagster_pandas.PandasColumn'>`class` dagster_pandas.PandasColumn <a href='https://github.com/dagster-io/dagster/blob/master/python_modules/libraries/dagster-pandas/dagster_pandas/validation.py#L46' className='source-link' target='_blank' rel='noopener noreferrer'>[source]</a><a href="#dagster_pandas.PandasColumn" class="hash-link"></a></Link></dt>
+    <dd>
+
+        :::info[beta]
+        This API is currently in beta, and may have breaking changes in minor version releases, with behavior changes in patch releases.
+
+
+        :::
+
+    The main API for expressing column level schemas and constraints for your custom dataframe
+    types.
+
+    Parameters:
+      - <strong>name</strong> (<em>str</em>) – Name of the column. This must match up with the column name in the dataframe you expect to receive.
+      - <strong>is_required</strong> (<em>Optional</em><em>[</em><em>bool</em><em>]</em>) – Flag indicating the optional/required presence of the column. If th column exists, the validate function will validate the column. Defaults to True.
+      - <strong>constraints</strong> (<em>Optional</em><em>[</em><em>List</em><em>[</em><em>Constraint</em><em>]</em><em>]</em>) – List of constraint objects that indicate the validation rules for the pandas column.
+
+
+
+    </dd>
+
+</dl>
+<dl>
+    <dt><Link class="anchor" id='dagster_pandas.DataFrame'>dagster_pandas.DataFrame `=` \<dagster._core.types.dagster_type.DagsterType object><a href="#dagster_pandas.DataFrame" class="hash-link"></a></Link></dt>
+    <dd>
+
+    Define a type in dagster. These can be used in the inputs and outputs of ops.
+
+    Parameters:
+      - <strong>type_check_fn</strong> (<em>Callable</em><em>[</em><em>[</em>[*TypeCheckContext*](../dagster/execution.mdx#dagster.TypeCheckContext)<em>, </em><em>Any</em><em>]</em><em>, </em><em>[</em><em>Union</em><em>[</em><em>bool</em><em>, </em>[*TypeCheck*](../dagster/ops.mdx#dagster.TypeCheck)<em>]</em><em>]</em><em>]</em>) – The function that defines the type check. It takes the value flowing through the input or output of the op. If it passes, return either `True` or a [`TypeCheck`](../dagster/ops.mdx#dagster.TypeCheck) with `success` set to `True`. If it fails, return either `False` or a [`TypeCheck`](../dagster/ops.mdx#dagster.TypeCheck) with `success` set to `False`. The first argument must be named `context` (or, if unused, `_`, `_context`, or `context_`). Use `required_resource_keys` for access to resources.
+      - <strong>key</strong> (<em>Optional</em><em>[</em><em>str</em><em>]</em>) –
+
+        The unique key to identify types programmatically. The key property always has a value. If you omit key to the argument to the init function, it instead receives the value of `name`. If neither `key` nor `name` is provided, a `CheckError` is thrown.
+
+        In the case of a generic type such as `List` or `Optional`, this is generated programmatically based on the type parameters.
+
+      - <strong>name</strong> (<em>Optional</em><em>[</em><em>str</em><em>]</em>) – A unique name given by a user. If `key` is `None`, `key` becomes this value. Name is not given in a case where the user does not specify a unique name for this type, such as a generic class.
+      - <strong>description</strong> (<em>Optional</em><em>[</em><em>str</em><em>]</em>) – A markdown-formatted string, displayed in tooling.
+      - <strong>loader</strong> (<em>Optional</em><em>[</em>[*DagsterTypeLoader*](../dagster/types.mdx#dagster.DagsterTypeLoader)<em>]</em>) – An instance of a class that inherits from [`DagsterTypeLoader`](../dagster/types.mdx#dagster.DagsterTypeLoader) and can map config data to a value of this type. Specify this argument if you will need to shim values of this type using the config machinery. As a rule, you should use the [`@dagster_type_loader`](../dagster/types.mdx#dagster.dagster_type_loader) decorator to construct these arguments.
+      - <strong>required_resource_keys</strong> (<em>Optional</em><em>[</em><em>Set</em><em>[</em><em>str</em><em>]</em><em>]</em>) – Resource keys required by the `type_check_fn`.
+      - <strong>is_builtin</strong> (<em>bool</em>) – Defaults to False. This is used by tools to display or filter built-in types (such as `String`, `Int`) to visually distinguish them from user-defined types. Meant for internal use.
+      - <strong>kind</strong> (<em>DagsterTypeKind</em>) – Defaults to None. This is used to determine the kind of runtime type for InputDefinition and OutputDefinition type checking.
+      - <strong>typing_type</strong> – Defaults to None. A valid python typing type (e.g. Optional[List[int]]) for the value contained within the DagsterType. Meant for internal use.
+
+
+
+    </dd>
+
+</dl>
+</div>

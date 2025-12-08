@@ -1,0 +1,460 @@
+---
+title: 'dlt (dagster-dlt)'
+title_meta: 'dlt (dagster-dlt) API Documentation - Build Better Data Pipelines | Python Reference Documentation for Dagster'
+description: 'dlt (dagster-dlt) Dagster API | Comprehensive Python API documentation for Dagster, the data orchestration platform. Learn how to build, test, and maintain data pipelines with our detailed guides and examples.'
+last_update:
+  date: '2025-12-05'
+custom_edit_url: null
+---
+
+<div class="section" id="dlt-dagster-dlt">
+
+# dlt (dagster-dlt)
+
+This library provides a Dagster integration with [dlt](https://dlthub.com).
+
+For more information on getting started, see the [Dagster & dlt](https://docs.dagster.io/integrations/libraries/dlt) documentation.
+
+<div class="section" id="component">
+
+## Component
+
+<dl>
+    <dt><Link class="anchor" id='dagster_dlt.DltLoadCollectionComponent'>`class` dagster_dlt.DltLoadCollectionComponent <a href='https://github.com/dagster-io/dagster/blob/master/python_modules/libraries/dagster-dlt/dagster_dlt/components/dlt_load_collection/component.py#L71' className='source-link' target='_blank' rel='noopener noreferrer'>[source]</a><a href="#dagster_dlt.DltLoadCollectionComponent" class="hash-link"></a></Link></dt>
+    <dd>
+
+    Expose one or more dlt loads to Dagster as assets.
+
+    <dl>
+        <dt><Link class="anchor" id='dagster_dlt.DltLoadCollectionComponent.execute'>execute <a href='https://github.com/dagster-io/dagster/blob/master/python_modules/libraries/dagster-dlt/dagster_dlt/components/dlt_load_collection/component.py#L143' className='source-link' target='_blank' rel='noopener noreferrer'>[source]</a><a href="#dagster_dlt.DltLoadCollectionComponent.execute" class="hash-link"></a></Link></dt>
+        <dd>
+
+        Executes the dlt pipeline for the selected resources.
+
+        This method can be overridden in a subclass to customize the pipeline execution behavior,
+        such as adding custom logging, validation, or error handling.
+
+        Parameters:
+          - <strong>context</strong> – The asset execution context provided by Dagster
+          - <strong>dlt_pipeline_resource</strong> – The DagsterDltResource used to run the dlt pipeline
+
+
+        Yields: Events from the dlt pipeline execution (e.g., AssetMaterialization, MaterializeResult)
+
+
+        Example:
+
+        Override this method to add custom logging during pipeline execution:
+
+            ```python
+            from dagster_dlt import DltLoadCollectionComponent
+            from dagster import AssetExecutionContext
+
+            class CustomDltLoadCollectionComponent(DltLoadCollectionComponent):
+                def execute(self, context, dlt_pipeline_resource):
+                    context.log.info("Starting dlt pipeline execution")
+                    yield from super().execute(context, dlt_pipeline_resource)
+                    context.log.info("dlt pipeline execution completed")
+            ```
+
+        </dd>
+
+    </dl>
+    <dl>
+        <dt><Link class="anchor" id='dagster_dlt.DltLoadCollectionComponent.get_asset_spec'>get_asset_spec <a href='https://github.com/dagster-io/dagster/blob/master/python_modules/libraries/dagster-dlt/dagster_dlt/components/dlt_load_collection/component.py#L89' className='source-link' target='_blank' rel='noopener noreferrer'>[source]</a><a href="#dagster_dlt.DltLoadCollectionComponent.get_asset_spec" class="hash-link"></a></Link></dt>
+        <dd>
+
+        Generates an AssetSpec for a given dlt resource.
+
+        This method can be overridden in a subclass to customize how dlt resources are
+        converted to Dagster asset specs. By default, it delegates to the configured
+        DagsterDltTranslator.
+
+        Parameters: <strong>data</strong> – The DltResourceTranslatorData containing information about the dlt source
+        and resource being loadedReturns: An AssetSpec that represents the dlt resource as a Dagster asset
+
+
+        Example:
+
+        Override this method to add custom tags based on resource properties:
+
+            ```python
+            from dagster_dlt import DltLoadCollectionComponent
+            from dagster import AssetSpec
+
+            class CustomDltLoadCollectionComponent(DltLoadCollectionComponent):
+                def get_asset_spec(self, data):
+                    base_spec = super().get_asset_spec(data)
+                    return base_spec.replace_attributes(
+                        tags={
+                            **base_spec.tags,
+                            "source": data.source_name,
+                            "resource": data.resource_name
+                        }
+                    )
+            ```
+
+        </dd>
+
+    </dl>
+
+    </dd>
+
+</dl>
+To use the dlt component, see the [dlt component integration guide](https://docs.dagster.io/integrations/libraries/dlt).
+
+<div class="section" id="yaml-configuration">
+
+### YAML configuration
+
+When you scaffold a dlt component definition, the following `defs.yaml` configuration file will be created:
+
+    ```yaml
+    type: dagster_dlt.DltLoadCollectionComponent
+
+    attributes:
+      loads:
+        - source: .loads.my_load_source
+          pipeline: .loads.my_load_pipeline
+    ```
+
+</div></div>
+
+<div class="section" id="assets">
+
+## Assets
+
+<dl>
+    <dt><Link class="anchor" id='dagster_dlt.dlt_assets'>@dagster_dlt.dlt_assets <a href='https://github.com/dagster-io/dagster/blob/master/python_modules/libraries/dagster-dlt/dagster_dlt/asset_decorator.py#L56' className='source-link' target='_blank' rel='noopener noreferrer'>[source]</a><a href="#dagster_dlt.dlt_assets" class="hash-link"></a></Link></dt>
+    <dd>
+
+    Asset Factory for using data load tool (dlt).
+
+    Parameters:
+      - <strong>dlt_source</strong> (<em>DltSource</em>) – The DltSource to be ingested.
+      - <strong>dlt_pipeline</strong> (<em>Pipeline</em>) – The dlt Pipeline defining the destination parameters.
+      - <strong>name</strong> (<em>Optional</em><em>[</em><em>str</em><em>]</em><em>, </em><em>optional</em>) – The name of the op.
+      - <strong>group_name</strong> (<em>Optional</em><em>[</em><em>str</em><em>]</em><em>, </em><em>optional</em>) – The name of the asset group.
+      - <strong>dagster_dlt_translator</strong> ([*DagsterDltTranslator*](#dagster_dlt.DagsterDltTranslator)<em>, </em><em>optional</em>) – Customization object for defining asset parameters from dlt resources.
+      - <strong>partitions_def</strong> (<em>Optional</em><em>[</em>[*PartitionsDefinition*](../dagster/partitions.mdx#dagster.PartitionsDefinition)<em>]</em>) – Optional partitions definition.
+      - <strong>backfill_policy</strong> (<em>Optional</em><em>[</em>[*BackfillPolicy*](../dagster/partitions.mdx#dagster.BackfillPolicy)<em>]</em>) – If a partitions_def is defined, this determines how to execute backfills that target multiple partitions. If a time window partition definition is used, this parameter defaults to a single-run policy.
+      - <strong>op_tags</strong> (<em>Optional</em><em>[</em><em>Mapping</em><em>[</em><em>str</em><em>, </em><em>Any</em><em>]</em><em>]</em>) – The tags for the underlying op.
+      - <strong>pool</strong> (<em>Optional</em><em>[</em><em>str</em><em>]</em>) – A string that identifies the concurrency pool that governs the dlt assets’ execution.
+
+
+
+
+    Examples:
+
+    Loading Hubspot data to Snowflake with an auto materialize policy using the dlt verified source:
+
+        ```python
+        from dagster_dlt import DagsterDltResource, DagsterDltTranslator, dlt_assets
+
+
+        class HubspotDagsterDltTranslator(DagsterDltTranslator):
+            @public
+            def get_auto_materialize_policy(self, resource: DltResource) -> Optional[AutoMaterializePolicy]:
+                return AutoMaterializePolicy.eager().with_rules(
+                    AutoMaterializeRule.materialize_on_cron("0 0 * * *")
+                )
+
+
+        @dlt_assets(
+            dlt_source=hubspot(include_history=True),
+            dlt_pipeline=pipeline(
+                pipeline_name="hubspot",
+                dataset_name="hubspot",
+                destination="snowflake",
+                progress="log",
+            ),
+            name="hubspot",
+            group_name="hubspot",
+            dagster_dlt_translator=HubspotDagsterDltTranslator(),
+        )
+        def hubspot_assets(context: AssetExecutionContext, dlt: DagsterDltResource):
+            yield from dlt.run(context=context)
+        ```
+    Loading Github issues to snowflake:
+
+        ```python
+        from dagster_dlt import DagsterDltResource, dlt_assets
+
+
+        @dlt_assets(
+            dlt_source=github_reactions(
+                "dagster-io", "dagster", items_per_page=100, max_items=250
+            ),
+            dlt_pipeline=pipeline(
+                pipeline_name="github_issues",
+                dataset_name="github",
+                destination="snowflake",
+                progress="log",
+            ),
+            name="github",
+            group_name="github",
+        )
+        def github_reactions_dagster_assets(context: AssetExecutionContext, dlt: DagsterDltResource):
+            yield from dlt.run(context=context)
+        ```
+
+    </dd>
+
+</dl>
+<dl>
+    <dt><Link class="anchor" id='dagster_dlt.build_dlt_asset_specs'>dagster_dlt.build_dlt_asset_specs <a href='https://github.com/dagster-io/dagster/blob/master/python_modules/libraries/dagster-dlt/dagster_dlt/asset_decorator.py#L21' className='source-link' target='_blank' rel='noopener noreferrer'>[source]</a><a href="#dagster_dlt.build_dlt_asset_specs" class="hash-link"></a></Link></dt>
+    <dd>
+
+    Build a list of asset specs from a dlt source and pipeline.
+
+    Parameters:
+      - <strong>dlt_source</strong> (<em>DltSource</em>) – dlt source object
+      - <strong>dlt_pipeline</strong> (<em>Pipeline</em>) – dlt pipeline object
+      - <strong>dagster_dlt_translator</strong> (<em>Optional</em><em>[</em>[*DagsterDltTranslator*](#dagster_dlt.DagsterDltTranslator)<em>]</em>) – Allows customizing how to map dlt project to asset keys and asset metadata.
+
+
+    Returns: List[AssetSpec] list of asset specs from dlt source and pipeline
+
+    </dd>
+
+</dl>
+<dl>
+    <dt><Link class="anchor" id='dagster_dlt.DagsterDltTranslator'>`class` dagster_dlt.DagsterDltTranslator <a href='https://github.com/dagster-io/dagster/blob/master/python_modules/libraries/dagster-dlt/dagster_dlt/translator.py#L24' className='source-link' target='_blank' rel='noopener noreferrer'>[source]</a><a href="#dagster_dlt.DagsterDltTranslator" class="hash-link"></a></Link></dt>
+    <dd>
+
+    <dl>
+        <dt><Link class="anchor" id='dagster_dlt.DagsterDltTranslator.get_asset_key'>get_asset_key <a href='https://github.com/dagster-io/dagster/blob/master/python_modules/libraries/dagster-dlt/dagster_dlt/translator.py#L91' className='source-link' target='_blank' rel='noopener noreferrer'>[source]</a><a href="#dagster_dlt.DagsterDltTranslator.get_asset_key" class="hash-link"></a></Link></dt>
+        <dd>
+
+            :::warning[superseded]
+            This API has been superseded.
+             Use `DagsterDltTranslator.get_asset_spec(...).key` instead..
+
+            :::
+
+        Defines asset key for a given dlt resource key and dataset name.
+
+        This method can be overridden to provide custom asset key for a dlt resource.
+
+        Parameters: <strong>resource</strong> (<em>DltResource</em>) – dlt resourceReturns: AssetKey of Dagster asset derived from dlt resource
+
+        </dd>
+
+    </dl>
+    <dl>
+        <dt><Link class="anchor" id='dagster_dlt.DagsterDltTranslator.get_auto_materialize_policy'>get_auto_materialize_policy <a href='https://github.com/dagster-io/dagster/blob/master/python_modules/libraries/dagster-dlt/dagster_dlt/translator.py#L121' className='source-link' target='_blank' rel='noopener noreferrer'>[source]</a><a href="#dagster_dlt.DagsterDltTranslator.get_auto_materialize_policy" class="hash-link"></a></Link></dt>
+        <dd>
+
+            :::warning[superseded]
+            This API has been superseded.
+             Use `DagsterDltTranslator.get_asset_spec(...).auto_materialize_policy` instead..
+
+            :::
+
+        Defines resource specific auto materialize policy.
+
+        This method can be overridden to provide custom auto materialize policy for a dlt resource.
+
+        Parameters: <strong>resource</strong> (<em>DltResource</em>) – dlt resourceReturns: The auto-materialize policy for a resourceReturn type: Optional[AutoMaterializePolicy]
+
+        </dd>
+
+    </dl>
+    <dl>
+        <dt><Link class="anchor" id='dagster_dlt.DagsterDltTranslator.get_automation_condition'>get_automation_condition <a href='https://github.com/dagster-io/dagster/blob/master/python_modules/libraries/dagster-dlt/dagster_dlt/translator.py#L153' className='source-link' target='_blank' rel='noopener noreferrer'>[source]</a><a href="#dagster_dlt.DagsterDltTranslator.get_automation_condition" class="hash-link"></a></Link></dt>
+        <dd>
+
+            :::warning[superseded]
+            This API has been superseded.
+             Use `DagsterDltTranslator.get_asset_spec(...).automation_condition` instead..
+
+            :::
+
+        Defines resource specific automation condition.
+
+        This method can be overridden to provide custom automation condition for a dlt resource.
+
+        Parameters: <strong>resource</strong> (<em>DltResource</em>) – dlt resourceReturns: The automation condition for a resourceReturn type: Optional[[AutomationCondition](../dagster/assets.mdx#dagster.AutomationCondition)]
+
+        </dd>
+
+    </dl>
+    <dl>
+        <dt><Link class="anchor" id='dagster_dlt.DagsterDltTranslator.get_deps_asset_keys'>get_deps_asset_keys <a href='https://github.com/dagster-io/dagster/blob/master/python_modules/libraries/dagster-dlt/dagster_dlt/translator.py#L188' className='source-link' target='_blank' rel='noopener noreferrer'>[source]</a><a href="#dagster_dlt.DagsterDltTranslator.get_deps_asset_keys" class="hash-link"></a></Link></dt>
+        <dd>
+
+            :::warning[superseded]
+            This API has been superseded.
+             Iterate over `DagsterDltTranslator.get_asset_spec(...).deps` to access `AssetDep.asset_key` instead..
+
+            :::
+
+        Defines upstream asset dependencies given a dlt resource.
+
+        Defaults to a concatenation of <cite>resource.source_name</cite> and <cite>resource.name</cite>.
+
+        Parameters: <strong>resource</strong> (<em>DltResource</em>) – dlt resourceReturns: The Dagster asset keys upstream of <cite>dlt_resource_key</cite>.Return type: Iterable[[AssetKey](../dagster/assets.mdx#dagster.AssetKey)]
+
+        </dd>
+
+    </dl>
+    <dl>
+        <dt><Link class="anchor" id='dagster_dlt.DagsterDltTranslator.get_description'>get_description <a href='https://github.com/dagster-io/dagster/blob/master/python_modules/libraries/dagster-dlt/dagster_dlt/translator.py#L225' className='source-link' target='_blank' rel='noopener noreferrer'>[source]</a><a href="#dagster_dlt.DagsterDltTranslator.get_description" class="hash-link"></a></Link></dt>
+        <dd>
+
+            :::warning[superseded]
+            This API has been superseded.
+             Use `DagsterDltTranslator.get_asset_spec(...).description` instead..
+
+            :::
+
+        A method that takes in a dlt resource returns the Dagster description of the resource.
+
+        This method can be overridden to provide a custom description for a dlt resource.
+
+        Parameters: <strong>resource</strong> (<em>DltResource</em>) – dlt resourceReturns: The Dagster description for the dlt resource.Return type: Optional[str]
+
+        </dd>
+
+    </dl>
+    <dl>
+        <dt><Link class="anchor" id='dagster_dlt.DagsterDltTranslator.get_group_name'>get_group_name <a href='https://github.com/dagster-io/dagster/blob/master/python_modules/libraries/dagster-dlt/dagster_dlt/translator.py#L258' className='source-link' target='_blank' rel='noopener noreferrer'>[source]</a><a href="#dagster_dlt.DagsterDltTranslator.get_group_name" class="hash-link"></a></Link></dt>
+        <dd>
+
+            :::warning[superseded]
+            This API has been superseded.
+             Use `DagsterDltTranslator.get_asset_spec(...).group_name` instead..
+
+            :::
+
+        A method that takes in a dlt resource and returns the Dagster group name of the resource.
+
+        This method can be overridden to provide a custom group name for a dlt resource.
+
+        Parameters: <strong>resource</strong> (<em>DltResource</em>) – dlt resourceReturns: A Dagster group name for the dlt resource.Return type: Optional[str]
+
+        </dd>
+
+    </dl>
+    <dl>
+        <dt><Link class="anchor" id='dagster_dlt.DagsterDltTranslator.get_kinds'>get_kinds <a href='https://github.com/dagster-io/dagster/blob/master/python_modules/libraries/dagster-dlt/dagster_dlt/translator.py#L370' className='source-link' target='_blank' rel='noopener noreferrer'>[source]</a><a href="#dagster_dlt.DagsterDltTranslator.get_kinds" class="hash-link"></a></Link></dt>
+        <dd>
+
+            :::warning[superseded]
+            This API has been superseded.
+             Use `DagsterDltTranslator.get_asset_spec(...).kinds` instead..
+
+            :::
+
+        A method that takes in a dlt resource and returns the kinds which should be
+        attached. Defaults to the destination type and “dlt”.
+
+        This method can be overridden to provide custom kinds for a dlt resource.
+
+        Parameters:
+          - <strong>resource</strong> (<em>DltResource</em>) – dlt resource
+          - <strong>destination</strong> (<em>Destination</em>) – dlt destination
+
+
+        Returns: The kinds of the asset.Return type: Set[str]
+
+        </dd>
+
+    </dl>
+    <dl>
+        <dt><Link class="anchor" id='dagster_dlt.DagsterDltTranslator.get_metadata'>get_metadata <a href='https://github.com/dagster-io/dagster/blob/master/python_modules/libraries/dagster-dlt/dagster_dlt/translator.py#L286' className='source-link' target='_blank' rel='noopener noreferrer'>[source]</a><a href="#dagster_dlt.DagsterDltTranslator.get_metadata" class="hash-link"></a></Link></dt>
+        <dd>
+
+            :::warning[superseded]
+            This API has been superseded.
+             Use `DagsterDltTranslator.get_asset_spec(...).metadata` instead..
+
+            :::
+
+        Defines resource specific metadata.
+
+        Parameters: <strong>resource</strong> (<em>DltResource</em>) – dlt resourceReturns: The custom metadata entries for this resource.Return type: Mapping[str, Any]
+
+        </dd>
+
+    </dl>
+    <dl>
+        <dt><Link class="anchor" id='dagster_dlt.DagsterDltTranslator.get_owners'>get_owners <a href='https://github.com/dagster-io/dagster/blob/master/python_modules/libraries/dagster-dlt/dagster_dlt/translator.py#L312' className='source-link' target='_blank' rel='noopener noreferrer'>[source]</a><a href="#dagster_dlt.DagsterDltTranslator.get_owners" class="hash-link"></a></Link></dt>
+        <dd>
+
+            :::warning[superseded]
+            This API has been superseded.
+             Use `DagsterDltTranslator.get_asset_spec(...).owners` instead..
+
+            :::
+
+        A method that takes in a dlt resource and returns the Dagster owners of the resource.
+
+        This method can be overridden to provide custom owners for a dlt resource.
+
+        Parameters: <strong>resource</strong> (<em>DltResource</em>) – dlt resourceReturns: A sequence of Dagster owners for the dlt resource.Return type: Optional[Sequence[str]]
+
+        </dd>
+
+    </dl>
+    <dl>
+        <dt><Link class="anchor" id='dagster_dlt.DagsterDltTranslator.get_tags'>get_tags <a href='https://github.com/dagster-io/dagster/blob/master/python_modules/libraries/dagster-dlt/dagster_dlt/translator.py#L340' className='source-link' target='_blank' rel='noopener noreferrer'>[source]</a><a href="#dagster_dlt.DagsterDltTranslator.get_tags" class="hash-link"></a></Link></dt>
+        <dd>
+
+            :::warning[superseded]
+            This API has been superseded.
+             Use `DagsterDltTranslator.get_asset_spec(...).tags` instead..
+
+            :::
+
+        A method that takes in a dlt resource and returns the Dagster tags of the structure.
+
+        This method can be overridden to provide custom tags for a dlt resource.
+
+        Parameters: <strong>resource</strong> (<em>DltResource</em>) – dlt resourceReturns:
+        A dictionary representing the Dagster tags for the
+            dlt resource.
+
+        Return type: Optional[Mapping[str, str]]
+
+        </dd>
+
+    </dl>
+
+    </dd>
+
+</dl>
+</div>
+
+<div class="section" id="resources">
+
+## Resources
+
+<dl>
+    <dt><Link class="anchor" id='dagster_dlt.DagsterDltResource'>`class` dagster_dlt.DagsterDltResource <a href='https://github.com/dagster-io/dagster/blob/master/python_modules/libraries/dagster-dlt/dagster_dlt/resource.py#L29' className='source-link' target='_blank' rel='noopener noreferrer'>[source]</a><a href="#dagster_dlt.DagsterDltResource" class="hash-link"></a></Link></dt>
+    <dd>
+
+    <dl>
+        <dt><Link class="anchor" id='dagster_dlt.DagsterDltResource.run'>run <a href='https://github.com/dagster-io/dagster/blob/master/python_modules/libraries/dagster-dlt/dagster_dlt/resource.py#L176' className='source-link' target='_blank' rel='noopener noreferrer'>[source]</a><a href="#dagster_dlt.DagsterDltResource.run" class="hash-link"></a></Link></dt>
+        <dd>
+
+        Runs the dlt pipeline with subset support.
+
+        Parameters:
+          - <strong>context</strong> (<em>Union</em><em>[</em>[*OpExecutionContext*](../dagster/execution.mdx#dagster.OpExecutionContext)<em>, </em>[*AssetExecutionContext*](../dagster/execution.mdx#dagster.AssetExecutionContext)<em>]</em>) – Asset or op execution context
+          - <strong>dlt_source</strong> (<em>Optional</em><em>[</em><em>DltSource</em><em>]</em>) – optional dlt source if resource is used from an <cite>@op</cite>
+          - <strong>dlt_pipeline</strong> (<em>Optional</em><em>[</em><em>Pipeline</em><em>]</em>) – optional dlt pipeline if resource is used from an <cite>@op</cite>
+          - <strong>dagster_dlt_translator</strong> (<em>Optional</em><em>[</em>[*DagsterDltTranslator*](#dagster_dlt.DagsterDltTranslator)<em>]</em>) – optional dlt translator if resource is used from an <cite>@op</cite>
+          - <strong>**kwargs</strong> (<em>dict</em><em>[</em><em>str</em><em>, </em><em>Any</em><em>]</em>) – Keyword args passed to pipeline <cite>run</cite> method
+
+
+        Returns: An iterator of MaterializeResult or AssetMaterializationReturn type: DltEventIterator[DltEventType]
+
+        </dd>
+
+    </dl>
+
+    </dd>
+
+</dl>
+</div></div>

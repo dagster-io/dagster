@@ -1,0 +1,142 @@
+---
+title: 'datadog (dagster-datadog)'
+title_meta: 'datadog (dagster-datadog) API Documentation - Build Better Data Pipelines | Python Reference Documentation for Dagster'
+description: 'datadog (dagster-datadog) Dagster API | Comprehensive Python API documentation for Dagster, the data orchestration platform. Learn how to build, test, and maintain data pipelines with our detailed guides and examples.'
+last_update:
+  date: '2025-12-05'
+custom_edit_url: null
+---
+
+<div class="section" id="datadog-dagster-datadog">
+
+# Datadog (dagster-datadog)
+
+This library provides an integration with Datadog, to support publishing metrics to Datadog from
+within Dagster ops.
+
+We use the Python [datadogpy](https://github.com/DataDog/datadogpy) library. To use it, you’ll
+first need to create a DataDog account and get both [API and Application keys](https://docs.datadoghq.com/account_management/api-app-keys).
+
+The integration uses [DogStatsD](https://docs.datadoghq.com/developers/dogstatsd), so you’ll need
+to ensure the datadog agent is running on the host you’re sending metrics from.
+
+<dl>
+    <dt><Link class="anchor" id='dagster_datadog.DatadogResource'>dagster_datadog.DatadogResource ResourceDefinition <a href='https://github.com/dagster-io/dagster/blob/master/python_modules/libraries/dagster-datadog/dagster_datadog/resources.py#L42' className='source-link' target='_blank' rel='noopener noreferrer'>[source]</a><a href="#dagster_datadog.DatadogResource" class="hash-link"></a></Link></dt>
+    <dd>
+
+        <div className='lineblock'> </div>
+
+        :::info[beta]
+        This API is currently in beta, and may have breaking changes in minor version releases, with behavior changes in patch releases.
+
+
+        :::
+
+    This resource is a thin wrapper over the
+    [dogstatsd library](https://datadogpy.readthedocs.io/en/latest/).
+
+    As such, we directly mirror the public API methods of DogStatsd here; you can refer to the
+    [Datadog documentation](https://docs.datadoghq.com/developers/dogstatsd/) for how to use this
+    resource.
+
+
+
+    Examples:
+
+        ```python
+        @op
+        def datadog_op(datadog_resource: DatadogResource):
+            datadog_client = datadog_resource.get_client()
+            datadog_client.event('Man down!', 'This server needs assistance.')
+            datadog_client.gauge('users.online', 1001, tags=["protocol:http"])
+            datadog_client.increment('page.views')
+            datadog_client.decrement('page.views')
+            datadog_client.histogram('album.photo.count', 26, tags=["gender:female"])
+            datadog_client.distribution('album.photo.count', 26, tags=["color:blue"])
+            datadog_client.set('visitors.uniques', 999, tags=["browser:ie"])
+            datadog_client.service_check('svc.check_name', datadog_client.WARNING)
+            datadog_client.timing("query.response.time", 1234)
+
+            # Use timed decorator
+            @datadog_client.timed('run_fn')
+            def run_fn():
+                pass
+
+            run_fn()
+
+        @job
+        def job_for_datadog_op() -> None:
+            datadog_op()
+
+        job_for_datadog_op.execute_in_process(
+            resources={"datadog_resource": DatadogResource(api_key="FOO", app_key="BAR")}
+        )
+        ```
+
+    </dd>
+
+</dl>
+<div class="section" id="legacy">
+
+## Legacy
+
+<dl>
+    <dt><Link class="anchor" id='dagster_datadog.datadog_resource'>dagster_datadog.datadog_resource ResourceDefinition <a href='https://github.com/dagster-io/dagster/blob/master/python_modules/libraries/dagster-datadog/dagster_datadog/resources.py#L104' className='source-link' target='_blank' rel='noopener noreferrer'>[source]</a><a href="#dagster_datadog.datadog_resource" class="hash-link"></a></Link></dt>
+    <dd>
+
+        <div className='lineblock'> </div>
+
+        :::info[beta]
+        This API is currently in beta, and may have breaking changes in minor version releases, with behavior changes in patch releases.
+
+
+        :::
+
+    This legacy resource is a thin wrapper over the
+    [dogstatsd library](https://datadogpy.readthedocs.io/en/latest/).
+
+    Prefer using [`DatadogResource`](#dagster_datadog.DatadogResource).
+
+    As such, we directly mirror the public API methods of DogStatsd here; you can refer to the
+    [DataDog documentation](https://docs.datadoghq.com/developers/dogstatsd/) for how to use this
+    resource.
+
+
+
+    Examples:
+
+        ```python
+        @op(required_resource_keys={'datadog'})
+        def datadog_op(context):
+            dd = context.resources.datadog
+
+            dd.event('Man down!', 'This server needs assistance.')
+            dd.gauge('users.online', 1001, tags=["protocol:http"])
+            dd.increment('page.views')
+            dd.decrement('page.views')
+            dd.histogram('album.photo.count', 26, tags=["gender:female"])
+            dd.distribution('album.photo.count', 26, tags=["color:blue"])
+            dd.set('visitors.uniques', 999, tags=["browser:ie"])
+            dd.service_check('svc.check_name', dd.WARNING)
+            dd.timing("query.response.time", 1234)
+
+            # Use timed decorator
+            @dd.timed('run_fn')
+            def run_fn():
+                pass
+
+            run_fn()
+
+        @job(resource_defs={'datadog': datadog_resource})
+        def dd_job():
+            datadog_op()
+
+        result = dd_job.execute_in_process(
+            run_config={'resources': {'datadog': {'config': {'api_key': 'YOUR_KEY', 'app_key': 'YOUR_KEY'}}}}
+        )
+        ```
+
+    </dd>
+
+</dl>
+</div></div>

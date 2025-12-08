@@ -1,0 +1,259 @@
+---
+title: 'gcp + pandas (dagster-gcp-pandas)'
+title_meta: 'gcp + pandas (dagster-gcp-pandas) API Documentation - Build Better Data Pipelines | Python Reference Documentation for Dagster'
+description: 'gcp + pandas (dagster-gcp-pandas) Dagster API | Comprehensive Python API documentation for Dagster, the data orchestration platform. Learn how to build, test, and maintain data pipelines with our detailed guides and examples.'
+last_update:
+  date: '2025-12-05'
+custom_edit_url: null
+---
+
+<div class="section" id="gcp-pandas-dagster-gcp-pandas">
+
+# GCP + Pandas (dagster-gcp-pandas)
+
+<div class="section" id="google-bigquery">
+
+## Google BigQuery
+
+This library provides an integration with the [BigQuery](https://cloud.google.com/bigquery) database and Pandas data processing library.
+
+Related Guides:
+
+- [Using Dagster with BigQuery](https://docs.dagster.io/integrations/libraries/gcp/bigquery)
+- [BigQuery I/O manager reference](https://docs.dagster.io/integrations/libraries/gcp/bigquery/reference)
+
+<dl>
+    <dt><Link class="anchor" id='dagster_gcp_pandas.BigQueryPandasIOManager'>dagster_gcp_pandas.BigQueryPandasIOManager IOManagerDefinition <a href='https://github.com/dagster-io/dagster/blob/master/python_modules/libraries/dagster-gcp-pandas/dagster_gcp_pandas/bigquery/bigquery_pandas_type_handler.py#L201' className='source-link' target='_blank' rel='noopener noreferrer'>[source]</a><a href="#dagster_gcp_pandas.BigQueryPandasIOManager" class="hash-link"></a></Link></dt>
+    <dd>
+
+        <div className='lineblock'> </div>
+
+    An I/O manager definition that reads inputs from and writes pandas DataFrames to BigQuery.
+
+    Returns: IOManagerDefinition
+
+
+    Examples:
+
+        ```python
+        from dagster_gcp_pandas import BigQueryPandasIOManager
+        from dagster import Definitions, EnvVar
+
+        @asset(
+            key_prefix=["my_dataset"]  # will be used as the dataset in BigQuery
+        )
+        def my_table() -> pd.DataFrame:  # the name of the asset will be the table name
+            ...
+
+        Definitions(
+            assets=[my_table],
+            resources={
+                "io_manager": BigQueryPandasIOManager(project=EnvVar("GCP_PROJECT"))
+            }
+        )
+        ```
+    You can set a default dataset to store the assets using the `dataset` configuration value of the BigQuery I/O
+    Manager. This dataset will be used if no other dataset is specified directly on an asset or op.
+
+        ```python
+        Definitions(
+            assets=[my_table],
+            resources={
+                    "io_manager": BigQueryPandasIOManager(project=EnvVar("GCP_PROJECT"), dataset="my_dataset")
+                }
+        )
+        ```
+    On individual assets, you an also specify the dataset where they should be stored using metadata or
+    by adding a `key_prefix` to the asset key. If both `key_prefix` and metadata are defined, the metadata will
+    take precedence.
+
+        ```python
+        @asset(
+            key_prefix=["my_dataset"]  # will be used as the dataset in BigQuery
+        )
+        def my_table() -> pd.DataFrame:
+            ...
+
+        @asset(
+            # note that the key needs to be "schema"
+            metadata={"schema": "my_dataset"}  # will be used as the dataset in BigQuery
+        )
+        def my_other_table() -> pd.DataFrame:
+            ...
+        ```
+    For ops, the dataset can be specified by including a “schema” entry in output metadata.
+
+        ```python
+        @op(
+            out={"my_table": Out(metadata={"schema": "my_schema"})}
+        )
+        def make_my_table() -> pd.DataFrame:
+            ...
+        ```
+    If none of these is provided, the dataset will default to “public”.
+
+    To only use specific columns of a table as input to a downstream op or asset, add the metadata “columns” to the
+    In or AssetIn.
+
+        ```python
+        @asset(
+            ins={"my_table": AssetIn("my_table", metadata={"columns": ["a"]})}
+        )
+        def my_table_a(my_table: pd.DataFrame) -> pd.DataFrame:
+            # my_table will just contain the data from column "a"
+            ...
+        ```
+    If you cannot upload a file to your Dagster deployment, or otherwise cannot
+    [authenticate with GCP](https://cloud.google.com/docs/authentication/provide-credentials-adc)
+    via a standard method, you can provide a service account key as the “gcp_credentials” configuration.
+    Dagster will store this key in a temporary file and set GOOGLE_APPLICATION_CREDENTIALS to point to the file.
+    After the run completes, the file will be deleted, and GOOGLE_APPLICATION_CREDENTIALS will be
+    unset. The key must be base64 encoded to avoid issues with newlines in the keys. You can retrieve
+    the base64 encoded key with this shell command: cat $GOOGLE_APPLICATION_CREDENTIALS | base64
+
+
+    </dd>
+
+</dl>
+<dl>
+    <dt><Link class="anchor" id='dagster_gcp_pandas.BigQueryPandasTypeHandler'>`class` dagster_gcp_pandas.BigQueryPandasTypeHandler <a href='https://github.com/dagster-io/dagster/blob/master/python_modules/libraries/dagster-gcp-pandas/dagster_gcp_pandas/bigquery/bigquery_pandas_type_handler.py#L15' className='source-link' target='_blank' rel='noopener noreferrer'>[source]</a><a href="#dagster_gcp_pandas.BigQueryPandasTypeHandler" class="hash-link"></a></Link></dt>
+    <dd>
+
+    Plugin for the BigQuery I/O Manager that can store and load Pandas DataFrames as BigQuery tables.
+
+
+
+    Examples:
+
+        ```python
+        from dagster_gcp import BigQueryIOManager
+        from dagster_bigquery_pandas import BigQueryPandasTypeHandler
+        from dagster import Definitions, EnvVar
+
+        class MyBigQueryIOManager(BigQueryIOManager):
+            @staticmethod
+            def type_handlers() -> Sequence[DbTypeHandler]:
+                return [BigQueryPandasTypeHandler()]
+
+        @asset(
+            key_prefix=["my_dataset"],  # my_dataset will be used as the dataset in BigQuery
+        )
+        def my_table() -> pd.DataFrame:  # the name of the asset will be the table name
+            ...
+
+        Definitions(
+            assets=[my_table],
+            resources={
+                "io_manager": MyBigQueryIOManager(project=EnvVar("GCP_PROJECT"))
+            }
+        )
+        ```
+
+    </dd>
+
+</dl>
+</div>
+
+<div class="section" id="legacy">
+
+## Legacy
+
+<dl>
+    <dt><Link class="anchor" id='dagster_gcp_pandas.bigquery_pandas_io_manager'>dagster_gcp_pandas.bigquery_pandas_io_manager IOManagerDefinition <a href='https://github.com/dagster-io/dagster/blob/master/python_modules/libraries/dagster-gcp/dagster_gcp/bigquery/io_manager.py#L138' className='source-link' target='_blank' rel='noopener noreferrer'>[source]</a><a href="#dagster_gcp_pandas.bigquery_pandas_io_manager" class="hash-link"></a></Link></dt>
+    <dd>
+
+        <div className='lineblock'> </div>
+
+    An I/O manager definition that reads inputs from and writes pandas DataFrames to BigQuery.
+
+    Returns: IOManagerDefinition
+
+
+    Examples:
+
+        ```python
+        from dagster_gcp_pandas import bigquery_pandas_io_manager
+        from dagster import Definitions
+
+        @asset(
+            key_prefix=["my_dataset"],  # will be used as the dataset in BigQuery
+        )
+        def my_table() -> pd.DataFrame:  # the name of the asset will be the table name
+            ...
+
+        Definitions(
+            assets=[my_table],
+            resources={
+                "io_manager": bigquery_pandas_io_manager.configured({
+                    "project": {"env": "GCP_PROJECT"}
+                })
+            }
+        )
+        ```
+    You can set a default dataset to store the assets using the `dataset` configuration value of the BigQuery I/O
+    Manager. This dataset will be used if no other dataset is specified directly on an asset or op.
+
+        ```python
+        Definitions(
+            assets=[my_table],
+            resources={
+                    "io_manager": bigquery_pandas_io_manager.configured({
+                        "project": {"env": "GCP_PROJECT"},
+                        "dataset": "my_dataset"
+                    })
+                }
+        )
+        ```
+    On individual assets, you an also specify the dataset where they should be stored using metadata or
+    by adding a `key_prefix` to the asset key. If both `key_prefix` and metadata are defined, the metadata will
+    take precedence.
+
+        ```python
+        @asset(
+            key_prefix=["my_dataset"]  # will be used as the dataset in BigQuery
+        )
+        def my_table() -> pd.DataFrame:
+            ...
+
+        @asset(
+            # note that the key needs to be "schema"
+            metadata={"schema": "my_dataset"}  # will be used as the dataset in BigQuery
+        )
+        def my_other_table() -> pd.DataFrame:
+            ...
+        ```
+    For ops, the dataset can be specified by including a “schema” entry in output metadata.
+
+        ```python
+        @op(
+            out={"my_table": Out(metadata={"schema": "my_schema"})}
+        )
+        def make_my_table() -> pd.DataFrame:
+            ...
+        ```
+    If none of these is provided, the dataset will default to “public”.
+
+    To only use specific columns of a table as input to a downstream op or asset, add the metadata “columns” to the
+    In or AssetIn.
+
+        ```python
+        @asset(
+            ins={"my_table": AssetIn("my_table", metadata={"columns": ["a"]})}
+        )
+        def my_table_a(my_table: pd.DataFrame) -> pd.DataFrame:
+            # my_table will just contain the data from column "a"
+            ...
+        ```
+    If you cannot upload a file to your Dagster deployment, or otherwise cannot
+    [authenticate with GCP](https://cloud.google.com/docs/authentication/provide-credentials-adc)
+    via a standard method, you can provide a service account key as the “gcp_credentials” configuration.
+    Dagster will store this key in a temporary file and set GOOGLE_APPLICATION_CREDENTIALS to point to the file.
+    After the run completes, the file will be deleted, and GOOGLE_APPLICATION_CREDENTIALS will be
+    unset. The key must be base64 encoded to avoid issues with newlines in the keys. You can retrieve
+    the base64 encoded key with this shell command: cat $GOOGLE_APPLICATION_CREDENTIALS | base64
+
+
+    </dd>
+
+</dl>
+</div></div>

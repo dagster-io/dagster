@@ -1,0 +1,604 @@
+---
+title: 'looker (dagster-looker)'
+title_meta: 'looker (dagster-looker) API Documentation - Build Better Data Pipelines | Python Reference Documentation for Dagster'
+description: 'looker (dagster-looker) Dagster API | Comprehensive Python API documentation for Dagster, the data orchestration platform. Learn how to build, test, and maintain data pipelines with our detailed guides and examples.'
+last_update:
+  date: '2025-12-05'
+custom_edit_url: null
+---
+
+<div class="section" id="looker-dagster-looker">
+
+# Looker (dagster-looker)
+
+Dagster allows you to represent your Looker project as assets, alongside other your other
+technologies like dbt and Sling. This allows you to see how your Looker assets are connected to
+your other data assets, and how changes to other data assets might impact your Looker project.
+
+<div class="section" id="component">
+
+## Component
+
+<dl>
+    <dt><Link class="anchor" id='dagster_looker.LookerComponent'>`class` dagster_looker.LookerComponent <a href='https://github.com/dagster-io/dagster/blob/master/python_modules/libraries/dagster-looker/dagster_looker/api/components/looker_component.py#L82' className='source-link' target='_blank' rel='noopener noreferrer'>[source]</a><a href="#dagster_looker.LookerComponent" class="hash-link"></a></Link></dt>
+    <dd>
+
+        :::info[beta]
+        This API is currently in beta, and may have breaking changes in minor version releases, with behavior changes in patch releases.
+
+
+        :::
+
+    Pulls in the contents of a Looker instance into Dagster assets.
+
+
+
+    Example:
+
+        ```yaml
+        # defs.yaml
+
+        type: dagster_looker.LookerComponent
+        attributes:
+          looker_resource:
+            base_url: https://your-company.looker.com
+            client_id: "{{ env.LOOKER_CLIENT_ID }}"
+            client_secret: "{{ env.LOOKER_CLIENT_SECRET }}"
+          looker_filter:
+            dashboard_folders:
+              - ["Shared"]
+            only_fetch_explores_used_in_dashboards: true
+        ```
+    <dl>
+        <dt><Link class="anchor" id='dagster_looker.LookerComponent.get_asset_spec'>get_asset_spec <a href='https://github.com/dagster-io/dagster/blob/master/python_modules/libraries/dagster-looker/dagster_looker/api/components/looker_component.py#L155' className='source-link' target='_blank' rel='noopener noreferrer'>[source]</a><a href="#dagster_looker.LookerComponent.get_asset_spec" class="hash-link"></a></Link></dt>
+        <dd>
+
+        Generates an AssetSpec for a given Looker content item.
+
+        This method can be overridden in a subclass to customize how Looker content
+        (dashboards, looks, explores) are converted to Dagster asset specs. By default,
+        it delegates to the configured DagsterLookerApiTranslator.
+
+        Parameters: <strong>looker_structure</strong> – The LookerApiTranslatorStructureData containing information
+        about the Looker content item and instanceReturns: An AssetSpec that represents the Looker content as a Dagster asset
+
+
+        Example:
+
+        Override this method to add custom tags based on content properties:
+
+            ```python
+            from dagster_looker import LookerComponent
+            from dagster import AssetSpec
+
+            class CustomLookerComponent(LookerComponent):
+                def get_asset_spec(self, looker_structure):
+                    base_spec = super().get_asset_spec(looker_structure)
+                    return base_spec.replace_attributes(
+                        tags={
+                            **base_spec.tags,
+                            "looker_type": looker_structure.structure_data.structure_type,
+                            "folder": looker_structure.structure_data.data.get("folder", {}).get("name")
+                        }
+                    )
+            ```
+
+        </dd>
+
+    </dl>
+
+    </dd>
+
+</dl>
+To use the Looker component, see the [Looker component integration guide](https://docs.dagster.io/integrations/libraries/looker).
+
+<div class="section" id="yaml-configuration">
+
+### YAML configuration
+
+When you scaffold a Looker component definition, the following `defs.yaml` configuration file will be created:
+
+    ```yaml
+    type: dagster_looker.LookerComponent
+
+    attributes:
+      looker_resource:
+        base_url: "{{ env.LOOKER_BASE_URL }}"
+        client_id: "{{ env.LOOKER_CLIENT_ID }}"
+        client_secret: "{{ env.LOOKER_CLIENT_SECRET }}"
+    ```
+
+</div></div>
+
+<div class="section" id="looker-api">
+
+## Looker API
+
+Here, we provide interfaces to manage Looker projects using the Looker API.
+
+<div class="section" id="assets-looker-api">
+
+### Assets (Looker API)
+
+<dl>
+    <dt><Link class="anchor" id='dagster_looker.LookerResource'>`class` dagster_looker.LookerResource <a href='https://github.com/dagster-io/dagster/blob/master/python_modules/libraries/dagster-looker/dagster_looker/api/resource.py#L57' className='source-link' target='_blank' rel='noopener noreferrer'>[source]</a><a href="#dagster_looker.LookerResource" class="hash-link"></a></Link></dt>
+    <dd>
+
+        :::info[beta]
+        This API is currently in beta, and may have breaking changes in minor version releases, with behavior changes in patch releases.
+
+
+        :::
+
+    Represents a connection to a Looker instance and provides methods
+    to interact with the Looker API.
+
+    <dl>
+        <dt><Link class="anchor" id='dagster_looker.LookerResource.build_defs'>build_defs <a href='https://github.com/dagster-io/dagster/blob/master/python_modules/libraries/dagster-looker/dagster_looker/api/resource.py#L83' className='source-link' target='_blank' rel='noopener noreferrer'>[source]</a><a href="#dagster_looker.LookerResource.build_defs" class="hash-link"></a></Link></dt>
+        <dd>
+
+            :::warning[deprecated]
+            This API will be removed in version 1.9.0.
+             Use dagster_looker.load_looker_asset_specs instead.
+
+            :::
+
+        Returns a Definitions object which will load structures from the Looker instance
+        and translate it into assets, using the provided translator.
+
+        Parameters:
+          - <strong>request_start_pdt_builds</strong> (<em>Optional</em><em>[</em><em>Sequence</em><em>[</em>[*RequestStartPdtBuild*](#dagster_looker.RequestStartPdtBuild)<em>]</em><em>]</em>) – A list of requests to start PDT builds. See [https://developers.looker.com/api/explorer/4.0/types/DerivedTable/RequestStartPdtBuild?sdk=py](https://developers.looker.com/api/explorer/4.0/types/DerivedTable/RequestStartPdtBuild?sdk=py) for documentation on all available fields.
+          - <strong>dagster_looker_translator</strong> (<em>Optional</em><em>[</em>[*DagsterLookerApiTranslator*](#dagster_looker.DagsterLookerApiTranslator)<em>]</em>) – The translator to use to convert Looker structures into assets. Defaults to DagsterLookerApiTranslator.
+
+
+        Returns: A Definitions object which will contain return the Looker structures as assets.Return type: [Definitions](../dagster/definitions.mdx#dagster.Definitions)
+
+        </dd>
+
+    </dl>
+
+    </dd>
+
+</dl>
+<dl>
+    <dt><Link class="anchor" id='dagster_looker.DagsterLookerApiTranslator'>`class` dagster_looker.DagsterLookerApiTranslator <a href='https://github.com/dagster-io/dagster/blob/master/python_modules/libraries/dagster-looker/dagster_looker/api/dagster_looker_api_translator.py#L133' className='source-link' target='_blank' rel='noopener noreferrer'>[source]</a><a href="#dagster_looker.DagsterLookerApiTranslator" class="hash-link"></a></Link></dt>
+    <dd>
+
+    <dl>
+        <dt><Link class="anchor" id='dagster_looker.DagsterLookerApiTranslator.get_asset_key'>get_asset_key <a href='https://github.com/dagster-io/dagster/blob/master/python_modules/libraries/dagster-looker/dagster_looker/api/dagster_looker_api_translator.py#L261' className='source-link' target='_blank' rel='noopener noreferrer'>[source]</a><a href="#dagster_looker.DagsterLookerApiTranslator.get_asset_key" class="hash-link"></a></Link></dt>
+        <dd>
+
+            :::warning[deprecated]
+            This API will be removed in version 1.10.
+             Use `DagsterLookerApiTranslator.get_asset_spec().key` instead.
+
+            :::
+
+
+        </dd>
+
+    </dl>
+    <dl>
+        <dt><Link class="anchor" id='dagster_looker.DagsterLookerApiTranslator.get_asset_spec'>get_asset_spec <a href='https://github.com/dagster-io/dagster/blob/master/python_modules/libraries/dagster-looker/dagster_looker/api/dagster_looker_api_translator.py#L250' className='source-link' target='_blank' rel='noopener noreferrer'>[source]</a><a href="#dagster_looker.DagsterLookerApiTranslator.get_asset_spec" class="hash-link"></a></Link></dt>
+        <dd>
+
+        </dd>
+
+    </dl>
+
+    </dd>
+
+</dl>
+<dl>
+    <dt><Link class="anchor" id='dagster_looker.LookerStructureData'>`class` dagster_looker.LookerStructureData <a href='https://github.com/dagster-io/dagster/blob/master/python_modules/libraries/dagster-looker/dagster_looker/api/dagster_looker_api_translator.py#L104' className='source-link' target='_blank' rel='noopener noreferrer'>[source]</a><a href="#dagster_looker.LookerStructureData" class="hash-link"></a></Link></dt>
+    <dd>
+
+    </dd>
+
+</dl>
+<dl>
+    <dt><Link class="anchor" id='dagster_looker.LookerStructureType'>`class` dagster_looker.LookerStructureType <a href='https://github.com/dagster-io/dagster/blob/master/python_modules/libraries/dagster-looker/dagster_looker/api/dagster_looker_api_translator.py#L92' className='source-link' target='_blank' rel='noopener noreferrer'>[source]</a><a href="#dagster_looker.LookerStructureType" class="hash-link"></a></Link></dt>
+    <dd>
+
+    </dd>
+
+</dl>
+<dl>
+    <dt><Link class="anchor" id='dagster_looker.RequestStartPdtBuild'>`class` dagster_looker.RequestStartPdtBuild <a href='https://github.com/dagster-io/dagster/blob/master/python_modules/libraries/dagster-looker/dagster_looker/api/dagster_looker_api_translator.py#L70' className='source-link' target='_blank' rel='noopener noreferrer'>[source]</a><a href="#dagster_looker.RequestStartPdtBuild" class="hash-link"></a></Link></dt>
+    <dd>
+
+    A request to start a PDT build. See [https://developers.looker.com/api/explorer/4.0/types/DerivedTable/RequestStartPdtBuild?sdk=py](https://developers.looker.com/api/explorer/4.0/types/DerivedTable/RequestStartPdtBuild?sdk=py)
+    for documentation on all available fields.
+
+    Parameters:
+      - <strong>model_name</strong> – The model of the PDT to start building.
+      - <strong>view_name</strong> – The view name of the PDT to start building.
+      - <strong>force_rebuild</strong> – Force rebuild of required dependent PDTs, even if they are already materialized.
+      - <strong>force_full_incremental</strong> – Force involved incremental PDTs to fully re-materialize.
+      - <strong>workspace</strong> – Workspace in which to materialize selected PDT (‘dev’ or default ‘production’).
+      - <strong>source</strong> – The source of this request.
+
+
+
+    </dd>
+
+</dl>
+<dl>
+    <dt><Link class="anchor" id='dagster_looker.LookerFilter'>`class` dagster_looker.LookerFilter <a href='https://github.com/dagster-io/dagster/blob/master/python_modules/libraries/dagster-looker/dagster_looker/api/resource.py#L41' className='source-link' target='_blank' rel='noopener noreferrer'>[source]</a><a href="#dagster_looker.LookerFilter" class="hash-link"></a></Link></dt>
+    <dd>
+
+    Filters the set of Looker objects to fetch.
+
+    Parameters:
+      - <strong>dashboard_folders</strong> (<em>Optional</em><em>[</em><em>List</em><em>[</em><em>List</em><em>[</em><em>str</em><em>]</em><em>]</em><em>]</em>) – A list of folder paths to fetch dashboards from. Each folder path is a list of folder names, starting from the root folder. All dashboards contained in the specified folders will be fetched. If not provided, all dashboards will be fetched.
+      - <strong>only_fetch_explores_used_in_dashboards</strong> (<em>bool</em>) – If True, only explores used in the fetched dashboards will be fetched. If False, all explores will be fetched. Defaults to False.
+
+
+
+    </dd>
+
+</dl>
+<dl>
+    <dt><Link class="anchor" id='dagster_looker.load_looker_asset_specs'>dagster_looker.load_looker_asset_specs <a href='https://github.com/dagster-io/dagster/blob/master/python_modules/libraries/dagster-looker/dagster_looker/api/resource.py#L125' className='source-link' target='_blank' rel='noopener noreferrer'>[source]</a><a href="#dagster_looker.load_looker_asset_specs" class="hash-link"></a></Link></dt>
+    <dd>
+
+        :::info[beta]
+        This API is currently in beta, and may have breaking changes in minor version releases, with behavior changes in patch releases.
+
+
+        :::
+
+    Returns a list of AssetSpecs representing the Looker structures.
+
+    Parameters:
+      - <strong>looker_resource</strong> ([*LookerResource*](#dagster_looker.LookerResource)) – The Looker resource to fetch assets from.
+      - <strong>dagster_looker_translator</strong> (<em>Optional</em><em>[</em><em>Union</em><em>[</em>[*DagsterLookerApiTranslator*](#dagster_looker.DagsterLookerApiTranslator)<em>, </em><em>Type</em><em>[</em>[*DagsterLookerApiTranslator*](#dagster_looker.DagsterLookerApiTranslator)<em>]</em><em>]</em><em>]</em>) – The translator to use to convert Looker structures into [`dagster.AssetSpec`](../dagster/assets.mdx#dagster.AssetSpec). Defaults to [`DagsterLookerApiTranslator`](#dagster_looker.DagsterLookerApiTranslator).
+
+
+    Returns: The set of AssetSpecs representing the Looker structures.Return type: List[[AssetSpec](../dagster/assets.mdx#dagster.AssetSpec)]
+
+    </dd>
+
+</dl>
+<dl>
+    <dt><Link class="anchor" id='dagster_looker.build_looker_pdt_assets_definitions'>dagster_looker.build_looker_pdt_assets_definitions <a href='https://github.com/dagster-io/dagster/blob/master/python_modules/libraries/dagster-looker/dagster_looker/api/assets.py#L21' className='source-link' target='_blank' rel='noopener noreferrer'>[source]</a><a href="#dagster_looker.build_looker_pdt_assets_definitions" class="hash-link"></a></Link></dt>
+    <dd>
+
+        :::info[beta]
+        This API is currently in beta, and may have breaking changes in minor version releases, with behavior changes in patch releases.
+
+
+        :::
+
+    Returns the AssetsDefinitions of the executable assets for the given the list of refreshable PDTs.
+
+    Parameters:
+      - <strong>resource_key</strong> (<em>str</em>) – The resource key to use for the Looker resource.
+      - <strong>request_start_pdt_builds</strong> (<em>Optional</em><em>[</em><em>Sequence</em><em>[</em>[*RequestStartPdtBuild*](#dagster_looker.RequestStartPdtBuild)<em>]</em><em>]</em>) – A list of requests to start PDT builds. See [https://developers.looker.com/api/explorer/4.0/types/DerivedTable/RequestStartPdtBuild?sdk=py](https://developers.looker.com/api/explorer/4.0/types/DerivedTable/RequestStartPdtBuild?sdk=py) for documentation on all available fields.
+      - <strong>dagster_looker_translator</strong> (<em>Optional</em><em>[</em><em>Union</em><em>[</em>[*DagsterLookerApiTranslator*](#dagster_looker.DagsterLookerApiTranslator)<em>, </em><em>Type</em><em>[</em>[*DagsterLookerApiTranslator*](#dagster_looker.DagsterLookerApiTranslator)<em>]</em><em>]</em><em>]</em>) – The translator to use to convert Looker structures into [`dagster.AssetSpec`](../dagster/assets.mdx#dagster.AssetSpec). Defaults to [`DagsterLookerApiTranslator`](#dagster_looker.DagsterLookerApiTranslator).
+
+
+    Returns: The AssetsDefinitions of the executable assets for the given the list of refreshable PDTs.Return type: [AssetsDefinition](../dagster/assets.mdx#dagster.AssetsDefinition)
+
+    </dd>
+
+</dl>
+</div></div>
+
+<div class="section" id="lkml-lookml">
+
+## lkml (LookML)
+
+Here, we provide interfaces to manage Looker projects defined a set of locally accessible
+LookML files.
+
+<div class="section" id="assets-lkml">
+
+### Assets (lkml)
+
+<dl>
+    <dt><Link class="anchor" id='dagster_looker.build_looker_asset_specs'>dagster_looker.build_looker_asset_specs <a href='https://github.com/dagster-io/dagster/blob/master/python_modules/libraries/dagster-looker/dagster_looker/lkml/asset_specs.py#L16' className='source-link' target='_blank' rel='noopener noreferrer'>[source]</a><a href="#dagster_looker.build_looker_asset_specs" class="hash-link"></a></Link></dt>
+    <dd>
+
+        :::info[beta]
+        This API is currently in beta, and may have breaking changes in minor version releases, with behavior changes in patch releases.
+
+
+        :::
+
+    Build a list of asset specs from a set of Looker structures defined in a Looker project.
+
+    Parameters:
+      - <strong>project_dir</strong> (<em>Path</em>) – The path to the Looker project directory.
+      - <strong>dagster_looker_translator</strong> (<em>Optional</em><em>[</em><em>DagsterLookerTranslator</em><em>]</em>) – Allows customizing how to map looker structures to asset keys and asset metadata.
+
+
+
+
+    Examples:
+
+        ```python
+        from pathlib import Path
+
+        from dagster import external_assets_from_specs
+        from dagster_looker import build_looker_asset_specs
+
+
+        looker_specs = build_looker_asset_specs(project_dir=Path("my_looker_project"))
+        looker_assets = external_assets_from_specs(looker_specs)
+        ```
+
+    </dd>
+
+</dl>
+<dl>
+    <dt><Link class="anchor" id='dagster_looker.DagsterLookerLkmlTranslator'>`class` dagster_looker.DagsterLookerLkmlTranslator <a href='https://github.com/dagster-io/dagster/blob/master/python_modules/libraries/dagster-looker/dagster_looker/lkml/dagster_looker_lkml_translator.py#L175' className='source-link' target='_blank' rel='noopener noreferrer'>[source]</a><a href="#dagster_looker.DagsterLookerLkmlTranslator" class="hash-link"></a></Link></dt>
+    <dd>
+
+        :::info[beta]
+        This API is currently in beta, and may have breaking changes in minor version releases, with behavior changes in patch releases.
+
+
+        :::
+
+    Holds a set of methods that derive Dagster asset definition metadata given a representation
+    of a LookML structure (dashboards, explores, views).
+
+    This class is exposed so that methods can be overridden to customize how Dagster asset metadata
+    is derived.
+
+    <dl>
+        <dt><Link class="anchor" id='dagster_looker.DagsterLookerLkmlTranslator.get_asset_key'>get_asset_key <a href='https://github.com/dagster-io/dagster/blob/master/python_modules/libraries/dagster-looker/dagster_looker/lkml/dagster_looker_lkml_translator.py#L254' className='source-link' target='_blank' rel='noopener noreferrer'>[source]</a><a href="#dagster_looker.DagsterLookerLkmlTranslator.get_asset_key" class="hash-link"></a></Link></dt>
+        <dd>
+
+            :::warning[superseded]
+            This API has been superseded.
+             Use `DagsterLookerLkmlTranslator.get_asset_spec(...).key` instead..
+
+            :::
+
+        A method that takes in a LookML structure (dashboards, explores, views) and
+        returns the Dagster asset key that represents the structure.
+
+        The LookML structure is parsed using `lkml`. You can learn more about this here:
+        [https://lkml.readthedocs.io/en/latest/simple.html](https://lkml.readthedocs.io/en/latest/simple.html).
+
+        You can learn more about LookML dashboards and the properties available in this
+        dictionary here: [https://cloud.google.com/looker/docs/reference/param-lookml-dashboard](https://cloud.google.com/looker/docs/reference/param-lookml-dashboard).
+
+        You can learn more about LookML explores and views and the properties available in this
+        dictionary here: [https://cloud.google.com/looker/docs/reference/lookml-quick-reference](https://cloud.google.com/looker/docs/reference/lookml-quick-reference).
+
+        This method can be overridden to provide a custom asset key for a LookML structure.
+
+        Parameters: <strong>lookml_structure</strong> (<em>Tuple</em><em>[</em><em>Path</em><em>, </em><em>str</em><em>, </em><em>Mapping</em><em>[</em><em>str</em><em>, </em><em>Any</em><em>]</em><em>]</em>) – A tuple with the path to file
+        defining a LookML structure, the LookML structure type, and a dictionary
+        representing a LookML structure.Returns: The Dagster asset key that represents the LookML structure.Return type: [AssetKey](../dagster/assets.mdx#dagster.AssetKey)
+
+        </dd>
+
+    </dl>
+    <dl>
+        <dt><Link class="anchor" id='dagster_looker.DagsterLookerLkmlTranslator.get_asset_spec'>get_asset_spec <a href='https://github.com/dagster-io/dagster/blob/master/python_modules/libraries/dagster-looker/dagster_looker/lkml/dagster_looker_lkml_translator.py#L184' className='source-link' target='_blank' rel='noopener noreferrer'>[source]</a><a href="#dagster_looker.DagsterLookerLkmlTranslator.get_asset_spec" class="hash-link"></a></Link></dt>
+        <dd>
+
+        A method that takes in a LookML structure (dashboards, explores, views) and
+        returns the Dagster asset spec that represents the structure.
+
+        The LookML structure is parsed using `lkml`. You can learn more about this here:
+        [https://lkml.readthedocs.io/en/latest/simple.html](https://lkml.readthedocs.io/en/latest/simple.html).
+
+        You can learn more about LookML dashboards and the properties available in this
+        dictionary here: [https://cloud.google.com/looker/docs/reference/param-lookml-dashboard](https://cloud.google.com/looker/docs/reference/param-lookml-dashboard).
+
+        You can learn more about LookML explores and views and the properties available in this
+        dictionary here: [https://cloud.google.com/looker/docs/reference/lookml-quick-reference](https://cloud.google.com/looker/docs/reference/lookml-quick-reference).
+
+        This method can be overridden to provide a custom asset spec for a LookML structure.
+
+        Parameters: <strong>lookml_structure</strong> (<em>Tuple</em><em>[</em><em>Path</em><em>, </em><em>str</em><em>, </em><em>Mapping</em><em>[</em><em>str</em><em>, </em><em>Any</em><em>]</em><em>]</em>) – A tuple with the path to file
+        defining a LookML structure, the LookML structure type, and a dictionary
+        representing a LookML structure.Returns: The Dagster asset spec that represents the LookML structure.Return type: [AssetSpec](../dagster/assets.mdx#dagster.AssetSpec)
+
+        </dd>
+
+    </dl>
+    <dl>
+        <dt><Link class="anchor" id='dagster_looker.DagsterLookerLkmlTranslator.get_deps'>get_deps <a href='https://github.com/dagster-io/dagster/blob/master/python_modules/libraries/dagster-looker/dagster_looker/lkml/dagster_looker_lkml_translator.py#L338' className='source-link' target='_blank' rel='noopener noreferrer'>[source]</a><a href="#dagster_looker.DagsterLookerLkmlTranslator.get_deps" class="hash-link"></a></Link></dt>
+        <dd>
+
+            :::warning[superseded]
+            This API has been superseded.
+             Iterate over `DagsterLookerLkmlTranslator.get_asset_spec(...).deps` to access `AssetDep.asset_key` instead..
+
+            :::
+
+        A method that takes in a LookML structure (dashboards, explores, views) and
+        returns the Dagster dependencies of the structure.
+
+        The LookML structure is parsed using `lkml`. You can learn more about this here:
+        [https://lkml.readthedocs.io/en/latest/simple.html](https://lkml.readthedocs.io/en/latest/simple.html).
+
+        You can learn more about LookML dashboards and the properties available in this
+        dictionary here: [https://cloud.google.com/looker/docs/reference/param-lookml-dashboard](https://cloud.google.com/looker/docs/reference/param-lookml-dashboard).
+
+        You can learn more about LookML explores and views and the properties available in this
+        dictionary here: [https://cloud.google.com/looker/docs/reference/lookml-quick-reference](https://cloud.google.com/looker/docs/reference/lookml-quick-reference).
+
+        This method can be overridden to provide custom dependencies for a LookML structure.
+
+        Parameters: <strong>lookml_structure</strong> (<em>Tuple</em><em>[</em><em>Path</em><em>, </em><em>str</em><em>, </em><em>Mapping</em><em>[</em><em>str</em><em>, </em><em>Any</em><em>]</em><em>]</em>) – A tuple with the path to file
+        defining a LookML structure, the LookML structure type, and a dictionary
+        representing a LookML structure.Returns: The Dagster dependencies for the LookML structure.Return type: Sequence[[AssetKey](../dagster/assets.mdx#dagster.AssetKey)]
+
+        </dd>
+
+    </dl>
+    <dl>
+        <dt><Link class="anchor" id='dagster_looker.DagsterLookerLkmlTranslator.get_description'>get_description <a href='https://github.com/dagster-io/dagster/blob/master/python_modules/libraries/dagster-looker/dagster_looker/lkml/dagster_looker_lkml_translator.py#L419' className='source-link' target='_blank' rel='noopener noreferrer'>[source]</a><a href="#dagster_looker.DagsterLookerLkmlTranslator.get_description" class="hash-link"></a></Link></dt>
+        <dd>
+
+            :::warning[superseded]
+            This API has been superseded.
+             Use `DagsterLookerLkmlTranslator.get_asset_spec(...).description` instead..
+
+            :::
+
+        A method that takes in a LookML structure (dashboards, explores, views) and
+        returns the Dagster description of the structure.
+
+        The LookML structure is parsed using `lkml`. You can learn more about this here:
+        [https://lkml.readthedocs.io/en/latest/simple.html](https://lkml.readthedocs.io/en/latest/simple.html).
+
+        You can learn more about LookML dashboards and the properties available in this
+        dictionary here: [https://cloud.google.com/looker/docs/reference/param-lookml-dashboard](https://cloud.google.com/looker/docs/reference/param-lookml-dashboard).
+
+        You can learn more about LookML explores and views and the properties available in this
+        dictionary here: [https://cloud.google.com/looker/docs/reference/lookml-quick-reference](https://cloud.google.com/looker/docs/reference/lookml-quick-reference).
+
+        This method can be overridden to provide a custom description for a LookML structure.
+
+        Parameters: <strong>lookml_structure</strong> (<em>Tuple</em><em>[</em><em>Path</em><em>, </em><em>str</em><em>, </em><em>Mapping</em><em>[</em><em>str</em><em>, </em><em>Any</em><em>]</em><em>]</em>) – A tuple with the path to file
+        defining a LookML structure, the LookML structure type, and a dictionary
+        representing a LookML structure.Returns: The Dagster description for the LookML structure.Return type: Optional[str]
+
+        </dd>
+
+    </dl>
+    <dl>
+        <dt><Link class="anchor" id='dagster_looker.DagsterLookerLkmlTranslator.get_group_name'>get_group_name <a href='https://github.com/dagster-io/dagster/blob/master/python_modules/libraries/dagster-looker/dagster_looker/lkml/dagster_looker_lkml_translator.py#L536' className='source-link' target='_blank' rel='noopener noreferrer'>[source]</a><a href="#dagster_looker.DagsterLookerLkmlTranslator.get_group_name" class="hash-link"></a></Link></dt>
+        <dd>
+
+            :::warning[superseded]
+            This API has been superseded.
+             Use `DagsterLookerLkmlTranslator.get_asset_spec(...).group_name` instead..
+
+            :::
+
+        A method that takes in a LookML structure (dashboards, explores, views) and
+        returns the Dagster group name of the structure.
+
+        The LookML structure is parsed using `lkml`. You can learn more about this here:
+        [https://lkml.readthedocs.io/en/latest/simple.html](https://lkml.readthedocs.io/en/latest/simple.html).
+
+        You can learn more about LookML dashboards and the properties available in this
+        dictionary here: [https://cloud.google.com/looker/docs/reference/param-lookml-dashboard](https://cloud.google.com/looker/docs/reference/param-lookml-dashboard).
+
+        You can learn more about LookML explores and views and the properties available in this
+        dictionary here: [https://cloud.google.com/looker/docs/reference/lookml-quick-reference](https://cloud.google.com/looker/docs/reference/lookml-quick-reference).
+
+        This method can be overridden to provide a custom group name for a LookML structure.
+
+        Parameters: <strong>lookml_structure</strong> (<em>Tuple</em><em>[</em><em>Path</em><em>, </em><em>str</em><em>, </em><em>Mapping</em><em>[</em><em>str</em><em>, </em><em>Any</em><em>]</em><em>]</em>) – A tuple with the path to file
+        defining a LookML structure, the LookML structure type, and a dictionary
+        representing a LookML structure.Returns: A Dagster group name for the LookML structure.Return type: Optional[str]
+
+        </dd>
+
+    </dl>
+    <dl>
+        <dt><Link class="anchor" id='dagster_looker.DagsterLookerLkmlTranslator.get_metadata'>get_metadata <a href='https://github.com/dagster-io/dagster/blob/master/python_modules/libraries/dagster-looker/dagster_looker/lkml/dagster_looker_lkml_translator.py#L477' className='source-link' target='_blank' rel='noopener noreferrer'>[source]</a><a href="#dagster_looker.DagsterLookerLkmlTranslator.get_metadata" class="hash-link"></a></Link></dt>
+        <dd>
+
+            :::warning[superseded]
+            This API has been superseded.
+             Use `DagsterLookerLkmlTranslator.get_asset_spec(...).metadata` instead..
+
+            :::
+
+        A method that takes in a LookML structure (dashboards, explores, views) and
+        returns the Dagster metadata of the structure.
+
+        The LookML structure is parsed using `lkml`. You can learn more about this here:
+        [https://lkml.readthedocs.io/en/latest/simple.html](https://lkml.readthedocs.io/en/latest/simple.html).
+
+        You can learn more about LookML dashboards and the properties available in this
+        dictionary here: [https://cloud.google.com/looker/docs/reference/param-lookml-dashboard](https://cloud.google.com/looker/docs/reference/param-lookml-dashboard).
+
+        You can learn more about LookML explores and views and the properties available in this
+        dictionary here: [https://cloud.google.com/looker/docs/reference/lookml-quick-reference](https://cloud.google.com/looker/docs/reference/lookml-quick-reference).
+
+        This method can be overridden to provide custom metadata for a LookML structure.
+
+        Parameters: <strong>lookml_structure</strong> (<em>Tuple</em><em>[</em><em>Path</em><em>, </em><em>str</em><em>, </em><em>Mapping</em><em>[</em><em>str</em><em>, </em><em>Any</em><em>]</em><em>]</em>) – A tuple with the path to file
+        defining a LookML structure, the LookML structure type, and a dictionary
+        representing a LookML structure.Returns:
+        A dictionary representing the Dagster metadata for the
+            LookML structure.
+
+        Return type: Optional[Mapping[str, Any]]
+
+        </dd>
+
+    </dl>
+    <dl>
+        <dt><Link class="anchor" id='dagster_looker.DagsterLookerLkmlTranslator.get_owners'>get_owners <a href='https://github.com/dagster-io/dagster/blob/master/python_modules/libraries/dagster-looker/dagster_looker/lkml/dagster_looker_lkml_translator.py#L592' className='source-link' target='_blank' rel='noopener noreferrer'>[source]</a><a href="#dagster_looker.DagsterLookerLkmlTranslator.get_owners" class="hash-link"></a></Link></dt>
+        <dd>
+
+            :::warning[superseded]
+            This API has been superseded.
+             Use `DagsterLookerLkmlTranslator.get_asset_spec(...).owners` instead..
+
+            :::
+
+        A method that takes in a LookML structure (dashboards, explores, views) and
+        returns the Dagster owners of the structure.
+
+        The LookML structure is parsed using `lkml`. You can learn more about this here:
+        [https://lkml.readthedocs.io/en/latest/simple.html](https://lkml.readthedocs.io/en/latest/simple.html).
+
+        You can learn more about LookML dashboards and the properties available in this
+        dictionary here: [https://cloud.google.com/looker/docs/reference/param-lookml-dashboard](https://cloud.google.com/looker/docs/reference/param-lookml-dashboard).
+
+        You can learn more about LookML explores and views and the properties available in this
+        dictionary here: [https://cloud.google.com/looker/docs/reference/lookml-quick-reference](https://cloud.google.com/looker/docs/reference/lookml-quick-reference).
+
+        This method can be overridden to provide custom owners for a LookML structure.
+
+        Parameters: <strong>lookml_structure</strong> (<em>Tuple</em><em>[</em><em>Path</em><em>, </em><em>str</em><em>, </em><em>Mapping</em><em>[</em><em>str</em><em>, </em><em>Any</em><em>]</em><em>]</em>) – A tuple with the path to file
+        defining a LookML structure, the LookML structure type, and a dictionary
+        representing a LookML structure.Returns: A sequence of Dagster owners for the LookML structure.Return type: Optional[Sequence[str]]
+
+        </dd>
+
+    </dl>
+    <dl>
+        <dt><Link class="anchor" id='dagster_looker.DagsterLookerLkmlTranslator.get_tags'>get_tags <a href='https://github.com/dagster-io/dagster/blob/master/python_modules/libraries/dagster-looker/dagster_looker/lkml/dagster_looker_lkml_translator.py#L648' className='source-link' target='_blank' rel='noopener noreferrer'>[source]</a><a href="#dagster_looker.DagsterLookerLkmlTranslator.get_tags" class="hash-link"></a></Link></dt>
+        <dd>
+
+            :::warning[superseded]
+            This API has been superseded.
+             Use `DagsterLookerLkmlTranslator.get_asset_spec(...).tags` instead..
+
+            :::
+
+        A method that takes in a LookML structure (dashboards, explores, views) and
+        returns the Dagster tags of the structure.
+
+        The LookML structure is parsed using `lkml`. You can learn more about this here:
+        [https://lkml.readthedocs.io/en/latest/simple.html](https://lkml.readthedocs.io/en/latest/simple.html).
+
+        You can learn more about LookML dashboards and the properties available in this
+        dictionary here: [https://cloud.google.com/looker/docs/reference/param-lookml-dashboard](https://cloud.google.com/looker/docs/reference/param-lookml-dashboard).
+
+        You can learn more about LookML explores and views and the properties available in this
+        dictionary here: [https://cloud.google.com/looker/docs/reference/lookml-quick-reference](https://cloud.google.com/looker/docs/reference/lookml-quick-reference).
+
+        This method can be overridden to provide custom tags for a LookML structure.
+
+        Parameters: <strong>lookml_structure</strong> (<em>Tuple</em><em>[</em><em>Path</em><em>, </em><em>str</em><em>, </em><em>Mapping</em><em>[</em><em>str</em><em>, </em><em>Any</em><em>]</em><em>]</em>) – A tuple with the path to file
+        defining a LookML structure, the LookML structure type, and a dictionary
+        representing a LookML structure.Returns:
+        A dictionary representing the Dagster tags for the
+            LookML structure.
+
+        Return type: Optional[Mapping[str, str]]
+
+        </dd>
+
+    </dl>
+
+    </dd>
+
+</dl>
+</div></div></div>

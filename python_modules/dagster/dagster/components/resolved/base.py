@@ -178,7 +178,11 @@ def derive_model_type(
 
             field_infos = []
             if annotation_info.field_info:
-                field_infos.append(annotation_info.field_info)
+                # remove the default_factory as we set a `default` marker field on the Model type
+                # for unserializable defaults (and functions are not serializable)
+                field_infos.append(
+                    FieldInfo.merge_field_infos(annotation_info.field_info, default_factory=None)
+                )
 
             if annotation_info.has_default:
                 # if the annotation has a serializable default

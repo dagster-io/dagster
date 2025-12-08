@@ -1,0 +1,182 @@
+---
+title: 'graphql (dagster-graphql)'
+title_meta: 'graphql (dagster-graphql) API Documentation - Build Better Data Pipelines | Python Reference Documentation for Dagster'
+description: 'graphql (dagster-graphql) Dagster API | Comprehensive Python API documentation for Dagster, the data orchestration platform. Learn how to build, test, and maintain data pipelines with our detailed guides and examples.'
+last_update:
+  date: '2025-12-05'
+custom_edit_url: null
+---
+
+<div class="section" id="graphql-dagster-graphql">
+
+# GraphQL (dagster-graphql)
+
+<div class="section" id="python-client">
+
+## Python Client
+
+<dl>
+    <dt><Link class="anchor" id='dagster_graphql.DagsterGraphQLClient'>`class` dagster_graphql.DagsterGraphQLClient <a href='https://github.com/dagster-io/dagster/blob/master/python_modules/dagster-graphql/dagster_graphql/client/client.py#L38' className='source-link' target='_blank' rel='noopener noreferrer'>[source]</a><a href="#dagster_graphql.DagsterGraphQLClient" class="hash-link"></a></Link></dt>
+    <dd>
+
+    Official Dagster Python Client for GraphQL.
+
+    Utilizes the gql library to dispatch queries over HTTP to a remote Dagster GraphQL Server
+
+    As of now, all operations on this client are synchronous.
+
+    Intended usage:
+
+        ```python
+        client = DagsterGraphQLClient("localhost", port_number=3000)
+        status = client.get_run_status(**SOME_RUN_ID**)
+        ```
+    Parameters:
+      - <strong>hostname</strong> (<em>str</em>) – Hostname for the Dagster GraphQL API, like <cite>localhost</cite> or <cite>YOUR_ORG_HERE.dagster.cloud</cite>.
+      - <strong>port_number</strong> (<em>Optional</em><em>[</em><em>int</em><em>]</em>) – Port number to connect to on the host. Defaults to None.
+      - <strong>transport</strong> (<em>Optional</em><em>[</em><em>Transport</em><em>]</em><em>, </em><em>optional</em>) – A custom transport to use to connect to the GraphQL API with (e.g. for custom auth). Defaults to None.
+      - <strong>use_https</strong> (<em>bool</em><em>, </em><em>optional</em>) – Whether to use https in the URL connection string for the GraphQL API. Defaults to False.
+      - <strong>timeout</strong> (<em>int</em>) – Number of seconds before requests should time out. Defaults to 60.
+      - <strong>headers</strong> (<em>Optional</em><em>[</em><em>Dict</em><em>[</em><em>str</em><em>, </em><em>str</em><em>]</em><em>]</em>) – Additional headers to include in the request. To use this client in Dagster Cloud, set the “Dagster-Cloud-Api-Token” header to a user token generated in the Dagster Cloud UI.
+
+
+    Raises: <strong>ConnectionError</strong> – if the client cannot connect to the host.
+    <dl>
+        <dt><Link class="anchor" id='dagster_graphql.DagsterGraphQLClient.get_run_status'>get_run_status <a href='https://github.com/dagster-io/dagster/blob/master/python_modules/dagster-graphql/dagster_graphql/client/client.py#L302' className='source-link' target='_blank' rel='noopener noreferrer'>[source]</a><a href="#dagster_graphql.DagsterGraphQLClient.get_run_status" class="hash-link"></a></Link></dt>
+        <dd>
+
+        Get the status of a given Pipeline Run.
+
+        Parameters: <strong>run_id</strong> (<em>str</em>) – run id of the requested pipeline run.Raises:
+          - [DagsterGraphQLClientError](#dagster_graphql.DagsterGraphQLClientError)<strong>DagsterGraphQLClientError</strong><strong>(</strong><strong>"PipelineNotFoundError"</strong><strong>, </strong><strong>message</strong><strong>)</strong> – if the requested run id is not found
+          - [DagsterGraphQLClientError](#dagster_graphql.DagsterGraphQLClientError)<strong>DagsterGraphQLClientError</strong><strong>(</strong><strong>"PythonError"</strong><strong>, </strong><strong>message</strong><strong>)</strong> – on internal framework errors
+
+
+        Returns: returns a status Enum describing the state of the requested pipeline runReturn type: [DagsterRunStatus](../dagster/internals.mdx#dagster.DagsterRunStatus)
+
+        </dd>
+
+    </dl>
+    <dl>
+        <dt><Link class="anchor" id='dagster_graphql.DagsterGraphQLClient.reload_repository_location'>reload_repository_location <a href='https://github.com/dagster-io/dagster/blob/master/python_modules/dagster-graphql/dagster_graphql/client/client.py#L328' className='source-link' target='_blank' rel='noopener noreferrer'>[source]</a><a href="#dagster_graphql.DagsterGraphQLClient.reload_repository_location" class="hash-link"></a></Link></dt>
+        <dd>
+
+        Reloads a Dagster Repository Location, which reloads all repositories in that repository location.
+
+        This is useful in a variety of contexts, including refreshing the Dagster UI without restarting
+        the server.
+
+        Parameters: <strong>repository_location_name</strong> (<em>str</em>) – The name of the repository locationReturns: Object with information about the result of the reload requestReturn type: [ReloadRepositoryLocationInfo](#dagster_graphql.ReloadRepositoryLocationInfo)
+
+        </dd>
+
+    </dl>
+    <dl>
+        <dt><Link class="anchor" id='dagster_graphql.DagsterGraphQLClient.shutdown_repository_location'>shutdown_repository_location <a href='https://github.com/dagster-io/dagster/blob/master/python_modules/dagster-graphql/dagster_graphql/client/client.py#L370' className='source-link' target='_blank' rel='noopener noreferrer'>[source]</a><a href="#dagster_graphql.DagsterGraphQLClient.shutdown_repository_location" class="hash-link"></a></Link></dt>
+        <dd>
+
+            :::warning[deprecated]
+            This API will be removed in version 2.0.
+
+
+            :::
+
+        Shuts down the server that is serving metadata for the provided repository location.
+
+        This is primarily useful when you want the server to be restarted by the compute environment
+        in which it is running (for example, in Kubernetes, the pod in which the server is running
+        will automatically restart when the server is shut down, and the repository metadata will
+        be reloaded)
+
+        Parameters: <strong>repository_location_name</strong> (<em>str</em>) – The name of the repository locationReturns: Object with information about the result of the reload requestReturn type: ShutdownRepositoryLocationInfo
+
+        </dd>
+
+    </dl>
+    <dl>
+        <dt><Link class="anchor" id='dagster_graphql.DagsterGraphQLClient.submit_job_execution'>submit_job_execution <a href='https://github.com/dagster-io/dagster/blob/master/python_modules/dagster-graphql/dagster_graphql/client/client.py#L245' className='source-link' target='_blank' rel='noopener noreferrer'>[source]</a><a href="#dagster_graphql.DagsterGraphQLClient.submit_job_execution" class="hash-link"></a></Link></dt>
+        <dd>
+
+        Submits a job with attached configuration for execution.
+
+        Parameters:
+          - <strong>job_name</strong> (<em>str</em>) – The job’s name
+          - <strong>repository_location_name</strong> (<em>Optional</em><em>[</em><em>str</em><em>]</em>) – The name of the repository location where the job is located. If omitted, the client will try to infer the repository location from the available options on the Dagster deployment. Defaults to None.
+          - <strong>repository_name</strong> (<em>Optional</em><em>[</em><em>str</em><em>]</em>) – The name of the repository where the job is located. If omitted, the client will try to infer the repository from the available options on the Dagster deployment. Defaults to None.
+          - <strong>run_config</strong> (<em>Optional</em><em>[</em><em>Union</em><em>[</em>[*RunConfig*](../dagster/config.mdx#dagster.RunConfig)<em>, </em><em>Mapping</em><em>[</em><em>str</em><em>, </em><em>Any</em><em>]</em><em>]</em><em>]</em>) – This is the run config to execute the job with. Note that runConfigData is any-typed in the GraphQL type system. This type is used when passing in an arbitrary object for run config. However, it must conform to the constraints of the config schema for this job. If it does not, the client will throw a DagsterGraphQLClientError with a message of JobConfigValidationInvalid. Defaults to None.
+          - <strong>tags</strong> (<em>Optional</em><em>[</em><em>Dict</em><em>[</em><em>str</em><em>, </em><em>Any</em><em>]</em><em>]</em>) – A set of tags to add to the job execution.
+          - <strong>op_selection</strong> (<em>Optional</em><em>[</em><em>Sequence</em><em>[</em><em>str</em><em>]</em><em>]</em>) – A list of ops to execute.
+          - <strong>asset_selection</strong> (<em>Optional</em><em>[</em><em>Sequence</em><em>[</em><em>CoercibleToAssetKey</em><em>]</em><em>]</em>) – A list of asset keys to execute.
+
+
+        Raises:
+          - [DagsterGraphQLClientError](#dagster_graphql.DagsterGraphQLClientError)<strong>DagsterGraphQLClientError</strong><strong>(</strong><strong>"InvalidStepError"</strong><strong>, </strong><strong>invalid_step_key</strong><strong>)</strong> – the job has an invalid step
+          - [DagsterGraphQLClientError](#dagster_graphql.DagsterGraphQLClientError)<strong>DagsterGraphQLClientError</strong><strong>(</strong><strong>"InvalidOutputError"</strong><strong>, </strong><strong>body=error_object</strong><strong>)</strong> – some solid has an invalid output within the job.     The error_object is of type dagster_graphql.InvalidOutputErrorInfo.
+          - [DagsterGraphQLClientError](#dagster_graphql.DagsterGraphQLClientError)<strong>DagsterGraphQLClientError</strong><strong>(</strong><strong>"RunConflict"</strong><strong>, </strong><strong>message</strong><strong>)</strong> – a <cite>DagsterRunConflict</cite> occured during execution.     This indicates that a conflicting job run already exists in run storage.
+          - [DagsterGraphQLClientError](#dagster_graphql.DagsterGraphQLClientError)<strong>DagsterGraphQLClientError</strong><strong>(</strong><strong>"PipelineConfigurationInvalid"</strong><strong>, </strong><strong>invalid_step_key</strong><strong>)</strong> – the run_config is not in the expected format     for the job
+          - [DagsterGraphQLClientError](#dagster_graphql.DagsterGraphQLClientError)<strong>DagsterGraphQLClientError</strong><strong>(</strong><strong>"JobNotFoundError"</strong><strong>, </strong><strong>message</strong><strong>)</strong> – the requested job does not exist
+          - [DagsterGraphQLClientError](#dagster_graphql.DagsterGraphQLClientError)<strong>DagsterGraphQLClientError</strong><strong>(</strong><strong>"PythonError"</strong><strong>, </strong><strong>message</strong><strong>)</strong> – an internal framework error occurred
+
+
+        Returns: run id of the submitted pipeline runReturn type: str
+
+        </dd>
+
+    </dl>
+
+    </dd>
+
+</dl>
+<dl>
+    <dt><Link class="anchor" id='dagster_graphql.DagsterGraphQLClientError'>`exception` dagster_graphql.DagsterGraphQLClientError <a href='https://github.com/dagster-io/dagster/blob/master/python_modules/dagster-graphql/dagster_graphql/client/utils.py#L5' className='source-link' target='_blank' rel='noopener noreferrer'>[source]</a><a href="#dagster_graphql.DagsterGraphQLClientError" class="hash-link"></a></Link></dt>
+    <dd>
+
+    </dd>
+
+</dl>
+<dl>
+    <dt><Link class="anchor" id='dagster_graphql.InvalidOutputErrorInfo'>`class` dagster_graphql.InvalidOutputErrorInfo <a href='https://github.com/dagster-io/dagster/blob/master/python_modules/dagster-graphql/dagster_graphql/client/utils.py#L78' className='source-link' target='_blank' rel='noopener noreferrer'>[source]</a><a href="#dagster_graphql.InvalidOutputErrorInfo" class="hash-link"></a></Link></dt>
+    <dd>
+
+    This class gives information about an InvalidOutputError from submitting a pipeline for execution
+    from GraphQL.
+
+    Parameters:
+      - <strong>step_key</strong> (<em>str</em>) – key of the step that failed
+      - <strong>invalid_output_name</strong> (<em>str</em>) – the name of the invalid output from the given step
+
+
+
+    </dd>
+
+</dl>
+<dl>
+    <dt><Link class="anchor" id='dagster_graphql.ReloadRepositoryLocationInfo'>`class` dagster_graphql.ReloadRepositoryLocationInfo <a href='https://github.com/dagster-io/dagster/blob/master/python_modules/dagster-graphql/dagster_graphql/client/utils.py#L28' className='source-link' target='_blank' rel='noopener noreferrer'>[source]</a><a href="#dagster_graphql.ReloadRepositoryLocationInfo" class="hash-link"></a></Link></dt>
+    <dd>
+
+    This class gives information about the result of reloading
+    a Dagster repository location with a GraphQL mutation.
+
+    Parameters:
+      - <strong>status</strong> ([*ReloadRepositoryLocationStatus*](#dagster_graphql.ReloadRepositoryLocationStatus)) – The status of the reload repository location mutation
+      - <strong>failure_type</strong> – (Optional[str], optional): the failure type if <cite>status == ReloadRepositoryLocationStatus.FAILURE</cite>. Can be one of <cite>ReloadNotSupported</cite>, <cite>RepositoryLocationNotFound</cite>, or <cite>RepositoryLocationLoadFailure</cite>. Defaults to None.
+      - <strong>message</strong> (<em>Optional</em><em>[</em><em>str</em><em>]</em><em>, </em><em>optional</em>) – the failure message/reason if <cite>status == ReloadRepositoryLocationStatus.FAILURE</cite>. Defaults to None.
+
+
+
+    </dd>
+
+</dl>
+<dl>
+    <dt><Link class="anchor" id='dagster_graphql.ReloadRepositoryLocationStatus'>`class` dagster_graphql.ReloadRepositoryLocationStatus <a href='https://github.com/dagster-io/dagster/blob/master/python_modules/dagster-graphql/dagster_graphql/client/utils.py#L11' className='source-link' target='_blank' rel='noopener noreferrer'>[source]</a><a href="#dagster_graphql.ReloadRepositoryLocationStatus" class="hash-link"></a></Link></dt>
+    <dd>
+
+    This enum describes the status of a GraphQL mutation to reload a Dagster repository location.
+
+    Parameters: <strong>Enum</strong> (<em>str</em>) – can be either <cite>ReloadRepositoryLocationStatus.SUCCESS</cite>
+    or <cite>ReloadRepositoryLocationStatus.FAILURE</cite>.
+
+    </dd>
+
+</dl>
+</div></div>

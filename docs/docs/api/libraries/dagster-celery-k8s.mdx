@@ -1,0 +1,113 @@
+---
+title: 'orchestration on celery + kubernetes'
+title_meta: 'orchestration on celery + kubernetes API Documentation - Build Better Data Pipelines | Python Reference Documentation for Dagster'
+description: 'orchestration on celery + kubernetes Dagster API | Comprehensive Python API documentation for Dagster, the data orchestration platform. Learn how to build, test, and maintain data pipelines with our detailed guides and examples.'
+last_update:
+  date: '2025-12-05'
+custom_edit_url: null
+---
+
+<div class="section" id="orchestration-on-celery-kubernetes">
+
+# Orchestration on Celery + Kubernetes
+
+<div class="section" id="apis">
+## APIs
+
+<dl>
+
+    <dt><Link class="anchor" id='dagster_celery_k8s.CeleryK8sRunLauncher'>dagster_celery_k8s.CeleryK8sRunLauncher RunLauncher <a href='https://github.com/dagster-io/dagster/blob/master/python_modules/libraries/dagster-celery-k8s/dagster_celery_k8s/launcher.py#L33' className='source-link' target='_blank' rel='noopener noreferrer'>[source]</a><a href="#dagster_celery_k8s.CeleryK8sRunLauncher" class="hash-link"></a></Link></dt>
+    <dd>
+
+        <div className='lineblock'> </div>
+
+    In contrast to the `K8sRunLauncher`, which launches dagster runs as single K8s
+    Jobs, this run launcher is intended for use in concert with
+    [`dagster_celery_k8s.celery_k8s_job_executor()`](#dagster_celery_k8s.celery_k8s_job_executor).
+
+    With this run launcher, execution is delegated to:
+
+    >
+
+    1. A run worker Kubernetes Job, which traverses the dagster run execution plan and submits steps to Celery queues for execution;
+    2. The step executions which are submitted to Celery queues are picked up by Celery workers, and each step execution spawns a step execution Kubernetes Job. See the implementation defined in `dagster_celery_k8.executor.create_k8s_job_task()`.
+
+You can configure a Dagster instance to use this RunLauncher by adding a section to your
+`dagster.yaml` like the following:
+
+    ```yaml
+    run_launcher:
+      module: dagster_k8s.launcher
+      class: CeleryK8sRunLauncher
+      config:
+        instance_config_map: "dagster-k8s-instance-config-map"
+        dagster_home: "/some/path"
+        postgres_password_secret: "dagster-k8s-pg-password"
+        broker: "some_celery_broker_url"
+        backend: "some_celery_backend_url"
+    ```
+
+</dd>
+
+</dl>
+<dl>
+    <dt><Link class="anchor" id='dagster_celery_k8s.celery_k8s_job_executor'>dagster_celery_k8s.celery_k8s_job_executor ExecutorDefinition <a href='https://github.com/dagster-io/dagster/blob/master/python_modules/libraries/dagster-celery-k8s/dagster_celery_k8s/executor.py#L49' className='source-link' target='_blank' rel='noopener noreferrer'>[source]</a><a href="#dagster_celery_k8s.celery_k8s_job_executor" class="hash-link"></a></Link></dt>
+    <dd>
+
+        <div className='lineblock'> </div>
+
+    Celery-based executor which launches tasks as Kubernetes Jobs.
+
+    The Celery executor exposes config settings for the underlying Celery app under
+    the `config_source` key. This config corresponds to the “new lowercase settings” introduced
+    in Celery version 4.0 and the object constructed from config will be passed to the
+    `celery.Celery` constructor as its `config_source` argument.
+    (See [https://docs.celeryq.dev/en/stable/userguide/configuration.html](https://docs.celeryq.dev/en/stable/userguide/configuration.html) for details.)
+
+    The executor also exposes the `broker`, <cite>backend</cite>, and `include` arguments to the
+    `celery.Celery` constructor.
+
+    In the most common case, you may want to modify the `broker` and `backend` (e.g., to use
+    Redis instead of RabbitMQ). We expect that `config_source` will be less frequently
+    modified, but that when op executions are especially fast or slow, or when there are
+    different requirements around idempotence or retry, it may make sense to execute dagster jobs
+    with variations on these settings.
+
+    To use the <cite>celery_k8s_job_executor</cite>, set it as the <cite>executor_def</cite> when defining a job:
+
+        ```python
+        from dagster import job
+        from dagster_celery_k8s.executor import celery_k8s_job_executor
+
+
+        @job(executor_def=celery_k8s_job_executor)
+        def celery_enabled_job():
+            pass
+        ```
+    Then you can configure the executor as follows:
+
+        ```YAML
+        execution:
+          config:
+            job_image: 'my_repo.com/image_name:latest'
+            job_namespace: 'some-namespace'
+            broker: 'pyamqp://guest@localhost//'  # Optional[str]: The URL of the Celery broker
+            backend: 'rpc://' # Optional[str]: The URL of the Celery results backend
+            include: ['my_module'] # Optional[List[str]]: Modules every worker should import
+            config_source: # Dict[str, Any]: Any additional parameters to pass to the
+                #...       # Celery workers. This dict will be passed as the `config_source`
+                #...       # argument of celery.Celery().
+        ```
+    Note that the YAML you provide here must align with the configuration with which the Celery
+    workers on which you hope to run were started. If, for example, you point the executor at a
+    different broker than the one your workers are listening to, the workers will never be able to
+    pick up tasks for execution.
+
+    In deployments where the celery_k8s_job_executor is used all appropriate celery and dagster_celery
+    commands must be invoked with the <cite>-A dagster_celery_k8s.app</cite> argument.
+
+
+    </dd>
+
+</dl>
+</div></div>

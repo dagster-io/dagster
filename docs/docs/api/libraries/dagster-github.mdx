@@ -1,0 +1,322 @@
+---
+title: 'github (dagster-github)'
+title_meta: 'github (dagster-github) API Documentation - Build Better Data Pipelines | Python Reference Documentation for Dagster'
+description: 'github (dagster-github) Dagster API | Comprehensive Python API documentation for Dagster, the data orchestration platform. Learn how to build, test, and maintain data pipelines with our detailed guides and examples.'
+last_update:
+  date: '2025-12-05'
+custom_edit_url: null
+---
+
+<div class="section" id="github-dagster-github">
+
+# GitHub (dagster-github)
+
+This library provides an integration with GitHub Apps, to support performing various automation
+operations within your github repositories and with the tighter permissions scopes that github apps
+allow for vs using a personal token.
+
+Presently, it provides a thin wrapper on the [github v4 graphql API](https://developer.github.com/v4).
+
+To use this integration, you’ll first need to create a GitHub App for it.
+
+1. <strong>Create App</strong>: Follow the instructions in
+   [https://developer.github.com/apps/quickstart-guides/setting-up-your-development-environment/](https://developer.github.com/apps/quickstart-guides/setting-up-your-development-environment),
+   You will end up with a private key and App ID, which will be used when configuring the `dagster-github` resource.
+   <strong>Note</strong> you will need to grant your app the relevent permissions for the API requests you want to make,
+   for example to post issues it will need read/write access for the issues repository permission, more info on GitHub
+   application permissions can be found [here](https://developer.github.com/v3/apps/permissions)
+2. <strong>Install App</strong>: Follow the instructions in
+   [https://developer.github.com/apps/quickstart-guides/setting-up-your-development-environment/#step-7-install-the-app-on-your-account](https://developer.github.com/apps/quickstart-guides/setting-up-your-development-environment/#step-7-install-the-app-on-your-account)
+3. <strong>Find your installation_id</strong>: You can pull this from the GitHub app administration page, `https://github.com/apps/<app-name>/installations/<installation_id>`. <strong>Note</strong> if your app is installed more than once you can also programatically retrieve these IDs.
+Sharing your App ID and Installation ID is fine, but make sure that the Private Key for your app is
+stored securily.
+
+<div class="section" id="posting-issues">
+
+## Posting Issues
+
+Now, you can create issues in GitHub from Dagster with the GitHub resource:
+
+    ```python
+    import os
+
+    from dagster import job, op
+    from dagster_github import GithubResource
+
+
+    @op
+    def github_op(github: GithubResource):
+        github.get_client().create_issue(
+            repo_name='dagster',
+            repo_owner='dagster-io',
+            title='Dagster\'s first github issue',
+            body='this open source thing seems like a pretty good idea',
+        )
+
+    @job(resource_defs={
+         'github': GithubResource(
+             github_app_id=os.getenv('GITHUB_APP_ID'),
+             github_app_private_rsa_key=os.getenv('GITHUB_PRIVATE_KEY'),
+             github_installation_id=os.getenv('GITHUB_INSTALLATION_ID')
+     )})
+    def github_job():
+        github_op()
+
+    github_job.execute_in_process()
+    ```
+
+Run the above code, and you’ll see the issue appear in GitHub:
+
+GitHub enterprise users can provide their hostname in the run config. Provide `github_hostname`
+as part of your github config like below.
+
+    ```python
+    GithubResource(
+        github_app_id=os.getenv('GITHUB_APP_ID'),
+        github_app_private_rsa_key=os.getenv('GITHUB_PRIVATE_KEY'),
+        github_installation_id=os.getenv('GITHUB_INSTALLATION_ID'),
+        github_hostname=os.getenv('GITHUB_HOSTNAME'),
+    )
+    ```
+
+By provisioning `GithubResource` as a Dagster resource, you can post to GitHub from
+within any asset or op execution.
+
+</div>
+
+<div class="section" id="executing-graphql-queries">
+
+## Executing GraphQL queries
+
+    ```python
+    import os
+
+    from dagster import job, op
+    from dagster_github import github_resource
+
+
+    @op
+    def github_op(github: GithubResource):
+        github.get_client().execute(
+            query="""
+            query get_repo_id($repo_name: String!, $repo_owner: String!) {
+                repository(name: $repo_name, owner: $repo_owner) {
+                    id
+                }
+            }
+            """,
+            variables={"repo_name": repo_name, "repo_owner": repo_owner},
+        )
+
+    @job(resource_defs={
+         'github': GithubResource(
+             github_app_id=os.getenv('GITHUB_APP_ID'),
+             github_app_private_rsa_key=os.getenv('GITHUB_PRIVATE_KEY'),
+             github_installation_id=os.getenv('GITHUB_INSTALLATION_ID')
+     )})
+    def github_job():
+        github_op()
+
+    github_job.execute_in_process()
+    ```
+
+</div>
+
+<div class="section" id="resources">
+
+## Resources
+
+<dl>
+    <dt><Link class="anchor" id='dagster_github.resources.GithubClient'>`class` dagster_github.resources.GithubClient <a href='https://github.com/dagster-io/dagster/blob/master/python_modules/libraries/dagster-github/dagster_github/resources.py#L104' className='source-link' target='_blank' rel='noopener noreferrer'>[source]</a><a href="#dagster_github.resources.GithubClient" class="hash-link"></a></Link></dt>
+    <dd>
+
+        :::warning[deprecated]
+        This API will be removed in version 0.27.
+         `GithubClient` is deprecated. Use your own resource and client instead. Learn how to create your own resource here: https://docs.dagster.io/guides/build/external-resources/defining-resources.
+
+        :::
+
+    A client for interacting with the GitHub API.
+
+    This client handles authentication and provides methods for making requests
+    to the GitHub API using an authenticated session.
+
+    Parameters:
+      - <strong>client</strong> (<em>requests.Session</em>) – The HTTP session used for making requests.
+      - <strong>app_id</strong> (<em>int</em>) – The GitHub App ID.
+      - <strong>app_private_rsa_key</strong> (<em>str</em>) – The private RSA key for the GitHub App.
+      - <strong>default_installation_id</strong> (<em>Optional</em><em>[</em><em>int</em><em>]</em>) – The default installation ID for the GitHub App.
+      - <strong>hostname</strong> (<em>Optional</em><em>[</em><em>str</em><em>]</em>) – The GitHub hostname, defaults to None.
+      - <strong>installation_tokens</strong> (<em>Dict</em><em>[</em><em>Any</em><em>, </em><em>Any</em><em>]</em>) – A dictionary to store installation tokens.
+      - <strong>app_token</strong> (<em>Dict</em><em>[</em><em>str</em><em>, </em><em>Any</em><em>]</em>) – A dictionary to store the app token.
+
+
+    <dl>
+        <dt><Link class="anchor" id='dagster_github.resources.GithubClient.create_issue'>create_issue <a href='https://github.com/dagster-io/dagster/blob/master/python_modules/libraries/dagster-github/dagster_github/resources.py#L291' className='source-link' target='_blank' rel='noopener noreferrer'>[source]</a><a href="#dagster_github.resources.GithubClient.create_issue" class="hash-link"></a></Link></dt>
+        <dd>
+
+        Create a new issue in the specified GitHub repository.
+
+        This method first retrieves the repository ID using the provided repository name
+        and owner, then creates a new issue in that repository with the given title and body.
+
+        Parameters:
+          - <strong>repo_name</strong> (<em>str</em>) – The name of the repository where the issue will be created.
+          - <strong>repo_owner</strong> (<em>str</em>) – The owner of the repository where the issue will be created.
+          - <strong>title</strong> (<em>str</em>) – The title of the issue.
+          - <strong>body</strong> (<em>str</em>) – The body content of the issue.
+          - <strong>installation_id</strong> (<em>Optional</em><em>[</em><em>int</em><em>]</em>) – The installation ID to use for authentication.
+
+
+        Returns: The response data from the GitHub API containing the created issue details.Return type: Dict[str, Any]Raises: <strong>RuntimeError</strong> – If there are errors in the response from the GitHub API.
+
+        </dd>
+
+    </dl>
+    <dl>
+        <dt><Link class="anchor" id='dagster_github.resources.GithubClient.create_pull_request'>create_pull_request <a href='https://github.com/dagster-io/dagster/blob/master/python_modules/libraries/dagster-github/dagster_github/resources.py#L383' className='source-link' target='_blank' rel='noopener noreferrer'>[source]</a><a href="#dagster_github.resources.GithubClient.create_pull_request" class="hash-link"></a></Link></dt>
+        <dd>
+
+        Create a new pull request in the specified GitHub repository.
+
+        This method creates a pull request from the head reference (branch) to the base reference (branch)
+        in the specified repositories. It uses the provided title and body for the pull request description.
+
+        Parameters:
+          - <strong>base_repo_name</strong> (<em>str</em>) – The name of the base repository where the pull request will be created.
+          - <strong>base_repo_owner</strong> (<em>str</em>) – The owner of the base repository.
+          - <strong>base_ref_name</strong> (<em>str</em>) – The name of the base reference (branch) to which the changes will be merged.
+          - <strong>head_repo_name</strong> (<em>str</em>) – The name of the head repository from which the changes will be taken.
+          - <strong>head_repo_owner</strong> (<em>str</em>) – The owner of the head repository.
+          - <strong>head_ref_name</strong> (<em>str</em>) – The name of the head reference (branch) from which the changes will be taken.
+          - <strong>title</strong> (<em>str</em>) – The title of the pull request.
+          - <strong>body</strong> (<em>Optional</em><em>[</em><em>str</em><em>]</em>) – The body content of the pull request. Defaults to None.
+          - <strong>maintainer_can_modify</strong> (<em>Optional</em><em>[</em><em>bool</em><em>]</em>) – Whether maintainers can modify the pull request. Defaults to None.
+          - <strong>draft</strong> (<em>Optional</em><em>[</em><em>bool</em><em>]</em>) – Whether the pull request is a draft. Defaults to None.
+          - <strong>installation_id</strong> (<em>Optional</em><em>[</em><em>int</em><em>]</em>) – The installation ID to use for authentication.
+
+
+        Returns: The response data from the GitHub API containing the created pull request details.Return type: Dict[str, Any]Raises: <strong>RuntimeError</strong> – If there are errors in the response from the GitHub API.
+
+        </dd>
+
+    </dl>
+    <dl>
+        <dt><Link class="anchor" id='dagster_github.resources.GithubClient.create_ref'>create_ref <a href='https://github.com/dagster-io/dagster/blob/master/python_modules/libraries/dagster-github/dagster_github/resources.py#L334' className='source-link' target='_blank' rel='noopener noreferrer'>[source]</a><a href="#dagster_github.resources.GithubClient.create_ref" class="hash-link"></a></Link></dt>
+        <dd>
+
+        Create a new reference (branch) in the specified GitHub repository.
+
+        This method first retrieves the repository ID and the source reference (branch or tag)
+        using the provided repository name, owner, and source reference. It then creates a new
+        reference (branch) in that repository with the given target name.
+
+        Parameters:
+          - <strong>repo_name</strong> (<em>str</em>) – The name of the repository where the reference will be created.
+          - <strong>repo_owner</strong> (<em>str</em>) – The owner of the repository where the reference will be created.
+          - <strong>source</strong> (<em>str</em>) – The source reference (branch or tag) from which the new reference will be created.
+          - <strong>target</strong> (<em>str</em>) – The name of the new reference (branch) to be created.
+          - <strong>installation_id</strong> (<em>Optional</em><em>[</em><em>int</em><em>]</em>) – The installation ID to use for authentication.
+
+
+        Returns: The response data from the GitHub API containing the created reference details.Return type: Dict[str, Any]Raises: <strong>RuntimeError</strong> – If there are errors in the response from the GitHub API.
+
+        </dd>
+
+    </dl>
+    <dl>
+        <dt><Link class="anchor" id='dagster_github.resources.GithubClient.execute'>execute <a href='https://github.com/dagster-io/dagster/blob/master/python_modules/libraries/dagster-github/dagster_github/resources.py#L235' className='source-link' target='_blank' rel='noopener noreferrer'>[source]</a><a href="#dagster_github.resources.GithubClient.execute" class="hash-link"></a></Link></dt>
+        <dd>
+
+        Execute a GraphQL query against the GitHub API.
+
+        This method sends a POST request to the GitHub API with the provided GraphQL query
+        and optional variables. It ensures that the appropriate installation token is included
+        in the request headers.
+
+        Parameters:
+          - <strong>query</strong> (<em>str</em>) – The GraphQL query string to be executed.
+          - <strong>variables</strong> (<em>Optional</em><em>[</em><em>Dict</em><em>[</em><em>str</em><em>, </em><em>Any</em><em>]</em><em>]</em>) – Optional variables to include in the query.
+          - <strong>headers</strong> (<em>Optional</em><em>[</em><em>Dict</em><em>[</em><em>str</em><em>, </em><em>Any</em><em>]</em><em>]</em>) – Optional headers to include in the request.
+          - <strong>installation_id</strong> (<em>Optional</em><em>[</em><em>int</em><em>]</em>) – The installation ID to use for authentication.
+
+
+        Returns: The response data from the GitHub API.Return type: Dict[str, Any]Raises:
+          - <strong>RuntimeError</strong> – If no installation ID is provided and no default installation ID is set.
+          - <strong>requests.exceptions.HTTPError</strong> – If the request to the GitHub API fails.
+
+
+
+        </dd>
+
+    </dl>
+    <dl>
+        <dt><Link class="anchor" id='dagster_github.resources.GithubClient.get_installations'>get_installations <a href='https://github.com/dagster-io/dagster/blob/master/python_modules/libraries/dagster-github/dagster_github/resources.py#L173' className='source-link' target='_blank' rel='noopener noreferrer'>[source]</a><a href="#dagster_github.resources.GithubClient.get_installations" class="hash-link"></a></Link></dt>
+        <dd>
+
+        Retrieve the list of installations for the authenticated GitHub App.
+
+        This method makes a GET request to the GitHub API to fetch the installations
+        associated with the authenticated GitHub App. It ensures that the app token
+        is valid and includes it in the request headers.
+
+        Parameters: <strong>headers</strong> (<em>Optional</em><em>[</em><em>Dict</em><em>[</em><em>str</em><em>, </em><em>Any</em><em>]</em><em>]</em>) – Optional headers to include in the request.Returns: A dictionary containing the installations data.Return type: Dict[str, Any]Raises: <strong>requests.exceptions.HTTPError</strong> – If the request to the GitHub API fails.
+
+        </dd>
+
+    </dl>
+
+    </dd>
+
+</dl>
+<dl>
+    <dt><Link class="anchor" id='dagster_github.resources.GithubResource'>dagster_github.resources.GithubResource ResourceDefinition <a href='https://github.com/dagster-io/dagster/blob/master/python_modules/libraries/dagster-github/dagster_github/resources.py#L449' className='source-link' target='_blank' rel='noopener noreferrer'>[source]</a><a href="#dagster_github.resources.GithubResource" class="hash-link"></a></Link></dt>
+    <dd>
+
+        <div className='lineblock'> </div>
+
+        :::warning[deprecated]
+        This API will be removed in version 0.27.
+         `GithubResource` is deprecated. Use your own resource instead. Learn how to create your own resource here: https://docs.dagster.io/guides/build/external-resources/defining-resources.
+
+        :::
+
+    A resource configuration class for GitHub integration.
+
+    This class provides configuration fields for setting up a GitHub Application,
+    including the application ID, private RSA key, installation ID, and hostname.
+
+    Parameters:
+      - <strong>github_app_id</strong> (<em>int</em>) – The GitHub Application ID. For more information, see [https://developer.github.com/apps/](https://developer.github.com/apps/).
+      - <strong>github_app_private_rsa_key</strong> (<em>str</em>) – The private RSA key text for the GitHub Application. For more information, see [https://developer.github.com/apps/](https://developer.github.com/apps/).
+      - <strong>github_installation_id</strong> (<em>Optional</em><em>[</em><em>int</em><em>]</em>) – The GitHub Application Installation ID. Defaults to None. For more information, see [https://developer.github.com/apps/](https://developer.github.com/apps/).
+      - <strong>github_hostname</strong> (<em>Optional</em><em>[</em><em>str</em><em>]</em>) – The GitHub hostname. Defaults to <cite>api.github.com</cite>. For more information, see [https://developer.github.com/apps/](https://developer.github.com/apps/).
+
+
+
+    </dd>
+
+</dl>
+</div>
+
+<div class="section" id="legacy">
+
+## Legacy
+
+<dl>
+    <dt><Link class="anchor" id='dagster_github.resources.github_resource'>dagster_github.resources.github_resource ResourceDefinition <a href='https://github.com/dagster-io/dagster/blob/master/python_modules/libraries/dagster-github/dagster_github/resources.py#L523' className='source-link' target='_blank' rel='noopener noreferrer'>[source]</a><a href="#dagster_github.resources.github_resource" class="hash-link"></a></Link></dt>
+    <dd>
+
+        <div className='lineblock'> </div>
+
+        :::warning[deprecated]
+        This API will be removed in version 0.27.
+         `github_resource` is deprecated. Use your own resource instead. Learn how to create your own resource here: https://docs.dagster.io/guides/build/external-resources/defining-resources.
+
+        :::
+
+
+    </dd>
+
+</dl>
+</div></div>

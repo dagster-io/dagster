@@ -1,0 +1,994 @@
+---
+title: 'airlift (dagster-airlift)'
+title_meta: 'airlift (dagster-airlift) API Documentation - Build Better Data Pipelines | Python Reference Documentation for Dagster'
+description: 'airlift (dagster-airlift) Dagster API | Comprehensive Python API documentation for Dagster, the data orchestration platform. Learn how to build, test, and maintain data pipelines with our detailed guides and examples.'
+last_update:
+  date: '2025-12-05'
+custom_edit_url: null
+---
+
+<div class="section" id="airlift-dagster-airlift">
+
+# Airlift (dagster-airlift)
+
+<div class="section" id="core-dagster-airlift-core">
+
+## Core (dagster_airlift.core)
+
+<div class="section" id="airflowinstance">
+
+### AirflowInstance
+
+<dl>
+    <dt><Link class="anchor" id='dagster_airlift.core.AirflowInstance'>`class` dagster_airlift.core.AirflowInstance <a href='https://github.com/dagster-io/dagster/blob/master/python_modules/libraries/dagster-airlift/dagster_airlift/core/airflow_instance.py#L56' className='source-link' target='_blank' rel='noopener noreferrer'>[source]</a><a href="#dagster_airlift.core.AirflowInstance" class="hash-link"></a></Link></dt>
+    <dd>
+
+        :::info[beta]
+        This API is currently in beta, and may have breaking changes in minor version releases, with behavior changes in patch releases.
+
+
+        :::
+
+    A class that represents a running Airflow Instance and provides methods for interacting with its REST API.
+
+    Parameters:
+      - <strong>auth_backend</strong> ([*AirflowAuthBackend*](#dagster_airlift.core.AirflowAuthBackend)) – The authentication backend to use when making requests to the Airflow instance.
+      - <strong>name</strong> (<em>str</em>) – The name of the Airflow instance. This will be prefixed to any assets automatically created using this instance.
+      - <strong>batch_task_instance_limit</strong> (<em>int</em>) – The number of task instances to query at a time when fetching task instances. Defaults to 100.
+      - <strong>batch_dag_runs_limit</strong> (<em>int</em>) – The number of dag runs to query at a time when fetching dag runs. Defaults to 100.
+
+
+    <dl>
+        <dt><Link class="anchor" id='dagster_airlift.core.AirflowInstance.get_run_state'>get_run_state <a href='https://github.com/dagster-io/dagster/blob/master/python_modules/libraries/dagster-airlift/dagster_airlift/core/airflow_instance.py#L421' className='source-link' target='_blank' rel='noopener noreferrer'>[source]</a><a href="#dagster_airlift.core.AirflowInstance.get_run_state" class="hash-link"></a></Link></dt>
+        <dd>
+
+        Given a run ID of an airflow dag, return the state of that run.
+
+        Parameters:
+          - <strong>dag_id</strong> (<em>str</em>) – The dag id.
+          - <strong>run_id</strong> (<em>str</em>) – The run id.
+
+
+        Returns: The state of the run. Will be one of the states defined by Airflow.Return type: str
+
+        </dd>
+
+    </dl>
+    <dl>
+        <dt><Link class="anchor" id='dagster_airlift.core.AirflowInstance.trigger_dag'>trigger_dag <a href='https://github.com/dagster-io/dagster/blob/master/python_modules/libraries/dagster-airlift/dagster_airlift/core/airflow_instance.py#L349' className='source-link' target='_blank' rel='noopener noreferrer'>[source]</a><a href="#dagster_airlift.core.AirflowInstance.trigger_dag" class="hash-link"></a></Link></dt>
+        <dd>
+
+        Trigger a dag run for the given dag_id.
+
+        Does not wait for the run to finish. To wait for the completed run to finish, use [`wait_for_run_completion()`](#dagster_airlift.core.AirflowInstance.wait_for_run_completion).
+
+        Parameters:
+          - <strong>dag_id</strong> (<em>str</em>) – The dag id to trigger.
+          - <strong>logical_date</strong> (<em>Optional</em><em>[</em><em>datetime.datetime</em><em>]</em>) – The Airflow logical_date to use for the dag run. If not provided, the current time will be used. Previously known as execution_date in Airflow; find more information in the Airflow docs: [https://airflow.apache.org/docs/apache-airflow/stable/faq.html#what-does-execution-date-mean](https://airflow.apache.org/docs/apache-airflow/stable/faq.html#what-does-execution-date-mean)
+
+
+        Returns: The dag run id.Return type: str
+
+        </dd>
+
+    </dl>
+    <dl>
+        <dt><Link class="anchor" id='dagster_airlift.core.AirflowInstance.wait_for_run_completion'>wait_for_run_completion <a href='https://github.com/dagster-io/dagster/blob/master/python_modules/libraries/dagster-airlift/dagster_airlift/core/airflow_instance.py#L399' className='source-link' target='_blank' rel='noopener noreferrer'>[source]</a><a href="#dagster_airlift.core.AirflowInstance.wait_for_run_completion" class="hash-link"></a></Link></dt>
+        <dd>
+
+        Given a run ID of an airflow dag, wait for that run to reach a completed state.
+
+        Parameters:
+          - <strong>dag_id</strong> (<em>str</em>) – The dag id.
+          - <strong>run_id</strong> (<em>str</em>) – The run id.
+          - <strong>timeout</strong> (<em>int</em>) – The number of seconds to wait before timing out.
+
+
+        Returns: None
+
+        </dd>
+
+    </dl>
+
+    </dd>
+
+</dl>
+<dl>
+    <dt><Link class="anchor" id='dagster_airlift.core.AirflowAuthBackend'>`class` dagster_airlift.core.AirflowAuthBackend <a href='https://github.com/dagster-io/dagster/blob/master/python_modules/libraries/dagster-airlift/dagster_airlift/core/airflow_instance.py#L36' className='source-link' target='_blank' rel='noopener noreferrer'>[source]</a><a href="#dagster_airlift.core.AirflowAuthBackend" class="hash-link"></a></Link></dt>
+    <dd>
+
+        :::info[beta]
+        This API is currently in beta, and may have breaking changes in minor version releases, with behavior changes in patch releases.
+
+
+        :::
+
+    An abstract class that represents an authentication backend for an Airflow instance.
+
+    Requires two methods to be implemented by subclasses:
+    - get_session: Returns a requests.Session object that can be used to make requests to the Airflow instance, and handles authentication.
+    - get_webserver_url: Returns the base URL of the Airflow webserver.
+
+    The <cite>dagster-airlift</cite> package provides the following default implementations:
+    - `dagster-airlift.core.AirflowBasicAuthBackend`: An authentication backend that uses Airflow’s basic auth to authenticate with the Airflow instance.
+    - `dagster-airlift.mwaa.MwaaSessionAuthBackend`: An authentication backend that uses AWS MWAA’s web login token to authenticate with the Airflow instance (requires <cite>dagster-airlift[mwaa]</cite>).
+
+
+    </dd>
+
+</dl>
+<dl>
+    <dt><Link class="anchor" id='dagster_airlift.core.AirflowBasicAuthBackend'>`class` dagster_airlift.core.AirflowBasicAuthBackend <a href='https://github.com/dagster-io/dagster/blob/master/python_modules/libraries/dagster-airlift/dagster_airlift/core/basic_auth.py#L7' className='source-link' target='_blank' rel='noopener noreferrer'>[source]</a><a href="#dagster_airlift.core.AirflowBasicAuthBackend" class="hash-link"></a></Link></dt>
+    <dd>
+
+        :::info[beta]
+        This API is currently in beta, and may have breaking changes in minor version releases, with behavior changes in patch releases.
+
+
+        :::
+
+    A [`dagster_airlift.core.AirflowAuthBackend`](#dagster_airlift.core.AirflowAuthBackend) that authenticates using basic auth.
+
+    Parameters:
+      - <strong>webserver_url</strong> (<em>str</em>) – The URL of the webserver.
+      - <strong>username</strong> (<em>str</em>) – The username to authenticate with.
+      - <strong>password</strong> (<em>str</em>) – The password to authenticate with.
+
+
+
+
+    Examples:
+
+    Creating a [`AirflowInstance`](#dagster_airlift.core.AirflowInstance) using this backend.
+
+        ```python
+        from dagster_airlift.core import AirflowInstance, AirflowBasicAuthBackend
+
+        af_instance = AirflowInstance(
+            name="my-instance",
+            auth_backend=AirflowBasicAuthBackend(
+                webserver_url="https://my-webserver-hostname",
+                username="my-username",
+                password="my-password"
+            )
+        )
+        ```
+
+    </dd>
+
+</dl>
+</div>
+
+<div class="section" id="assets-definitions">
+
+### Assets & Definitions
+
+<dl>
+    <dt><Link class="anchor" id='dagster_airlift.core.build_defs_from_airflow_instance'>dagster_airlift.core.build_defs_from_airflow_instance <a href='https://github.com/dagster-io/dagster/blob/master/python_modules/libraries/dagster-airlift/dagster_airlift/core/load_defs.py#L78' className='source-link' target='_blank' rel='noopener noreferrer'>[source]</a><a href="#dagster_airlift.core.build_defs_from_airflow_instance" class="hash-link"></a></Link></dt>
+    <dd>
+
+        :::info[beta]
+        This API is currently in beta, and may have breaking changes in minor version releases, with behavior changes in patch releases.
+
+
+        :::
+
+    Builds a [`dagster.Definitions`](../dagster/definitions.mdx#dagster.Definitions) object from an Airflow instance.
+
+    For every DAG in the Airflow instance, this function will create a Dagster asset for the DAG
+    with an asset key instance_name/dag/dag_id. It will also create a sensor that polls the Airflow
+    instance for DAG runs and emits Dagster events for each successful run.
+
+    An optional <cite>defs</cite> argument can be provided, where the user can pass in a [`dagster.Definitions`](../dagster/definitions.mdx#dagster.Definitions)
+    object containing assets which are mapped to Airflow DAGs and tasks. These assets will be enriched with
+    metadata from the Airflow instance, and placed upstream of the automatically generated DAG assets.
+
+    An optional <cite>event_transformer_fn</cite> can be provided, which allows the user to modify the Dagster events
+    produced by the sensor. The function takes the Dagster events produced by the sensor and returns a sequence
+    of Dagster events.
+
+    An optional <cite>dag_selector_fn</cite> can be provided, which allows the user to filter which DAGs assets are created for.
+    The function takes a [`dagster_airlift.core.serialization.serialized_data.DagInfo`](#dagster_airlift.core.DagInfo) object and returns a
+    boolean indicating whether the DAG should be included.
+
+    Parameters:
+      - <strong>airflow_instance</strong> ([*AirflowInstance*](#dagster_airlift.core.AirflowInstance)) – The Airflow instance to build assets and the sensor from.
+      - <strong>defs</strong> – Optional[Definitions]: A [`dagster.Definitions`](../dagster/definitions.mdx#dagster.Definitions) object containing assets that are mapped to Airflow DAGs and tasks.
+      - <strong>sensor_minimum_interval_seconds</strong> (<em>int</em>) – The minimum interval in seconds between sensor runs.
+      - <strong>event_transformer_fn</strong> (<em>DagsterEventTransformerFn</em>) – A function that allows for modifying the Dagster events produced by the sensor.
+      - <strong>dag_selector_fn</strong> (<em>Optional</em><em>[</em><em>Callable</em><em>[</em><em>[</em>[*DagInfo*](#dagster_airlift.core.DagInfo)<em>]</em><em>, </em><em>bool</em><em>]</em><em>]</em>) – A function that allows for filtering which DAGs assets are created for.
+      - <strong>source_code_retrieval_enabled</strong> (<em>Optional</em><em>[</em><em>bool</em><em>]</em>) – Whether to retrieve source code for the Airflow DAGs. By default, source code is retrieved when the number of DAGs is under 50 for performance reasons. This setting overrides the default behavior.
+      - <strong>default_sensor_status</strong> (<em>Optional</em><em>[</em><em>DefaultSensorStatus</em><em>]</em>) – The default status for the sensor. By default, the sensor will be enabled.
+
+
+    Returns: A [`dagster.Definitions`](../dagster/definitions.mdx#dagster.Definitions) object containing the assets and sensor.Return type: [Definitions](../dagster/definitions.mdx#dagster.Definitions)
+
+
+    Examples:
+
+    Building a [`dagster.Definitions`](../dagster/definitions.mdx#dagster.Definitions) object from an Airflow instance.
+
+        ```python
+        from dagster_airlift.core import (
+            AirflowInstance,
+            AirflowBasicAuthBackend,
+            build_defs_from_airflow_instance,
+        )
+
+        from .constants import AIRFLOW_BASE_URL, AIRFLOW_INSTANCE_NAME, PASSWORD, USERNAME
+
+        airflow_instance = AirflowInstance(
+            auth_backend=AirflowBasicAuthBackend(
+                webserver_url=AIRFLOW_BASE_URL, username=USERNAME, password=PASSWORD
+            ),
+            name=AIRFLOW_INSTANCE_NAME,
+        )
+
+
+        defs = build_defs_from_airflow_instance(airflow_instance=airflow_instance)
+        ```
+    Providing task-mapped assets to the function.
+
+        ```python
+        from dagster import Definitions
+        from dagster_airlift.core import (
+            AirflowInstance,
+            AirflowBasicAuthBackend,
+            assets_with_task_mappings,
+            build_defs_from_airflow_instance,
+        )
+        ...
+
+
+        defs = build_defs_from_airflow_instance(
+            airflow_instance=airflow_instance, # same as above
+            defs=Definitions(
+                assets=assets_with_task_mappings(
+                    dag_id="rebuild_iris_models",
+                    task_mappings={
+                        "my_task": [AssetSpec("my_first_asset"), AssetSpec("my_second_asset")],
+                    },
+                ),
+            ),
+        )
+        ```
+    Providing a custom event transformer function.
+
+        ```python
+        from typing import Sequence
+        from dagster import Definitions, SensorEvaluationContext
+        from dagster_airlift.core import (
+            AirflowInstance,
+            AirflowBasicAuthBackend,
+            AssetEvent,
+            assets_with_task_mappings,
+            build_defs_from_airflow_instance,
+            AirflowDefinitionsData,
+        )
+        ...
+
+        def add_tags_to_events(
+            context: SensorEvaluationContext,
+            defs_data: AirflowDefinitionsData,
+            events: Sequence[AssetEvent]
+        ) -> Sequence[AssetEvent]:
+            altered_events = []
+            for event in events:
+                altered_events.append(event._replace(tags={"my_tag": "my_value"}))
+            return altered_events
+
+        defs = build_defs_from_airflow_instance(
+            airflow_instance=airflow_instance, # same as above
+            event_transformer_fn=add_tags_to_events,
+        )
+        ```
+    Filtering which DAGs assets are created for.
+
+        ```python
+        from dagster import Definitions
+        from dagster_airlift.core import (
+            AirflowInstance,
+            AirflowBasicAuthBackend,
+            AssetEvent,
+            assets_with_task_mappings,
+            build_defs_from_airflow_instance,
+            DagInfo,
+        )
+        ...
+
+        def only_include_dag(dag_info: DagInfo) -> bool:
+            return dag_info.dag_id == "my_dag_id"
+
+        defs = build_defs_from_airflow_instance(
+            airflow_instance=airflow_instance, # same as above
+            dag_selector_fn=only_include_dag,
+        )
+        ```
+
+    </dd>
+
+</dl>
+<div class="section" id="mapping-dagster-assets-to-airflow-tasks-dags">
+
+#### Mapping Dagster assets to Airflow tasks/DAGs
+
+<dl>
+    <dt><Link class="anchor" id='dagster_airlift.core.assets_with_task_mappings'>dagster_airlift.core.assets_with_task_mappings <a href='https://github.com/dagster-io/dagster/blob/master/python_modules/libraries/dagster-airlift/dagster_airlift/core/top_level_dag_def_api.py#L61' className='source-link' target='_blank' rel='noopener noreferrer'>[source]</a><a href="#dagster_airlift.core.assets_with_task_mappings" class="hash-link"></a></Link></dt>
+    <dd>
+
+        :::info[beta]
+        This API is currently in beta, and may have breaking changes in minor version releases, with behavior changes in patch releases.
+
+
+        :::
+
+    Modify assets to be associated with a particular task in Airlift tooling.
+
+    Used in concert with <cite>build_defs_from_airflow_instance</cite> to observe an airflow
+    instance to monitor the tasks that are associated with the assets and
+    keep their materialization histories up to date.
+
+    Concretely this adds metadata to all asset specs in the provided definitions
+    with the provided dag_id and task_id. The dag_id comes from the dag_id argument;
+    the task_id comes from the key of the provided task_mappings dictionary.
+    There is a single metadata key “airlift/task-mapping” that is used to store
+    this information. It is a list of dictionaries with keys “dag_id” and “task_id”.
+
+
+
+    Example:
+
+        ```python
+        from dagster import AssetSpec, Definitions, asset
+        from dagster_airlift.core import assets_with_task_mappings
+
+        @asset
+        def asset_one() -> None: ...
+
+        Definitions(
+            assets=assets_with_task_mappings(
+                dag_id="dag_one",
+                task_mappings={
+                    "task_one": [asset_one],
+                    "task_two": [AssetSpec(key="asset_two"), AssetSpec(key="asset_three")],
+                },
+            )
+        )
+        ```
+
+    </dd>
+
+</dl>
+<dl>
+    <dt><Link class="anchor" id='dagster_airlift.core.assets_with_dag_mappings'>dagster_airlift.core.assets_with_dag_mappings <a href='https://github.com/dagster-io/dagster/blob/master/python_modules/libraries/dagster-airlift/dagster_airlift/core/top_level_dag_def_api.py#L108' className='source-link' target='_blank' rel='noopener noreferrer'>[source]</a><a href="#dagster_airlift.core.assets_with_dag_mappings" class="hash-link"></a></Link></dt>
+    <dd>
+
+        :::info[beta]
+        This API is currently in beta, and may have breaking changes in minor version releases, with behavior changes in patch releases.
+
+
+        :::
+
+    Modify assets to be associated with a particular dag in Airlift tooling.
+
+    Used in concert with <cite>build_defs_from_airflow_instance</cite> to observe an airflow
+    instance to monitor the dags that are associated with the assets and
+    keep their materialization histories up to date.
+
+    In contrast with <cite>assets_with_task_mappings</cite>, which maps assets on a per-task basis, this is used in concert with
+    <cite>proxying_to_dagster</cite> dag-level mappings where an entire dag is migrated at once.
+
+    Concretely this adds metadata to all asset specs in the provided definitions
+    with the provided dag_id. The dag_id comes from the key of the provided dag_mappings dictionary.
+    There is a single metadata key “airlift/dag-mapping” that is used to store
+    this information. It is a list of strings, where each string is a dag_id which the asset is associated with.
+
+    Example:
+
+        ```python
+        from dagster import AssetSpec, Definitions, asset
+        from dagster_airlift.core import assets_with_dag_mappings
+
+        @asset
+        def asset_one() -> None: ...
+
+        Definitions(
+            assets=assets_with_dag_mappings(
+                dag_mappings={
+                    "dag_one": [asset_one],
+                    "dag_two": [AssetSpec(key="asset_two"), AssetSpec(key="asset_three")],
+                },
+            )
+        )
+        ```
+
+    </dd>
+
+</dl>
+<dl>
+    <dt><Link class="anchor" id='dagster_airlift.core.assets_with_multiple_task_mappings'>dagster_airlift.core.assets_with_multiple_task_mappings <a href='https://github.com/dagster-io/dagster/blob/master/python_modules/libraries/dagster-airlift/dagster_airlift/core/multiple_tasks.py#L23' className='source-link' target='_blank' rel='noopener noreferrer'>[source]</a><a href="#dagster_airlift.core.assets_with_multiple_task_mappings" class="hash-link"></a></Link></dt>
+    <dd>
+
+        :::info[beta]
+        This API is currently in beta, and may have breaking changes in minor version releases, with behavior changes in patch releases.
+
+
+        :::
+
+    Given an asset or assets definition, return a new asset or assets definition with metadata
+    that indicates that it is targeted by multiple airflow tasks. An example of this would
+    be a separate weekly and daily dag that contains a task that targets a single asset.
+
+        ```python
+        from dagster import Definitions, AssetSpec, asset
+        from dagster_airlift import (
+            build_defs_from_airflow_instance,
+            targeted_by_multiple_tasks,
+            assets_with_task_mappings,
+        )
+
+        # Asset maps to a single task.
+        @asset
+        def other_asset(): ...
+
+        # Asset maps to a physical entity which is produced by two different airflow tasks.
+        @asset
+        def scheduled_twice(): ...
+
+        defs = build_defs_from_airflow_instance(
+            airflow_instance=airflow_instance,
+            defs=Definitions(
+                assets=[
+                    *assets_with_task_mappings(
+                        dag_id="other_dag",
+                        task_mappings={
+                            "task1": [other_asset]
+                        },
+                    ),
+                    *assets_with_multiple_task_mappings(
+                        assets=[scheduled_twice],
+                        task_handles=[
+                            {"dag_id": "weekly_dag", "task_id": "task1"},
+                            {"dag_id": "daily_dag", "task_id": "task1"},
+                        ],
+                    ),
+                ]
+            ),
+        )
+        ```
+
+    </dd>
+
+</dl>
+</div>
+
+<div class="section" id="annotations-for-customizable-components">
+
+#### Annotations for customizable components
+
+<dl>
+    <dt><Link class="anchor" id='dagster_airlift.core.DagSelectorFn'>dagster_airlift.core.DagSelectorFn <a href='https://github.com/dagster-io/dagster/blob/master/.local/share/uv/python/cpython-3.12.7-macos-aarch64-none/lib/python3.12/typing.py#L1180' className='source-link' target='_blank' rel='noopener noreferrer'>[source]</a><a href="#dagster_airlift.core.DagSelectorFn" class="hash-link"></a></Link></dt>
+    <dd>
+    alias of `Callable`[[[`DagInfo`](#dagster_airlift.core.DagInfo)], `bool`]
+    </dd>
+
+</dl>
+<dl>
+    <dt><Link class="anchor" id='dagster_airlift.core.DagsterEventTransformerFn'>dagster_airlift.core.DagsterEventTransformerFn <a href='https://github.com/dagster-io/dagster/blob/master/.local/share/uv/python/cpython-3.12.7-macos-aarch64-none/lib/python3.12/typing.py#L1180' className='source-link' target='_blank' rel='noopener noreferrer'>[source]</a><a href="#dagster_airlift.core.DagsterEventTransformerFn" class="hash-link"></a></Link></dt>
+    <dd>
+    alias of `Callable`[[`SensorEvaluationContext`, [`AirflowDefinitionsData`](#dagster_airlift.core.AirflowDefinitionsData), `Sequence`[[`AssetMaterialization`](../dagster/ops.mdx#dagster.AssetMaterialization)]], `Iterable`[[`AssetMaterialization`](../dagster/ops.mdx#dagster.AssetMaterialization) | [`AssetObservation`](../dagster/assets.mdx#dagster.AssetObservation) | `AssetCheckEvaluation`]]
+    </dd>
+
+</dl>
+<dl>
+    <dt><Link class="anchor" id='dagster_airlift.core.TaskHandleDict'>`class` dagster_airlift.core.TaskHandleDict <a href='https://github.com/dagster-io/dagster/blob/master/python_modules/libraries/dagster-airlift/dagster_airlift/core/multiple_tasks.py#L17' className='source-link' target='_blank' rel='noopener noreferrer'>[source]</a><a href="#dagster_airlift.core.TaskHandleDict" class="hash-link"></a></Link></dt>
+    <dd>
+
+        :::info[beta]
+        This API is currently in beta, and may have breaking changes in minor version releases, with behavior changes in patch releases.
+
+
+        :::
+
+
+    </dd>
+
+</dl>
+</div>
+
+<div class="section" id="objects-for-retrieving-information-about-the-airflow-dagster-mapping">
+
+#### Objects for retrieving information about the Airflow/Dagster mapping
+
+<dl>
+    <dt><Link class="anchor" id='dagster_airlift.core.DagInfo'>`class` dagster_airlift.core.DagInfo <a href='https://github.com/dagster-io/dagster/blob/master/python_modules/libraries/dagster-airlift/dagster_airlift/core/serialization/serialized_data.py#L42' className='source-link' target='_blank' rel='noopener noreferrer'>[source]</a><a href="#dagster_airlift.core.DagInfo" class="hash-link"></a></Link></dt>
+    <dd>
+
+        :::info[beta]
+        This API is currently in beta, and may have breaking changes in minor version releases, with behavior changes in patch releases.
+
+
+        :::
+
+    A record containing information about a given airflow dag.
+
+    Users should not instantiate this class directly. It is provided when customizing which DAGs are included
+    in the generated definitions using the <cite>dag_selector_fn</cite> argument of [`build_defs_from_airflow_instance()`](#dagster_airlift.core.build_defs_from_airflow_instance).
+
+    Parameters: <strong>metadata</strong> (<em>Dict</em><em>[</em><em>str</em><em>, </em><em>Any</em><em>]</em>) – The metadata associated with the dag, retrieved by the Airflow REST API:
+    [https://airflow.apache.org/docs/apache-airflow/stable/stable-rest-api-ref.html#operation/get_dags](https://airflow.apache.org/docs/apache-airflow/stable/stable-rest-api-ref.html#operation/get_dags)
+
+    </dd>
+
+</dl>
+<dl>
+    <dt><Link class="anchor" id='dagster_airlift.core.AirflowDefinitionsData'>`class` dagster_airlift.core.AirflowDefinitionsData <a href='https://github.com/dagster-io/dagster/blob/master/python_modules/libraries/dagster-airlift/dagster_airlift/core/airflow_defs_data.py#L44' className='source-link' target='_blank' rel='noopener noreferrer'>[source]</a><a href="#dagster_airlift.core.AirflowDefinitionsData" class="hash-link"></a></Link></dt>
+    <dd>
+
+        :::info[beta]
+        This API is currently in beta, and may have breaking changes in minor version releases, with behavior changes in patch releases.
+
+
+        :::
+
+    A class that holds data about the assets that are mapped to Airflow dags and tasks, and
+    provides methods for retrieving information about the mappings.
+    The user should not instantiate this class directly. It is provided when customizing the events
+    that are generated by the Airflow sensor using the <cite>event_transformer_fn</cite> argument of
+    [`build_defs_from_airflow_instance()`](#dagster_airlift.core.build_defs_from_airflow_instance).
+
+    <dl>
+        <dt><Link class="anchor" id='dagster_airlift.core.AirflowDefinitionsData.asset_keys_in_task'>asset_keys_in_task <a href='https://github.com/dagster-io/dagster/blob/master/python_modules/libraries/dagster-airlift/dagster_airlift/core/airflow_defs_data.py#L170' className='source-link' target='_blank' rel='noopener noreferrer'>[source]</a><a href="#dagster_airlift.core.AirflowDefinitionsData.asset_keys_in_task" class="hash-link"></a></Link></dt>
+        <dd>
+
+        Returns the asset keys that are mapped to the given task.
+
+        Parameters:
+          - <strong>dag_id</strong> (<em>str</em>) – The dag id.
+          - <strong>task_id</strong> (<em>str</em>) – The task id.
+
+
+
+        </dd>
+
+    </dl>
+    <dl>
+        <dt><Link class="anchor" id='dagster_airlift.core.AirflowDefinitionsData.task_ids_in_dag'>task_ids_in_dag <a href='https://github.com/dagster-io/dagster/blob/master/python_modules/libraries/dagster-airlift/dagster_airlift/core/airflow_defs_data.py#L107' className='source-link' target='_blank' rel='noopener noreferrer'>[source]</a><a href="#dagster_airlift.core.AirflowDefinitionsData.task_ids_in_dag" class="hash-link"></a></Link></dt>
+        <dd>
+
+        Returns the task ids within the given dag_id.
+
+        Parameters: <strong>dag_id</strong> (<em>str</em>) – The dag id.
+
+        </dd>
+
+    </dl>
+    <dl>
+        <dt><Link class="anchor" id='dagster_airlift.core.AirflowDefinitionsData.instance_name'>`property` instance_name <a href='https://github.com/dagster-io/dagster/blob/master/python_modules/libraries/dagster-airlift/dagster_airlift/core/airflow_defs_data.py#L97' className='source-link' target='_blank' rel='noopener noreferrer'>[source]</a><a href="#dagster_airlift.core.AirflowDefinitionsData.instance_name" class="hash-link"></a></Link></dt>
+        <dd>
+        The name of the Airflow instance.
+        </dd>
+
+    </dl>
+
+    </dd>
+
+</dl>
+</div></div>
+
+<div class="section" id="airflowinstancecomponent">
+
+### AirflowInstanceComponent
+
+<dl>
+    <dt><Link class="anchor" id='dagster_airlift.core.components.AirflowInstanceComponent'>`class` dagster_airlift.core.components.AirflowInstanceComponent <a href='https://github.com/dagster-io/dagster/blob/master/python_modules/libraries/dagster-airlift/dagster_airlift/core/components/airflow_instance/component.py#L207' className='source-link' target='_blank' rel='noopener noreferrer'>[source]</a><a href="#dagster_airlift.core.components.AirflowInstanceComponent" class="hash-link"></a></Link></dt>
+    <dd>
+
+    Loads Airflow DAGs and tasks from an Airflow instance as Dagster assets.
+
+    This component connects to an Airflow instance, retrieves metadata about DAGs and tasks,
+    and creates corresponding Dagster assets. It supports mapping Airflow tasks to existing
+    Dagster assets or creating new assets to represent Airflow workflows.
+
+
+
+    Example:
+
+        ```yaml
+        # defs.yaml
+
+        type: dagster_airlift.core.AirflowInstanceComponent
+        attributes:
+          name: my_airflow_instance
+          auth:
+            type: basic_auth
+            webserver_url: "{{ env.AIRFLOW_WEBSERVER_URL }}"
+            username: "{{ env.AIRFLOW_USERNAME }}"
+            password: "{{ env.AIRFLOW_PASSWORD }}"
+          filter:
+            dag_id_ilike: "analytics_%"
+            retrieve_datasets: true
+        ```
+
+    </dd>
+
+</dl>
+</div></div>
+
+<div class="section" id="mwaa-dagster-airlift-mwaa">
+
+## MWAA (dagster_airlift.mwaa)
+
+<dl>
+    <dt><Link class="anchor" id='dagster_airlift.mwaa.MwaaSessionAuthBackend'>`class` dagster_airlift.mwaa.MwaaSessionAuthBackend <a href='https://github.com/dagster-io/dagster/blob/master/python_modules/libraries/dagster-airlift/dagster_airlift/mwaa/auth.py#L33' className='source-link' target='_blank' rel='noopener noreferrer'>[source]</a><a href="#dagster_airlift.mwaa.MwaaSessionAuthBackend" class="hash-link"></a></Link></dt>
+    <dd>
+
+        :::info[beta]
+        This API is currently in beta, and may have breaking changes in minor version releases, with behavior changes in patch releases.
+
+
+        :::
+
+    A [`dagster_airlift.core.AirflowAuthBackend`](#dagster_airlift.core.AirflowAuthBackend) that authenticates to AWS MWAA.
+
+    Under the hood, this class uses the MWAA boto3 session to request a web login token and then
+    uses the token to authenticate to the MWAA web server.
+
+    Parameters:
+      - <strong>mwaa_session</strong> (<em>boto3.Session</em>) – The boto3 MWAA session
+      - <strong>env_name</strong> (<em>str</em>) – The name of the MWAA environment
+
+
+
+
+    Examples:
+
+    Creating an AirflowInstance pointed at a MWAA environment.
+
+        ```python
+        import boto3
+        from dagster_airlift.mwaa import MwaaSessionAuthBackend
+        from dagster_airlift.core import AirflowInstance
+
+        boto_client = boto3.client("mwaa")
+        af_instance = AirflowInstance(
+            name="my-mwaa-instance",
+            auth_backend=MwaaSessionAuthBackend(
+                mwaa_client=boto_client,
+                env_name="my-mwaa-env"
+            )
+        )
+        ```
+
+    </dd>
+
+</dl>
+</div>
+
+<div class="section" id="in-airflow-dagster-airlift-in-airflow">
+
+## In Airflow (dagster_airlift.in_airflow)
+
+<div class="section" id="proxying">
+
+### Proxying
+
+<dl>
+    <dt><Link class="anchor" id='dagster_airlift.in_airflow.proxying_to_dagster'>dagster_airlift.in_airflow.proxying_to_dagster <a href='https://github.com/dagster-io/dagster/blob/master/python_modules/libraries/dagster-airlift/dagster_airlift/in_airflow/proxying_fn.py#L19' className='source-link' target='_blank' rel='noopener noreferrer'>[source]</a><a href="#dagster_airlift.in_airflow.proxying_to_dagster" class="hash-link"></a></Link></dt>
+    <dd>
+
+    Proxies tasks and dags to Dagster based on provided proxied state.
+    Expects a dictionary of in-scope global variables to be provided (typically retrieved with <cite>globals()</cite>), and a proxied state dictionary
+    (typically retrieved with [`load_proxied_state_from_yaml()`](#dagster_airlift.in_airflow.load_proxied_state_from_yaml)) for dags in that global state. This function will modify in-place the
+    dictionary of global variables to replace proxied tasks with appropriate Dagster operators.
+
+    In the case of task-level proxying, the proxied tasks will be replaced with new operators that are constructed by the provided <cite>build_from_task_fn</cite>.
+    A default implementation of this function is provided in <cite>DefaultProxyTaskToDagsterOperator</cite>.
+    In the case of dag-level proxying, the entire dag structure will be replaced with a single task that is constructed by the provided <cite>build_from_dag_fn</cite>.
+    A default implementation of this function is provided in <cite>DefaultProxyDAGToDagsterOperator</cite>.
+
+    Parameters:
+      - <strong>global_vars</strong> (<em>Dict</em><em>[</em><em>str</em><em>, </em><em>Any</em><em>]</em>) – The global variables in the current context. In most cases, retrieved with <cite>globals()</cite> (no import required). This is equivalent to what airflow already does to introspect the dags which exist in a given module context: [https://airflow.apache.org/docs/apache-airflow/stable/core-concepts/dags.html#loading-dags](https://airflow.apache.org/docs/apache-airflow/stable/core-concepts/dags.html#loading-dags)
+      - <strong>proxied_state</strong> (<em>AirflowMigrationState</em>) – The proxied state for the dags.
+      - <strong>logger</strong> (<em>Optional</em><em>[</em><em>logging.Logger</em><em>]</em>) – The logger to use. Defaults to logging.getLogger(“dagster_airlift”).
+
+
+
+
+    Examples:
+
+    Typical usage of this function is to be called at the end of a dag file, retrieving proxied_state from an accompanying <cite>proxied_state</cite> path.
+
+        ```python
+        from pathlib import Path
+
+        from airflow import DAG
+        from airflow.operators.python import PythonOperator
+        from dagster._time import get_current_datetime_midnight
+        from dagster_airlift.in_airflow import proxying_to_dagster
+        from dagster_airlift.in_airflow.proxied_state import load_proxied_state_from_yaml
+
+
+        with DAG(
+            dag_id="daily_interval_dag",
+            ...,
+        ) as minute_dag:
+            PythonOperator(task_id="my_task", python_callable=...)
+
+        # At the end of the dag file, so we can ensure dags are loaded into globals.
+        proxying_to_dagster(
+            proxied_state=load_proxied_state_from_yaml(Path(__file__).parent / "proxied_state"),
+            global_vars=globals(),
+        )
+        ```
+    You can also provide custom implementations of the <cite>build_from_task_fn</cite> function to customize the behavior of task-level proxying.
+
+        ```python
+        from dagster_airlift.in_airflow import proxying_to_dagster, BaseProxyTaskToDagsterOperator
+        from airflow.models.operator import BaseOperator
+
+        ... # Dag code here
+
+        class CustomAuthTaskProxyOperator(BaseProxyTaskToDagsterOperator):
+            def get_dagster_session(self, context: Context) -> requests.Session:
+                # Add custom headers to the session
+                return requests.Session(headers={"Authorization": "Bearer my_token"})
+
+            def get_dagster_url(self, context: Context) -> str:
+                # Use a custom environment variable for the dagster url
+                return os.environ["CUSTOM_DAGSTER_URL"]
+
+            @classmethod
+            def build_from_task(cls, task: BaseOperator) -> "CustomAuthTaskProxyOperator":
+                # Custom logic to build the operator from the task (task_id should remain the same)
+                if task.task_id == "my_task_needs_more_retries":
+                    return CustomAuthTaskProxyOperator(task_id=task_id, retries=3)
+                else:
+                    return CustomAuthTaskProxyOperator(task_id=task_id)
+
+        proxying_to_dagster(
+            proxied_state=load_proxied_state_from_yaml(Path(__file__).parent / "proxied_state"),
+            global_vars=globals(),
+            build_from_task_fn=CustomAuthTaskProxyOperator.build_from_task,
+        )
+        ```
+    You can do the same for dag-level proxying by providing a custom implementation of the <cite>build_from_dag_fn</cite> function.
+
+        ```python
+        from dagster_airlift.in_airflow import proxying_to_dagster, BaseProxyDAGToDagsterOperator
+        from airflow.models.dag import DAG
+
+        ... # Dag code here
+
+        class CustomAuthDAGProxyOperator(BaseProxyDAGToDagsterOperator):
+            def get_dagster_session(self, context: Context) -> requests.Session:
+                # Add custom headers to the session
+                return requests.Session(headers={"Authorization": "Bearer my_token"})
+
+            def get_dagster_url(self, context: Context) -> str:
+                # Use a custom environment variable for the dagster url
+                return os.environ["CUSTOM_DAGSTER_URL"]
+
+            @classmethod
+            def build_from_dag(cls, dag: DAG) -> "CustomAuthDAGProxyOperator":
+                # Custom logic to build the operator from the dag (DAG id should remain the same)
+                if dag.dag_id == "my_dag_needs_more_retries":
+                    return CustomAuthDAGProxyOperator(task_id="custom override", retries=3, dag=dag)
+                else:
+                    return CustomAuthDAGProxyOperator(task_id="basic_override", dag=dag)
+
+        proxying_to_dagster(
+            proxied_state=load_proxied_state_from_yaml(Path(__file__).parent / "proxied_state"),
+            global_vars=globals(),
+            build_from_dag_fn=CustomAuthDAGProxyOperator.build_from_dag,
+        )
+        ```
+
+    </dd>
+
+</dl>
+<dl>
+
+    <dt><Link class="anchor" id='dagster_airlift.in_airflow.BaseDagsterAssetsOperator'>`class` dagster_airlift.in_airflow.BaseDagsterAssetsOperator <a href='https://github.com/dagster-io/dagster/blob/master/docs/.tox/sphinx-mdx-local/lib/python3.12/site-packages/sphinx/ext/autodoc/mock.py#L68' className='source-link' target='_blank' rel='noopener noreferrer'>[source]</a><a href="#dagster_airlift.in_airflow.BaseDagsterAssetsOperator" class="hash-link"></a></Link></dt>
+    <dd>
+
+    Interface for an operator which materializes dagster assets.
+
+    This operator needs to implement the following methods:
+
+    >
+
+      - get_dagster_session: Returns a requests session that can be used to make requests to the Dagster API.
+      - get_dagster_url: Returns the URL for the Dagster instance.
+      - filter_asset_nodes: Filters asset nodes (which are returned from Dagster’s graphql API) to only include those
+
+Optionally, these methods can be overridden as well:
+
+>
+
+- get_partition_key: Determines the partition key to use to trigger the dagster run. This method will only be
+
+</dd>
+
+</dl>
+<dl>
+
+    <dt><Link class="anchor" id='dagster_airlift.in_airflow.load_proxied_state_from_yaml'>dagster_airlift.in_airflow.load_proxied_state_from_yaml <a href='https://github.com/dagster-io/dagster/blob/master/python_modules/libraries/dagster-airlift/dagster_airlift/in_airflow/proxied_state.py#L154' className='source-link' target='_blank' rel='noopener noreferrer'>[source]</a><a href="#dagster_airlift.in_airflow.load_proxied_state_from_yaml" class="hash-link"></a></Link></dt>
+    <dd>
+
+    Loads the proxied state from a directory of yaml files.
+
+    Expects the directory to contain yaml files, where each file corresponds to the id of a dag (ie: <cite>dag_id.yaml</cite>).
+    This directory is typically constructed using the <cite>dagster-airlift</cite> CLI:
+
+    >
+
+        ```bash
+        AIRFLOW_HOME=... dagster-airlift proxy scaffold
+        ```
+
+The file should have either of the following structure.
+In the case of task-level proxying:
+
+>
+
+    ```yaml
+    tasks:
+        - id: task_id
+          proxied: true
+        - id: task_id
+          proxied: false
+    ```
+
+In the case of dag-level proxying:
+
+>
+
+    ```yaml
+    proxied: true
+    ```
+
+Parameters: <strong>proxied_yaml_path</strong> (<em>Path</em>) – The path to the directory containing the yaml files.Returns: The proxied state of the dags and tasks in Airflow.Return type: [AirflowProxiedState](#dagster_airlift.in_airflow.AirflowProxiedState)
+
+</dd>
+
+</dl>
+<div class="section" id="proxying-state">
+
+#### Proxying state
+
+<dl>
+    <dt><Link class="anchor" id='dagster_airlift.in_airflow.AirflowProxiedState'>`class` dagster_airlift.in_airflow.AirflowProxiedState <a href='https://github.com/dagster-io/dagster/blob/master/python_modules/libraries/dagster-airlift/dagster_airlift/in_airflow/proxied_state.py#L94' className='source-link' target='_blank' rel='noopener noreferrer'>[source]</a><a href="#dagster_airlift.in_airflow.AirflowProxiedState" class="hash-link"></a></Link></dt>
+    <dd>
+
+    A class to store the proxied state of dags and tasks in Airflow.
+    Typically, this is constructed by [`load_proxied_state_from_yaml()`](#dagster_airlift.in_airflow.load_proxied_state_from_yaml).
+
+    Parameters: <strong>dags</strong> (<em>Dict</em><em>[</em><em>str</em><em>, </em>[*DagProxiedState*](#dagster_airlift.in_airflow.DagProxiedState)<em>]</em>) – A dictionary of dag_id to DagProxiedState.
+
+    </dd>
+
+</dl>
+<dl>
+    <dt><Link class="anchor" id='dagster_airlift.in_airflow.DagProxiedState'>`class` dagster_airlift.in_airflow.DagProxiedState <a href='https://github.com/dagster-io/dagster/blob/master/python_modules/libraries/dagster-airlift/dagster_airlift/in_airflow/proxied_state.py#L33' className='source-link' target='_blank' rel='noopener noreferrer'>[source]</a><a href="#dagster_airlift.in_airflow.DagProxiedState" class="hash-link"></a></Link></dt>
+    <dd>
+
+    A class to store the proxied state of tasks in a dag.
+
+    Parameters:
+      - <strong>tasks</strong> (<em>Dict</em><em>[</em><em>str</em><em>, </em>[*TaskProxiedState*](#dagster_airlift.in_airflow.TaskProxiedState)<em>]</em>) – A dictionary of task_id to TaskProxiedState. If the entire dag is proxied, or proxied state is not set for a task, the task_id will not be present in this dictionary.
+      - <strong>proxied</strong> (<em>Optional</em><em>[</em><em>bool</em><em>]</em>) – A boolean indicating whether the entire dag is proxied. If this is None, then the dag proxies at the task level (or
+      - <strong>all</strong><strong>)</strong><strong>.</strong> (<em>proxying state has not been set at</em>)
+
+
+
+    </dd>
+
+</dl>
+<dl>
+    <dt><Link class="anchor" id='dagster_airlift.in_airflow.TaskProxiedState'>`class` dagster_airlift.in_airflow.TaskProxiedState <a href='https://github.com/dagster-io/dagster/blob/master/python_modules/libraries/dagster-airlift/dagster_airlift/in_airflow/proxied_state.py#L8' className='source-link' target='_blank' rel='noopener noreferrer'>[source]</a><a href="#dagster_airlift.in_airflow.TaskProxiedState" class="hash-link"></a></Link></dt>
+    <dd>
+
+    A class to store the proxied state of a task.
+
+    Parameters:
+      - <strong>task_id</strong> (<em>str</em>) – The id of the task.
+      - <strong>proxied</strong> (<em>bool</em>) – A boolean indicating whether the task is proxied.
+
+
+
+    </dd>
+
+</dl>
+</div>
+
+<div class="section" id="task-level-proxying">
+#### Task-level proxying
+
+<dl>
+
+    <dt><Link class="anchor" id='dagster_airlift.in_airflow.BaseProxyTaskToDagsterOperator'>`class` dagster_airlift.in_airflow.BaseProxyTaskToDagsterOperator <a href='https://github.com/dagster-io/dagster/blob/master/docs/.tox/sphinx-mdx-local/lib/python3.12/site-packages/sphinx/ext/autodoc/mock.py#L68' className='source-link' target='_blank' rel='noopener noreferrer'>[source]</a><a href="#dagster_airlift.in_airflow.BaseProxyTaskToDagsterOperator" class="hash-link"></a></Link></dt>
+    <dd>
+
+    An operator that proxies task execution to Dagster assets with metadata that map to this task’s dag ID and task ID.
+
+    For the DAG ID and task ID that this operator proxies, it expects there to be corresponding assets
+    in the linked Dagster deployment that have metadata entries with the key <cite>dagster-airlift/task-mapping</cite> that
+    map to this DAG ID and task ID. This metadata is typically set using the
+    [`dagster_airlift.core.assets_with_task_mappings()`](#dagster_airlift.core.assets_with_task_mappings) function.
+
+    The following methods must be implemented by subclasses:
+
+    >
+
+      - `get_dagster_session()` (inherited from [`BaseDagsterAssetsOperator`](#dagster_airlift.in_airflow.BaseDagsterAssetsOperator))
+      - `get_dagster_url()` (inherited from [`BaseDagsterAssetsOperator`](#dagster_airlift.in_airflow.BaseDagsterAssetsOperator))
+      - `build_from_task()` A class method which takes the task to be proxied, and constructs
+
+There is a default implementation of this operator, [`DefaultProxyTaskToDagsterOperator`](#dagster_airlift.in_airflow.DefaultProxyTaskToDagsterOperator),
+which is used by [`proxying_to_dagster()`](#dagster_airlift.in_airflow.proxying_to_dagster) if no override operator is provided.
+
+</dd>
+
+</dl>
+<dl>
+    <dt><Link class="anchor" id='dagster_airlift.in_airflow.DefaultProxyTaskToDagsterOperator'>`class` dagster_airlift.in_airflow.DefaultProxyTaskToDagsterOperator <a href='https://github.com/dagster-io/dagster/blob/master/docs/.tox/sphinx-mdx-local/lib/python3.12/site-packages/sphinx/ext/autodoc/mock.py#L68' className='source-link' target='_blank' rel='noopener noreferrer'>[source]</a><a href="#dagster_airlift.in_airflow.DefaultProxyTaskToDagsterOperator" class="hash-link"></a></Link></dt>
+    <dd>
+
+    The default task proxying operator - which opens a blank session and expects the dagster URL to be set in the environment.
+    The dagster url is expected to be set in the environment as DAGSTER_URL.
+
+    This operator should not be instantiated directly - it is instantiated by [`proxying_to_dagster()`](#dagster_airlift.in_airflow.proxying_to_dagster) if no
+    override operator is provided.
+
+
+    </dd>
+
+</dl>
+</div>
+
+<div class="section" id="dag-level-proxying">
+#### DAG-level Proxying
+
+<dl>
+
+    <dt><Link class="anchor" id='dagster_airlift.in_airflow.BaseProxyDAGToDagsterOperator'>`class` dagster_airlift.in_airflow.BaseProxyDAGToDagsterOperator <a href='https://github.com/dagster-io/dagster/blob/master/docs/.tox/sphinx-mdx-local/lib/python3.12/site-packages/sphinx/ext/autodoc/mock.py#L68' className='source-link' target='_blank' rel='noopener noreferrer'>[source]</a><a href="#dagster_airlift.in_airflow.BaseProxyDAGToDagsterOperator" class="hash-link"></a></Link></dt>
+    <dd>
+
+    An operator base class that proxies the entire DAG’s execution to Dagster assets with
+    metadata that map to the DAG id used by this task.
+
+    For the Dag ID that this operator proxies, it expects there to be corresponding assets
+    in the linked Dagster deployment that have metadata entries with the key <cite>dagster-airlift/dag-mapping</cite> that
+    map to this Dag ID. This metadata is typically set using the
+    [`dagster_airlift.core.assets_with_dag_mappings()`](#dagster_airlift.core.assets_with_dag_mappings) function.
+
+    The following methods must be implemented by subclasses:
+
+    >
+
+      - `get_dagster_session()` (inherited from [`BaseDagsterAssetsOperator`](#dagster_airlift.in_airflow.BaseDagsterAssetsOperator))
+      - `get_dagster_url()` (inherited from [`BaseDagsterAssetsOperator`](#dagster_airlift.in_airflow.BaseDagsterAssetsOperator))
+      - `build_from_dag()` A class method which takes the DAG to be proxied, and constructs
+
+There is a default implementation of this operator, [`DefaultProxyDAGToDagsterOperator`](#dagster_airlift.in_airflow.DefaultProxyDAGToDagsterOperator),
+which is used by [`proxying_to_dagster()`](#dagster_airlift.in_airflow.proxying_to_dagster) if no override operator is provided.
+
+</dd>
+
+</dl>
+<dl>
+    <dt><Link class="anchor" id='dagster_airlift.in_airflow.DefaultProxyDAGToDagsterOperator'>`class` dagster_airlift.in_airflow.DefaultProxyDAGToDagsterOperator <a href='https://github.com/dagster-io/dagster/blob/master/docs/.tox/sphinx-mdx-local/lib/python3.12/site-packages/sphinx/ext/autodoc/mock.py#L68' className='source-link' target='_blank' rel='noopener noreferrer'>[source]</a><a href="#dagster_airlift.in_airflow.DefaultProxyDAGToDagsterOperator" class="hash-link"></a></Link></dt>
+    <dd>
+
+    The default task proxying operator - which opens a blank session and expects the dagster URL to be set in the environment.
+    The dagster url is expected to be set in the environment as DAGSTER_URL.
+
+    This operator should not be instantiated directly - it is instantiated by [`proxying_to_dagster()`](#dagster_airlift.in_airflow.proxying_to_dagster) if no
+    override operator is provided.
+
+
+    </dd>
+
+</dl>
+</div></div></div></div>

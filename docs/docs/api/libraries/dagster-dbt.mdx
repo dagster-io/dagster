@@ -1,0 +1,2192 @@
+---
+title: 'dbt (dagster-dbt)'
+title_meta: 'dbt (dagster-dbt) API Documentation - Build Better Data Pipelines | Python Reference Documentation for Dagster'
+description: 'dbt (dagster-dbt) Dagster API | Comprehensive Python API documentation for Dagster, the data orchestration platform. Learn how to build, test, and maintain data pipelines with our detailed guides and examples.'
+last_update:
+  date: '2025-12-05'
+custom_edit_url: null
+---
+
+<div class="section" id="dbt-dagster-dbt">
+
+# dbt (dagster-dbt)
+
+Dagster orchestrates [dbt](https://www.getdbt.com/) alongside other technologies, so you can combine dbt with Spark, Python,
+and other tools in a single workflow. Dagster’s software-defined asset abstractions make it simple to define
+data assets that depend on specific dbt models, or define the computation required to compute
+the sources that your dbt models depend on.
+
+For more information on using the dbt and dbt Cloud integrations, see the [Dagster & dbt](https://docs.dagster.io/integrations/libraries/dbt) and
+[Dagster & dbt Cloud](https://docs.dagster.io/integrations/libraries/dbt/dbt-cloud) docs.
+
+<div class="section" id="dbtprojectcomponent">
+
+## DbtProjectComponent
+
+<dl>
+    <dt><Link class="anchor" id='dagster_dbt.DbtProjectComponent'>`class` dagster_dbt.DbtProjectComponent <a href='https://github.com/dagster-io/dagster/blob/master/python_modules/libraries/dagster-dbt/dagster_dbt/components/dbt_project/component.py#L106' className='source-link' target='_blank' rel='noopener noreferrer'>[source]</a><a href="#dagster_dbt.DbtProjectComponent" class="hash-link"></a></Link></dt>
+    <dd>
+
+    Expose a DBT project to Dagster as a set of assets.
+
+    This component assumes that you have already set up a dbt project, for example, the dbt [Jaffle shop](https://github.com/dbt-labs/jaffle-shop). Run <cite>git clone –depth=1 https://github.com/dbt-labs/jaffle-shop.git jaffle_shop && rm -rf jaffle_shop/.git</cite> to copy that project
+    into your Dagster project directory.
+
+    Scaffold a DbtProjectComponent definition by running <cite>dg scaffold defs dagster_dbt.DbtProjectComponent –project-path path/to/your/existing/dbt_project</cite>
+    in the Dagster project directory.
+
+
+
+    Example:
+
+        ```yaml
+        # defs.yaml
+
+        type: dagster_dbt.DbtProjectComponent
+        attributes:
+          project: "{{ project_root }}/path/to/dbt_project"
+          cli_args:
+            - build
+        ```
+    <dl>
+        <dt><Link class="anchor" id='dagster_dbt.DbtProjectComponent.execute'>execute <a href='https://github.com/dagster-io/dagster/blob/master/python_modules/libraries/dagster-dbt/dagster_dbt/components/dbt_project/component.py#L458' className='source-link' target='_blank' rel='noopener noreferrer'>[source]</a><a href="#dagster_dbt.DbtProjectComponent.execute" class="hash-link"></a></Link></dt>
+        <dd>
+
+        Executes the dbt command for the selected assets.
+
+        This method can be overridden in a subclass to customize the execution behavior,
+        such as adding custom logging, modifying CLI arguments, or handling events differently.
+
+        Parameters:
+          - <strong>context</strong> – The asset execution context provided by Dagster
+          - <strong>dbt</strong> – The DbtCliResource used to execute dbt commands
+
+
+        Yields: Events from the dbt CLI execution (e.g., AssetMaterialization, AssetObservation)
+
+
+        Example:
+
+        Override this method to add custom logging before and after execution:
+
+            ```python
+            from dagster_dbt import DbtProjectComponent
+            import dagster as dg
+
+            class CustomDbtProjectComponent(DbtProjectComponent):
+                def execute(self, context, dbt):
+                    context.log.info("Starting custom dbt execution")
+                    yield from super().execute(context, dbt)
+                    context.log.info("Completed custom dbt execution")
+            ```
+
+        </dd>
+
+    </dl>
+    <dl>
+        <dt><Link class="anchor" id='dagster_dbt.DbtProjectComponent.get_asset_spec'>get_asset_spec <a href='https://github.com/dagster-io/dagster/blob/master/python_modules/libraries/dagster-dbt/dagster_dbt/components/dbt_project/component.py#L303' className='source-link' target='_blank' rel='noopener noreferrer'>[source]</a><a href="#dagster_dbt.DbtProjectComponent.get_asset_spec" class="hash-link"></a></Link></dt>
+        <dd>
+
+        Generates an AssetSpec for a given dbt node.
+
+        This method can be overridden in a subclass to customize how dbt nodes are converted
+        to Dagster asset specs. By default, it delegates to the configured DagsterDbtTranslator.
+
+        Parameters:
+          - <strong>manifest</strong> – The dbt manifest dictionary containing information about all dbt nodes
+          - <strong>unique_id</strong> – The unique identifier for the dbt node (e.g., “model.my_project.my_model”)
+          - <strong>project</strong> – The DbtProject object, if available
+
+
+        Returns: An AssetSpec that represents the dbt node as a Dagster asset
+
+
+        Example:
+
+        Override this method to add custom tags to all dbt models:
+
+            ```python
+            from dagster_dbt import DbtProjectComponent
+            import dagster as dg
+
+            class CustomDbtProjectComponent(DbtProjectComponent):
+                def get_asset_spec(self, manifest, unique_id, project):
+                    base_spec = super().get_asset_spec(manifest, unique_id, project)
+                    return base_spec.replace_attributes(
+                        tags={**base_spec.tags, "custom_tag": "my_value"}
+                    )
+            ```
+
+        </dd>
+
+    </dl>
+
+    </dd>
+
+</dl>
+To use the dbt component, see the [dbt component integration guide](https://docs.dagster.io/integrations/libraries/dbt).
+
+<div class="section" id="component-yaml">
+
+### Component YAML
+
+When you scaffold a dbt component definition, the following `defs.yaml` configuration file will be created:
+
+    ```yaml
+    type: dagster_dbt.DbtProjectComponent
+
+    attributes:
+      project: '{{ context.project_root }}/dbt'
+    ```
+
+</div></div>
+
+<div class="section" id="id1">
+
+## dagster-dbt
+
+<div class="section" id="dagster-dbt-project">
+
+### dagster-dbt project
+
+Commands for using a dbt project in Dagster.
+
+    ```shell
+    dagster-dbt project [OPTIONS] COMMAND [ARGS]...
+    ```
+
+<div class="section" id="dagster-dbt-project-prepare-and-package">
+
+#### prepare-and-package
+
+This command will invoke `prepare_and_package` on [`DbtProject`](#dagster_dbt.DbtProject) found in the target module or file.
+Note that this command runs <cite>dbt deps</cite> and <cite>dbt parse</cite>.
+
+    ```shell
+    dagster-dbt project prepare-and-package [OPTIONS]
+    ```
+
+Options:
+
+<dl>
+    <dt><Link class="anchor" id='cmdoption-dagster-dbt-project-prepare-and-package-file'>--file \<file><a href="#cmdoption-dagster-dbt-project-prepare-and-package-file" class="hash-link"></a></Link></dt>
+    <dd>
+    The file containing DbtProject definitions to prepare.
+    </dd>
+
+</dl>
+<dl>
+    <dt><Link class="anchor" id='cmdoption-dagster-dbt-project-prepare-and-package-components'>--components \<components><a href="#cmdoption-dagster-dbt-project-prepare-and-package-components" class="hash-link"></a></Link></dt>
+    <dd>
+    The path to a dg project directory containing DbtProjectComponents.
+    </dd>
+
+</dl>
+</div>
+
+<div class="section" id="dagster-dbt-project-scaffold">
+
+#### scaffold
+
+This command will initialize a new Dagster project and create directories and files that
+load assets from an existing dbt project.
+
+    ```shell
+    dagster-dbt project scaffold [OPTIONS]
+    ```
+
+Options:
+
+<dl>
+    <dt><Link class="anchor" id='cmdoption-dagster-dbt-project-scaffold-project-name'>--project-name \<project_name><a href="#cmdoption-dagster-dbt-project-scaffold-project-name" class="hash-link"></a></Link></dt>
+    <dd>
+    <strong>Required</strong> The name of the Dagster project to initialize for your dbt project.
+    </dd>
+
+</dl>
+<dl>
+    <dt><Link class="anchor" id='cmdoption-dagster-dbt-project-scaffold-dbt-project-dir'>--dbt-project-dir \<dbt_project_dir><a href="#cmdoption-dagster-dbt-project-scaffold-dbt-project-dir" class="hash-link"></a></Link></dt>
+    <dd>
+    The path of your dbt project directory. This path must contain a dbt_project.yml file. By default, this command will assume that the current working directory contains a dbt project, but you can set a different directory by setting this option.
+    </dd>
+
+</dl>
+</div></div></div>
+
+<div class="section" id="dbt-core">
+
+## dbt Core
+
+Here, we provide interfaces to manage dbt projects invoked by the local dbt command line interface
+(dbt CLI).
+
+<div class="section" id="assets-dbt-core">
+
+### Assets (dbt Core)
+
+<dl>
+    <dt><Link class="anchor" id='dagster_dbt.dbt_assets'>@dagster_dbt.dbt_assets <a href='https://github.com/dagster-io/dagster/blob/master/python_modules/libraries/dagster-dbt/dagster_dbt/asset_decorator.py#L29' className='source-link' target='_blank' rel='noopener noreferrer'>[source]</a><a href="#dagster_dbt.dbt_assets" class="hash-link"></a></Link></dt>
+    <dd>
+
+    Create a definition for how to compute a set of dbt resources, described by a manifest.json.
+    When invoking dbt commands using [`DbtCliResource`](#dagster_dbt.DbtCliResource)’s
+    [`cli()`](#dagster_dbt.DbtCliResource.cli) method, Dagster events are emitted by calling
+    `yield from` on the event stream returned by [`stream()`](#dagster_dbt.DbtCliInvocation.stream).
+
+    Parameters:
+      - <strong>manifest</strong> (<em>Union</em><em>[</em><em>Mapping</em><em>[</em><em>str</em><em>, </em><em>Any</em><em>]</em><em>, </em><em>str</em><em>, </em><em>Path</em><em>]</em>) – The contents of a manifest.json file or the path to a manifest.json file. A manifest.json contains a representation of a dbt project (models, tests, macros, etc). We use this representation to create corresponding Dagster assets.
+      - <strong>select</strong> (<em>str</em>) – A dbt selection string for the models in a project that you want to include. Defaults to `fqn:*`.
+      - <strong>exclude</strong> (<em>Optional</em><em>[</em><em>str</em><em>]</em>) – A dbt selection string for the models in a project that you want to exclude. Defaults to “”.
+      - <strong>selector</strong> (<em>Optional</em><em>[</em><em>str</em><em>]</em>) – A dbt selector for the models in a project that you want to include. Cannot be combined with select or exclude. Defaults to None.
+      - <strong>name</strong> (<em>Optional</em><em>[</em><em>str</em><em>]</em>) – The name of the op.
+      - <strong>io_manager_key</strong> (<em>Optional</em><em>[</em><em>str</em><em>]</em>) – The IO manager key that will be set on each of the returned assets. When other ops are downstream of the loaded assets, the IOManager specified here determines how the inputs to those ops are loaded. Defaults to “io_manager”.
+      - <strong>partitions_def</strong> (<em>Optional</em><em>[</em>[*PartitionsDefinition*](../dagster/partitions.mdx#dagster.PartitionsDefinition)<em>]</em>) – Defines the set of partition keys that compose the dbt assets.
+      - <strong>dagster_dbt_translator</strong> (<em>Optional</em><em>[</em>[*DagsterDbtTranslator*](#dagster_dbt.DagsterDbtTranslator)<em>]</em>) – Allows customizing how to map dbt models, seeds, etc. to asset keys and asset metadata.
+      - <strong>backfill_policy</strong> (<em>Optional</em><em>[</em>[*BackfillPolicy*](../dagster/partitions.mdx#dagster.BackfillPolicy)<em>]</em>) – If a partitions_def is defined, this determines how to execute backfills that target multiple partitions. If a time window partition definition is used, this parameter defaults to a single-run policy.
+      - <strong>op_tags</strong> (<em>Optional</em><em>[</em><em>Dict</em><em>[</em><em>str</em><em>, </em><em>Any</em><em>]</em><em>]</em>) – A dictionary of tags for the op that computes the assets. Frameworks may expect and require certain metadata to be attached to a op. Values that are not strings will be json encoded and must meet the criteria that <cite>json.loads(json.dumps(value)) == value</cite>.
+      - <strong>required_resource_keys</strong> (<em>Optional</em><em>[</em><em>Set</em><em>[</em><em>str</em><em>]</em><em>]</em>) – Set of required resource handles.
+      - <strong>project</strong> (<em>Optional</em><em>[</em>[*DbtProject*](#dagster_dbt.DbtProject)<em>]</em>) – A DbtProject instance which provides a pointer to the dbt project location and manifest. Not required, but needed to attach code references from model code to Dagster assets.
+      - <strong>retry_policy</strong> (<em>Optional</em><em>[</em>[*RetryPolicy*](../dagster/ops.mdx#dagster.RetryPolicy)<em>]</em>) – The retry policy for the op that computes the asset.
+      - <strong>pool</strong> (<em>Optional</em><em>[</em><em>str</em><em>]</em>) – A string that identifies the concurrency pool that governs the dbt assets’ execution.
+
+
+
+
+    Examples:
+
+    Running `dbt build` for a dbt project:
+
+        ```python
+        from pathlib import Path
+
+        from dagster import AssetExecutionContext
+        from dagster_dbt import DbtCliResource, dbt_assets
+
+
+        @dbt_assets(manifest=Path("target", "manifest.json"))
+        def my_dbt_assets(context: AssetExecutionContext, dbt: DbtCliResource):
+            yield from dbt.cli(["build"], context=context).stream()
+        ```
+    Running dbt commands with flags:
+
+        ```python
+        from pathlib import Path
+
+        from dagster import AssetExecutionContext
+        from dagster_dbt import DbtCliResource, dbt_assets
+
+
+        @dbt_assets(manifest=Path("target", "manifest.json"))
+        def my_dbt_assets(context: AssetExecutionContext, dbt: DbtCliResource):
+            yield from dbt.cli(["build", "--full-refresh"], context=context).stream()
+        ```
+    Running dbt commands with `--vars`:
+
+        ```python
+        import json
+        from pathlib import Path
+
+        from dagster import AssetExecutionContext
+        from dagster_dbt import DbtCliResource, dbt_assets
+
+
+        @dbt_assets(manifest=Path("target", "manifest.json"))
+        def my_dbt_assets(context: AssetExecutionContext, dbt: DbtCliResource):
+            dbt_vars = {"key": "value"}
+
+            yield from dbt.cli(["build", "--vars", json.dumps(dbt_vars)], context=context).stream()
+        ```
+    Retrieving dbt artifacts after running a dbt command:
+
+        ```python
+        from pathlib import Path
+
+        from dagster import AssetExecutionContext
+        from dagster_dbt import DbtCliResource, dbt_assets
+
+
+        @dbt_assets(manifest=Path("target", "manifest.json"))
+        def my_dbt_assets(context: AssetExecutionContext, dbt: DbtCliResource):
+            dbt_build_invocation = dbt.cli(["build"], context=context)
+
+            yield from dbt_build_invocation.stream()
+
+            run_results_json = dbt_build_invocation.get_artifact("run_results.json")
+        ```
+    Running multiple dbt commands for a dbt project:
+
+        ```python
+        from pathlib import Path
+
+        from dagster import AssetExecutionContext
+        from dagster_dbt import DbtCliResource, dbt_assets
+
+
+        @dbt_assets(manifest=Path("target", "manifest.json"))
+        def my_dbt_assets(context: AssetExecutionContext, dbt: DbtCliResource):
+            yield from dbt.cli(["run"], context=context).stream()
+            yield from dbt.cli(["test"], context=context).stream()
+        ```
+    Accessing the dbt event stream alongside the Dagster event stream:
+
+        ```python
+        from pathlib import Path
+
+        from dagster import AssetExecutionContext
+        from dagster_dbt import DbtCliResource, dbt_assets
+
+
+        @dbt_assets(manifest=Path("target", "manifest.json"))
+        def my_dbt_assets(context: AssetExecutionContext, dbt: DbtCliResource):
+            dbt_cli_invocation = dbt.cli(["build"], context=context)
+
+            # Each dbt event is structured: https://docs.getdbt.com/reference/events-logging
+            for dbt_event in dbt_invocation.stream_raw_events():
+                for dagster_event in dbt_event.to_default_asset_events(
+                    manifest=dbt_invocation.manifest,
+                    dagster_dbt_translator=dbt_invocation.dagster_dbt_translator,
+                    context=dbt_invocation.context,
+                    target_path=dbt_invocation.target_path,
+                ):
+                    # Manipulate `dbt_event`
+                    ...
+
+                    # Then yield the Dagster event
+                    yield dagster_event
+        ```
+    Customizing the Dagster asset definition metadata inferred from a dbt project using [`DagsterDbtTranslator`](#dagster_dbt.DagsterDbtTranslator):
+
+        ```python
+        from pathlib import Path
+
+        from dagster import AssetExecutionContext
+        from dagster_dbt import DagsterDbtTranslator, DbtCliResource, dbt_assets
+
+
+        class CustomDagsterDbtTranslator(DagsterDbtTranslator):
+            ...
+
+
+        @dbt_assets(
+            manifest=Path("target", "manifest.json"),
+            dagster_dbt_translator=CustomDagsterDbtTranslator(),
+        )
+        def my_dbt_assets(context: AssetExecutionContext, dbt: DbtCliResource):
+            yield from dbt.cli(["build"], context=context).stream()
+        ```
+    Using a custom resource key for dbt:
+
+        ```python
+        from pathlib import Path
+
+        from dagster import AssetExecutionContext
+        from dagster_dbt import DbtCliResource, dbt_assets
+
+
+        @dbt_assets(manifest=Path("target", "manifest.json"))
+        def my_dbt_assets(context: AssetExecutionContext, my_custom_dbt_resource_key: DbtCliResource):
+            yield from my_custom_dbt_resource_key.cli(["build"], context=context).stream()
+        ```
+    Using a dynamically generated resource key for dbt using <cite>required_resource_keys</cite>:
+
+        ```python
+        from pathlib import Path
+
+        from dagster import AssetExecutionContext
+        from dagster_dbt import DbtCliResource, dbt_assets
+
+
+        dbt_resource_key = "my_custom_dbt_resource_key"
+
+        @dbt_assets(manifest=Path("target", "manifest.json"), required_resource_keys={my_custom_dbt_resource_key})
+        def my_dbt_assets(context: AssetExecutionContext):
+            dbt = getattr(context.resources, dbt_resource_key)
+            yield from dbt.cli(["build"], context=context).stream()
+        ```
+    Invoking another Dagster [`ResourceDefinition`](../dagster/resources.mdx#dagster.ResourceDefinition) alongside dbt:
+
+        ```python
+        from pathlib import Path
+
+        from dagster import AssetExecutionContext
+        from dagster_dbt import DbtCliResource, dbt_assets
+        from dagster_slack import SlackResource
+
+
+        @dbt_assets(manifest=Path("target", "manifest.json"))
+        def my_dbt_assets(context: AssetExecutionContext, dbt: DbtCliResource, slack: SlackResource):
+            yield from dbt.cli(["build"], context=context).stream()
+
+            slack_client = slack.get_client()
+            slack_client.chat_postMessage(channel="#my-channel", text="dbt build succeeded!")
+        ```
+    Defining and accessing Dagster [`Config`](../dagster/config.mdx#dagster.Config) alongside dbt:
+
+        ```python
+        from pathlib import Path
+
+        from dagster import AssetExecutionContext, Config
+        from dagster_dbt import DbtCliResource, dbt_assets
+
+
+        class MyDbtConfig(Config):
+            full_refresh: bool
+
+
+        @dbt_assets(manifest=Path("target", "manifest.json"))
+        def my_dbt_assets(context: AssetExecutionContext, dbt: DbtCliResource, config: MyDbtConfig):
+            dbt_build_args = ["build"]
+            if config.full_refresh:
+                dbt_build_args += ["--full-refresh"]
+
+            yield from dbt.cli(dbt_build_args, context=context).stream()
+        ```
+    Defining Dagster `PartitionDefinition` alongside dbt:
+
+        ```python
+        import json
+        from pathlib import Path
+
+        from dagster import AssetExecutionContext, DailyPartitionDefinition
+        from dagster_dbt import DbtCliResource, dbt_assets
+
+
+        @dbt_assets(
+            manifest=Path("target", "manifest.json"),
+            partitions_def=DailyPartitionsDefinition(start_date="2023-01-01")
+        )
+        def partitionshop_dbt_assets(context: AssetExecutionContext, dbt: DbtCliResource):
+            time_window = context.partition_time_window
+
+            dbt_vars = {
+                "min_date": time_window.start.isoformat(),
+                "max_date": time_window.end.isoformat()
+            }
+            dbt_build_args = ["build", "--vars", json.dumps(dbt_vars)]
+
+            yield from dbt.cli(dbt_build_args, context=context).stream()
+        ```
+
+    </dd>
+
+</dl>
+<dl>
+    <dt><Link class="anchor" id='dagster_dbt.DagsterDbtTranslator'>`class` dagster_dbt.DagsterDbtTranslator <a href='https://github.com/dagster-io/dagster/blob/master/python_modules/libraries/dagster-dbt/dagster_dbt/dagster_dbt_translator.py#L74' className='source-link' target='_blank' rel='noopener noreferrer'>[source]</a><a href="#dagster_dbt.DagsterDbtTranslator" class="hash-link"></a></Link></dt>
+    <dd>
+
+    Holds a set of methods that derive Dagster asset definition metadata given a representation
+    of a dbt resource (models, tests, sources, etc).
+
+    This class is exposed so that methods can be overriden to customize how Dagster asset metadata
+    is derived.
+
+    <dl>
+        <dt><Link class="anchor" id='dagster_dbt.DagsterDbtTranslator.get_asset_key'>get_asset_key <a href='https://github.com/dagster-io/dagster/blob/master/python_modules/libraries/dagster-dbt/dagster_dbt/dagster_dbt_translator.py#L236' className='source-link' target='_blank' rel='noopener noreferrer'>[source]</a><a href="#dagster_dbt.DagsterDbtTranslator.get_asset_key" class="hash-link"></a></Link></dt>
+        <dd>
+
+        A function that takes a dictionary representing properties of a dbt resource, and
+        returns the Dagster asset key that represents that resource.
+
+        Note that a dbt resource is unrelated to Dagster’s resource concept, and simply represents
+        a model, seed, snapshot or source in a given dbt project. You can learn more about dbt
+        resources and the properties available in this dictionary here:
+        [https://docs.getdbt.com/reference/artifacts/manifest-json#resource-details](https://docs.getdbt.com/reference/artifacts/manifest-json#resource-details)
+
+        This method can be overridden to provide a custom asset key for a dbt resource.
+
+        Parameters: <strong>dbt_resource_props</strong> (<em>Mapping</em><em>[</em><em>str</em><em>, </em><em>Any</em><em>]</em>) – A dictionary representing the dbt resource.Returns: The Dagster asset key for the dbt resource.Return type: [AssetKey](../dagster/assets.mdx#dagster.AssetKey)
+
+
+        Examples:
+
+        Adding a prefix to the default asset key generated for each dbt resource:
+
+            ```python
+            from typing import Any, Mapping
+
+            from dagster import AssetKey
+            from dagster_dbt import DagsterDbtTranslator
+
+
+            class CustomDagsterDbtTranslator(DagsterDbtTranslator):
+                def get_asset_key(self, dbt_resource_props: Mapping[str, Any]) -> AssetKey:
+                    return super().get_asset_key(dbt_resource_props).with_prefix("prefix")
+            ```
+        Adding a prefix to the default asset key generated for each dbt resource, but only for dbt sources:
+
+            ```python
+            from typing import Any, Mapping
+
+            from dagster import AssetKey
+            from dagster_dbt import DagsterDbtTranslator
+
+
+            class CustomDagsterDbtTranslator(DagsterDbtTranslator):
+                def get_asset_key(self, dbt_resource_props: Mapping[str, Any]) -> AssetKey:
+                    asset_key = super().get_asset_key(dbt_resource_props)
+
+                    if dbt_resource_props["resource_type"] == "source":
+                        asset_key = asset_key.with_prefix("my_prefix")
+
+                    return asset_key
+            ```
+
+        </dd>
+
+    </dl>
+    <dl>
+        <dt><Link class="anchor" id='dagster_dbt.DagsterDbtTranslator.get_auto_materialize_policy'>get_auto_materialize_policy <a href='https://github.com/dagster-io/dagster/blob/master/python_modules/libraries/dagster-dbt/dagster_dbt/dagster_dbt_translator.py#L521' className='source-link' target='_blank' rel='noopener noreferrer'>[source]</a><a href="#dagster_dbt.DagsterDbtTranslator.get_auto_materialize_policy" class="hash-link"></a></Link></dt>
+        <dd>
+
+            :::info[beta]
+            This API is currently in beta, and may have breaking changes in minor version releases, with behavior changes in patch releases.
+
+
+            :::
+
+        A function that takes a dictionary representing properties of a dbt resource, and
+        returns the Dagster `dagster.AutoMaterializePolicy` for that resource.
+
+        Note that a dbt resource is unrelated to Dagster’s resource concept, and simply represents
+        a model, seed, snapshot or source in a given dbt project. You can learn more about dbt
+        resources and the properties available in this dictionary here:
+        [https://docs.getdbt.com/reference/artifacts/manifest-json#resource-details](https://docs.getdbt.com/reference/artifacts/manifest-json#resource-details)
+
+        This method can be overridden to provide a custom auto-materialize policy for a dbt resource.
+
+        Parameters: <strong>dbt_resource_props</strong> (<em>Mapping</em><em>[</em><em>str</em><em>, </em><em>Any</em><em>]</em>) – A dictionary representing the dbt resource.Returns: A Dagster auto-materialize policy.Return type: Optional[AutoMaterializePolicy]
+
+
+        Examples:
+
+        Set a custom auto-materialize policy for all dbt resources:
+
+            ```python
+            from typing import Any, Mapping
+
+            from dagster_dbt import DagsterDbtTranslator
+
+
+            class CustomDagsterDbtTranslator(DagsterDbtTranslator):
+                def get_auto_materialize_policy(self, dbt_resource_props: Mapping[str, Any]) -> Optional[AutoMaterializePolicy]:
+                    return AutoMaterializePolicy.eager()
+            ```
+        Set a custom auto-materialize policy for dbt resources with a specific tag:
+
+            ```python
+            from typing import Any, Mapping
+
+            from dagster_dbt import DagsterDbtTranslator
+
+
+            class CustomDagsterDbtTranslator(DagsterDbtTranslator):
+                def get_auto_materialize_policy(self, dbt_resource_props: Mapping[str, Any]) -> Optional[AutoMaterializePolicy]:
+                    auto_materialize_policy = None
+                    if "my_custom_tag" in dbt_resource_props.get("tags", []):
+                        auto_materialize_policy = AutoMaterializePolicy.eager()
+
+                    return auto_materialize_policy
+            ```
+
+        </dd>
+
+    </dl>
+    <dl>
+        <dt><Link class="anchor" id='dagster_dbt.DagsterDbtTranslator.get_automation_condition'>get_automation_condition <a href='https://github.com/dagster-io/dagster/blob/master/python_modules/libraries/dagster-dbt/dagster_dbt/dagster_dbt_translator.py#L576' className='source-link' target='_blank' rel='noopener noreferrer'>[source]</a><a href="#dagster_dbt.DagsterDbtTranslator.get_automation_condition" class="hash-link"></a></Link></dt>
+        <dd>
+
+            :::info[beta]
+            This API is currently in beta, and may have breaking changes in minor version releases, with behavior changes in patch releases.
+
+
+            :::
+
+        A function that takes a dictionary representing properties of a dbt resource, and
+        returns the Dagster `dagster.AutoMaterializePolicy` for that resource.
+
+        Note that a dbt resource is unrelated to Dagster’s resource concept, and simply represents
+        a model, seed, snapshot or source in a given dbt project. You can learn more about dbt
+        resources and the properties available in this dictionary here:
+        [https://docs.getdbt.com/reference/artifacts/manifest-json#resource-details](https://docs.getdbt.com/reference/artifacts/manifest-json#resource-details)
+
+        This method can be overridden to provide a custom AutomationCondition for a dbt resource.
+
+        Parameters: <strong>dbt_resource_props</strong> (<em>Mapping</em><em>[</em><em>str</em><em>, </em><em>Any</em><em>]</em>) – A dictionary representing the dbt resource.Returns: A Dagster auto-materialize policy.Return type: Optional[AutoMaterializePolicy]
+
+
+        Examples:
+
+        Set a custom AutomationCondition for all dbt resources:
+
+            ```python
+            from typing import Any, Mapping
+
+            from dagster_dbt import DagsterDbtTranslator
+
+
+            class CustomDagsterDbtTranslator(DagsterDbtTranslator):
+                def get_automation_condition(self, dbt_resource_props: Mapping[str, Any]) -> Optional[AutomationCondition]:
+                    return AutomationCondition.eager()
+            ```
+        Set a custom AutomationCondition for dbt resources with a specific tag:
+
+            ```python
+            from typing import Any, Mapping
+
+            from dagster_dbt import DagsterDbtTranslator
+
+
+            class CustomDagsterDbtTranslator(DagsterDbtTranslator):
+                def get_automation_condition(self, dbt_resource_props: Mapping[str, Any]) -> Optional[AutomationCondition]:
+                    automation_condition = None
+                    if "my_custom_tag" in dbt_resource_props.get("tags", []):
+                        automation_condition = AutomationCondition.eager()
+
+                    return automation_condition
+            ```
+
+        </dd>
+
+    </dl>
+    <dl>
+        <dt><Link class="anchor" id='dagster_dbt.DagsterDbtTranslator.get_code_version'>get_code_version <a href='https://github.com/dagster-io/dagster/blob/master/python_modules/libraries/dagster-dbt/dagster_dbt/dagster_dbt_translator.py#L457' className='source-link' target='_blank' rel='noopener noreferrer'>[source]</a><a href="#dagster_dbt.DagsterDbtTranslator.get_code_version" class="hash-link"></a></Link></dt>
+        <dd>
+
+        A function that takes a dictionary representing properties of a dbt resource, and
+        returns the Dagster code version for that resource.
+
+        Note that a dbt resource is unrelated to Dagster’s resource concept, and simply represents
+        a model, seed, snapshot or source in a given dbt project. You can learn more about dbt
+        resources and the properties available in this dictionary here:
+        [https://docs.getdbt.com/reference/artifacts/manifest-json#resource-details](https://docs.getdbt.com/reference/artifacts/manifest-json#resource-details)
+
+        This method can be overridden to provide a custom code version for a dbt resource.
+
+        Parameters: <strong>dbt_resource_props</strong> (<em>Mapping</em><em>[</em><em>str</em><em>, </em><em>Any</em><em>]</em>) – A dictionary representing the dbt resource.Returns: A Dagster code version.Return type: Optional[str]
+
+
+        Examples:
+
+            ```python
+            from typing import Any, Mapping
+
+            from dagster_dbt import DagsterDbtTranslator
+
+
+            class CustomDagsterDbtTranslator(DagsterDbtTranslator):
+                def get_code_version(self, dbt_resource_props: Mapping[str, Any]) -> Optional[str]:
+                    return dbt_resource_props["checksum"]["checksum"]
+            ```
+
+        </dd>
+
+    </dl>
+    <dl>
+        <dt><Link class="anchor" id='dagster_dbt.DagsterDbtTranslator.get_description'>get_description <a href='https://github.com/dagster-io/dagster/blob/master/python_modules/libraries/dagster-dbt/dagster_dbt/dagster_dbt_translator.py#L321' className='source-link' target='_blank' rel='noopener noreferrer'>[source]</a><a href="#dagster_dbt.DagsterDbtTranslator.get_description" class="hash-link"></a></Link></dt>
+        <dd>
+
+        A function that takes a dictionary representing properties of a dbt resource, and
+        returns the Dagster description for that resource.
+
+        Note that a dbt resource is unrelated to Dagster’s resource concept, and simply represents
+        a model, seed, snapshot or source in a given dbt project. You can learn more about dbt
+        resources and the properties available in this dictionary here:
+        [https://docs.getdbt.com/reference/artifacts/manifest-json#resource-details](https://docs.getdbt.com/reference/artifacts/manifest-json#resource-details)
+
+        This method can be overridden to provide a custom description for a dbt resource.
+
+        Parameters: <strong>dbt_resource_props</strong> (<em>Mapping</em><em>[</em><em>str</em><em>, </em><em>Any</em><em>]</em>) – A dictionary representing the dbt resource.Returns: The description for the dbt resource.Return type: str
+
+
+        Examples:
+
+            ```python
+            from typing import Any, Mapping
+
+            from dagster_dbt import DagsterDbtTranslator
+
+
+            class CustomDagsterDbtTranslator(DagsterDbtTranslator):
+                def get_description(self, dbt_resource_props: Mapping[str, Any]) -> str:
+                    return "custom description"
+            ```
+
+        </dd>
+
+    </dl>
+    <dl>
+        <dt><Link class="anchor" id='dagster_dbt.DagsterDbtTranslator.get_group_name'>get_group_name <a href='https://github.com/dagster-io/dagster/blob/master/python_modules/libraries/dagster-dbt/dagster_dbt/dagster_dbt_translator.py#L425' className='source-link' target='_blank' rel='noopener noreferrer'>[source]</a><a href="#dagster_dbt.DagsterDbtTranslator.get_group_name" class="hash-link"></a></Link></dt>
+        <dd>
+
+        A function that takes a dictionary representing properties of a dbt resource, and
+        returns the Dagster group name for that resource.
+
+        Note that a dbt resource is unrelated to Dagster’s resource concept, and simply represents
+        a model, seed, snapshot or source in a given dbt project. You can learn more about dbt
+        resources and the properties available in this dictionary here:
+        [https://docs.getdbt.com/reference/artifacts/manifest-json#resource-details](https://docs.getdbt.com/reference/artifacts/manifest-json#resource-details)
+
+        This method can be overridden to provide a custom group name for a dbt resource.
+
+        Parameters: <strong>dbt_resource_props</strong> (<em>Mapping</em><em>[</em><em>str</em><em>, </em><em>Any</em><em>]</em>) – A dictionary representing the dbt resource.Returns: A Dagster group name.Return type: Optional[str]
+
+
+        Examples:
+
+            ```python
+            from typing import Any, Mapping
+
+            from dagster_dbt import DagsterDbtTranslator
+
+
+            class CustomDagsterDbtTranslator(DagsterDbtTranslator):
+                def get_group_name(self, dbt_resource_props: Mapping[str, Any]) -> Optional[str]:
+                    return "custom_group_prefix" + dbt_resource_props.get("config", {}).get("group")
+            ```
+
+        </dd>
+
+    </dl>
+    <dl>
+        <dt><Link class="anchor" id='dagster_dbt.DagsterDbtTranslator.get_metadata'>get_metadata <a href='https://github.com/dagster-io/dagster/blob/master/python_modules/libraries/dagster-dbt/dagster_dbt/dagster_dbt_translator.py#L353' className='source-link' target='_blank' rel='noopener noreferrer'>[source]</a><a href="#dagster_dbt.DagsterDbtTranslator.get_metadata" class="hash-link"></a></Link></dt>
+        <dd>
+
+        A function that takes a dictionary representing properties of a dbt resource, and
+        returns the Dagster metadata for that resource.
+
+        Note that a dbt resource is unrelated to Dagster’s resource concept, and simply represents
+        a model, seed, snapshot or source in a given dbt project. You can learn more about dbt
+        resources and the properties available in this dictionary here:
+        [https://docs.getdbt.com/reference/artifacts/manifest-json#resource-details](https://docs.getdbt.com/reference/artifacts/manifest-json#resource-details)
+
+        This method can be overridden to provide a custom metadata for a dbt resource.
+
+        Parameters: <strong>dbt_resource_props</strong> (<em>Mapping</em><em>[</em><em>str</em><em>, </em><em>Any</em><em>]</em>) – A dictionary representing the dbt resource.Returns: A dictionary representing the Dagster metadata for the dbt resource.Return type: Mapping[str, Any]
+
+
+        Examples:
+
+            ```python
+            from typing import Any, Mapping
+
+            from dagster_dbt import DagsterDbtTranslator
+
+
+            class CustomDagsterDbtTranslator(DagsterDbtTranslator):
+                def get_metadata(self, dbt_resource_props: Mapping[str, Any]) -> Mapping[str, Any]:
+                    return {"custom": "metadata"}
+            ```
+
+        </dd>
+
+    </dl>
+    <dl>
+        <dt><Link class="anchor" id='dagster_dbt.DagsterDbtTranslator.get_owners'>get_owners <a href='https://github.com/dagster-io/dagster/blob/master/python_modules/libraries/dagster-dbt/dagster_dbt/dagster_dbt_translator.py#L489' className='source-link' target='_blank' rel='noopener noreferrer'>[source]</a><a href="#dagster_dbt.DagsterDbtTranslator.get_owners" class="hash-link"></a></Link></dt>
+        <dd>
+
+        A function that takes a dictionary representing properties of a dbt resource, and
+        returns the Dagster owners for that resource.
+
+        Note that a dbt resource is unrelated to Dagster’s resource concept, and simply represents
+        a model, seed, snapshot or source in a given dbt project. You can learn more about dbt
+        resources and the properties available in this dictionary here:
+        [https://docs.getdbt.com/reference/artifacts/manifest-json#resource-details](https://docs.getdbt.com/reference/artifacts/manifest-json#resource-details)
+
+        This method can be overridden to provide custom owners for a dbt resource.
+
+        Parameters: <strong>dbt_resource_props</strong> (<em>Mapping</em><em>[</em><em>str</em><em>, </em><em>Any</em><em>]</em>) – A dictionary representing the dbt resource.Returns: A set of Dagster owners.Return type: Optional[Sequence[str]]
+
+
+        Examples:
+
+            ```python
+            from typing import Any, Mapping
+
+            from dagster_dbt import DagsterDbtTranslator
+
+
+            class CustomDagsterDbtTranslator(DagsterDbtTranslator):
+                def get_owners(self, dbt_resource_props: Mapping[str, Any]) -> Optional[Sequence[str]]:
+                    return ["user@owner.com", "team:team@owner.com"]
+            ```
+
+        </dd>
+
+    </dl>
+    <dl>
+        <dt><Link class="anchor" id='dagster_dbt.DagsterDbtTranslator.get_partition_mapping'>get_partition_mapping <a href='https://github.com/dagster-io/dagster/blob/master/python_modules/libraries/dagster-dbt/dagster_dbt/dagster_dbt_translator.py#L290' className='source-link' target='_blank' rel='noopener noreferrer'>[source]</a><a href="#dagster_dbt.DagsterDbtTranslator.get_partition_mapping" class="hash-link"></a></Link></dt>
+        <dd>
+
+            :::info[beta]
+            This API is currently in beta, and may have breaking changes in minor version releases, with behavior changes in patch releases.
+
+
+            :::
+
+        A function that takes two dictionaries: the first, representing properties of a dbt
+        resource; and the second, representing the properties of a parent dependency to the first
+        dbt resource. The function returns the Dagster partition mapping for the dbt dependency.
+
+        Note that a dbt resource is unrelated to Dagster’s resource concept, and simply represents
+        a model, seed, snapshot or source in a given dbt project. You can learn more about dbt
+        resources and the properties available in this dictionary here:
+        [https://docs.getdbt.com/reference/artifacts/manifest-json#resource-details](https://docs.getdbt.com/reference/artifacts/manifest-json#resource-details)
+
+        This method can be overridden to provide a custom partition mapping for a dbt dependency.
+
+        Parameters:
+          - <strong>dbt_resource_props</strong> (<em>Mapping</em><em>[</em><em>str</em><em>, </em><em>Any</em><em>]</em>) – A dictionary representing the dbt child resource.
+          - <strong>dbt_parent_resource_props</strong> (<em>Mapping</em><em>[</em><em>str</em><em>, </em><em>Any</em><em>]</em>) – A dictionary representing the dbt parent resource, in relationship to the child.
+
+
+        Returns: The Dagster partition mapping for the dbt resource. If None is returned, the
+        default partition mapping will be used.Return type: Optional[[PartitionMapping](../dagster/partitions.mdx#dagster.PartitionMapping)]
+
+        </dd>
+
+    </dl>
+    <dl>
+        <dt><Link class="anchor" id='dagster_dbt.DagsterDbtTranslator.get_tags'>get_tags <a href='https://github.com/dagster-io/dagster/blob/master/python_modules/libraries/dagster-dbt/dagster_dbt/dagster_dbt_translator.py#L385' className='source-link' target='_blank' rel='noopener noreferrer'>[source]</a><a href="#dagster_dbt.DagsterDbtTranslator.get_tags" class="hash-link"></a></Link></dt>
+        <dd>
+
+        A function that takes a dictionary representing properties of a dbt resource, and
+        returns the Dagster tags for that resource.
+
+        Note that a dbt resource is unrelated to Dagster’s resource concept, and simply represents
+        a model, seed, snapshot or source in a given dbt project. You can learn more about dbt
+        resources and the properties available in this dictionary here:
+        [https://docs.getdbt.com/reference/artifacts/manifest-json#resource-details](https://docs.getdbt.com/reference/artifacts/manifest-json#resource-details)
+
+        dbt tags are strings, but Dagster tags are key-value pairs. To bridge this divide, the dbt
+        tag string is used as the Dagster tag key, and the Dagster tag value is set to the empty
+        string, “”.
+
+        Any dbt tags that don’t match Dagster’s supported tag key format (e.g. they contain
+        unsupported characters) will be ignored.
+
+        This method can be overridden to provide custom tags for a dbt resource.
+
+        Parameters: <strong>dbt_resource_props</strong> (<em>Mapping</em><em>[</em><em>str</em><em>, </em><em>Any</em><em>]</em>) – A dictionary representing the dbt resource.Returns: A dictionary representing the Dagster tags for the dbt resource.Return type: Mapping[str, str]
+
+
+        Examples:
+
+            ```python
+            from typing import Any, Mapping
+
+            from dagster_dbt import DagsterDbtTranslator
+
+
+            class CustomDagsterDbtTranslator(DagsterDbtTranslator):
+                def get_tags(self, dbt_resource_props: Mapping[str, Any]) -> Mapping[str, str]:
+                    return {"custom": "tag"}
+            ```
+
+        </dd>
+
+    </dl>
+
+    </dd>
+
+</dl>
+<dl>
+    <dt><Link class="anchor" id='dagster_dbt.DagsterDbtTranslatorSettings'>`class` dagster_dbt.DagsterDbtTranslatorSettings <a href='https://github.com/dagster-io/dagster/blob/master/python_modules/libraries/dagster-dbt/dagster_dbt/dagster_dbt_translator.py#L50' className='source-link' target='_blank' rel='noopener noreferrer'>[source]</a><a href="#dagster_dbt.DagsterDbtTranslatorSettings" class="hash-link"></a></Link></dt>
+    <dd>
+
+    Settings to enable Dagster features for your dbt project.
+
+    Parameters:
+      - <strong>enable_asset_checks</strong> (<em>bool</em>) – Whether to load dbt tests as Dagster asset checks. Defaults to True.
+      - <strong>enable_duplicate_source_asset_keys</strong> (<em>bool</em>) – Whether to allow dbt sources with duplicate Dagster asset keys. Defaults to False.
+      - <strong>enable_code_references</strong> (<em>bool</em>) – Whether to enable Dagster code references for dbt resources. Defaults to False.
+      - <strong>enable_dbt_selection_by_name</strong> (<em>bool</em>) – Whether to enable selecting dbt resources by name, rather than fully qualified name. Defaults to False.
+      - <strong>enable_source_tests_as_checks</strong> (<em>bool</em>) – Whether to load dbt source tests as Dagster asset checks. Defaults to False. If False, asset observations will be emitted for source tests.
+
+
+
+    </dd>
+
+</dl>
+<dl>
+    <dt><Link class="anchor" id='dagster_dbt.DbtManifestAssetSelection'>`class` dagster_dbt.DbtManifestAssetSelection <a href='https://github.com/dagster-io/dagster/blob/master/python_modules/libraries/dagster-dbt/dagster_dbt/dbt_manifest_asset_selection.py#L27' className='source-link' target='_blank' rel='noopener noreferrer'>[source]</a><a href="#dagster_dbt.DbtManifestAssetSelection" class="hash-link"></a></Link></dt>
+    <dd>
+
+    Defines a selection of assets from a dbt manifest wrapper and a dbt selection string.
+
+    Parameters:
+      - <strong>manifest</strong> (<em>Mapping</em><em>[</em><em>str</em><em>, </em><em>Any</em><em>]</em>) – The dbt manifest blob.
+      - <strong>select</strong> (<em>str</em>) – A dbt selection string to specify a set of dbt resources.
+      - <strong>exclude</strong> (<em>Optional</em><em>[</em><em>str</em><em>]</em>) – A dbt selection string to exclude a set of dbt resources.
+
+
+
+
+    Examples:
+
+        ```python
+        import json
+        from pathlib import Path
+
+        from dagster_dbt import DbtManifestAssetSelection
+
+        manifest = json.loads(Path("path/to/manifest.json").read_text())
+
+        # select the dbt assets that have the tag "foo".
+        my_selection = DbtManifestAssetSelection(manifest=manifest, select="tag:foo")
+        ```
+
+    </dd>
+
+</dl>
+<dl>
+    <dt><Link class="anchor" id='dagster_dbt.build_dbt_asset_selection'>dagster_dbt.build_dbt_asset_selection <a href='https://github.com/dagster-io/dagster/blob/master/python_modules/libraries/dagster-dbt/dagster_dbt/asset_utils.py#L224' className='source-link' target='_blank' rel='noopener noreferrer'>[source]</a><a href="#dagster_dbt.build_dbt_asset_selection" class="hash-link"></a></Link></dt>
+    <dd>
+
+    Build an asset selection for a dbt selection string.
+
+    See [https://docs.getdbt.com/reference/node-selection/syntax#how-does-selection-work](https://docs.getdbt.com/reference/node-selection/syntax#how-does-selection-work) for
+    more information.
+
+    Parameters:
+      - <strong>dbt_select</strong> (<em>str</em>) – A dbt selection string to specify a set of dbt resources.
+      - <strong>dbt_exclude</strong> (<em>Optional</em><em>[</em><em>str</em><em>]</em>) – A dbt selection string to exclude a set of dbt resources.
+
+
+    Returns: An asset selection for the selected dbt nodes.Return type: [AssetSelection](../dagster/assets.mdx#dagster.AssetSelection)
+
+
+    Examples:
+
+        ```python
+        from dagster_dbt import dbt_assets, build_dbt_asset_selection
+
+        @dbt_assets(manifest=...)
+        def all_dbt_assets():
+            ...
+
+        # Select the dbt assets that have the tag "foo".
+        foo_selection = build_dbt_asset_selection([dbt_assets], dbt_select="tag:foo")
+
+        # Select the dbt assets that have the tag "foo" and all Dagster assets downstream
+        # of them (dbt-related or otherwise)
+        foo_and_downstream_selection = foo_selection.downstream()
+        ```
+    Building an asset selection on a dbt assets definition with an existing selection:
+
+        ```python
+        from dagster_dbt import dbt_assets, build_dbt_asset_selection
+
+        @dbt_assets(
+            manifest=...
+            select="bar+",
+        )
+        def bar_plus_dbt_assets():
+            ...
+
+        # Select the dbt assets that are in the intersection of having the tag "foo" and being
+        # in the existing selection "bar+".
+        bar_plus_and_foo_selection = build_dbt_asset_selection(
+            [bar_plus_dbt_assets],
+            dbt_select="tag:foo"
+        )
+
+        # Furthermore, select all assets downstream (dbt-related or otherwise).
+        bar_plus_and_foo_and_downstream_selection = bar_plus_and_foo_selection.downstream()
+        ```
+
+    </dd>
+
+</dl>
+<dl>
+    <dt><Link class="anchor" id='dagster_dbt.build_schedule_from_dbt_selection'>dagster_dbt.build_schedule_from_dbt_selection <a href='https://github.com/dagster-io/dagster/blob/master/python_modules/libraries/dagster-dbt/dagster_dbt/asset_utils.py#L314' className='source-link' target='_blank' rel='noopener noreferrer'>[source]</a><a href="#dagster_dbt.build_schedule_from_dbt_selection" class="hash-link"></a></Link></dt>
+    <dd>
+
+    Build a schedule to materialize a specified set of dbt resources from a dbt selection string.
+
+    See [https://docs.getdbt.com/reference/node-selection/syntax#how-does-selection-work](https://docs.getdbt.com/reference/node-selection/syntax#how-does-selection-work) for
+    more information.
+
+    Parameters:
+      - <strong>job_name</strong> (<em>str</em>) – The name of the job to materialize the dbt resources.
+      - <strong>cron_schedule</strong> (<em>str</em>) – The cron schedule to define the schedule.
+      - <strong>dbt_select</strong> (<em>str</em>) – A dbt selection string to specify a set of dbt resources.
+      - <strong>dbt_exclude</strong> (<em>Optional</em><em>[</em><em>str</em><em>]</em>) – A dbt selection string to exclude a set of dbt resources.
+      - <strong>dbt_selector</strong> (<em>str</em>) – A dbt selector to select resources to materialize.
+      - <strong>schedule_name</strong> (<em>Optional</em><em>[</em><em>str</em><em>]</em>) – The name of the dbt schedule to create.
+      - <strong>tags</strong> (<em>Optional</em><em>[</em><em>Mapping</em><em>[</em><em>str</em><em>, </em><em>str</em><em>]</em><em>]</em>) – A dictionary of tags (string key-value pairs) to attach to the scheduled runs.
+      - <strong>config</strong> (<em>Optional</em><em>[</em>[*RunConfig*](../dagster/config.mdx#dagster.RunConfig)<em>]</em>) – The config that parameterizes the execution of this schedule.
+      - <strong>execution_timezone</strong> (<em>Optional</em><em>[</em><em>str</em><em>]</em>) – Timezone in which the schedule should run. Supported strings for timezones are the ones provided by the <cite>IANA time zone database \<https://www.iana.org/time-zones></cite> - e.g. “America/Los_Angeles”.
+
+
+    Returns: A definition to materialize the selected dbt resources on a cron schedule.Return type: [ScheduleDefinition](../dagster/schedules-sensors.mdx#dagster.ScheduleDefinition)
+
+
+    Examples:
+
+        ```python
+        from dagster_dbt import dbt_assets, build_schedule_from_dbt_selection
+
+        @dbt_assets(manifest=...)
+        def all_dbt_assets():
+            ...
+
+        daily_dbt_assets_schedule = build_schedule_from_dbt_selection(
+            [all_dbt_assets],
+            job_name="all_dbt_assets",
+            cron_schedule="0 0 * * *",
+            dbt_select="fqn:*",
+        )
+        ```
+
+    </dd>
+
+</dl>
+<dl>
+    <dt><Link class="anchor" id='dagster_dbt.get_asset_key_for_model'>dagster_dbt.get_asset_key_for_model <a href='https://github.com/dagster-io/dagster/blob/master/python_modules/libraries/dagster-dbt/dagster_dbt/asset_utils.py#L76' className='source-link' target='_blank' rel='noopener noreferrer'>[source]</a><a href="#dagster_dbt.get_asset_key_for_model" class="hash-link"></a></Link></dt>
+    <dd>
+
+    Return the corresponding Dagster asset key for a dbt model, seed, or snapshot.
+
+    Parameters:
+      - <strong>dbt_assets</strong> ([*AssetsDefinition*](../dagster/assets.mdx#dagster.AssetsDefinition)) – An AssetsDefinition object produced by @dbt_assets.
+      - <strong>model_name</strong> (<em>str</em>) – The name of the dbt model, seed, or snapshot.
+
+
+    Returns: The corresponding Dagster asset key.Return type: [AssetKey](../dagster/assets.mdx#dagster.AssetKey)
+
+
+    Examples:
+
+        ```python
+        from dagster import asset
+        from dagster_dbt import dbt_assets, get_asset_key_for_model
+
+        @dbt_assets(manifest=...)
+        def all_dbt_assets():
+            ...
+
+
+        @asset(deps={get_asset_key_for_model([all_dbt_assets], "customers")})
+        def cleaned_customers():
+            ...
+        ```
+
+    </dd>
+
+</dl>
+<dl>
+    <dt><Link class="anchor" id='dagster_dbt.get_asset_key_for_source'>dagster_dbt.get_asset_key_for_source <a href='https://github.com/dagster-io/dagster/blob/master/python_modules/libraries/dagster-dbt/dagster_dbt/asset_utils.py#L185' className='source-link' target='_blank' rel='noopener noreferrer'>[source]</a><a href="#dagster_dbt.get_asset_key_for_source" class="hash-link"></a></Link></dt>
+    <dd>
+
+    Returns the corresponding Dagster asset key for a dbt source with a singular table.
+
+    Parameters: <strong>source_name</strong> (<em>str</em>) – The name of the dbt source.Raises: <strong>DagsterInvalidInvocationError</strong> – If the source has more than one table.Returns: The corresponding Dagster asset key.Return type: [AssetKey](../dagster/assets.mdx#dagster.AssetKey)
+
+
+    Examples:
+
+        ```python
+        from dagster import asset
+        from dagster_dbt import dbt_assets, get_asset_key_for_source
+
+        @dbt_assets(manifest=...)
+        def all_dbt_assets():
+            ...
+
+        @asset(key=get_asset_key_for_source([all_dbt_assets], "my_source"))
+        def upstream_python_asset():
+            ...
+        ```
+
+    </dd>
+
+</dl>
+<dl>
+    <dt><Link class="anchor" id='dagster_dbt.get_asset_keys_by_output_name_for_source'>dagster_dbt.get_asset_keys_by_output_name_for_source <a href='https://github.com/dagster-io/dagster/blob/master/python_modules/libraries/dagster-dbt/dagster_dbt/asset_utils.py#L124' className='source-link' target='_blank' rel='noopener noreferrer'>[source]</a><a href="#dagster_dbt.get_asset_keys_by_output_name_for_source" class="hash-link"></a></Link></dt>
+    <dd>
+
+    Returns the corresponding Dagster asset keys for all tables in a dbt source.
+
+    This is a convenience method that makes it easy to define a multi-asset that generates
+    all the tables for a given dbt source.
+
+    Parameters: <strong>source_name</strong> (<em>str</em>) – The name of the dbt source.Returns:
+    A mapping of the table name to corresponding Dagster asset key
+        for all tables in the given dbt source.
+
+    Return type: Mapping[str, [AssetKey](../dagster/assets.mdx#dagster.AssetKey)]
+
+
+    Examples:
+
+        ```python
+        from dagster import AssetOut, multi_asset
+        from dagster_dbt import dbt_assets, get_asset_keys_by_output_name_for_source
+
+        @dbt_assets(manifest=...)
+        def all_dbt_assets():
+            ...
+
+        @multi_asset(
+            outs={
+                name: AssetOut(key=asset_key)
+                for name, asset_key in get_asset_keys_by_output_name_for_source(
+                    [all_dbt_assets], "raw_data"
+                ).items()
+            },
+        )
+        def upstream_python_asset():
+            ...
+        ```
+
+    </dd>
+
+</dl>
+<dl>
+    <dt><Link class="anchor" id='dagster_dbt.DbtProject'>`class` dagster_dbt.DbtProject <a href='https://github.com/dagster-io/dagster/blob/master/python_modules/libraries/dagster-dbt/dagster_dbt/dbt_project.py#L136' className='source-link' target='_blank' rel='noopener noreferrer'>[source]</a><a href="#dagster_dbt.DbtProject" class="hash-link"></a></Link></dt>
+    <dd>
+
+    Representation of a dbt project and related settings that assist with managing the project preparation.
+
+    Using this helps achieve a setup where the dbt manifest file
+    and dbt dependencies are available and up-to-date:
+    * during development, pull the dependencies and reload the manifest at run time to pick up any changes.
+    * when deployed, expect a manifest that was created at build time to reduce start-up time.
+
+    The cli `dagster-dbt project prepare-and-package` can be used as part of the deployment process to
+    handle the project preparation.
+
+    This object can be passed directly to [`DbtCliResource`](#dagster_dbt.DbtCliResource).
+
+    Parameters:
+      - <strong>project_dir</strong> (<em>Union</em><em>[</em><em>str</em><em>, </em><em>Path</em><em>]</em>) – The directory of the dbt project.
+      - <strong>target_path</strong> (<em>Union</em><em>[</em><em>str</em><em>, </em><em>Path</em><em>]</em>) – The path, relative to the project directory, to output artifacts. It corresponds to the target path in dbt. Default: “target”
+      - <strong>profiles_dir</strong> (<em>Union</em><em>[</em><em>str</em><em>, </em><em>Path</em><em>]</em>) – The path to the directory containing your dbt <cite>profiles.yml</cite>. By default, the current working directory is used, which is the dbt project directory.
+      - <strong>profile</strong> (<em>Optional</em><em>[</em><em>str</em><em>]</em>) – The profile from your dbt <cite>profiles.yml</cite> to use for execution, if it should be explicitly set.
+      - <strong>target</strong> (<em>Optional</em><em>[</em><em>str</em><em>]</em>) – The target from your dbt <cite>profiles.yml</cite> to use for execution, if it should be explicitly set.
+      - <strong>packaged_project_dir</strong> (<em>Optional</em><em>[</em><em>Union</em><em>[</em><em>str</em><em>, </em><em>Path</em><em>]</em><em>]</em>) – A directory that will contain a copy of the dbt project and the manifest.json when the artifacts have been built. The prepare method will handle syncing the project_path to this directory. This is useful when the dbt project needs to be part of the python package data like when deploying using PEX.
+      - <strong>state_path</strong> (<em>Optional</em><em>[</em><em>Union</em><em>[</em><em>str</em><em>, </em><em>Path</em><em>]</em><em>]</em>) – The path, relative to the project directory, to reference artifacts from another run.
+
+
+
+
+    Examples:
+
+    Creating a DbtProject with by referencing the dbt project directory:
+
+        ```python
+        from pathlib import Path
+
+        from dagster_dbt import DbtProject
+
+        my_project = DbtProject(project_dir=Path("path/to/dbt_project"))
+        ```
+    Creating a DbtProject that changes target based on environment variables and uses manged state artifacts:
+
+        ```python
+        import os
+        from pathlib import Path
+        from dagster_dbt import DbtProject
+
+
+        def get_env():
+            if os.getenv("DAGSTER_CLOUD_IS_BRANCH_DEPLOYMENT", "") == "1":
+                return "BRANCH"
+            if os.getenv("DAGSTER_CLOUD_DEPLOYMENT_NAME", "") == "prod":
+                return "PROD"
+            return "LOCAL"
+
+
+        dbt_project = DbtProject(
+            project_dir=Path('path/to/dbt_project'),
+            state_path="target/managed_state",
+            target=get_env(),
+        )
+        ```
+    <dl>
+        <dt><Link class="anchor" id='dagster_dbt.DbtProject.prepare_if_dev'>prepare_if_dev <a href='https://github.com/dagster-io/dagster/blob/master/python_modules/libraries/dagster-dbt/dagster_dbt/dbt_project.py#L290' className='source-link' target='_blank' rel='noopener noreferrer'>[source]</a><a href="#dagster_dbt.DbtProject.prepare_if_dev" class="hash-link"></a></Link></dt>
+        <dd>
+
+        Prepare a dbt project at run time during development, i.e. when <cite>dagster dev</cite> is used.
+        This method has no effect outside this development context.
+
+        The preparation process ensures that the dbt manifest file and dbt dependencies are available and up-to-date.
+        During development, it pulls the dependencies and reloads the manifest at run time to pick up any changes.
+
+        If this method returns successfully, <cite>self.manifest_path</cite> will point to a loadable manifest file.
+        This method causes errors if the manifest file has not been correctly created by the preparation process.
+
+
+
+        Examples:
+
+        Preparing a DbtProject during development:
+
+            ```python
+            from pathlib import Path
+
+            from dagster import Definitions
+            from dagster_dbt import DbtProject
+
+            my_project = DbtProject(project_dir=Path("path/to/dbt_project"))
+            my_project.prepare_if_dev()
+
+            Definitions(
+                resources={
+                    "dbt": DbtCliResource(project_dir=my_project),
+                },
+                ...
+            )
+            ```
+
+        </dd>
+
+    </dl>
+
+    </dd>
+
+</dl>
+</div>
+
+<div class="section" id="asset-checks-dbt-core">
+
+### Asset Checks (dbt Core)
+
+<dl>
+    <dt><Link class="anchor" id='dagster_dbt.build_freshness_checks_from_dbt_assets'>dagster_dbt.build_freshness_checks_from_dbt_assets <a href='https://github.com/dagster-io/dagster/blob/master/python_modules/libraries/dagster-dbt/dagster_dbt/freshness_builder.py#L37' className='source-link' target='_blank' rel='noopener noreferrer'>[source]</a><a href="#dagster_dbt.build_freshness_checks_from_dbt_assets" class="hash-link"></a></Link></dt>
+    <dd>
+
+        :::warning[superseded]
+        This API has been superseded.
+         Create `FreshnessPolicy` objects for your dbt models by overriding `get_asset_spec` in your `DagsterDbtTranslator`, or by updating the `translation` configuration of your `DbtProjectComponent` instead..
+
+        :::
+
+    Returns a sequence of freshness checks constructed from the provided dbt assets.
+
+    Freshness checks can be configured on a per-model basis in the model schema configuration.
+
+    For assets which are not partitioned based on time, the freshness check configuration mirrors
+    that of the `build_last_update_freshness_checks()` function. <cite>lower_bound_delta</cite> is provided in
+    terms of seconds, and <cite>deadline_cron</cite> is optional.
+
+    For time-partitioned assets, the freshness check configuration mirrors that of the
+    `build_time_partition_freshness_checks()` function.
+
+    Below is example of configuring a non-time-partitioned dbt asset with a freshness check.
+    This code would be placed in the schema.yml file for the dbt model.
+
+        ```YAML
+        models:
+          - name: customers
+            ...
+            meta:
+              dagster:
+                freshness_check:
+                  lower_bound_delta_seconds: 86400 # 1 day
+                  deadline_cron: "0 0 * * *" # Optional
+                  severity: "WARN" # Optional, defaults to "WARN"
+        ```
+    Below is an example of configuring a time-partitioned dbt asset with a freshness check.
+    This code would be placed in the schema.yml file for the dbt model.
+
+        ```yaml
+        models:
+          - name: customers
+            ...
+            meta:
+              dagster:
+                freshness_check:
+                  deadline_cron: "0 0 * * *"
+                  severity: "WARN" # Optional, defaults to "WARN"
+        ```
+    Parameters: <strong>dbt_assets</strong> (<em>Sequence</em><em>[</em>[*AssetsDefinition*](../dagster/assets.mdx#dagster.AssetsDefinition)<em>]</em>) – A sequence of dbt assets to construct freshness
+    checks from.Returns:
+    A sequence of asset checks definitions representing the
+        freshness checks for the provided dbt assets.
+
+    Return type: Sequence[[AssetChecksDefinition](../dagster/asset-checks.mdx#dagster.AssetChecksDefinition)]
+
+    </dd>
+
+</dl>
+</div>
+
+<div class="section" id="resources-dbt-core">
+
+### Resources (dbt Core)
+
+<div class="section" id="cli-resource">
+#### CLI Resource
+
+<dl>
+    <dt><Link class="anchor" id='dagster_dbt.DbtCliResource'>`class` dagster_dbt.DbtCliResource <a href='https://github.com/dagster-io/dagster/blob/master/python_modules/libraries/dagster-dbt/dagster_dbt/core/resource.py#L62' className='source-link' target='_blank' rel='noopener noreferrer'>[source]</a><a href="#dagster_dbt.DbtCliResource" class="hash-link"></a></Link></dt>
+    <dd>
+
+    A resource used to execute dbt CLI commands.
+
+    Parameters:
+      - <strong>project_dir</strong> (<em>str</em>) – The path to the dbt project directory. This directory should contain a <cite>dbt_project.yml</cite>. See [https://docs.getdbt.com/reference/dbt_project.yml](https://docs.getdbt.com/reference/dbt_project.yml) for more information.
+      - <strong>global_config_flags</strong> (<em>List</em><em>[</em><em>str</em><em>]</em>) – A list of global flags configuration to pass to the dbt CLI invocation. Invoke <cite>dbt –help</cite> to see a full list of global flags.
+      - <strong>profiles_dir</strong> (<em>Optional</em><em>[</em><em>str</em><em>]</em>) – The path to the directory containing your dbt <cite>profiles.yml</cite>. By default, the current working directory is used, which is the dbt project directory. See [https://docs.getdbt.com/docs/core/connect-data-platform/connection-profiles](https://docs.getdbt.com/docs/core/connect-data-platform/connection-profiles) for more information.
+      - <strong>profile</strong> (<em>Optional</em><em>[</em><em>str</em><em>]</em>) – The profile from your dbt <cite>profiles.yml</cite> to use for execution. See [https://docs.getdbt.com/docs/core/connect-data-platform/connection-profiles](https://docs.getdbt.com/docs/core/connect-data-platform/connection-profiles) for more information.
+      - <strong>target</strong> (<em>Optional</em><em>[</em><em>str</em><em>]</em>) – The target from your dbt <cite>profiles.yml</cite> to use for execution. See [https://docs.getdbt.com/docs/core/connect-data-platform/connection-profiles](https://docs.getdbt.com/docs/core/connect-data-platform/connection-profiles) for more information.
+      - <strong>dbt_executable</strong> (<em>str</em>) – The path to the dbt executable. By default, this is <cite>dbt</cite>.
+      - <strong>state_path</strong> (<em>Optional</em><em>[</em><em>str</em><em>]</em>) – The path, relative to the project directory, to a directory of dbt artifacts to be used with <cite>–state</cite> / <cite>–defer-state</cite>.
+
+
+
+
+    Examples:
+
+    Creating a dbt resource with only a reference to `project_dir`:
+
+        ```python
+        from dagster_dbt import DbtCliResource
+
+        dbt = DbtCliResource(project_dir="/path/to/dbt/project")
+        ```
+    Creating a dbt resource with a custom `profiles_dir`:
+
+        ```python
+        from dagster_dbt import DbtCliResource
+
+        dbt = DbtCliResource(
+            project_dir="/path/to/dbt/project",
+            profiles_dir="/path/to/dbt/project/profiles",
+        )
+        ```
+    Creating a dbt resource with a custom `profile` and `target`:
+
+        ```python
+        from dagster_dbt import DbtCliResource
+
+        dbt = DbtCliResource(
+            project_dir="/path/to/dbt/project",
+            profiles_dir="/path/to/dbt/project/profiles",
+            profile="jaffle_shop",
+            target="dev",
+        )
+        ```
+    Creating a dbt resource with global configs, e.g. disabling colored logs with `--no-use-color`:
+
+        ```python
+        from dagster_dbt import DbtCliResource
+
+        dbt = DbtCliResource(
+            project_dir="/path/to/dbt/project",
+            global_config_flags=["--no-use-color"],
+        )
+        ```
+    Creating a dbt resource with custom dbt executable path:
+
+        ```python
+        from dagster_dbt import DbtCliResource
+
+        dbt = DbtCliResource(
+            project_dir="/path/to/dbt/project",
+            dbt_executable="/path/to/dbt/executable",
+        )
+        ```
+    <dl>
+        <dt><Link class="anchor" id='dagster_dbt.DbtCliResource.cli'>cli <a href='https://github.com/dagster-io/dagster/blob/master/python_modules/libraries/dagster-dbt/dagster_dbt/core/resource.py#L484' className='source-link' target='_blank' rel='noopener noreferrer'>[source]</a><a href="#dagster_dbt.DbtCliResource.cli" class="hash-link"></a></Link></dt>
+        <dd>
+
+        Create a subprocess to execute a dbt CLI command.
+
+        Parameters:
+          - <strong>args</strong> (<em>Sequence</em><em>[</em><em>str</em><em>]</em>) – The dbt CLI command to execute.
+          - <strong>raise_on_error</strong> (<em>bool</em>) – Whether to raise an exception if the dbt CLI command fails.
+          - <strong>manifest</strong> (<em>Optional</em><em>[</em><em>Union</em><em>[</em><em>Mapping</em><em>[</em><em>str</em><em>, </em><em>Any</em><em>]</em><em>, </em><em>str</em><em>, </em><em>Path</em><em>]</em><em>]</em>) – The dbt manifest blob. If an execution context from within <cite>@dbt_assets</cite> is provided to the context argument, then the manifest provided to <cite>@dbt_assets</cite> will be used.
+          - <strong>dagster_dbt_translator</strong> (<em>Optional</em><em>[</em>[*DagsterDbtTranslator*](#dagster_dbt.DagsterDbtTranslator)<em>]</em>) – The translator to link dbt nodes to Dagster assets. If an execution context from within <cite>@dbt_assets</cite> is provided to the context argument, then the dagster_dbt_translator provided to <cite>@dbt_assets</cite> will be used.
+          - <strong>context</strong> (<em>Optional</em><em>[</em><em>Union</em><em>[</em>[*OpExecutionContext*](../dagster/execution.mdx#dagster.OpExecutionContext)<em>, </em>[*AssetExecutionContext*](../dagster/execution.mdx#dagster.AssetExecutionContext)<em>]</em><em>]</em>) – The execution context from within <cite>@dbt_assets</cite>. If an AssetExecutionContext is passed, its underlying OpExecutionContext will be used.
+          - <strong>target_path</strong> (<em>Optional</em><em>[</em><em>Path</em><em>]</em>) – An explicit path to a target folder to use to store and retrieve dbt artifacts when running a dbt CLI command. If not provided, a unique target path will be generated.
+
+
+        Returns:
+        A invocation instance that can be used to retrieve the output of the
+            dbt CLI command.
+
+        Return type: [DbtCliInvocation](#dagster_dbt.DbtCliInvocation)
+
+
+        Examples:
+
+        Streaming Dagster events for dbt asset materializations and observations:
+
+            ```python
+            from pathlib import Path
+
+            from dagster import AssetExecutionContext
+            from dagster_dbt import DbtCliResource, dbt_assets
+
+
+            @dbt_assets(manifest=Path("target", "manifest.json"))
+            def my_dbt_assets(context: AssetExecutionContext, dbt: DbtCliResource):
+                yield from dbt.cli(["run"], context=context).stream()
+            ```
+        Retrieving a dbt artifact after streaming the Dagster events:
+
+            ```python
+            from pathlib import Path
+
+            from dagster import AssetExecutionContext
+            from dagster_dbt import DbtCliResource, dbt_assets
+
+
+            @dbt_assets(manifest=Path("target", "manifest.json"))
+            def my_dbt_assets(context: AssetExecutionContext, dbt: DbtCliResource):
+                dbt_run_invocation = dbt.cli(["run"], context=context)
+
+                yield from dbt_run_invocation.stream()
+
+                # Retrieve the `run_results.json` dbt artifact as a dictionary:
+                run_results_json = dbt_run_invocation.get_artifact("run_results.json")
+
+                # Retrieve the `run_results.json` dbt artifact as a file path:
+                run_results_path = dbt_run_invocation.target_path.joinpath("run_results.json")
+            ```
+        Customizing the asset materialization metadata when streaming the Dagster events:
+
+            ```python
+            from pathlib import Path
+
+            from dagster import AssetExecutionContext
+            from dagster_dbt import DbtCliResource, dbt_assets
+
+
+            @dbt_assets(manifest=Path("target", "manifest.json"))
+            def my_dbt_assets(context: AssetExecutionContext, dbt: DbtCliResource):
+                dbt_cli_invocation = dbt.cli(["run"], context=context)
+
+                for dagster_event in dbt_cli_invocation.stream():
+                    if isinstance(dagster_event, Output):
+                        context.add_output_metadata(
+                            metadata={
+                                "my_custom_metadata": "my_custom_metadata_value",
+                            },
+                            output_name=dagster_event.output_name,
+                        )
+
+                    yield dagster_event
+            ```
+        Suppressing exceptions from a dbt CLI command when a non-zero exit code is returned:
+
+            ```python
+            from pathlib import Path
+
+            from dagster import AssetExecutionContext
+            from dagster_dbt import DbtCliResource, dbt_assets
+
+
+            @dbt_assets(manifest=Path("target", "manifest.json"))
+            def my_dbt_assets(context: AssetExecutionContext, dbt: DbtCliResource):
+                dbt_run_invocation = dbt.cli(["run"], context=context, raise_on_error=False)
+
+                if dbt_run_invocation.is_successful():
+                    yield from dbt_run_invocation.stream()
+                else:
+                    ...
+            ```
+        Invoking a dbt CLI command in a custom asset or op:
+
+            ```python
+            import json
+
+            from dagster import Nothing, Out, asset, op
+            from dagster_dbt import DbtCliResource
+
+
+            @asset
+            def my_dbt_asset(dbt: DbtCliResource):
+                dbt_macro_args = {"key": "value"}
+                dbt.cli(["run-operation", "my-macro", json.dumps(dbt_macro_args)]).wait()
+
+
+            @op(out=Out(Nothing))
+            def my_dbt_op(dbt: DbtCliResource):
+                dbt_macro_args = {"key": "value"}
+                yield from dbt.cli(["run-operation", "my-macro", json.dumps(dbt_macro_args)]).stream()
+            ```
+
+        </dd>
+
+    </dl>
+    <dl>
+        <dt><Link class="anchor" id='dagster_dbt.DbtCliResource.get_defer_args'>get_defer_args <a href='https://github.com/dagster-io/dagster/blob/master/python_modules/libraries/dagster-dbt/dagster_dbt/core/resource.py#L456' className='source-link' target='_blank' rel='noopener noreferrer'>[source]</a><a href="#dagster_dbt.DbtCliResource.get_defer_args" class="hash-link"></a></Link></dt>
+        <dd>
+
+        Build the defer arguments for the dbt CLI command, using the supplied state directory.
+        If no state directory is supplied, or the state directory does not have a manifest for.
+        comparison, an empty list of arguments is returned.
+
+        Returns: The defer arguments for the dbt CLI command.Return type: Sequence[str]
+
+        </dd>
+
+    </dl>
+    <dl>
+        <dt><Link class="anchor" id='dagster_dbt.DbtCliResource.get_state_args'>get_state_args <a href='https://github.com/dagster-io/dagster/blob/master/python_modules/libraries/dagster-dbt/dagster_dbt/core/resource.py#L470' className='source-link' target='_blank' rel='noopener noreferrer'>[source]</a><a href="#dagster_dbt.DbtCliResource.get_state_args" class="hash-link"></a></Link></dt>
+        <dd>
+
+        Build the state arguments for the dbt CLI command, using the supplied state directory.
+        If no state directory is supplied, or the state directory does not have a manifest for.
+        comparison, an empty list of arguments is returned.
+
+        Returns: The state arguments for the dbt CLI command.Return type: Sequence[str]
+
+        </dd>
+
+    </dl>
+
+    </dd>
+
+</dl>
+<dl>
+    <dt><Link class="anchor" id='dagster_dbt.DbtCliInvocation'>`class` dagster_dbt.DbtCliInvocation <a href='https://github.com/dagster-io/dagster/blob/master/python_modules/libraries/dagster-dbt/dagster_dbt/core/dbt_cli_invocation.py#L76' className='source-link' target='_blank' rel='noopener noreferrer'>[source]</a><a href="#dagster_dbt.DbtCliInvocation" class="hash-link"></a></Link></dt>
+    <dd>
+
+    The representation of an invoked dbt command.
+
+    Parameters:
+      - <strong>process</strong> (<em>subprocess.Popen</em>) – The process running the dbt command.
+      - <strong>manifest</strong> (<em>Mapping</em><em>[</em><em>str</em><em>, </em><em>Any</em><em>]</em>) – The dbt manifest blob.
+      - <strong>project</strong> (<em>Optional</em><em>[</em>[*DbtProject*](#dagster_dbt.DbtProject)<em>]</em>) – The dbt project.
+      - <strong>project_dir</strong> (<em>Path</em>) – The path to the dbt project.
+      - <strong>target_path</strong> (<em>Path</em>) – The path to the dbt target folder.
+      - <strong>raise_on_error</strong> (<em>bool</em>) – Whether to raise an exception if the dbt command fails.
+
+
+    <dl>
+        <dt><Link class="anchor" id='dagster_dbt.DbtCliInvocation.get_artifact'>get_artifact <a href='https://github.com/dagster-io/dagster/blob/master/python_modules/libraries/dagster-dbt/dagster_dbt/core/dbt_cli_invocation.py#L383' className='source-link' target='_blank' rel='noopener noreferrer'>[source]</a><a href="#dagster_dbt.DbtCliInvocation.get_artifact" class="hash-link"></a></Link></dt>
+        <dd>
+
+        Retrieve a dbt artifact from the target path.
+
+        See [https://docs.getdbt.com/reference/artifacts/dbt-artifacts](https://docs.getdbt.com/reference/artifacts/dbt-artifacts) for more information.
+
+        Parameters: <strong>artifact</strong> (<em>Union</em><em>[</em><em>Literal</em><em>[</em><em>"manifest.json"</em><em>]</em><em>, </em><em>Literal</em><em>[</em><em>"catalog.json"</em><em>]</em><em>, </em><em>Literal</em><em>[</em><em>"run_results.json"</em><em>]</em><em>, </em><em>Literal</em><em>[</em><em>"sources.json"</em><em>]</em><em>]</em>) – The name of the artifact to retrieve.Returns: The artifact as a dictionary.Return type: Dict[str, Any]
+
+
+        Examples:
+
+            ```python
+            from dagster_dbt import DbtCliResource
+
+            dbt = DbtCliResource(project_dir="/path/to/dbt/project")
+
+            dbt_cli_invocation = dbt.cli(["run"]).wait()
+
+            # Retrieve the run_results.json artifact.
+            run_results = dbt_cli_invocation.get_artifact("run_results.json")
+            ```
+
+        </dd>
+
+    </dl>
+    <dl>
+        <dt><Link class="anchor" id='dagster_dbt.DbtCliInvocation.get_error'>get_error <a href='https://github.com/dagster-io/dagster/blob/master/python_modules/libraries/dagster-dbt/dagster_dbt/core/dbt_cli_invocation.py#L245' className='source-link' target='_blank' rel='noopener noreferrer'>[source]</a><a href="#dagster_dbt.DbtCliInvocation.get_error" class="hash-link"></a></Link></dt>
+        <dd>
+
+        Return an exception if the dbt CLI process failed.
+
+        Returns: An exception if the dbt CLI process failed, and None otherwise.Return type: Optional[Exception]
+
+
+        Examples:
+
+            ```python
+            from dagster_dbt import DbtCliResource
+
+            dbt = DbtCliResource(project_dir="/path/to/dbt/project")
+
+            dbt_cli_invocation = dbt.cli(["run"], raise_on_error=False)
+
+            error = dbt_cli_invocation.get_error()
+            if error:
+                logger.error(error)
+            ```
+
+        </dd>
+
+    </dl>
+    <dl>
+        <dt><Link class="anchor" id='dagster_dbt.DbtCliInvocation.is_successful'>is_successful <a href='https://github.com/dagster-io/dagster/blob/master/python_modules/libraries/dagster-dbt/dagster_dbt/core/dbt_cli_invocation.py#L222' className='source-link' target='_blank' rel='noopener noreferrer'>[source]</a><a href="#dagster_dbt.DbtCliInvocation.is_successful" class="hash-link"></a></Link></dt>
+        <dd>
+
+        Return whether the dbt CLI process completed successfully.
+
+        Returns: True, if the dbt CLI process returns with a zero exit code, and False otherwise.Return type: bool
+
+
+        Examples:
+
+            ```python
+            from dagster_dbt import DbtCliResource
+
+            dbt = DbtCliResource(project_dir="/path/to/dbt/project")
+
+            dbt_cli_invocation = dbt.cli(["run"], raise_on_error=False)
+
+            if dbt_cli_invocation.is_successful():
+                ...
+            ```
+
+        </dd>
+
+    </dl>
+    <dl>
+        <dt><Link class="anchor" id='dagster_dbt.DbtCliInvocation.stream'>stream <a href='https://github.com/dagster-io/dagster/blob/master/python_modules/libraries/dagster-dbt/dagster_dbt/core/dbt_cli_invocation.py#L297' className='source-link' target='_blank' rel='noopener noreferrer'>[source]</a><a href="#dagster_dbt.DbtCliInvocation.stream" class="hash-link"></a></Link></dt>
+        <dd>
+
+        Stream the events from the dbt CLI process and convert them to Dagster events.
+
+        Returns:
+        A set of corresponding Dagster events.
+
+        In a Dagster asset definition, the following are yielded:
+        - Output for refables (e.g. models, seeds, snapshots.)
+        - AssetCheckResult for dbt test results that are enabled as asset checks.
+        - AssetObservation for dbt test results that are not enabled as asset checks.
+
+        In a Dagster op definition, the following are yielded:
+        - AssetMaterialization refables (e.g. models, seeds, snapshots.)
+        - AssetCheckEvaluation for dbt test results that are enabled as asset checks.
+        - AssetObservation for dbt test results that are not enabled as asset checks.
+
+        Return type: Iterator[Union[[Output](../dagster/ops.mdx#dagster.Output), [AssetMaterialization](../dagster/ops.mdx#dagster.AssetMaterialization), [AssetObservation](../dagster/assets.mdx#dagster.AssetObservation), [AssetCheckResult](../dagster/asset-checks.mdx#dagster.AssetCheckResult), AssetCheckEvaluation]]
+
+
+        Examples:
+
+            ```python
+            from pathlib import Path
+            from dagster_dbt import DbtCliResource, dbt_assets
+
+            @dbt_assets(manifest=Path("target", "manifest.json"))
+            def my_dbt_assets(context, dbt: DbtCliResource):
+                yield from dbt.cli(["run"], context=context).stream()
+            ```
+
+        </dd>
+
+    </dl>
+    <dl>
+        <dt><Link class="anchor" id='dagster_dbt.DbtCliInvocation.stream_raw_events'>stream_raw_events <a href='https://github.com/dagster-io/dagster/blob/master/python_modules/libraries/dagster-dbt/dagster_dbt/core/dbt_cli_invocation.py#L332' className='source-link' target='_blank' rel='noopener noreferrer'>[source]</a><a href="#dagster_dbt.DbtCliInvocation.stream_raw_events" class="hash-link"></a></Link></dt>
+        <dd>
+
+        Stream the events from the dbt CLI process.
+
+        Returns: An iterator of events from the dbt CLI process.Return type: Iterator[[DbtCliEventMessage](#dagster_dbt.DbtCliEventMessage)]
+
+        </dd>
+
+    </dl>
+    <dl>
+        <dt><Link class="anchor" id='dagster_dbt.DbtCliInvocation.wait'>wait <a href='https://github.com/dagster-io/dagster/blob/master/python_modules/libraries/dagster-dbt/dagster_dbt/core/dbt_cli_invocation.py#L202' className='source-link' target='_blank' rel='noopener noreferrer'>[source]</a><a href="#dagster_dbt.DbtCliInvocation.wait" class="hash-link"></a></Link></dt>
+        <dd>
+
+        Wait for the dbt CLI process to complete.
+
+        Returns: The current representation of the dbt CLI invocation.Return type: [DbtCliInvocation](#dagster_dbt.DbtCliInvocation)
+
+
+        Examples:
+
+            ```python
+            from dagster_dbt import DbtCliResource
+
+            dbt = DbtCliResource(project_dir="/path/to/dbt/project")
+
+            dbt_cli_invocation = dbt.cli(["run"]).wait()
+            ```
+
+        </dd>
+
+    </dl>
+
+    </dd>
+
+</dl>
+<dl>
+    <dt><Link class="anchor" id='dagster_dbt.core.dbt_cli_invocation.DbtEventIterator'>`class` dagster_dbt.core.dbt_cli_invocation.DbtEventIterator <a href='https://github.com/dagster-io/dagster/blob/master/python_modules/libraries/dagster-dbt/dagster_dbt/core/dbt_event_iterator.py#L201' className='source-link' target='_blank' rel='noopener noreferrer'>[source]</a><a href="#dagster_dbt.core.dbt_cli_invocation.DbtEventIterator" class="hash-link"></a></Link></dt>
+    <dd>
+
+    A wrapper around an iterator of dbt events which contains additional methods for
+    post-processing the events, such as fetching row counts for materialized tables.
+
+    <dl>
+        <dt><Link class="anchor" id='dagster_dbt.core.dbt_cli_invocation.DbtEventIterator.fetch_column_metadata'>fetch_column_metadata <a href='https://github.com/dagster-io/dagster/blob/master/python_modules/libraries/dagster-dbt/dagster_dbt/core/dbt_event_iterator.py#L235' className='source-link' target='_blank' rel='noopener noreferrer'>[source]</a><a href="#dagster_dbt.core.dbt_cli_invocation.DbtEventIterator.fetch_column_metadata" class="hash-link"></a></Link></dt>
+        <dd>
+
+        Functionality which will fetch column schema metadata for dbt models in a run
+        once they’re built. It will also fetch schema information for upstream models and generate
+        column lineage metadata using sqlglot, if enabled.
+
+        Parameters: <strong>generate_column_lineage</strong> (<em>bool</em>) – Whether to generate column lineage metadata using sqlglot.Returns: A set of corresponding Dagster events for dbt models, with column metadata attached,
+        yielded in the order they are emitted by dbt.Return type: Iterator[Union[[Output](../dagster/ops.mdx#dagster.Output), [AssetMaterialization](../dagster/ops.mdx#dagster.AssetMaterialization), [AssetObservation](../dagster/assets.mdx#dagster.AssetObservation), [AssetCheckResult](../dagster/asset-checks.mdx#dagster.AssetCheckResult), AssetCheckEvaluation]]
+
+        </dd>
+
+    </dl>
+    <dl>
+        <dt><Link class="anchor" id='dagster_dbt.core.dbt_cli_invocation.DbtEventIterator.fetch_row_counts'>fetch_row_counts <a href='https://github.com/dagster-io/dagster/blob/master/python_modules/libraries/dagster-dbt/dagster_dbt/core/dbt_event_iterator.py#L220' className='source-link' target='_blank' rel='noopener noreferrer'>[source]</a><a href="#dagster_dbt.core.dbt_cli_invocation.DbtEventIterator.fetch_row_counts" class="hash-link"></a></Link></dt>
+        <dd>
+
+        Functionality which will fetch row counts for materialized dbt
+        models in a dbt run once they are built. Note that row counts will not be fetched
+        for views, since this requires running the view’s SQL query which may be costly.
+
+        Returns: A set of corresponding Dagster events for dbt models, with row counts attached,
+        yielded in the order they are emitted by dbt.Return type: Iterator[Union[[Output](../dagster/ops.mdx#dagster.Output), [AssetMaterialization](../dagster/ops.mdx#dagster.AssetMaterialization), [AssetObservation](../dagster/assets.mdx#dagster.AssetObservation), [AssetCheckResult](../dagster/asset-checks.mdx#dagster.AssetCheckResult), AssetCheckEvaluation]]
+
+        </dd>
+
+    </dl>
+    <dl>
+        <dt><Link class="anchor" id='dagster_dbt.core.dbt_cli_invocation.DbtEventIterator.with_insights'>with_insights <a href='https://github.com/dagster-io/dagster/blob/master/python_modules/libraries/dagster-dbt/dagster_dbt/core/dbt_event_iterator.py#L323' className='source-link' target='_blank' rel='noopener noreferrer'>[source]</a><a href="#dagster_dbt.core.dbt_cli_invocation.DbtEventIterator.with_insights" class="hash-link"></a></Link></dt>
+        <dd>
+
+        Associate each warehouse query with the produced asset materializations for use in Dagster
+        Plus Insights. Currently supports Snowflake and BigQuery.
+
+        For more information, see the documentation for
+        <cite>dagster_cloud.dagster_insights.dbt_with_snowflake_insights</cite> and
+        <cite>dagster_cloud.dagster_insights.dbt_with_bigquery_insights</cite>.
+
+        Parameters:
+          - <strong>skip_config_check</strong> (<em>bool</em>) – If true, skips the check that the dbt project config is set up correctly. Defaults to False.
+          - <strong>record_observation_usage</strong> (<em>bool</em>) – If True, associates the usage associated with asset observations with that asset. Default is True.
+
+
+        <strong>Example:</strong>
+
+            ```python
+            @dbt_assets(manifest=DBT_MANIFEST_PATH)
+            def jaffle_shop_dbt_assets(
+                context: AssetExecutionContext,
+                dbt: DbtCliResource,
+            ):
+                yield from dbt.cli(["build"], context=context).stream().with_insights()
+            ```
+
+        </dd>
+
+    </dl>
+
+    </dd>
+
+</dl>
+<dl>
+
+    <dt><Link class="anchor" id='dagster_dbt.DbtCliEventMessage'>`class` dagster_dbt.DbtCliEventMessage <a href='https://github.com/dagster-io/dagster/blob/master/python_modules/libraries/dagster-dbt/dagster_dbt/core/dbt_cli_event.py#L217' className='source-link' target='_blank' rel='noopener noreferrer'>[source]</a><a href="#dagster_dbt.DbtCliEventMessage" class="hash-link"></a></Link></dt>
+    <dd>
+    The representation of a dbt CLI event.
+
+    Parameters:
+      - <strong>raw_event</strong> (<em>Dict</em><em>[</em><em>str</em><em>, </em><em>Any</em><em>]</em>) – The raw event dictionary. See [https://docs.getdbt.com/reference/events-logging#structured-logging](https://docs.getdbt.com/reference/events-logging#structured-logging) for more information.
+      - <strong>event_history_metadata</strong> (<em>Dict</em><em>[</em><em>str</em><em>, </em><em>Any</em><em>]</em>) – A dictionary of metadata about the current event, gathered from previous historical events.
+
+
+    <dl>
+
+        <dt><Link class="anchor" id='dagster_dbt.DbtCliEventMessage.to_default_asset_events'>to_default_asset_events <a href='https://github.com/dagster-io/dagster/blob/master/python_modules/libraries/dagster-dbt/dagster_dbt/core/dbt_cli_event.py#L526' className='source-link' target='_blank' rel='noopener noreferrer'>[source]</a><a href="#dagster_dbt.DbtCliEventMessage.to_default_asset_events" class="hash-link"></a></Link></dt>
+        <dd>
+        Convert a dbt CLI event to a set of corresponding Dagster events.
+
+        Parameters:
+
+          - <strong>manifest</strong> (<em>Union</em><em>[</em><em>Mapping</em><em>[</em><em>str</em><em>, </em><em>Any</em><em>]</em><em>, </em><em>str</em><em>, </em><em>Path</em><em>]</em>) – The dbt manifest blob.
+          - <strong>dagster_dbt_translator</strong> ([*DagsterDbtTranslator*](#dagster_dbt.DagsterDbtTranslator)) – Optionally, a custom translator for linking dbt nodes to Dagster assets.
+          - <strong>context</strong> (<em>Optional</em><em>[</em><em>Union</em><em>[</em>[*OpExecutionContext*](../dagster/execution.mdx#dagster.OpExecutionContext)<em>, </em>[*AssetExecutionContext*](../dagster/execution.mdx#dagster.AssetExecutionContext)<em>]</em><em>]</em>) – The execution context.
+          - <strong>target_path</strong> (<em>Optional</em><em>[</em><em>Path</em><em>]</em>) – An explicit path to a target folder used to retrieve dbt artifacts while generating events.
+
+
+        Returns:
+
+        A set of corresponding Dagster events.
+
+        >
+
+        In a Dagster asset definition, the following are yielded:
+        - Output for refables (e.g. models, seeds, snapshots.)
+        - AssetCheckResult for dbt test results that are enabled as asset checks.
+        - AssetObservation for dbt test results that are not enabled as asset checks.
+
+
+
+        In a Dagster op definition, the following are yielded:
+              - AssetMaterialization refables (e.g. models, seeds, snapshots.)
+              - AssetCheckEvaluation for dbt test results that are enabled as asset checks.
+              - AssetObservation for dbt test results that are not enabled as asset checks.
+
+
+        Return type: Iterator[Union[[Output](../dagster/ops.mdx#dagster.Output), [AssetMaterialization](../dagster/ops.mdx#dagster.AssetMaterialization), [AssetObservation](../dagster/assets.mdx#dagster.AssetObservation), [AssetCheckResult](../dagster/asset-checks.mdx#dagster.AssetCheckResult), AssetCheckEvaluation]]
+
+    </dd>
+
+    </dl>
+
+</dd>
+
+</dl>
+</div></div></div>
+
+<div class="section" id="dbt-cloud-v2">
+
+## dbt Cloud v2
+
+Updated interfaces to manage dbt projects invoked by the hosted dbt Cloud service.
+
+<div class="section" id="assets-dbt-cloud-v2">
+
+### Assets (dbt Cloud v2)
+
+<dl>
+    <dt><Link class="anchor" id='dagster_dbt.dbt_cloud_assets'>@dagster_dbt.dbt_cloud_assets <a href='https://github.com/dagster-io/dagster/blob/master/python_modules/libraries/dagster-dbt/dagster_dbt/cloud_v2/asset_decorator.py#L20' className='source-link' target='_blank' rel='noopener noreferrer'>[source]</a><a href="#dagster_dbt.dbt_cloud_assets" class="hash-link"></a></Link></dt>
+    <dd>
+
+    Create a definition for how to compute a set of dbt Cloud resources,
+    described by a manifest.json for a given dbt Cloud workspace.
+
+    Parameters:
+      - <strong>workspace</strong> ([*DbtCloudWorkspace*](#dagster_dbt.DbtCloudWorkspace)) – The dbt Cloud workspace.
+      - <strong>select</strong> (<em>str</em>) – A dbt selection string for the models in a project that you want to include. Defaults to `fqn:*`.
+      - <strong>exclude</strong> (<em>str</em>) – A dbt selection string for the models in a project that you want to exclude. Defaults to “”.
+      - <strong>selector</strong> (<em>str</em>) – A dbt selector to select resources to materialize. Defaults to “”.
+      - <strong>name</strong> (<em>Optional</em><em>[</em><em>str</em><em>]</em><em>, </em><em>optional</em>) – The name of the op.
+      - <strong>group_name</strong> (<em>Optional</em><em>[</em><em>str</em><em>]</em><em>, </em><em>optional</em>) – The name of the asset group.
+      - <strong>dagster_dbt_translator</strong> (<em>Optional</em><em>[</em>[*DagsterDbtTranslator*](#dagster_dbt.DagsterDbtTranslator)<em>]</em><em>, </em><em>optional</em>) – The translator to use to convert dbt Cloud content into [`dagster.AssetSpec`](../dagster/assets.mdx#dagster.AssetSpec). Defaults to [`DagsterDbtTranslator`](#dagster_dbt.DagsterDbtTranslator).
+
+
+
+    </dd>
+
+</dl>
+</div>
+
+<div class="section" id="resources-dbt-cloud-v2">
+
+### Resources (dbt Cloud v2)
+
+<dl>
+    <dt><Link class="anchor" id='dagster_dbt.DbtCloudCredentials'>`class` dagster_dbt.DbtCloudCredentials <a href='https://github.com/dagster-io/dagster/blob/master/python_modules/libraries/dagster-dbt/dagster_dbt/cloud_v2/resources.py#L60' className='source-link' target='_blank' rel='noopener noreferrer'>[source]</a><a href="#dagster_dbt.DbtCloudCredentials" class="hash-link"></a></Link></dt>
+    <dd>
+
+    The DbtCloudCredentials to access your dbt Cloud workspace.
+
+    Parameters:
+      - <strong>account_id</strong> (<em>int</em>) – The ID of your dbt Cloud account.
+      - <strong>token</strong> (<em>str</em>) – Your dbt Cloud API token.
+      - <strong>access_url</strong> (<em>str</em>) – Your dbt Cloud workspace URL.
+
+
+
+    </dd>
+
+</dl>
+<dl>
+    <dt><Link class="anchor" id='dagster_dbt.DbtCloudWorkspace'>`class` dagster_dbt.DbtCloudWorkspace <a href='https://github.com/dagster-io/dagster/blob/master/python_modules/libraries/dagster-dbt/dagster_dbt/cloud_v2/resources.py#L75' className='source-link' target='_blank' rel='noopener noreferrer'>[source]</a><a href="#dagster_dbt.DbtCloudWorkspace" class="hash-link"></a></Link></dt>
+    <dd>
+
+    This class represents a dbt Cloud workspace and provides utilities
+    to interact with dbt Cloud APIs.
+
+    Parameters:
+      - <strong>credentials</strong> ([*DbtCloudCredentials*](#dagster_dbt.DbtCloudCredentials)) – An instance of DbtCloudCredentials class.
+      - <strong>project_id</strong> (<em>int</em>) – The ID of the dbt cloud project to use for this resource.
+      - <strong>environment_id</strong> (<em>int</em>) – The ID of the environment to use for the dbt Cloud project used in this resource.
+      - <strong>adhoc_job_name</strong> (<em>Optional</em><em>[</em><em>str</em><em>]</em>) – The name of the ad hoc job that will be created by Dagster in your dbt Cloud workspace. This ad hoc job is used to parse your project and materialize your dbt Cloud assets. If not provided, this job name will be generated using your project ID and environment ID.
+      - <strong>request_max_retries</strong> (<em>int</em>) – The maximum number of times requests to the dbt Cloud API should be retried before failing.
+      - <strong>request_retry_delay</strong> (<em>float</em>) – Time (in seconds) to wait between each request retry.
+      - <strong>request_timeout</strong> – Time (in seconds) after which the requests to dbt Cloud are declared timed out.
+
+
+    <dl>
+        <dt><Link class="anchor" id='dagster_dbt.DbtCloudWorkspace.cli'>cli <a href='https://github.com/dagster-io/dagster/blob/master/python_modules/libraries/dagster-dbt/dagster_dbt/cloud_v2/resources.py#L344' className='source-link' target='_blank' rel='noopener noreferrer'>[source]</a><a href="#dagster_dbt.DbtCloudWorkspace.cli" class="hash-link"></a></Link></dt>
+        <dd>
+
+        Creates a dbt CLI invocation with the dbt Cloud client.
+
+        Parameters:
+          - <strong>args</strong> – (Sequence[str]): The dbt CLI command to execute.
+          - <strong>dagster_dbt_translator</strong> (<em>Optional</em><em>[</em>[*DagsterDbtTranslator*](#dagster_dbt.DagsterDbtTranslator)<em>]</em>) – Allows customizing how to map dbt models, seeds, etc. to asset keys and asset metadata.
+          - <strong>context</strong> (<em>Optional</em><em>[</em>[*AssetExecutionContext*](../dagster/execution.mdx#dagster.AssetExecutionContext)<em>]</em>) – The execution context.
+
+
+
+        </dd>
+
+    </dl>
+
+    </dd>
+
+</dl>
+</div></div>
+
+<div class="section" id="dbt-cloud">
+
+## dbt Cloud
+
+Here, we provide interfaces to manage dbt projects invoked by the hosted dbt Cloud service.
+
+<div class="section" id="assets-dbt-cloud">
+
+### Assets (dbt Cloud)
+
+<dl>
+    <dt><Link class="anchor" id='dagster_dbt.load_assets_from_dbt_cloud_job'>dagster_dbt.load_assets_from_dbt_cloud_job <a href='https://github.com/dagster-io/dagster/blob/master/python_modules/libraries/dagster-dbt/dagster_dbt/cloud/asset_defs.py#L529' className='source-link' target='_blank' rel='noopener noreferrer'>[source]</a><a href="#dagster_dbt.load_assets_from_dbt_cloud_job" class="hash-link"></a></Link></dt>
+    <dd>
+
+        :::info[beta]
+        This API is currently in beta, and may have breaking changes in minor version releases, with behavior changes in patch releases.
+
+
+        :::
+
+    Loads a set of dbt models, managed by a dbt Cloud job, into Dagster assets. In order to
+    determine the set of dbt models, the project is compiled to generate the necessary artifacts
+    that define the dbt models and their dependencies.
+
+    One Dagster asset is created for each dbt model.
+
+    Parameters:
+      - <strong>dbt_cloud</strong> ([*ResourceDefinition*](../dagster/resources.mdx#dagster.ResourceDefinition)) – The dbt Cloud resource to use to connect to the dbt Cloud API.
+      - <strong>job_id</strong> (<em>int</em>) – The ID of the dbt Cloud job to load assets from.
+      - <strong>node_info_to_asset_key</strong> – (Mapping[str, Any] -> AssetKey): A function that takes a dictionary of dbt metadata and returns the AssetKey that you want to represent a given model or source. By default: dbt model -> AssetKey([model_name]) and dbt source -> AssetKey([source_name, table_name])
+      - <strong>node_info_to_group_fn</strong> (<em>Dict</em><em>[</em><em>str</em><em>, </em><em>Any</em><em>] </em><em>-> Optional</em><em>[</em><em>str</em><em>]</em>) – A function that takes a dictionary of dbt node info and returns the group that this node should be assigned to.
+      - <strong>node_info_to_auto_materialize_policy_fn</strong> (<em>Dict</em><em>[</em><em>str</em><em>, </em><em>Any</em><em>] </em><em>-> Optional</em><em>[</em><em>AutoMaterializePolicy</em><em>]</em>) – A function that takes a dictionary of dbt node info and optionally returns a AutoMaterializePolicy that should be applied to this node. By default, AutoMaterializePolicies will be created from config applied to dbt models, i.e.: <cite>dagster_auto_materialize_policy=\{“type”: “lazy”}</cite> will result in that model being assigned <cite>AutoMaterializePolicy.lazy()</cite>
+      - <strong>node_info_to_definition_metadata_fn</strong> (<em>Dict</em><em>[</em><em>str</em><em>, </em><em>Any</em><em>] </em><em>-> Optional</em><em>[</em><em>Dict</em><em>[</em><em>str</em><em>, </em><em>RawMetadataMapping</em><em>]</em><em>]</em>) – A function that takes a dictionary of dbt node info and optionally returns a dictionary of metadata to be attached to the corresponding definition. This is added to the default metadata assigned to the node, which consists of the node’s schema (if present).
+      - <strong>partitions_def</strong> (<em>Optional</em><em>[</em>[*PartitionsDefinition*](../dagster/partitions.mdx#dagster.PartitionsDefinition)<em>]</em>) – <span className="flag flag-info">beta</span>  Defines the set of partition keys that compose the dbt assets.
+      - <strong>partition_key_to_vars_fn</strong> (<em>Optional</em><em>[</em><em>str -> Dict</em><em>[</em><em>str</em><em>, </em><em>Any</em><em>]</em><em>]</em>) – <span className="flag flag-info">beta</span>  A function to translate a given partition key (e.g. ‘2022-01-01’) to a dictionary of vars to be passed into the dbt invocation (e.g. \{“run_date”: “2022-01-01”})
+
+
+    Returns: A definition for the loaded assets.Return type: CacheableAssetsDefinition
+
+
+    Examples:
+
+        ```python
+        from dagster import repository
+        from dagster_dbt import dbt_cloud_resource, load_assets_from_dbt_cloud_job
+
+        DBT_CLOUD_JOB_ID = 1234
+
+        dbt_cloud = dbt_cloud_resource.configured(
+            {
+                "auth_token": {"env": "DBT_CLOUD_API_TOKEN"},
+                "account_id": {"env": "DBT_CLOUD_ACCOUNT_ID"},
+            }
+        )
+
+        dbt_cloud_assets = load_assets_from_dbt_cloud_job(
+            dbt_cloud=dbt_cloud, job_id=DBT_CLOUD_JOB_ID
+        )
+
+
+        @repository
+        def dbt_cloud_sandbox():
+            return [dbt_cloud_assets]
+        ```
+
+    </dd>
+
+</dl>
+</div>
+
+<div class="section" id="ops-dbt-cloud">
+
+### Ops (dbt Cloud)
+
+<dl>
+    <dt><Link class="anchor" id='dagster_dbt.dbt_cloud_run_op'>dagster_dbt.dbt_cloud_run_op `=` \<dagster._core.definitions.op_definition.OpDefinition object> <a href='https://github.com/dagster-io/dagster/blob/master/python_modules/libraries/dagster-dbt/dagster_dbt/cloud/ops.py#L50' className='source-link' target='_blank' rel='noopener noreferrer'>[source]</a><a href="#dagster_dbt.dbt_cloud_run_op" class="hash-link"></a></Link></dt>
+    <dd>
+
+        <div className='lineblock'> </div>
+
+        :::info[beta]
+        This API is currently in beta, and may have breaking changes in minor version releases, with behavior changes in patch releases.
+
+
+        :::
+
+    Initiates a run for a dbt Cloud job, then polls until the run completes. If the job
+    fails or is otherwised stopped before succeeding, a <cite>dagster.Failure</cite> exception will be raised,
+    and this op will fail.
+
+    It requires the use of a ‘dbt_cloud’ resource, which is used to connect to the dbt Cloud API.
+
+    <strong>Config Options:</strong>
+
+    job_id (int)
+        The integer ID of the relevant dbt Cloud job. You can find this value by going to the details
+        page of your job in the dbt Cloud UI. It will be the final number in the url, e.g.:
+        `https://cloud.getdbt.com/#/accounts/\{account_id}/projects/\{project_id}/jobs/\{job_id}/`
+
+    poll_interval (float)
+        The time (in seconds) that will be waited between successive polls. Defaults to `10`.
+
+    poll_timeout (float)
+        The maximum time (in seconds) that will waited before this operation is timed out. By
+        default, this will never time out.
+
+    yield_materializations (bool)
+        If True, materializations corresponding to the results of the dbt operation will be
+        yielded when the solid executes. Defaults to `True`.
+
+    rasset_key_prefix (float)
+        If provided and yield_materializations is True, these components will be used to ”
+        prefix the generated asset keys. Defaults to [“dbt”].
+
+    <strong>Examples:</strong>
+
+        ```python
+        from dagster import job
+        from dagster_dbt import dbt_cloud_resource, dbt_cloud_run_op
+
+        my_dbt_cloud_resource = dbt_cloud_resource.configured(
+            {"auth_token": {"env": "DBT_CLOUD_AUTH_TOKEN"}, "account_id": 77777}
+        )
+        run_dbt_nightly_sync = dbt_cloud_run_op.configured(
+            {"job_id": 54321}, name="run_dbt_nightly_sync"
+        )
+
+        @job(resource_defs={"dbt_cloud": my_dbt_cloud_resource})
+        def dbt_cloud():
+            run_dbt_nightly_sync()
+        ```
+
+    </dd>
+
+</dl>
+</div>
+
+<div class="section" id="resources-dbt-cloud">
+
+### Resources (dbt Cloud)
+
+<dl>
+    <dt><Link class="anchor" id='dagster_dbt.DbtCloudClientResource'>`class` dagster_dbt.DbtCloudClientResource <a href='https://github.com/dagster-io/dagster/blob/master/python_modules/libraries/dagster-dbt/dagster_dbt/cloud/resources.py#L596' className='source-link' target='_blank' rel='noopener noreferrer'>[source]</a><a href="#dagster_dbt.DbtCloudClientResource" class="hash-link"></a></Link></dt>
+    <dd>
+
+        :::info[beta]
+        This API is currently in beta, and may have breaking changes in minor version releases, with behavior changes in patch releases.
+
+
+        :::
+
+    This resource helps interact with dbt Cloud connectors.
+
+
+    </dd>
+
+</dl>
+<div class="section" id="deprecated-dbt-cloud">
+
+#### Deprecated (dbt Cloud)
+
+<dl>
+    <dt><Link class="anchor" id='dagster_dbt.dbt_cloud_resource'>dagster_dbt.dbt_cloud_resource ResourceDefinition <a href='https://github.com/dagster-io/dagster/blob/master/python_modules/libraries/dagster-dbt/dagster_dbt/cloud/resources.py#L662' className='source-link' target='_blank' rel='noopener noreferrer'>[source]</a><a href="#dagster_dbt.dbt_cloud_resource" class="hash-link"></a></Link></dt>
+    <dd>
+
+        <div className='lineblock'> </div>
+
+        :::info[beta]
+        This API is currently in beta, and may have breaking changes in minor version releases, with behavior changes in patch releases.
+
+
+        :::
+
+    This resource allows users to programatically interface with the dbt Cloud Administrative REST
+    API (v2) to launch jobs and monitor their progress. This currently implements only a subset of
+    the functionality exposed by the API.
+
+    For a complete set of documentation on the dbt Cloud Administrative REST API, including expected
+    response JSON schemae, see the [dbt Cloud API Docs](https://docs.getdbt.com/dbt-cloud/api-v2).
+
+    To configure this resource, we recommend using the [configured](https://legacy-docs.dagster.io/concepts/configuration/configured) method.
+
+    <strong>Examples:</strong>
+
+        ```python
+        from dagster import job
+        from dagster_dbt import dbt_cloud_resource
+
+        my_dbt_cloud_resource = dbt_cloud_resource.configured(
+            {
+                "auth_token": {"env": "DBT_CLOUD_AUTH_TOKEN"},
+                "account_id": {"env": "DBT_CLOUD_ACCOUNT_ID"},
+            }
+        )
+
+        @job(resource_defs={"dbt_cloud": my_dbt_cloud_resource})
+        def my_dbt_cloud_job():
+            ...
+        ```
+
+    </dd>
+
+</dl>
+</div></div></div>
+
+<div class="section" id="errors">
+
+## Errors
+
+<dl>
+    <dt><Link class="anchor" id='dagster_dbt.DagsterDbtError'>`exception` dagster_dbt.DagsterDbtError <a href='https://github.com/dagster-io/dagster/blob/master/python_modules/libraries/dagster-dbt/dagster_dbt/errors.py#L6' className='source-link' target='_blank' rel='noopener noreferrer'>[source]</a><a href="#dagster_dbt.DagsterDbtError" class="hash-link"></a></Link></dt>
+    <dd>
+    The base exception of the `dagster-dbt` library.
+    </dd>
+
+</dl>
+<dl>
+    <dt><Link class="anchor" id='dagster_dbt.DagsterDbtCliRuntimeError'>`exception` dagster_dbt.DagsterDbtCliRuntimeError <a href='https://github.com/dagster-io/dagster/blob/master/python_modules/libraries/dagster-dbt/dagster_dbt/errors.py#L10' className='source-link' target='_blank' rel='noopener noreferrer'>[source]</a><a href="#dagster_dbt.DagsterDbtCliRuntimeError" class="hash-link"></a></Link></dt>
+    <dd>
+    Represents an error while executing a dbt CLI command.
+    </dd>
+
+</dl>
+</div>
+
+<div class="section" id="utils">
+
+## Utils
+
+<dl>
+    <dt><Link class="anchor" id='dagster_dbt.default_group_from_dbt_resource_props'>dagster_dbt.default_group_from_dbt_resource_props <a href='https://github.com/dagster-io/dagster/blob/master/python_modules/libraries/dagster-dbt/dagster_dbt/asset_utils.py#L590' className='source-link' target='_blank' rel='noopener noreferrer'>[source]</a><a href="#dagster_dbt.default_group_from_dbt_resource_props" class="hash-link"></a></Link></dt>
+    <dd>
+
+    Get the group name for a dbt node.
+
+    If a Dagster group is configured in the metadata for the node, use that.
+
+    Otherwise, if a dbt group is configured for the node, use that.
+
+
+    </dd>
+
+</dl>
+<dl>
+    <dt><Link class="anchor" id='dagster_dbt.group_from_dbt_resource_props_fallback_to_directory'>dagster_dbt.group_from_dbt_resource_props_fallback_to_directory <a href='https://github.com/dagster-io/dagster/blob/master/python_modules/libraries/dagster-dbt/dagster_dbt/asset_utils.py#L610' className='source-link' target='_blank' rel='noopener noreferrer'>[source]</a><a href="#dagster_dbt.group_from_dbt_resource_props_fallback_to_directory" class="hash-link"></a></Link></dt>
+    <dd>
+
+    Get the group name for a dbt node.
+
+    Has the same behavior as the default_group_from_dbt_resource_props, except for that, if no group can be determined
+    from config or metadata, falls back to using the subdirectory of the models directory that the
+    source file is in.
+
+    Parameters: <strong>dbt_resource_props</strong> (<em>Mapping</em><em>[</em><em>str</em><em>, </em><em>Any</em><em>]</em>) – A dictionary representing the dbt resource.
+
+    </dd>
+
+</dl>
+<dl>
+    <dt><Link class="anchor" id='dagster_dbt.default_metadata_from_dbt_resource_props'>dagster_dbt.default_metadata_from_dbt_resource_props <a href='https://github.com/dagster-io/dagster/blob/master/python_modules/libraries/dagster-dbt/dagster_dbt/asset_utils.py#L551' className='source-link' target='_blank' rel='noopener noreferrer'>[source]</a><a href="#dagster_dbt.default_metadata_from_dbt_resource_props" class="hash-link"></a></Link></dt>
+    <dd>
+
+    </dd>
+
+</dl>
+</div></div>

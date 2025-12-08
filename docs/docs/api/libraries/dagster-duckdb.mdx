@@ -1,0 +1,238 @@
+---
+title: 'duckdb (dagster-duckdb)'
+title_meta: 'duckdb (dagster-duckdb) API Documentation - Build Better Data Pipelines | Python Reference Documentation for Dagster'
+description: 'duckdb (dagster-duckdb) Dagster API | Comprehensive Python API documentation for Dagster, the data orchestration platform. Learn how to build, test, and maintain data pipelines with our detailed guides and examples.'
+last_update:
+  date: '2025-12-05'
+custom_edit_url: null
+---
+
+<div class="section" id="duckdb-dagster-duckdb">
+
+# DuckDB (dagster-duckdb)
+
+This library provides an integration with the [DuckDB](https://duckdb.org) database.
+
+Related Guides:
+
+- [Using Dagster with DuckDB guide](https://docs.dagster.io/integrations/libraries/duckdb)
+- [DuckDB I/O manager reference](https://docs.dagster.io/integrations/libraries/duckdb/reference)
+
+<dl>
+    <dt><Link class="anchor" id='dagster_duckdb.DuckDBIOManager'>dagster_duckdb.DuckDBIOManager IOManagerDefinition <a href='https://github.com/dagster-io/dagster/blob/master/python_modules/libraries/dagster-duckdb/dagster_duckdb/io_manager.py#L137' className='source-link' target='_blank' rel='noopener noreferrer'>[source]</a><a href="#dagster_duckdb.DuckDBIOManager" class="hash-link"></a></Link></dt>
+    <dd>
+
+        <div className='lineblock'> </div>
+
+    Base class for an IO manager definition that reads inputs from and writes outputs to DuckDB.
+
+
+
+    Examples:
+
+        ```python
+        from dagster_duckdb import DuckDBIOManager
+        from dagster_duckdb_pandas import DuckDBPandasTypeHandler
+
+        class MyDuckDBIOManager(DuckDBIOManager):
+            @staticmethod
+            def type_handlers() -> Sequence[DbTypeHandler]:
+                return [DuckDBPandasTypeHandler()]
+
+        @asset(
+            key_prefix=["my_schema"]  # will be used as the schema in duckdb
+        )
+        def my_table() -> pd.DataFrame:  # the name of the asset will be the table name
+            ...
+
+        Definitions(
+            assets=[my_table],
+            resources={"io_manager": MyDuckDBIOManager(database="my_db.duckdb")}
+        )
+        ```
+    You can set a default schema to store the assets using the `schema` configuration value of the DuckDB I/O
+    Manager. This schema will be used if no other schema is specified directly on an asset or op.
+
+        ```python
+        Definitions(
+            assets=[my_table],
+            resources={"io_manager": MyDuckDBIOManager(database="my_db.duckdb", schema="my_schema")}
+        )
+        ```
+    On individual assets, you an also specify the schema where they should be stored using metadata or
+    by adding a `key_prefix` to the asset key. If both `key_prefix` and metadata are defined, the metadata will
+    take precedence.
+
+        ```python
+        @asset(
+            key_prefix=["my_schema"]  # will be used as the schema in duckdb
+        )
+        def my_table() -> pd.DataFrame:
+            ...
+
+        @asset(
+            metadata={"schema": "my_schema"}  # will be used as the schema in duckdb
+        )
+        def my_other_table() -> pd.DataFrame:
+            ...
+        ```
+    For ops, the schema can be specified by including a “schema” entry in output metadata.
+
+        ```python
+        @op(
+            out={"my_table": Out(metadata={"schema": "my_schema"})}
+        )
+        def make_my_table() -> pd.DataFrame:
+            ...
+        ```
+    If none of these is provided, the schema will default to “public”.
+
+    To only use specific columns of a table as input to a downstream op or asset, add the metadata “columns” to the
+    In or AssetIn.
+
+        ```python
+        @asset(
+            ins={"my_table": AssetIn("my_table", metadata={"columns": ["a"]})}
+        )
+        def my_table_a(my_table: pd.DataFrame):
+            # my_table will just contain the data from column "a"
+            ...
+        ```
+    Set DuckDB configuration options using the connection_config field. See
+    [https://duckdb.org/docs/sql/configuration.html](https://duckdb.org/docs/sql/configuration.html) for all available settings.
+
+        ```python
+        Definitions(
+            assets=[my_table],
+            resources={"io_manager": MyDuckDBIOManager(database="my_db.duckdb",
+                                                       connection_config={"arrow_large_buffer_size": True})}
+        )
+        ```
+
+    </dd>
+
+</dl>
+<dl>
+    <dt><Link class="anchor" id='dagster_duckdb.DuckDBResource'>dagster_duckdb.DuckDBResource ResourceDefinition <a href='https://github.com/dagster-io/dagster/blob/master/python_modules/libraries/dagster-duckdb/dagster_duckdb/resource.py#L11' className='source-link' target='_blank' rel='noopener noreferrer'>[source]</a><a href="#dagster_duckdb.DuckDBResource" class="hash-link"></a></Link></dt>
+    <dd>
+
+        <div className='lineblock'> </div>
+
+    Resource for interacting with a DuckDB database.
+
+
+
+    Examples:
+
+        ```python
+        from dagster import Definitions, asset
+        from dagster_duckdb import DuckDBResource
+
+        @asset
+        def my_table(duckdb: DuckDBResource):
+            with duckdb.get_connection() as conn:
+                conn.execute("SELECT * from MY_SCHEMA.MY_TABLE")
+
+        Definitions(
+            assets=[my_table],
+            resources={"duckdb": DuckDBResource(database="path/to/db.duckdb")}
+        )
+        ```
+
+    </dd>
+
+</dl>
+<div class="section" id="legacy">
+
+## Legacy
+
+<dl>
+    <dt><Link class="anchor" id='dagster_duckdb.build_duckdb_io_manager'>dagster_duckdb.build_duckdb_io_manager IOManagerDefinition <a href='https://github.com/dagster-io/dagster/blob/master/python_modules/libraries/dagster-duckdb/dagster_duckdb/io_manager.py#L25' className='source-link' target='_blank' rel='noopener noreferrer'>[source]</a><a href="#dagster_duckdb.build_duckdb_io_manager" class="hash-link"></a></Link></dt>
+    <dd>
+
+        <div className='lineblock'> </div>
+
+    Builds an IO manager definition that reads inputs from and writes outputs to DuckDB.
+
+    Parameters:
+      - <strong>type_handlers</strong> (<em>Sequence</em><em>[</em><em>DbTypeHandler</em><em>]</em>) – Each handler defines how to translate between DuckDB tables and an in-memory type - e.g. a Pandas DataFrame. If only one DbTypeHandler is provided, it will be used as the default_load_type.
+      - <strong>default_load_type</strong> (<em>Type</em>) – When an input has no type annotation, load it as this type.
+
+
+    Returns: IOManagerDefinition
+
+
+    Examples:
+
+        ```python
+        from dagster_duckdb import build_duckdb_io_manager
+        from dagster_duckdb_pandas import DuckDBPandasTypeHandler
+
+        @asset(
+            key_prefix=["my_schema"]  # will be used as the schema in duckdb
+        )
+        def my_table() -> pd.DataFrame:  # the name of the asset will be the table name
+            ...
+
+        duckdb_io_manager = build_duckdb_io_manager([DuckDBPandasTypeHandler()])
+
+        Definitions(
+            assets=[my_table]
+            resources={"io_manager" duckdb_io_manager.configured({"database": "my_db.duckdb"})}
+        )
+        ```
+    You can set a default schema to store the assets using the `schema` configuration value of the DuckDB I/O
+    Manager. This schema will be used if no other schema is specified directly on an asset or op.
+
+        ```python
+        Definitions(
+            assets=[my_table]
+            resources={"io_manager" duckdb_io_manager.configured(
+                {"database": "my_db.duckdb", "schema": "my_schema"} # will be used as the schema
+            )}
+        )
+        ```
+    On individual assets, you an also specify the schema where they should be stored using metadata or
+    by adding a `key_prefix` to the asset key. If both `key_prefix` and metadata are defined, the metadata will
+    take precedence.
+
+        ```python
+        @asset(
+            key_prefix=["my_schema"]  # will be used as the schema in duckdb
+        )
+        def my_table() -> pd.DataFrame:
+            ...
+
+        @asset(
+            metadata={"schema": "my_schema"}  # will be used as the schema in duckdb
+        )
+        def my_other_table() -> pd.DataFrame:
+            ...
+        ```
+    For ops, the schema can be specified by including a “schema” entry in output metadata.
+
+        ```python
+        @op(
+            out={"my_table": Out(metadata={"schema": "my_schema"})}
+        )
+        def make_my_table() -> pd.DataFrame:
+            ...
+        ```
+    If none of these is provided, the schema will default to “public”.
+
+    To only use specific columns of a table as input to a downstream op or asset, add the metadata “columns” to the
+    In or AssetIn.
+
+        ```python
+        @asset(
+            ins={"my_table": AssetIn("my_table", metadata={"columns": ["a"]})}
+        )
+        def my_table_a(my_table: pd.DataFrame):
+            # my_table will just contain the data from column "a"
+            ...
+        ```
+
+    </dd>
+
+</dl>
+</div></div>

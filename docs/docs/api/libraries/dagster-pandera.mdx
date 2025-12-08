@@ -1,0 +1,56 @@
+---
+title: 'pandera (dagster-pandera)'
+title_meta: 'pandera (dagster-pandera) API Documentation - Build Better Data Pipelines | Python Reference Documentation for Dagster'
+description: 'pandera (dagster-pandera) Dagster API | Comprehensive Python API documentation for Dagster, the data orchestration platform. Learn how to build, test, and maintain data pipelines with our detailed guides and examples.'
+last_update:
+  date: '2025-12-05'
+custom_edit_url: null
+---
+
+<div class="section" id="pandera-dagster-pandera">
+
+# Pandera (dagster-pandera)
+
+The <cite>dagster_pandera</cite> library allows Dagster users to use dataframe validation library [Pandera](https://github.com/pandera-dev/pandera) for the validation of Pandas dataframes. See [the guide](https://docs.dagster.io/integrations/libraries/pandera) for details.
+
+<dl>
+    <dt><Link class="anchor" id='dagster_pandera.pandera_schema_to_dagster_type'>dagster_pandera.pandera_schema_to_dagster_type <a href='https://github.com/dagster-io/dagster/blob/master/python_modules/libraries/dagster-pandera/dagster_pandera/__init__.py#L94' className='source-link' target='_blank' rel='noopener noreferrer'>[source]</a><a href="#dagster_pandera.pandera_schema_to_dagster_type" class="hash-link"></a></Link></dt>
+    <dd>
+
+        :::info[beta]
+        This API is currently in beta, and may have breaking changes in minor version releases, with behavior changes in patch releases.
+
+
+        :::
+
+    Convert a Pandera dataframe schema to a <cite>DagsterType</cite>.
+
+    The generated Dagster type will be given an automatically generated <cite>name</cite>. The schema’s <cite>title</cite>
+    property, <cite>name</cite> property, or class name (in that order) will be used. If neither <cite>title</cite> or
+    <cite>name</cite> is defined, a name of the form <cite>DagsterPanderaDataframe\<n></cite> is generated.
+
+    Additional metadata is also extracted from the Pandera schema and attached to the returned
+    <cite>DagsterType</cite> as a metadata dictionary. The extracted metadata includes:
+
+      - Descriptions on the schema and constituent columns and checks.
+      - Data types for each column.
+      - String representations of all column-wise checks.
+      - String representations of all row-wise (i.e. “wide”) checks.
+
+
+    The returned <cite>DagsterType</cite> type will call the Pandera schema’s <cite>validate()</cite> method in its type
+    check function. Validation is done in <cite>lazy</cite> mode, i.e. pandera will attempt to validate all
+    values in the dataframe, rather than stopping on the first error.
+
+    If validation fails, the returned <cite>TypeCheck</cite> object will contain two pieces of metadata:
+
+      - <cite>num_failures</cite> total number of validation errors.
+      - <cite>failure_sample</cite> a table containing up to the first 10 validation errors.
+
+
+    Parameters: <strong>schema</strong> (<em>Union</em><em>[</em><em>pa.DataFrameSchema</em><em>, </em><em>Type</em><em>[</em><em>pa.DataFrameModel</em><em>]</em><em>]</em>)Returns: Dagster Type constructed from the Pandera schema.Return type: [DagsterType](../dagster/types.mdx#dagster.DagsterType)
+
+    </dd>
+
+</dl>
+</div>

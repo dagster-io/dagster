@@ -1,0 +1,769 @@
+---
+title: 'airbyte (dagster-airbyte)'
+title_meta: 'airbyte (dagster-airbyte) API Documentation - Build Better Data Pipelines | Python Reference Documentation for Dagster'
+description: 'airbyte (dagster-airbyte) Dagster API | Comprehensive Python API documentation for Dagster, the data orchestration platform. Learn how to build, test, and maintain data pipelines with our detailed guides and examples.'
+last_update:
+  date: '2025-12-05'
+custom_edit_url: null
+---
+
+<div class="section" id="airbyte-dagster-airbyte">
+
+# Airbyte (dagster-airbyte)
+
+This library provides a Dagster integration with [Airbyte](https://www.airbyte.com).
+
+For more information on getting started, see the [Airbyte integration guide](https://docs.dagster.io/integrations/libraries/airbyte).
+
+<div class="section" id="component">
+
+## Component
+
+<dl>
+    <dt><Link class="anchor" id='dagster_airbyte.AirbyteWorkspaceComponent'>`class` dagster_airbyte.AirbyteWorkspaceComponent <a href='https://github.com/dagster-io/dagster/blob/master/python_modules/libraries/dagster-airbyte/dagster_airbyte/components/workspace_component/component.py#L230' className='source-link' target='_blank' rel='noopener noreferrer'>[source]</a><a href="#dagster_airbyte.AirbyteWorkspaceComponent" class="hash-link"></a></Link></dt>
+    <dd>
+
+    Loads Airbyte connections from a given Airbyte workspace as Dagster assets.
+    Materializing these assets will trigger a sync of the Airbyte connection, enabling
+    you to schedule Airbyte syncs using Dagster.
+
+
+
+    Example:
+
+        ```yaml
+        # defs.yaml
+
+        type: dagster_airbyte.AirbyteWorkspaceComponent
+        attributes:
+          workspace:
+            rest_api_base_url: http://localhost:8000/api/public/v1
+            configuration_api_base_url: http://localhost:8000/api/v1
+            workspace_id: your-workspace-id
+            client_id: "{{ env.AIRBYTE_CLIENT_ID }}"
+            client_secret: "{{ env.AIRBYTE_CLIENT_SECRET }}"
+          connection_selector:
+            by_name:
+              - my_postgres_to_snowflake_connection
+              - my_mysql_to_bigquery_connection
+        ```
+    <dl>
+        <dt><Link class="anchor" id='dagster_airbyte.AirbyteWorkspaceComponent.execute'>execute <a href='https://github.com/dagster-io/dagster/blob/master/python_modules/libraries/dagster-airbyte/dagster_airbyte/components/workspace_component/component.py#L334' className='source-link' target='_blank' rel='noopener noreferrer'>[source]</a><a href="#dagster_airbyte.AirbyteWorkspaceComponent.execute" class="hash-link"></a></Link></dt>
+        <dd>
+
+        Executes an Airbyte sync for the selected connection.
+
+        This method can be overridden in a subclass to customize the sync execution behavior,
+        such as adding custom logging or handling sync results differently.
+
+        Parameters:
+          - <strong>context</strong> – The asset execution context provided by Dagster
+          - <strong>airbyte</strong> – The BaseAirbyteWorkspace resource used to trigger and monitor syncs
+
+
+        Yields: AssetMaterialization or MaterializeResult events from the Airbyte sync
+
+
+        Example:
+
+        Override this method to add custom logging during sync execution:
+
+            ```python
+            from dagster_airbyte import AirbyteWorkspaceComponent
+            import dagster as dg
+
+            class CustomAirbyteWorkspaceComponent(AirbyteWorkspaceComponent):
+                def execute(self, context, airbyte):
+                    context.log.info(f"Starting Airbyte sync for connection")
+                    yield from super().execute(context, airbyte)
+                    context.log.info("Airbyte sync completed successfully")
+            ```
+
+        </dd>
+
+    </dl>
+    <dl>
+        <dt><Link class="anchor" id='dagster_airbyte.AirbyteWorkspaceComponent.get_asset_spec'>get_asset_spec <a href='https://github.com/dagster-io/dagster/blob/master/python_modules/libraries/dagster-airbyte/dagster_airbyte/components/workspace_component/component.py#L298' className='source-link' target='_blank' rel='noopener noreferrer'>[source]</a><a href="#dagster_airbyte.AirbyteWorkspaceComponent.get_asset_spec" class="hash-link"></a></Link></dt>
+        <dd>
+
+        Generates an AssetSpec for a given Airbyte connection table.
+
+        This method can be overridden in a subclass to customize how Airbyte connection tables
+        are converted to Dagster asset specs. By default, it delegates to the configured
+        DagsterAirbyteTranslator.
+
+        Parameters: <strong>props</strong> – The AirbyteConnectionTableProps containing information about the connection
+        and table/stream being syncedReturns: An AssetSpec that represents the Airbyte connection table as a Dagster asset
+
+
+        Example:
+
+        Override this method to add custom metadata to all Airbyte assets:
+
+            ```python
+            from dagster_airbyte import AirbyteWorkspaceComponent
+            import dagster as dg
+
+            class CustomAirbyteWorkspaceComponent(AirbyteWorkspaceComponent):
+                def get_asset_spec(self, props):
+                    base_spec = super().get_asset_spec(props)
+                    return base_spec.replace_attributes(
+                        metadata={
+                            **base_spec.metadata,
+                            "data_source": "airbyte",
+                            "connection_id": props.connection_id
+                        }
+                    )
+            ```
+
+        </dd>
+
+    </dl>
+
+    </dd>
+
+</dl>
+<div class="section" id="assets-airbyte-api">
+
+### Assets (Airbyte API)
+
+<dl>
+    <dt><Link class="anchor" id='dagster_airbyte.AirbyteCloudWorkspace'>dagster_airbyte.AirbyteCloudWorkspace ResourceDefinition <a href='https://github.com/dagster-io/dagster/blob/master/python_modules/libraries/dagster-airbyte/dagster_airbyte/resources.py#L831' className='source-link' target='_blank' rel='noopener noreferrer'>[source]</a><a href="#dagster_airbyte.AirbyteCloudWorkspace" class="hash-link"></a></Link></dt>
+    <dd>
+
+        <div className='lineblock'> </div>
+
+        :::info[beta]
+        This API is currently in beta, and may have breaking changes in minor version releases, with behavior changes in patch releases.
+
+
+        :::
+
+    This resource allows users to programatically interface with the Airbyte Cloud REST API to launch
+    syncs and monitor their progress for a given Airbyte Cloud workspace.
+
+    <strong>Examples:</strong>
+
+        ```python
+        from dagster_airbyte import AirbyteCloudWorkspace, build_airbyte_assets_definitions
+
+        import dagster as dg
+
+        airbyte_workspace = AirbyteCloudWorkspace(
+            workspace_id=dg.EnvVar("AIRBYTE_CLOUD_WORKSPACE_ID"),
+            client_id=dg.EnvVar("AIRBYTE_CLOUD_CLIENT_ID"),
+            client_secret=dg.EnvVar("AIRBYTE_CLOUD_CLIENT_SECRET"),
+        )
+
+        all_airbyte_assets = build_airbyte_assets_definitions(workspace=airbyte_workspace)
+
+        defs = dg.Definitions(
+            assets=all_airbyte_assets,
+            resources={"airbyte": airbyte_workspace},
+        )
+        ```
+
+    </dd>
+
+</dl>
+<dl>
+    <dt><Link class="anchor" id='dagster_airbyte.AirbyteWorkspace'>dagster_airbyte.AirbyteWorkspace ResourceDefinition <a href='https://github.com/dagster-io/dagster/blob/master/python_modules/libraries/dagster-airbyte/dagster_airbyte/resources.py#L711' className='source-link' target='_blank' rel='noopener noreferrer'>[source]</a><a href="#dagster_airbyte.AirbyteWorkspace" class="hash-link"></a></Link></dt>
+    <dd>
+
+        <div className='lineblock'> </div>
+
+        :::info[beta]
+        This API is currently in beta, and may have breaking changes in minor version releases, with behavior changes in patch releases.
+
+
+        :::
+
+    This resource allows users to programatically interface with the Airbyte REST API to launch
+    syncs and monitor their progress for a given Airbyte workspace.
+
+    <strong>Examples:</strong>
+    Using OAuth client credentials:
+
+        ```python
+        import dagster as dg
+        from dagster_airbyte import AirbyteWorkspace, build_airbyte_assets_definitions
+
+        airbyte_workspace = AirbyteWorkspace(
+            rest_api_base_url=dg.EnvVar("AIRBYTE_REST_API_BASE_URL"),
+            configuration_api_base_url=dg.EnvVar("AIRBYTE_CONFIGURATION_API_BASE_URL"),
+            workspace_id=dg.EnvVar("AIRBYTE_WORKSPACE_ID"),
+            client_id=dg.EnvVar("AIRBYTE_CLIENT_ID"),
+            client_secret=dg.EnvVar("AIRBYTE_CLIENT_SECRET"),
+        )
+
+        all_airbyte_assets = build_airbyte_assets_definitions(workspace=airbyte_workspace)
+
+        defs = dg.Definitions(
+            assets=all_airbyte_assets,
+            resources={"airbyte": airbyte_workspace},
+        )
+        ```
+    Using basic Authentication:
+
+        ```python
+        import dagster as dg
+        from dagster_airbyte import AirbyteWorkspace, build_airbyte_assets_definitions
+
+        airbyte_workspace = AirbyteWorkspace(
+            rest_api_base_url=dg.EnvVar("AIRBYTE_REST_API_BASE_URL"),
+            configuration_api_base_url=dg.EnvVar("AIRBYTE_CONFIGURATION_API_BASE_URL"),
+            workspace_id=dg.EnvVar("AIRBYTE_WORKSPACE_ID"),
+            username=dg.EnvVar("AIRBYTE_USERNAME"),
+            password=dg.EnvVar("AIRBYTE_PASSWORD"),
+        )
+
+        all_airbyte_assets = build_airbyte_assets_definitions(workspace=airbyte_workspace)
+
+        defs = dg.Definitions(
+            assets=all_airbyte_assets,
+            resources={"airbyte": airbyte_workspace},
+        )
+        ```
+    Using no authentication:
+
+        ```python
+        import dagster as dg
+        from dagster_airbyte import AirbyteWorkspace, build_airbyte_assets_definitions
+
+        airbyte_workspace = AirbyteWorkspace(
+            rest_api_base_url=dg.EnvVar("AIRBYTE_REST_API_BASE_URL"),
+            configuration_api_base_url=dg.EnvVar("AIRBYTE_CONFIGURATION_API_BASE_URL"),
+            workspace_id=dg.EnvVar("AIRBYTE_WORKSPACE_ID"),
+        )
+
+        all_airbyte_assets = build_airbyte_assets_definitions(workspace=airbyte_workspace)
+
+        defs = dg.Definitions(
+            assets=all_airbyte_assets,
+            resources={"airbyte": airbyte_workspace},
+        )
+        ```
+
+    </dd>
+
+</dl>
+<dl>
+    <dt><Link class="anchor" id='dagster_airbyte.DagsterAirbyteTranslator'>`class` dagster_airbyte.DagsterAirbyteTranslator <a href='https://github.com/dagster-io/dagster/blob/master/python_modules/libraries/dagster-airbyte/dagster_airbyte/translator.py#L224' className='source-link' target='_blank' rel='noopener noreferrer'>[source]</a><a href="#dagster_airbyte.DagsterAirbyteTranslator" class="hash-link"></a></Link></dt>
+    <dd>
+
+        :::info[beta]
+        This API is currently in beta, and may have breaking changes in minor version releases, with behavior changes in patch releases.
+
+
+        :::
+
+    Translator class which converts a <cite>AirbyteConnectionTableProps</cite> object into AssetSpecs.
+    Subclass this class to implement custom logic how to translate Airbyte content into asset spec.
+
+
+    </dd>
+
+</dl>
+<dl>
+    <dt><Link class="anchor" id='dagster_airbyte.load_airbyte_asset_specs'>dagster_airbyte.load_airbyte_asset_specs <a href='https://github.com/dagster-io/dagster/blob/master/python_modules/libraries/dagster-airbyte/dagster_airbyte/resources.py#L883' className='source-link' target='_blank' rel='noopener noreferrer'>[source]</a><a href="#dagster_airbyte.load_airbyte_asset_specs" class="hash-link"></a></Link></dt>
+    <dd>
+
+        :::info[beta]
+        This API is currently in beta, and may have breaking changes in minor version releases, with behavior changes in patch releases.
+
+
+        :::
+
+    Returns a list of AssetSpecs representing the Airbyte content in the workspace.
+
+    Parameters:
+      - <strong>workspace</strong> (<em>BaseAirbyteWorkspace</em>) – The Airbyte workspace to fetch assets from.
+      - <strong>dagster_airbyte_translator</strong> (<em>Optional</em><em>[</em>[*DagsterAirbyteTranslator*](#dagster_airbyte.DagsterAirbyteTranslator)<em>]</em><em>, </em><em>optional</em>) – The translator to use to convert Airbyte content into [`dagster.AssetSpec`](../dagster/assets.mdx#dagster.AssetSpec). Defaults to [`DagsterAirbyteTranslator`](#dagster_airbyte.DagsterAirbyteTranslator).
+      - <strong>connection_selector_fn</strong> (<em>Optional</em><em>[</em><em>Callable</em><em>[</em><em>[</em><em>AirbyteConnection</em><em>]</em><em>, </em><em>bool</em><em>]</em><em>]</em>) – A function that allows for filtering which Airbyte connection assets are created for.
+
+
+    Returns: The set of assets representing the Airbyte content in the workspace.Return type: List[[AssetSpec](../dagster/assets.mdx#dagster.AssetSpec)]
+
+
+    Examples:
+
+    Loading the asset specs for a given Airbyte workspace:
+
+        ```python
+        from dagster_airbyte import AirbyteWorkspace, load_airbyte_asset_specs
+
+        import dagster as dg
+
+        airbyte_workspace = AirbyteWorkspace(
+            workspace_id=dg.EnvVar("AIRBYTE_WORKSPACE_ID"),
+            client_id=dg.EnvVar("AIRBYTE_CLIENT_ID"),
+            client_secret=dg.EnvVar("AIRBYTE_CLIENT_SECRET"),
+        )
+
+        airbyte_specs = load_airbyte_asset_specs(airbyte_workspace)
+        dg.Definitions(assets=airbyte_specs)
+        ```
+    Filter connections by name:
+
+        ```python
+        from dagster_airbyte import AirbyteWorkspace, load_airbyte_asset_specs
+
+        import dagster as dg
+
+        airbyte_workspace = AirbyteWorkspace(
+            workspace_id=dg.EnvVar("AIRBYTE_WORKSPACE_ID"),
+            client_id=dg.EnvVar("AIRBYTE_CLIENT_ID"),
+            client_secret=dg.EnvVar("AIRBYTE_CLIENT_SECRET"),
+        )
+
+        airbyte_specs = load_airbyte_asset_specs(
+            workspace=airbyte_workspace,
+            connection_selector_fn=lambda connection: connection.name in ["connection1", "connection2"]
+        )
+        dg.Definitions(assets=airbyte_specs)
+        ```
+
+    </dd>
+
+</dl>
+<dl>
+    <dt><Link class="anchor" id='dagster_airbyte.load_airbyte_cloud_asset_specs'>dagster_airbyte.load_airbyte_cloud_asset_specs <a href='https://github.com/dagster-io/dagster/blob/master/python_modules/libraries/dagster-airbyte/dagster_airbyte/resources.py#L961' className='source-link' target='_blank' rel='noopener noreferrer'>[source]</a><a href="#dagster_airbyte.load_airbyte_cloud_asset_specs" class="hash-link"></a></Link></dt>
+    <dd>
+
+        :::warning[superseded]
+        This API has been superseded.
+         Use load_airbyte_asset_specs instead..
+
+        :::
+
+    Returns a list of AssetSpecs representing the Airbyte content in the workspace.
+
+    Parameters:
+      - <strong>workspace</strong> (<em>AirbyteCloudWorkspace</em>) – The Airbyte Cloud workspace to fetch assets from.
+      - <strong>dagster_airbyte_translator</strong> (<em>Optional</em><em>[</em>[*DagsterAirbyteTranslator*](#dagster_airbyte.DagsterAirbyteTranslator)<em>]</em><em>, </em><em>optional</em>) – The translator to use to convert Airbyte content into [`dagster.AssetSpec`](../dagster/assets.mdx#dagster.AssetSpec). Defaults to [`DagsterAirbyteTranslator`](#dagster_airbyte.DagsterAirbyteTranslator).
+      - <strong>connection_selector_fn</strong> (<em>Optional</em><em>[</em><em>Callable</em><em>[</em><em>[</em><em>AirbyteConnection</em><em>]</em><em>, </em><em>bool</em><em>]</em><em>]</em>) – A function that allows for filtering which Airbyte connection assets are created for.
+
+
+    Returns: The set of assets representing the Airbyte content in the workspace.Return type: List[[AssetSpec](../dagster/assets.mdx#dagster.AssetSpec)]
+
+
+    Examples:
+
+    Loading the asset specs for a given Airbyte Cloud workspace:
+
+        ```python
+        from dagster_airbyte import AirbyteCloudWorkspace, load_airbyte_cloud_asset_specs
+
+        import dagster as dg
+
+        airbyte_cloud_workspace = AirbyteCloudWorkspace(
+            workspace_id=dg.EnvVar("AIRBYTE_CLOUD_WORKSPACE_ID"),
+            client_id=dg.EnvVar("AIRBYTE_CLOUD_CLIENT_ID"),
+            client_secret=dg.EnvVar("AIRBYTE_CLOUD_CLIENT_SECRET"),
+        )
+
+        airbyte_cloud_specs = load_airbyte_cloud_asset_specs(airbyte_cloud_workspace)
+        dg.Definitions(assets=airbyte_cloud_specs)
+        ```
+    Filter connections by name:
+
+        ```python
+        from dagster_airbyte import AirbyteCloudWorkspace, load_airbyte_cloud_asset_specs
+
+        import dagster as dg
+
+        airbyte_cloud_workspace = AirbyteCloudWorkspace(
+            workspace_id=dg.EnvVar("AIRBYTE_CLOUD_WORKSPACE_ID"),
+            client_id=dg.EnvVar("AIRBYTE_CLOUD_CLIENT_ID"),
+            client_secret=dg.EnvVar("AIRBYTE_CLOUD_CLIENT_SECRET"),
+        )
+
+        airbyte_cloud_specs = load_airbyte_cloud_asset_specs(
+            workspace=airbyte_cloud_workspace,
+            connection_selector_fn=lambda connection: connection.name in ["connection1", "connection2"]
+        )
+        dg.Definitions(assets=airbyte_cloud_specs)
+        ```
+
+    </dd>
+
+</dl>
+<dl>
+    <dt><Link class="anchor" id='dagster_airbyte.airbyte_assets'>@dagster_airbyte.airbyte_assets <a href='https://github.com/dagster-io/dagster/blob/master/python_modules/libraries/dagster-airbyte/dagster_airbyte/asset_decorator.py#L12' className='source-link' target='_blank' rel='noopener noreferrer'>[source]</a><a href="#dagster_airbyte.airbyte_assets" class="hash-link"></a></Link></dt>
+    <dd>
+
+        :::info[beta]
+        This API is currently in beta, and may have breaking changes in minor version releases, with behavior changes in patch releases.
+
+
+        :::
+
+    Create a definition for how to sync the tables of a given Airbyte connection.
+
+    Parameters:
+      - <strong>connection_id</strong> (<em>str</em>) – The Airbyte Connection ID.
+      - <strong>workspace</strong> (<em>Union</em><em>[</em><em>AirbyteWorkspace</em><em>, </em><em>AirbyteCloudWorkspace</em><em>]</em>) – The Airbyte workspace to fetch assets from.
+      - <strong>name</strong> (<em>Optional</em><em>[</em><em>str</em><em>]</em><em>, </em><em>optional</em>) – The name of the op.
+      - <strong>group_name</strong> (<em>Optional</em><em>[</em><em>str</em><em>]</em><em>, </em><em>optional</em>) – The name of the asset group.
+      - <strong>dagster_airbyte_translator</strong> (<em>Optional</em><em>[</em>[*DagsterAirbyteTranslator*](#dagster_airbyte.DagsterAirbyteTranslator)<em>]</em><em>, </em><em>optional</em>) – The translator to use to convert Airbyte content into [`dagster.AssetSpec`](../dagster/assets.mdx#dagster.AssetSpec). Defaults to [`DagsterAirbyteTranslator`](#dagster_airbyte.DagsterAirbyteTranslator).
+
+
+
+
+    Examples:
+
+    Sync the tables of an Airbyte connection:
+
+        ```python
+        from dagster_airbyte import AirbyteCloudWorkspace, airbyte_assets
+
+        import dagster as dg
+
+        airbyte_workspace = AirbyteCloudWorkspace(
+            workspace_id=dg.EnvVar("AIRBYTE_CLOUD_WORKSPACE_ID"),
+            client_id=dg.EnvVar("AIRBYTE_CLOUD_CLIENT_ID"),
+            client_secret=dg.EnvVar("AIRBYTE_CLOUD_CLIENT_SECRET"),
+        )
+
+
+        @airbyte_assets(
+            connection_id="airbyte_connection_id",
+            workspace=airbyte_workspace,
+        )
+        def airbyte_connection_assets(context: dg.AssetExecutionContext, airbyte: AirbyteCloudWorkspace):
+            yield from airbyte.sync_and_poll(context=context)
+
+
+        defs = dg.Definitions(
+            assets=[airbyte_connection_assets],
+            resources={"airbyte": airbyte_workspace},
+        )
+        ```
+    Sync the tables of an Airbyte connection with a custom translator:
+
+        ```python
+        from dagster_airbyte import (
+            DagsterAirbyteTranslator,
+            AirbyteConnectionTableProps,
+            AirbyteCloudWorkspace,
+            airbyte_assets
+        )
+
+        import dagster as dg
+
+        class CustomDagsterAirbyteTranslator(DagsterAirbyteTranslator):
+            def get_asset_spec(self, props: AirbyteConnectionTableProps) -> dg.AssetSpec:
+                default_spec = super().get_asset_spec(props)
+                return default_spec.merge_attributes(
+                    metadata={"custom": "metadata"},
+                )
+
+        airbyte_workspace = AirbyteCloudWorkspace(
+            workspace_id=dg.EnvVar("AIRBYTE_CLOUD_WORKSPACE_ID"),
+            client_id=dg.EnvVar("AIRBYTE_CLOUD_CLIENT_ID"),
+            client_secret=dg.EnvVar("AIRBYTE_CLOUD_CLIENT_SECRET"),
+        )
+
+
+        @airbyte_assets(
+            connection_id="airbyte_connection_id",
+            workspace=airbyte_workspace,
+            dagster_airbyte_translator=CustomDagsterAirbyteTranslator()
+        )
+        def airbyte_connection_assets(context: dg.AssetExecutionContext, airbyte: AirbyteCloudWorkspace):
+            yield from airbyte.sync_and_poll(context=context)
+
+
+        defs = dg.Definitions(
+            assets=[airbyte_connection_assets],
+            resources={"airbyte": airbyte_workspace},
+        )
+        ```
+
+    </dd>
+
+</dl>
+<dl>
+    <dt><Link class="anchor" id='dagster_airbyte.build_airbyte_assets_definitions'>dagster_airbyte.build_airbyte_assets_definitions <a href='https://github.com/dagster-io/dagster/blob/master/python_modules/libraries/dagster-airbyte/dagster_airbyte/asset_defs.py#L1053' className='source-link' target='_blank' rel='noopener noreferrer'>[source]</a><a href="#dagster_airbyte.build_airbyte_assets_definitions" class="hash-link"></a></Link></dt>
+    <dd>
+
+        :::info[beta]
+        This API is currently in beta, and may have breaking changes in minor version releases, with behavior changes in patch releases.
+
+
+        :::
+
+    The list of AssetsDefinition for all connections in the Airbyte workspace.
+
+    Parameters:
+      - <strong>workspace</strong> (<em>Union</em><em>[</em><em>AirbyteWorkspace</em><em>, </em><em>AirbyteCloudWorkspace</em><em>]</em>) – The Airbyte workspace to fetch assets from.
+      - <strong>dagster_airbyte_translator</strong> (<em>Optional</em><em>[</em>[*DagsterAirbyteTranslator*](#dagster_airbyte.DagsterAirbyteTranslator)<em>]</em><em>, </em><em>optional</em>) – The translator to use to convert Airbyte content into [`dagster.AssetSpec`](../dagster/assets.mdx#dagster.AssetSpec). Defaults to [`DagsterAirbyteTranslator`](#dagster_airbyte.DagsterAirbyteTranslator).
+      - <strong>connection_selector_fn</strong> (<em>Optional</em><em>[</em><em>Callable</em><em>[</em><em>[</em><em>AirbyteConnection</em><em>]</em><em>, </em><em>bool</em><em>]</em><em>]</em>) – A function that allows for filtering which Airbyte connection assets are created for.
+
+
+    Returns: The list of AssetsDefinition for all connections in the Airbyte workspace.Return type: List[[AssetsDefinition](../dagster/assets.mdx#dagster.AssetsDefinition)]
+
+
+    Examples:
+
+    Sync the tables of a Airbyte connection:
+
+        ```python
+        from dagster_airbyte import AirbyteCloudWorkspace, build_airbyte_assets_definitions
+
+        import dagster as dg
+
+        airbyte_workspace = AirbyteCloudWorkspace(
+            workspace_id=dg.EnvVar("AIRBYTE_CLOUD_WORKSPACE_ID"),
+            client_id=dg.EnvVar("AIRBYTE_CLOUD_CLIENT_ID"),
+            client_secret=dg.EnvVar("AIRBYTE_CLOUD_CLIENT_SECRET"),
+        )
+
+        airbyte_assets = build_airbyte_assets_definitions(workspace=workspace)
+
+        defs = dg.Definitions(
+            assets=airbyte_assets,
+            resources={"airbyte": airbyte_workspace},
+        )
+        ```
+    Sync the tables of a Airbyte connection with a custom translator:
+
+        ```python
+        from dagster_airbyte import (
+            DagsterAirbyteTranslator,
+            AirbyteConnectionTableProps,
+            AirbyteCloudWorkspace,
+            build_airbyte_assets_definitions
+        )
+
+        import dagster as dg
+
+        class CustomDagsterAirbyteTranslator(DagsterAirbyteTranslator):
+            def get_asset_spec(self, props: AirbyteConnectionTableProps) -> dg.AssetSpec:
+                default_spec = super().get_asset_spec(props)
+                return default_spec.merge_attributes(
+                    metadata={"custom": "metadata"},
+                )
+
+        airbyte_workspace = AirbyteCloudWorkspace(
+            workspace_id=dg.EnvVar("AIRBYTE_CLOUD_WORKSPACE_ID"),
+            client_id=dg.EnvVar("AIRBYTE_CLOUD_CLIENT_ID"),
+            client_secret=dg.EnvVar("AIRBYTE_CLOUD_CLIENT_SECRET"),
+        )
+
+        airbyte_assets = build_airbyte_assets_definitions(
+            workspace=workspace,
+            dagster_airbyte_translator=CustomDagsterAirbyteTranslator()
+        )
+
+        defs = dg.Definitions(
+            assets=airbyte_assets,
+            resources={"airbyte": airbyte_workspace},
+        )
+        ```
+    Filter connections by name:
+
+        ```python
+        from dagster_airbyte import AirbyteCloudWorkspace, build_airbyte_assets_definitions
+
+        import dagster as dg
+
+        airbyte_workspace = AirbyteCloudWorkspace(
+            workspace_id=dg.EnvVar("AIRBYTE_CLOUD_WORKSPACE_ID"),
+            client_id=dg.EnvVar("AIRBYTE_CLOUD_CLIENT_ID"),
+            client_secret=dg.EnvVar("AIRBYTE_CLOUD_CLIENT_SECRET"),
+        )
+
+        airbyte_assets = build_airbyte_assets_definitions(
+            workspace=workspace,
+            connection_selector_fn=lambda connection: connection.name in ["connection1", "connection2"]
+        )
+
+        defs = dg.Definitions(
+            assets=airbyte_assets,
+            resources={"airbyte": airbyte_workspace},
+        )
+        ```
+
+    </dd>
+
+</dl>
+</div>
+
+<div class="section" id="legacy">
+
+### Legacy
+
+<dl>
+    <dt><Link class="anchor" id='dagster_airbyte.AirbyteResource'>dagster_airbyte.AirbyteResource ResourceDefinition <a href='https://github.com/dagster-io/dagster/blob/master/python_modules/libraries/dagster-airbyte/dagster_airbyte/legacy_resources.py#L259' className='source-link' target='_blank' rel='noopener noreferrer'>[source]</a><a href="#dagster_airbyte.AirbyteResource" class="hash-link"></a></Link></dt>
+    <dd>
+
+        <div className='lineblock'> </div>
+
+        :::warning[superseded]
+        This API has been superseded.
+         If you are using Airbyte 1.6.0 or higher, please see the migration guide: https://docs.dagster.io/integrations/libraries/airbyte/migration-guide.
+
+        :::
+
+    This resource allows users to programatically interface with the Airbyte REST API to launch
+    syncs and monitor their progress.
+
+    <strong>Examples:</strong>
+
+        ```python
+        from dagster import job, EnvVar
+        from dagster_airbyte import AirbyteResource
+
+        my_airbyte_resource = AirbyteResource(
+            host=EnvVar("AIRBYTE_HOST"),
+            port=EnvVar("AIRBYTE_PORT"),
+            # If using basic auth
+            username=EnvVar("AIRBYTE_USERNAME"),
+            password=EnvVar("AIRBYTE_PASSWORD"),
+        )
+
+        airbyte_assets = build_airbyte_assets(
+            connection_id="87b7fe85-a22c-420e-8d74-b30e7ede77df",
+            destination_tables=["releases", "tags", "teams"],
+        )
+
+        Definitions(
+            assets=[airbyte_assets],
+            resources={"airbyte": my_airbyte_resource},
+        )
+        ```
+
+    </dd>
+
+</dl>
+<dl>
+    <dt><Link class="anchor" id='dagster_airbyte.load_assets_from_airbyte_instance'>dagster_airbyte.load_assets_from_airbyte_instance <a href='https://github.com/dagster-io/dagster/blob/master/python_modules/libraries/dagster-airbyte/dagster_airbyte/asset_defs.py#L912' className='source-link' target='_blank' rel='noopener noreferrer'>[source]</a><a href="#dagster_airbyte.load_assets_from_airbyte_instance" class="hash-link"></a></Link></dt>
+    <dd>
+
+        :::warning[superseded]
+        This API has been superseded.
+         If you are using Airbyte 1.6.0 or higher, please see the migration guide: https://docs.dagster.io/integrations/libraries/airbyte/migration-guide.
+
+        :::
+
+    Loads Airbyte connection assets from a configured AirbyteResource instance. This fetches information
+    about defined connections at initialization time, and will error on workspace load if the Airbyte
+    instance is not reachable.
+
+    Parameters:
+      - <strong>airbyte</strong> ([*ResourceDefinition*](../dagster/resources.mdx#dagster.ResourceDefinition)) – An AirbyteResource configured with the appropriate connection details.
+      - <strong>workspace_id</strong> (<em>Optional</em><em>[</em><em>str</em><em>]</em>) – The ID of the Airbyte workspace to load connections from. Only required if multiple workspaces exist in your instance.
+      - <strong>key_prefix</strong> (<em>Optional</em><em>[</em><em>CoercibleToAssetKeyPrefix</em><em>]</em>) – A prefix for the asset keys created.
+      - <strong>create_assets_for_normalization_tables</strong> (<em>bool</em>) – If True, assets will be created for tables created by Airbyte’s normalization feature. If False, only the destination tables will be created. Defaults to True.
+      - <strong>connection_to_group_fn</strong> (<em>Optional</em><em>[</em><em>Callable</em><em>[</em><em>[</em><em>str</em><em>]</em><em>, </em><em>Optional</em><em>[</em><em>str</em><em>]</em><em>]</em><em>]</em>) – Function which returns an asset group name for a given Airbyte connection name. If None, no groups will be created. Defaults to a basic sanitization function.
+      - <strong>connection_meta_to_group_fn</strong> (<em>Optional</em><em>[</em><em>Callable</em><em>[</em><em>[</em><em>AirbyteConnectionMetadata</em><em>]</em><em>, </em><em>Optional</em><em>[</em><em>str</em><em>]</em><em>]</em><em>]</em>) – Function which returns an asset group name for a given Airbyte connection metadata. If None and connection_to_group_fn is None, no groups will be created
+      - <strong>io_manager_key</strong> (<em>Optional</em><em>[</em><em>str</em><em>]</em>) – The I/O manager key to use for all assets. Defaults to “io_manager”. Use this if all assets should be loaded from the same source, otherwise use connection_to_io_manager_key_fn.
+      - <strong>connection_to_io_manager_key_fn</strong> (<em>Optional</em><em>[</em><em>Callable</em><em>[</em><em>[</em><em>str</em><em>]</em><em>, </em><em>Optional</em><em>[</em><em>str</em><em>]</em><em>]</em><em>]</em>) – Function which returns an I/O manager key for a given Airbyte connection name. When other ops are downstream of the loaded assets, the IOManager specified determines how the inputs to those ops are loaded. Defaults to “io_manager”.
+      - <strong>connection_filter</strong> (<em>Optional</em><em>[</em><em>Callable</em><em>[</em><em>[</em><em>AirbyteConnectionMetadata</em><em>]</em><em>, </em><em>bool</em><em>]</em><em>]</em>) – Optional function which takes in connection metadata and returns False if the connection should be excluded from the output assets.
+      - <strong>connection_to_asset_key_fn</strong> (<em>Optional</em><em>[</em><em>Callable</em><em>[</em><em>[</em><em>AirbyteConnectionMetadata</em><em>, </em><em>str</em><em>]</em><em>, </em>[*AssetKey*](../dagster/assets.mdx#dagster.AssetKey)<em>]</em><em>]</em>) – Optional function which takes in connection metadata and table name and returns an asset key for the table. If None, the default asset key is based on the table name. Any asset key prefix will be applied to the output of this function.
+      - <strong>connection_to_freshness_policy_fn</strong> (<em>Optional</em><em>[</em><em>Callable</em><em>[</em><em>[</em><em>AirbyteConnectionMetadata</em><em>]</em><em>, </em><em>Optional</em><em>[</em>[*FreshnessPolicy*](../dagster/assets.mdx#dagster.FreshnessPolicy)<em>]</em><em>]</em><em>]</em>) – Optional function which takes in connection metadata and returns a freshness policy for the connection’s assets. If None, no freshness policies will be applied to the assets.
+      - <strong>connection_to_auto_materialize_policy_fn</strong> (<em>Optional</em><em>[</em><em>Callable</em><em>[</em><em>[</em><em>AirbyteConnectionMetadata</em><em>]</em><em>, </em><em>Optional</em><em>[</em><em>AutoMaterializePolicy</em><em>]</em><em>]</em><em>]</em>) – Optional function which takes in connection metadata and returns an auto materialization policy for the connection’s assets. If None, no auto materialization policies will be applied to the assets.
+
+
+    <strong>Examples:</strong>
+
+    Loading all Airbyte connections as assets:
+
+        ```python
+        from dagster_airbyte import airbyte_resource, load_assets_from_airbyte_instance
+
+        airbyte_instance = airbyte_resource.configured(
+            {
+                "host": "localhost",
+                "port": "8000",
+            }
+        )
+        airbyte_assets = load_assets_from_airbyte_instance(airbyte_instance)
+        ```
+    Filtering the set of loaded connections:
+
+        ```python
+        from dagster_airbyte import airbyte_resource, load_assets_from_airbyte_instance
+
+        airbyte_instance = airbyte_resource.configured(
+            {
+                "host": "localhost",
+                "port": "8000",
+            }
+        )
+        airbyte_assets = load_assets_from_airbyte_instance(
+            airbyte_instance,
+            connection_filter=lambda meta: "snowflake" in meta.name,
+        )
+        ```
+
+    </dd>
+
+</dl>
+<dl>
+    <dt><Link class="anchor" id='dagster_airbyte.build_airbyte_assets'>dagster_airbyte.build_airbyte_assets <a href='https://github.com/dagster-io/dagster/blob/master/python_modules/libraries/dagster-airbyte/dagster_airbyte/asset_defs.py#L254' className='source-link' target='_blank' rel='noopener noreferrer'>[source]</a><a href="#dagster_airbyte.build_airbyte_assets" class="hash-link"></a></Link></dt>
+    <dd>
+
+    Builds a set of assets representing the tables created by an Airbyte sync operation.
+
+    Parameters:
+      - <strong>connection_id</strong> (<em>str</em>) – The Airbyte Connection ID that this op will sync. You can retrieve this value from the “Connections” tab of a given connector in the Airbyte UI.
+      - <strong>destination_tables</strong> (<em>List</em><em>[</em><em>str</em><em>]</em>) – The names of the tables that you want to be represented in the Dagster asset graph for this sync. This will generally map to the name of the stream in Airbyte, unless a stream prefix has been specified in Airbyte.
+      - <strong>destination_database</strong> (<em>Optional</em><em>[</em><em>str</em><em>]</em>) – The name of the destination database.
+      - <strong>destination_schema</strong> (<em>Optional</em><em>[</em><em>str</em><em>]</em>) – The name of the destination schema.
+      - <strong>normalization_tables</strong> (<em>Optional</em><em>[</em><em>Mapping</em><em>[</em><em>str</em><em>, </em><em>List</em><em>[</em><em>str</em><em>]</em><em>]</em><em>]</em>) – If you are using Airbyte’s normalization feature, you may specify a mapping of destination table to a list of derived tables that will be created by the normalization process.
+      - <strong>asset_key_prefix</strong> (<em>Optional</em><em>[</em><em>List</em><em>[</em><em>str</em><em>]</em><em>]</em>) – A prefix for the asset keys inside this asset. If left blank, assets will have a key of <cite>AssetKey([table_name])</cite>.
+      - <strong>deps</strong> (<em>Optional</em><em>[</em><em>Sequence</em><em>[</em><em>Union</em><em>[</em>[*AssetsDefinition*](../dagster/assets.mdx#dagster.AssetsDefinition)<em>, </em>[*SourceAsset*](../dagster/assets.mdx#dagster.SourceAsset)<em>, </em><em>str</em><em>, </em>[*AssetKey*](../dagster/assets.mdx#dagster.AssetKey)<em>]</em><em>]</em><em>]</em>) – A list of assets to add as sources.
+      - <strong>upstream_assets</strong> (<em>Optional</em><em>[</em><em>Set</em><em>[</em>[*AssetKey*](../dagster/assets.mdx#dagster.AssetKey)<em>]</em><em>]</em>) – Deprecated, use deps instead. A list of assets to add as sources.
+      - <strong>stream_to_asset_map</strong> (<em>Optional</em><em>[</em><em>Mapping</em><em>[</em><em>str</em><em>, </em><em>str</em><em>]</em><em>]</em>) – A mapping of an Airbyte stream name to a Dagster asset. This allows the use of the “prefix” setting in Airbyte with special characters that aren’t valid asset names.
+
+
+
+    </dd>
+
+</dl>
+<dl>
+    <dt><Link class="anchor" id='dagster_airbyte.airbyte_sync_op'>dagster_airbyte.airbyte_sync_op `=` \<dagster._core.definitions.op_definition.OpDefinition object> <a href='https://github.com/dagster-io/dagster/blob/master/python_modules/libraries/dagster-airbyte/dagster_airbyte/ops.py#L54' className='source-link' target='_blank' rel='noopener noreferrer'>[source]</a><a href="#dagster_airbyte.airbyte_sync_op" class="hash-link"></a></Link></dt>
+    <dd>
+
+        <div className='lineblock'> </div>
+
+    Executes a Airbyte job sync for a given `connection_id`, and polls until that sync
+    completes, raising an error if it is unsuccessful. It outputs a AirbyteOutput which contains
+    the job details for a given `connection_id`.
+
+    It requires the use of the `airbyte_resource`, which allows it to
+    communicate with the Airbyte API.
+
+
+
+    Examples:
+
+        ```python
+        from dagster import job
+        from dagster_airbyte import airbyte_resource, airbyte_sync_op
+
+        my_airbyte_resource = airbyte_resource.configured(
+            {
+                "host": {"env": "AIRBYTE_HOST"},
+                "port": {"env": "AIRBYTE_PORT"},
+            }
+        )
+
+        sync_foobar = airbyte_sync_op.configured({"connection_id": "foobar"}, name="sync_foobar")
+
+        @job(resource_defs={"airbyte": my_airbyte_resource})
+        def my_simple_airbyte_job():
+            sync_foobar()
+
+        @job(resource_defs={"airbyte": my_airbyte_resource})
+        def my_composed_airbyte_job():
+            final_foobar_state = sync_foobar(start_after=some_op())
+            other_op(final_foobar_state)
+        ```
+
+    </dd>
+
+</dl>
+</div></div></div>

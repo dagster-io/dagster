@@ -1,0 +1,190 @@
+---
+title: 'orchestration on docker'
+title_meta: 'orchestration on docker API Documentation - Build Better Data Pipelines | Python Reference Documentation for Dagster'
+description: 'orchestration on docker Dagster API | Comprehensive Python API documentation for Dagster, the data orchestration platform. Learn how to build, test, and maintain data pipelines with our detailed guides and examples.'
+last_update:
+  date: '2025-12-05'
+custom_edit_url: null
+---
+
+<div class="section" id="orchestration-on-docker">
+
+# Orchestration on Docker
+
+<div class="section" id="apis">
+
+## APIs
+
+<dl>
+    <dt><Link class="anchor" id='dagster_docker.DockerRunLauncher'>dagster_docker.DockerRunLauncher RunLauncher <a href='https://github.com/dagster-io/dagster/blob/master/python_modules/libraries/dagster-docker/dagster_docker/docker_run_launcher.py#L28' className='source-link' target='_blank' rel='noopener noreferrer'>[source]</a><a href="#dagster_docker.DockerRunLauncher" class="hash-link"></a></Link></dt>
+    <dd>
+
+        <div className='lineblock'> </div>
+
+    Launches runs in a Docker container.
+
+
+    </dd>
+
+</dl>
+<dl>
+    <dt><Link class="anchor" id='dagster_docker.docker_executor'>dagster_docker.docker_executor ExecutorDefinition <a href='https://github.com/dagster-io/dagster/blob/master/python_modules/libraries/dagster-docker/dagster_docker/docker_executor.py#L36' className='source-link' target='_blank' rel='noopener noreferrer'>[source]</a><a href="#dagster_docker.docker_executor" class="hash-link"></a></Link></dt>
+    <dd>
+
+        <div className='lineblock'> </div>
+
+        :::info[beta]
+        This API is currently in beta, and may have breaking changes in minor version releases, with behavior changes in patch releases.
+
+
+        :::
+
+    Executor which launches steps as Docker containers.
+
+    To use the <cite>docker_executor</cite>, set it as the <cite>executor_def</cite> when defining a job:
+
+        ```python
+        from dagster_docker import docker_executor
+
+        from dagster import job
+
+        @job(executor_def=docker_executor)
+        def docker_job():
+            pass
+        ```
+    Then you can configure the executor with run config as follows:
+
+        ```YAML
+        execution:
+          config:
+            registry: ...
+            network: ...
+            networks: ...
+            container_kwargs: ...
+        ```
+    If you’re using the DockerRunLauncher, configuration set on the containers created by the run
+    launcher will also be set on the containers that are created for each step.
+
+
+    </dd>
+
+</dl>
+<div class="section" id="ops">
+
+### Ops
+
+<dl>
+    <dt><Link class="anchor" id='dagster_docker.docker_container_op'>dagster_docker.docker_container_op `=` \<dagster._core.definitions.op_definition.OpDefinition object> <a href='https://github.com/dagster-io/dagster/blob/master/python_modules/libraries/dagster-docker/dagster_docker/ops/docker_container_op.py#L152' className='source-link' target='_blank' rel='noopener noreferrer'>[source]</a><a href="#dagster_docker.docker_container_op" class="hash-link"></a></Link></dt>
+    <dd>
+
+        <div className='lineblock'> </div>
+
+        :::info[beta]
+        This API is currently in beta, and may have breaking changes in minor version releases, with behavior changes in patch releases.
+
+
+        :::
+
+    An op that runs a Docker container using the docker Python API.
+
+    Contrast with the <cite>docker_executor</cite>, which runs each Dagster op in a Dagster job in its
+    own Docker container.
+
+    This op may be useful when:
+          - You need to orchestrate a command that isn’t a Dagster op (or isn’t written in Python)
+          - You want to run the rest of a Dagster job using a specific executor, and only a single op in docker.
+
+
+    For example:
+
+        ```python
+        from dagster_docker import docker_container_op
+
+        from dagster import job
+
+        first_op = docker_container_op.configured(
+            {
+                "image": "busybox",
+                "command": ["echo HELLO"],
+            },
+            name="first_op",
+        )
+        second_op = docker_container_op.configured(
+            {
+                "image": "busybox",
+                "command": ["echo GOODBYE"],
+            },
+            name="second_op",
+        )
+
+        @job
+        def full_job():
+            second_op(first_op())
+        ```
+    You can create your own op with the same implementation by calling the <cite>execute_docker_container</cite> function
+    inside your own op.
+
+
+    </dd>
+
+</dl>
+<dl>
+    <dt><Link class="anchor" id='dagster_docker.execute_docker_container'>dagster_docker.execute_docker_container <a href='https://github.com/dagster-io/dagster/blob/master/python_modules/libraries/dagster-docker/dagster_docker/ops/docker_container_op.py#L76' className='source-link' target='_blank' rel='noopener noreferrer'>[source]</a><a href="#dagster_docker.execute_docker_container" class="hash-link"></a></Link></dt>
+    <dd>
+
+        :::info[beta]
+        This API is currently in beta, and may have breaking changes in minor version releases, with behavior changes in patch releases.
+
+
+        :::
+
+    This function is a utility for executing a Docker container from within a Dagster op.
+
+    Parameters:
+      - <strong>image</strong> (<em>str</em>) – The image to use for the launched Docker container.
+      - <strong>entrypoint</strong> (<em>Optional</em><em>[</em><em>Sequence</em><em>[</em><em>str</em><em>]</em><em>]</em>) – The ENTRYPOINT to run in the launched Docker container. Default: None.
+      - <strong>command</strong> (<em>Optional</em><em>[</em><em>Sequence</em><em>[</em><em>str</em><em>]</em><em>]</em>) – The CMD to run in the launched Docker container. Default: None.
+      - <strong>networks</strong> (<em>Optional</em><em>[</em><em>Sequence</em><em>[</em><em>str</em><em>]</em><em>]</em>) – Names of the Docker networks to which to connect the launched container. Default: None.
+      - <strong>registry</strong> – (Optional[Mapping[str, str]]): Information for using a non local/public Docker registry. Can have “url”, “username”, or “password” keys.
+      - <strong>env_vars</strong> (<em>Optional</em><em>[</em><em>Sequence</em><em>[</em><em>str</em><em>]</em><em>]</em>) – List of environemnt variables to include in the launched container. ach can be of the form KEY=VALUE or just KEY (in which case the value will be pulled from the calling environment.
+      - <strong>container_kwargs</strong> (<em>Optional</em><em>[</em><em>Dict</em><em>[</em><em>str</em><em>[</em><em>Any</em><em>]</em><em>]</em><em>]</em>) – key-value pairs that can be passed into containers.create in the Docker Python API. See [https://docker-py.readthedocs.io/en/stable/containers.html](https://docker-py.readthedocs.io/en/stable/containers.html) for the full list of available options.
+
+
+
+    </dd>
+
+</dl>
+</div>
+
+<div class="section" id="pipes">
+
+### Pipes
+
+<dl>
+    <dt><Link class="anchor" id='dagster_docker.PipesDockerClient'>`class` dagster_docker.PipesDockerClient <a href='https://github.com/dagster-io/dagster/blob/master/python_modules/libraries/dagster-docker/dagster_docker/pipes.py#L58' className='source-link' target='_blank' rel='noopener noreferrer'>[source]</a><a href="#dagster_docker.PipesDockerClient" class="hash-link"></a></Link></dt>
+    <dd>
+
+    A pipes client that runs external processes in docker containers.
+
+    By default context is injected via environment variables and messages are parsed out of the
+    log stream, with other logs forwarded to stdout of the orchestration process.
+
+    Parameters:
+      - <strong>env</strong> (<em>Optional</em><em>[</em><em>Mapping</em><em>[</em><em>str</em><em>, </em><em>str</em><em>]</em><em>]</em>) – An optional dict of environment variables to pass to the container.
+      - <strong>register</strong> (<em>Optional</em><em>[</em><em>Mapping</em><em>[</em><em>str</em><em>, </em><em>str</em><em>]</em><em>]</em>) – An optional dict of registry credentials to login to the docker client.
+      - <strong>context_injector</strong> (<em>Optional</em><em>[</em>[*PipesContextInjector*](../dagster/pipes.mdx#dagster.PipesContextInjector)<em>]</em>) – A context injector to use to inject context into the docker container process. Defaults to `PipesEnvContextInjector`.
+      - <strong>message_reader</strong> (<em>Optional</em><em>[</em>[*PipesMessageReader*](../dagster/pipes.mdx#dagster.PipesMessageReader)<em>]</em>) – A message reader to use to read messages from the docker container process. Defaults to `DockerLogsMessageReader`.
+
+
+
+    </dd>
+
+</dl>
+<dl>
+    <dt><Link class="anchor" id='dagster_docker.PipesDockerLogsMessageReader'>`class` dagster_docker.PipesDockerLogsMessageReader <a href='https://github.com/dagster-io/dagster/blob/master/python_modules/libraries/dagster-docker/dagster_docker/pipes.py#L28' className='source-link' target='_blank' rel='noopener noreferrer'>[source]</a><a href="#dagster_docker.PipesDockerLogsMessageReader" class="hash-link"></a></Link></dt>
+    <dd>
+
+    </dd>
+
+</dl>
+</div></div></div>
