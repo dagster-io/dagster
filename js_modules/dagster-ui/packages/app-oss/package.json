@@ -40,6 +40,7 @@
     "@types/webpack-bundle-analyzer": "^4",
     "@typescript-eslint/eslint-plugin": "^8.44.0",
     "@typescript-eslint/parser": "^8.44.0",
+    "@typescript/native-preview": "^7.0.0-dev.20251204.1",
     "eslint": "^8.57.1",
     "eslint-plugin-import": "^2.31.0",
     "eslint-plugin-jest": "^26.4.6",
@@ -60,6 +61,7 @@
     "lint:ci": "eslint src/ --ext=.tsx,.ts,.js -c .eslintrc.js",
     "test": "jest",
     "ts": "tsc -p .",
+    "tsgo": "tsgo -p .",
     "analyze": "webpack-bundle-analyzer '.next/webpack-stats.json'"
   },
   "browserslist": {
