@@ -57,7 +57,7 @@ You can also use concurrency pools to limit the number of in progress runs conta
 Once you have assigned your assets and ops to your pool, you can change your deployment settings to set the pool enforcement granularity. To limit the total number of runs containing a specific op at any given time (instead of the total number of ops actively executing), we need to set the pool granularity to `run`.
 
 - Dagster Core, add the following to your [dagster.yaml](/deployment/oss/dagster-yaml)
-- In Dagster+, add the following to your [deployment settings]/deployment/dagster-plus/deploying-code/full-deployments/full-deployment-settings-reference)
+- In Dagster+, add the following to your [deployment settings](/deployment/dagster-plus/deploying-code/full-deployments/full-deployment-settings-reference)
 
 ```yaml
 concurrency:
