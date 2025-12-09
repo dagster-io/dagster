@@ -8,7 +8,7 @@ import ScaffoldProject from '@site/docs/partials/\_ScaffoldProject.md';
 
 This article covers how to use [Dagster Pipes](/guides/build/external-pipelines) to submit jobs to [Azure Machine Learning](https://azure.microsoft.com/en-us/products/machine-learning).
 
-The [dagster-azure](/integrations/libraries/dagster-azure) integration library provides the `PipesAzureMLClient` resource, which can be used to launch Azure ML jobs from Dagster assets and ops. Dagster can receive events such as logs, asset checks, or asset materializations from jobs launched with this client. The client requires minimal code changes to your Azure ML jobs.
+The [dagster-azure](/integrations/libraries/azure/dagster-azure) integration library provides the `PipesAzureMLClient` resource, which can be used to launch Azure ML jobs from Dagster assets and ops. Dagster can receive events such as logs, asset checks, or asset materializations from jobs launched with this client. The client requires minimal code changes to your Azure ML jobs.
 
 ## Prerequisites
 

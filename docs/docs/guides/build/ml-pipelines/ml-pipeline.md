@@ -70,4 +70,4 @@ Depending on what the objective of your ML model is, you can use this data to se
 
 - [Managing machine learning models with Dagster](/guides/build/ml-pipelines/managing-ml) - This guide reviews ways to manage and maintain your machine learning (ML) models in Dagster
 - Dagster integrates with [MLflow](/integrations/libraries/mlflow/dagster-mlflow) that can be used to keep track of your models
-- Dagster integrates with [Weights & Biases](/integrations/libraries/dagster-wandb). For an example that demonstrates how to use W\&B's artifacts with Dagster, see the [Dagster repository](https://github.com/dagster-io/dagster/tree/master/examples/with_wandb).
+- Dagster integrates with [Weights & Biases](/integrations/libraries/wandb/dagster-wandb). For an example that demonstrates how to use W\&B's artifacts with Dagster, see the [Dagster repository](https://github.com/dagster-io/dagster/tree/master/examples/with_wandb).

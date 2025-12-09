@@ -14,7 +14,7 @@ The KubernetesPodOperator in Apache Airflow enables users to execute containeriz
 
 ## Dagster equivalent
 
-The Dagster equivalent is to use the <PyObject section="libraries" object="PipesK8sClient" module="dagster_k8s"/> to execute a task within a Kubernetes pod.
+The Dagster equivalent is to use the <PyObject section="libraries" integration="pipes" object="PipesK8sClient" module="dagster_k8s"/> to execute a task within a Kubernetes pod.
 
 <CodeExample path="docs_snippets/docs_snippets/integrations/airlift/operator_migration/using_k8s_pipes.py" />
 
@@ -23,12 +23,12 @@ The Dagster equivalent is to use the <PyObject section="libraries" object="Pipes
 Migrating the operator breaks down into a few steps:
 
 1. Ensure that your Dagster deployment has access to the Kubernetes cluster.
-2. Write an <PyObject section="assets" object="asset" module="dagster"/> that executes the task within a Kubernetes pod using the <PyObject section="libraries" object="PipesK8sClient" module="dagster_k8s"/>.
+2. Write an <PyObject section="assets" object="asset" module="dagster"/> that executes the task within a Kubernetes pod using the <PyObject section="libraries" integration="pipes" object="PipesK8sClient" module="dagster_k8s"/>.
 3. Use `dagster-airlift` to proxy execution of the original task to Dagster.
 
 ### Step 1: Ensure access to the Kubernetes cluster
 
-First, you need to ensure that your Dagster deployment has access to the Kubernetes cluster where you want to run your tasks. The <PyObject section="libraries" object="PipesK8sClient" module="dagster_k8s"/> accepts `kubeconfig` and `kubecontext`, and `env` arguments to configure the Kubernetes client.
+First, you need to ensure that your Dagster deployment has access to the Kubernetes cluster where you want to run your tasks. The <PyObject section="libraries" integration="pipes" object="PipesK8sClient" module="dagster_k8s"/> accepts `kubeconfig` and `kubecontext`, and `env` arguments to configure the Kubernetes client.
 
 Here's an example of what this might look like when configuring the client to access an EKS cluster:
 
@@ -40,7 +40,7 @@ Here's an example of what this might look like when configuring the client to ac
 
 ### Step 2: Writing an asset that executes the task within a Kubernetes pod
 
-Once you have access to the Kubernetes cluster, you can write an asset that executes the task within a Kubernetes pod using the <PyObject section="libraries" object="PipesK8sClient" module="dagster_k8s"/>. In comparison to the KubernetesPodOperator, the PipesK8sClient allows you to define the pod spec directly in your Python code.
+Once you have access to the Kubernetes cluster, you can write an asset that executes the task within a Kubernetes pod using the <PyObject section="libraries" integration="pipes" object="PipesK8sClient" module="dagster_k8s"/>. In comparison to the KubernetesPodOperator, the PipesK8sClient allows you to define the pod spec directly in your Python code.
 
 In the [parameter comparison](#parameter-comparison) section of this doc, you'll find a detailed comparison describing how to map the KubernetesPodOperator parameters to the PipesK8sClient parameters.
 

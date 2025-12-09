@@ -50,9 +50,9 @@ def downstream(upstream: pl.LazyFrame) -> pl.LazyFrame:
     return upstream
 ```
 
-Find out more in the [API docs](/integrations/libraries/dagster-polars)
+Find out more in the [API docs](/integrations/libraries/polars/dagster-polars)
 
 ## Supplementary
 
-- [API docs](/integrations/libraries/dagster-polars)
+- [API docs](/integrations/libraries/polars/dagster-polars)
 - [Patito integration](/integrations/libraries/patito)

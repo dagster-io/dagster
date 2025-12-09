@@ -4,7 +4,7 @@ description: Store your Dagster assets in Delta Lake
 sidebar_position: 200
 ---
 
-This reference page provides information for working with [`dagster-deltalake`](/integrations/libraries/dagster-deltalake) features that are not covered as part of the [Using Delta Lake with Dagster tutorial](/integrations/libraries/deltalake/using-deltalake-with-dagster).
+This reference page provides information for working with [`dagster-deltalake`](/integrations/libraries/deltalake/dagster-deltalake) features that are not covered as part of the [Using Delta Lake with Dagster tutorial](/integrations/libraries/deltalake/using-deltalake-with-dagster).
 
 - [Selecting specific columns in a downstream asset](#selecting-specific-columns-in-a-downstream-asset)
 - [Storing partitioned assets](#storing-partitioned-assets)

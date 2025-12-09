@@ -4,7 +4,7 @@ description: Store your Dagster assets in DuckDB
 sidebar_position: 200
 ---
 
-This reference page provides information for working with [`dagster-duckdb`](/integrations/libraries/dagster-duckdb) features that are not covered as part of the [Using Dagster with DuckDB tutorial](/integrations/libraries/duckdb/using-duckdb-with-dagster).
+This reference page provides information for working with [`dagster-duckdb`](/integrations/libraries/duckdb/dagster-duckdb) features that are not covered as part of the [Using Dagster with DuckDB tutorial](/integrations/libraries/duckdb/using-duckdb-with-dagster).
 
 DuckDB resource:
 
@@ -23,7 +23,7 @@ DuckDB I/O manager:
 
 The DuckDB resource provides access to a [`duckdb.DuckDBPyConnection`](https://duckdb.org/docs/api/python/reference/#duckdb.DuckDBPyConnection) object. This allows you full control over how your data is stored and retrieved in your database.
 
-For further information on the DuckDB resource, see the [DuckDB resource API docs](/integrations/libraries/dagster-duckdb#dagster_duckdb.DuckDBResource).
+For further information on the DuckDB resource, see the [DuckDB resource API docs](/integrations/libraries/duckdb/dagster-duckdb#dagster_duckdb.DuckDBResource).
 
 ### Executing custom SQL queries
 
@@ -206,7 +206,7 @@ The DuckDB I/O manager also supports storing and loading PySpark and Polars Data
 <Tabs>
 <TabItem value="PySpark DataFrames" label="Storing and loading PySpark DataFrames in DuckDB">
 
-To use the <PyObject section="libraries" module="dagster_duckdb_pyspark" object="DuckDBPySparkIOManager" />, first install the package:
+To use the <PyObject section="libraries" integration="duckdb" module="dagster_duckdb_pyspark" object="DuckDBPySparkIOManager" />, first install the package:
 
 <PackageInstallInstructions packageName="dagster-duckdb-pyspark" />
 
@@ -218,7 +218,7 @@ Then you can use the `DuckDBPySparkIOManager` in your <PyObject section="definit
   endBefore="end_configuration"
 />
 
-The `DuckDBPySparkIOManager` requires an active `SparkSession`. You can either create your own `SparkSession` or use the <PyObject section="libraries" module="dagster_spark" object="spark_resource"/>.
+The `DuckDBPySparkIOManager` requires an active `SparkSession`. You can either create your own `SparkSession` or use the <PyObject section="libraries" integration="spark" module="dagster_spark" object="spark_resource"/>.
 
 <Tabs>
 <TabItem value="With the spark_resource">
@@ -240,7 +240,7 @@ The `DuckDBPySparkIOManager` requires an active `SparkSession`. You can either c
 </TabItem>
 <TabItem value="Polars DataFrames" label="Storing and loading Polars DataFrames in DuckDB">
 
-To use the <PyObject section="libraries" module="dagster_duckdb_polars" object="DuckDBPolarsIOManager" />, first install the package:
+To use the <PyObject section="libraries" integration="duckdb" module="dagster_duckdb_polars" object="DuckDBPolarsIOManager" />, first install the package:
 
 <PackageInstallInstructions packageName="dagster-duckdb-polars" />
 
@@ -259,7 +259,7 @@ Then you can use the `DuckDBPolarsIOManager` in your <PyObject section="definiti
 
 If you work with several DataFrame libraries and want a single I/O manager to handle storing and loading these DataFrames in DuckDB, you can write a new I/O manager that handles the DataFrame types.
 
-To do this, inherit from the <PyObject section="libraries" module="dagster_duckdb" object="DuckDBIOManager" /> base class and implement the `type_handlers` and `default_load_type` methods. The resulting I/O manager will inherit the configuration fields of the base `DuckDBIOManager`.
+To do this, inherit from the <PyObject section="libraries" integration="duckdb" module="dagster_duckdb" object="DuckDBIOManager" /> base class and implement the `type_handlers` and `default_load_type` methods. The resulting I/O manager will inherit the configuration fields of the base `DuckDBIOManager`.
 
 <CodeExample
   path="docs_snippets/docs_snippets/integrations/duckdb/reference/multiple_dataframe_types.py"

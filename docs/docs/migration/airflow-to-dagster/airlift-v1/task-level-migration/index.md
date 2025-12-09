@@ -10,7 +10,7 @@ import UseAirliftComponent from '@site/docs/partials/\_UseAirliftComponent.md';
 
 <UseAirliftComponent />
 
-This tutorial demonstrates using [`dagster-airlift`](/integrations/libraries/dagster-airlift) to migrate an Airflow DAG to Dagster at the task level.
+This tutorial demonstrates using [`dagster-airlift`](/integrations/libraries/airlift/dagster-airlift) to migrate an Airflow DAG to Dagster at the task level.
 
 Using `dagster-airlift` you can:
 

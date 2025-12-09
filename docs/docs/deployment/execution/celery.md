@@ -77,9 +77,9 @@ When using the Celery executor for job runs, you'll need to use storage that's a
 
 To do this, include an appropriate I/O manager in the job's resource. For example, any of the following I/O managers would be suitable:
 
-- <PyObject section="libraries" module="dagster_aws" object="s3.s3_pickle_io_manager" />
-- <PyObject section="libraries" module="dagster_azure" object="adls2.adls2_pickle_io_manager" />
-- <PyObject section="libraries" module="dagster_gcp" object="gcs_pickle_io_manager" />
+- <PyObject section="libraries" integration="aws" module="dagster_aws" object="s3.s3_pickle_io_manager" />
+- <PyObject section="libraries" integration="azure" module="dagster_azure" object="adls2.adls2_pickle_io_manager" />
+- <PyObject section="libraries" integration="gcp" module="dagster_gcp" object="gcs_pickle_io_manager" />
 
 ### Step 3: Supply executor and worker config
 

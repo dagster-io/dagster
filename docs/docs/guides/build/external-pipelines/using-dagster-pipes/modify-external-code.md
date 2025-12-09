@@ -28,11 +28,11 @@ Getting external code to send information back to Dagster via Dagster Pipes requ
 
 - Imports from `dagster-pipes`
 
-- A call that connects to Dagster Pipes: <PyObject section="libraries" module="dagster_pipes" object="open_dagster_pipes"/> initializes the Dagster Pipes context that can be used to stream information back to Dagster. We recommend calling this function near the entry point of a pipes session.
+- A call that connects to Dagster Pipes: <PyObject section="libraries" integration="pipes" module="dagster_pipes" object="open_dagster_pipes"/> initializes the Dagster Pipes context that can be used to stream information back to Dagster. We recommend calling this function near the entry point of a pipes session.
 
   The `with open_dagster_pipes()` is a context manager in Python, ensuring resource setup and cleanup for a specific segment of code. It's useful for tasks requiring initial setup and final teardown, like opening and closing connections. In this case, the context manager is used to initialize and close the Dagster Pipes connection.
 
-- An instance of the Dagster Pipes context via <PyObject section="libraries" module="dagster_pipes" object="PipesContext.get" />. You can access information like `partition_key` and `asset_key` via this context object. Refer to the [the API documentation](/integrations/libraries/dagster-pipes#dagster_pipes.PipesContext) for more information.
+- An instance of the Dagster Pipes context via <PyObject section="libraries" integration="pipes" module="dagster_pipes" object="PipesContext.get" />. You can access information like `partition_key` and `asset_key` via this context object. Refer to the [the API documentation](/integrations/libraries/pipes/dagster-pipes#dagster_pipes.PipesContext) for more information.
 
 In our sample Python script, the changes would look like the following:
 
@@ -40,7 +40,7 @@ In our sample Python script, the changes would look like the following:
 
 ## Step 2: Send log messages to Dagster
 
-Dagster Pipes context offers a built-in logging capability that enables you to stream log messages back to Dagster. Instead of printing to the standard output, you can use the `context.log` method on <PyObject section="libraries" module="dagster_pipes" object="PipesContext" /> to send log messages back to Dagster. In this case, we’re sending an `info` level log message:
+Dagster Pipes context offers a built-in logging capability that enables you to stream log messages back to Dagster. Instead of printing to the standard output, you can use the `context.log` method on <PyObject section="libraries" integration="pipes" module="dagster_pipes" object="PipesContext" /> to send log messages back to Dagster. In this case, we’re sending an `info` level log message:
 
 
 <CodeExample path="docs_snippets/docs_snippets/guides/dagster/dagster_pipes/subprocess/part_2/step_2/external_code.py" title="src/external_pipeline/defs/external_code.py" />
@@ -60,7 +60,7 @@ Sometimes, you may want to log information from your external code as structured
 
 Similar to [reporting materialization metadata within the Dagster process](/guides/build/assets/metadata-and-tags), you can also report asset materialization back to Dagster from the external process.
 
-In this example, we’re passing a piece of metadata named `total_orders` to the `metadata` parameter of the <PyObject section="libraries" module="dagster_pipes" object="PipesContext" method="report_asset_materialization" />. This payload will be sent from the external process back to Dagster:
+In this example, we’re passing a piece of metadata named `total_orders` to the `metadata` parameter of the <PyObject section="libraries" integration="pipes" module="dagster_pipes" object="PipesContext" method="report_asset_materialization" />. This payload will be sent from the external process back to Dagster:
 
 
 <CodeExample path="docs_snippets/docs_snippets/guides/dagster/dagster_pipes/subprocess/part_2/step_3_materialization/external_code.py" title="src/external_pipeline/defs/external_code.py" />
@@ -77,7 +77,7 @@ This metadata will also be displayed on the **Events** tab of the **Asset Detail
 
 Dagster allows you to define and execute data quality checks on assets. Refer to the [Asset Checks](/guides/test/asset-checks) documentation for more information.
 
-If your asset has data quality checks defined, you can report to Dagster that an asset check has been performed via <PyObject section="libraries" module="dagster_pipes" object="PipesContext" method="report_asset_check" />:
+If your asset has data quality checks defined, you can report to Dagster that an asset check has been performed via <PyObject section="libraries" integration="pipes" module="dagster_pipes" object="PipesContext" method="report_asset_check" />:
 
 <Tabs>
 <TabItem value="Report from the external code">

@@ -100,11 +100,11 @@ To use a SQLite database for storage, configure `storage.sqlite` in `dagster.yam
 
 :::note
 
-To use Postgres storage, you'll need to install the [dagster-postgres](/integrations/libraries/dagster-postgres) library.
+To use Postgres storage, you'll need to install the [dagster-postgres](/integrations/libraries/postgres/dagster-postgres) library.
 
 :::
 
-To use a [PostgreSQL database](/integrations/libraries/dagster-postgres) for storage, configure `storage.postgres` in `dagster.yaml`:
+To use a [PostgreSQL database](/integrations/libraries/postgres/dagster-postgres) for storage, configure `storage.postgres` in `dagster.yaml`:
 
 <CodeExample
   path="docs_snippets/docs_snippets/deploying/dagster_instance/dagster.yaml"
@@ -119,11 +119,11 @@ To use a [PostgreSQL database](/integrations/libraries/dagster-postgres) for sto
 
 :::note
 
-To use MySQL storage, you'll need to install the [dagster-mysql](/integrations/libraries/dagster-mysql) library.
+To use MySQL storage, you'll need to install the [dagster-mysql](/integrations/libraries/mysql/dagster-mysql) library.
 
 :::
 
-To use a [MySQL database](/integrations/libraries/dagster-mysql) for storage, configure `storage.mysql` in `dagster.yaml`:
+To use a [MySQL database](/integrations/libraries/mysql/dagster-mysql) for storage, configure `storage.mysql` in `dagster.yaml`:
 
 <CodeExample
   path="docs_snippets/docs_snippets/deploying/dagster_instance/dagster.yaml"
@@ -158,7 +158,7 @@ The <PyObject section="internals" module="dagster._core.launcher" object="Defaul
 
 **DockerRunLauncher**
 
-The <PyObject section="libraries" module="dagster_docker" object="DockerRunLauncher" /> allocates a Docker container per run.
+The <PyObject section="libraries" integration="docker" module="dagster_docker" object="DockerRunLauncher" /> allocates a Docker container per run.
 
 <CodeExample
   path="docs_snippets/docs_snippets/deploying/dagster_instance/dagster.yaml"
@@ -171,7 +171,7 @@ The <PyObject section="libraries" module="dagster_docker" object="DockerRunLaunc
 
 **K8sRunLauncher**
 
-The <PyObject section="libraries" module="dagster_k8s" object="K8sRunLauncher" /> allocates a Kubernetes job per run.
+The <PyObject section="libraries" integration="k8s" module="dagster_k8s" object="K8sRunLauncher" /> allocates a Kubernetes job per run.
 
 <CodeExample
   path="docs_snippets/docs_snippets/deploying/dagster_instance/dagster.yaml"
@@ -256,7 +256,7 @@ The <PyObject section="internals" module="dagster._core.storage.noop_compute_log
 
 **AzureBlobComputeLogManager**
 
-The <PyObject section="libraries" module="dagster_azure" object="blob.AzureBlobComputeLogManager" /> writes `stdout` and `stderr` to Azure Blob Storage.
+The <PyObject section="libraries" integration="azure" module="dagster_azure" object="blob.AzureBlobComputeLogManager" /> writes `stdout` and `stderr` to Azure Blob Storage.
 
 <CodeExample
   path="docs_snippets/docs_snippets/deploying/dagster_instance/dagster.yaml"
@@ -269,7 +269,7 @@ The <PyObject section="libraries" module="dagster_azure" object="blob.AzureBlobC
 
 **GCSComputeLogManager**
 
-The <PyObject section="libraries" module="dagster_gcp" object="gcs.GCSComputeLogManager" /> writes `stdout` and `stderr` to Google Cloud Storage.
+The <PyObject section="libraries" integration="gcp" module="dagster_gcp" object="gcs.GCSComputeLogManager" /> writes `stdout` and `stderr` to Google Cloud Storage.
 
 <CodeExample
   path="docs_snippets/docs_snippets/deploying/dagster_instance/dagster.yaml"
@@ -282,7 +282,7 @@ The <PyObject section="libraries" module="dagster_gcp" object="gcs.GCSComputeLog
 
 **S3ComputeLogManager**
 
-The <PyObject section="libraries" module="dagster_aws" object="s3.S3ComputeLogManager" /> writes `stdout` and `stderr` to an Amazon Web Services S3 bucket.
+The <PyObject section="libraries" integration="aws" module="dagster_aws" object="s3.S3ComputeLogManager" /> writes `stdout` and `stderr` to an Amazon Web Services S3 bucket.
 
 <CodeExample
   path="docs_snippets/docs_snippets/deploying/dagster_instance/dagster.yaml"

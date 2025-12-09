@@ -10,7 +10,7 @@ import UseAirliftComponent from '@site/docs/partials/\_UseAirliftComponent.md';
 
 <UseAirliftComponent />
 
-This tutorial demonstrates mapping assets to a full Airflow DAG using [`dagster-airlift`](/integrations/libraries/dagster-airlift).
+This tutorial demonstrates mapping assets to a full Airflow DAG using [`dagster-airlift`](/integrations/libraries/airlift/dagster-airlift).
 
 You might want to map assets to a full Airflow DAG rather than on a per-task basis because:
 

@@ -17,7 +17,7 @@ import CommunityIntegration from '@site/docs/partials/\_CommunityIntegration.md'
 
 <CommunityIntegration />
 
-The [`dagster-census` library](/integrations/libraries/dagster-census) provides a `CensusComponent` which can be used to easily represent Census syncs as assets in Dagster.
+The [`dagster-census` library](/integrations/libraries/census/dagster-census) provides a `CensusComponent` which can be used to easily represent Census syncs as assets in Dagster.
 
 :::info
 

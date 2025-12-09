@@ -75,7 +75,7 @@ First, you will want a new shell and navigate to the same directory. You will ne
 
 ## Create asset representations of DAGs in Dagster
 
-Next, use the <PyObject section="libraries" module="dagster_airlift" object="core.build_defs_from_airflow_instance" displayText="build_defs_from_airflow_instance" /> function to create a `Definitions` object. Copy the following code into the empty `tutorial_example/dagster_defs/definitions.py` file:
+Next, use the <PyObject section="libraries" integration="airlift" module="dagster_airlift" object="core.build_defs_from_airflow_instance" displayText="build_defs_from_airflow_instance" /> function to create a `Definitions` object. Copy the following code into the empty `tutorial_example/dagster_defs/definitions.py` file:
 
 <CodeExample path="airlift-migration-tutorial/tutorial_example/dagster_defs/stages/peer.py" language="python" />
 

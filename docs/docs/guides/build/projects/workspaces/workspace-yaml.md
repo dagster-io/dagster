@@ -274,7 +274,7 @@ When running your own gRPC server within a container, you can tell the webserver
 
 To do this, set the `DAGSTER_CURRENT_IMAGE` environment variable to the name of the image before starting the server. After setting this environment variable for your server, the image should be listed alongside the code location on the **Status** page in the UI.
 
-This image will only be used by [run launchers](/deployment/execution/run-launchers) and [executors](/guides/operate/run-executors) that expect to use Docker images (like the <PyObject section="libraries" module="dagster_docker" object="DockerRunLauncher" />, <PyObject section="libraries" module="dagster_k8s" object="K8sRunLauncher" />, <PyObject section="libraries" module="dagster_docker" object="docker_executor" />, or <PyObject section="libraries" module="dagster_k8s" object="k8s_job_executor" />).
+This image will only be used by [run launchers](/deployment/execution/run-launchers) and [executors](/guides/operate/run-executors) that expect to use Docker images (like the <PyObject section="libraries" integration="docker" module="dagster_docker" object="DockerRunLauncher" />, <PyObject section="libraries" integration="k8s" module="dagster_k8s" object="K8sRunLauncher" />, <PyObject section="libraries" integration="docker" module="dagster_docker" object="docker_executor" />, or <PyObject section="libraries" integration="k8s" module="dagster_k8s" object="k8s_job_executor" />).
 
 If you're using the built-in [Helm chart](/deployment/oss/deployment-options/kubernetes/deploying-to-kubernetes), this environment variable is automatically set on each of your gRPC servers.
 

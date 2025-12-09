@@ -12,10 +12,11 @@ export const PyObject: React.FunctionComponent<{
   section: string;
   module: string;
   object: string;
+  integration?: string;
   displayText?: string;
   pluralize?: boolean;
   decorator?: boolean;
-}> = ({section, object, displayText, module = 'dagster', pluralize = false, decorator = false}) => {
+}> = ({section, object, integration, displayText, module = 'dagster', pluralize = false, decorator = false}) => {
   let textValue = displayText || object;
   if (pluralize) {
     textValue += 's';
@@ -30,9 +31,13 @@ export const PyObject: React.FunctionComponent<{
   }
 
   let href = `/api/dagster/${section}#${module}.${object}`;
-  if (section === 'libraries' || section === 'dagster_dg') {
+  if (section === 'dagster_dg' || section === 'graphql') {
     const _package = module.replace(/_/g, '-');
     href = `/api/${section}/${_package}#${module}.${object}`;
+  }
+  else if (section === 'libraries') {
+    const _package = module.replace(/_/g, '-');
+    href = `/integrations/${section}/${integration}/${_package}#${module}.${object}`;
   }
 
   return (

@@ -20,7 +20,7 @@ Here's an overview of the main concepts we'll be using:
 - [Ops](/guides/build/ops) - We'll define two ops that query Snowflake. The first will clone a database, and the second will drop database clones.
 - [Graphs](/guides/build/ops/graphs) - We'll build graphs that define the order in which our ops should run.
 - [Jobs](/guides/build/jobs/asset-jobs) - We'll define jobs by binding our graphs to resources.
-- [Resources](/guides/build/external-resources) - We'll use the <PyObject section="libraries" module="dagster_snowflake" object="SnowflakeResource" /> to swap in different Snowflake connections to our jobs depending on environment.
+- [Resources](/guides/build/external-resources) - We'll use the <PyObject section="libraries" module="dagster_snowflake" object="SnowflakeResource" integration="snowflake" /> to swap in different Snowflake connections to our jobs depending on environment.
 - [I/O managers](/guides/build/io-managers) - We'll use a [Snowflake I/O manager](/integrations/libraries/snowflake/using-snowflake-with-dagster-io-managers) to persist asset outputs to Snowflake.
 
 ## Prerequisites
@@ -103,7 +103,7 @@ Additionally, we don't need asset-specific features for these tasks, like viewin
   title="src/<project_name>/defs/ops.py"
 />
 
-We've defined `drop_database_clone` and `clone_production_database` to utilize the <PyObject section="libraries" object="SnowflakeResource" module="dagster_snowflake" />. The Snowflake resource will use the same configuration as the Snowflake I/O manager to generate a connection to Snowflake. However, while our I/O manager writes outputs to Snowflake, the Snowflake resource executes queries against Snowflake.
+We've defined `drop_database_clone` and `clone_production_database` to utilize the <PyObject section="libraries" integration="snowflake" object="SnowflakeResource" module="dagster_snowflake" />. The Snowflake resource will use the same configuration as the Snowflake I/O manager to generate a connection to Snowflake. However, while our I/O manager writes outputs to Snowflake, the Snowflake resource executes queries against Snowflake.
 
 We now need to define resources that configure our jobs to the current environment. We can modify the resource mapping by environment as follows:
 

@@ -12,7 +12,7 @@ canonicalUrl: '/integrations/libraries/fivetran'
 slug: '/integrations/libraries/fivetran'
 ---
 
-The [`dagster-fivetran` library](/integrations/libraries/dagster-fivetran) provides a `FivetranAccountComponent` which can be used to easily represent Fivetran connectors as assets in Dagster.
+The [`dagster-fivetran` library](/integrations/libraries/fivetran/dagster-fivetran) provides a `FivetranAccountComponent` which can be used to easily represent Fivetran connectors as assets in Dagster.
 
 :::info
 

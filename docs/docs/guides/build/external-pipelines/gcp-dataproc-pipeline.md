@@ -8,7 +8,7 @@ import ScaffoldProject from '@site/docs/partials/\_ScaffoldProject.md';
 
 This article covers how to use [Dagster Pipes](/guides/build/external-pipelines) to [submit jobs](https://cloud.google.com/dataproc/docs/guides/submit-job) to [GCP Dataproc](https://cloud.google.com/dataproc).
 
-The [dagster-gcp](/integrations/libraries/dagster-gcp) integration library provides the <PyObject section="libraries" module="dagster_gcp" object="pipes.PipesDataprocJobClient" /> resource, which can be used to launch GCP Dataproc jobs from Dagster assets and ops. Dagster can receive events such as logs, asset checks, or asset materializations from jobs launched with this client. The client requires minimal code changes to your Dataproc jobs.
+The [dagster-gcp](/integrations/libraries/gcp/dagster-gcp) integration library provides the <PyObject section="libraries" integration="gcp" module="dagster_gcp" object="pipes.PipesDataprocJobClient" /> resource, which can be used to launch GCP Dataproc jobs from Dagster assets and ops. Dagster can receive events such as logs, asset checks, or asset materializations from jobs launched with this client. The client requires minimal code changes to your Dataproc jobs.
 
 ## Prerequisites
 

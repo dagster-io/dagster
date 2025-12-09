@@ -36,7 +36,7 @@ Sometimes, you may not want to materialize an asset, but instead want to report 
 
 <TabItem value="External code in external_code.py">
 
-From the external code, you can report to Dagster that an asset check has been performed via <PyObject section="libraries" module="dagster_pipes" object="PipesContext" method="report_asset_check" />. Note that `asset_key` in this case is required, and must match the asset key defined in <PyObject section="asset-checks" module="dagster" object="asset_check" decorator />:
+From the external code, you can report to Dagster that an asset check has been performed via <PyObject section="libraries" integration="pipes" module="dagster_pipes" object="PipesContext" method="report_asset_check" />. Note that `asset_key` in this case is required, and must match the asset key defined in <PyObject section="asset-checks" module="dagster" object="asset_check" decorator />:
 
 <CodeExample path="docs_snippets/docs_snippets/guides/dagster/dagster_pipes/subprocess/with_asset_check/external_code.py" title="src/external_pipeline/defs/external_code.py" />
 
@@ -58,7 +58,7 @@ Sometimes, you may invoke a single call to an API that results in multiple table
 
 <TabItem value="External code in external_code.py">
 
-**Note**: When working with multi-assets, <PyObject section="libraries" module="dagster_pipes" object="PipesContext" method="report_asset_materialization" /> may only be called once per unique asset key. If called more than once, an error similar to the following will surface:
+**Note**: When working with multi-assets, <PyObject section="libraries" integration="pipes" module="dagster_pipes" object="PipesContext" method="report_asset_materialization" /> may only be called once per unique asset key. If called more than once, an error similar to the following will surface:
 
 ```bash
 Calling {method} with asset key {asset_key} is undefined. Asset has already been materialized, so no additional data can be reported for it

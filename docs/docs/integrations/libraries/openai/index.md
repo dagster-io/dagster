@@ -12,7 +12,7 @@ partnerlink: https://platform.openai.com/docs/introduction
 
 <p>{frontMatter.description}</p>
 
-Using this library's <PyObject section="libraries" module="dagster_openai" object="OpenAIResource" />, you can easily interact with the [OpenAI REST API](https://platform.openai.com/docs/introduction) via the [OpenAI Python API](https://github.com/openai/openai-python).
+Using this library's <PyObject section="libraries" integration="openai" module="dagster_openai" object="OpenAIResource" />, you can easily interact with the [OpenAI REST API](https://platform.openai.com/docs/introduction) via the [OpenAI Python API](https://github.com/openai/openai-python).
 
 When used with Dagster's [asset definitions](/guides/build/assets/defining-assets), the resource automatically logs OpenAI usage metadata in [asset metadata](/guides/build/assets/metadata-and-tags).
 

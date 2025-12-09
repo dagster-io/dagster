@@ -9,8 +9,8 @@ Dagster provides a GraphQL Python Client to interface with [Dagster's GraphQL AP
 
 | Name                                                                                        | Description                                                          |
 | ------------------------------------------------------------------------------------------- | -------------------------------------------------------------------- |
-| <PyObject section="libraries" module="dagster_graphql" object="DagsterGraphQLClient"/>      | The client class to interact with Dagster's GraphQL API from Python. |
-| <PyObject section="libraries" module="dagster_graphql" object="DagsterGraphQLClientError"/> | The exception that the client raises upon a response error.          |
+| <PyObject section="graphql" module="dagster_graphql" object="DagsterGraphQLClient"/>      | The client class to interact with Dagster's GraphQL API from Python. |
+| <PyObject section="graphql" module="dagster_graphql" object="DagsterGraphQLClientError"/> | The exception that the client raises upon a response error.          |
 
 ## Overview
 
@@ -22,19 +22,19 @@ When is this useful? Dagster exposes a powerful GraphQL API, but this level of f
 
 Note that all GraphQL methods on the API are not yet available in Python - the `DagsterGraphQLClient` currently only provides the following methods:
 
-- <PyObject section="libraries" module="dagster_graphql" object="DagsterGraphQLClient" method="submit_job_execution" />
+- <PyObject section="graphql" module="dagster_graphql" object="DagsterGraphQLClient" method="submit_job_execution" />
   [submit_job_execution](#submitting-a-job-run)
-- <PyObject section="libraries" module="dagster_graphql" object="DagsterGraphQLClient" method="get_run_status" />
+- <PyObject section="graphql" module="dagster_graphql" object="DagsterGraphQLClient" method="get_run_status" />
   [get_run_status](#getting-a-job-runs-status)
 - <PyObject
-    section="libraries"
+    section="graphql"
     module="dagster_graphql"
     object="DagsterGraphQLClient"
     method="reload_repository_location"
   />
   [reload_repository_location](#reloading-all-repositories-in-a-repository-location)
 - <PyObject
-    section="libraries"
+    section="graphql"
     module="dagster_graphql"
     object="DagsterGraphQLClient"
     method="shutdown_repository_location"
