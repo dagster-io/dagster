@@ -19,7 +19,7 @@ import Beta from '@site/docs/partials/\_Beta.md';
 This page describes the `dagster-pandas` library, which is used for performing data validation. To simply use pandas with Dagster, start with the [Dagster Quickstart](/getting-started/quickstart).
 
 Dagster makes it easy to use pandas code to manipulate data and then store
-that data in other systems such as [files on Amazon S3](/integrations/libraries/aws#dagster_aws.s3.s3_pickle_io_manager) or [tables in Snowflake](/integrations/libraries/snowflake/using-snowflake-with-dagster)
+that data in other systems such as [files on Amazon S3](/integrations/libraries/aws/dagster-aws#dagster_aws.s3.s3_pickle_io_manager) or [tables in Snowflake](/integrations/libraries/snowflake/using-snowflake-with-dagster)
 
 :::
 

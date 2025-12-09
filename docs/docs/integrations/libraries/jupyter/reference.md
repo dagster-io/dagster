@@ -4,13 +4,13 @@ description: The Dagstermill package lets you run notebooks using the Dagster to
 sidebar_position: 200
 ---
 
-This reference provides a high-level look at working with Jupyter notebooks using the [`dagstermill` integration library](/integrations/libraries/dagstermill).
+This reference provides a high-level look at working with Jupyter notebooks using the [`dagstermill` integration library](/integrations/libraries/jupyter).
 
 For a step-by-step implementation walkthrough, refer to the [Using notebooks with Dagster tutorial](/integrations/libraries/jupyter/using-notebooks-with-dagster).
 
 ## Notebooks as assets
 
-To load a Jupyter notebook as a Dagster [asset](/guides/build/assets/defining-assets), use <PyObject section="libraries" module="dagstermill" object="define_dagstermill_asset" />:
+To load a Jupyter notebook as a Dagster [asset](/guides/build/assets/defining-assets), use <PyObject section="libraries" integration="jupyter" module="dagstermill" object="define_dagstermill_asset" />:
 
 <CodeExample path="docs_snippets/docs_snippets/integrations/dagstermill/iris_notebook_asset.py" />
 
@@ -18,7 +18,7 @@ In this code block, we use `define_dagstermill_asset` to create a Dagster asset.
 
 ## Notebooks as ops
 
-Dagstermill also supports running Jupyter notebooks as [ops](/guides/build/ops). We can use <PyObject section="libraries" module="dagstermill" object="define_dagstermill_op" /> to turn a notebook into an op.
+Dagstermill also supports running Jupyter notebooks as [ops](/guides/build/ops). We can use <PyObject section="libraries" integration="jupyter" module="dagstermill" object="define_dagstermill_op" /> to turn a notebook into an op.
 
 <CodeExample path="docs_snippets/docs_snippets/integrations/dagstermill/iris_notebook_op.py" startAfter="start" />
 
@@ -64,7 +64,7 @@ The functionality described in this section only works for notebooks run with `d
 
 :::
 
-If you are using `define_dagstermill_op` and you'd like to yield a result to be consumed downstream of a notebook, you can call <PyObject section="libraries" module="dagstermill" object="yield_result" /> with the value of the result and its name. In interactive execution, this is a no-op, so you don't need to change anything when moving from interactive exploration and development to production.
+If you are using `define_dagstermill_op` and you'd like to yield a result to be consumed downstream of a notebook, you can call <PyObject section="libraries" integration="jupyter" module="dagstermill" object="yield_result" /> with the value of the result and its name. In interactive execution, this is a no-op, so you don't need to change anything when moving from interactive exploration and development to production.
 
 <CodeExample
   path="docs_snippets/docs_snippets/integrations/dagstermill/notebook_outputs.py"
@@ -82,7 +82,7 @@ And then:
 
 ## Dagster events
 
-You can also yield Dagster events from your notebook using <PyObject section="libraries" module="dagstermill" object="yield_event" />.
+You can also yield Dagster events from your notebook using <PyObject section="libraries" integration="jupyter" module="dagstermill" object="yield_event" />.
 
 For example, if you'd like to yield a custom <PyObject section="ops" module="dagster" object="AssetMaterialization" /> object (for instance, to tell the Dagster UI where you've saved a plot), you can do the following:
 

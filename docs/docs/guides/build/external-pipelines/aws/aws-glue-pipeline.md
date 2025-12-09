@@ -10,7 +10,7 @@ import ScaffoldProject from '@site/docs/partials/\_ScaffoldProject.md';
 
 This article covers how to use [Dagster Pipes](/guides/build/external-pipelines) with [AWS Glue](https://aws.amazon.com/glue).
 
-The [dagster-aws](/integrations/libraries/aws) integration library provides the <PyObject section="libraries" integration="pipes" object="pipes.PipesGlueClient" module="dagster_aws" /> resource which can be used to launch AWS Glue jobs from Dagster assets and ops. Dagster can receive regular events like logs, asset checks, or asset materializations from jobs launched with this client. Using it requires minimal code changes on the job side.
+The [dagster-aws](/integrations/libraries/aws) integration library provides the <PyObject section="libraries" integration="aws" object="pipes.PipesGlueClient" module="dagster_aws" /> resource which can be used to launch AWS Glue jobs from Dagster assets and ops. Dagster can receive regular events like logs, asset checks, or asset materializations from jobs launched with this client. Using it requires minimal code changes on the job side.
 
 ## Prerequisites
 
@@ -87,4 +87,4 @@ Dagster will now be able to launch the AWS Glue job from the `glue_pipes_asset` 
 
 By default, the client uses the CloudWatch log stream (`.../output/<job-run-id>`) created by the Glue job to receive Dagster events. The client will also forward the stream to `stdout`.
 
-To customize this behavior, the client can be configured to use <PyObject section="libraries" integration="pipes" object="pipes.PipesS3MessageReader" module="dagster_aws" />, and the Glue job to use <PyObject section="libraries" integration="pipes" object="PipesS3MessageWriter" module="dagster_pipes" /> .
+To customize this behavior, the client can be configured to use <PyObject section="libraries" integration="aws" object="pipes.PipesS3MessageReader" module="dagster_aws" />, and the Glue job to use <PyObject section="libraries" integration="pipes" object="PipesS3MessageWriter" module="dagster_pipes" /> .

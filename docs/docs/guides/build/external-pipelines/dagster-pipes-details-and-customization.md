@@ -4,7 +4,7 @@ description: "Learn about Dagster Pipes APIs and how to compose them to create a
 sidebar_position: 90
 ---
 
-[Dagster Pipes](/guides/build/external-pipelines) is a toolkit for integrating Dagster with an arbitrary external compute environment. While many users will be well-served by the simplified interface offered by Pipes client objects (e.g. <PyObject section="pipes" module="dagster" object="PipesSubprocessClient" />, <PyObject section="libraries" integration="pipes" object="PipesDatabricksClient" module="dagster_databricks"/>), others will need a greater level of control over Pipes. This is particularly the case for users seeking to connect large existing codebases to Dagster.
+[Dagster Pipes](/guides/build/external-pipelines) is a toolkit for integrating Dagster with an arbitrary external compute environment. While many users will be well-served by the simplified interface offered by Pipes client objects (e.g. <PyObject section="pipes" module="dagster" object="PipesSubprocessClient" />, <PyObject section="libraries" integration="databricks" object="PipesDatabricksClient" module="dagster_databricks"/>), others will need a greater level of control over Pipes. This is particularly the case for users seeking to connect large existing codebases to Dagster.
 
 This guide will cover the lower level Pipes APIs and how you can compose them to provide a custom solution for your data platform.
 
