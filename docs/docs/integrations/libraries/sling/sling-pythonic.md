@@ -183,8 +183,8 @@ In the downstream asset, you may want direct access to the contents of the Sling
 
 ## APIs in this guide
 
-| Name                                                                                     | Description                                                                            |
-| ---------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------- |
+| Name                                                                                                         | Description                                                                            |
+| ------------------------------------------------------------------------------------------------------------ | -------------------------------------------------------------------------------------- |
 | <PyObject section="libraries" integration="sling" module="dagster_sling" object="sling_assets" decorator />  | The core Sling asset factory for building syncs                                        |
 | <PyObject section="libraries" integration="sling" module="dagster_sling" object="SlingResource" />           | The Sling resource used for handing credentials to databases and object stores         |
 | <PyObject section="libraries" integration="sling" module="dagster_sling" object="DagsterSlingTranslator" />  | A translator for specifying how to map between Sling and Dagster types                 |

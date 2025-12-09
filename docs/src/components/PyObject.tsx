@@ -34,8 +34,7 @@ export const PyObject: React.FunctionComponent<{
   if (section === 'dagster_dg' || section === 'graphql') {
     const _package = module.replace(/_/g, '-');
     href = `/api/${section}/${_package}#${module}.${object}`;
-  }
-  else if (section === 'libraries') {
+  } else if (section === 'libraries') {
     const _package = module.replace(/_/g, '-');
     href = `/integrations/${section}/${integration}/${_package}#${module}.${object}`;
   }

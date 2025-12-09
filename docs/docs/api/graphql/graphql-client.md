@@ -7,8 +7,8 @@ Dagster provides a GraphQL Python Client to interface with [Dagster's GraphQL AP
 
 ## Relevant APIs
 
-| Name                                                                                        | Description                                                          |
-| ------------------------------------------------------------------------------------------- | -------------------------------------------------------------------- |
+| Name                                                                                      | Description                                                          |
+| ----------------------------------------------------------------------------------------- | -------------------------------------------------------------------- |
 | <PyObject section="graphql" module="dagster_graphql" object="DagsterGraphQLClient"/>      | The client class to interact with Dagster's GraphQL API from Python. |
 | <PyObject section="graphql" module="dagster_graphql" object="DagsterGraphQLClientError"/> | The exception that the client raises upon a response error.          |
 
