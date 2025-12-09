@@ -1,44 +1,11 @@
-import itertools
 from collections import defaultdict
-from collections.abc import Iterable, Mapping, Sequence
-from typing import AbstractSet, cast  # noqa: UP035
+from collections.abc import Iterable, Sequence
+from typing import Optional
 
-from dagster import _check as check
 from dagster._core.definitions.assets.definition.assets_definition import AssetsDefinition
 from dagster._core.definitions.events import AssetKey
-from dagster._core.definitions.source_asset import SourceAsset
 from dagster._core.errors import DagsterInvalidDefinitionError
 from dagster._utils.warnings import beta_warning
-
-
-class ResolvedAssetDependencies:
-    """An asset can depend on another asset without specifying the full asset key for the upstream
-    asset, if the name and groups match.
-
-    ResolvedAssetDependencies maps these flexible dependencies to precise key-based dependencies.
-    """
-
-    def __init__(
-        self, assets_defs: Iterable[AssetsDefinition], source_assets: Iterable[SourceAsset]
-    ):
-        self._deps_by_assets_def_id = resolve_assets_def_deps(assets_defs, source_assets)
-
-    def get_resolved_upstream_asset_keys(
-        self, assets_def: AssetsDefinition, asset_key: AssetKey
-    ) -> AbstractSet[AssetKey]:
-        resolved_keys_by_unresolved_key = self._deps_by_assets_def_id.get(id(assets_def), {})
-        return {
-            resolved_keys_by_unresolved_key.get(unresolved_dep.asset_key, unresolved_dep.asset_key)
-            for unresolved_dep in assets_def.specs_by_key[asset_key].deps
-        }
-
-    def get_resolved_asset_key_for_input(
-        self, assets_def: AssetsDefinition, input_name: str
-    ) -> AssetKey:
-        unresolved_asset_key_for_input = assets_def.node_keys_by_input_name[input_name]
-        return self._deps_by_assets_def_id.get(id(assets_def), {}).get(
-            unresolved_asset_key_for_input, unresolved_asset_key_for_input
-        )
 
 
 def resolve_similar_asset_names(
@@ -122,91 +89,77 @@ def resolve_similar_asset_names(
     return sorted(similar_names, key=lambda key: key.to_string())
 
 
-def resolve_assets_def_deps(
-    assets_defs: Iterable[AssetsDefinition], source_assets: Iterable[SourceAsset]
-) -> Mapping[int, Mapping[AssetKey, AssetKey]]:
-    """For each AssetsDefinition, resolves its inputs to upstream asset keys. Matches based on either
-    of two criteria:
-    - The input asset key exactly matches an asset key.
-    - The input asset key has one component, that component matches the final component of an asset
-        key, and they're both in the same asset group.
+def _build_input_error_msg(
+    input_name: str, upstream_key: AssetKey, asset_keys: Iterable[AssetKey]
+) -> str:
+    msg = f'Input asset "{upstream_key.to_string()}" is not produced by any of the provided asset ops and is not one of the provided sources.'
+    similar_names = resolve_similar_asset_names(upstream_key, asset_keys)
+    if similar_names:
+        # Arbitrarily limit to 10 similar names to avoid a huge error message
+        subset_similar_names = similar_names[:10]
+        similar_to_string = ", ".join(similar.to_string() for similar in subset_similar_names)
+        msg += f" Did you mean one of the following?\n\t{similar_to_string}"
+    return msg
 
-    The returned dictionary only contains entries for assets definitions with group-resolved asset
-    dependencies.
-    """
-    group_names_by_key: dict[AssetKey, str] = {}
-    for assets_def in assets_defs:
-        for spec in assets_def.specs:
-            group_names_by_key[spec.key] = check.not_none(spec.group_name)
-    for source_asset in source_assets:
-        group_names_by_key[source_asset.key] = source_asset.group_name
 
-    all_asset_keys = group_names_by_key.keys()
+def resolve_assets_def_deps(assets_defs: list[AssetsDefinition]) -> list[AssetsDefinition]:
+    specs = [spec for assets_def in assets_defs for spec in assets_def.specs]
+    asset_keys = {spec.key for spec in specs}
 
-    asset_keys_by_group_and_name: dict[tuple[str, str], list[AssetKey]] = defaultdict(list)
+    keys_by_group_and_name: dict[tuple[Optional[str], str], list[AssetKey]] = defaultdict(list)
+    for spec in specs:
+        if spec.group_name is not None:
+            keys_by_group_and_name[(spec.group_name, spec.key.path[-1])].append(spec.key)
 
-    for key, group in group_names_by_key.items():
-        asset_keys_by_group_and_name[(group, key.path[-1])].append(key)
-
+    # analyze each assets definition for unresolved dependencies and attempt to resolve them
     warned = False
-
-    result: dict[int, Mapping[AssetKey, AssetKey]] = {}
+    resolved_assets_defs: list[AssetsDefinition] = []
     for assets_def in assets_defs:
-        # If all keys have the same group name, use that
-        group_names = {spec.group_name for spec in assets_def.specs}
-        group_name = next(iter(group_names)) if len(group_names) == 1 else None
+        replacements: dict[AssetKey, AssetKey] = {}
+        for spec in assets_def.specs:
+            for dep in spec.deps:
+                # dep's key already maps to an existing spec
+                if dep.asset_key in asset_keys:
+                    continue
 
-        resolved_keys_by_unresolved_key: dict[AssetKey, AssetKey] = {}
-        for input_name, upstream_key in assets_def.keys_by_input_name.items():
-            group_and_upstream_name = (group_name, upstream_key.path[-1])
-            matching_asset_keys = asset_keys_by_group_and_name.get(
-                cast("tuple[str, str]", group_and_upstream_name)
-            )
-            if upstream_key in all_asset_keys:
-                pass
-            elif (
-                group_name is not None
-                and len(upstream_key.path) == 1
-                and matching_asset_keys
-                and len(matching_asset_keys) == 1
-                and matching_asset_keys[0] not in assets_def.keys
-            ):
-                resolved_key = matching_asset_keys[0]
-                resolved_keys_by_unresolved_key[upstream_key] = resolved_key
+                input_name = assets_def.input_names_by_node_key.get(dep.asset_key)
+                input_def = assets_def.node_def.input_def_named(input_name) if input_name else None
 
-                if not warned:
-                    beta_warning(
-                        f"Asset {next(iter(assets_def.keys)).to_string()}'s dependency"
-                        f" '{upstream_key.path[-1]}' was resolved to upstream asset"
-                        f" {resolved_key.to_string()}, because the name matches and they're in the"
-                        " same group. This is a beta functionality that may change in a"
-                        " future release"
+                # attempt to match by name and group
+                matching_asset_keys = keys_by_group_and_name[
+                    (spec.group_name, dep.asset_key.path[0])
+                ]
+                if (
+                    # no prefix explicitly provided
+                    len(dep.asset_key.path) == 1
+                    # unambiguous match
+                    and len(matching_asset_keys) == 1
+                    # not remapping to self
+                    and matching_asset_keys[0] not in assets_def.keys
+                ):
+                    replacements[dep.asset_key] = matching_asset_keys[0]
+                    if not warned:
+                        beta_warning(
+                            f"Asset {spec.key.to_string()}'s dependency"
+                            f" '{input_name or dep.asset_key.to_string()}' was resolved to upstream asset"
+                            f" {matching_asset_keys[0].to_string()}, because the name matches and they're in the"
+                            " same group. This is a beta functionality that may change in a"
+                            " future release"
+                        )
+                        warned = True
+                    continue
+
+                # could not resolve the dependency, and input requires a real upstream assets def
+                if input_name and input_def and not input_def.dagster_type.is_nothing:
+                    raise DagsterInvalidDefinitionError(
+                        _build_input_error_msg(input_name, dep.asset_key, asset_keys)
                     )
 
-                    warned = True
-            elif not assets_def.node_def.input_def_named(input_name).dagster_type.is_nothing:
-                msg = (
-                    f"Input asset '{upstream_key.to_string()}' for asset "
-                    f"'{next(iter(assets_def.keys)).to_string()}' is not "
-                    "produced by any of the provided asset ops and is not one of the provided "
-                    "sources."
-                )
-                similar_names = resolve_similar_asset_names(
-                    upstream_key,
-                    list(
-                        itertools.chain.from_iterable(asset_def.keys for asset_def in assets_defs)
-                    ),
-                )
-                if similar_names:
-                    # Arbitrarily limit to 10 similar names to avoid a huge error message
-                    subset_similar_names = similar_names[:10]
-                    similar_to_string = ", ".join(
-                        similar.to_string() for similar in subset_similar_names
-                    )
-                    msg += f" Did you mean one of the following?\n\t{similar_to_string}"
-                raise DagsterInvalidDefinitionError(msg)
+        # only update the object if replacements were necessary
+        resolved_assets_defs.append(
+            assets_def.with_attributes(asset_key_replacements=replacements)
+            if replacements
+            else assets_def
+        )
 
-        if resolved_keys_by_unresolved_key:
-            result[id(assets_def)] = resolved_keys_by_unresolved_key
-
-    return result
+    return resolved_assets_defs
