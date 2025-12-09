@@ -230,6 +230,7 @@ export type PartialWorkspaceLocationNodeFragment = {
   loadStatus: Types.RepositoryLocationLoadStatus;
   updatedTimestamp: number;
   versionKey: string;
+  definitionsSource: Types.DefinitionsSource;
   displayMetadata: Array<{__typename: 'RepositoryMetadata'; key: string; value: string}>;
   featureFlags: Array<{__typename: 'FeatureFlag'; name: string; enabled: boolean}>;
   locationOrLoadError:
@@ -814,6 +815,7 @@ export type LocationWorkspaceQuery = {
         loadStatus: Types.RepositoryLocationLoadStatus;
         updatedTimestamp: number;
         versionKey: string;
+        definitionsSource: Types.DefinitionsSource;
         displayMetadata: Array<{__typename: 'RepositoryMetadata'; key: string; value: string}>;
         featureFlags: Array<{__typename: 'FeatureFlag'; name: string; enabled: boolean}>;
         locationOrLoadError:
@@ -1060,6 +1062,7 @@ export type WorkspaceLocationNodeFragment = {
   loadStatus: Types.RepositoryLocationLoadStatus;
   updatedTimestamp: number;
   versionKey: string;
+  definitionsSource: Types.DefinitionsSource;
   displayMetadata: Array<{__typename: 'RepositoryMetadata'; key: string; value: string}>;
   featureFlags: Array<{__typename: 'FeatureFlag'; name: string; enabled: boolean}>;
   locationOrLoadError:
@@ -1508,7 +1511,7 @@ export type WorkspaceRepositoryFragment = {
   displayMetadata: Array<{__typename: 'RepositoryMetadata'; key: string; value: string}>;
 };
 
-export const LocationWorkspaceQueryVersion = '7176c4113b2f47be7aef8961535e1849749ec94a01a79954ec9c5910fbe435a7';
+export const LocationWorkspaceQueryVersion = '6aba5471892bcccd71c3152a44d88c593c1cc03b7471e37066623d992868a6b2';
 
 export const CodeLocationStatusQueryVersion = '5491629a2659feca3a6cf0cc976c6f59c8e78dff1193e07d7850ae4355698b04';
 

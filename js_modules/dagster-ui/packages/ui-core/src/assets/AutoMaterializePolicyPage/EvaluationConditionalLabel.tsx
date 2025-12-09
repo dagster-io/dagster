@@ -101,7 +101,7 @@ export const EvaluationSinceMetadata = ({
   assetKey: {path: string[]};
   checkName?: string;
   detailLabel: string;
-  evaluationId: number | null;
+  evaluationId: string | null;
   timestamp: number | null;
   pushHistory?: (item: EvaluationHistoryStackItem) => void;
 }) => {
@@ -119,7 +119,7 @@ export const EvaluationSinceMetadata = ({
           pushHistory({
             assetKeyPath: assetKey.path,
             assetCheckName: checkName,
-            evaluationID: String(evaluationId),
+            evaluationID: evaluationId,
           });
         }}
       >

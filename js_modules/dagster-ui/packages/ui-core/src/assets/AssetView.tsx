@@ -33,7 +33,6 @@ import {useAssetViewParams} from './useAssetViewParams';
 import {useDeleteDynamicPartitionsDialog} from './useDeleteDynamicPartitionsDialog';
 import {healthRefreshHintFromLiveData} from './usePartitionHealthData';
 import {useReportEventsDialog} from './useReportEventsDialog';
-import {useWipeDialog} from './useWipeDialog';
 import {currentPageAtom} from '../app/analytics';
 import {Timestamp} from '../app/time/Timestamp';
 import {AssetLiveDataRefreshButton, useAssetLiveData} from '../asset-data/AssetLiveDataProvider';
@@ -247,8 +246,6 @@ const AssetViewImpl = ({assetKey, headerBreadcrumbs, writeAssetVisit, currentPat
     setCurrentPage(({specificPath}) => ({specificPath, path: `${path}?view=${selectedTab}`}));
   }, [path, selectedTab, setCurrentPage]);
 
-  const wipe = useWipeDialog({assetKey, repository: definition?.repository || null}, refresh);
-
   const dynamicPartitionsDelete = useDeleteDynamicPartitionsDialog(
     definition && repoAddress ? {assetKey: definition.assetKey, definition, repoAddress} : null,
     () => {
@@ -315,7 +312,6 @@ const AssetViewImpl = ({assetKey, headerBreadcrumbs, writeAssetVisit, currentPat
         right={
           <Box style={{margin: '-4px 0'}} flex={{direction: 'row', gap: 8}}>
             {reportEvents.element}
-            {wipe.element}
             {dynamicPartitionsDelete.element}
             <LaunchAssetExecutionButton
               scope={{
@@ -327,7 +323,6 @@ const AssetViewImpl = ({assetKey, headerBreadcrumbs, writeAssetVisit, currentPat
               showChangedAndMissingOption={false}
               additionalDropdownOptions={[
                 ...reportEvents.dropdownOptions,
-                ...wipe.dropdownOptions,
                 ...dynamicPartitionsDelete.dropdownOptions,
               ]}
             />

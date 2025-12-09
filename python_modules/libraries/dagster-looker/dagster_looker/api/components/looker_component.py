@@ -41,6 +41,16 @@ class LookerInstanceArgs(Model, Resolvable):
     client_secret: str = Field(..., description="A client secret with access to the Looker API.")
 
 
+def resolve_looker_resource(context, model) -> LookerResource:
+    """Resolver function for LookerResource that properly resolves templated strings."""
+    args = LookerInstanceArgs.resolve_from_model(context, model)
+    return LookerResource(
+        base_url=args.base_url,
+        client_id=args.client_id,
+        client_secret=args.client_secret,
+    )
+
+
 class LookerFilterArgs(Model, Resolvable):
     """Arguments for filtering which Looker content to load."""
 
@@ -55,6 +65,17 @@ class LookerFilterArgs(Model, Resolvable):
     only_fetch_explores_used_in_dashboards: bool = Field(
         default=False,
         description="If True, only load explores that are used in dashboards. If False, load all explores.",
+    )
+
+
+def resolve_looker_filter(context, model) -> Optional[LookerFilter]:
+    """Resolver function for LookerFilter that properly resolves templated strings."""
+    if model is None:
+        return None
+    args = LookerFilterArgs.resolve_from_model(context, model)
+    return LookerFilter(
+        dashboard_folders=args.dashboard_folders,
+        only_fetch_explores_used_in_dashboards=args.only_fetch_explores_used_in_dashboards,
     )
 
 
@@ -84,7 +105,8 @@ class LookerComponent(StateBackedComponent, Resolvable):
 
     looker_resource: Annotated[
         LookerResource,
-        Resolver.default(
+        Resolver(
+            resolve_looker_resource,
             model_field_type=LookerInstanceArgs.model(),
             description="Configuration for connecting to the Looker instance",
             examples=[
@@ -99,7 +121,8 @@ class LookerComponent(StateBackedComponent, Resolvable):
 
     looker_filter: Annotated[
         Optional[LookerFilter],
-        Resolver.default(
+        Resolver(
+            resolve_looker_filter,
             model_field_type=LookerFilterArgs.model(),
             description="Filters for which Looker content to load",
             examples=[

@@ -464,9 +464,9 @@ export type AssetCheckAutomationListQuery = {
               | {__typename: 'AssetKey'; path: Array<string>};
             sinceMetadata: {
               __typename: 'SinceConditionMetadata';
-              triggerEvaluationId: number | null;
+              triggerEvaluationId: string | null;
               triggerTimestamp: number | null;
-              resetEvaluationId: number | null;
+              resetEvaluationId: string | null;
               resetTimestamp: number | null;
             } | null;
           }>;

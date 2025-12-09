@@ -48,7 +48,7 @@
   "FreshnessEvaluationEnabledQuery": "db79450d1d49690ab8e4b843490dbb3b83b7349c2334c619e80e597089cc9d57",
   "FreshnessStatusQuery": "3bb87b020443a031d2b0786e007d175d474896b5ad8b7b06f6f9c4de51b21594",
   "AssetRecordsQuery": "1778f6a11acc440983fcf6b6156518b3113c7fa29127130bb30a3e0140807575",
-  "AssetPermissionsQuery": "ff8b09ce270b20e67a0b552f66238f6705e12b79fdbff05b24a8dc3dcbf53ef0",
+  "AssetsPermissionsQuery": "ab77e79a165269b79bdd9768a816cdccfb6fe320b2abbc6d0e2b1deb307d4590",
   "GetAutoMaterializePausedQuery": "50f74183f54031274136ab855701d01f26642a6d958d7452ae13aa6c40ca349d",
   "SetAutoMaterializePausedMutation": "144afc0d6f43dfa6d437c0e7f621e4f19ffb48c7f75669d2e3d742c115aa7b4b",
   "AssetOverviewMetadataEventsQuery": "114f8107c50306b1a96275b011beacf8b6422c88e387f479da4d0a45c4a08cca",
@@ -182,7 +182,7 @@
   "SingleScheduleQuery": "b55973514f6a41c14fe9501f44defc21caa004b694d5cc976c4740ed3ba97b4e",
   "SingleSensorQuery": "50c997295f433dee6c217e7bb90775fc20c420d69ba5d0ad0c627ec86caa639a",
   "WorkspaceAssetsQuery": "8e60e278ee64dbc08867486462047b5db1852bbcb23777cd6fbae587703e7ebe",
-  "LocationWorkspaceQuery": "7176c4113b2f47be7aef8961535e1849749ec94a01a79954ec9c5910fbe435a7",
+  "LocationWorkspaceQuery": "6aba5471892bcccd71c3152a44d88c593c1cc03b7471e37066623d992868a6b2",
   "CodeLocationStatusQuery": "5491629a2659feca3a6cf0cc976c6f59c8e78dff1193e07d7850ae4355698b04",
   "LocationWorkspaceAssetsQuery": "61195fc88cb53d325132085b835ac95f0315c431e9a80a86dddd51815ef4c77f",
   "WorkspaceGraphsQuery": "ccbef870f327b56beb0d781a476c8afbbc22ff2621181c8576861daaf7667ecf"
