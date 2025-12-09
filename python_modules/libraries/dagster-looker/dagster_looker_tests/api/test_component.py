@@ -15,6 +15,7 @@ from dagster._utils.test.definitions import scoped_definitions_load_context
 from dagster.components.testing import create_defs_folder_sandbox
 from dagster.components.testing.test_cases import TestTranslation
 from dagster_looker.api.components import LookerComponent
+from dagster_shared.utils import environ
 
 BASIC_LOOKER_COMPONENT_BODY = {
     "type": "dagster_looker.LookerComponent",
@@ -130,17 +131,18 @@ def mock_looker_resource(looker_api_mocks: Any):
 
 def test_pdt_assets_configuration(looker_api_mocks):
     """Test that PDT assets are created from YAML configuration."""
-    body = copy.deepcopy(BASIC_LOOKER_COMPONENT_BODY)
-    body["attributes"]["pdt_builds"] = [
-        {"model_name": "my_model", "view_name": "my_pdt_view", "force_rebuild": "true"},
-        {"model_name": "sales_model", "view_name": "monthly_report", "workspace": "dev"},
-    ]
+    with environ({"LOOKER_VIEW_ENV": "monthly_report"}):
+        body = copy.deepcopy(BASIC_LOOKER_COMPONENT_BODY)
+        body["attributes"]["pdt_builds"] = [
+            {"model_name": "my_model", "view_name": "my_pdt_view", "force_rebuild": "true"},
+            {"model_name": "sales_model", "view_name": "{{ env.LOOKER_VIEW_ENV }}", "workspace": "dev"},
+        ]
 
-    with setup_looker_component(defs_yaml_contents=body) as (component, defs):
-        all_keys = defs.resolve_asset_graph().get_all_asset_keys()
+        with setup_looker_component(defs_yaml_contents=body) as (component, defs):
+            all_keys = defs.resolve_asset_graph().get_all_asset_keys()
 
-        assert AssetKey(["view", "my_pdt_view"]) in all_keys
+            assert AssetKey(["view", "my_pdt_view"]) in all_keys
 
-        assert AssetKey(["view", "monthly_report"]) in all_keys
+            assert AssetKey(["view", "monthly_report"]) in all_keys
 
-        assert len(component.pdt_builds) == 2
+            assert len(component.pdt_builds) == 2

@@ -118,7 +118,6 @@ class LookerComponent(StateBackedComponent, Resolvable):
     pdt_builds: Annotated[
         Optional[list[RequestStartPdtBuild]],
         Resolver.default(
-            model_field_type=RequestStartPdtBuild,
             description=("A list of PDT build requests. Each request defined here will be converted "
                          "into a materializable asset definition representing that PDT build."),
             examples=[
