@@ -469,7 +469,7 @@ def test_readiness_probe_can_be_disabled(template: HelmTemplate):
 
 def test_readiness_probe_can_be_customized(template: HelmTemplate):
     deployment = create_simple_user_deployment("foo")
-    deployment.readinessProbe = ReadinessProbeWithEnabled.construct(timeoutSeconds=42)
+    deployment.readinessProbe = ReadinessProbeWithEnabled.construct(enabled=True, timeoutSeconds=42)
     helm_values = DagsterHelmValues.construct(
         dagsterUserDeployments=UserDeployments.construct(deployments=[deployment])
     )

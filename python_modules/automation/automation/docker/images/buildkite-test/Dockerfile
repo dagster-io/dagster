@@ -49,16 +49,17 @@ RUN curl -LO "https://storage.googleapis.com/kubernetes-release/release/$KUBECTL
     && mv ./kind /usr/local/bin/kind \
     && curl "https://raw.githubusercontent.com/helm/helm/master/scripts/get-helm-3" | bash
 
-# Install libxmlsec to use xmlsec
+# Install libxmlsec to use xmlsec and libffi for cffi
 RUN apt-get update -yqq \
     && apt-get install -yqq --no-install-recommends \
+    libffi-dev \
     libxmlsec1-dev \
     pkg-config
 
 # Install Java (required by pyspark) - Java 17 for compatibility with both Spark 3 and 4
-COPY --from=openjdk:17-slim-buster /usr/local/openjdk-17 /usr/local/openjdk-17
-ENV JAVA_HOME /usr/local/openjdk-17
-RUN update-alternatives --install /usr/bin/java java /usr/local/openjdk-17/bin/java 1
+COPY --from=eclipse-temurin:17-jdk-jammy /opt/java/openjdk /opt/java/openjdk
+ENV JAVA_HOME /opt/java/openjdk
+RUN update-alternatives --install /usr/bin/java java /opt/java/openjdk/bin/java 1
 
 # Install various packages used in running/installing/testing Dagster:
 # - git/make (cloning dagster, running checks defined in Makefile)
@@ -66,7 +67,7 @@ RUN update-alternatives --install /usr/bin/java java /usr/local/openjdk-17/bin/j
 # - assorted others-- some may no longer be required, but leaving in place for now
 #
 # deb.nodesource script adds node source to apt
-RUN curl -sL https://deb.nodesource.com/setup_21.x | bash - \
+RUN curl -sL https://deb.nodesource.com/setup_22.x | bash - \
     # Add yarn GPG key and apt source
     && curl -sL https://dl.yarnpkg.com/debian/pubkey.gpg | \
     gpg --dearmor -o /usr/share/keyrings/yarnkey.gpg \
@@ -90,7 +91,6 @@ RUN curl -sL https://deb.nodesource.com/setup_21.x | bash - \
     rabbitmq-server \
     rsync \
     ssh \
-    software-properties-common \
     unzip \
     wget \
     xz-utils \
@@ -107,8 +107,9 @@ RUN wget https://github.com/fossas/fossa-cli/releases/download/v${FOSSA_VERSION}
 
 # Install Google Cloud SDK
 # https://cloud.google.com/sdk/docs/install#deb
-# Add Google Cloud GPG key and apt source
-RUN curl https://packages.cloud.google.com/apt/doc/apt-key.gpg | apt-key --keyring /usr/share/keyrings/cloud.google.gpg add - \
+# Add Google Cloud GPG key and apt source (using modern method without deprecated apt-key)
+RUN curl -fsSL https://packages.cloud.google.com/apt/doc/apt-key.gpg | \
+    gpg --dearmor -o /usr/share/keyrings/cloud.google.gpg \
     && echo "deb [signed-by=/usr/share/keyrings/cloud.google.gpg] https://packages.cloud.google.com/apt cloud-sdk main" | \
     tee -a /etc/apt/sources.list.d/google-cloud-sdk.list > /dev/null \
     && apt-get -yqq update \

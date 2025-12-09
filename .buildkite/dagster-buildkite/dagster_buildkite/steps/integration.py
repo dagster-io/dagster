@@ -269,6 +269,7 @@ def build_integration_suite_steps(
 
 def k8s_integration_suite_pytest_extra_cmds(version: AvailablePythonVersion, _) -> list[str]:
     return [
+        "export DOCKER_API_VERSION=1.41",
         "export DAGSTER_DOCKER_IMAGE_TAG=$${BUILDKITE_BUILD_ID}-" + version.value,
         'export DAGSTER_DOCKER_REPOSITORY="$${AWS_ACCOUNT_ID}.dkr.ecr.us-west-2.amazonaws.com"',
         "aws ecr get-login --no-include-email --region us-west-2 | sh",
@@ -277,6 +278,7 @@ def k8s_integration_suite_pytest_extra_cmds(version: AvailablePythonVersion, _) 
 
 def celery_k8s_integration_suite_pytest_extra_cmds(version: AvailablePythonVersion, _) -> list[str]:
     cmds = [
+        "export DOCKER_API_VERSION=1.41",
         'export AIRFLOW_HOME="/airflow"',
         "mkdir -p $${AIRFLOW_HOME}",
         "export DAGSTER_DOCKER_IMAGE_TAG=$${BUILDKITE_BUILD_ID}-" + version.value,

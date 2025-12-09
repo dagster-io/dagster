@@ -46,6 +46,8 @@ def docker_compose_cm(
 
 
 def dump_docker_compose_logs(context, docker_compose_yml):
+    env = os.environ.copy()
+    env["DOCKER_API_VERSION"] = "1.41"
     if context:
         compose_command = ["docker", "--context", context, "compose"]
     else:
@@ -57,7 +59,7 @@ def dump_docker_compose_logs(context, docker_compose_yml):
         "logs",
     ]
 
-    subprocess.run(compose_command, check=False)
+    subprocess.run(compose_command, check=False, env=env)
 
 
 @pytest.fixture(scope="module", name="docker_compose_cm")
@@ -88,6 +90,8 @@ def docker_compose(docker_compose_cm):
 
 
 def docker_compose_up(docker_compose_yml, context, service, env_file, no_build: bool = False):
+    docker_env = os.environ.copy()
+    docker_env["DOCKER_API_VERSION"] = "1.41"
     if context:
         compose_command = ["docker", "--context", context, "compose"]
     else:
@@ -109,10 +113,12 @@ def docker_compose_up(docker_compose_yml, context, service, env_file, no_build: 
     if service:
         compose_command.append(service)
 
-    subprocess.check_call(compose_command)
+    subprocess.check_call(compose_command, env=docker_env)
 
 
 def docker_compose_down(docker_compose_yml, context, service, env_file):
+    docker_env = os.environ.copy()
+    docker_env["DOCKER_API_VERSION"] = "1.41"
     if context:
         compose_command = ["docker", "--context", context, "compose"]
     else:
@@ -123,7 +129,7 @@ def docker_compose_down(docker_compose_yml, context, service, env_file):
 
     if service:
         compose_command += ["--file", str(docker_compose_yml), "down", "--volumes", service]
-        subprocess.check_call(compose_command)
+        subprocess.check_call(compose_command, env=docker_env)
 
     else:
         compose_command += [
@@ -133,19 +139,27 @@ def docker_compose_down(docker_compose_yml, context, service, env_file):
             "--volumes",
             "--remove-orphans",
         ]
-        subprocess.check_call(compose_command)
+        subprocess.check_call(compose_command, env=docker_env)
 
 
 def list_containers():
     # TODO: Handle default container names: {project_name}_service_{task_number}
-    return subprocess.check_output(["docker", "ps", "--format", "{{.Names}}"]).decode().splitlines()
+    env = os.environ.copy()
+    env["DOCKER_API_VERSION"] = "1.41"
+    return (
+        subprocess.check_output(["docker", "ps", "--format", "{{.Names}}"], env=env)
+        .decode()
+        .splitlines()
+    )
 
 
 def current_container():
     container_id = subprocess.check_output(["cat", "/etc/hostname"]).strip().decode()
+    env = os.environ.copy()
+    env["DOCKER_API_VERSION"] = "1.41"
     container = (
         subprocess.check_output(
-            ["docker", "ps", "--filter", f"id={container_id}", "--format", "{{.Names}}"]
+            ["docker", "ps", "--filter", f"id={container_id}", "--format", "{{.Names}}"], env=env
         )
         .strip()
         .decode()
@@ -156,25 +170,31 @@ def current_container():
 def connect_container_to_network(container, network):
     # subprocess.run instead of subprocess.check_call so we don't fail when
     # trying to connect a container to a network that it's already connected to
+    env = os.environ.copy()
+    env["DOCKER_API_VERSION"] = "1.41"
     try:
-        subprocess.check_call(["docker", "network", "connect", network, container])
+        subprocess.check_call(["docker", "network", "connect", network, container], env=env)
         logging.info(f"Connected {container} to network {network}.")
     except subprocess.CalledProcessError:
         logging.warning(f"Unable to connect {container} to network {network}.")
 
 
 def disconnect_container_from_network(container, network):
+    env = os.environ.copy()
+    env["DOCKER_API_VERSION"] = "1.41"
     try:
-        subprocess.check_call(["docker", "network", "disconnect", network, container])
+        subprocess.check_call(["docker", "network", "disconnect", network, container], env=env)
         logging.info(f"Disconnected {container} from network {network}.")
     except subprocess.CalledProcessError:
         logging.warning(f"Unable to disconnect {container} from network {network}.")
 
 
 def hostnames(network):
+    env = os.environ.copy()
+    env["DOCKER_API_VERSION"] = "1.41"
     hostnames = {}
     for container in list_containers():
-        output = subprocess.check_output(["docker", "inspect", container])
+        output = subprocess.check_output(["docker", "inspect", container], env=env)
         networking = json.loads(output)[0]["NetworkSettings"]
         hostname = networking["Networks"].get(network, {}).get("IPAddress")
         if hostname:
