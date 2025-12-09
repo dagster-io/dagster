@@ -1,5 +1,11 @@
 # Changelog
 
+## 1.12.5 (core) / 0.28.5 (libraries)
+
+## New
+
+- Increased the version of NextJS used by the Dagster webserver to `15.4.8` and the version of NextJS used by the `dg docs serve` command to `15.5.7`. While these applications are unaffected by https://nextjs.org/blog/CVE-2025-66478 due to not using React Server Components, this upgrade ensures that dagster packages will not be flagged for that CVE by vulnerability scanners.
+
 ## 1.12.4 (core) / 0.28.4 (libraries)
 
 ### New
