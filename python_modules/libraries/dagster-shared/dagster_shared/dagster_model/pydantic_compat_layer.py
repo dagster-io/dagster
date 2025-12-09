@@ -60,6 +60,10 @@ class ModelFieldCompat:
         if hasattr(self.field, "discriminator"):
             return self.field.discriminator if hasattr(self.field, "discriminator") else None
 
+    @property
+    def json_schema_extra(self) -> Optional[dict[str, Any]]:
+        return getattr(self.field, "json_schema_extra", None)
+
 
 def model_fields(model: type[BaseModel]) -> dict[str, ModelFieldCompat]:
     """Returns a dictionary of fields for a given pydantic model, wrapped
