@@ -33,7 +33,7 @@ setup(
     install_requires=[
         "deltalake>=1.0.0",
         "pyarrow",
-        "dagster==1.12.4",
+        "dagster==1.12.5",
     ],
     extras_require={
         "pandas": ["pandas"],

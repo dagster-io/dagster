@@ -43,7 +43,7 @@ setup(
     include_package_data=True,
     python_requires=">=3.10,<3.14",
     install_requires=[
-        "dagster-webserver==1.12.4",
+        "dagster-webserver==1.12.5",
     ],
     extras_require={
         "notebook": [f"dagster-webserver[notebook]{pin}"],  # notebooks support

@@ -33,7 +33,7 @@ setup(
     packages=find_packages(exclude=["dagster_managed_elements_tests*"]),
     include_package_data=True,
     python_requires=">=3.10,<3.14",
-    install_requires=["dagster==1.12.4", "requests", "click_spinner"],
+    install_requires=["dagster==1.12.5", "requests", "click_spinner"],
     zip_safe=False,
     entry_points={
         "console_scripts": [

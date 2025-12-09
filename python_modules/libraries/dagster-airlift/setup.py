@@ -64,7 +64,7 @@ setup(
     requires=CLI_REQUIREMENTS,
     extras_require={
         "core": [
-            "dagster==1.12.4",
+            "dagster==1.12.5",
             *CLI_REQUIREMENTS,
         ],
         # [in-airflow] doesn't directly have a dependency on airflow because Airflow cannot be installed via setup.py reliably. Instead, users need to install from a constraints
@@ -81,10 +81,10 @@ setup(
         ],  # confirms that mwaa is available in the environment (can't find exactly which version adds mwaa support, but I can confirm that 1.18.0 and greater have it.)
         "test": [
             "pytest",
-            "dagster-dbt==0.28.4",
+            "dagster-dbt==0.28.5",
             "dbt-duckdb",
             "boto3",
-            "dagster-webserver==1.12.4",
+            "dagster-webserver==1.12.5",
             *AIRFLOW_REQUIREMENTS,
             *CLI_REQUIREMENTS,
         ],
