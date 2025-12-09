@@ -1000,22 +1000,17 @@ class TimeWindowPartitionsDefinition(PartitionsDefinition, IHaveNew):
 
         exclusion_iterators = self._build_exclusion_iterator_list(start_timestamp, ascending=True)
         while exclusion_iterators:
-            next_exclusion: Optional[tuple[int, datetime]] = None
-            for idx, (_, current_time) in enumerate(exclusion_iterators):
-                if current_time is not None:
-                    if (
-                        next_exclusion is None
-                        or current_time.timestamp() < next_exclusion[1].timestamp()
-                    ):
-                        next_exclusion = (idx, current_time)
+            # Find the iterator with the minimum timestamp
+            min_idx, (excl_iter, min_time) = min(
+                enumerate(exclusion_iterators),
+                key=lambda x: x[1][1].timestamp() if x[1][1] is not None else float("inf"),
+            )
 
-            if next_exclusion is None:
+            if min_time is None:
                 break
 
-            (min_idx, min_time) = next_exclusion
             yield min_time
 
-            excl_iter, _ = exclusion_iterators[min_idx]
             next_time = next(excl_iter, None)
             if next_time is None:
                 exclusion_iterators.pop(min_idx)
@@ -1030,22 +1025,17 @@ class TimeWindowPartitionsDefinition(PartitionsDefinition, IHaveNew):
 
         exclusion_iterators = self._build_exclusion_iterator_list(end_timestamp, ascending=False)
         while exclusion_iterators:
-            next_exclusion: Optional[tuple[int, datetime]] = None
-            for idx, (_, current_time) in enumerate(exclusion_iterators):
-                if current_time is not None:
-                    if (
-                        next_exclusion is None
-                        or current_time.timestamp() > next_exclusion[1].timestamp()
-                    ):
-                        next_exclusion = (idx, current_time)
+            # Find the iterator with the maximum timestamp
+            max_idx, (excl_iter, max_time) = max(
+                enumerate(exclusion_iterators),
+                key=lambda x: x[1][1].timestamp() if x[1][1] is not None else float("-inf"),
+            )
 
-            if next_exclusion is None:
+            if max_time is None:
                 break
 
-            (max_idx, max_time) = next_exclusion
             yield max_time
 
-            excl_iter, _ = exclusion_iterators[max_idx]
             next_time = next(excl_iter, None)
             if next_time is None:
                 exclusion_iterators.pop(max_idx)
