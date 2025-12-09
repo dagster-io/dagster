@@ -4,6 +4,7 @@ from typing import Optional
 
 from dagster._core.definitions.assets.definition.assets_definition import AssetsDefinition
 from dagster._core.definitions.events import AssetKey
+from dagster._core.definitions.metadata.metadata_set import TableMetadataSet
 from dagster._core.errors import DagsterInvalidDefinitionError
 from dagster._utils.warnings import beta_warning
 
@@ -106,10 +107,18 @@ def resolve_assets_def_deps(assets_defs: list[AssetsDefinition]) -> list[AssetsD
     specs = [spec for assets_def in assets_defs for spec in assets_def.specs]
     asset_keys = {spec.key for spec in specs}
 
+    # build mapping from group and name to asset keys
     keys_by_group_and_name: dict[tuple[Optional[str], str], list[AssetKey]] = defaultdict(list)
     for spec in specs:
         if spec.group_name is not None:
             keys_by_group_and_name[(spec.group_name, spec.key.path[-1])].append(spec.key)
+
+    # build mapping from table name to asset keys
+    keys_by_table_name: dict[Optional[str], list[AssetKey]] = defaultdict(list)
+    for spec in specs:
+        table_name = TableMetadataSet.extract(spec.metadata).table_name
+        if table_name is not None:
+            keys_by_table_name[table_name].append(spec.key)
 
     # analyze each assets definition for unresolved dependencies and attempt to resolve them
     warned = False
@@ -124,6 +133,7 @@ def resolve_assets_def_deps(assets_defs: list[AssetsDefinition]) -> list[AssetsD
 
                 input_name = assets_def.input_names_by_node_key.get(dep.asset_key)
                 input_def = assets_def.node_def.input_def_named(input_name) if input_name else None
+                table_name = TableMetadataSet.extract(dep.metadata).table_name
 
                 # attempt to match by name and group
                 matching_asset_keys = keys_by_group_and_name[
@@ -144,6 +154,25 @@ def resolve_assets_def_deps(assets_defs: list[AssetsDefinition]) -> list[AssetsD
                             f" '{input_name or dep.asset_key.to_string()}' was resolved to upstream asset"
                             f" {matching_asset_keys[0].to_string()}, because the name matches and they're in the"
                             " same group. This is a beta functionality that may change in a"
+                            " future release"
+                        )
+                        warned = True
+                    continue
+
+                # attempt to match by table name
+                matching_asset_keys = keys_by_table_name[table_name]
+                if len(matching_asset_keys) > 0:
+                    if len(matching_asset_keys) > 1:
+                        raise DagsterInvalidDefinitionError(
+                            f'Multiple upstream assets found with table name "{table_name}": {matching_asset_keys}. '
+                            f"Unable to resolve dependency {dep.asset_key.to_string()} for asset {spec.key.to_string()}."
+                        )
+                    replacements[dep.asset_key] = matching_asset_keys[0]
+                    if not warned:
+                        beta_warning(
+                            f"Asset {spec.key.to_string()}'s dependency"
+                            f" '{input_name or dep.asset_key.to_string()}' was resolved to upstream asset"
+                            f" {matching_asset_keys[0].to_string()}, because the table name matches. This is a beta functionality that may change in a"
                             " future release"
                         )
                         warned = True
