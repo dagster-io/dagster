@@ -1,6 +1,7 @@
 ---
 title: Dagster & Looker (Pythonic)
 sidebar_label: Looker (Pythonic)
+sidebar_position: 2
 description: The Looker integration allows you to monitor your Looker project as assets in Dagster, along with other data assets.
 tags: [dagster-supported, bi]
 source: https://github.com/dagster-io/dagster/tree/master/python_modules/libraries/dagster-looker

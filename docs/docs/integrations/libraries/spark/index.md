@@ -1,6 +1,7 @@
 ---
 title: Dagster & Spark
 sidebar_label: Spark
+sidebar_position: 1
 description: Running Spark code often requires submitting code to a Databricks or EMR cluster. The Pyspark integration provides a Spark class with methods for configuration and constructing the spark-submit command for a Spark job.
 tags: [dagster-supported, compute]
 source: https://github.com/dagster-io/dagster/tree/master/python_modules/libraries/dagster-pyspark

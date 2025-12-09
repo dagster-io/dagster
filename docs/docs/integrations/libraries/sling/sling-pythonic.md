@@ -1,6 +1,7 @@
 ---
 title: Dagster & Sling (Pythonic)
 sidebar_label: Sling (Pythonic)
+sidebar_position: 2
 description: Sling provides an easy-to-use YAML configuration layer for loading data from files, replicating data between databases, exporting custom SQL queries to cloud storage, and much more.
 tags: [dagster-supported, etl]
 source: https://github.com/dagster-io/dagster/tree/master/python_modules/libraries/dagster-sling

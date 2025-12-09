@@ -1,6 +1,7 @@
 ---
 title: Dagster & Sling (Component)
 sidebar_label: Sling
+sidebar_position: 1
 description: The dagster-sling library provides a SlingReplicationCollectionComponent, which can be used to represent a collection of Sling replications as assets in Dagster.
 tags: [dagster-supported, etl, component]
 source: https://github.com/dagster-io/dagster/tree/master/python_modules/libraries/dagster-sling

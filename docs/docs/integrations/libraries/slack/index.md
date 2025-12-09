@@ -1,6 +1,7 @@
 ---
 title: Dagster & Slack
 sidebar_label: Slack
+sidebar_position: 1
 description: This library provides an integration with Slack to support posting messages in your company's Slack workspace.
 tags: [dagster-supported, alerting]
 source: https://github.com/dagster-io/dagster/tree/master/python_modules/libraries/dagster-slack

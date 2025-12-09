@@ -1,6 +1,7 @@
 ---
 title: Dagster & Microsoft Teams
 sidebar_label: Microsoft Teams
+sidebar_position: 1
 description: An integration with Microsoft Teams to post messages to MS Teams from any Dagster op or asset.
 tags: [dagster-supported, alerting]
 source: https://github.com/dagster-io/dagster/tree/master/python_modules/libraries/dagster-msteams

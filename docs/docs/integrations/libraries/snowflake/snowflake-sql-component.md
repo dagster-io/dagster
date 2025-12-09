@@ -1,5 +1,6 @@
 ---
 title: Snowflake SQL component
+sidebar_position: 300
 description: Execute custom SQL queries in Snowflake with Dagster
 tags: [dagster-supported, storage, component]
 source: https://github.com/dagster-io/dagster/tree/master/python_modules/libraries/dagster-snowflake

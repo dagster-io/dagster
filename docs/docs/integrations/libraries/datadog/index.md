@@ -1,6 +1,7 @@
 ---
 title: Dagster & Datadog
 sidebar_label: Datadog
+sidebar_position: 1
 description: While Dagster provides comprehensive monitoring and observability of the pipelines it orchestrates, many teams look to centralize all their monitoring across apps, processes and infrastructure using Datadog's 'Cloud Monitoring as a Service'. The Datadog integration allows you to publish metrics to Datadog from within Dagster ops.
 tags: [dagster-supported, monitoring]
 source: https://github.com/dagster-io/dagster/tree/master/python_modules/libraries/dagster-datadog

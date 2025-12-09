@@ -1,6 +1,7 @@
 ---
 title: Migrating from Legacy Airbyte Resources
 sidebar_label: Migration Guide
+sidebar_position: 5
 description: Learn how to migrate from legacy Airbyte resources to the new AirbyteWorkspace and AirbyteCloudWorkspace.
 tags: [dagster-supported, migration, etl]
 ---

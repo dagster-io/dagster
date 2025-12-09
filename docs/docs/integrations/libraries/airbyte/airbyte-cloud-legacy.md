@@ -1,6 +1,7 @@
 ---
 title: Dagster & Airbyte Cloud (Legacy)
 sidebar_label: Airbyte Cloud (Legacy)
+sidebar_position: 4
 description: Orchestrate Airbyte Cloud connections and schedule syncs alongside upstream or downstream dependencies.
 tags: [dagster-supported, etl]
 source: https://github.com/dagster-io/dagster/tree/master/python_modules/libraries/dagster-airbyte

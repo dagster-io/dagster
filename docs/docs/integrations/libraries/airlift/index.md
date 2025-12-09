@@ -1,6 +1,7 @@
 ---
 title: Dagster & Airlift
 sidebar_label: Airlift
+sidebar_position: 1
 description: Airlift is a toolkit for integrating Dagster and Airflow.
 tags: [dagster-supported, other]
 source: https://github.com/dagster-io/dagster/tree/master/python_modules/libraries/dagster-airlift

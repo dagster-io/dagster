@@ -1,6 +1,7 @@
 ---
 title: Dagster & Tableau (Pythonic)
 sidebar_label: Tableau (Pythonic)
+sidebar_position: 2
 description: Your Tableau assets, such as data sources, sheets, and dashboards, can be represented in the Dagster asset graph, allowing you to track lineage and dependencies between Tableau assets and upstream data assets you are already modeling in Dagster.
 tags: [dagster-supported, bi]
 source: https://github.com/dagster-io/dagster/tree/master/python_modules/libraries/dagster-tableau

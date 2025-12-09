@@ -1,6 +1,7 @@
 ---
 title: Dagster & Twilio
 sidebar_label: Twilio
+sidebar_position: 1
 description: Use your Twilio Account SID and Auth Token to build Twilio tasks right into your Dagster pipeline.
 tags: [dagster-supported, alerting]
 source: https://github.com/dagster-io/dagster/tree/master/python_modules/libraries/dagster-twilio

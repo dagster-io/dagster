@@ -1,6 +1,7 @@
 ---
 title: Dagster & Celery
 sidebar_label: Celery
+sidebar_position: 1
 description: TK
 source: https://github.com/dagster-io/dagster/tree/master/python_modules/libraries/dagster-celery
 pypi: https://pypi.org/project/dagster-celery/

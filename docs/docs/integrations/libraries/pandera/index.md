@@ -1,6 +1,7 @@
 ---
 title: Dagster & Pandera
 sidebar_label: Pandera
+sidebar_position: 1
 description: The Pandera integration library provides an API for generating Dagster Types from Pandera dataframe schemas. Like all Dagster types, Pandera-generated types can be used to annotate op inputs and outputs.
 tags: [dagster-supported, metadata]
 source: https://github.com/dagster-io/dagster/tree/master/python_modules/libraries/dagster-pandera

@@ -1,6 +1,7 @@
 ---
 title: Dagster & PySpark
 sidebar_label: PySpark
+sidebar_position: 1
 description: TK
 tags: [dagster-supported]
 source: https://github.com/dagster-io/dagster/tree/master/python_modules/libraries/dagster-pyspark

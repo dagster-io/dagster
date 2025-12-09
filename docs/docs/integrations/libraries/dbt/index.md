@@ -1,6 +1,7 @@
 ---
 title: Dagster & dbt (Component)
 sidebar_label: dbt
+sidebar_position: 1
 description: Orchestrate your dbt transformations directly with Dagster.
 tags: [dagster-supported, etl, component]
 source: https://github.com/dagster-io/dagster/tree/master/python_modules/libraries/dagster-dbt

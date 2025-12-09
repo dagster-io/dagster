@@ -1,6 +1,7 @@
 ---
 title: Dagster & Prometheus
 sidebar_label: Prometheus
+sidebar_position: 1
 description: This integration allows you to push metrics to the Prometheus gateway from within a Dagster pipeline.
 tags: [dagster-supported, monitoring]
 source: https://github.com/dagster-io/dagster/tree/master/python_modules/libraries/dagster-prometheus

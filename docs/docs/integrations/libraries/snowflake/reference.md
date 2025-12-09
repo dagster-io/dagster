@@ -1,7 +1,7 @@
 ---
 title: 'dagster-snowflake integration reference'
 description: Store your Dagster assets in Snowflake
-sidebar_position: 300
+sidebar_position: 400
 ---
 
 This reference page provides information for working with [`dagster-snowflake`](/integrations/libraries/snowflake/dagster-snowflake) features that are not covered as part of the Snowflake & Dagster tutorials ([resources](/integrations/libraries/snowflake/using-snowflake-with-dagster), [I/O managers](/integrations/libraries/snowflake/using-snowflake-with-dagster-io-managers)).

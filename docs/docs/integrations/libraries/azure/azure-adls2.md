@@ -1,6 +1,7 @@
 ---
 title: Dagster &  Azure Data Lake Storage Gen 2
 sidebar_label: Azure Data Lake Storage Gen 2
+sidebar_position: 2
 description: Dagster helps you use Azure Storage Accounts as part of your data pipeline. Azure Data Lake Storage Gen 2 (ADLS2) is our primary focus but we also provide utilities for Azure Blob Storage.
 tags: [dagster-supported, storage]
 source: https://github.com/dagster-io/dagster/tree/master/python_modules/libraries/dagster-azure

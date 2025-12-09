@@ -1,6 +1,7 @@
 ---
 title: Dagster & OpenAI
 sidebar_label: OpenAI
+sidebar_position: 1
 description: The OpenAI library allows you to easily interact with the OpenAI REST API using the OpenAI Python API to build AI steps into your Dagster pipelines. You can also log OpenAI API usage metadata in Dagster Insights, giving you detailed observability on API call credit consumption.
 tags: [dagster-supported]
 source: https://github.com/dagster-io/dagster/tree/master/python_modules/libraries/dagster-openai

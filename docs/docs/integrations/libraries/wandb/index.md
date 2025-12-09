@@ -1,6 +1,7 @@
 ---
 title: Dagster & Weights & Biases
 sidebar_label: Weights & Biases
+sidebar_position: 1
 description: Use Dagster and Weights & Biases (W&B) to orchestrate your MLOps pipelines and maintain ML assets.
 tags: [community-supported]
 source: https://github.com/dagster-io/dagster/tree/master/python_modules/libraries/dagster-wandb

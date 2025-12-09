@@ -1,6 +1,7 @@
 ---
 title: Dagster & Pandas
 sidebar_label: Pandas
+sidebar_position: 1
 description: Implement validation on pandas DataFrames.
 tags: [dagster-supported, metadata]
 source: https://github.com/dagster-io/dagster/tree/master/python_modules/libraries/dagster-pandas
