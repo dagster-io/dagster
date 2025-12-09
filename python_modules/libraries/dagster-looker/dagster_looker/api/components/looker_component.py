@@ -1,7 +1,7 @@
 from dataclasses import dataclass, field
 from functools import cached_property
 from pathlib import Path
-from typing import Annotated, Optional, List
+from typing import Annotated, Optional
 
 import dagster as dg
 from dagster._annotations import beta, public
@@ -14,8 +14,9 @@ from dagster.components.utils.defs_state import (
     ResolvedDefsStateConfig,
 )
 from dagster_shared.serdes.serdes import deserialize_value
-from pydantic import Field, BaseModel
+from pydantic import Field
 
+from dagster_looker.api.assets import core_looker_pdt_execution
 from dagster_looker.api.components.translation import (
     ResolvedMultilayerTranslationFn,
     create_looker_component_translator,
@@ -26,11 +27,10 @@ from dagster_looker.api.dagster_looker_api_translator import (
     LookerInstanceData,
     LookerStructureData,
     LookerStructureType,
-    RequestStartPdtBuild,
     LookmlView,
+    RequestStartPdtBuild,
 )
 from dagster_looker.api.resource import LookerApiDefsLoader, LookerFilter, LookerResource
-from dagster_looker.api.assets import core_looker_pdt_execution 
 
 
 class LookerInstanceArgs(Model, Resolvable):
@@ -59,6 +59,7 @@ class LookerFilterArgs(Model, Resolvable):
         default=False,
         description="If True, only load explores that are used in dashboards. If False, load all explores.",
     )
+
 
 @beta
 @public
@@ -112,14 +113,16 @@ class LookerComponent(StateBackedComponent, Resolvable):
             ],
         ),
     ] = None
-    
+
     translation: Optional[ResolvedMultilayerTranslationFn] = None
-    
+
     pdt_builds: Annotated[
         Optional[list[RequestStartPdtBuild]],
         Resolver.default(
-            description=("A list of PDT build requests. Each request defined here will be converted "
-                         "into a materializable asset definition representing that PDT build."),
+            description=(
+                "A list of PDT build requests. Each request defined here will be converted "
+                "into a materializable asset definition representing that PDT build."
+            ),
             examples=[
                 [
                     {
@@ -184,7 +187,6 @@ class LookerComponent(StateBackedComponent, Resolvable):
                             }
                         )
         """
-                
         return self._base_translator.get_asset_spec(looker_structure)
 
     def _load_asset_specs(self, state: LookerInstanceData) -> list[AssetSpec]:
@@ -236,10 +238,7 @@ class LookerComponent(StateBackedComponent, Resolvable):
         state = instance_data.to_state(sdk)
         state_path.write_text(dg.serialize_value(state))
 
-    def _build_pdt_assets_definition(
-        self, request: RequestStartPdtBuild
-    ) -> dg.AssetsDefinition:
-        
+    def _build_pdt_assets_definition(self, request: RequestStartPdtBuild) -> dg.AssetsDefinition:
         spec = self.translator.get_asset_spec(
             LookerApiTranslatorStructureData(
                 structure_data=LookerStructureData(
@@ -253,16 +252,10 @@ class LookerComponent(StateBackedComponent, Resolvable):
             )
         )
 
-        @dg.multi_asset(
-            specs=[spec],
-            name=f"{request.model_name}_{request.view_name}"
-        )
+        @dg.multi_asset(specs=[spec], name=f"{request.model_name}_{request.view_name}")
         def pdt_asset(context: dg.AssetExecutionContext):
             core_looker_pdt_execution(
-                looker=self.looker_resource,
-                request=request,
-                log=context.log,
-                run_id=context.run_id
+                looker=self.looker_resource, request=request, log=context.log, run_id=context.run_id
             )
 
         return pdt_asset
@@ -286,5 +279,5 @@ class LookerComponent(StateBackedComponent, Resolvable):
             for pdt_config in self.pdt_builds:
                 request = RequestStartPdtBuild(**pdt_config.model_dump())
                 pdt_assets.append(self._build_pdt_assets_definition(request))
-        
+
         return dg.Definitions(assets=[*specs, *pdt_assets])

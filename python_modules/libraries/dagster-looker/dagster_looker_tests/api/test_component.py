@@ -135,7 +135,11 @@ def test_pdt_assets_configuration(looker_api_mocks):
         body = copy.deepcopy(BASIC_LOOKER_COMPONENT_BODY)
         body["attributes"]["pdt_builds"] = [
             {"model_name": "my_model", "view_name": "my_pdt_view", "force_rebuild": "true"},
-            {"model_name": "sales_model", "view_name": "{{ env.LOOKER_VIEW_ENV }}", "workspace": "dev"},
+            {
+                "model_name": "sales_model",
+                "view_name": "{{ env.LOOKER_VIEW_ENV }}",
+                "workspace": "dev",
+            },
         ]
 
         with setup_looker_component(defs_yaml_contents=body) as (component, defs):

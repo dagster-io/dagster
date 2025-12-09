@@ -11,9 +11,9 @@ from dagster._annotations import deprecated, public
 from dagster._core.definitions.metadata.metadata_value import MetadataValue
 from dagster._record import record
 from dagster._utils.log import get_dagster_logger
+from dagster.components import Model, Resolvable
 from looker_sdk.sdk.api40.methods import Looker40SDK
 from looker_sdk.sdk.api40.models import Dashboard, DashboardFilter, LookmlModelExplore, User
-from dagster.components import Model, Resolvable
 
 logger = get_dagster_logger("dagster_looker")
 
@@ -66,7 +66,6 @@ class LookerInstanceData:
             dashboards_by_id=dashboards_by_id,
             users_by_id=users_by_id,
         )
-
 
 
 class RequestStartPdtBuild(Model, Resolvable):

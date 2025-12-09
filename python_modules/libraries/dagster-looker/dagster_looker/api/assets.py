@@ -1,7 +1,7 @@
 from collections.abc import Sequence
-from typing import TYPE_CHECKING, Optional, Union, cast
+from typing import Optional, Union, cast
 
-from dagster import AssetExecutionContext, AssetsDefinition, Failure, multi_asset, DagsterLogManager
+from dagster import AssetExecutionContext, AssetsDefinition, DagsterLogManager, Failure, multi_asset
 from dagster._annotations import beta
 from dagster._utils.warnings import deprecation_warning
 
@@ -11,10 +11,10 @@ from dagster_looker.api.dagster_looker_api_translator import (
     LookerStructureData,
     LookerStructureType,
     LookmlView,
-    RequestStartPdtBuild
+    RequestStartPdtBuild,
 )
-
 from dagster_looker.api.resource import LookerResource
+
 
 def core_looker_pdt_execution(
     looker: LookerResource,
@@ -44,8 +44,7 @@ def core_looker_pdt_execution(
     )
 
     log.info(
-        f"Materialization id: {check_pdt.materialization_id}, "
-        f"response text: {check_pdt.resp_text}"
+        f"Materialization id: {check_pdt.materialization_id}, response text: {check_pdt.resp_text}"
     )
 
 
@@ -84,32 +83,29 @@ def build_looker_pdt_assets_definitions(
     translator = dagster_looker_translator or DagsterLookerApiTranslator()
     result = []
     for request_start_pdt_build in request_start_pdt_builds:
-
-       for request in request_start_pdt_builds:
-        spec = translator.get_asset_spec(
-            LookerApiTranslatorStructureData(
-                structure_data=LookerStructureData(
-                    structure_type=LookerStructureType.VIEW,
-                    data=LookmlView(
-                        view_name=request.view_name,
-                        sql_table_name=None,
+        for request in request_start_pdt_builds:
+            spec = translator.get_asset_spec(
+                LookerApiTranslatorStructureData(
+                    structure_data=LookerStructureData(
+                        structure_type=LookerStructureType.VIEW,
+                        data=LookmlView(
+                            view_name=request.view_name,
+                            sql_table_name=None,
+                        ),
                     ),
-                ),
-                instance_data=None,
+                    instance_data=None,
+                )
             )
-        )
 
-        @multi_asset(
-            specs=[spec],
-            name=f"{request.model_name}_{request.view_name}",
-            required_resource_keys={resource_key},
-        )
-        
-        def pdts(context: AssetExecutionContext):
-            looker = cast("LookerResource", getattr(context.resources, resource_key))
-            core_looker_pdt_execution(looker, request, context.log, context.run_id)
+            @multi_asset(
+                specs=[spec],
+                name=f"{request.model_name}_{request.view_name}",
+                required_resource_keys={resource_key},
+            )
+            def pdts(context: AssetExecutionContext):
+                looker = cast("LookerResource", getattr(context.resources, resource_key))
+                core_looker_pdt_execution(looker, request, context.log, context.run_id)
 
-
-        result.append(pdts)
+            result.append(pdts)
 
     return result
