@@ -17,6 +17,7 @@ on:
       - js_modules/dagster-ui/packages/ui-core/src/graph/OpTags.tsx
       # Required to rebuild docs on new version release
       - python_modules/dagster/dagster/version.py
+      - CHANGES.md
   pull_request:
     paths:
       - docs/**
@@ -31,6 +32,7 @@ on:
       - js_modules/dagster-ui/packages/ui-core/src/graph/OpTags.tsx
       # Required to rebuild docs on new version release
       - python_modules/dagster/dagster/version.py
+      - CHANGES.md
     types:
       - opened
       - reopened
