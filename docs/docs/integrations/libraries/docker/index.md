@@ -9,6 +9,8 @@ pypi: https://pypi.org/project/dagster-docker/
 sidebar_custom_props:
   logo: images/integrations/docker.svg
 partnerlink: https://www.docker.com/
+canonicalUrl: '/integrations/libraries/docker'
+slug: '/integrations/libraries/docker'
 ---
 
 <p>{frontMatter.description}</p>

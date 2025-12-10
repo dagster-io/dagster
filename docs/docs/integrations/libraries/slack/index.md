@@ -9,6 +9,8 @@ pypi: https://pypi.org/project/dagster-slack
 sidebar_custom_props:
   logo: images/integrations/slack.svg
 partnerlink: https://slack.com/
+canonicalUrl: '/integrations/libraries/slack'
+slug: '/integrations/libraries/slack'
 ---
 
 <p>{frontMatter.description}</p>

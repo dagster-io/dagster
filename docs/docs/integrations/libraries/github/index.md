@@ -9,6 +9,8 @@ pypi: https://pypi.org/project/dagster-github/
 sidebar_custom_props:
   logo: images/integrations/github.svg
 partnerlink: https://github.com/
+canonicalUrl: '/integrations/libraries/github'
+slug: '/integrations/libraries/github'
 ---
 
 import Deprecated from '@site/docs/partials/\_Deprecated.md';

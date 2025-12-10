@@ -9,6 +9,8 @@ pypi: https://pypi.org/project/dagster-datadog/
 sidebar_custom_props:
   logo: images/integrations/datadog.svg
 partnerlink: https://www.datadoghq.com/
+canonicalUrl: '/integrations/libraries/datadog'
+slug: '/integrations/libraries/datadog'
 ---
 
 import Beta from '@site/docs/partials/\_Beta.md';

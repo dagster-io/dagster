@@ -8,6 +8,8 @@ source: https://github.com/dagster-io/dagster/tree/master/python_modules/librari
 pypi: https://pypi.org/project/dagster-airlift/
 sidebar_custom_props:
   logo: images/integrations/airflow.svg
+canonicalUrl: '/integrations/libraries/airlift'
+slug: '/integrations/libraries/airlift'
 ---
 
 import Beta from '@site/docs/partials/\_Beta.md';

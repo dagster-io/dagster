@@ -10,6 +10,8 @@ sidebar_custom_props:
   logo: images/integrations/wandb.svg
   community: true
 partnerlink: https://wandb.ai/
+canonicalUrl: '/integrations/libraries/wandb'
+slug: '/integrations/libraries/wandb'
 ---
 
 import CommunityIntegration from '@site/docs/partials/\_CommunityIntegration.md';

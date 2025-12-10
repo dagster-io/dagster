@@ -9,6 +9,8 @@ pypi: https://pypi.org/project/dagster-databricks/
 sidebar_custom_props:
   logo: images/integrations/databricks.svg
 partnerlink: https://databricks.com/
+canonicalUrl: '/integrations/libraries/databricks'
+slug: '/integrations/libraries/databricks'
 ---
 
 <p>{frontMatter.description}</p>

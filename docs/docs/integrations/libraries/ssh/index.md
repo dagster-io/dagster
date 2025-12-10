@@ -9,6 +9,8 @@ pypi: https://pypi.org/project/dagster-ssh
 sidebar_custom_props:
   logo: images/integrations/ssh.svg
 partnerlink: https://www.ssh.com/academy/ssh/protocol
+canonicalUrl: '/integrations/libraries/ssh'
+slug: '/integrations/libraries/ssh'
 ---
 
 import Beta from '@site/docs/partials/\_Beta.md';

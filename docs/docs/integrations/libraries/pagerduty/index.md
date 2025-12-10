@@ -9,6 +9,8 @@ pypi: https://pypi.org/project/dagster-pagerduty
 sidebar_custom_props:
   logo: images/integrations/pagerduty.svg
 partnerlink: https://www.pagerduty.com/
+canonicalUrl: '/integrations/libraries/pagerduty'
+slug: '/integrations/libraries/pagerduty'
 ---
 
 <p>{frontMatter.description}</p>

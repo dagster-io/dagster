@@ -9,6 +9,8 @@ pypi: https://pypi.org/project/dagster-msteams/
 sidebar_custom_props:
   logo: images/integrations/microsoft_teams.svg
 partnerlink: https://www.microsoft.com/en-us/microsoft-teams/group-chat-software
+canonicalUrl: '/integrations/libraries/msteams'
+slug: '/integrations/libraries/msteams'
 ---
 
 <p>{frontMatter.description}</p>

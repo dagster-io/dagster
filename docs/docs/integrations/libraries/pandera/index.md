@@ -9,6 +9,8 @@ pypi: https://pypi.org/project/dagster-pandera
 sidebar_custom_props:
   logo: images/integrations/pandera.svg
 partnerlink: https://pandera.readthedocs.io/en/stable/
+canonicalUrl: '/integrations/libraries/pandera'
+slug: '/integrations/libraries/pandera'
 ---
 
 import Beta from '@site/docs/partials/\_Beta.md';

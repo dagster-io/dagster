@@ -9,6 +9,8 @@ pypi: https://pypi.org/project/dagster-twilio
 sidebar_custom_props:
   logo: images/integrations/twilio.svg
 partnerlink: https://www.twilio.com/
+canonicalUrl: '/integrations/libraries/twilio'
+slug: '/integrations/libraries/twilio'
 ---
 
 <p>{frontMatter.description}</p>

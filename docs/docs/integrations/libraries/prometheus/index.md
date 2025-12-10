@@ -9,6 +9,8 @@ pypi: https://pypi.org/project/dagster-prometheus
 sidebar_custom_props:
   logo: images/integrations/prometheus.svg
 partnerlink:
+canonicalUrl: '/integrations/libraries/prometheus'
+slug: '/integrations/libraries/prometheus'
 ---
 
 import Beta from '@site/docs/partials/\_Beta.md';

@@ -9,6 +9,8 @@ pypi: https://pypi.org/project/dagster-pyspark
 sidebar_custom_props:
   logo: images/integrations/spark.svg
 partnerlink:
+canonicalUrl: '/integrations/libraries/spark'
+slug: '/integrations/libraries/spark'
 ---
 
 <p>{frontMatter.description}</p>

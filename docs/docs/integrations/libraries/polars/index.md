@@ -10,6 +10,8 @@ sidebar_custom_props:
   logo: images/integrations/polars-logo-python.svg
   community: true
 partnerlink: https://pola.rs/
+canonicalUrl: '/integrations/libraries/polars'
+slug: '/integrations/libraries/polars'
 ---
 
 import CommunityIntegration from '@site/docs/partials/\_CommunityIntegration.md';

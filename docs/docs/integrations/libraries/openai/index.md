@@ -9,6 +9,8 @@ pypi: https://pypi.org/project/dagster-openai
 sidebar_custom_props:
   logo: images/integrations/openai.svg
 partnerlink: https://platform.openai.com/docs/introduction
+canonicalUrl: '/integrations/libraries/openai'
+slug: '/integrations/libraries/openai'
 ---
 
 <p>{frontMatter.description}</p>

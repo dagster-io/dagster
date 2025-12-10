@@ -9,6 +9,8 @@ pypi: https://pypi.org/project/dagster-pandas
 sidebar_custom_props:
   logo: images/integrations/pandas.svg
 partnerlink: https://pandas.pydata.org/
+canonicalUrl: '/integrations/libraries/pandas'
+slug: '/integrations/libraries/pandas'
 ---
 
 import Beta from '@site/docs/partials/\_Beta.md';

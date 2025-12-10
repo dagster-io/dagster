@@ -9,6 +9,8 @@ pypi: https://pypi.org/project/dagster-k8s/
 sidebar_custom_props:
   logo: images/integrations/kubernetes.svg
 partnerlink: https://kubernetes.io/
+canonicalUrl: '/integrations/libraries/k8s'
+slug: '/integrations/libraries/k8s'
 ---
 
 <p>{frontMatter.description}</p>
