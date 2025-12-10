@@ -169,7 +169,7 @@ class ConfigEnumValueSnap:
     description: Optional[str]
 
 
-@whitelist_for_serdes
+@whitelist_for_serdes(skip_when_none_fields={"is_secret"})
 @record
 class ConfigFieldSnap:
     name: Optional[str]
@@ -178,6 +178,7 @@ class ConfigFieldSnap:
     default_provided: bool
     default_value_as_json_str: Optional[str]
     description: Optional[str]
+    is_secret: Optional[bool] = None
 
 
 def snap_from_field(name: str, field: Field):
@@ -190,6 +191,7 @@ def snap_from_field(name: str, field: Field):
             field.default_value_as_json_str if field.default_provided else None
         ),
         description=field.description,
+        is_secret=field.is_secret if field.is_secret else None,
     )
 
 
