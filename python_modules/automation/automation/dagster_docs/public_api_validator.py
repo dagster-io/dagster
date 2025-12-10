@@ -340,7 +340,7 @@ class PublicApiValidator:
 
         if relative_path.parts[1] == "dagster":
             return "dagster"
-        elif relative_path.parts[1] == "libraries":
+        elif relative_path.parts[1] == "libraries" or relative_path.parts[1] == "graphql":
             if len(relative_path.parts) > 1:
                 # For library RST files like libraries/dagster-airlift.rst,
                 # assume symbols are exported at library top-level: dagster_airlift
