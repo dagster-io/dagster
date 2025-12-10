@@ -4,11 +4,7 @@ from functools import cached_property
 from typing import AbstractSet, Optional, Union  # noqa: UP035
 
 from dagster._core.definitions.asset_checks.asset_check_spec import AssetCheckKey, AssetCheckSpec
-from dagster._core.definitions.assets.definition.asset_spec import (
-    SYSTEM_METADATA_KEY_AUTO_CREATED_STUB_ASSET,
-    AssetExecutionType,
-    AssetSpec,
-)
+from dagster._core.definitions.assets.definition.asset_spec import AssetExecutionType, AssetSpec
 from dagster._core.definitions.assets.definition.assets_definition import AssetsDefinition
 from dagster._core.definitions.assets.graph.base_asset_graph import (
     AssetCheckNode,
@@ -27,7 +23,10 @@ from dagster._core.definitions.freshness_policy import LegacyFreshnessPolicy
 from dagster._core.definitions.metadata import ArbitraryMetadataMapping
 from dagster._core.definitions.partitions.definition import PartitionsDefinition
 from dagster._core.definitions.partitions.mapping import PartitionMapping
-from dagster._core.definitions.resolved_asset_deps import resolve_assets_def_deps
+from dagster._core.definitions.resolved_asset_deps import (
+    resolve_assets_def_deps,
+    resolve_stub_assets_defs,
+)
 from dagster._core.definitions.source_asset import SourceAsset
 from dagster._core.definitions.utils import DEFAULT_GROUP_NAME
 from dagster._core.selector.subset_selector import generate_asset_dep_graph
@@ -216,36 +215,14 @@ class AssetGraph(BaseAssetGraph[AssetNode]):
             create_external_asset_from_source_asset(a) if isinstance(a, SourceAsset) else a
             for a in assets
         ]
-        all_keys = {k for asset_def in assets_defs for k in asset_def.keys}
-
-        # Resolve all asset dependency keys to their final values
-        assets_defs = resolve_assets_def_deps(assets_defs)
-
-        # Create unexecutable external assets definitions for any referenced keys for which no
-        # definition was provided.
-        all_referenced_asset_keys = {
-            key for assets_def in assets_defs for key in assets_def.dependency_keys
-        }.union(
-            {
-                check_spec.key.asset_key
-                for assets_def in assets_defs
-                for check_spec in assets_def.node_check_specs_by_output_name.values()
-            }
-        )
 
         with disable_dagster_warnings():
-            for key in all_referenced_asset_keys.difference(all_keys):
-                assets_defs.append(
-                    AssetsDefinition(
-                        specs=[
-                            AssetSpec(
-                                key=key,
-                                metadata={SYSTEM_METADATA_KEY_AUTO_CREATED_STUB_ASSET: True},
-                            )
-                        ]
-                    )
-                )
-        return assets_defs
+            # Resolve all asset dependency keys to their final values
+            assets_defs = resolve_assets_def_deps(assets_defs)
+            # Create stub assets for any referenced keys for which no definition was provided.
+            stub_assets_defs = resolve_stub_assets_defs(assets_defs)
+
+        return assets_defs + stub_assets_defs
 
     @classmethod
     def key_mappings_from_assets(
