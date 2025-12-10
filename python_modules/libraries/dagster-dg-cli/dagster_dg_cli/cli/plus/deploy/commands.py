@@ -16,7 +16,7 @@ from dagster_dg_core.shared_options import (
     dg_path_options,
     make_option_group,
 )
-from dagster_dg_core.utils import DgClickCommand, DgClickGroup, not_none
+from dagster_dg_core.utils import DgClickCommand, DgClickGroup, activate_venv, not_none
 from dagster_dg_core.utils.telemetry import cli_telemetry_wrapper
 from dagster_shared import check
 from dagster_shared.plus.config import DagsterPlusCliConfig
@@ -488,7 +488,9 @@ def refresh_defs_state_impl(
             )
 
             try:
-                subprocess.run(cmd, check=True, capture_output=False)
+                # activate the venv for the subprocess to ensure CLIs are available
+                with activate_venv(project_context.root_path / ".venv"):
+                    subprocess.run(cmd, check=True, capture_output=False)
             except subprocess.CalledProcessError as e:
                 click.echo(
                     click.style(
