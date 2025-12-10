@@ -743,3 +743,48 @@ def test_nonexistent_asset_check_deps_creates_stub_asset():
         asset_graph.get(does_not_exist).metadata[SYSTEM_METADATA_KEY_AUTO_CREATED_STUB_ASSET]
         is True
     )
+
+
+def test_stub_asset_includes_metadata_from_asset_deps():
+    does_not_exist = dg.AssetKey(["does_not_exist"])
+    custom_metadata = {"foo": "bar", "baz": 123}
+
+    @dg.asset(deps=[AssetDep(does_not_exist, metadata=custom_metadata)])
+    def the_asset():
+        return None
+
+    @dg.asset(deps=[AssetDep(does_not_exist, metadata=custom_metadata)])
+    def another_asset():
+        return None
+
+    # no metadata, which is ok
+    @dg.asset(deps=[AssetDep(does_not_exist)])
+    def final_asset():
+        return None
+
+    defs = dg.Definitions(assets=[the_asset, another_asset, final_asset])
+
+    asset_graph = defs.resolve_asset_graph()
+
+    stub_metadata = asset_graph.get(does_not_exist).metadata
+    assert stub_metadata[SYSTEM_METADATA_KEY_AUTO_CREATED_STUB_ASSET] is True
+    assert stub_metadata["foo"] == "bar"
+    assert stub_metadata["baz"] == 123
+
+
+def test_stub_asset_conflicting_metadata_error():
+    does_not_exist = dg.AssetKey(["does_not_exist"])
+
+    @dg.asset(deps=[AssetDep(does_not_exist, metadata={"foo": "bar"})])
+    def the_asset():
+        return None
+
+    @dg.asset(deps=[AssetDep(does_not_exist, metadata={"foo": "different_value"})])
+    def another_asset():
+        return None
+
+    with pytest.raises(
+        dg.DagsterInvalidDefinitionError,
+        match=r'Conflicting metadata found on AssetDeps referencing \["does_not_exist"\]',
+    ):
+        dg.Definitions(assets=[the_asset, another_asset]).resolve_asset_graph()
