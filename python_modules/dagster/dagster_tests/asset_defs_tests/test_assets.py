@@ -2317,10 +2317,11 @@ def test_asset_decorator_with_kinds() -> None:
     assert asset1.specs_by_key[dg.AssetKey("asset1")].kinds == {"python"}
 
     with pytest.raises(
-        dg.DagsterInvalidDefinitionError, match="Assets can have at most three kinds currently."
+        dg.DagsterInvalidDefinitionError, match="Assets can have at most ten kinds currently."
     ):
+        kinds = {f"kind_{i}" for i in range(11)}
 
-        @dg.asset(kinds={"python", "snowflake", "bigquery", "airflow"})
+        @dg.asset(kinds=kinds)
         def asset2(): ...
 
     with pytest.raises(
@@ -2339,12 +2340,11 @@ def test_asset_spec_with_kinds() -> None:
     assert assets.specs_by_key[dg.AssetKey("asset1")].kinds == {"python"}
 
     with pytest.raises(
-        dg.DagsterInvalidDefinitionError, match="Assets can have at most three kinds currently."
+        dg.DagsterInvalidDefinitionError, match="Assets can have at most ten kinds currently."
     ):
+        kinds = {f"kind_{i}" for i in range(11)}
 
-        @dg.multi_asset(
-            specs=[dg.AssetSpec("asset1", kinds={"python", "snowflake", "bigquery", "airflow"})]
-        )
+        @dg.multi_asset(specs=[dg.AssetSpec("asset1", kinds=kinds)])
         def assets2(): ...
 
     with pytest.raises(
