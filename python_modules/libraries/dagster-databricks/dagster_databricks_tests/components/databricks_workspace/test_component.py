@@ -7,19 +7,19 @@ import pytest
 from dagster import AssetKey, Definitions
 from dagster._utils.test.definitions import scoped_definitions_load_context
 from dagster.components.testing import create_defs_folder_sandbox
-from dagster_databricks.components.databricks_asset_bundle.configs import Job
+from dagster_databricks.components.databricks_asset_bundle.configs import DatabricksJob
 from dagster_databricks.components.databricks_workspace.component import (
     DatabricksWorkspaceComponent,
 )
 from dagster_shared.serdes.serdes import deserialize_value, serialize_value
 
 MOCK_JOBS_DATA = [
-    Job(
+    DatabricksJob(
         job_id=101,
         name="Data Ingestion Job",
         tasks=[{"task_key": "ingest_task", "description": "Ingests data"}],
     ),
-    Job(
+    DatabricksJob(
         job_id=102,
         name="ML Training Job",
         tasks=[
@@ -126,7 +126,7 @@ def test_databricks_custom_asset_mapping(mock_fetcher):
             "assets_by_task_key": {
                 "ingest_task": {
                     "key": "my_custom_ingestion",
-                    "group": "etl_group",
+                    "group_name": "etl_group",
                     "description": "Overridden description",
                 }
             },
@@ -149,9 +149,9 @@ def test_databricks_custom_asset_mapping(mock_fetcher):
 
 
 def test_state_serialization():
-    """Test that the Job model can be serialized and deserialized correctly."""
+    """Test that the DatabricksJob model can be serialized and deserialized correctly."""
     original_jobs = [
-        Job(
+        DatabricksJob(
             job_id=123,
             name="Complex Job",
             tasks=[
@@ -162,7 +162,7 @@ def test_state_serialization():
     ]
 
     serialized = serialize_value(original_jobs)
-    deserialized = deserialize_value(serialized, list[Job])
+    deserialized = deserialize_value(serialized, list[DatabricksJob])
 
     assert len(deserialized) == 1
     assert deserialized[0].job_id == 123
@@ -174,9 +174,9 @@ def test_state_serialization():
 def test_malformed_job_data(mock_fetcher):
     """Test that the component handles jobs with missing data gracefully."""
     mock_fetcher.return_value = [
-        Job(job_id=1, name="Good", tasks=[{"task_key": "valid"}]),
-        Job(job_id=2, name="Empty", tasks=[]),
-        Job(job_id=3, name="Survival", tasks=[{"task_key": "survival"}]),
+        DatabricksJob(job_id=1, name="Good", tasks=[{"task_key": "valid"}]),
+        DatabricksJob(job_id=2, name="Empty", tasks=[]),
+        DatabricksJob(job_id=3, name="Survival", tasks=[{"task_key": "survival"}]),
     ]
 
     with setup_databricks_component(defs_yaml_contents=COMPONENT_YAML) as (component, defs):

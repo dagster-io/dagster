@@ -621,7 +621,7 @@ class ResolvedDatabricksServerlessConfig(Resolvable, Model):
 
 
 @whitelist_for_serdes
-class Job(Model):
+class DatabricksJob(Model):
     """Represents a Databricks Job structure for serialization."""
 
     job_id: int

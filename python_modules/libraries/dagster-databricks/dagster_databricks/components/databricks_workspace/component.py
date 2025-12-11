@@ -4,7 +4,15 @@ from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Annotated, Any, Optional
 
-from dagster import AssetExecutionContext, AssetKey, AssetSpec, Definitions, Resolvable, multi_asset
+from dagster import (
+    AssetExecutionContext,
+    AssetKey,
+    AssetSpec,
+    Definitions,
+    Resolvable,
+    ResolvedAssetSpec,
+    multi_asset,
+)
 from dagster._annotations import beta
 from dagster.components import Resolver
 from dagster.components.component.state_backed_component import StateBackedComponent
@@ -16,15 +24,14 @@ from dagster.components.utils.defs_state import (
 from dagster_shared.serdes.serdes import deserialize_value, serialize_value
 from databricks.sdk import WorkspaceClient
 
-from dagster_databricks.components.databricks_asset_bundle.configs import Job
+from dagster_databricks.components.databricks_asset_bundle.configs import DatabricksJob
 from dagster_databricks.components.databricks_workspace.fetcher import (
     fetch_databricks_workspace_data,
 )
 from dagster_databricks.components.databricks_workspace.schema import (
-    AssetSpecConfig,
-    DatabricksFilterConfig,
+    DatabricksFilter,
     DatabricksWorkspaceConfig,
-    resolve_databricks_filter,
+    ResolvedDatabricksFilter,
 )
 
 
@@ -45,12 +52,12 @@ class DatabricksWorkspaceComponent(StateBackedComponent, Resolvable):
     ]
 
     databricks_filter: Annotated[
-        Optional[DatabricksFilterConfig],
+        Optional[ResolvedDatabricksFilter],
         Resolver.default(description="Filter which Databricks jobs to include"),
     ] = None
 
     assets_by_task_key: Annotated[
-        Optional[dict[str, AssetSpecConfig]],
+        Optional[dict[str, ResolvedAssetSpec]],
         Resolver.default(
             description="Optional mapping of Databricks task keys to Dagster AssetSpecs.",
         ),
@@ -65,11 +72,10 @@ class DatabricksWorkspaceComponent(StateBackedComponent, Resolvable):
         default_key = f"{self.__class__.__name__}[{self.workspace.host}]"
         return DefsStateConfig.from_args(self.defs_state, default_key=default_key)
 
-    def get_state(self) -> list[Job]:
+    def get_state(self) -> list[DatabricksJob]:
         """Fetch current workspace state (list of Jobs)."""
         client = WorkspaceClient(host=self.workspace.host, token=self.workspace.token)
-        filter_config = self.databricks_filter or DatabricksFilterConfig()
-        databricks_filter = resolve_databricks_filter(filter_config)
+        databricks_filter = self.databricks_filter or DatabricksFilter(include_job=lambda j: True)
         return asyncio.run(fetch_databricks_workspace_data(client, databricks_filter))
 
     def write_state_to_path(self, state_path: Path) -> None:
@@ -82,7 +88,7 @@ class DatabricksWorkspaceComponent(StateBackedComponent, Resolvable):
         if not state_path or not state_path.exists():
             return Definitions()
 
-        jobs_state = deserialize_value(state_path.read_text(), list[Job])
+        jobs_state = deserialize_value(state_path.read_text(), list[DatabricksJob])
 
         databricks_assets = []
         for job in jobs_state:
@@ -111,13 +117,13 @@ class DatabricksWorkspaceComponent(StateBackedComponent, Resolvable):
             task_key = getattr(task, "task_key", None)
 
         if task_key and self.assets_by_task_key and task_key in self.assets_by_task_key:
-            user_config = self.assets_by_task_key[task_key]
+            user_spec = self.assets_by_task_key[task_key]
 
             return [
                 AssetSpec(
-                    key=user_config.key,
-                    group_name=user_config.group,
-                    description=user_config.description,
+                    key=user_spec.key,
+                    group_name=user_spec.group_name,
+                    description=user_spec.description,
                     kinds={"databricks"},
                     metadata={"task_key": task_key, "job_name": job_name},
                 )

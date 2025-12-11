@@ -4,7 +4,7 @@ from typing import Any, Optional
 import aiohttp
 from dagster import get_dagster_logger
 
-from dagster_databricks.components.databricks_asset_bundle.configs import Job
+from dagster_databricks.components.databricks_asset_bundle.configs import DatabricksJob
 from dagster_databricks.components.databricks_workspace.schema import DatabricksFilter
 
 logger = get_dagster_logger()
@@ -131,7 +131,7 @@ async def fetch_databricks_workspace_data(
                 job_name = settings.get("name", f"job_{job_id}")
                 tasks = settings.get("tasks", [])
 
-                return Job(job_id=job_id, name=job_name, tasks=tasks)
+                return DatabricksJob(job_id=job_id, name=job_name, tasks=tasks)
 
             except Exception as e:
                 logger.warning(f"Failed to process job {job_id}: {e}")
