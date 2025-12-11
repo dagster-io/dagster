@@ -878,7 +878,8 @@ def make_graphql_context_test_suite(context_variants):
             class MockedGraphQLClient:
                 def execute(self, gql_query, variable_values=None):
                     # Handle both gql v3 (DocumentNode) and v4 (GraphQLRequest)
-                    if HAS_GRAPHQL_REQUEST:
+                    # In gql v4, queries may be wrapped in GraphQLRequest objects
+                    if HAS_GRAPHQL_REQUEST and isinstance(gql_query, GraphQLRequest):  # pyright: ignore[reportPossiblyUnboundVariable]
                         document = gql_query.document
                         variables = (
                             variable_values
