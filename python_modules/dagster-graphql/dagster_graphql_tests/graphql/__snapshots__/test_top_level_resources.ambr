@@ -225,6 +225,50 @@
           'description': 'My description.',
           'name': 'my_resource_two_env_vars',
         }),
+        dict({
+          'configFields': list([
+            dict({
+              'configType': dict({
+                'key': 'Noneable.StringSourceType',
+              }),
+              'description': 'the api key',
+              'name': 'api_key',
+            }),
+            dict({
+              'configType': dict({
+                'key': 'Noneable.StringSourceType',
+              }),
+              'description': 'the password',
+              'name': 'password',
+            }),
+            dict({
+              'configType': dict({
+                'key': 'Noneable.StringSourceType',
+              }),
+              'description': 'the username',
+              'name': 'username',
+            }),
+          ]),
+          'configuredValues': list([
+            dict({
+              'key': 'api_key',
+              'type': 'SECRET',
+              'value': '********',
+            }),
+            dict({
+              'key': 'password',
+              'type': 'SECRET',
+              'value': '********',
+            }),
+            dict({
+              'key': 'username',
+              'type': 'VALUE',
+              'value': '"admin"',
+            }),
+          ]),
+          'description': 'A test resource with secret fields.',
+          'name': 'my_resource_with_secrets',
+        }),
       ]),
     }),
   })
