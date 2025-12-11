@@ -2,7 +2,7 @@
 title: Dagster & Papertrail
 sidebar_label: Papertrail
 sidebar_position: 1
-description: TK
+description: The dagster-papertrail library provides an integration with Papertrail for logging.
 tags: [dagster-supported]
 source: https://github.com/dagster-io/dagster/tree/master/python_modules/libraries/dagster-papertrail
 pypi: https://pypi.org/project/dagster-papertrail/
