@@ -16,7 +16,7 @@
 - Fixed an issue with `dg plus deploy refresh-defs-state` which could cause errors when refreshing state for components that required CLIs that were only available in the project environment.
 - [ui] Fixed Snowflake connection by changing the private key encoding from PEM to DER format. Snowflake requires unencrypted RSA private keys to be in DER format as bytes.
 - [dagster-dbt] Updated `DbtCliResource` to use the `project_dir` attribute from the `DbtProject` instance rather than passing the entire `DbtProject` object.
-- [dagster-tableau][dagster-sigma] Fixed bug that would cause templated env vars (e.g. '{{ env.SOME_VALUE }}') to not be resolved when specified in yaml.
+- [dagster-tableau][dagster-sigma] Fixed bug that would cause templated env vars to not be resolved when specified in yaml.
 
 ## 1.12.5 (core) / 0.28.5 (libraries)
 
