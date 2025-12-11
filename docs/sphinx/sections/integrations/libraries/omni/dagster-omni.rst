@@ -1,5 +1,5 @@
-Omni (dagster-omni)
------------------------------------------------------
+dagster-omni library
+--------------------
 
 Dagster allows you to represent your Omni documents as assets, with dependencies on the data
 assets (e.g. database tables) that they depend on. This allows you to understand how changes to

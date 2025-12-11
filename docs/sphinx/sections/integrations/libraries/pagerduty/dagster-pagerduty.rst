@@ -1,5 +1,5 @@
-PagerDuty (dagster-pagerduty)
-=============================
+dagster-pagerduty library
+=========================
 
 This library provides an integration with PagerDuty, to support creating alerts from your Dagster
 code.

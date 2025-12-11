@@ -1,4 +1,4 @@
-Pipes (dagster-pipes)
+dagster-pipes library
 =====================
 
 .. currentmodule:: dagster_pipes

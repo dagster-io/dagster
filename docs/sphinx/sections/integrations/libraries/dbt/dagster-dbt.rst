@@ -1,5 +1,5 @@
-dbt (dagster-dbt)
-#################
+dagster-dbt library
+###################
 
 Dagster orchestrates `dbt <https://www.getdbt.com/>`_ alongside other technologies, so you can combine dbt with Spark, Python,
 and other tools in a single workflow. Dagster's software-defined asset abstractions make it simple to define

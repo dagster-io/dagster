@@ -1,6 +1,6 @@
-################################
-Weights & Biases (dagster-wandb)
-################################
+#####################
+dagster-wandb library
+#####################
 
 This library provides a Dagster integration with `Weights & Biases <https://wandb.ai>`_.
 

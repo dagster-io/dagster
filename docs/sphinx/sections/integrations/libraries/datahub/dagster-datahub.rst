@@ -1,5 +1,5 @@
-Datahub (dagster-datahub)
--------------------------
+dagster-datahub library
+-----------------------
 
 This library provides an integration with Datahub, to support pushing metadata to Datahub from
 within Dagster ops.

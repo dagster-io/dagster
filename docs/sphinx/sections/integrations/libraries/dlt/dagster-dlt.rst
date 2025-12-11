@@ -1,5 +1,5 @@
-dlt (dagster-dlt)
-#################
+dagster-dlt library
+###################
 
 This library provides a Dagster integration with `dlt <https://dlthub.com>`_.
 

@@ -1,5 +1,5 @@
-DuckDB (dagster-duckdb)
------------------------------
+dagster-duckdb library
+----------------------
 
 This library provides an integration with the `DuckDB <https://duckdb.org>`_ database.
 

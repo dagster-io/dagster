@@ -1,5 +1,5 @@
-Pyspark (dagster-pyspark)
--------------------------
+dagster-pyspark library
+-----------------------
 
 .. currentmodule:: dagster_pyspark
 

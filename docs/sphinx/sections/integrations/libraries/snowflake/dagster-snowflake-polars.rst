@@ -1,5 +1,5 @@
-Snowflake Polars (dagster-snowflake-polars)
------------------------------------------------------
+dagster-snowflake-polars library
+--------------------------------
 
 This library provides an integration with Snowflake and Polars, allowing you to use Polars DataFrames with Snowflake storage.
 

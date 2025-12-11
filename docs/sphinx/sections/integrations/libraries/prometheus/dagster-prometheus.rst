@@ -1,5 +1,5 @@
-Prometheus (dagster-prometheus)
--------------------------------
+dagster-prometheus library
+--------------------------
 
 .. currentmodule:: dagster_prometheus
 

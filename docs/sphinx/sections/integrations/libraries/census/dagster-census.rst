@@ -1,5 +1,5 @@
-Census (dagster-census)
-###########################
+dagster-census library
+######################
 
 This library provides an integration with Census.
 

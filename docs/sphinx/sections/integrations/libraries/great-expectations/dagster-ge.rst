@@ -1,5 +1,5 @@
-Great Expectations (dagster-ge)
--------------------------------
+dagster-ge library
+------------------
 
 .. currentmodule:: dagster_ge
 

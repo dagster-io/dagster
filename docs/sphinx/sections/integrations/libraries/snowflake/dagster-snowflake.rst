@@ -1,5 +1,5 @@
-Snowflake (dagster-snowflake)
------------------------------
+dagster-snowflake library
+-------------------------
 
 This library provides an integration with the `Snowflake <https://www.snowflake.com>`_ data
 warehouse.

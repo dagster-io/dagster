@@ -1,7 +1,5 @@
-Airlift (dagster-airlift)
-=========================
-
-
+dagster-airlift library
+=======================
 
 Core (dagster_airlift.core)
 ---------------------------

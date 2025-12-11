@@ -1,5 +1,5 @@
-GCP (dagster-gcp)
-=================
+dagster-gcp library
+===================
 
 .. currentmodule:: dagster_gcp
 

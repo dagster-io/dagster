@@ -1,5 +1,5 @@
-SSH / SFTP (dagster-ssh)
-------------------------
+dagster-ssh library
+-------------------
 
 This library provides an integration with SSH and SFTP.
 

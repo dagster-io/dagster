@@ -1,5 +1,5 @@
-Iceberg (dagster-iceberg)
--------------------------
+dagster-iceberg library
+-----------------------
 
 This library provides an integration with the `Iceberg <https://iceberg.apache.org>`_ table
 format.

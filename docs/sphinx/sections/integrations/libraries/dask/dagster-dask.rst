@@ -1,5 +1,6 @@
-Dask (dagster-dask)
--------------------
+dagster-dask library
+--------------------
+
 See also the `Dask deployment guide <https://docs.dagster.io/deployment/execution/dask>`_.
 
 

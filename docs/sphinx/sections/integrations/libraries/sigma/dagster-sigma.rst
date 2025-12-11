@@ -1,5 +1,5 @@
 #####################
-Sigma (dagster-sigma)
+dagster-sigma library
 #####################
 
 Dagster allows you to represent the workbooks and datasets in your Sigma project as assets alongside other

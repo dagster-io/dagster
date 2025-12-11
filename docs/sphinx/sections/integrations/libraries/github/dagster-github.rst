@@ -1,9 +1,8 @@
 .. role:: raw-html-m2r(raw)
    :format: html
 
-
-GitHub (dagster-github)
------------------------
+dagster-github library
+----------------------
 
 This library provides an integration with GitHub Apps, to support performing various automation
 operations within your github repositories and with the tighter permissions scopes that github apps

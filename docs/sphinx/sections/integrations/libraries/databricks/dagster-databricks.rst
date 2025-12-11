@@ -1,5 +1,5 @@
-Databricks (dagster-databricks)
-===============================
+dagster-databricks library
+==========================
 
 The ``dagster_databricks`` package provides these main pieces of functionality:
 

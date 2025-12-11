@@ -1,5 +1,5 @@
-Fivetran (dagster-fivetran)
-###########################
+dagster-fivetran library
+########################
 
 This library provides a Dagster integration with `Fivetran <https://www.fivetran.com>`_.
 

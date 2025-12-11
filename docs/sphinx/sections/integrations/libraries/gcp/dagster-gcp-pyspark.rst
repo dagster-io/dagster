@@ -1,5 +1,5 @@
-GCP + PySpark (dagster-gcp-pyspark)
-===================================
+dagster-gcp-pyspark library
+===========================
 
 .. currentmodule:: dagster_gcp_pyspark
 

@@ -1,6 +1,6 @@
-#########################
-Tableau (dagster-tableau)
-#########################
+########################
+dagster-tableau library
+########################
 
 Dagster allows you to represent your Tableau workspace as assets, alongside other your other
 technologies like dbt and Sling. This allows you to see how your Tableau assets are connected to

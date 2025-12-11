@@ -1,7 +1,7 @@
 .. currentmodule:: dagster_polars
 
-Polars (dagster-polars)
-=======================
+dagster-polars library
+======================
 
 This library provides Dagster integration with `Polars <https://pola.rs>`_.
 It allows using Polars eager or lazy DataFrames as inputs and outputs with Dagster's `@asset` and `@op`.

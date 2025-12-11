@@ -1,5 +1,5 @@
-Power BI (dagster-powerbi)
-##########################
+dagster-powerbi library
+#######################
 
 Dagster allows you to represent your Power BI Workspaces as assets, alongside other your other
 technologies like dbt and Sling. This allows you to see how your Power BI assets are connected to

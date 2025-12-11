@@ -1,5 +1,5 @@
-DuckDB + PySpark (dagster-duckdb-pyspark)
------------------------------------------
+dagster-duckdb-pyspark library
+------------------------------
 
 This library provides an integration with the `DuckDB <https://duckdb.org>`_ database and PySpark data processing library.
 

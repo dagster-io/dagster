@@ -1,4 +1,4 @@
-Sling (dagster-sling)
+dagster-sling library
 #####################
 
 This library provides a Dagster integration with `Sling <https://slingdata.io>`_.

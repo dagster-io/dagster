@@ -1,4 +1,4 @@
-Spark (dagster-spark)
+dagster-spark library
 ---------------------
 
 .. currentmodule:: dagster_spark

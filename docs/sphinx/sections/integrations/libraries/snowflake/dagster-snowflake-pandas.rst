@@ -1,5 +1,5 @@
-Snowflake with Pandas (dagster-snowflake-pandas)
-------------------------------------------------
+dagster-snowflake-pandas library
+--------------------------------
 
 This library provides an integration with the `Snowflake <https://www.snowflake.com>`_ data
 warehouse and Pandas data processing library.

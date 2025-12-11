@@ -1,5 +1,5 @@
-Microsoft Teams (dagster-msteams)
----------------------------------
+dagster-msteams library
+-----------------------
 
 .. currentmodule:: dagster_msteams
 

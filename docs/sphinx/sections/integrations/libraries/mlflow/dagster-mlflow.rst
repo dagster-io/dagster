@@ -1,5 +1,5 @@
-MLflow (dagster-mlflow)
------------------------------
+dagster-mlflow library
+----------------------
 
 .. currentmodule:: dagster_mlflow
 

@@ -1,5 +1,5 @@
-Orchestration on Celery + Kubernetes
-====================================
+dagster-celery-k8s library
+==========================
 
 APIs
 ----

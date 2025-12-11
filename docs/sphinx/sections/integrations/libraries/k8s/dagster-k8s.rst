@@ -1,6 +1,5 @@
-
-Kubernetes (dagster-k8s)
-========================
+dagster-k8s
+===========
 
 See also the `Kubernetes deployment guide <https://docs.dagster.io/deployment/oss/deployment-options/kubernetes>`_.
 

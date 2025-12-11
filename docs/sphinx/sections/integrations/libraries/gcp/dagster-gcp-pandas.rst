@@ -1,5 +1,5 @@
-GCP + Pandas (dagster-gcp-pandas)
-=================================
+dagster-gcp-pandas library
+==========================
 
 .. currentmodule:: dagster_gcp_pandas
 

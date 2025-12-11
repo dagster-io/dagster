@@ -1,5 +1,5 @@
-Celery (dagster-celery)
------------------------
+dagster-celery library
+----------------------
 
 Quickstart
 ~~~~~~~~~~

@@ -1,5 +1,5 @@
-Orchestration on Celery + Docker
-================================
+dagster-celery-docker library
+=============================
 
 APIs
 ----

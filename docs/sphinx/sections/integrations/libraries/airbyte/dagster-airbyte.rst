@@ -1,5 +1,5 @@
-Airbyte (dagster-airbyte)
----------------------------
+dagster-airbyte library
+-----------------------
 
 This library provides a Dagster integration with `Airbyte <https://www.airbyte.com>`_.
 

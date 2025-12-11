@@ -1,7 +1,7 @@
 .. role:: raw-html-m2r(raw)
    :format: html
 
-Slack (dagster-slack)
+dagster-slack library
 ---------------------
 
 :raw-html-m2r:`<img src="https://user-images.githubusercontent.com/609349/57994610-c581f680-7a72-11e9-85cd-41fd649cc26d.png" />`

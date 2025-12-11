@@ -1,5 +1,5 @@
-Datadog (dagster-datadog)
--------------------------
+dagster-datadog library
+-----------------------
 
 This library provides an integration with Datadog, to support publishing metrics to Datadog from
 within Dagster ops.

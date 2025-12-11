@@ -1,5 +1,5 @@
-Deltalake + Polars (dagster-deltalake-polars)
----------------------------------------------
+dagster-deltalake-polars library
+--------------------------------
 
 This library provides an integration with the `Delta Lake <https://delta.io>`_ storage framework.
 

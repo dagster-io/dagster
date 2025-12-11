@@ -1,5 +1,5 @@
-Twilio (dagster-twilio)
------------------------
+dagster-twilio library
+----------------------
 
 This library provides an integration with Twilio.
 

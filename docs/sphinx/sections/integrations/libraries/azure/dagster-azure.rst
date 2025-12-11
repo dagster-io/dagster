@@ -1,4 +1,4 @@
-Azure (dagster-azure)
+dagster-azure library
 ---------------------
 
 Utilities for using Azure Storage Accounts with Dagster. This is mostly aimed at Azure Data Lake

@@ -1,6 +1,6 @@
-#######################
-Looker (dagster-looker)
-#######################
+##############
+dagster-looker
+##############
 
 Dagster allows you to represent your Looker project as assets, alongside other your other
 technologies like dbt and Sling. This allows you to see how your Looker assets are connected to

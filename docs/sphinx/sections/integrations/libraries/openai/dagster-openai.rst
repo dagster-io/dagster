@@ -1,5 +1,5 @@
-OpenAI (dagster-openai)
-------------------------
+dagster-openai library
+----------------------
 
 The `dagster_openai` library provides utilities for using OpenAI with Dagster.
 A good place to start with `dagster_openai` is `the guide <https://docs.dagster.io/integrations/libraries/openai>`_.

@@ -1,5 +1,5 @@
-MySQL (dagster-mysql)
------------------------------
+dagster-mysql library
+---------------------
 
 .. currentmodule:: dagster_mysql
 

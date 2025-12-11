@@ -1,5 +1,5 @@
-AWS (dagster-aws)
-=================
+dagster-aws library
+===================
 
 Utilities for interfacing with AWS with Dagster.
 
