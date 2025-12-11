@@ -36,12 +36,12 @@ from dagster_shared.ipc import open_ipc_subprocess
 from graphql import print_ast
 
 try:
-    from gql.client import GraphQLRequest
+    from gql.client import GraphQLRequest  # noqa: F401
+
+    HAS_GRAPHQL_REQUEST = True
 except ImportError:
     # gql <3.5.0 doesn't have GraphQLRequest
-    # Create a dummy class that nothing will match
-    class GraphQLRequest:  # type: ignore
-        pass
+    HAS_GRAPHQL_REQUEST = False
 
 
 def get_main_loadable_target_origin():
@@ -878,8 +878,7 @@ def make_graphql_context_test_suite(context_variants):
             class MockedGraphQLClient:
                 def execute(self, gql_query, variable_values=None):
                     # Handle both gql v3 (DocumentNode) and v4 (GraphQLRequest)
-                    if isinstance(gql_query, GraphQLRequest):
-                        # gql v4: extract document and variables from request
+                    if HAS_GRAPHQL_REQUEST:
                         document = gql_query.document
                         variables = (
                             variable_values
@@ -887,7 +886,6 @@ def make_graphql_context_test_suite(context_variants):
                             else gql_query.variable_values
                         )
                     else:
-                        # gql v3: use directly as DocumentNode
                         document = gql_query
                         variables = variable_values
 
