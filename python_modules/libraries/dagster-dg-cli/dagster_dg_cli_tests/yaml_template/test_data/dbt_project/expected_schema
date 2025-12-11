@@ -97,4 +97,5 @@ attributes:  # Optional: Attributes details
     enable_code_references: <one of: boolean, string>  # Optional: 
     enable_dbt_selection_by_name: <one of: boolean, string>  # Optional: 
     enable_source_tests_as_checks: <one of: boolean, string>  # Optional: 
+    enable_source_metadata: <one of: boolean, string>  # Optional: 
   prepare_if_dev: <one of: boolean, string>  # Optional: Whether to prepare the dbt project every time in `dagster dev` or `dg` cli calls.
