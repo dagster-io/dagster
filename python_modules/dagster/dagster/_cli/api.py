@@ -67,10 +67,25 @@ def api_cli() -> None:
         "interactively."
     ),
 )
-@click.argument("input_json", type=click.STRING)
-def execute_run_command(input_json: str) -> None:
+@click.argument("input_json", type=click.STRING, envvar="DAGSTER_EXECUTE_RUN_ARGS", required=False)
+@click.option(
+    "compressed_input_json",
+    "--compressed-input-json",
+    type=click.STRING,
+    envvar="DAGSTER_COMPRESSED_EXECUTE_RUN_ARGS",
+)
+def execute_run_command(input_json: Optional[str], compressed_input_json: Optional[str]) -> None:
     with capture_interrupts():
-        args = deserialize_value(input_json, ExecuteRunArgs)
+        if input_json and not compressed_input_json:
+            normalized_input_json = input_json
+        elif compressed_input_json and not input_json:
+            normalized_input_json = zlib.decompress(
+                base64.b64decode(compressed_input_json.encode())
+            ).decode()
+        else:
+            check.failed("Must provide one of input_json or compressed_input_json")
+
+        args = deserialize_value(normalized_input_json, ExecuteRunArgs)
 
         with get_instance_for_cli(instance_ref=args.instance_ref) as instance:
             buffer = []
