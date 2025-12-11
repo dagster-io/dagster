@@ -1,4 +1,5 @@
 import importlib
+from datetime import timedelta
 from pathlib import Path
 
 import dagster as dg
@@ -22,6 +23,7 @@ def test_load_from_path(snapshot) -> None:
     assert defs.resolve_asset_graph().get_all_asset_keys() == {
         dg.AssetKey("a"),
         dg.AssetKey("b"),
+        dg.AssetKey("b_cron"),
         dg.AssetKey("c"),
         dg.AssetKey("up1"),
         dg.AssetKey("up2"),
@@ -42,6 +44,29 @@ def test_load_from_path(snapshot) -> None:
     }
     assert defs.component_tree
 
+    asset_def = defs.get_assets_def(dg.AssetKey("a"))
+    assert (
+        asset_def.specs_by_key[dg.AssetKey("a")].automation_condition
+        == dg.AutomationCondition.eager()
+    )
+    assert asset_def.specs_by_key[
+        dg.AssetKey("a")
+    ].freshness_policy == dg.FreshnessPolicy.time_window(
+        fail_window=timedelta(days=2), warn_window=timedelta(days=1)
+    )
+    assert asset_def.specs_by_key[
+        dg.AssetKey("b")
+    ].automation_condition == dg.AutomationCondition.on_cron("@daily")
+    assert asset_def.specs_by_key[
+        dg.AssetKey("b")
+    ].freshness_policy == dg.FreshnessPolicy.time_window(fail_window=timedelta(days=3))
+    assert asset_def.specs_by_key[
+        dg.AssetKey("b_cron")
+    ].freshness_policy == dg.FreshnessPolicy.cron(
+        deadline_cron="0 10 * * *",
+        lower_bound_delta=timedelta(hours=1),
+    )
+
     snapshot.assert_match(tree.to_string_representation(include_load_and_build_status=True))
 
 
@@ -54,6 +79,7 @@ def test_load_from_location_path() -> None:
     assert defs.resolve_asset_graph().get_all_asset_keys() == {
         dg.AssetKey("a"),
         dg.AssetKey("b"),
+        dg.AssetKey("b_cron"),
         dg.AssetKey("c"),
         dg.AssetKey("up1"),
         dg.AssetKey("up2"),
