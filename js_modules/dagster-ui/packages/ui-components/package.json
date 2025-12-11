@@ -85,7 +85,6 @@
     "babel-jest": "^27.4.6",
     "babel-loader": "^9.1.2",
     "babel-plugin-macros": "^3.1.0",
-    "buildkite-test-collector": "^1.8.1",
     "core-js": "^3.21.1",
     "eslint": "^8.57.1",
     "eslint-plugin-storybook": "^9.1.8",
