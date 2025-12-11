@@ -38,9 +38,10 @@ from graphql import print_ast
 try:
     from gql.client import GraphQLRequest
 except ImportError:
-    # gql v3 doesn't have GraphQLRequest, which only exists in v4+
-    # Setting to None allows isinstance() checks to safely return False
-    GraphQLRequest = None
+    # gql <3.5.0 doesn't have GraphQLRequest
+    # Create a dummy class that nothing will match
+    class GraphQLRequest:  # type: ignore
+        pass
 
 
 def get_main_loadable_target_origin():
