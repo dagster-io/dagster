@@ -351,16 +351,9 @@ class BigQueryIOManager(ConfigurableIOManagerFactory):
 
 
 class BigQueryClient(DbClient):
-    def __init__(self, write_mode: Optional[Union[BigQueryWriteMode, str]] = BigQueryWriteMode.TRUNCATE):
-        # Coerce string inputs (from raw config) to the enum, fallback to TRUNCATE on invalid values
-        if write_mode is None:
-            write_mode = BigQueryWriteMode.TRUNCATE
-            
+    def __init__(self, write_mode: Union[BigQueryWriteMode, str] = BigQueryWriteMode.TRUNCATE):
         if isinstance(write_mode, str):
-            try:
-                write_mode = BigQueryWriteMode(write_mode)
-            except ValueError:
-                write_mode = BigQueryWriteMode.TRUNCATE
+            write_mode = BigQueryWriteMode(write_mode)
 
         self.write_mode = write_mode
 
