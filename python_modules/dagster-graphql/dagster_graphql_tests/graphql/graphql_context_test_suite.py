@@ -33,7 +33,8 @@ from dagster._utils.test.postgres_instance import TestPostgresInstance
 from dagster_graphql import DagsterGraphQLClient
 from dagster_graphql.test.utils import execute_dagster_graphql
 from dagster_shared.ipc import open_ipc_subprocess
-from graphql import DocumentNode, print_ast
+from gql.client import GraphQLRequest
+from graphql import print_ast
 
 
 def get_main_loadable_target_origin():
@@ -867,11 +868,25 @@ def make_graphql_context_test_suite(context_variants):
         @contextmanager
         def yield_graphql_client(self, context) -> Generator[DagsterGraphQLClient, None, None]:
             class MockedGraphQLClient:
-                def execute(self, gql_query: DocumentNode, variable_values=None):
+                def execute(self, gql_query, variable_values=None):
+                    # Handle both gql v3 (DocumentNode) and v4 (GraphQLRequest)
+                    if isinstance(gql_query, GraphQLRequest):
+                        # gql v4: extract document and variables from request
+                        document = gql_query.document
+                        variables = (
+                            variable_values
+                            if variable_values is not None
+                            else gql_query.variable_values
+                        )
+                    else:
+                        # gql v3: use directly as DocumentNode
+                        document = gql_query
+                        variables = variable_values
+
                     return execute_dagster_graphql(
                         context,
-                        print_ast(gql_query),  # convert doc back to str
-                        variable_values,
+                        print_ast(document),  # convert doc back to str
+                        variables,
                     ).data
 
             with patch("dagster_graphql.client.client.Client") as mock_client:
