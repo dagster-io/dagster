@@ -33,7 +33,6 @@ boto3==1.40.61
 boto3-stubs-lite==1.40.70
 botocore==1.40.61
 botocore-stubs==1.40.70
-buildkite-test-collector==1.1.1
 cachetools==6.2.1
 caio==0.9.24
 certifi==2025.1.31

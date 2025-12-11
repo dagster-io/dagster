@@ -2018,7 +2018,6 @@ __metadata:
     babel-jest: "npm:^27.4.6"
     babel-loader: "npm:^9.1.2"
     babel-plugin-macros: "npm:^3.1.0"
-    buildkite-test-collector: "npm:^1.8.1"
     clsx: "npm:^2.1.1"
     codemirror: "npm:^5.65.2"
     core-js: "npm:^3.21.1"
@@ -2128,7 +2127,6 @@ __metadata:
     babel-plugin-graphql-tag: "npm:^3.3.0"
     babel-plugin-macros: "npm:^2.8.0"
     babel-plugin-transform-import-meta: "npm:^2.2.1"
-    buildkite-test-collector: "npm:^1.8.1"
     chart.js: "npm:^4.5.0"
     chartjs-adapter-date-fns: "npm:^3.0.0"
     chartjs-plugin-zoom: "npm:^1.1.1"
@@ -7112,17 +7110,6 @@ __metadata:
   languageName: node
   linkType: hard
 
-"axios@npm:^1.8.2":
-  version: 1.12.2
-  resolution: "axios@npm:1.12.2"
-  dependencies:
-    follow-redirects: "npm:^1.15.6"
-    form-data: "npm:^4.0.4"
-    proxy-from-env: "npm:^1.1.0"
-  checksum: 10/886a79770594eaad76493fecf90344b567bd956240609b5dcd09bd0afe8d3e6f1ad6d3257a93a483b6192b409d4b673d9515a34619e3e3ed1b2c0ec2a83b20ba
-  languageName: node
-  linkType: hard
-
 "axobject-query@npm:^4.1.0":
   version: 4.1.0
   resolution: "axobject-query@npm:4.1.0"
@@ -7716,19 +7703,6 @@ __metadata:
     base64-js: "npm:^1.3.1"
     ieee754: "npm:^1.2.1"
   checksum: 10/b6bc68237ebf29bdacae48ce60e5e28fc53ae886301f2ad9496618efac49427ed79096750033e7eab1897a4f26ae374ace49106a5758f38fb70c78c9fda2c3b1
-  languageName: node
-  linkType: hard
-
-"buildkite-test-collector@npm:^1.8.1":
-  version: 1.8.1
-  resolution: "buildkite-test-collector@npm:1.8.1"
-  dependencies:
-    axios: "npm:^1.8.2"
-    dotenv: "npm:^16.0.2"
-    request-spy: "npm:^0.0.10"
-    strip-ansi: "npm:^6.0.0"
-    uuid: "npm:^8.3.2"
-  checksum: 10/e9bef026b1d230d9db05f532e16b858b67455e15122d166d4c88306c0aa2c5f70f4980486be4e708e35c9a39464f783f40ea354f3008f220b0838f362f1ee525
   languageName: node
   linkType: hard
 
@@ -9427,7 +9401,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"dotenv@npm:^16.0.0, dotenv@npm:^16.0.2":
+"dotenv@npm:^16.0.0":
   version: 16.5.0
   resolution: "dotenv@npm:16.5.0"
   checksum: 10/e68a16834f1a41cc2dfb01563bc150668ad675e6cd09191211467b5c0806b6ecd6ec438e021aa8e01cd0e72d2b70ef4302bec7cc0fe15b6955f85230b62dc8a9
@@ -10914,16 +10888,6 @@ __metadata:
   languageName: node
   linkType: hard
 
-"follow-redirects@npm:^1.15.6":
-  version: 1.15.9
-  resolution: "follow-redirects@npm:1.15.9"
-  peerDependenciesMeta:
-    debug:
-      optional: true
-  checksum: 10/e3ab42d1097e90d28b913903841e6779eb969b62a64706a3eb983e894a5db000fbd89296f45f08885a0e54cd558ef62e81be1165da9be25a6c44920da10f424c
-  languageName: node
-  linkType: hard
-
 "for-each@npm:^0.3.3, for-each@npm:^0.3.5":
   version: 0.3.5
   resolution: "for-each@npm:0.3.5"
@@ -10966,7 +10930,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"form-data@npm:^4.0.0, form-data@npm:^4.0.4":
+"form-data@npm:^4.0.0":
   version: 4.0.4
   resolution: "form-data@npm:4.0.4"
   dependencies:
@@ -15371,13 +15335,6 @@ __metadata:
   languageName: node
   linkType: hard
 
-"monkeypatch@npm:^1.0.0":
-  version: 1.0.0
-  resolution: "monkeypatch@npm:1.0.0"
-  checksum: 10/26d5ce5fd17f28d9d2c95a77520fb94667bf26784fe90a9fe97eb0a5dd0c4f0bac0cc08e792b344e54b2e13db26b2793d1c0246073a8fa126dd5f057c9799ee3
-  languageName: node
-  linkType: hard
-
 "moo-color@npm:^1.0.2":
   version: 1.0.3
   resolution: "moo-color@npm:1.0.3"
@@ -16848,13 +16805,6 @@ __metadata:
   languageName: node
   linkType: hard
 
-"proxy-from-env@npm:^1.1.0":
-  version: 1.1.0
-  resolution: "proxy-from-env@npm:1.1.0"
-  checksum: 10/f0bb4a87cfd18f77bc2fba23ae49c3b378fb35143af16cc478171c623eebe181678f09439707ad80081d340d1593cd54a33a0113f3ccb3f4bc9451488780ee23
-  languageName: node
-  linkType: hard
-
 "psl@npm:^1.1.33":
   version: 1.9.0
   resolution: "psl@npm:1.9.0"
@@ -17729,15 +17679,6 @@ __metadata:
     lodash: "npm:^4.17.21"
     strip-ansi: "npm:^6.0.1"
   checksum: 10/434bd56d9930dd344bcba3ef7683f3dd893396b6bc7e8caa551a4cacbe75a9466dc6cf3d75bc324a5979278a73ef968d7854f8f660dbf1a52c38a73f1fb59b20
-  languageName: node
-  linkType: hard
-
-"request-spy@npm:^0.0.10":
-  version: 0.0.10
-  resolution: "request-spy@npm:0.0.10"
-  dependencies:
-    monkeypatch: "npm:^1.0.0"
-  checksum: 10/97c702658f7e7160e5ce4f2158b92a1239765a857260b70fdcf8b32625ad676032e4ad531656b408011db24b38008698abe42dc1b03fd26ab795f03c31fb4e99
   languageName: node
   linkType: hard
 
@@ -20203,15 +20144,6 @@ __metadata:
   version: 0.4.0
   resolution: "utila@npm:0.4.0"
   checksum: 10/b068d8cb140588da0d0c80ee3c14c6b75d3f68760d8a1c6c3908d0270e9e4056454ff16189586481b7382926c44674f6929d08e06eaf9ec8f62736cd900169c5
-  languageName: node
-  linkType: hard
-
-"uuid@npm:^8.3.2":
-  version: 8.3.2
-  resolution: "uuid@npm:8.3.2"
-  bin:
-    uuid: dist/bin/uuid
-  checksum: 10/9a5f7aa1d6f56dd1e8d5f2478f855f25c645e64e26e347a98e98d95781d5ed20062d6cca2eecb58ba7c84bc3910be95c0451ef4161906abaab44f9cb68ffbdd1
   languageName: node
   linkType: hard
 
