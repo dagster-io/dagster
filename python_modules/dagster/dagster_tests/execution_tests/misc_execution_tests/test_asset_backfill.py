@@ -31,6 +31,7 @@ from dagster._core.definitions.selector import (
     PartitionsByAssetSelector,
     PartitionsSelector,
 )
+from dagster._core.errors import DagsterBackfillFailedError
 from dagster._core.execution.asset_backfill import (
     AssetBackfillData,
     AssetBackfillIterationResult,
@@ -2988,3 +2989,138 @@ def test_asset_backfill_with_asset_check():
     run_request = result.run_requests[0]
     assert run_request.asset_selection == [foo.key]
     assert run_request.asset_check_keys == [foo_check.check_key]
+
+
+def test_backfill_fails_on_partitioned_asset_with_unpartitioned_materialization():
+    """Test that a backfill fails when a partitioned asset receives an unpartitioned materialization."""
+    instance = DagsterInstance.ephemeral()
+
+    @dg.asset(partitions_def=dg.StaticPartitionsDefinition(["a", "b"]))
+    def partitioned_asset(context):
+        return 1
+
+    assets = [partitioned_asset]
+    asset_graph = get_asset_graph({"repo": assets})
+
+    # Create a backfill targeting partition "a"
+    backfill_data = AssetBackfillData.from_asset_partitions(
+        asset_graph=asset_graph,
+        partition_names=["a"],
+        asset_selection=[partitioned_asset.key],
+        dynamic_partitions_store=MagicMock(spec=DynamicPartitionsStore),
+        all_partitions=False,
+        backfill_start_timestamp=create_datetime(2024, 1, 1, 0, 0, 0).timestamp(),
+    )
+
+    # Execute first iteration to generate run requests
+    result = execute_asset_backfill_iteration_consume_generator(
+        backfill_id="test_backfill",
+        asset_backfill_data=backfill_data,
+        asset_graph=asset_graph,
+        instance=instance,
+    )
+
+    # Mark the run requests as submitted so the next iteration will check materializations
+    backfill_data = result.backfill_data.with_run_requests_submitted(
+        result.run_requests,
+        _get_asset_graph_view(instance, asset_graph, backfill_data.backfill_start_datetime),
+    )
+
+    # Simulate materializing the asset WITHOUT a partition key (incorrect)
+    # Use an op to report the materialization directly
+    @dg.op
+    def report_unpartitioned_materialization():
+        yield dg.AssetMaterialization(asset_key=partitioned_asset.key)
+        yield dg.Output(None)
+
+    @dg.job
+    def report_mat_job():
+        report_unpartitioned_materialization()
+
+    # Execute the job with the backfill tag
+    report_mat_job.execute_in_process(instance=instance, tags={BACKFILL_ID_TAG: "test_backfill"})
+
+    # Verify the backfill structure before updating
+    assert partitioned_asset.key in backfill_data.target_subset.partitions_subsets_by_asset_key
+    assert partitioned_asset.key not in backfill_data.target_subset.non_partitioned_asset_keys
+
+    # Update backfill data with the latest storage ID to pick up the new materialization
+    backfill_data = backfill_data.with_latest_storage_id(None)
+
+    # Try to execute another iteration - this should raise an error
+    with pytest.raises(DagsterBackfillFailedError) as exc_info:
+        execute_asset_backfill_iteration_consume_generator(
+            backfill_id="test_backfill",
+            asset_backfill_data=backfill_data,
+            asset_graph=asset_graph,
+            instance=instance,
+        )
+
+    assert "is partitioned in the backfill target subset" in str(exc_info.value)
+    assert "received an unpartitioned materialization" in str(exc_info.value)
+
+
+def test_backfill_fails_on_unpartitioned_asset_with_partitioned_materialization():
+    """Test that a backfill fails when an unpartitioned asset receives a partitioned materialization."""
+    instance = DagsterInstance.ephemeral()
+
+    @dg.asset
+    def unpartitioned_asset(context):
+        return 1
+
+    assets = [unpartitioned_asset]
+    asset_graph = get_asset_graph({"repo": assets})
+
+    # Create a backfill targeting the unpartitioned asset
+    target_asset_graph_subset = AssetGraphSubset(
+        partitions_subsets_by_asset_key={},
+        non_partitioned_asset_keys={unpartitioned_asset.key},
+    )
+    backfill_data = AssetBackfillData.from_asset_graph_subset(
+        asset_graph_subset=target_asset_graph_subset,
+        dynamic_partitions_store=instance,
+        backfill_start_timestamp=create_datetime(2024, 1, 1, 0, 0, 0).timestamp(),
+    )
+
+    # Execute first iteration to generate run requests
+    result = execute_asset_backfill_iteration_consume_generator(
+        backfill_id="test_backfill_2",
+        asset_backfill_data=backfill_data,
+        asset_graph=asset_graph,
+        instance=instance,
+    )
+
+    # Mark the run requests as submitted so the next iteration will check materializations
+    backfill_data = result.backfill_data.with_run_requests_submitted(
+        result.run_requests,
+        _get_asset_graph_view(instance, asset_graph, backfill_data.backfill_start_datetime),
+    )
+
+    # Simulate materializing the asset WITH a partition key (incorrect)
+    # Use an op to report the materialization directly with a partition
+    @dg.op
+    def report_partitioned_materialization():
+        yield dg.AssetMaterialization(asset_key=unpartitioned_asset.key, partition="x")
+        yield dg.Output(None)
+
+    @dg.job
+    def report_mat_job():
+        report_partitioned_materialization()
+
+    # Execute the job with the backfill tag
+    report_mat_job.execute_in_process(instance=instance, tags={BACKFILL_ID_TAG: "test_backfill_2"})
+
+    # Update backfill data with the latest storage ID to pick up the new materialization
+    backfill_data = backfill_data.with_latest_storage_id(None)
+
+    # Try to execute another iteration - this should raise an error
+    with pytest.raises(DagsterBackfillFailedError) as exc_info:
+        execute_asset_backfill_iteration_consume_generator(
+            backfill_id="test_backfill_2",
+            asset_backfill_data=backfill_data,
+            asset_graph=asset_graph,
+            instance=instance,
+        )
+
+    assert "is unpartitioned in the backfill target subset" in str(exc_info.value)
+    assert "received a partitioned materialization" in str(exc_info.value)
