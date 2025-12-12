@@ -347,7 +347,7 @@ class AssetHealthMaterializationHealthyPartitionedMeta:
 @whitelist_for_serdes
 @record.record
 class AssetHealthMaterializationDegradedNotPartitionedMeta:
-    latest_failed_to_materialize_run_id: Optional[str]
+    failed_run_id: Optional[str]
 
 
 AssetHealthMaterializationMetadata = Union[
@@ -470,7 +470,7 @@ async def get_materialization_status_and_metadata(
             )
         else:
             meta = AssetHealthMaterializationDegradedNotPartitionedMeta(
-                latest_failed_to_materialize_run_id=asset_materialization_health_state.latest_failed_to_materialize_run_id,
+                failed_run_id=asset_materialization_health_state.latest_failed_to_materialize_run_id,
             )
         return AssetHealthStatus.DEGRADED, meta
     elif asset_materialization_health_state.health_status == AssetHealthStatus.UNKNOWN:

@@ -130,7 +130,7 @@ class GrapheneAssetHealthMaterializationMeta(graphene.Union):
     ) -> "GrapheneAssetHealthMaterializationMeta":
         if isinstance(metadata, AssetHealthMaterializationDegradedNotPartitionedMeta):
             return GrapheneAssetHealthMaterializationDegradedNotPartitionedMeta(
-                failedRunId=metadata.latest_failed_to_materialize_run_id,
+                failedRunId=metadata.failed_run_id,
             )
         elif isinstance(metadata, AssetHealthMaterializationHealthyPartitionedMeta):
             return GrapheneAssetHealthMaterializationHealthyPartitionedMeta(
