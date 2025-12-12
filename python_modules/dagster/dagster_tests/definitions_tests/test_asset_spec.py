@@ -252,6 +252,33 @@ def test_map_asset_specs_additional_deps() -> None:
     assert set(next(iter(c_asset.specs)).deps) == {dg.AssetDep("a"), dg.AssetDep("b")}
 
 
+def test_map_asset_specs_asset_with_ins_regression() -> None:
+    """
+    This regression test prevents the recurrence of the AttributeError from OpDefinition.__init__.
+    """
+    
+    @dg.asset(ins={"my_input": dg.AssetIn(key="upstream")})
+    def my_asset(my_input):
+        pass
+
+    assets = [my_asset]
+    spec = next(iter(my_asset.specs))
+    
+    new_spec = spec.replace_attributes(
+        deps={*spec.deps, dg.AssetDep("another_upstream")},
+    )
+
+    mapped_assets = dg.map_asset_specs(lambda s: new_spec, assets)
+    
+    mapped_asset = mapped_assets[0]
+    mapped_spec = next(iter(mapped_asset.specs))
+    dep_keys = {dep.asset_key for dep in mapped_spec.deps}
+    
+    assert dg.AssetKey("upstream") in dep_keys
+    assert dg.AssetKey("another_upstream") in dep_keys
+    assert mapped_asset.keys_by_input_name["my_input"] == dg.AssetKey("upstream")
+
+
 def test_map_asset_specs_multiple_deps_same_key() -> None:
     @dg.multi_asset(specs=[dg.AssetSpec(key="a", deps=[dg.AssetDep("b")])])
     def my_asset():
