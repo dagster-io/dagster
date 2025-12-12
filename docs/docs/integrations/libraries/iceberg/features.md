@@ -20,7 +20,7 @@ You may also pass your catalog configuration through use of the `IcebergCatalogC
 
 ### Spark
 
-Spark configuration can be set directly on the <PyObject section="libraries" object="io_manager.spark.SparkIcebergIOManager" module="dagster_iceberg" /> or in the `spark-defaults.conf` file. Properties set directly on the I/O manager take precedence over those set in the `spark-defaults.conf` file. To set properties directly, pass a dictionary of configurations to set in the `spark_config` argument of the I/O manager:
+Spark configuration can be set directly on the <PyObject section="libraries" integration="iceberg" object="io_manager.spark.SparkIcebergIOManager" module="dagster_iceberg" /> or in the `spark-defaults.conf` file. Properties set directly on the I/O manager take precedence over those set in the `spark-defaults.conf` file. To set properties directly, pass a dictionary of configurations to set in the `spark_config` argument of the I/O manager:
 
 <CodeExample path="docs_snippets/docs_snippets/integrations/iceberg/configuring_spark.py" language="python" />
 
@@ -33,7 +33,7 @@ The following engines are currently implemented.
 - [pandas](https://pandas.pydata.org/)
 - [polars](https://pola.rs/)
 
-## PyIceberg Features
+## PyIceberg features
 
 The table below shows which PyIceberg features are currently available.
 
