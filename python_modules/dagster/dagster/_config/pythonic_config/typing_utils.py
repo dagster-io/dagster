@@ -1,3 +1,4 @@
+import sys
 from typing import (
     TYPE_CHECKING,
     Annotated,
@@ -25,6 +26,61 @@ except ImportError:
 
 if TYPE_CHECKING:
     from dagster._config.pythonic_config import PartialResource
+
+
+def _materialize_annotations_for_pydantic(namespaces: dict[str, Any]) -> dict[str, Any]:
+    """Materialize lazy annotations in Python 3.14+ so Pydantic can see them.
+
+    In Python 3.14 with PEP 649, annotations can be stored in two ways:
+    1. As strings in __annotations__ (with `from __future__ import annotations`)
+    2. In an __annotate__ function that must be called to materialize them
+
+    This function handles both cases and returns evaluated type objects.
+
+    Args:
+        namespaces: The class namespace dict passed to __new__
+
+    Returns:
+        A dict of materialized type annotations
+    """
+    if sys.version_info < (3, 14):
+        return namespaces.get("__annotations__", {})
+
+    # Get annotations - they might be strings or empty
+    annotations = namespaces.get("__annotations__", {})
+
+    # If empty, try calling __annotate_func__
+    if not annotations and "__annotate_func__" in namespaces:
+        annotations = namespaces["__annotate_func__"](1)  # format=1 for VALUE
+        namespaces["__annotations__"] = annotations
+        return annotations
+
+    # If we have annotations, check if they're strings that need evaluation
+    if annotations:
+        first_value = next(iter(annotations.values()))
+        if isinstance(first_value, str):
+            # Need to evaluate string annotations
+            module_name = namespaces.get("__module__", "__main__")
+            module = sys.modules.get(module_name)
+            if not module:
+                # Can't evaluate without module context, fail fast
+                raise RuntimeError(
+                    f"Cannot evaluate annotations for {namespaces.get('__qualname__')}: module {module_name} not found"
+                )
+
+            globalns = module.__dict__
+            evaluated = {}
+            for key, value in annotations.items():
+                if isinstance(value, str):
+                    evaluated[key] = eval(value, globalns, namespaces)
+                else:
+                    evaluated[key] = value
+
+            namespaces["__annotations__"] = evaluated
+            return evaluated
+
+    # Annotations are already type objects or empty
+    return annotations
 
 
 # Since a metaclass is invoked by Resource before Resource or PartialResource is defined, we need to
@@ -72,7 +128,8 @@ class LateBoundTypesForResourceTypeChecking:
 @dataclass_transform(kw_only_default=True, field_specifiers=(Field,))
 class BaseConfigMeta(ModelMetaclass):  # type: ignore
     def __new__(cls, name, bases, namespaces, **kwargs) -> Any:
-        annotations = namespaces.get("__annotations__", {})
+        # Materialize lazy annotations for Python 3.14+ before Pydantic sees them
+        annotations = _materialize_annotations_for_pydantic(namespaces)
 
         # Need try/catch because DagsterType may not be loaded when some of the base Config classes are
         # being created
@@ -118,11 +175,11 @@ class BaseResourceMeta(BaseConfigMeta):
         from pydantic.fields import FieldInfo
 
         # Gather all type annotations from the class and its base classes
-        annotations = namespaces.get("__annotations__", {})
+        # Materialize lazy annotations for Python 3.14+ before Pydantic sees them
+        annotations = _materialize_annotations_for_pydantic(namespaces)
         for field in annotations:
             if not field.startswith("__"):
                 # Check if the annotation is a ResourceDependency
-
                 if (
                     get_origin(annotations[field])
                     == LateBoundTypesForResourceTypeChecking.get_resource_rep_type()

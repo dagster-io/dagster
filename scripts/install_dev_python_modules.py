@@ -127,6 +127,50 @@ def main(
             "python_modules/libraries/dagster-airflow",
         ]
 
+    # Python 3.14 exclusions - packages that depend on libraries without 3.14 wheels yet
+    if sys.version_info >= (3, 14):
+        # Many packages with native dependencies don't have Python 3.14 wheels yet
+        # This list should be reduced as more packages add 3.14 support
+        python_314_exclusions = [
+            # Polars doesn't have Python 3.14 wheels yet
+            "dagster-deltalake-polars",
+            "dagster-snowflake-polars",
+            # Delta-rs/deltalake doesn't have Python 3.14 wheels yet
+            "dagster-deltalake",
+            # Great Expectations doesn't have Python 3.14 wheels yet
+            "dagster-ge",
+            # MLflow doesn't have Python 3.14 wheels yet
+            "dagster-mlflow",
+            # Pandera doesn't have Python 3.14 wheels yet
+            "dagster-pandera",
+            # Sling doesn't have Python 3.14 wheels yet
+            "dagster-sling",
+            "dagster-embedded-elt",  # depends on sling
+            # PySpark doesn't have Python 3.14 wheels yet
+            "dagster-pyspark",
+            "dagster-gcp-pyspark",
+            "dagster-spark",  # might pull in pyspark
+            # Datahub doesn't have Python 3.14 wheels yet
+            "dagster-datahub",
+            # Papermill/dagstermill has issues on Python 3.14
+            "dagstermill",
+            # Airflow-based packages (airflow doesn't support 3.14 yet)
+            "dagster-airlift",
+            # Dask might not have Python 3.14 wheels yet
+            "dagster-dask",
+            # Databricks SDK might not have Python 3.14 wheels yet
+            "dagster-databricks",
+            # DLT might not have Python 3.14 wheels yet
+            "dagster-dlt",
+            # Snowflake connector doesn't have Python 3.14 wheels yet
+            "dagster-snowflake",
+        ]
+        editable_target_paths = [
+            p
+            for p in editable_target_paths
+            if not any(exclude in p for exclude in python_314_exclusions)
+        ]
+
     install_targets += list(
         itertools.chain.from_iterable(
             zip(["-e"] * len(editable_target_paths), editable_target_paths)
