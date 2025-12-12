@@ -293,7 +293,7 @@ export const ASSETS_HEALTH_INFO_QUERY = gql`
     numMissingPartitions
     numFailedPartitions
     totalNumPartitions
-    failedRunId
+    latestFailedRunId
   }
 
   fragment AssetHealthMaterializationHealthyPartitionedMetaFragment on AssetHealthMaterializationHealthyPartitionedMeta {
