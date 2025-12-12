@@ -8,7 +8,6 @@ from dagster_dg_core.utils import DG_CLI_MAX_OUTPUT_WIDTH, DgClickGroup
 from dagster_dg_cli.cli.api import api_group
 from dagster_dg_cli.cli.check import check_group
 from dagster_dg_cli.cli.dev import dev_command
-from dagster_dg_cli.cli.docs import docs_group
 from dagster_dg_cli.cli.launch import launch_command
 from dagster_dg_cli.cli.list import list_group
 from dagster_dg_cli.cli.mcp_server import mcp_group
@@ -24,7 +23,6 @@ def create_dg_cli():
         commands={
             "api": api_group,
             "check": check_group,
-            "docs": docs_group,
             "utils": utils_group,
             "launch": launch_command,
             "list": list_group,

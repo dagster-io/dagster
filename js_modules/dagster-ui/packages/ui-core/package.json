@@ -150,7 +150,6 @@
     "babel-loader": "9.1.2",
     "babel-plugin-graphql-tag": "^3.3.0",
     "babel-plugin-macros": "^2.8.0",
-    "buildkite-test-collector": "^1.8.1",
     "child-process": "^1.0.2",
     "eslint": "^8.57.1",
     "eslint-plugin-import": "^2.31.0",

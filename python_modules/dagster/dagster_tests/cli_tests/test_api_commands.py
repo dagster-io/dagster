@@ -1,4 +1,6 @@
+import base64
 import os
+import zlib
 from unittest import mock
 
 import dagster as dg
@@ -672,4 +674,322 @@ def test_execute_step_verify_step_framework_error(mock_verify_step):
 
             assert "Unexpected framework error text" in str(
                 log_entry.dagster_event.event_specific_data.error  # pyright: ignore[reportAttributeAccessIssue,reportOptionalMemberAccess]
+            )
+
+
+def test_execute_run_with_env_var():
+    """Test that execute_run can receive input via DAGSTER_EXECUTE_RUN_ARGS environment variable."""
+    with dg.instance_for_test(
+        overrides={
+            "compute_logs": {
+                "module": "dagster._core.storage.noop_compute_log_manager",
+                "class": "NoOpComputeLogManager",
+            }
+        }
+    ) as instance:
+        with get_foo_job_handle(instance) as job_handle:
+            runner = CliRunner()
+
+            run = create_run_for_test(
+                instance,
+                job_name="foo",
+                job_code_origin=job_handle.get_python_origin(),
+            )
+
+            input_json = dg.serialize_value(
+                ExecuteRunArgs(
+                    job_origin=job_handle.get_python_origin(),
+                    run_id=run.run_id,
+                    instance_ref=instance.get_ref(),
+                )
+            )
+
+            # Test with env var set - no command line argument
+            result = runner.invoke(
+                api.execute_run_command, [], env={"DAGSTER_EXECUTE_RUN_ARGS": input_json}
+            )
+
+            assert result.exit_code == 0
+            assert "RUN_SUCCESS" in result.output, f"no match, result: {result.output}"
+
+
+def test_execute_run_with_compressed_input_json():
+    """Test that execute_run can receive compressed input via --compressed-input-json argument."""
+    with dg.instance_for_test(
+        overrides={
+            "compute_logs": {
+                "module": "dagster._core.storage.noop_compute_log_manager",
+                "class": "NoOpComputeLogManager",
+            }
+        }
+    ) as instance:
+        with get_foo_job_handle(instance) as job_handle:
+            runner = CliRunner()
+
+            run = create_run_for_test(
+                instance,
+                job_name="foo",
+                job_code_origin=job_handle.get_python_origin(),
+            )
+
+            input_json = dg.serialize_value(
+                ExecuteRunArgs(
+                    job_origin=job_handle.get_python_origin(),
+                    run_id=run.run_id,
+                    instance_ref=instance.get_ref(),
+                )
+            )
+
+            # Compress the input JSON
+            compressed_input = base64.b64encode(zlib.compress(input_json.encode())).decode()
+
+            result = runner_execute_run(
+                runner,
+                ["--compressed-input-json", compressed_input],
+            )
+
+            assert "RUN_SUCCESS" in result.output, f"no match, result: {result.output}"
+
+
+def test_execute_run_with_compressed_env_var():
+    """Test that execute_run can receive compressed input via DAGSTER_COMPRESSED_EXECUTE_RUN_ARGS env var."""
+    with dg.instance_for_test(
+        overrides={
+            "compute_logs": {
+                "module": "dagster._core.storage.noop_compute_log_manager",
+                "class": "NoOpComputeLogManager",
+            }
+        }
+    ) as instance:
+        with get_foo_job_handle(instance) as job_handle:
+            runner = CliRunner()
+
+            run = create_run_for_test(
+                instance,
+                job_name="foo",
+                job_code_origin=job_handle.get_python_origin(),
+            )
+
+            input_json = dg.serialize_value(
+                ExecuteRunArgs(
+                    job_origin=job_handle.get_python_origin(),
+                    run_id=run.run_id,
+                    instance_ref=instance.get_ref(),
+                )
+            )
+
+            # Compress the input JSON
+            compressed_input = base64.b64encode(zlib.compress(input_json.encode())).decode()
+
+            # Test with compressed env var set - no command line argument
+            result = runner.invoke(
+                api.execute_run_command,
+                [],
+                env={"DAGSTER_COMPRESSED_EXECUTE_RUN_ARGS": compressed_input},
+            )
+
+            assert result.exit_code == 0
+            assert "RUN_SUCCESS" in result.output, f"no match, result: {result.output}"
+
+
+def test_execute_run_with_both_inputs_fails():
+    """Test that providing both regular and compressed input fails."""
+    with dg.instance_for_test(
+        overrides={
+            "compute_logs": {
+                "module": "dagster._core.storage.noop_compute_log_manager",
+                "class": "NoOpComputeLogManager",
+            }
+        }
+    ) as instance:
+        with get_foo_job_handle(instance) as job_handle:
+            runner = CliRunner()
+
+            run = create_run_for_test(
+                instance,
+                job_name="foo",
+                job_code_origin=job_handle.get_python_origin(),
+            )
+
+            input_json = dg.serialize_value(
+                ExecuteRunArgs(
+                    job_origin=job_handle.get_python_origin(),
+                    run_id=run.run_id,
+                    instance_ref=instance.get_ref(),
+                )
+            )
+
+            # Compress the input JSON
+            compressed_input = base64.b64encode(zlib.compress(input_json.encode())).decode()
+
+            # Try to provide both inputs - should fail
+            result = runner.invoke(
+                api.execute_run_command,
+                [input_json, "--compressed-input-json", compressed_input],
+            )
+
+            assert result.exit_code != 0
+            assert "Must provide one of input_json or compressed_input_json" in str(
+                result.exception
+            )
+
+
+def test_execute_step_with_env_var():
+    """Test that execute_step can receive input via DAGSTER_EXECUTE_STEP_ARGS environment variable."""
+    with dg.instance_for_test(
+        overrides={
+            "compute_logs": {
+                "module": "dagster._core.storage.noop_compute_log_manager",
+                "class": "NoOpComputeLogManager",
+            }
+        }
+    ) as instance:
+        with get_foo_job_handle(instance) as job_handle:
+            runner = CliRunner()
+
+            run = create_run_for_test(
+                instance,
+                job_name="foo",
+                job_code_origin=job_handle.get_python_origin(),
+            )
+
+            args = ExecuteStepArgs(
+                job_origin=job_handle.get_python_origin(),
+                run_id=run.run_id,
+                step_keys_to_execute=None,
+                instance_ref=instance.get_ref(),
+            )
+
+            input_json = dg.serialize_value(args)
+
+            # Test with env var set - no command line argument
+            result = runner.invoke(
+                api.execute_step_command, [], env={"DAGSTER_EXECUTE_STEP_ARGS": input_json}
+            )
+
+            assert result.exit_code == 0
+            assert "STEP_SUCCESS" in result.output
+
+
+def test_execute_step_with_compressed_input_json():
+    """Test that execute_step can receive compressed input via --compressed-input-json argument."""
+    with dg.instance_for_test(
+        overrides={
+            "compute_logs": {
+                "module": "dagster._core.storage.noop_compute_log_manager",
+                "class": "NoOpComputeLogManager",
+            }
+        }
+    ) as instance:
+        with get_foo_job_handle(instance) as job_handle:
+            runner = CliRunner()
+
+            run = create_run_for_test(
+                instance,
+                job_name="foo",
+                job_code_origin=job_handle.get_python_origin(),
+            )
+
+            args = ExecuteStepArgs(
+                job_origin=job_handle.get_python_origin(),
+                run_id=run.run_id,
+                step_keys_to_execute=None,
+                instance_ref=instance.get_ref(),
+            )
+
+            input_json = dg.serialize_value(args)
+
+            # Compress the input JSON
+            compressed_input = base64.b64encode(zlib.compress(input_json.encode())).decode()
+
+            result = runner_execute_step(
+                runner,
+                ["--compressed-input-json", compressed_input],
+            )
+
+            assert "STEP_SUCCESS" in result.output
+
+
+def test_execute_step_with_compressed_env_var():
+    """Test that execute_step can receive compressed input via DAGSTER_COMPRESSED_EXECUTE_STEP_ARGS env var."""
+    with dg.instance_for_test(
+        overrides={
+            "compute_logs": {
+                "module": "dagster._core.storage.noop_compute_log_manager",
+                "class": "NoOpComputeLogManager",
+            }
+        }
+    ) as instance:
+        with get_foo_job_handle(instance) as job_handle:
+            runner = CliRunner()
+
+            run = create_run_for_test(
+                instance,
+                job_name="foo",
+                job_code_origin=job_handle.get_python_origin(),
+            )
+
+            args = ExecuteStepArgs(
+                job_origin=job_handle.get_python_origin(),
+                run_id=run.run_id,
+                step_keys_to_execute=None,
+                instance_ref=instance.get_ref(),
+            )
+
+            input_json = dg.serialize_value(args)
+
+            # Compress the input JSON
+            compressed_input = base64.b64encode(zlib.compress(input_json.encode())).decode()
+
+            # Test with compressed env var set - no command line argument
+            result = runner.invoke(
+                api.execute_step_command,
+                [],
+                env={"DAGSTER_COMPRESSED_EXECUTE_STEP_ARGS": compressed_input},
+            )
+
+            assert result.exit_code == 0
+            assert "STEP_SUCCESS" in result.output
+
+
+def test_execute_step_with_both_inputs_fails():
+    """Test that providing both regular and compressed input fails for execute_step."""
+    with dg.instance_for_test(
+        overrides={
+            "compute_logs": {
+                "module": "dagster._core.storage.noop_compute_log_manager",
+                "class": "NoOpComputeLogManager",
+            }
+        }
+    ) as instance:
+        with get_foo_job_handle(instance) as job_handle:
+            runner = CliRunner()
+
+            run = create_run_for_test(
+                instance,
+                job_name="foo",
+                job_code_origin=job_handle.get_python_origin(),
+            )
+
+            args = ExecuteStepArgs(
+                job_origin=job_handle.get_python_origin(),
+                run_id=run.run_id,
+                step_keys_to_execute=None,
+                instance_ref=instance.get_ref(),
+            )
+
+            input_json = dg.serialize_value(args)
+
+            # Compress the input JSON
+            compressed_input = base64.b64encode(zlib.compress(input_json.encode())).decode()
+
+            # Try to provide both inputs - should fail
+            result = runner.invoke(
+                api.execute_step_command,
+                [input_json, "--compressed-input-json", compressed_input],
+            )
+
+            assert result.exit_code != 0
+            assert "Must provide one of input_json or compressed_input_json" in str(
+                result.exception
             )

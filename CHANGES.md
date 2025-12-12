@@ -1,8 +1,26 @@
 # Changelog
 
+## 1.12.6 (core) / 0.28.6 (libraries)
+
+### New
+
+- All CLI commands under `dagster project` have been removed. `create-dagster` should be used instead.
+- [ui] Added a new Partitions facet to the Asset Lineage Graph.
+- [ui] More details are now displayed for `SINCE` conditions in evaluation tables for automation conditions.
+- [dagster-dbt] Added dbt cloud logs to stdout after the run completes in dbt cloud.
+- [dagster-tableau] Improved resilience when fetching Tableau workspace data. The integration now skips individual workbooks that fail to return data and logs a warning, rather than failing the entire operation. (Thanks, [@miriamcastel](https://github.com/miriamcastel)!)
+
+### Bugfixes
+
+- Fixed an issue that would cause errors when attempting to create subclasses of `Resolved` that had fields using `default_factory` arguments.
+- Fixed an issue with `dg plus deploy refresh-defs-state` which could cause errors when refreshing state for components that required CLIs that were only available in the project environment.
+- [ui] Fixed Snowflake connection by changing the private key encoding from PEM to DER format. Snowflake requires unencrypted RSA private keys to be in DER format as bytes.
+- [dagster-dbt] Updated `DbtCliResource` to use the `project_dir` attribute from the `DbtProject` instance rather than passing the entire `DbtProject` object.
+- [dagster-tableau][dagster-sigma] Fixed bug that would cause templated env vars to not be resolved when specified in yaml.
+
 ## 1.12.5 (core) / 0.28.5 (libraries)
 
-## New
+### New
 
 - Increased the version of NextJS used by the Dagster webserver and the `dg docs serve` command to `15.5.7`. While these applications are unaffected by https://nextjs.org/blog/CVE-2025-66478 due to not using React 19, this upgrade ensures that dagster packages will not be flagged for that CVE by vulnerability scanners.
 

@@ -45,7 +45,6 @@ setup(
     extras_require={
         "test": [
             "pytest",
-            "buildkite-test-collector",
             "flaky",
         ],
     },
