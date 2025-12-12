@@ -15,6 +15,8 @@ from dagster._core.event_api import EventHandlerFn
 from dagster._core.storage.asset_check_execution_record import (
     AssetCheckExecutionRecord,
     AssetCheckExecutionRecordStatus,
+    AssetCheckPartitionRecord,
+    AssetCheckPartitionStatusCacheValue,
 )
 from dagster._core.storage.base_storage import DagsterStorage
 from dagster._core.storage.event_log.base import (
@@ -37,7 +39,6 @@ from dagster._utils import PrintFn
 from dagster._utils.concurrency import ConcurrencyClaimStatus, ConcurrencyKeyInfo
 
 if TYPE_CHECKING:
-    from dagster._core.definitions.asset_checks.asset_check_spec import AssetCheckKey
     from dagster._core.definitions.run_request import InstigatorType
     from dagster._core.event_api import AssetRecordsFilter, RunStatusChangeRecordsFilter
     from dagster._core.events import DagsterEvent, DagsterEventType
@@ -745,12 +746,14 @@ class LegacyEventLogStorage(EventLogStorage, ConfigurableClass):
         limit: int,
         cursor: Optional[int] = None,
         status: Optional[AbstractSet[AssetCheckExecutionRecordStatus]] = None,
+        partition: Optional[str] = None,
     ) -> Sequence[AssetCheckExecutionRecord]:
         return self._storage.event_log_storage.get_asset_check_execution_history(
             check_key=check_key,
             limit=limit,
             cursor=cursor,
             status=status,
+            partition=partition,
         )
 
     def get_latest_asset_check_execution_by_key(  # pyright: ignore[reportIncompatibleMethodOverride]
@@ -758,6 +761,31 @@ class LegacyEventLogStorage(EventLogStorage, ConfigurableClass):
         check_keys: Sequence["AssetCheckKey"],
     ) -> Mapping["AssetCheckKey", Optional[AssetCheckExecutionRecord]]:
         return self._storage.event_log_storage.get_latest_asset_check_execution_by_key(check_keys)
+
+    def get_asset_check_cached_value(
+        self, check_key: AssetCheckKey
+    ) -> Optional["AssetCheckPartitionStatusCacheValue"]:
+        """Get the cached partition status record - pure storage retrieval."""
+        return self._storage.event_log_storage.get_asset_check_cached_value(check_key)
+
+    def update_asset_check_cached_value(
+        self, check_key: AssetCheckKey, cache_value: "AssetCheckPartitionStatusCacheValue"
+    ) -> None:
+        """Update the cached partition status record - pure storage write."""
+        return self._storage.event_log_storage.update_asset_check_cached_value(
+            check_key, cache_value
+        )
+
+    def get_asset_check_partition_records(
+        self,
+        check_key: AssetCheckKey,
+        partition_key: Optional[str] = None,
+        after_event_storage_id: Optional[int] = None,
+    ) -> Sequence["AssetCheckPartitionRecord"]:
+        """Get asset check partition records with execution status and planned run info."""
+        return self._storage.event_log_storage.get_asset_check_partition_records(
+            check_key, partition_key, after_event_storage_id
+        )
 
 
 class LegacyScheduleStorage(ScheduleStorage, ConfigurableClass):
