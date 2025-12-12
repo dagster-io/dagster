@@ -1140,7 +1140,7 @@ type AssetHealthMaterializationDegradedPartitionedMeta {
   numMissingPartitions: Int!
   totalNumPartitions: Int!
   latestRunId: String
-  failedRunId: String
+  latestFailedRunId: String
 }
 
 type AssetHealthMaterializationHealthyPartitionedMeta {

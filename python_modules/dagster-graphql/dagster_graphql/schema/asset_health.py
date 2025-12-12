@@ -1,5 +1,4 @@
 import asyncio
-from typing import Optional
 
 import graphene
 from dagster._core.definitions.asset_health.asset_check_health import (
@@ -23,7 +22,6 @@ from dagster._core.definitions.asset_health.asset_materialization_health import 
     AssetHealthMaterializationMetadata,
     get_materialization_status_and_metadata,
 )
-from dagster._core.storage.event_log.base import AssetRecord
 
 from dagster_graphql.schema.entity_key import GrapheneAssetKey
 from dagster_graphql.schema.util import ResolveInfo
@@ -94,36 +92,10 @@ class GrapheneAssetHealthMaterializationDegradedPartitionedMeta(graphene.ObjectT
     numMissingPartitions = graphene.NonNull(graphene.Int)
     totalNumPartitions = graphene.NonNull(graphene.Int)
     latestRunId = graphene.String()
-    failedRunId = graphene.String()
+    latestFailedRunId = graphene.String()
 
     class Meta:
         name = "AssetHealthMaterializationDegradedPartitionedMeta"
-
-    def __init__(
-        self,
-        asset_key: GrapheneAssetKey,
-        num_failed_partitions: int,
-        num_missing_partitions: int,
-        total_num_partitions: int,
-        latest_run_id: str,
-    ):
-        super().__init__()
-        self._asset_key = asset_key
-        self.numFailedPartitions = num_failed_partitions
-        self.numMissingPartitions = num_missing_partitions
-        self.totalNumPartitions = total_num_partitions
-        self.latestRunId = latest_run_id
-
-    async def resolve_failedRunId(self, graphene_info: ResolveInfo) -> Optional[str]:
-        # The latest failed run for a degraded partitioned asset may not be the most recent run that
-        # attempted to materialize the asset. The failed partitions could be in a historical run
-        asset_record = await AssetRecord.gen(graphene_info.context, self._asset_key)
-        if (
-            asset_record is not None
-            and asset_record.asset_entry.last_failed_to_materialize_record is not None
-        ):
-            return asset_record.asset_entry.last_failed_to_materialize_record.run_id
-        return None
 
 
 class GrapheneAssetHealthMaterializationHealthyPartitionedMeta(graphene.ObjectType):
@@ -158,7 +130,7 @@ class GrapheneAssetHealthMaterializationMeta(graphene.Union):
     ) -> "GrapheneAssetHealthMaterializationMeta":
         if isinstance(metadata, AssetHealthMaterializationDegradedNotPartitionedMeta):
             return GrapheneAssetHealthMaterializationDegradedNotPartitionedMeta(
-                failedRunId=metadata.failed_run_id
+                failedRunId=metadata.latest_failed_to_materialize_run_id,
             )
         elif isinstance(metadata, AssetHealthMaterializationHealthyPartitionedMeta):
             return GrapheneAssetHealthMaterializationHealthyPartitionedMeta(
@@ -168,11 +140,11 @@ class GrapheneAssetHealthMaterializationMeta(graphene.Union):
             )
         elif isinstance(metadata, AssetHealthMaterializationDegradedPartitionedMeta):
             return GrapheneAssetHealthMaterializationDegradedPartitionedMeta(
-                asset_key=asset_key,
-                num_failed_partitions=metadata.num_failed_partitions,
-                num_missing_partitions=metadata.num_missing_partitions,
-                total_num_partitions=metadata.total_num_partitions,
-                latest_run_id=metadata.latest_run_id,
+                numFailedPartitions=metadata.num_failed_partitions,
+                numMissingPartitions=metadata.num_missing_partitions,
+                totalNumPartitions=metadata.total_num_partitions,
+                latestRunId=metadata.latest_run_id,
+                latestFailedRunId=metadata.latest_failed_to_materialize_run_id,
             )
         else:
             raise ValueError(f"Unknown metadata class: {type(metadata)}")

@@ -435,7 +435,7 @@ export type AssetHealthMaterializationDegradedNotPartitionedMeta = {
 
 export type AssetHealthMaterializationDegradedPartitionedMeta = {
   __typename: 'AssetHealthMaterializationDegradedPartitionedMeta';
-  failedRunId: Maybe<Scalars['String']['output']>;
+  latestFailedRunId: Maybe<Scalars['String']['output']>;
   latestRunId: Maybe<Scalars['String']['output']>;
   numFailedPartitions: Scalars['Int']['output'];
   numMissingPartitions: Scalars['Int']['output'];
@@ -7033,8 +7033,10 @@ export const buildAssetHealthMaterializationDegradedPartitionedMeta = (
   relationshipsToOmit.add('AssetHealthMaterializationDegradedPartitionedMeta');
   return {
     __typename: 'AssetHealthMaterializationDegradedPartitionedMeta',
-    failedRunId:
-      overrides && overrides.hasOwnProperty('failedRunId') ? overrides.failedRunId! : 'autem',
+    latestFailedRunId:
+      overrides && overrides.hasOwnProperty('latestFailedRunId')
+        ? overrides.latestFailedRunId!
+        : 'explicabo',
     latestRunId:
       overrides && overrides.hasOwnProperty('latestRunId')
         ? overrides.latestRunId!
