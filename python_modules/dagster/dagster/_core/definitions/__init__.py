@@ -124,9 +124,6 @@ from dagster._core.definitions.repository_definition import (
     RepositoryData as RepositoryData,
     RepositoryDefinition as RepositoryDefinition,
 )
-from dagster._core.definitions.resolved_asset_deps import (
-    ResolvedAssetDependencies as ResolvedAssetDependencies,
-)
 from dagster._core.definitions.resource_definition import (
     ResourceDefinition as ResourceDefinition,
     make_values_resource as make_values_resource,

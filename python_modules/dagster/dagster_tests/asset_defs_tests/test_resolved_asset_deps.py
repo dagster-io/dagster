@@ -13,7 +13,9 @@ def test_same_name_twice_and_downstream():
     def asset3(apple):
         del apple
 
-    assert len(resolve_assets_def_deps([asset1, asset2, asset3], [])) == 0
+    assets = [asset1, asset2, asset3]
+    resolved_assets = resolve_assets_def_deps(assets)
+    assert resolved_assets == assets
 
 
 def test_multi_asset_group_name():
@@ -25,11 +27,15 @@ def test_multi_asset_group_name():
     def multi_downstream(upstream):
         pass
 
-    resolved = resolve_assets_def_deps([upstream, multi_downstream], [])
-    assert len(resolved) == 1
+    assets = [upstream, multi_downstream]
+    resolved_assets = resolve_assets_def_deps(assets)
+    assert resolved_assets != assets
 
-    resolution = next(iter(resolved.values()))
-    assert resolution == {dg.AssetKey(["upstream"]): dg.AssetKey(["some", "path", "upstream"])}
+    for spec in resolved_assets[1].specs:
+        deps = list(spec.deps)
+        assert len(deps) == 1
+        # should have been remapped
+        assert deps[0].asset_key == dg.AssetKey(["some", "path", "upstream"])
 
 
 def test_input_has_asset_key():
@@ -39,18 +45,20 @@ def test_input_has_asset_key():
     @dg.asset(deps=[dg.AssetKey(["b", "asset1"])])
     def asset2(): ...
 
-    assert len(resolve_assets_def_deps([asset1, asset2], [])) == 0
+    assets = [asset1, asset2]
+    resolved_assets = resolve_assets_def_deps(assets)
+    assert resolved_assets == assets
 
 
 def test_upstream_same_name_as_asset():
     @dg.asset(deps=[dg.AssetKey("asset1")], key_prefix="b")
     def asset1(): ...
 
-    assert len(resolve_assets_def_deps([asset1], [])) == 0
+    assert resolve_assets_def_deps([asset1]) == [asset1]
 
     @dg.multi_asset(
         outs={"asset1": dg.AssetOut(key_prefix="b")}, deps=[dg.AssetKey(["a", "asset1"])]
     )
     def multi_asset1(): ...
 
-    assert len(resolve_assets_def_deps([multi_asset1], [])) == 0
+    assert resolve_assets_def_deps([multi_asset1]) == [multi_asset1]
