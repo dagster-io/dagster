@@ -12,6 +12,7 @@ from dagster import (
     get_dagster_logger,
 )
 from dagster._record import record
+from dagster._time import get_current_timestamp
 from dateutil import parser
 from requests.exceptions import RequestException
 
@@ -80,6 +81,10 @@ class DbtCloudJobRunHandler:
 
 
 def get_completed_at_timestamp(result: Mapping[str, Any]) -> float:
+    timing = result["timing"]
+    if len(timing) == 0:
+        # as a fallback, use the current timestamp
+        return get_current_timestamp()
     # result["timing"] is a list of events in run_results.json
     # For successful models and passing tests,
     # the last item of that list includes the timing details of the execution.

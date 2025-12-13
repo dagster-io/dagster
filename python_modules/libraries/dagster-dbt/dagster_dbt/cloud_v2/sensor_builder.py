@@ -142,7 +142,7 @@ def sorted_asset_events(
     return [
         sorted_event[1]
         for sorted_event in sorted(
-            materializations_and_timestamps, key=lambda x: (x[0], topo_aks.index(x[1].asset_key))
+            materializations_and_timestamps, key=lambda x: (topo_aks.index(x[1].asset_key), x[0])
         )
     ]
 
