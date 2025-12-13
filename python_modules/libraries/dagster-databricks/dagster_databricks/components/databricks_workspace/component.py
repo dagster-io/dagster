@@ -14,6 +14,7 @@ from dagster import (
     multi_asset,
 )
 from dagster._annotations import beta
+from dagster._serdes import whitelist_for_serdes
 from dagster.components import Resolver
 from dagster.components.component.state_backed_component import StateBackedComponent
 from dagster.components.utils.defs_state import (
@@ -21,6 +22,7 @@ from dagster.components.utils.defs_state import (
     DefsStateConfigArgs,
     ResolvedDefsStateConfig,
 )
+from dagster_shared.record import record
 from dagster_shared.serdes.serdes import deserialize_value, serialize_value
 from databricks.sdk import WorkspaceClient
 
@@ -33,6 +35,14 @@ from dagster_databricks.components.databricks_workspace.schema import (
     DatabricksWorkspaceConfig,
     ResolvedDatabricksFilter,
 )
+
+
+@whitelist_for_serdes
+@record
+class DatabricksWorkspaceData:
+    """Container for serialized Databricks workspace state."""
+
+    jobs: list[DatabricksJob]
 
 
 def _snake_case(name: str) -> str:
@@ -57,9 +67,9 @@ class DatabricksWorkspaceComponent(StateBackedComponent, Resolvable):
     ] = None
 
     assets_by_task_key: Annotated[
-        Optional[dict[str, ResolvedAssetSpec]],
+        Optional[dict[str, list[ResolvedAssetSpec]]],
         Resolver.default(
-            description="Optional mapping of Databricks task keys to Dagster AssetSpecs.",
+            description="Optional mapping of Databricks task keys to lists of Dagster AssetSpecs.",
         ),
     ] = None
 
@@ -72,27 +82,29 @@ class DatabricksWorkspaceComponent(StateBackedComponent, Resolvable):
         default_key = f"{self.__class__.__name__}[{self.workspace.host}]"
         return DefsStateConfig.from_args(self.defs_state, default_key=default_key)
 
-    def get_state(self) -> list[DatabricksJob]:
+    def get_state(self) -> DatabricksWorkspaceData:
         """Fetch current workspace state (list of Jobs)."""
         client = WorkspaceClient(host=self.workspace.host, token=self.workspace.token)
         databricks_filter = self.databricks_filter or DatabricksFilter(include_job=lambda j: True)
-        return asyncio.run(fetch_databricks_workspace_data(client, databricks_filter))
+        jobs = asyncio.run(fetch_databricks_workspace_data(client, databricks_filter))
+        return DatabricksWorkspaceData(jobs=jobs)
 
     def write_state_to_path(self, state_path: Path) -> None:
         """Serializes the fetched state to disk."""
-        jobs = self.get_state()
-        state_path.write_text(serialize_value(jobs))
+        state = self.get_state()
+        state_path.write_text(serialize_value(state))
 
     def build_defs_from_state(self, context: Any, state_path: Path) -> Definitions:
         """Build Dagster Definitions from the cached state."""
         if not state_path or not state_path.exists():
             return Definitions()
 
-        jobs_state = deserialize_value(state_path.read_text(), list[DatabricksJob])
+        workspace_data = deserialize_value(state_path.read_text(), DatabricksWorkspaceData)
+        jobs_state = workspace_data.jobs
 
         databricks_assets = []
         for job in jobs_state:
-            tasks = getattr(job, "tasks", []) if not isinstance(job, dict) else job.get("tasks", [])
+            tasks = job.tasks or []
             for task in tasks:
                 specs = self.get_asset_specs(job_name=job.name, task=task)
                 asset_name = specs[0].key.path[-1] if specs else f"task_{id(task)}"
@@ -111,23 +123,10 @@ class DatabricksWorkspaceComponent(StateBackedComponent, Resolvable):
 
     def get_asset_specs(self, job_name: str, task: Any) -> list[AssetSpec]:
         """Return a list of AssetSpec objects for the given task."""
-        if isinstance(task, dict):
-            task_key = task.get("task_key")
-        else:
-            task_key = getattr(task, "task_key", None)
+        task_key = getattr(task, "task_key", None)
 
         if task_key and self.assets_by_task_key and task_key in self.assets_by_task_key:
-            user_spec = self.assets_by_task_key[task_key]
-
-            return [
-                AssetSpec(
-                    key=user_spec.key,
-                    group_name=user_spec.group_name,
-                    description=user_spec.description,
-                    kinds={"databricks"},
-                    metadata={"task_key": task_key, "job_name": job_name},
-                )
-            ]
+            return self.assets_by_task_key[task_key]
 
         clean_job = _snake_case(job_name)
         clean_task = _snake_case(task_key or "unknown")

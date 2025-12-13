@@ -60,8 +60,3 @@ class DatabricksWorkspaceConfig(BaseModel):
     host: str
     token: str
 
-
-class AssetSpecConfig(BaseModel):
-    key: str
-    group: Optional[str] = None
-    description: Optional[str] = None

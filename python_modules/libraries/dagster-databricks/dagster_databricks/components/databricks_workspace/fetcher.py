@@ -10,21 +10,12 @@ from dagster_databricks.components.databricks_workspace.schema import Databricks
 logger = get_dagster_logger()
 
 
-class DatabricksFetcherError(RuntimeError):
-    pass
-
-
 async def _fetch_json(
     session: aiohttp.ClientSession, url: str, params: Optional[dict[str, Any]] = None
 ) -> dict[str, Any]:
     async with session.get(url, params=params) as resp:
-        text = await resp.text()
-        if resp.status >= 400:
-            raise DatabricksFetcherError(f"Failed to fetch {url} (status={resp.status}): {text}")
-        try:
-            return await resp.json()
-        except Exception as exc:
-            raise DatabricksFetcherError(f"Invalid JSON from {url}: {exc}; body={text}")
+        resp.raise_for_status()
+        return await resp.json()
 
 
 def _extract_host_and_token_from_client(workspace_client: Any) -> tuple[str, str]:
@@ -61,7 +52,7 @@ def _extract_host_and_token_from_client(workspace_client: Any) -> tuple[str, str
                 host_str = "https://" + host_str.lstrip("/")
             return host_str.rstrip("/"), token_str
 
-    raise DatabricksFetcherError(
+    raise ValueError(
         "Could not extract host and token from provided workspace_client. "
         "Pass a databricks.sdk WorkspaceClient or provide host/token accessors."
     )
@@ -79,7 +70,9 @@ async def fetch_databricks_workspace_data(
     - For each matching job, call `/api/2.1/jobs/get?job_id=...` in parallel.
     - Deserialize each full job JSON into `Job` if available, otherwise return raw dict.
 
-    Raises DatabricksFetcherError on failure.
+    Raises:
+        ValueError: If host/token cannot be found.
+        aiohttp.ClientResponseError: If the API request fails.
     """
     host, token = _extract_host_and_token_from_client(workspace_client)
 
@@ -116,28 +109,23 @@ async def fetch_databricks_workspace_data(
 
         sem = asyncio.Semaphore(20)
 
-        async def _fetch_full(job_info: dict[str, Any]) -> Any:
+        async def _fetch_full(job_info: dict[str, Any]) -> DatabricksJob:
             job_id = job_info.get("job_id") or job_info.get("jobId")
             if not job_id:
-                raise DatabricksFetcherError(f"Job missing job_id: {job_info}")
+                raise ValueError(f"Job missing job_id: {job_info}")
 
             params = {"job_id": job_id}
 
-            try:
-                async with sem:
-                    full_json = await _fetch_json(session, get_url, params=params)
+            async with sem:
+                full_json = await _fetch_json(session, get_url, params=params)
 
-                settings = full_json.get("settings", {})
-                job_name = settings.get("name", f"job_{job_id}")
-                tasks = settings.get("tasks", [])
+            settings = full_json.get("settings", {})
+            job_name = settings.get("name", f"job_{job_id}")
+            tasks = settings.get("tasks", [])
 
-                return DatabricksJob(job_id=job_id, name=job_name, tasks=tasks)
-
-            except Exception as e:
-                logger.warning(f"Failed to process job {job_id}: {e}")
-                return None
+            return DatabricksJob(job_id=job_id, name=job_name, tasks=tasks)
 
         tasks = [_fetch_full(job) for job in filtered_jobs]
         results = await asyncio.gather(*tasks, return_exceptions=False)
 
-    return [r for r in results if r is not None]
+    return results
