@@ -353,9 +353,10 @@ class AssetsDefinition(ResourceAddable, IHasInternalInit):
         unique_partitions_defs = {
             spec.partitions_def for spec in normalized_specs if spec.partitions_def is not None
         }
-        if len(unique_partitions_defs) > 1 and not can_subset:
+        if len(unique_partitions_defs) > 1 and not (can_subset or node_def is None):
             raise DagsterInvalidDefinitionError(
                 "If different AssetSpecs have different partitions_defs, can_subset must be True"
+                " or node_def must be None."
             )
 
         _validate_self_deps(normalized_specs)
