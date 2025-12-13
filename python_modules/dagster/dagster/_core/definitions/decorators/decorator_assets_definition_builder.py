@@ -652,8 +652,15 @@ class DecoratorAssetsDefinitionBuilder:
 
     def _synthesize_specs(self) -> Sequence[AssetSpec]:
         resolved_specs = []
+        upstream_asset_dep_metadata_by_key = {
+            dep.asset_key: dep.metadata for dep in self.args.upstream_asset_deps or []
+        }
         input_deps_by_key = {
-            key: AssetDep(asset=key, partition_mapping=self.partition_mappings.get(key))
+            key: AssetDep(
+                asset=key,
+                partition_mapping=self.partition_mappings.get(key),
+                metadata=upstream_asset_dep_metadata_by_key.get(key),
+            )
             for key in self.asset_keys_by_input_names.values()
         }
         input_deps = list(input_deps_by_key.values())

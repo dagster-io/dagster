@@ -1,5 +1,5 @@
-from collections.abc import Iterable, Sequence
-from typing import TYPE_CHECKING, NamedTuple, Optional, Union
+from collections.abc import Iterable, Mapping, Sequence
+from typing import TYPE_CHECKING, Any, NamedTuple, Optional, Union
 
 import dagster._check as check
 from dagster._annotations import PublicAttr, public
@@ -28,6 +28,7 @@ class AssetDep(
         [
             ("asset_key", PublicAttr[AssetKey]),
             ("partition_mapping", PublicAttr[Optional[PartitionMapping]]),
+            ("metadata", Mapping[str, Any]),
         ],
     )
 ):
@@ -60,6 +61,7 @@ class AssetDep(
         asset: Union[CoercibleToAssetKey, "AssetSpec", "AssetsDefinition", "SourceAsset"],
         *,
         partition_mapping: Optional[PartitionMapping] = None,
+        metadata: Optional[Mapping[str, Any]] = None,
     ):
         from dagster._core.definitions.assets.definition.asset_spec import AssetSpec
         from dagster._core.definitions.assets.definition.assets_definition import AssetsDefinition
@@ -93,6 +95,7 @@ class AssetDep(
                 "partition_mapping",
                 PartitionMapping,
             ),
+            metadata=check.opt_mapping_param(metadata, "metadata", key_type=str),
         )
 
     @staticmethod
