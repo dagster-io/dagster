@@ -2533,3 +2533,77 @@ def test_exclusions_with_negative_end_offset():
         "2021-05-29",
         "2021-05-28",
     ]
+
+
+def test_multiple_cron_and_timestamp_exclusions():
+    specific_holidays = [
+        create_datetime(2024, 1, 1),  # New Year's Day (Monday)
+        create_datetime(2024, 1, 15),  # MLK Day (Monday)
+        create_datetime(2024, 2, 19),  # Presidents Day (Monday)
+    ]
+
+    partitions_def = TimeWindowPartitionsDefinition(
+        start="2024-01-01",
+        end="2024-03-01",
+        fmt="%Y-%m-%d",
+        cron_schedule="0 0 * * *",
+        exclusions=[
+            "0 0 * * 6",  # exclude Saturdays
+            "0 0 * * 7",  # exclude Sundays
+            *specific_holidays,
+        ],
+    )
+
+    all_keys = list(partitions_def.get_partition_keys())
+    for key in all_keys:
+        dt = datetime.strptime(key, "%Y-%m-%d")
+        assert dt.weekday() not in [5, 6], f"Weekend {key} should be excluded"
+
+    assert "2024-01-01" not in all_keys
+    assert "2024-01-15" not in all_keys
+    assert "2024-02-19" not in all_keys
+
+    # Test forward iteration - weekends and holidays
+    assert partitions_def.get_next_partition_key("2024-01-12") == "2024-01-16"
+    assert partitions_def.get_next_partition_key("2024-02-16") == "2024-02-20"
+
+    # Test reverse iteration with get_prev_partition_window
+    tuesday_jan_16 = datetime.strptime("2024-01-16", "%Y-%m-%d")
+    window = partitions_def.get_prev_partition_window(tuesday_jan_16)
+    assert window
+    assert window.start == datetime.strptime("2024-01-12", "%Y-%m-%d").replace(tzinfo=timezone.utc)
+    assert window.end == datetime.strptime("2024-01-13", "%Y-%m-%d").replace(tzinfo=timezone.utc)
+
+    tuesday_feb_20 = datetime.strptime("2024-02-20", "%Y-%m-%d")
+    window = partitions_def.get_prev_partition_window(tuesday_feb_20)
+    assert window
+    assert window.start == datetime.strptime("2024-02-16", "%Y-%m-%d").replace(tzinfo=timezone.utc)
+    assert window.end == datetime.strptime("2024-02-17", "%Y-%m-%d").replace(tzinfo=timezone.utc)
+
+    # Test reverse iteration with pagination
+    current_time = datetime.strptime("2024-02-25", DATE_FORMAT)
+    partition_context = PartitionLoadingContext(
+        temporal_context=TemporalContext(
+            effective_dt=current_time,
+            last_event_id=None,
+        ),
+        dynamic_partitions_store=None,
+    )
+
+    paginated_results = partitions_def.get_paginated_partition_keys(
+        context=partition_context, limit=10, ascending=False, cursor=None
+    )
+
+    # Should skip weekends and the Feb 19 holiday
+    assert paginated_results.results == [
+        "2024-02-23",  # Fri
+        "2024-02-22",  # Thu
+        "2024-02-21",  # Wed
+        "2024-02-20",  # Tue
+        "2024-02-16",  # Fri (skip Sat 17, Sun 18, Mon 19 holiday)
+        "2024-02-15",  # Thu
+        "2024-02-14",  # Wed
+        "2024-02-13",  # Tue
+        "2024-02-12",  # Mon
+        "2024-02-09",  # Fri (skip Sat 10, Sun 11)
+    ]
