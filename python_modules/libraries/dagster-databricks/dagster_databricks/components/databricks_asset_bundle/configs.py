@@ -1,3 +1,5 @@
+import json
+import subprocess
 from abc import ABC, abstractmethod
 from collections.abc import Mapping
 from functools import cached_property
@@ -39,6 +41,54 @@ def load_yaml(path: Path) -> Mapping[str, Any]:
     except Exception as e:
         logger.warning(f"Warning: Could not load {path}: {e}")
         return {}
+
+
+def load_databricks_bundle_config(bundle_dir: Path) -> Mapping[str, Any]:
+    """Load Databricks bundle configuration with template variables resolved.
+
+    Uses the Databricks CLI to validate and resolve all template variables
+    (e.g., ${workspace.current_user.userName}, ${bundle.name}, etc.).
+
+    Args:
+        bundle_dir: Path to the directory containing databricks.yml
+
+    Returns:
+        Resolved bundle configuration as a dictionary
+
+    Raises:
+        RuntimeError: If the Databricks CLI is not available or fails
+    """
+    try:
+        # Run databricks bundle validate to get resolved configuration
+        result = subprocess.run(
+            ["databricks", "bundle", "validate", "--output", "json"],
+            cwd=bundle_dir,
+            capture_output=True,
+            text=True,
+            timeout=30,
+            check=False,
+        )
+
+        if result.returncode != 0:
+            error_msg = result.stderr or result.stdout
+            raise RuntimeError(
+                f"Failed to validate Databricks bundle: {error_msg}\n"
+                f"Make sure you are authenticated with 'databricks auth login'"
+            )
+
+        # Parse the JSON output
+        config = json.loads(result.stdout)
+        logger.info(f"Successfully resolved Databricks bundle configuration from {bundle_dir}")
+        return config
+
+    except FileNotFoundError:
+        raise RuntimeError(
+            "Databricks CLI not found. Please install it: https://docs.databricks.com/dev-tools/cli/install.html"
+        )
+    except subprocess.TimeoutExpired:
+        raise RuntimeError(f"Databricks CLI timed out while validating bundle at {bundle_dir}")
+    except json.JSONDecodeError as e:
+        raise RuntimeError(f"Failed to parse Databricks CLI output as JSON: {e}")
 
 
 def parse_depends_on(depends_on: Optional[list]) -> list["DatabricksTaskDependsOnConfig"]:
@@ -470,50 +520,26 @@ class DatabricksConfig(IHaveNew):
         if not databricks_config_path.exists():
             raise FileNotFoundError(f"Databricks config file not found: {databricks_config_path}")
 
-        # Load databricks config
-        databricks_config = load_yaml(databricks_config_path)
         bundle_dir = databricks_config_path.parent
 
-        # Extract variables and includes
-        includes = databricks_config.get("include", [])
+        # Load resolved bundle configuration using Databricks CLI
+        # This resolves all template variables like ${workspace.current_user.userName}
+        try:
+            resolved_config = load_databricks_bundle_config(bundle_dir)
+        except RuntimeError as e:
+            raise RuntimeError(
+                f"Failed to load Databricks bundle configuration from {databricks_config_path}: {e}"
+            ) from e
 
-        # Parse all included resource files
+        # Extract tasks from the resolved configuration
         tasks = []
         job_level_parameters = {}
-        for include_path in includes:
-            resource_path = bundle_dir / include_path
-            if resource_path.exists():
-                resource_tasks, resource_job_level_parameters = cls._extract_tasks_from_resource(
-                    resource_path
-                )
-                tasks.extend(resource_tasks)
-                if resource_job_level_parameters:
-                    job_level_parameters.update(resource_job_level_parameters)
 
-        if not tasks:
-            raise ValueError(f"No tasks found in databricks config: {databricks_config_path}")
+        # The resolved config has the full bundle structure
+        resources = resolved_config.get("resources", {})
+        jobs_config = resources.get("jobs", {})
 
-        return super().__new__(
-            cls,
-            databricks_config_path=databricks_config_path,
-            tasks=tasks,
-            job_level_parameters=job_level_parameters,
-        )
-
-    @classmethod
-    def _extract_tasks_from_resource(
-        cls, resource_path: Path
-    ) -> tuple[list[Any], Optional[Mapping[str, Any]]]:
-        """Extract Databricks tasks from a resource YAML file."""
-        resource_config = load_yaml(resource_path)
-        tasks = []
-        job_level_parameters = {}  # Collect job-level parameters from all jobs
-
-        # Navigate to jobs section
-        resources = resource_config.get("resources", {})
-        jobs = resources.get("jobs", {})
-
-        for job_name, job_config in jobs.items():
+        for job_name, job_config in jobs_config.items():
             # Extract job-level parameters for this job
             job_params = cls._extract_job_level_parameters(job_config)
             if job_params:
@@ -546,7 +572,6 @@ class DatabricksConfig(IHaveNew):
                             job_task_config=augmented_job_task_config
                         )
                     )
-
                 elif "python_wheel_task" in job_task_config:
                     tasks.append(
                         DatabricksPythonWheelTask.from_job_task_config(
@@ -565,13 +590,20 @@ class DatabricksConfig(IHaveNew):
                             job_task_config=augmented_job_task_config
                         )
                     )
-
                 else:
                     # Skip unknown task types
                     logger.warning(f"Warning: Unknown task type for task {task_key}, skipping")
                     continue
 
-        return tasks, job_level_parameters
+        if not tasks:
+            raise ValueError(f"No tasks found in databricks config: {databricks_config_path}")
+
+        return super().__new__(
+            cls,
+            databricks_config_path=databricks_config_path,
+            tasks=tasks,
+            job_level_parameters=job_level_parameters,
+        )
 
     @classmethod
     def _extract_job_level_parameters(
