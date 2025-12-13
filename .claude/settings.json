@@ -151,5 +151,9 @@
       "Read(./exponent.txt)",
       "Read(./.cloudstorage/**)"
     ]
+  },
+  "statusLine": {
+    "type": "command",
+    "command": "input=$(cat); current_dir=$(echo \"$input\" | jq -r '.workspace.current_dir'); model=$(echo \"$input\" | jq -r '.model.display_name'); dir_name=$(basename \"$current_dir\"); branch=$(cd \"$current_dir\" && git rev-parse --abbrev-ref HEAD 2>/dev/null || echo ''); git_status=$(cd \"$current_dir\" && git status --porcelain 2>/dev/null); if [ -n \"$git_status\" ]; then dirty='✗'; else dirty=''; fi; if [ -n \"$branch\" ]; then git_info=\" git:($branch) $dirty\"; else git_info=''; fi; printf \"➜ %s%s │ %s\" \"$dir_name\" \"$git_info\" \"$model\""
   }
 }
