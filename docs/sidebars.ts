@@ -161,6 +161,11 @@ const sidebars: SidebarsConfig = {
             },
             {
               type: 'link',
+              label: 'Dagster Nanochat',
+              href: 'https://dagster.io/blog/orchestrating-nanochat-building-the-tokenizer/',
+            },
+            {
+              type: 'link',
               label: 'Sales demo example pipelines',
               href: 'https://github.com/dagster-io/hooli-data-eng-pipelines/',
             },
