@@ -12,6 +12,9 @@ import dagster as dg
 import pytest
 from click.testing import CliRunner
 from dagster import AssetKey, AssetSpec, BackfillPolicy
+from dagster._core.definitions.assets.definition.asset_spec import (
+    SYSTEM_METADATA_KEY_AUTO_CREATED_STUB_ASSET,
+)
 from dagster._core.definitions.backfill_policy import BackfillPolicyType
 from dagster._core.definitions.metadata.source_code import (
     CodeReferencesMetadataValue,
@@ -33,6 +36,7 @@ from dagster_dbt.components.dbt_project.component import (
     _set_resolution_context,
     get_projects_from_dbt_component,
 )
+from dagster_dbt_tests.dbt_projects import test_metadata_path
 from dagster_dg_cli.cli import cli as dg_cli
 from dagster_shared import check
 
@@ -726,3 +730,57 @@ def test_subclass_with_op_config_schema_and_custom_get_asset_spec(dbt_path: Path
             },
         )
         assert result.success
+
+
+def test_upstream_source_metadata_flows_to_stub_asset() -> None:
+    """Test that source metadata is included on stub assets when enable_source_metadata is True."""
+    # Prepare the manifest for test_metadata_path
+    project = DbtProject(test_metadata_path)
+    project.preparer.prepare(project)
+
+    defs = build_component_defs_for_test(
+        DbtProjectComponent,
+        {
+            "project": str(test_metadata_path),
+            "select": "stg_customers",  # This model depends on source 'jaffle_shop.raw_customers'
+            "translation_settings": {
+                "enable_source_metadata": True,
+            },
+        },
+    )
+
+    # Get all asset specs from the definitions
+    all_specs = list(defs.get_all_asset_specs())
+    specs_by_key = {spec.key: spec for spec in all_specs}
+
+    # The source has a custom asset key configured via meta.dagster.asset_key: ["raw_source_customers"]
+    source_key = AssetKey("raw_source_customers")
+    assert source_key in specs_by_key, f"Source key {source_key} not found in {specs_by_key.keys()}"
+
+    source_spec = specs_by_key[source_key]
+
+    # Should be marked as auto-created stub asset
+    assert source_spec.metadata.get(SYSTEM_METADATA_KEY_AUTO_CREATED_STUB_ASSET) is True
+
+    # Should have the table_name metadata from the source definition that enables remapping
+    table_name = "master_jaffle_shop.main.raw_customers"
+    assert source_spec.metadata["dagster/table_name"] == table_name
+
+    # Now build defs with something matching that table name and verify key is remapped
+    upstream_spec = dg.AssetSpec(
+        key=AssetKey("foo_upstream_defined"), metadata={"dagster/table_name": table_name}
+    )
+    defs_combined = dg.Definitions.merge(defs, dg.Definitions(assets=[upstream_spec]))
+
+    all_specs_combined = list(defs_combined.get_all_asset_specs())
+    specs_by_key_combined = {spec.key: spec for spec in all_specs_combined}
+
+    # should have been remapped, so shouldn't show up here
+    assert AssetKey("raw_source_customers") not in specs_by_key_combined
+    stg_customers_spec = specs_by_key_combined[AssetKey("stg_customers")]
+
+    # dependency of stg_customers should have been remapped
+    deps = list(stg_customers_spec.deps)
+    assert len(deps) == 1
+    assert deps[0].asset_key == AssetKey("foo_upstream_defined")
+    assert deps[0].metadata["dagster/table_name"] == table_name

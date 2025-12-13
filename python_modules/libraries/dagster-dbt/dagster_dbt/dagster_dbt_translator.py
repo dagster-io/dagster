@@ -62,6 +62,8 @@ class DagsterDbtTranslatorSettings(Resolvable):
             rather than fully qualified name. Defaults to False.
         enable_source_tests_as_checks (bool): Whether to load dbt source tests as Dagster asset checks.
             Defaults to False. If False, asset observations will be emitted for source tests.
+        enable_source_metadata (bool): Whether to include metadata on AssetDep objects for dbt sources.
+            If set to True, enables the ability to remap upstream asset keys based on table name. Defaults to False.
     """
 
     enable_asset_checks: bool = True
@@ -69,6 +71,7 @@ class DagsterDbtTranslatorSettings(Resolvable):
     enable_code_references: bool = False
     enable_dbt_selection_by_name: bool = False
     enable_source_tests_as_checks: bool = False
+    enable_source_metadata: bool = False
 
 
 class DagsterDbtTranslator:
@@ -145,15 +148,23 @@ class DagsterDbtTranslator:
 
         # calculate the dependencies for the asset
         upstream_ids = get_upstream_unique_ids(manifest, resource_props)
-        deps = [
-            AssetDep(
-                asset=self.get_asset_spec(manifest, upstream_id, project).key,
-                partition_mapping=self.get_partition_mapping(
-                    resource_props, self.get_resource_props(manifest, upstream_id)
-                ),
+        deps: list[AssetDep] = []
+        for upstream_id in upstream_ids:
+            spec = self.get_asset_spec(manifest, upstream_id, project)
+            partition_mapping = self.get_partition_mapping(
+                resource_props, self.get_resource_props(manifest, upstream_id)
             )
-            for upstream_id in upstream_ids
-        ]
+
+            deps.append(
+                AssetDep(
+                    asset=spec.key,
+                    partition_mapping=partition_mapping,
+                    metadata=spec.metadata
+                    if self.settings.enable_source_metadata and upstream_id.startswith("source")
+                    else None,
+                )
+            )
+
         self_partition_mapping = self.get_partition_mapping(resource_props, resource_props)
         if self_partition_mapping and has_self_dependency(resource_props):
             deps.append(
