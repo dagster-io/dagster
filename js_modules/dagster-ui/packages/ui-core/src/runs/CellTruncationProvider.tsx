@@ -30,7 +30,6 @@ interface Props {
   style: React.CSSProperties;
   onExpand?: () => void;
   forceExpandability?: boolean;
-  buttons?: React.ReactNode;
 }
 
 export const CellTruncationProvider = (props: Props) => {
@@ -79,7 +78,6 @@ export const CellTruncationProvider = (props: Props) => {
             <Button intent="primary" icon={<Icon name="unfold_more" />} onClick={onView}>
               View full message
             </Button>
-            {props.buttons}
           </OverflowButtonContainer>
           {props.onExpand ? null : (
             <Dialog

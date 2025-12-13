@@ -2,7 +2,6 @@ import {Box, Button, Icon} from '@dagster-io/ui-components';
 import clsx from 'clsx';
 import {ComponentProps, Fragment, forwardRef, useRef} from 'react';
 import {PythonErrorInfoHeader} from 'shared/app/PythonErrorInfoHeader.oss';
-import {SummarizeErrorWithAIButton} from 'shared/runs/SummarizeErrorWithAIButton.oss';
 
 import {showSharedToaster} from './DomUtils';
 import {useCopyToClipboard} from './browser';
@@ -70,7 +69,6 @@ export const PythonErrorInfo = (props: IPythonErrorInfoProps) => {
           padding={{top: 16}}
           flex={{direction: 'row', gap: 4, alignItems: 'center', justifyContent: 'flex-end'}}
         >
-          <SummarizeErrorWithAIButton error={props.error} />
           <CopyErrorButton
             copy={() => {
               const text = wrapperRef.current?.innerText || '';
