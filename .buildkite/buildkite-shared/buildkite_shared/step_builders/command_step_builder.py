@@ -23,10 +23,13 @@ ECR_LOGIN_FAILURE_EXIT_CODE = 200
 
 
 class ResourceRequests:
-    def __init__(self, cpu, memory, docker_cpu: str = "500m"):
+    def __init__(
+        self, cpu, memory, docker_cpu: str = "500m", ephemeral_storage: Optional[str] = None
+    ):
         self._cpu = cpu
         self._memory = memory
         self._docker_cpu = docker_cpu
+        self._ephemeral_storage = ephemeral_storage
 
     @property
     def cpu(self):
@@ -39,6 +42,10 @@ class ResourceRequests:
     @property
     def docker_cpu(self):
         return self._docker_cpu
+
+    @property
+    def ephemeral_storage(self):
+        return self._ephemeral_storage
 
 
 class BuildkiteQueue(Enum):
@@ -291,12 +298,14 @@ class CommandStepBuilder:
             else ("1500m" if self._requires_docker else "500m")
         )
         memory = self._resources.memory if self._resources else None
+
+        ephemeral_storage = self._resources.ephemeral_storage if self._resources else None
+
+        if not ephemeral_storage:
+            ephemeral_storage = "10Gi" if self._requires_docker else "5Gi"
+
         return {
-            "requests": {
-                "cpu": cpu,
-                "memory": memory,
-                "ephemeral-storage": ("10Gi" if self._requires_docker else "5Gi"),
-            },
+            "requests": {"cpu": cpu, "memory": memory, "ephemeral-storage": ephemeral_storage},
         }
 
     def _base_docker_settings(self, env=None):
