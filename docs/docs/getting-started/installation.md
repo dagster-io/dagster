@@ -8,7 +8,7 @@ import InstallUv from '@site/docs/partials/\_InstallUv.md';
 
 :::note
 
-To follow the steps in this guide, you'll need to install [Python 3.10](https://www.python.org/downloads/) or higher. **Python 3.13 is recommended**.
+To follow the steps in this guide, you'll need to install [Python 3.10](https://www.python.org/downloads/) or higher. **Python 3.14 is recommended**.
 
 :::
 

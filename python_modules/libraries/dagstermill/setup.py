@@ -28,7 +28,7 @@ setup(
         "License :: OSI Approved :: Apache Software License",
         "Operating System :: OS Independent",
     ],
-    python_requires=">=3.10,<3.14",
+    python_requires=">=3.10,<3.15",
     install_requires=[
         f"dagster{pin}",
         # ipykernel 5.4.0 and 5.4.1 broke papermill

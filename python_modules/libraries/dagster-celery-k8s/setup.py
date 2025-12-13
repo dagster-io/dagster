@@ -28,7 +28,7 @@ setup(
     ],
     packages=find_packages(exclude=["dagster_celery_k8s_tests*"]),
     include_package_data=True,
-    python_requires=">=3.10,<3.14",
+    python_requires=">=3.10,<3.15",
     install_requires=[
         f"dagster{pin}",
         f"dagster-k8s{pin}",
