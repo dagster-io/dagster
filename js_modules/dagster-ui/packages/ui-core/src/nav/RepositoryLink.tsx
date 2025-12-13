@@ -1,4 +1,12 @@
-import {Box, Colors, Icon, MiddleTruncate, Spinner, Tooltip} from '@dagster-io/ui-components';
+import {
+  Box,
+  Colors,
+  Icon,
+  MiddleTruncate,
+  Spinner,
+  Tooltip,
+  UnstyledButton,
+} from '@dagster-io/ui-components';
 import {Link} from 'react-router-dom';
 import styled from 'styled-components';
 
@@ -51,12 +59,12 @@ export const RepositoryLink = ({
                 {reloading ? (
                   <Spinner purpose="body-text" />
                 ) : (
-                  <StyledButton disabled={!hasReloadPermission} onClick={tryReload}>
+                  <UnstyledButton disabled={!hasReloadPermission} onClick={tryReload}>
                     <Icon
                       name="refresh"
                       color={hasReloadPermission ? Colors.accentGray() : Colors.accentGrayHover()}
                     />
-                  </StyledButton>
+                  </UnstyledButton>
                 )}
               </ReloadTooltip>
             );
@@ -79,28 +87,28 @@ const ReloadTooltip = styled(Tooltip)`
   }
 `;
 
-const StyledButton = styled.button`
-  background-color: transparent;
-  border: 0;
-  cursor: pointer;
-  display: block;
-  padding: 0;
-  margin: 0;
+// const StyledButton = styled.button`
+//   background-color: transparent;
+//   border: 0;
+//   cursor: pointer;
+//   display: block;
+//   padding: 0;
+//   margin: 0;
 
-  :disabled {
-    cursor: default;
-  }
+//   :disabled {
+//     cursor: default;
+//   }
 
-  :focus:not(:focus-visible) {
-    outline: none;
-  }
+//   :focus:not(:focus-visible) {
+//     outline: none;
+//   }
 
-  & .iconGlobal {
-    display: block;
-    transition: color 100ms linear;
-  }
+//   & .iconGlobal {
+//     display: block;
+//     transition: color 100ms linear;
+//   }
 
-  :hover .iconGlobal {
-    color: ${Colors.accentBlue()};
-  }
-`;
+//   :hover .iconGlobal {
+//     color: ${Colors.accentBlue()};
+//   }
+// `;
