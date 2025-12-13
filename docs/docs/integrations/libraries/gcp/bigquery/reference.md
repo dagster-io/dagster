@@ -45,6 +45,32 @@ In this example, we only use the columns containing sepal data from the `IRIS_DA
 
 When Dagster materializes `sepal_data` and loads the `iris_data` asset using the BigQuery I/O manager, it will only fetch the `sepal_length_cm` and `sepal_width_cm` columns of the `IRIS.IRIS_DATA` table and pass them to `sepal_data` as a Pandas DataFrame.
 
+## Configuring write modes
+
+By default, the BigQuery I/O manager performs a `TRUNCATE` operation when writing to an existing table. This deletes all rows but preserves the table schema. If the schema of your DataFrame changes (e.g., adding a new column), the insertion will fail.
+
+You can configure the `write_mode` to handle these scenarios:
+
+* `"truncate"` (default): Truncates the table before inserting data. Schema is preserved.
+* `"replace"`: Drops the table and recreates it. This allows schema evolution.
+* `"append"`: Inserts data without deleting existing rows.
+
+Note: For partitioned assets, the write mode is ignored, and the I/O manager will replace data in the targeted partitions.
+
+```python
+from dagster_gcp import BigQueryIOManager
+from dagster import Definitions, EnvVar
+
+defs = Definitions(
+    resources={
+        "io_manager": BigQueryIOManager(
+            project=EnvVar("GCP_PROJECT"),
+            write_mode="replace"
+        )
+    }
+)
+```
+
 ## Storing partitioned assets
 
 The BigQuery I/O manager supports storing and loading partitioned data. In order to correctly store and load data from the BigQuery table, the BigQuery I/O manager needs to know which column contains the data defining the partition bounds. The BigQuery I/O manager uses this information to construct the correct queries to select or replace the data. In the following sections, we describe how the I/O manager constructs these queries for different types of partitions.
