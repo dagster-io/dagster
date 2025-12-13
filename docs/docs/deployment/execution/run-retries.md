@@ -45,7 +45,7 @@ By default, retries will re-execute from failure (tag value `FROM_FAILURE`). Thi
 
 :::note
 
-`FROM_FAILURE` requires an I/O manager that can access outputs from other runs. For example, on Kubernetes the <PyObject section="libraries" object="s3.s3_pickle_io_manager" module="dagster_aws" /> would work but the <PyObject section="io-managers" object="FilesystemIOManager" module="dagster" /> would not, since the new run is in a new Kubernetes job with a separate filesystem.
+`FROM_FAILURE` requires an I/O manager that can access outputs from other runs. For example, on Kubernetes the <PyObject section="libraries" integration="aws" object="s3.s3_pickle_io_manager" module="dagster_aws" /> would work but the <PyObject section="io-managers" object="FilesystemIOManager" module="dagster" /> would not, since the new run is in a new Kubernetes job with a separate filesystem.
 
 :::
 

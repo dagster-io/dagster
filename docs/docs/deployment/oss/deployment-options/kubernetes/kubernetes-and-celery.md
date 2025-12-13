@@ -6,7 +6,7 @@ title: Using Celery with Kubernetes
 
 In addition to using the `k8s_job_executor` to run each op in its own Kubernetes job, Dagster also allows you to use Celery to limit the number of ops that can concurrently connect to a resource across all running Dagster jobs.
 
-In this section, we demonstrate how to extend the [previous Helm deployment guide](/deployment/oss/deployment-options/kubernetes/deploying-to-kubernetes) to support that use case, by deploying a more complex configuration of Dagster, which utilizes the <PyObject section="libraries" module="dagster_celery_k8s" object="CeleryK8sRunLauncher" /> and <PyObject section="libraries" module="dagster_celery_k8s" object="celery_k8s_job_executor" />.
+In this section, we demonstrate how to extend the [previous Helm deployment guide](/deployment/oss/deployment-options/kubernetes/deploying-to-kubernetes) to support that use case, by deploying a more complex configuration of Dagster, which utilizes the <PyObject section="libraries" integration="celery" module="dagster_celery_k8s" object="CeleryK8sRunLauncher" /> and <PyObject section="libraries" integration="celery" module="dagster_celery_k8s" object="celery_k8s_job_executor" />.
 
 ## Prerequisites
 
@@ -40,7 +40,7 @@ The Celery workers poll for new Celery tasks and execute each task in order of r
 
 ### Daemon
 
-The daemon now launches runs using the <PyObject section="libraries" module="dagster_celery_k8s" object="CeleryK8sRunLauncher" />.
+The daemon now launches runs using the <PyObject section="libraries" integration="celery" module="dagster_celery_k8s" object="CeleryK8sRunLauncher" />.
 
 ### Run worker
 
@@ -176,4 +176,4 @@ redis:
 
 ## Conclusion
 
-We deployed Dagster, configured with the <PyObject section="libraries" module="dagster_celery_k8s" object="CeleryK8sRunLauncher" />, onto a Kubernetes cluster using Helm.
+We deployed Dagster, configured with the <PyObject section="libraries" integration="celery" module="dagster_celery_k8s" object="CeleryK8sRunLauncher" />, onto a Kubernetes cluster using Helm.

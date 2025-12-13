@@ -218,7 +218,7 @@ This example is adapted from the [Transitioning data pipelines from development 
 
 Let's review what's happening here:
 
-- We've created a dictionary of resource definitions called `resources`, with sections for `local` and `production` environments. In this example, we're using a [Pandas Snowflake I/O manager](/api/libraries/dagster-snowflake-pandas).
+- We've created a dictionary of resource definitions called `resources`, with sections for `local` and `production` environments. In this example, we're using a [Pandas Snowflake I/O manager](/integrations/libraries/snowflake/dagster-snowflake-pandas).
 - For both `local` and `production`, we constructed the I/O manager using environment-specific run configuration.
 - Following the `resources` dictionary, we define the `deployment_name` variable, which determines the current executing environment. This variable defaults to `local`, ensuring that `DAGSTER_DEPLOYMENT=PRODUCTION` must be set to use the `production` configuration.
 

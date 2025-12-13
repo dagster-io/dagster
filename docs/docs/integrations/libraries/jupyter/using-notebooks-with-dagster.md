@@ -99,7 +99,7 @@ Like many notebooks, this example does some fairly sophisticated work, including
 
 By creating a Dagster asset from our notebook, we can integrate the notebook as part of our data platform. This enables us to make its contents more accessible to developers, stakeholders, and other assets in Dagster.
 
-To create a Dagster asset from a Jupyter notebook, we can use the <PyObject section="libraries" module="dagstermill" object="define_dagstermill_asset" /> function. In `/tutorial_template/assets.py` add the following code snippet:
+To create a Dagster asset from a Jupyter notebook, we can use the <PyObject section="libraries" integration="jupyter" module="dagstermill" object="define_dagstermill_asset" /> function. In `/tutorial_template/assets.py` add the following code snippet:
 
 ```python
 # /tutorial_template/assets.py
@@ -153,7 +153,7 @@ Let's take a look at what's happening here:
 
 - Using <PyObject section="assets" module="dagster" object="load_assets_from_modules" />, we've imported all assets in the `assets` module. This approach allows any new assets we create to be automatically added to the `Definitions` object instead of needing to manually add them one by one.
 
-- We provided a dictionary of resources to the `resources` parameter. In this example, that's the <PyObject section="libraries" module="dagstermill" object="ConfigurableLocalOutputNotebookIOManager" /> resource.
+- We provided a dictionary of resources to the `resources` parameter. In this example, that's the <PyObject section="libraries" integration="jupyter" module="dagstermill" object="ConfigurableLocalOutputNotebookIOManager" /> resource.
 
   This I/O manager, bound to the `output_notebook_io_manager` key, is responsible for handling the storage of the notebook asset's resulting `.ipynb` file.
 

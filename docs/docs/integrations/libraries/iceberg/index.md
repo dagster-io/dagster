@@ -1,6 +1,7 @@
 ---
 title: Dagster & Iceberg
 sidebar_label: Iceberg
+sidebar_position: 1
 description: This library provides I/O managers for reading and writing Apache Iceberg tables. It also provides a Dagster resource for accessing Iceberg tables.
 tags: [community-supported, storage]
 source: https://github.com/dagster-io/community-integrations/tree/main/libraries/dagster-iceberg
@@ -27,7 +28,7 @@ import Preview from '@site/docs/partials/\_Preview.md';
 
 <PackageInstallInstructions packageName="dagster-iceberg" />
 
-`dagster-iceberg` defines the following extras for interoperability with various DataFrame libraries:
+The [`dagster-iceberg` library](/integrations/libraries/iceberg/dagster-iceberg) defines the following extras for interoperability with various DataFrame libraries:
 
 - `daft` for interoperability with Daft DataFrames
 - `pandas` for interoperability with pandas DataFrames

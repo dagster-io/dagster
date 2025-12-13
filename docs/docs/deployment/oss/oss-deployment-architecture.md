@@ -25,7 +25,7 @@ Dagster requires three long-running services, which are outlined in the table be
 
 ## Deployment configuration
 
-Dagster OSS deployments are composed of multiple components, such as storages, executors, and run launchers. One of the core features of Dagster is that each of these components is swappable and configurable. If custom configuration isn't provided, Dagster will automatically use a default implementation of each component. For example, by default Dagster uses <PyObject section="internals" module="dagster._core.storage.runs" object="SqliteRunStorage" /> to store information about pipeline runs. This can be swapped with the Dagster-provided <PyObject section="libraries" module="dagster_postgres" object="PostgresRunStorage"/> instead or or a custom storage class.
+Dagster OSS deployments are composed of multiple components, such as storages, executors, and run launchers. One of the core features of Dagster is that each of these components is swappable and configurable. If custom configuration isn't provided, Dagster will automatically use a default implementation of each component. For example, by default Dagster uses <PyObject section="internals" module="dagster._core.storage.runs" object="SqliteRunStorage" /> to store information about pipeline runs. This can be swapped with the Dagster-provided <PyObject section="libraries" integration="postgres" module="dagster_postgres" object="PostgresRunStorage"/> instead or or a custom storage class.
 
 Based on the component's scope, configuration occurs at either the **Dagster instance** or **Job run** level. Access to user code is configured at the **Workspace** level. Refer to the following table for info on how components are configured at each of these levels:
 

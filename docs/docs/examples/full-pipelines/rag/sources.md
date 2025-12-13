@@ -12,7 +12,7 @@ To begin we need our specific context. Our RAG system will combine two different
 
 ## GitHub
 
-To retrieve data from GitHub, we are going to borrow code from the [dagster-open-platform](https://github.com/dagster-io/dagster-open-platform). The open platform repository shows how we use Dagster internally, and GitHub is one of the data sources we use, and we wrote a resource to manage pulling that data. The [`GithubResource`](/api/libraries/dagster-github#resources) allows us to query GitHub using GraphQL. We are most interested in issues and discussions, so our resource will have two methods to retrieve that information over a given date range:
+To retrieve data from GitHub, we are going to borrow code from the [dagster-open-platform](https://github.com/dagster-io/dagster-open-platform). The open platform repository shows how we use Dagster internally, and GitHub is one of the data sources we use, and we wrote a resource to manage pulling that data. The [`GithubResource`](/integrations/libraries/github/dagster-github#resources) allows us to query GitHub using GraphQL. We are most interested in issues and discussions, so our resource will have two methods to retrieve that information over a given date range:
 
 <CodeExample
   path="docs_projects/project_ask_ai_dagster/src/project_ask_ai_dagster/defs/github.py"

@@ -12,7 +12,7 @@ Previously, we completed [migration](/migration/airflow-to-dagster/airlift-v1/ta
 
 First, we can remove the DAG from our Airflow DAG directory.
 
-Next, we can remove the task associations from our Dagster definitions. This can be done by removing the <PyObject section="libraries" module="dagster_airlift" object="core.assets_with_task_mappings" displayText="assets_with_task_mappings" /> call.
+Next, we can remove the task associations from our Dagster definitions. This can be done by removing the <PyObject section="libraries" integration="airlift" module="dagster_airlift" object="core.assets_with_task_mappings" displayText="assets_with_task_mappings" /> call.
 
 Finally, we can attach our example assets to a <PyObject section="schedules-sensors" module="dagster" object="ScheduleDefinition" /> so Dagster's scheduler can manage their execution.
 

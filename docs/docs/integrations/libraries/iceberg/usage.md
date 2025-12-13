@@ -1,7 +1,7 @@
 ---
 title: Usage
 description: This guide walks through common scenarios for using Iceberg with Dagster.
-sidebar_position: 300
+sidebar_position: 4
 ---
 
 <p>{frontMatter.description}</p>

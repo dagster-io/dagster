@@ -523,9 +523,9 @@ class MdxTranslator(SphinxTranslator):
         meta_description = self.builder.config.mdx_description_meta
         # Display index files at the top of their sections
         if "index.rst" in node.attributes["source"]:
-            sidebar_position = True
+            sidebar_position = "sidebar_position: 1\n"
         else:
-            sidebar_position = self.builder.config.mdx_sidebar_position
+            sidebar_position = "sidebar_position: 1000\n"
 
         # Escape single quotes in strings
         title = title.replace("'", "\\'")
@@ -541,8 +541,9 @@ class MdxTranslator(SphinxTranslator):
         if title_suffix:
             frontmatter += f" {title_suffix}"
         frontmatter += "'\n"
-        if sidebar_position:
-            frontmatter += "sidebar_position: 1\n"
+        frontmatter += sidebar_position
+        # if sidebar_position:
+        #     frontmatter += "sidebar_position: 1\n"
 
         if title_meta:
             frontmatter += f"title_meta: '{title}{title_meta}'\n"

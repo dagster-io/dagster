@@ -1,6 +1,7 @@
 ---
 title: Dagster & Census (Pythonic)
 sidebar_label: Census (Pythonic)
+sidebar_position: 2
 description: The dagster-census library provides a CensusComponent, which can be used to represent Census syncs as assets in Dagster.
 tags: [community-supported, etl]
 source: https://github.com/dagster-io/dagster/tree/master/python_modules/libraries/dagster-census

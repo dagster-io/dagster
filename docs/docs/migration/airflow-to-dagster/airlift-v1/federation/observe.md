@@ -21,7 +21,7 @@ uv add 'dagster-airlift[core]' dagster-webserver dagster
 
 :::note dagster-airlift API
 
-For a full list of `dagster-airlift` classes and methods, see the [API docs](https://docs.dagster.io/api/libraries/dagster-airlift).
+For a full list of `dagster-airlift` classes and methods, see the [API docs](https://docs.dagster.io/integrations/libraries/airlift/dagster-airlift).
 
 :::
 

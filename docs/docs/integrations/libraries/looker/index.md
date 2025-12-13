@@ -1,6 +1,7 @@
 ---
 title: Dagster & Looker (Component)
 sidebar_label: Looker
+sidebar_position: 1
 description: The dagster-looker library provides a LookerComponent, which can be used to represent Looker assets as assets in Dagster.
 tags: [dagster-supported, bi, component]
 source: https://github.com/dagster-io/dagster/tree/master/python_modules/libraries/dagster-looker

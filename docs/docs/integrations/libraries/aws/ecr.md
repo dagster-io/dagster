@@ -1,6 +1,7 @@
 ---
 title: Dagster & AWS ECR
 sidebar_label: ECR
+sidebar_position: 4
 description: This integration allows you to connect to AWS Elastic Container Registry (ECR). It provides resources to interact with AWS ECR, enabling you to manage your container images.
 tags: [dagster-supported]
 source: https://github.com/dagster-io/dagster/tree/master/python_modules/libraries/dagster-aws

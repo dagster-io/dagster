@@ -190,7 +190,7 @@ def execute_run(
             "execute_run requires a reconstructable job but received job definition directly"
             " instead. To support hand-off to other processes please wrap your definition in a call"
             " to reconstructable(). Learn more about reconstructable here:"
-            " https://docs.dagster.io/api/python-api/execution#dagster.reconstructable"
+            " https://docs.dagster.io/api/dagster/execution#dagster.reconstructable"
         )
 
     check.inst_param(job, "job", IJob)

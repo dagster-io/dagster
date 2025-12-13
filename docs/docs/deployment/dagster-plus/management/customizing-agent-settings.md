@@ -96,8 +96,8 @@ compute_logs:
 
 ## Writing compute logs to AWS S3
 
-{/* /api/libraries/dagster-aws#dagster_aws.s3.S3ComputeLogManager */}
-You can write compute logs to an AWS S3 bucket by configuring the <PyObject section="libraries" module="dagster_aws" object="s3.S3ComputeLogManager" /> module.
+{/* /integrations/libraries/aws/dagster-aws#dagster_aws.s3.S3ComputeLogManager */}
+You can write compute logs to an AWS S3 bucket by configuring the <PyObject section="libraries" integration="aws" module="dagster_aws" object="s3.S3ComputeLogManager" /> module.
 
 You are also able to stream partial compute log files by configuring the log upload interval (in seconds) using the `upload_interval` parameter.
 

@@ -19,7 +19,7 @@ Dagster's compute logs are handled by the configured [`ComputeLogManager`](/api/
 
 ### Writing to your own S3 bucket
 
-If using the Kubernetes agent, you can instead forward logs to your own S3 bucket by using the [`S3ComputeLogManager`](/api/libraries/dagster-aws#dagster_aws.s3.S3ComputeLogManager).
+If using the Kubernetes agent, you can instead forward logs to your own S3 bucket by using the [`S3ComputeLogManager`](/integrations/libraries/aws/dagster-aws#dagster_aws.s3.S3ComputeLogManager).
 
 You can configure the `S3ComputeLogManager` in your [`dagster.yaml` file](/deployment/dagster-plus/management/customizing-agent-settings):
 

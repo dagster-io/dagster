@@ -1,6 +1,7 @@
 ---
 title: Dagster & Airbyte
 sidebar_label: Airbyte
+sidebar_position: 1
 description: Orchestrate Airbyte connections and schedule syncs alongside upstream or downstream dependencies.
 tags: [dagster-supported, etl]
 source: https://github.com/dagster-io/dagster/tree/master/python_modules/libraries/dagster-airbyte

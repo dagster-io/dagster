@@ -1,6 +1,7 @@
 ---
 title: Dagster & dlt (Pythonic)
 sidebar_label: dlt (Pythonic)
+sidebar_position: 2
 description: The dltHub open-source library defines a standardized approach for creating data pipelines that load often messy data sources into well-structured data sets.
 tags: [dagster-supported, etl]
 source: https://github.com/dagster-io/dagster/tree/master/python_modules/libraries/dagster-dlt
@@ -164,7 +165,7 @@ Ensure that these variables are defined in your environment, either in your `.en
 
 ## Step 4: Define a DagsterDltResource
 
-Next, we'll define a <PyObject section="libraries" module="dagster_dlt" object="DagsterDltResource" />, which provides a wrapper of a dlt pipeline runner. Use the following to define the resource, which can be shared across all dlt pipelines:
+Next, we'll define a <PyObject section="libraries" integration="dlt" module="dagster_dlt" object="DagsterDltResource" />, which provides a wrapper of a dlt pipeline runner. Use the following to define the resource, which can be shared across all dlt pipelines:
 
 ```python
 from dagster_dlt import DagsterDltResource
@@ -176,9 +177,9 @@ We'll add the resource to our <PyObject section="definitions" module="dagster" o
 
 ## Step 5: Create a dlt_assets definition for GitHub
 
-The <PyObject section="libraries" object="dlt_assets" module="dagster_dlt" decorator /> decorator takes a `dlt_source` and `dlt_pipeline` parameter. In this example, we used the `github_reactions` source and created a `dlt_pipeline` to ingest data from Github to Snowflake.
+The <PyObject section="libraries" integration="dlt" object="dlt_assets" module="dagster_dlt" decorator /> decorator takes a `dlt_source` and `dlt_pipeline` parameter. In this example, we used the `github_reactions` source and created a `dlt_pipeline` to ingest data from Github to Snowflake.
 
-In the same file containing your Dagster assets, you can create an instance of your <PyObject section="libraries" object="dlt_assets" module="dagster_dlt" decorator /> by doing something like the following:
+In the same file containing your Dagster assets, you can create an instance of your <PyObject section="libraries" integration="dlt" object="dlt_assets" module="dagster_dlt" decorator /> by doing something like the following:
 
 :::
 
@@ -251,9 +252,9 @@ Also, jobs created for your dlt assets can be scheduled.
 
 ### Overriding the translator to customize dlt assets
 
-The <PyObject section="libraries" module="dagster_dlt" object="DagsterDltTranslator" /> object can be used to customize how dlt properties map to Dagster concepts.
+The <PyObject section="libraries" integration="dlt" module="dagster_dlt" object="DagsterDltTranslator" /> object can be used to customize how dlt properties map to Dagster concepts.
 
-For example, to change how the name of the asset is derived, or if you would like to change the key of the upstream source asset, you can override the <PyObject section="libraries" module="dagster_dlt" object="DagsterDltTranslator" method="get_asset_spec" /> method.
+For example, to change how the name of the asset is derived, or if you would like to change the key of the upstream source asset, you can override the <PyObject section="libraries" integration="dlt" module="dagster_dlt" object="DagsterDltTranslator" method="get_asset_spec" /> method.
 
 <CodeExample path="docs_snippets/docs_snippets/integrations/dlt/dlt_dagster_translator.py" />
 
@@ -263,7 +264,7 @@ In this example, we customized the translator to change how the dlt assets' name
 
 A common question is how to define metadata on the external assets upstream of the dlt assets.
 
-This can be accomplished by defining a <PyObject section="assets" module="dagster" object="AssetSpec" /> with a key that matches the one defined in the <PyObject section="libraries" module="dagster_dlt" object="DagsterDltTranslator" method="get_asset_spec" /> method.
+This can be accomplished by defining a <PyObject section="assets" module="dagster" object="AssetSpec" /> with a key that matches the one defined in the <PyObject section="libraries" integration="dlt" module="dagster_dlt" object="DagsterDltTranslator" method="get_asset_spec" /> method.
 
 For example, let's say we have defined a set of dlt assets named `thinkific_assets`, we can iterate over those assets and derive a <PyObject section="assets" module="dagster" object="AssetSpec" /> with attributes like `group_name`.
 
@@ -271,7 +272,7 @@ For example, let's say we have defined a set of dlt assets named `thinkific_asse
 
 ### Customize upstream dependencies
 
-By default, Dagster sets upstream dependencies when generating asset specs for your dlt assets. To do so, Dagster parses information about assets that are upstream of specific dlt assets from the dlt resource itself. You can customize how upstream dependencies are set on your dlt assets by passing an instance of the custom <PyObject section="libraries" module="dagster_dlt" object="DagsterDltTranslator" /> to the <PyObject section="libraries" module="dagster_dlt" object="build_dlt_asset_specs" /> function.
+By default, Dagster sets upstream dependencies when generating asset specs for your dlt assets. To do so, Dagster parses information about assets that are upstream of specific dlt assets from the dlt resource itself. You can customize how upstream dependencies are set on your dlt assets by passing an instance of the custom <PyObject section="libraries" integration="dlt" module="dagster_dlt" object="DagsterDltTranslator" /> to the <PyObject section="libraries" integration="dlt" module="dagster_dlt" object="build_dlt_asset_specs" /> function.
 
 <CodeExample
   startAfter="start_upstream_asset"
@@ -281,11 +282,11 @@ By default, Dagster sets upstream dependencies when generating asset specs for y
 
 Note that `super()` is called in each of the overridden methods to generate the default asset spec. It is best practice to generate the default asset spec before customizing it.
 
-You can also pass an instance of the custom <PyObject section="libraries" module="dagster_dlt" object="DagsterDltTranslator" /> to the <PyObject section="libraries" module="dagster_dlt" object="dlt_assets" /> decorator.
+You can also pass an instance of the custom <PyObject section="libraries" integration="dlt" module="dagster_dlt" object="DagsterDltTranslator" /> to the <PyObject section="libraries" integration="dlt" module="dagster_dlt" object="dlt_assets" /> decorator.
 
 ### Define downstream dependencies
 
-Dagster allows you to define assets that are downstream of specific dlt resources using their asset keys. The asset key for a dlt resource can be retrieved using the <PyObject section="libraries" module="dagster_dlt" object="DagsterDltTranslator" />. The below example defines `example_downstream_asset` as a downstream dependency of `example_dlt_resource`:
+Dagster allows you to define assets that are downstream of specific dlt resources using their asset keys. The asset key for a dlt resource can be retrieved using the <PyObject section="libraries" integration="dlt" module="dagster_dlt" object="DagsterDltTranslator" />. The below example defines `example_downstream_asset` as a downstream dependency of `example_dlt_resource`:
 
 <CodeExample
   startAfter="start_downstream_asset"

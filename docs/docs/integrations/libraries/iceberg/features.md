@@ -1,7 +1,7 @@
 ---
 title: Features
 description: Support for Iceberg features depends upon the execution engine you choose.
-sidebar_position: 200
+sidebar_position: 3
 ---
 
 <p>{frontMatter.description}</p>

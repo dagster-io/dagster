@@ -1,10 +1,10 @@
 ---
 title: 'dagster-snowflake integration reference'
 description: Store your Dagster assets in Snowflake
-sidebar_position: 300
+sidebar_position: 400
 ---
 
-This reference page provides information for working with [`dagster-snowflake`](/api/libraries/dagster-snowflake) features that are not covered as part of the Snowflake & Dagster tutorials ([resources](/integrations/libraries/snowflake/using-snowflake-with-dagster), [I/O managers](/integrations/libraries/snowflake/using-snowflake-with-dagster-io-managers)).
+This reference page provides information for working with [`dagster-snowflake`](/integrations/libraries/snowflake/dagster-snowflake) features that are not covered as part of the Snowflake & Dagster tutorials ([resources](/integrations/libraries/snowflake/using-snowflake-with-dagster), [I/O managers](/integrations/libraries/snowflake/using-snowflake-with-dagster-io-managers)).
 
 ## Authenticating using a private key
 
@@ -57,7 +57,7 @@ Currently, the Dagster's Snowflake integration only supports encrypted private k
 
 ### Executing custom SQL commands
 
-Using a [Snowflake resource](/api/libraries/dagster-snowflake#dagster_snowflake.SnowflakeResource), you can execute custom SQL queries on a Snowflake database:
+Using a [Snowflake resource](/integrations/libraries/snowflake/dagster-snowflake#dagster_snowflake.SnowflakeResource), you can execute custom SQL queries on a Snowflake database:
 
 <CodeExample path="docs_snippets/docs_snippets/integrations/snowflake/resource.py" startAfter="start" endBefore="end" />
 
@@ -67,7 +67,7 @@ Let's review what's happening in this example:
 - Used the `get_connection` context manager method of the Snowflake resource to get a [`snowflake.connector.Connection`](https://docs.snowflake.com/en/developer-guide/python-connector/python-connector-api#object-connection) object
 - Used the connection to execute a custom SQL query against the `IRIS_DATASET` table created in [Step 2](/integrations/libraries/snowflake/using-snowflake-with-dagster#step-2-create-tables-in-snowflake) of the [Snowflake resource tutorial](/integrations/libraries/snowflake/using-snowflake-with-dagster)
 
-For more information on the Snowflake resource, including additional configuration settings, see the <PyObject section="libraries" object="SnowflakeResource" module="dagster_snowflake" /> API docs.
+For more information on the Snowflake resource, including additional configuration settings, see the <PyObject section="libraries" integration="snowflake" object="SnowflakeResource" module="dagster_snowflake" /> API docs.
 
 ## Using the Snowflake I/O manager
 
@@ -233,7 +233,7 @@ In this example, the `iris_dataset` asset uses the I/O manager bound to the key 
 
 ### Storing and loading PySpark DataFrames in Snowflake
 
-The Snowflake I/O manager also supports storing and loading PySpark DataFrames. To use the <PyObject section="libraries" module="dagster_snowflake_pyspark" object="SnowflakePySparkIOManager" />, first install the package:
+The Snowflake I/O manager also supports storing and loading PySpark DataFrames. To use the <PyObject section="libraries" integration="snowflake" module="dagster_snowflake_pyspark" object="SnowflakePySparkIOManager" />, first install the package:
 
 <PackageInstallInstructions packageName="dagster-snowflake-pyspark" />
 
@@ -251,7 +251,7 @@ When using the `snowflake_pyspark_io_manager` the `warehouse` configuration is r
 
 :::
 
-The `SnowflakePySparkIOManager` requires that a `SparkSession` be active and configured with the [Snowflake connector for Spark](https://docs.snowflake.com/en/user-guide/spark-connector.html). You can either create your own `SparkSession` or use the <PyObject section="libraries" module="dagster_spark" object="spark_resource"/>.
+The `SnowflakePySparkIOManager` requires that a `SparkSession` be active and configured with the [Snowflake connector for Spark](https://docs.snowflake.com/en/user-guide/spark-connector.html). You can either create your own `SparkSession` or use the <PyObject section="libraries" integration="spark" module="dagster_spark" object="spark_resource"/>.
 
 <Tabs>
 <TabItem value="With the spark_resource">
@@ -268,7 +268,7 @@ The `SnowflakePySparkIOManager` requires that a `SparkSession` be active and con
 
 ### Using Pandas and PySpark DataFrames with Snowflake
 
-If you work with both Pandas and PySpark DataFrames and want a single I/O manager to handle storing and loading these DataFrames in Snowflake, you can write a new I/O manager that handles both types. To do this, inherit from the <PyObject section="libraries" module="dagster_snowflake" object="SnowflakeIOManager" /> base class and implement the `type_handlers` and `default_load_type` methods. The resulting I/O manager will inherit the configuration fields of the base `SnowflakeIOManager`.
+If you work with both Pandas and PySpark DataFrames and want a single I/O manager to handle storing and loading these DataFrames in Snowflake, you can write a new I/O manager that handles both types. To do this, inherit from the <PyObject section="libraries" integration="snowflake" module="dagster_snowflake" object="SnowflakeIOManager" /> base class and implement the `type_handlers` and `default_load_type` methods. The resulting I/O manager will inherit the configuration fields of the base `SnowflakeIOManager`.
 
 <CodeExample
   path="docs_snippets/docs_snippets/integrations/snowflake/pandas_and_pyspark.py"
