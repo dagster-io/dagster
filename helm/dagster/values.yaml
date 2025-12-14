@@ -1181,6 +1181,26 @@ dagsterDaemon:
     enabled: true
     maxRetries: 0
 
+# Configuration for defs state storage
+defsStateStorage:
+  # Type of defs state storage to use
+  type: "BlobStorageStateStorage"
+  config:
+    blobStorageStateStorage:
+      # Base path for storing defs state
+      basePath: "/tmp/dagster/defs_state"
+      # Optional storage options for the underlying storage backend
+      # storageOptions: {}
+
+  # Example of custom defs state storage configuration:
+  # type: "CustomDefsStateStorage"
+  # config:
+  #   customDefsStateStorage:
+  #     module: "my_module.defs_state_storage"
+  #     class: "MyCustomDefsStateStorage"
+  #     config:
+  #       custom_option: "value"
+
   sensors:
     # Whether to evaluate sensors using an asynchronous thread pool, allowing sensprs
     # to execute in parallel,
