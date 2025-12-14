@@ -658,7 +658,9 @@ class RemoteJob(RepresentedJob, LoadableBy[JobSubsetSelector, "BaseWorkspaceRequ
         return self.tags.get(EXTERNAL_JOB_SOURCE_TAG_KEY)
 
     def get_subset_selector(
-        self, asset_selection: Set[AssetKey], asset_check_selection: Set[AssetCheckKey]
+        self,
+        asset_selection: Optional[Set[AssetKey]],
+        asset_check_selection: Optional[Set[AssetCheckKey]],
     ) -> JobSubsetSelector:
         """Returns a JobSubsetSelector to select a subset of this RemoteJob."""
         return JobSubsetSelector(
