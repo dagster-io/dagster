@@ -139,7 +139,7 @@ def definitions_validate_command_impl(
                     logger.info(f"Validation successful for code location {code_location}.")
 
             try:
-                workspace.asset_graph.validate_partition_mappings()
+                workspace.asset_graph.validate_partitions()
             except Exception:
                 logger.error(
                     f"Asset graph contained an invalid partition mapping:\n{serializable_error_info_from_exc_info(sys.exc_info()).to_string()}"
