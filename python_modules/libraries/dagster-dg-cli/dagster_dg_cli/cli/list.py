@@ -477,7 +477,7 @@ class DagsterPlusScopesForVariable:
 
 
 def _get_dagster_plus_keys(
-    location_name: str, env_var_keys: set[str]
+    location_name: str, env_var_keys: set[str], deployment: Optional[str] = None
 ) -> Optional[Mapping[str, DagsterPlusScopesForVariable]]:
     """Retrieves the set Dagster Plus keys for the given location name, if Plus is configured, otherwise returns None."""
     if not DagsterPlusCliConfig.exists():
@@ -485,6 +485,10 @@ def _get_dagster_plus_keys(
     config = DagsterPlusCliConfig.get()
     if not config.organization:
         return None
+
+    # Use provided deployment or fall back to default
+    if deployment:
+        config = config.with_deployment(deployment)
 
     scopes_for_key = defaultdict(lambda: DagsterPlusScopesForVariable(False, False, False))
     gql_client = DagsterPlusGraphQLClient.from_config(config)
@@ -514,10 +518,16 @@ def _get_dagster_plus_keys(
 
 
 @list_group.command(name="envs", aliases=["env"], cls=DgClickCommand)
+@click.option(
+    "--deployment",
+    help="The deployment to list environment variables from. If not provided, uses the default deployment from your configuration.",
+)
 @dg_path_options
 @dg_global_options
 @cli_telemetry_wrapper
-def list_env_command(target_path: Path, **global_options: object) -> None:
+def list_env_command(
+    target_path: Path, deployment: Optional[str], **global_options: object
+) -> None:
     """List environment variables from the .env file of the current project."""
     from rich.console import Console
 
@@ -532,7 +542,7 @@ def list_env_command(target_path: Path, **global_options: object) -> None:
         return
 
     env_var_keys = env.values.keys() | used_env_vars.keys()
-    plus_keys = _get_dagster_plus_keys(dg_context.project_name, env_var_keys)
+    plus_keys = _get_dagster_plus_keys(dg_context.project_name, env_var_keys, deployment)
 
     table = DagsterOuterTable([])
     table.add_column("Env Var")

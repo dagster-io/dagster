@@ -1,5 +1,6 @@
 from collections.abc import Mapping
 from pathlib import Path
+from typing import Optional
 
 import click
 from dagster_dg_core.config import normalize_cli_config
@@ -42,15 +43,25 @@ def _get_local_secrets_for_locations(
 
 
 @click.command(name="env", cls=DgClickCommand)
+@click.option(
+    "--deployment",
+    help="The deployment to pull environment variables from. If not provided, uses the default deployment from your configuration.",
+)
 @dg_global_options
 @dg_path_options
 @cli_telemetry_wrapper
-def pull_env_command(target_path: Path, **global_options: object) -> None:
+def pull_env_command(
+    target_path: Path, deployment: Optional[str], **global_options: object
+) -> None:
     """Pull environment variables from Dagster Plus and save to a .env file for local use."""
     cli_config = normalize_cli_config(global_options, click.get_current_context())
 
     dg_context = DgContext.for_workspace_or_project_environment(target_path, cli_config)
     config = _get_config_or_error()
+
+    # Use provided deployment or fall back to default
+    if deployment:
+        config = config.with_deployment(deployment)
 
     project_ctxs = []
 
