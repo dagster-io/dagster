@@ -98,29 +98,30 @@ def wrap_source_asset_observe_fn_in_op_compute_fn(
             else observe_fn(**resource_kwargs)
         )
 
-        if isinstance(observe_fn_return_value, (DataVersion, ObserveResult)):
+        if isinstance(observe_fn_return_value, ObserveResult):
+            data_version = observe_fn_return_value.data_version
+            metadata = observe_fn_return_value.metadata
+            extra_tags = observe_fn_return_value.tags or {}
+
+            if (
+                observe_fn_return_value.asset_key is not None
+                and observe_fn_return_value.asset_key != source_asset.key
+            ):
+                raise DagsterInvariantViolationError(
+                    f"Asset key {observe_fn_return_value.asset_key.to_user_string()} not found in AssetsDefinition"
+                )
+        else:  # DataVersion
+            data_version = observe_fn_return_value
+            metadata = {}
+            extra_tags = {}
+
+
+        if isinstance(data_version, DataVersion):
             if source_asset.partitions_def is not None:
                 raise DagsterInvalidObservationError(
-                    f"{source_asset.key} is partitioned. Returning `{observe_fn_return_value.__class__}` not supported"
+                    f"{source_asset.key} is partitioned. Returning `{data_version.__class__}` not supported"
                     " for partitioned assets. Return `DataVersionsByPartition` instead."
                 )
-
-            if isinstance(observe_fn_return_value, ObserveResult):
-                data_version = observe_fn_return_value.data_version
-                metadata = observe_fn_return_value.metadata
-                extra_tags = observe_fn_return_value.tags or {}
-
-                if (
-                    observe_fn_return_value.asset_key is not None
-                    and observe_fn_return_value.asset_key != source_asset.key
-                ):
-                    raise DagsterInvariantViolationError(
-                        f"Asset key {observe_fn_return_value.asset_key.to_user_string()} not found in AssetsDefinition"
-                    )
-            else:  # DataVersion
-                data_version = observe_fn_return_value
-                metadata = {}
-                extra_tags = {}
 
             tags = {
                 **({DATA_VERSION_TAG: data_version.value} if data_version is not None else {}),
@@ -135,7 +136,7 @@ def wrap_source_asset_observe_fn_in_op_compute_fn(
                 )
             )
 
-        elif isinstance(observe_fn_return_value, DataVersionsByPartition):
+        elif isinstance(data_version, DataVersionsByPartition):
             if source_asset.partitions_def is None:
                 raise DagsterInvalidObservationError(
                     f"{source_asset.key} is not partitioned, so its observe function should return"
@@ -144,24 +145,25 @@ def wrap_source_asset_observe_fn_in_op_compute_fn(
 
             for (
                 partition_key,
-                data_version,
-            ) in observe_fn_return_value.data_versions_by_partition.items():
+                partition_data_version,
+            ) in data_version.data_versions_by_partition.items():
                 context.log_event(
                     AssetObservation(
                         asset_key=source_asset.key,
-                        tags={DATA_VERSION_TAG: data_version.value},
+                        tags={DATA_VERSION_TAG: partition_data_version.value},
                         partition=partition_key,
                     )
                 )
         else:
             raise DagsterInvalidObservationError(
-                f"Observe function for {source_asset.key} must return a DataVersion or"
+                f"Observe function for {source_asset.key} must return a DataVersion, ObserveResult or"
                 " DataVersionsByPartition, but returned a value of type"
                 f" {type(observe_fn_return_value)}"
             )
         return Output(None, metadata={SYSTEM_METADATA_KEY_SOURCE_ASSET_OBSERVATION: True})
 
     return DecoratedOpFunction(fn)
+
 
 
 @beta_param(param="resource_defs")

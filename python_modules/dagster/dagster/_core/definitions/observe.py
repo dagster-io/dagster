@@ -52,13 +52,15 @@ def observe(
         observation_job = define_asset_job(
             "in_process_observation_job", selection=AssetSelection.all(include_sources=True)
         )
-        defs = Definitions(
-            assets=assets,
-            jobs=[observation_job],
-            resources=resources,
-        )
+        defs = Definitions(assets=assets)
 
-        return defs.resolve_job_def("in_process_observation_job").execute_in_process(
+
+
+        return observation_job.resolve(
+            asset_graph=defs.resolve_asset_graph(),
+            resource_defs=resources,
+            allow_different_partitions_defs=True
+        ).execute_in_process(
             run_config=run_config,
             instance=instance,
             partition_key=partition_key,
