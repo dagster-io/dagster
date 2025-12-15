@@ -3,6 +3,7 @@ import re
 from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Annotated, Any, Optional
+from databricks.sdk.service.jobs import RunResultState
 
 from dagster import (
     AssetExecutionContext,
@@ -158,12 +159,22 @@ class DatabricksWorkspaceComponent(StateBackedComponent, Resolvable):
                     client.jobs.wait_get_run_job_terminated_or_skipped(run.run_id)
 
                     final_run = client.jobs.get_run(run.run_id)
-                    final_state = "UNKNOWN"
-                    if final_run.state and final_run.state.result_state:
-                        final_state = final_run.state.result_state.value
+                    
+                    state_obj = final_run.state
+                    result_state = state_obj.result_state if state_obj else None
+                    
+                    if result_state != RunResultState.SUCCESS:
+                        status_str = result_state.value if result_state else "UNKNOWN"
+                        error_msg = (
+                            f"Databricks job {captured_job_id} failed with state: {status_str}. "
+                            f"View run: {run.run_page_url}"
+                        )
+                        context.log.error(error_msg)
+                        raise Exception(error_msg)
 
-                    context.log.info(f"Job finished with state: {final_state}")
+                    context.log.info(f"Job finished with state: {result_state.value}")
 
+                    # 4. Yield results
                     for spec in captured_specs:
                         if spec.key in selected_keys:
                             task_key = captured_key_map.get(spec.key)
@@ -175,7 +186,7 @@ class DatabricksWorkspaceComponent(StateBackedComponent, Resolvable):
                                     "task_key": MetadataValue.text(task_key) if task_key else None,
                                     "run_id": MetadataValue.int(run.run_id),
                                     "run_url": MetadataValue.url(run.run_page_url) if run.run_page_url else None,
-                                    "final_state": MetadataValue.text(final_state),
+                                    "final_state": MetadataValue.text(result_state.value),
                                 },
                             )
                 

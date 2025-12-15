@@ -6,6 +6,7 @@ from dagster_databricks.components.databricks_asset_bundle.resource import Datab
 from dagster_databricks.components.databricks_workspace.component import DatabricksWorkspaceComponent
 from dagster_databricks.components.databricks_asset_bundle.configs import DatabricksJob
 from dagster_databricks.components.databricks_workspace.schema import DatabricksFilter
+from databricks.sdk.service.jobs import RunResultState
 
 # --- Helpers ---
 
@@ -178,7 +179,7 @@ def test_databricks_asset_execution(mock_fetcher, mock_workspace, mock_serialize
     mock_client.jobs.run_now.return_value = mock_run
     
     mock_run_info = MagicMock()
-    mock_run_info.state.result_state.value = "SUCCESS"
+    mock_run_info.state.result_state = RunResultState.SUCCESS
     mock_client.jobs.get_run.return_value = mock_run_info
 
     mock_deserializer.return_value = SimpleNamespace(jobs=MOCK_JOBS_HYBRID)
@@ -199,3 +200,33 @@ def test_databricks_asset_execution(mock_fetcher, mock_workspace, mock_serialize
     assert len(calls_for_102) == 1
     
     mock_client.jobs.wait_get_run_job_terminated_or_skipped.assert_called_with(999)
+
+def test_databricks_execution_failure(mock_fetcher, mock_workspace, mock_serializer, mock_deserializer, tmp_path):
+    """Test that a failed Databricks job raises an exception in Dagster."""
+    
+    mock_client = mock_workspace.get_client.return_value
+    mock_run = MagicMock()
+    mock_run.run_id = 666
+    mock_run.run_page_url = "https://failure-url.com"
+    mock_client.jobs.run_now.return_value = mock_run
+    
+    mock_run_info = MagicMock()
+    mock_run_info.state.result_state = RunResultState.FAILED
+    mock_client.jobs.get_run.return_value = mock_run_info
+
+    mock_deserializer.return_value = SimpleNamespace(jobs=MOCK_JOBS_HYBRID)
+    component = DatabricksWorkspaceComponent(workspace=mock_workspace)
+    
+    state_path = tmp_path / "state.json"
+    component.write_state_to_path(state_path)
+    defs = component.build_defs_from_state(context=None, state_path=state_path)
+
+    target_key = AssetKey(["data_ingestion_job", "ingest_task"])
+    job_assets = [a for a in defs.assets if target_key in a.keys]
+        
+    with pytest.raises(Exception) as excinfo:
+        materialize(assets=job_assets)
+    
+    assert "failed with state: FAILED" in str(excinfo.value)
+    
+    mock_client.jobs.wait_get_run_job_terminated_or_skipped.assert_called_with(666)
