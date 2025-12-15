@@ -8,6 +8,8 @@ source: https://github.com/dagster-io/dagster/tree/master/python_modules/librari
 pypi: https://pypi.org/project/dagster-datahub/
 canonicalUrl: '/integrations/libraries/datahub'
 slug: '/integrations/libraries/datahub'
+sidebar_custom_props:
+  logo: images/integrations/datahub.svg
 ---
 
 import DocCardList from '@theme/DocCardList';

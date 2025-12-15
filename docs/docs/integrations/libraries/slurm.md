@@ -7,7 +7,7 @@ tags: [community-supported]
 source: https://github.com/ascii-supply-networks/dagster-slurm/
 pypi: https://pypi.org/project/dagster-slurm/
 sidebar_custom_props:
-  logo: images/integrations/slurm.jpg
+  logo: images/integrations/slurm.png
   community: true
 ---
 

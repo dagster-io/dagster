@@ -8,6 +8,8 @@ source: https://github.com/dagster-io/dagster/tree/master/python_modules/librari
 pypi: https://pypi.org/project/dagster-mlflow/
 canonicalUrl: '/integrations/libraries/mlflow'
 slug: '/integrations/libraries/mlflow'
+sidebar_custom_props:
+  logo: images/integrations/mlflow.svg
 ---
 
 import DocCardList from '@theme/DocCardList';

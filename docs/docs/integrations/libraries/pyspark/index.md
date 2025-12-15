@@ -8,6 +8,8 @@ source: https://github.com/dagster-io/dagster/tree/master/python_modules/librari
 pypi: https://pypi.org/project/dagster-pyspark/
 canonicalUrl: '/integrations/libraries/pyspark'
 slug: '/integrations/libraries/pyspark'
+sidebar_custom_props:
+  logo: images/integrations/pyspark.svg
 ---
 
 import DocCardList from '@theme/DocCardList';

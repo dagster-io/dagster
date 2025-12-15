@@ -8,6 +8,8 @@ source: https://github.com/dagster-io/dagster/tree/master/python_modules/librari
 pypi: https://pypi.org/project/dagster-papertrail/
 canonicalUrl: '/integrations/libraries/papertrail'
 slug: '/integrations/libraries/papertrail'
+sidebar_custom_props:
+  logo: images/integrations/papertrail.svg
 ---
 
 import DocCardList from '@theme/DocCardList';

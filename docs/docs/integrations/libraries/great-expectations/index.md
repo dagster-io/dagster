@@ -8,6 +8,8 @@ source: https://github.com/dagster-io/dagster/tree/master/python_modules/librari
 pypi: https://pypi.org/project/dagster-ge/
 canonicalUrl: '/integrations/libraries/great-expectations'
 slug: '/integrations/libraries/great-expectations'
+sidebar_custom_props:
+  logo: images/integrations/great_expectations.svg
 ---
 
 import DocCardList from '@theme/DocCardList';

@@ -7,7 +7,7 @@ tags: [dagster-supported, bi, component]
 source: https://github.com/dagster-io/dagster/tree/master/python_modules/libraries/dagster-omni
 pypi: https://pypi.org/project/dagster-omni
 sidebar_custom_props:
-  logo: images/integrations/omni.svg
+  logo: images/integrations/omni.png
 partnerlink: https://omni.co/
 canonicalUrl: '/integrations/libraries/omni'
 slug: '/integrations/libraries/omni'

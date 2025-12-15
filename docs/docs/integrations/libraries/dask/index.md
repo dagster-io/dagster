@@ -7,6 +7,8 @@ source: https://github.com/dagster-io/dagster/tree/master/python_modules/librari
 pypi: https://pypi.org/project/dagster-dask/
 canonicalUrl: '/integrations/libraries/dask'
 slug: '/integrations/libraries/dask'
+sidebar_custom_props:
+  logo: images/integrations/dask.svg
 tags: [dagster-supported]
 ---
 
