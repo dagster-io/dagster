@@ -114,51 +114,75 @@ class DatabricksWorkspaceComponent(StateBackedComponent, Resolvable):
         jobs_state = workspace_data.jobs
 
         databricks_assets = []
+        
         for job in jobs_state:
+            job_specs = []
+            task_key_map = {}
+            
             tasks = job.tasks or []
+            
             for task in tasks:
                 current_task_key = getattr(task, "task_key", "unknown")
                 specs = self.get_asset_specs(job_name=job.name, task=task)
-                asset_name = specs[0].key.path[-1] if specs else f"task_{id(task)}"
+                
+                for spec in specs:
+                    job_specs.append(spec)
+                    task_key_map[spec.key] = current_task_key
 
-                # Factory function to capture loop variables safely
-                def make_asset_fn(captured_job_id, captured_task_key, captured_job_name, captured_specs):
+            if not job_specs:
+                continue
+
+            asset_name = f"databricks_job_{job.job_id}"
+
+            #  Factory to capture job-level variables
+            def make_job_asset_fn(captured_job_id, captured_job_name, captured_specs, captured_key_map):
+                
+                # Define one multi-asset for the whole job
+                @multi_asset(
+                    name=asset_name, 
+                    specs=captured_specs, 
+                    can_subset=True
+                )
+                def _job_multi_asset(context: AssetExecutionContext):
+                    """Execute the Databricks job containing these tasks."""
+                    client = self.workspace.get_client()
+
+                    selected_keys = context.selected_asset_keys
+                    context.log.info(f"Triggering Databricks job {captured_job_id} for keys: {selected_keys}")
                     
-                    @multi_asset(name=asset_name, specs=captured_specs)
-                    def _task_multi_asset(context: AssetExecutionContext):
-                        """Execute the corresponding Databricks job when the asset is materialized."""
-                        client = self.workspace.get_client()
-                        run = client.jobs.run_now(job_id=captured_job_id)
-                        
-                        if run.run_page_url:
-                            context.log.info(f"Databricks run URL: {run.run_page_url}")
+                    run = client.jobs.run_now(job_id=captured_job_id)
+                    
+                    if run.run_page_url:
+                        context.log.info(f"Databricks run URL: {run.run_page_url}")
 
-                        client.jobs.wait_get_run_job_terminated_or_skipped(run.run_id)
-                        final_run = client.jobs.get_run(run.run_id)
-                        
-                        final_state = "UNKNOWN"
-                        if final_run.state and final_run.state.result_state:
-                            final_state = final_run.state.result_state.value
+                    client.jobs.wait_get_run_job_terminated_or_skipped(run.run_id)
 
-                        context.log.info(f"Job finished with state: {final_state}")
+                    final_run = client.jobs.get_run(run.run_id)
+                    final_state = "UNKNOWN"
+                    if final_run.state and final_run.state.result_state:
+                        final_state = final_run.state.result_state.value
 
-                        for spec in captured_specs:
+                    context.log.info(f"Job finished with state: {final_state}")
+
+                    for spec in captured_specs:
+                        if spec.key in selected_keys:
+                            task_key = captured_key_map.get(spec.key)
                             yield MaterializeResult(
                                 asset_key=spec.key,
                                 metadata={
                                     "job_id": MetadataValue.int(captured_job_id),
                                     "job_name": MetadataValue.text(captured_job_name),
-                                    "task_key": MetadataValue.text(captured_task_key) if captured_task_key else None,
+                                    "task_key": MetadataValue.text(task_key) if task_key else None,
                                     "run_id": MetadataValue.int(run.run_id),
                                     "run_url": MetadataValue.url(run.run_page_url) if run.run_page_url else None,
                                     "final_state": MetadataValue.text(final_state),
                                 },
                             )
-                    
-                    return _task_multi_asset
+                
+                return _job_multi_asset
 
-                asset_definition = make_asset_fn(job.job_id, current_task_key, job.name, specs)
-                databricks_assets.append(asset_definition)
+            asset_def = make_job_asset_fn(job.job_id, job.name, job_specs, task_key_map)
+            databricks_assets.append(asset_def)
 
         return Definitions(assets=databricks_assets)
     

@@ -94,11 +94,12 @@ def test_databricks_workspace_loading(mock_fetcher, mock_workspace, mock_seriali
     assert AssetKey(["data_ingestion_job", "process_task"]) in asset_keys
     assert AssetKey(["ml_training_job", "train_model"]) in asset_keys
 
+    assert len(defs.assets) == 3
+
 def test_databricks_filtering(mock_fetcher, mock_workspace, mock_serializer, mock_deserializer, tmp_path):
     """Test that jobs are correctly filtered based on config."""
     db_filter = MagicMock(spec=DatabricksFilter)
     
-    # Update mock to return subset
     filtered_jobs = [j for j in MOCK_JOBS_HYBRID if j.job_id == 101]
     mock_deserializer.return_value = SimpleNamespace(jobs=filtered_jobs)
 
@@ -168,6 +169,7 @@ def test_malformed_job_data(mock_fetcher, mock_workspace, mock_serializer, mock_
 def test_databricks_asset_execution(mock_fetcher, mock_workspace, mock_serializer, mock_deserializer, tmp_path):
     """Test that materializing the asset actually calls the Databricks Client."""
     
+    # Setup mocks to return a valid Run object when run_now is called
     mock_client = mock_workspace.get_client.return_value
     mock_run = MagicMock()
     mock_run.run_id = 999
@@ -190,7 +192,10 @@ def test_databricks_asset_execution(mock_fetcher, mock_workspace, mock_serialize
 
     assert result.success
     
-    mock_client.jobs.run_now.assert_any_call(job_id=101)
-    mock_client.jobs.run_now.assert_any_call(job_id=102)
+    calls_for_101 = [call for call in mock_client.jobs.run_now.call_args_list if call.kwargs.get('job_id') == 101]
+    assert len(calls_for_101) == 1, "Job 101 should execute exactly once for all its tasks"
+    
+    calls_for_102 = [call for call in mock_client.jobs.run_now.call_args_list if call.kwargs.get('job_id') == 102]
+    assert len(calls_for_102) == 1
     
     mock_client.jobs.wait_get_run_job_terminated_or_skipped.assert_called_with(999)
