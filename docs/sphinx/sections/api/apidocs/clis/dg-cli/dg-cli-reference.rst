@@ -27,7 +27,7 @@ dg CLI local build command reference
 dg scaffold defs example
 ========================
 
-**Note:** Before scaffolding definitions with ``dg``, you must `create a project <https://docs.dagster.io/guides/build/projects/creating-a-new-project>`_ with the `create-dagster CLI <https://docs.dagster.io/api/clis/create-dagster>`_ and activate its virtual environment.
+**Note:** Before scaffolding definitions with ``dg``, you must `create a project <https://docs.dagster.io/guides/build/projects/creating-projects>`_ with the `create-dagster CLI <https://docs.dagster.io/api/clis/create-dagster>`_ and activate its virtual environment.
 
 You can use the ``dg scaffold defs`` command to scaffold a new asset underneath the ``defs`` folder. In this example, we scaffold an asset named ``my_asset.py`` and write it to the ``defs/assets`` directory:
 
