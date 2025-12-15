@@ -9,7 +9,7 @@ canonicalUrl: '/integrations/libraries/dask'
 slug: '/integrations/libraries/dask'
 sidebar_custom_props:
   logo: images/integrations/dask.svg
-tags: [dagster-supported]
+tags: [dagster-supported, compute]
 ---
 
 import DocCardList from '@theme/DocCardList';

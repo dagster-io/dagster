@@ -9,7 +9,7 @@ canonicalUrl: '/integrations/libraries/celery'
 slug: '/integrations/libraries/celery'
 sidebar_custom_props:
   logo: images/integrations/celery.svg
-tags: [dagster-supported]
+tags: [dagster-supported, compute]
 ---
 
 import DocCardList from '@theme/DocCardList';

@@ -46,6 +46,10 @@ other:
   label: 'other'
   permalink: '/integrations/other'
   description: 'Other integrations'
+testing:
+  label: 'testing'
+  permalink: '/integrations/testing'
+  description: 'Testing integrations'
 code-example:
   label: 'code-example'
   permalink: '/examples/code-example'

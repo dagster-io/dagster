@@ -3,7 +3,7 @@ title: Dagster & GitHub
 sidebar_label: GitHub
 sidebar_position: 1
 description: This library provides an integration with GitHub Apps by providing a thin wrapper on the GitHub v4 GraphQL API. This allows for automating operations within your GitHub repositories and with the tighter permissions scopes that GitHub Apps allow for vs using a personal token.
-tags: [dagster-supported]
+tags: [dagster-supported, other]
 source: https://github.com/dagster-io/dagster/tree/master/python_modules/libraries/dagster-github
 pypi: https://pypi.org/project/dagster-github/
 sidebar_custom_props:

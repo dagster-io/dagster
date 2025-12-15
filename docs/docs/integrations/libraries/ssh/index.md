@@ -3,7 +3,7 @@ title: Dagster & SSH
 sidebar_label: SSH
 sidebar_position: 1
 description: This integration provides a resource for SSH remote execution using Paramiko. It allows you to establish secure connections to networked resources and execute commands remotely. The integration also provides an SFTP client for secure file transfers between the local and remote systems.
-tags: [dagster-supported]
+tags: [dagster-supported, other]
 source: https://github.com/dagster-io/dagster/tree/master/python_modules/libraries/dagster-ssh
 pypi: https://pypi.org/project/dagster-ssh
 sidebar_custom_props:
