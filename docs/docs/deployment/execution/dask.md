@@ -28,6 +28,7 @@ Setting up and running a Dagster job on local Dask can be useful for testing.
 ```shell
 uv add dagster-dask
 ```
+
 </TabItem>
 <TabItem value="pip" label="pip">
 
@@ -35,6 +36,7 @@ uv add dagster-dask
 
 pip install dagster-dask
 ```
+
 </TabItem>
 </Tabs>
 
