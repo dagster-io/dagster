@@ -665,6 +665,7 @@ LIBRARY_PACKAGES_WITH_CUSTOM_CONFIG: list[PackageSpec] = [
             ToxFactor("postgres-instance_multi_location"),
             ToxFactor("postgres-instance_managed_grpc_env", splits=2),
             ToxFactor("postgres-instance_deployed_grpc_env", splits=2),
+            ToxFactor("gql_v3"),
         ],
         unsupported_python_versions=(
             lambda tox_factor: (
