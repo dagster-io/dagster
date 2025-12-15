@@ -143,6 +143,7 @@ fastapi>=0.115.6 # producing a bizarrely early version of fastapi without this
 -e python_modules/libraries/dagster-dbt/kitchen-sink
 -e python_modules/libraries/dagster-airlift/perf-harness
 -e examples/airlift-migration-tutorial
+-e examples/ingestion-patterns
 -e examples/use_case_repository[dev]
 # -e examples/docs_projects/project_atproto_dashboard
 # -e examples/docs_projects/project_dagster_modal_pipes
