@@ -55,9 +55,7 @@ def test_schedules_exist():
     expected_schedules = ["daily_pull_schedule"]
 
     for schedule in expected_schedules:
-        assert (
-            schedule in schedule_names
-        ), f"Schedule '{schedule}' not found in definitions"
+        assert schedule in schedule_names, f"Schedule '{schedule}' not found in definitions"
 
 
 def test_resources_exist():

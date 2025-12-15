@@ -51,6 +51,7 @@ Open http://localhost:3000 to view the Dagster UI.
 ### 3. Materialize Assets
 
 In the Dagster UI:
+
 1. Navigate to the **Assets** page
 2. Select assets to materialize
 3. Click **Materialize** to run
@@ -67,6 +68,7 @@ External systems push data to your platform via webhooks.
 #### Demo: Simulate Webhooks
 
 **Option A: Use the simulator script (in-memory)**
+
 ```bash
 python scripts/webhook_simulator.py --count 10
 ```
@@ -74,6 +76,7 @@ python scripts/webhook_simulator.py --count 10
 Then materialize `process_webhook_data` in the Dagster UI.
 
 **Option B: Run the webhook server**
+
 ```bash
 # Terminal 1: Start the webhook server
 python scripts/webhook_server.py
@@ -92,6 +95,7 @@ curl http://localhost:5050/webhook/my-source/pending
 Your platform initiates data extraction from source systems on a schedule.
 
 **Assets:**
+
 - `extract_source_data` - Pulls data from API with incremental checkpointing
 - `load_to_storage` - Loads data to DuckDB
 
@@ -110,6 +114,7 @@ Your platform initiates data extraction from source systems on a schedule.
 Continuously poll event streams for new data.
 
 **Assets:**
+
 - `poll_kafka_events` - Polls Kafka topic for new events
 - `process_kafka_events` - Processes and stores events in DuckDB
 
@@ -118,6 +123,7 @@ Continuously poll event streams for new data.
 #### Demo: Poll Kafka Events
 
 **Step 1: Start Kafka**
+
 ```bash
 docker compose up -d
 ```
@@ -125,11 +131,13 @@ docker compose up -d
 Wait for Kafka to be healthy (check with `docker compose ps`).
 
 **Step 2: Install Kafka dependencies**
+
 ```bash
 uv pip install -e ".[kafka]"
 ```
 
 **Step 3: Produce sample events**
+
 ```bash
 python scripts/kafka_producer.py --count 20
 ```
@@ -137,6 +145,7 @@ python scripts/kafka_producer.py --count 20
 **Step 4: Materialize in Dagster**
 
 In the Dagster UI, materialize `poll_kafka_events` with config:
+
 ```yaml
 bootstrap_servers: "localhost:9094"
 kafka_topic: "transactions"
@@ -149,6 +158,7 @@ Or leave `bootstrap_servers` empty to use the mock consumer.
 Open http://localhost:8080 to monitor topics and messages.
 
 **Step 6: Stop Kafka**
+
 ```bash
 docker compose down      # Stop containers
 docker compose down -v   # Stop and remove data
@@ -171,13 +181,14 @@ pytest tests/test_definitions.py -v
 
 All patterns store data in DuckDB (`ingestion_patterns.duckdb`). Tables created:
 
-| Pattern | Table |
-|---------|-------|
-| Push | `ingestion.webhook_data` |
-| Pull | `ingestion.raw_extract`, `ingestion.final_data` |
-| Poll | `ingestion.kafka_events` |
+| Pattern | Table                                           |
+| ------- | ----------------------------------------------- |
+| Push    | `ingestion.webhook_data`                        |
+| Pull    | `ingestion.raw_extract`, `ingestion.final_data` |
+| Poll    | `ingestion.kafka_events`                        |
 
 Query the data:
+
 ```bash
 python -c "import duckdb; conn = duckdb.connect('ingestion_patterns.duckdb'); print(conn.execute('SHOW TABLES').fetchall())"
 ```
@@ -207,24 +218,26 @@ python scripts/webhook_server.py \
 Assets can be configured at runtime in the Dagster UI:
 
 **poll_kafka_events:**
+
 - `bootstrap_servers`: Kafka servers (empty = mock)
 - `kafka_topic`: Topic name (default: `transactions`)
 - `max_records_per_poll`: Max messages per poll (default: 100)
 
 **process_webhook_data:**
+
 - `source_id`: Filter by source (default: `default`)
 - `validate_schema`: Enable schema validation (default: true)
 
 ## Project Files
 
-| File | Description |
-|------|-------------|
-| `src/ingestion_patterns/definitions.py` | Main definitions using `Definitions.merge` and `load_defs` |
-| `src/ingestion_patterns/defs/jobs.py` | Jobs, schedules, and sensors |
-| `src/ingestion_patterns/resources/mock_apis.py` | Mock API client, Kafka consumer, webhook storage |
-| `scripts/kafka_producer.py` | Produces events to real Kafka |
-| `scripts/webhook_server.py` | Flask server that receives webhooks |
-| `scripts/webhook_simulator.py` | Simulates webhooks to in-memory storage |
+| File                                            | Description                                                |
+| ----------------------------------------------- | ---------------------------------------------------------- |
+| `src/ingestion_patterns/definitions.py`         | Main definitions using `Definitions.merge` and `load_defs` |
+| `src/ingestion_patterns/defs/jobs.py`           | Jobs, schedules, and sensors                               |
+| `src/ingestion_patterns/resources/mock_apis.py` | Mock API client, Kafka consumer, webhook storage           |
+| `scripts/kafka_producer.py`                     | Produces events to real Kafka                              |
+| `scripts/webhook_server.py`                     | Flask server that receives webhooks                        |
+| `scripts/webhook_simulator.py`                  | Simulates webhooks to in-memory storage                    |
 
 ## Key Concepts Demonstrated
 
