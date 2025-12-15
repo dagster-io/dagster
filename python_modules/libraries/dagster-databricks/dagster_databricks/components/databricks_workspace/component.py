@@ -121,49 +121,47 @@ class DatabricksWorkspaceComponent(StateBackedComponent, Resolvable):
                 specs = self.get_asset_specs(job_name=job.name, task=task)
                 asset_name = specs[0].key.path[-1] if specs else f"task_{id(task)}"
 
-                def make_asset_fn(captured_job_id, captured_task_key, captured_job_name):
+                # Factory function to capture loop variables safely
+                def make_asset_fn(captured_job_id, captured_task_key, captured_job_name, captured_specs):
                     
-                    @multi_asset(name=asset_name, specs=specs)
+                    @multi_asset(name=asset_name, specs=captured_specs)
                     def _task_multi_asset(context: AssetExecutionContext):
                         """Execute the corresponding Databricks job when the asset is materialized."""
                         client = self.workspace.get_client()
-
-                        # Trigger the Databricks job
-                        context.log.info(f"Triggering Databricks job {captured_job_id} for task {captured_task_key}")
                         run = client.jobs.run_now(job_id=captured_job_id)
-                        run_id = run.run_id
-                        run_url = getattr(run, "run_page_url", None)
+                        
+                        if run.run_page_url:
+                            context.log.info(f"Databricks run URL: {run.run_page_url}")
 
-                        if run_url:
-                            context.log.info(f"Databricks job run URL: {run_url}")
+                        client.jobs.wait_get_run_job_terminated_or_skipped(run.run_id)
+                        final_run = client.jobs.get_run(run.run_id)
+                        
+                        final_state = "UNKNOWN"
+                        if final_run.state and final_run.state.result_state:
+                            final_state = final_run.state.result_state.value
 
-                        client.jobs.wait_get_run_job_terminated_or_skipped(run_id)
+                        context.log.info(f"Job finished with state: {final_state}")
 
-                        final_run = client.jobs.get_run(run_id)
-                        state_obj = getattr(final_run, "state", None)
-                        result_state_obj = getattr(state_obj, "result_state", None)
-                        final_state = result_state_obj.value if result_state_obj else "UNKNOWN"
-
-                        for spec in specs:
+                        for spec in captured_specs:
                             yield MaterializeResult(
                                 asset_key=spec.key,
                                 metadata={
                                     "job_id": MetadataValue.int(captured_job_id),
                                     "job_name": MetadataValue.text(captured_job_name),
                                     "task_key": MetadataValue.text(captured_task_key) if captured_task_key else None,
-                                    "run_id": MetadataValue.int(run_id),
-                                    "run_url": MetadataValue.url(run_url),
+                                    "run_id": MetadataValue.int(run.run_id),
+                                    "run_url": MetadataValue.url(run.run_page_url) if run.run_page_url else None,
                                     "final_state": MetadataValue.text(final_state),
                                 },
                             )
                     
                     return _task_multi_asset
 
-                asset_definition = make_asset_fn(job.job_id, current_task_key, job.name)
+                asset_definition = make_asset_fn(job.job_id, current_task_key, job.name, specs)
                 databricks_assets.append(asset_definition)
 
         return Definitions(assets=databricks_assets)
-
+    
     def get_asset_specs(self, job_name: str, task: Any) -> list[AssetSpec]:
         """Return a list of AssetSpec objects for the given task."""
         task_key = getattr(task, "task_key", None)

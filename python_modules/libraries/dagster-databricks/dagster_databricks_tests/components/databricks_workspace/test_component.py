@@ -1,7 +1,7 @@
 import pytest
 from unittest.mock import AsyncMock, MagicMock, patch
 from types import SimpleNamespace
-from dagster import AssetKey, AssetSpec
+from dagster import AssetKey, AssetSpec, materialize
 from dagster_databricks.components.databricks_asset_bundle.resource import DatabricksWorkspace
 from dagster_databricks.components.databricks_workspace.component import DatabricksWorkspaceComponent
 from dagster_databricks.components.databricks_asset_bundle.configs import DatabricksJob
@@ -164,3 +164,34 @@ def test_malformed_job_data(mock_fetcher, mock_workspace, mock_serializer, mock_
     
     assert AssetKey(["good", "valid"]) in asset_keys
     assert AssetKey(["survival", "survival"]) in asset_keys
+
+def test_databricks_asset_execution(mock_fetcher, mock_workspace, mock_serializer, mock_deserializer, tmp_path):
+    """Test that materializing the asset actually calls the Databricks Client."""
+    
+    # 1. Setup mocks to return a valid Run object when run_now is called
+    mock_client = mock_workspace.get_client.return_value
+    mock_run = MagicMock()
+    mock_run.run_id = 999
+    mock_run.run_page_url = "https://fake-url.com"
+
+    mock_client.jobs.run_now.return_value = mock_run
+    
+    mock_run_info = MagicMock()
+    mock_run_info.state.result_state.value = "SUCCESS"
+    mock_client.jobs.get_run.return_value = mock_run_info
+
+    mock_deserializer.return_value = SimpleNamespace(jobs=MOCK_JOBS_HYBRID)
+    component = DatabricksWorkspaceComponent(workspace=mock_workspace)
+    
+    state_path = tmp_path / "state.json"
+    component.write_state_to_path(state_path)
+    defs = component.build_defs_from_state(context=None, state_path=state_path)
+
+    result = materialize(assets=defs.assets)
+
+    assert result.success
+    
+    mock_client.jobs.run_now.assert_any_call(job_id=101)
+    mock_client.jobs.run_now.assert_any_call(job_id=102)
+    
+    mock_client.jobs.wait_get_run_job_terminated_or_skipped.assert_called_with(999)
