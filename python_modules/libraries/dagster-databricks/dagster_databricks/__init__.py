@@ -43,4 +43,3 @@ from dagster_databricks.resources import (
 from dagster_databricks.version import __version__
 
 DagsterLibraryRegistry.register("dagster-databricks", __version__)
-
