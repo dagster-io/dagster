@@ -168,7 +168,6 @@ def test_malformed_job_data(mock_fetcher, mock_workspace, mock_serializer, mock_
 def test_databricks_asset_execution(mock_fetcher, mock_workspace, mock_serializer, mock_deserializer, tmp_path):
     """Test that materializing the asset actually calls the Databricks Client."""
     
-    # 1. Setup mocks to return a valid Run object when run_now is called
     mock_client = mock_workspace.get_client.return_value
     mock_run = MagicMock()
     mock_run.run_id = 999
