@@ -72,7 +72,8 @@ Asset jobs
 Code locations
 --------------
 
-Loading assets and asset jobs into a `code location <https://docs.dagster.io/deployment/code-locations>`_ makes them available to Dagster tools like the UI, CLI, and GraphQL API.
+Loading assets and asset jobs into a code location makes them available to Dagster tools like the UI, CLI, and GraphQL API.
+A code location is automatically created when you `create a Dagster project <https://docs.dagster.io/guides/build/projects/creating-projects>`_ with the `create-dagster CLI <https://docs.dagster.io/api/clis/create-dagster>`_.
 
 .. autofunction:: load_assets_from_modules
 
