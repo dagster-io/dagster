@@ -9,6 +9,8 @@ from dagster import (
     AssetKey,
     AssetSpec,
     Definitions,
+    MaterializeResult,
+    MetadataValue,
     Resolvable,
     ResolvedAssetSpec,
     multi_asset,
@@ -115,18 +117,50 @@ class DatabricksWorkspaceComponent(StateBackedComponent, Resolvable):
         for job in jobs_state:
             tasks = job.tasks or []
             for task in tasks:
+                current_task_key = getattr(task, "task_key", "unknown")
                 specs = self.get_asset_specs(job_name=job.name, task=task)
                 asset_name = specs[0].key.path[-1] if specs else f"task_{id(task)}"
 
-                @multi_asset(name=asset_name, specs=specs)
-                # TODO: Implement execution logic.
-                # This will require refactoring `submit_and_poll` from DatabricksAssetBundleComponent
-                # into a shared utility to allow execution via the workspace client.
-                def _task_multi_asset(context: AssetExecutionContext):
-                    context.log.info(f"Executing Databricks task: {asset_name}")
-                    return None
+                def make_asset_fn(captured_job_id, captured_task_key, captured_job_name):
+                    
+                    @multi_asset(name=asset_name, specs=specs)
+                    def _task_multi_asset(context: AssetExecutionContext):
+                        """Execute the corresponding Databricks job when the asset is materialized."""
+                        client = self.workspace.get_client()
 
-                databricks_assets.append(_task_multi_asset)
+                        # Trigger the Databricks job
+                        context.log.info(f"Triggering Databricks job {captured_job_id} for task {captured_task_key}")
+                        run = client.jobs.run_now(job_id=captured_job_id)
+                        run_id = run.run_id
+                        run_url = getattr(run, "run_page_url", None)
+
+                        if run_url:
+                            context.log.info(f"Databricks job run URL: {run_url}")
+
+                        client.jobs.wait_get_run_job_terminated_or_skipped(run_id)
+
+                        final_run = client.jobs.get_run(run_id)
+                        state_obj = getattr(final_run, "state", None)
+                        result_state_obj = getattr(state_obj, "result_state", None)
+                        final_state = result_state_obj.value if result_state_obj else "UNKNOWN"
+
+                        for spec in specs:
+                            yield MaterializeResult(
+                                asset_key=spec.key,
+                                metadata={
+                                    "job_id": MetadataValue.int(captured_job_id),
+                                    "job_name": MetadataValue.text(captured_job_name),
+                                    "task_key": MetadataValue.text(captured_task_key) if captured_task_key else None,
+                                    "run_id": MetadataValue.int(run_id),
+                                    "run_url": MetadataValue.url(run_url),
+                                    "final_state": MetadataValue.text(final_state),
+                                },
+                            )
+                    
+                    return _task_multi_asset
+
+                asset_definition = make_asset_fn(job.job_id, current_task_key, job.name)
+                databricks_assets.append(asset_definition)
 
         return Definitions(assets=databricks_assets)
 
