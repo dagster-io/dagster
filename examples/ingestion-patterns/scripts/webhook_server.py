@@ -6,7 +6,8 @@ import uuid
 from datetime import datetime
 from pathlib import Path
 
-from flask import Flask, jsonify, request
+from flask import Flask, abort, jsonify, request
+from werkzeug.utils import secure_filename
 
 app = Flask(__name__)
 
@@ -17,6 +18,38 @@ WEBHOOK_STORAGE_DIR = Path(os.environ.get("WEBHOOK_STORAGE_DIR", "/tmp/webhook_s
 def ensure_storage_dir():
     """Ensure the storage directory exists."""
     WEBHOOK_STORAGE_DIR.mkdir(parents=True, exist_ok=True)
+
+
+def get_safe_source_file(source_id: str) -> Path:
+    """Safely construct the file path for a source, preventing path traversal.
+
+    Args:
+        source_id: The source identifier from user input.
+
+    Returns:
+        The validated file path within WEBHOOK_STORAGE_DIR.
+
+    Raises:
+        Aborts with 400 if the source_id would result in path traversal.
+    """
+    # Sanitize the filename using secure_filename
+    safe_id = secure_filename(source_id)
+
+    # Reject empty or invalid source_id after sanitization
+    if not safe_id:
+        abort(400, description="Invalid source_id: must contain valid filename characters")
+
+    # Construct the path
+    source_file = WEBHOOK_STORAGE_DIR / f"{safe_id}.json"
+
+    # Resolve to absolute path and verify it's within the storage directory
+    resolved_path = source_file.resolve()
+    resolved_storage = WEBHOOK_STORAGE_DIR.resolve()
+
+    if not str(resolved_path).startswith(str(resolved_storage) + os.sep):
+        abort(400, description="Invalid source_id: path traversal detected")
+
+    return resolved_path
 
 
 def save_payload(source_id: str, payload: dict) -> str:
@@ -32,8 +65,8 @@ def save_payload(source_id: str, payload: dict) -> str:
         "source_id": source_id,
     }
 
-    # Save to source-specific file
-    source_file = WEBHOOK_STORAGE_DIR / f"{source_id}.json"
+    # Save to source-specific file (with path traversal protection)
+    source_file = get_safe_source_file(source_id)
 
     # Load existing payloads
     existing = []
@@ -90,7 +123,7 @@ def receive_webhook(source_id: str):
 @app.route("/webhook/<source_id>/pending", methods=["GET"])
 def get_pending(source_id: str):
     """Get pending payloads for a source (for debugging)."""
-    source_file = WEBHOOK_STORAGE_DIR / f"{source_id}.json"
+    source_file = get_safe_source_file(source_id)
 
     if not source_file.exists():
         return jsonify({"source": source_id, "pending": [], "count": 0})
@@ -104,7 +137,7 @@ def get_pending(source_id: str):
 @app.route("/webhook/<source_id>/clear", methods=["DELETE"])
 def clear_pending(source_id: str):
     """Clear pending payloads for a source."""
-    source_file = WEBHOOK_STORAGE_DIR / f"{source_id}.json"
+    source_file = get_safe_source_file(source_id)
 
     if source_file.exists():
         source_file.unlink()

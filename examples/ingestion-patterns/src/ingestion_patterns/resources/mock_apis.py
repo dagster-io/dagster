@@ -1,5 +1,6 @@
 import json
 import os
+import re
 from datetime import datetime, timedelta
 from pathlib import Path
 from typing import Any
@@ -13,9 +14,55 @@ def _ensure_storage_dir() -> None:
     WEBHOOK_STORAGE_DIR.mkdir(parents=True, exist_ok=True)
 
 
+def _sanitize_source_id(source_id: str) -> str:
+    """Sanitize source_id to prevent path traversal attacks.
+
+    Only allows alphanumeric characters, hyphens, and underscores.
+
+    Args:
+        source_id: The source identifier from user input.
+
+    Returns:
+        Sanitized source_id safe for use in filenames.
+
+    Raises:
+        ValueError: If source_id is invalid after sanitization.
+    """
+    # Allow only alphanumeric, hyphens, and underscores
+    sanitized = re.sub(r"[^a-zA-Z0-9_-]", "", source_id)
+
+    if not sanitized:
+        raise ValueError("Invalid source_id: must contain valid filename characters")
+
+    return sanitized
+
+
 def _get_source_file(source_id: str) -> Path:
-    """Get the file path for a source's payloads."""
-    return WEBHOOK_STORAGE_DIR / f"{source_id}.json"
+    """Get the file path for a source's payloads with path traversal protection.
+
+    Args:
+        source_id: The source identifier from user input.
+
+    Returns:
+        The validated file path within WEBHOOK_STORAGE_DIR.
+
+    Raises:
+        ValueError: If source_id would result in path traversal.
+    """
+    # Sanitize the source_id
+    safe_id = _sanitize_source_id(source_id)
+
+    # Construct the path
+    source_file = WEBHOOK_STORAGE_DIR / f"{safe_id}.json"
+
+    # Resolve to absolute path and verify it's within the storage directory
+    resolved_path = source_file.resolve()
+    resolved_storage = WEBHOOK_STORAGE_DIR.resolve()
+
+    if not str(resolved_path).startswith(str(resolved_storage) + os.sep):
+        raise ValueError("Invalid source_id: path traversal detected")
+
+    return resolved_path
 
 
 def get_webhook_storage() -> dict[str, list[dict[str, Any]]]:
