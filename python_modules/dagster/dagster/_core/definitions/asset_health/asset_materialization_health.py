@@ -331,8 +331,8 @@ class AssetHealthMaterializationDegradedPartitionedMeta:
     num_failed_partitions: int
     num_missing_partitions: int
     total_num_partitions: int
-    latest_run_id: Optional[str]
-    latest_failed_to_materialize_run_id: Optional[str]
+    latest_run_id: Optional[str] = None
+    latest_failed_to_materialize_run_id: Optional[str] = None
 
 
 @whitelist_for_serdes
@@ -340,8 +340,8 @@ class AssetHealthMaterializationDegradedPartitionedMeta:
 class AssetHealthMaterializationHealthyPartitionedMeta:
     num_missing_partitions: int
     total_num_partitions: int
-    latest_run_id: Optional[str]
-    latest_failed_to_materialize_run_id: Optional[str]
+    latest_run_id: Optional[str] = None
+    latest_failed_to_materialize_run_id: Optional[str] = None
 
 
 @whitelist_for_serdes
