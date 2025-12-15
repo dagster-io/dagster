@@ -24,15 +24,20 @@ from dagster.components.utils.defs_state import (
 )
 from dagster_shared.record import record
 from dagster_shared.serdes.serdes import deserialize_value, serialize_value
-from databricks.sdk import WorkspaceClient
 
 from dagster_databricks.components.databricks_asset_bundle.configs import DatabricksJob
+from dagster_databricks.components.databricks_asset_bundle.resource import (
+    DatabricksWorkspace,
+)
+from dagster_databricks.components.databricks_asset_bundle.component import (
+    DatabricksWorkspaceArgs,
+    resolve_databricks_workspace,
+)
 from dagster_databricks.components.databricks_workspace.fetcher import (
     fetch_databricks_workspace_data,
 )
 from dagster_databricks.components.databricks_workspace.schema import (
     DatabricksFilter,
-    DatabricksWorkspaceConfig,
     ResolvedDatabricksFilter,
 )
 
@@ -57,8 +62,12 @@ class DatabricksWorkspaceComponent(StateBackedComponent, Resolvable):
     """Component that fetches Databricks workspace jobs and exposes them as assets."""
 
     workspace: Annotated[
-        DatabricksWorkspaceConfig,
-        Resolver.default(description="Databricks workspace connection info"),
+        DatabricksWorkspace,
+        Resolver(
+            resolve_databricks_workspace,
+            model_field_type=DatabricksWorkspaceArgs.model(),
+            description="The mapping defining a DatabricksWorkspace.",
+        ),
     ]
 
     databricks_filter: Annotated[
@@ -84,7 +93,7 @@ class DatabricksWorkspaceComponent(StateBackedComponent, Resolvable):
 
     def get_state(self) -> DatabricksWorkspaceData:
         """Fetch current workspace state (list of Jobs)."""
-        client = WorkspaceClient(host=self.workspace.host, token=self.workspace.token)
+        client = self.workspace.get_client()
         databricks_filter = self.databricks_filter or DatabricksFilter(include_job=lambda j: True)
         jobs = asyncio.run(fetch_databricks_workspace_data(client, databricks_filter))
         return DatabricksWorkspaceData(jobs=jobs)

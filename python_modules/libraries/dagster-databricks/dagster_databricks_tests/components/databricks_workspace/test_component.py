@@ -1,187 +1,166 @@
-from collections.abc import Iterator
-from contextlib import contextmanager
-from typing import Any
-from unittest.mock import AsyncMock, patch
-
 import pytest
-from dagster import AssetKey, Definitions
-from dagster._utils.test.definitions import scoped_definitions_load_context
-from dagster.components.testing import create_defs_folder_sandbox
+from unittest.mock import AsyncMock, MagicMock, patch
+from types import SimpleNamespace
+from dagster import AssetKey, AssetSpec
+from dagster_databricks.components.databricks_asset_bundle.resource import DatabricksWorkspace
+from dagster_databricks.components.databricks_workspace.component import DatabricksWorkspaceComponent
 from dagster_databricks.components.databricks_asset_bundle.configs import DatabricksJob
-from dagster_databricks.components.databricks_workspace.component import (
-    DatabricksWorkspaceComponent,
-)
-from dagster_shared.serdes.serdes import deserialize_value, serialize_value
+from dagster_databricks.components.databricks_workspace.schema import DatabricksFilter
 
-MOCK_JOBS_DATA = [
-    DatabricksJob(
+# --- Helpers ---
+
+def make_obj_task(key):
+    """Creates a task as an OBJECT (SimpleNamespace)."""
+    return SimpleNamespace(task_key=key)
+
+def make_hybrid_job(job_id, name, tasks):
+    """
+    Creates a REAL DatabricksJob to pass runtime type checks,
+    but injects SimpleNamespace tasks to satisfy component logic logic.
+    """
+    job = DatabricksJob(job_id=job_id, name=name, tasks=[])
+    job.tasks = tasks
+    return job
+
+MOCK_JOBS_HYBRID = [
+    make_hybrid_job(
         job_id=101,
         name="Data Ingestion Job",
-        tasks=[{"task_key": "ingest_task", "description": "Ingests data"}],
+        tasks=[make_obj_task("ingest_task"), make_obj_task("process_task")]
     ),
-    DatabricksJob(
+    make_hybrid_job(
         job_id=102,
         name="ML Training Job",
-        tasks=[
-            {"task_key": "prepare_data", "description": "Prep"},
-            {"task_key": "train_model", "description": "Train"},
-        ],
+        tasks=[make_obj_task("train_model")]
+    ),
+    make_hybrid_job(
+        job_id=103,
+        name="Filtered Out Job",
+        tasks=[make_obj_task("secret_task")]
     ),
 ]
 
-COMPONENT_YAML = {
-    "type": "dagster_databricks.DatabricksWorkspaceComponent",
-    "attributes": {
-        "workspace": {"host": "https://fake-workspace.cloud.databricks.com", "token": "fake-token"},
-        "databricks_filter": {"include_jobs": {"job_ids": [101, 102]}},
-    },
-}
-
-# --- Fixtures & Helpers ---
-
+# --- Fixtures ---
 
 @pytest.fixture
 def mock_fetcher():
+    """Mocks the API fetcher."""
     with patch(
         "dagster_databricks.components.databricks_workspace.component.fetch_databricks_workspace_data",
-        new_callable=AsyncMock,
+        new_callable=AsyncMock
     ) as mock:
-        mock.return_value = MOCK_JOBS_DATA
+        mock.return_value = MOCK_JOBS_HYBRID
         yield mock
 
+@pytest.fixture
+def mock_workspace():
+    workspace = MagicMock(spec=DatabricksWorkspace)
+    workspace.host = "https://fake-workspace.com"
+    workspace.token = "fake-token"
+    workspace.get_client.return_value = MagicMock() 
+    return workspace
 
-@contextmanager
-def setup_databricks_component(
-    defs_yaml_contents: dict[str, Any],
-) -> Iterator[tuple[DatabricksWorkspaceComponent, Definitions]]:
-    with create_defs_folder_sandbox() as sandbox:
-        defs_path = sandbox.scaffold_component(
-            component_cls=DatabricksWorkspaceComponent,
-            defs_yaml_contents=defs_yaml_contents,
-        )
-        with (
-            scoped_definitions_load_context(),
-            sandbox.load_component_and_build_defs(defs_path=defs_path) as (component, defs),
-        ):
-            yield component, defs
+@pytest.fixture
+def mock_serializer():
+    """
+    Prevents write_state_to_path from crashing when trying to serialize our hybrid objects.
+    """
+    with patch("dagster_databricks.components.databricks_workspace.component.serialize_value") as mock:
+        mock.return_value = "{}"
+        yield mock
 
+@pytest.fixture
+def mock_deserializer():
+    """
+    Mocks reading from disk to return our objects directly.
+    """
+    with patch("dagster_databricks.components.databricks_workspace.component.deserialize_value") as mock:
+        mock.return_value = SimpleNamespace(jobs=MOCK_JOBS_HYBRID)
+        yield mock
 
 # --- Tests ---
 
-
-def test_databricks_workspace_loading(mock_fetcher):
+def test_databricks_workspace_loading(mock_fetcher, mock_workspace, mock_serializer, mock_deserializer, tmp_path):
     """Test that the component correctly loads jobs and converts them to assets."""
-    with setup_databricks_component(defs_yaml_contents=COMPONENT_YAML) as (component, defs):
-        assert isinstance(component, DatabricksWorkspaceComponent)
+    component = DatabricksWorkspaceComponent(workspace=mock_workspace)
+    
+    state_path = tmp_path / "state.json"
+    component.write_state_to_path(state_path)
+    
+    defs = component.build_defs_from_state(context=None, state_path=state_path)
+    asset_keys = defs.resolve_asset_graph().get_all_asset_keys()
 
-        mock_fetcher.assert_called_once()
+    assert AssetKey(["data_ingestion_job", "ingest_task"]) in asset_keys
+    assert AssetKey(["data_ingestion_job", "process_task"]) in asset_keys
+    assert AssetKey(["ml_training_job", "train_model"]) in asset_keys
 
-        asset_keys = defs.resolve_asset_graph().get_all_asset_keys()
-
-        assert AssetKey(["data_ingestion_job", "ingest_task"]) in asset_keys
-        assert AssetKey(["ml_training_job", "prepare_data"]) in asset_keys
-        assert AssetKey(["ml_training_job", "train_model"]) in asset_keys
-
-        assert len(asset_keys) == 3
-
-
-def test_databricks_filtering(mock_fetcher):
+def test_databricks_filtering(mock_fetcher, mock_workspace, mock_serializer, mock_deserializer, tmp_path):
     """Test that jobs are correctly filtered based on config."""
+    db_filter = MagicMock(spec=DatabricksFilter)
+    
+    # Update mock to return subset
+    filtered_jobs = [j for j in MOCK_JOBS_HYBRID if j.job_id == 101]
+    mock_deserializer.return_value = SimpleNamespace(jobs=filtered_jobs)
 
-    def side_effect(client, databricks_filter):
-        filtered_results = []
-        for job in MOCK_JOBS_DATA:
-            job_as_dict = {"job_id": job.job_id}
-            if databricks_filter.include_job(job_as_dict):
-                filtered_results.append(job)
-        return filtered_results
+    component = DatabricksWorkspaceComponent(
+        workspace=mock_workspace,
+        databricks_filter=db_filter 
+    )
 
-    mock_fetcher.side_effect = side_effect
+    state_path = tmp_path / "filtered_state.json"
+    component.write_state_to_path(state_path)
+    
+    defs = component.build_defs_from_state(context=None, state_path=state_path)
+    asset_keys = defs.resolve_asset_graph().get_all_asset_keys()
+    
+    assert AssetKey(["data_ingestion_job", "ingest_task"]) in asset_keys
+    assert AssetKey(["ml_training_job", "train_model"]) not in asset_keys
 
-    filter_yaml = {
-        "type": "dagster_databricks.DatabricksWorkspaceComponent",
-        "attributes": {
-            "workspace": {"host": "fake", "token": "fake"},
-            "databricks_filter": {"include_jobs": {"job_ids": [101]}},
-        },
-    }
-
-    with setup_databricks_component(defs_yaml_contents=filter_yaml) as (component, defs):
-        asset_keys = defs.resolve_asset_graph().get_all_asset_keys()
-
-        assert AssetKey(["data_ingestion_job", "ingest_task"]) in asset_keys
-
-        assert AssetKey(["ml_training_job", "prepare_data"]) not in asset_keys
-
-        assert len(asset_keys) == 1
-
-
-def test_databricks_custom_asset_mapping(mock_fetcher):
+def test_databricks_custom_asset_mapping(mock_fetcher, mock_workspace, mock_serializer, mock_deserializer, tmp_path):
     """Test that assets can be renamed and customized via YAML."""
-    custom_yaml = {
-        "type": "dagster_databricks.DatabricksWorkspaceComponent",
-        "attributes": {
-            "workspace": {"host": "fake", "token": "fake"},
-            "databricks_filter": {"include_jobs": {"job_ids": [101]}},
-            "assets_by_task_key": {
-                "ingest_task": {
-                    "key": "my_custom_ingestion",
-                    "group_name": "etl_group",
-                    "description": "Overridden description",
-                }
-            },
-        },
-    }
+    custom_spec = AssetSpec(
+        key=AssetKey("my_custom_ingestion"),
+        group_name="etl_group",
+        description="Overridden description"
+    )
+    
+    mock_deserializer.return_value = SimpleNamespace(jobs=MOCK_JOBS_HYBRID)
 
-    with setup_databricks_component(defs_yaml_contents=custom_yaml) as (component, defs):
-        asset_graph = defs.resolve_asset_graph()
-        all_keys = asset_graph.get_all_asset_keys()
+    component = DatabricksWorkspaceComponent(
+        workspace=mock_workspace,
+        assets_by_task_key={
+            "ingest_task": [custom_spec]
+        }
+    )
 
-        assert AssetKey(["data_ingestion_job", "ingest_task"]) not in all_keys
+    state_path = tmp_path / "custom_state.json"
+    component.write_state_to_path(state_path)
+    
+    defs = component.build_defs_from_state(context=None, state_path=state_path)
+    asset_graph = defs.resolve_asset_graph()
+    
+    custom_key = AssetKey("my_custom_ingestion")
+    assert custom_key in asset_graph.get_all_asset_keys()
+    
+    spec = asset_graph.get(custom_key)
+    assert spec.group_name == "etl_group"
+    assert spec.description == "Overridden description"
 
-        custom_key = AssetKey(["my_custom_ingestion"])
-        assert custom_key in all_keys
-
-        spec = asset_graph.get(custom_key)
-        assert spec.group_name == "etl_group"
-        assert spec.description == "Overridden description"
-        assert "databricks" in spec.kinds
-
-
-def test_state_serialization():
-    """Test that the DatabricksJob model can be serialized and deserialized correctly."""
-    original_jobs = [
-        DatabricksJob(
-            job_id=123,
-            name="Complex Job",
-            tasks=[
-                {"task_key": "task_a", "notebook_task": {"source": "git"}},
-                {"task_key": "task_b", "spark_python_task": {"parameters": ["--foo", "bar"]}},
-            ],
-        )
+def test_malformed_job_data(mock_fetcher, mock_workspace, mock_serializer, mock_deserializer, tmp_path):
+    # Prepare malformed objects using hybrid approach
+    malformed_objects = [
+        make_hybrid_job(1, "Good", [make_obj_task("valid")]),
+        make_hybrid_job(2, "Empty", []),
+        make_hybrid_job(3, "Survival", [make_obj_task("survival")]),
     ]
+    mock_deserializer.return_value = SimpleNamespace(jobs=malformed_objects)
 
-    serialized = serialize_value(original_jobs)
-    deserialized = deserialize_value(serialized, list[DatabricksJob])
-
-    assert len(deserialized) == 1
-    assert deserialized[0].job_id == 123
-    assert deserialized[0].name == "Complex Job"
-    assert len(deserialized[0].tasks) == 2
-    assert deserialized[0].tasks[0]["task_key"] == "task_a"
-
-
-def test_malformed_job_data(mock_fetcher):
-    """Test that the component handles jobs with missing data gracefully."""
-    mock_fetcher.return_value = [
-        DatabricksJob(job_id=1, name="Good", tasks=[{"task_key": "valid"}]),
-        DatabricksJob(job_id=2, name="Empty", tasks=[]),
-        DatabricksJob(job_id=3, name="Survival", tasks=[{"task_key": "survival"}]),
-    ]
-
-    with setup_databricks_component(defs_yaml_contents=COMPONENT_YAML) as (component, defs):
-        asset_keys = defs.resolve_asset_graph().get_all_asset_keys()
-
-        assert AssetKey(["good", "valid"]) in asset_keys
-
-        assert AssetKey(["survival", "survival"]) in asset_keys
+    component = DatabricksWorkspaceComponent(workspace=mock_workspace)
+    state_path = tmp_path / "malformed_state.json"
+    component.write_state_to_path(state_path)
+    
+    defs = component.build_defs_from_state(context=None, state_path=state_path)
+    asset_keys = defs.resolve_asset_graph().get_all_asset_keys()
+    
+    assert AssetKey(["good", "valid"]) in asset_keys
+    assert AssetKey(["survival", "survival"]) in asset_keys

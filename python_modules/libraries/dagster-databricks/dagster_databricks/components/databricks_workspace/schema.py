@@ -54,9 +54,3 @@ ResolvedDatabricksFilter = Annotated[
         description="Filter which Databricks jobs to include",
     ),
 ]
-
-
-class DatabricksWorkspaceConfig(BaseModel):
-    host: str
-    token: str
-
