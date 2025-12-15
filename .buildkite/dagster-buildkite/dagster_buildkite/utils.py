@@ -84,6 +84,8 @@ def check_for_release() -> bool:
 
 def network_buildkite_container(network_name: str) -> list[str]:
     return [
+        # Set Docker API version for compatibility with older daemons
+        "export DOCKER_API_VERSION=1.41",
         # hold onto your hats, this is docker networking at its best. First, we figure out
         # the name of the currently running container...
         "export CONTAINER_ID=`cat /etc/hostname`",
