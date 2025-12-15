@@ -1,6 +1,7 @@
 ---
 title: Dagster & Teradata
 sidebar_label: Teradata
+sidebar_position: 1
 description: The community-supported Teradata package provides an integration with Teradata Vantage.
 tags: [community-supported, storage]
 source: https://github.com/dagster-io/community-integrations/tree/main/libraries/dagster-teradata

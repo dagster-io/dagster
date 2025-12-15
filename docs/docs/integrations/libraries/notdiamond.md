@@ -1,6 +1,7 @@
 ---
 title: Dagster & Not Diamond
 sidebar_label: Not Diamond
+sidebar_position: 1
 description: Leverage the Not Diamond resource to easily determine which LLM provider is most appropriate for your use case.
 tags: [community-supported, ai]
 source: https://github.com/dagster-io/community-integrations/tree/main/libraries/dagster-notdiamond

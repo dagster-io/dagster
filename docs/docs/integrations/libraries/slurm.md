@@ -1,6 +1,7 @@
 ---
 title: Dagster & SLURM
 sidebar_label: SLURM
+sidebar_position: 1
 description: >
   The SLURM integration allows you to easily interact with the SLURM workload manager on HPC systems using the SLURM CLI to scale your workload of your Dagster pipelines.
 tags: [community-supported]

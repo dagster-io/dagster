@@ -1,6 +1,7 @@
 ---
 title: Dagster & DingTalk
 sidebar_label: DingTalk
+sidebar_position: 1
 description: The community-supported DingTalk package provides an integration with DingTalk.
 tags: [community-supported]
 source: https://github.com/sqkkyzx/dagster-dingtalk

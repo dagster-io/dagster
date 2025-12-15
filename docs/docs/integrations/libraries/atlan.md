@@ -1,6 +1,7 @@
 ---
 title: Dagster & Atlan
 sidebar_label: Atlan
+sidebar_position: 1
 description: The Atlan integration streams Dagster event metadata to Atlan.
 tags: [dagster-supported]
 partnerlink: https://atlan.com/
