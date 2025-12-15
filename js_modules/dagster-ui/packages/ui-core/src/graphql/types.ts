@@ -430,11 +430,13 @@ export type AssetHealthFreshnessMeta = {
 
 export type AssetHealthMaterializationDegradedNotPartitionedMeta = {
   __typename: 'AssetHealthMaterializationDegradedNotPartitionedMeta';
-  failedRunId: Scalars['String']['output'];
+  failedRunId: Maybe<Scalars['String']['output']>;
 };
 
 export type AssetHealthMaterializationDegradedPartitionedMeta = {
   __typename: 'AssetHealthMaterializationDegradedPartitionedMeta';
+  latestFailedRunId: Maybe<Scalars['String']['output']>;
+  latestRunId: Maybe<Scalars['String']['output']>;
   numFailedPartitions: Scalars['Int']['output'];
   numMissingPartitions: Scalars['Int']['output'];
   totalNumPartitions: Scalars['Int']['output'];
@@ -442,6 +444,7 @@ export type AssetHealthMaterializationDegradedPartitionedMeta = {
 
 export type AssetHealthMaterializationHealthyPartitionedMeta = {
   __typename: 'AssetHealthMaterializationHealthyPartitionedMeta';
+  latestRunId: Maybe<Scalars['String']['output']>;
   numMissingPartitions: Scalars['Int']['output'];
   totalNumPartitions: Scalars['Int']['output'];
 };
@@ -7030,6 +7033,14 @@ export const buildAssetHealthMaterializationDegradedPartitionedMeta = (
   relationshipsToOmit.add('AssetHealthMaterializationDegradedPartitionedMeta');
   return {
     __typename: 'AssetHealthMaterializationDegradedPartitionedMeta',
+    latestFailedRunId:
+      overrides && overrides.hasOwnProperty('latestFailedRunId')
+        ? overrides.latestFailedRunId!
+        : 'explicabo',
+    latestRunId:
+      overrides && overrides.hasOwnProperty('latestRunId')
+        ? overrides.latestRunId!
+        : 'perspiciatis',
     numFailedPartitions:
       overrides && overrides.hasOwnProperty('numFailedPartitions')
         ? overrides.numFailedPartitions!
@@ -7055,6 +7066,8 @@ export const buildAssetHealthMaterializationHealthyPartitionedMeta = (
   relationshipsToOmit.add('AssetHealthMaterializationHealthyPartitionedMeta');
   return {
     __typename: 'AssetHealthMaterializationHealthyPartitionedMeta',
+    latestRunId:
+      overrides && overrides.hasOwnProperty('latestRunId') ? overrides.latestRunId! : 'eveniet',
     numMissingPartitions:
       overrides && overrides.hasOwnProperty('numMissingPartitions')
         ? overrides.numMissingPartitions!
