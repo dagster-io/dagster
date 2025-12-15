@@ -4,12 +4,15 @@ from ingestion_patterns.definitions import defs
 
 def test_definitions_can_load():
     """Test that the Definitions object loads without errors."""
-    assert isinstance(defs, dg.Definitions)
+    # defs is a LazyDefinitions, call it to get the actual Definitions
+    definitions = defs()
+    assert isinstance(definitions, dg.Definitions)
 
 
 def test_assets_exist():
     """Test that expected assets are defined."""
-    repo = defs.get_repository_def()
+    definitions = defs()
+    repo = definitions.get_repository_def()
     asset_graph = repo.asset_graph
     asset_keys = {key.to_user_string() for key in asset_graph.materializable_asset_keys}
 
@@ -27,7 +30,8 @@ def test_assets_exist():
 
 def test_jobs_exist():
     """Test that expected jobs are defined."""
-    repo = defs.get_repository_def()
+    definitions = defs()
+    repo = definitions.get_repository_def()
     job_names = {job.name for job in repo.get_all_jobs()}
 
     expected_jobs = ["daily_pull_job", "kafka_poll_job", "webhook_processing_job"]
@@ -38,7 +42,8 @@ def test_jobs_exist():
 
 def test_sensors_exist():
     """Test that expected sensors are defined."""
-    repo = defs.get_repository_def()
+    definitions = defs()
+    repo = definitions.get_repository_def()
     sensor_names = {sensor.name for sensor in repo.sensor_defs}
 
     expected_sensors = ["kafka_polling_sensor", "webhook_pending_sensor"]
@@ -49,7 +54,8 @@ def test_sensors_exist():
 
 def test_schedules_exist():
     """Test that expected schedules are defined."""
-    repo = defs.get_repository_def()
+    definitions = defs()
+    repo = definitions.get_repository_def()
     schedule_names = {schedule.name for schedule in repo.schedule_defs}
 
     expected_schedules = ["daily_pull_schedule"]
@@ -60,7 +66,11 @@ def test_schedules_exist():
 
 def test_resources_exist():
     """Test that expected resources are defined."""
-    repo = defs.get_repository_def()
+    definitions = defs()
+    repo = definitions.get_repository_def()
     resource_keys = set(repo.get_top_level_resources().keys())
 
-    assert "duckdb" in resource_keys, "DuckDB resource not found in definitions"
+    # Check for all resources
+    expected_resources = ["duckdb", "api_client", "kafka_consumer", "webhook_storage"]
+    for resource in expected_resources:
+        assert resource in resource_keys, f"Resource '{resource}' not found in definitions"

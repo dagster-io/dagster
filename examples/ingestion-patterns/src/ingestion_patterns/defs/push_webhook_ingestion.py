@@ -5,7 +5,7 @@ import dagster as dg
 import pandas as pd
 from dagster_duckdb import DuckDBResource
 
-from ingestion_patterns.resources.mock_apis import clear_webhook_storage, get_webhook_storage
+from ingestion_patterns.resources import WebhookStorageResource
 
 
 class WebhookPayloadConfig(dg.Config):
@@ -20,17 +20,15 @@ def process_webhook_data(
     context: dg.AssetExecutionContext,
     config: WebhookPayloadConfig,
     duckdb: DuckDBResource,
+    webhook_storage: WebhookStorageResource,
 ) -> dict[str, Any]:
     """Process data received via webhook push and store in DuckDB.
 
     This asset processes pending webhook payloads from storage,
     validates them, ensures idempotency, and stores in DuckDB.
     """
-    # Get webhook storage (in production, this would be a proper queue/database)
-    webhook_storage = get_webhook_storage()
-
-    # Retrieve pending payloads for this source
-    pending = webhook_storage.get(config.source_id, [])
+    # Retrieve pending payloads for this source using the resource
+    pending = webhook_storage.get_pending_payloads(config.source_id)
 
     if not pending:
         context.log.info(f"No pending payloads for source: {config.source_id}")
@@ -79,8 +77,8 @@ def process_webhook_data(
 
         processed.append(processed_item)
 
-    # Clear processed payloads from storage
-    clear_webhook_storage(config.source_id)
+    # Clear processed payloads from storage using the resource
+    webhook_storage.clear_payloads(config.source_id)
 
     # Store processed payloads in DuckDB
     total_count = 0
@@ -88,12 +86,16 @@ def process_webhook_data(
         webhook_df = pd.DataFrame(processed)
         with duckdb.get_connection() as conn:
             conn.execute("CREATE SCHEMA IF NOT EXISTS ingestion")
-            # Register DataFrame and create table
             conn.register("webhook_df", webhook_df)
-            conn.execute(
-                "CREATE TABLE IF NOT EXISTS ingestion.webhook_data AS SELECT * FROM webhook_df WHERE 1=0"
-            )
-            conn.execute("INSERT INTO ingestion.webhook_data SELECT * FROM webhook_df")
+            # Check if table exists
+            table_exists = conn.execute(
+                "SELECT 1 FROM information_schema.tables "
+                "WHERE table_schema='ingestion' AND table_name='webhook_data'"
+            ).fetchone()
+            if table_exists:
+                conn.execute("INSERT INTO ingestion.webhook_data SELECT * FROM webhook_df")
+            else:
+                conn.execute("CREATE TABLE ingestion.webhook_data AS SELECT * FROM webhook_df")
 
             result = conn.execute("SELECT COUNT(*) FROM ingestion.webhook_data").fetchone()
             total_count = result[0] if result else 0

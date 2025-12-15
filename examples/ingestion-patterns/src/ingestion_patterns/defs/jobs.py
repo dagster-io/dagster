@@ -5,7 +5,7 @@ import dagster as dg
 from ingestion_patterns.defs.poll_kafka_ingestion import poll_kafka_events, process_kafka_events
 from ingestion_patterns.defs.pull_api_ingestion import extract_source_data, load_to_storage
 from ingestion_patterns.defs.push_webhook_ingestion import process_webhook_data
-from ingestion_patterns.resources.mock_apis import get_webhook_storage
+from ingestion_patterns.resources import WebhookStorageResource
 
 # Jobs
 pull_job = dg.define_asset_job(
@@ -42,9 +42,12 @@ def kafka_polling_sensor(context):
 
 
 @dg.sensor(job=webhook_job, minimum_interval_seconds=10)
-def webhook_pending_sensor(context):
+def webhook_pending_sensor(
+    context: dg.SensorEvaluationContext,
+    webhook_storage: WebhookStorageResource,
+):
     """Sensor that triggers processing when webhook payloads are pending."""
-    storage = get_webhook_storage()
+    storage = webhook_storage.get_all_sources()
 
     # Check each source for pending payloads
     for source_id, payloads in storage.items():

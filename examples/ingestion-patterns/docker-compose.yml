@@ -40,3 +40,41 @@ services:
     depends_on:
       kafka:
         condition: service_healthy
+
+  # Webhook receiver server
+  webhook-server:
+    image: python:3.12-slim
+    container_name: ingestion-patterns-webhook
+    ports:
+      - "5050:5050"
+    volumes:
+      - ./scripts/webhook_server.py:/app/webhook_server.py:ro
+      - /tmp/webhook_storage:/tmp/webhook_storage  # Host mount for shared access with Dagster
+    environment:
+      WEBHOOK_STORAGE_DIR: /tmp/webhook_storage
+    command: >
+      sh -c "pip install flask werkzeug && python /app/webhook_server.py --host 0.0.0.0 --port 5050"
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:5050/health || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
+
+  # Sample data API server (for pull ingestion pattern)
+  api-server:
+    image: python:3.12-slim
+    container_name: ingestion-patterns-api
+    ports:
+      - "5051:5051"
+    volumes:
+      - ./scripts/api_server.py:/app/api_server.py:ro
+    command: >
+      sh -c "pip install flask && python /app/api_server.py --host 0.0.0.0 --port 5051"
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:5051/health || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
+

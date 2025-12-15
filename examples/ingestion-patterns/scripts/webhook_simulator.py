@@ -1,11 +1,57 @@
 #!/usr/bin/env python3
+"""Simulate webhook pushes directly to the file storage.
+
+This script writes webhook payloads directly to the shared storage directory,
+simulating what the webhook server does when it receives HTTP requests.
+"""
+
 import argparse
+import json
+import os
 import random
 import time
 import uuid
 from datetime import datetime
+from pathlib import Path
 
-from ingestion_patterns.resources.mock_apis import get_webhook_storage, receive_webhook
+# Default storage directory (same as webhook server and Dagster resource)
+WEBHOOK_STORAGE_DIR = Path(os.environ.get("WEBHOOK_STORAGE_DIR", "/tmp/webhook_storage"))
+
+
+def ensure_storage_dir() -> None:
+    """Ensure the storage directory exists."""
+    WEBHOOK_STORAGE_DIR.mkdir(parents=True, exist_ok=True)
+
+
+def receive_webhook(source_id: str, payload: dict) -> None:
+    """Store a webhook payload to file storage."""
+    ensure_storage_dir()
+
+    # Add metadata
+    payload["received_at"] = datetime.now().isoformat()
+
+    # Load existing payloads
+    source_file = WEBHOOK_STORAGE_DIR / f"{source_id}.json"
+    existing: list = []
+    if source_file.exists():
+        with open(source_file) as f:
+            existing = json.load(f)
+
+    # Append new payload
+    existing.append(payload)
+
+    # Save back
+    with open(source_file, "w") as f:
+        json.dump(existing, f, indent=2)
+
+
+def get_pending_count(source_id: str) -> int:
+    """Get count of pending payloads for a source."""
+    source_file = WEBHOOK_STORAGE_DIR / f"{source_id}.json"
+    if not source_file.exists():
+        return 0
+    with open(source_file) as f:
+        return len(json.load(f))
 
 
 def create_webhook_payload(event_num: int) -> dict:
@@ -35,6 +81,7 @@ def simulate_webhooks(
 ) -> None:
     """Simulate webhook pushes to the storage buffer."""
     print(f"Simulating {count} webhook pushes for source '{source_id}'...")  # noqa: T201
+    print(f"Storage directory: {WEBHOOK_STORAGE_DIR}")  # noqa: T201
     print(f"Interval between events: {interval}s")  # noqa: T201
     print("-" * 50)  # noqa: T201
 
@@ -51,8 +98,7 @@ def simulate_webhooks(
             time.sleep(interval)
 
     # Show storage state
-    storage = get_webhook_storage()
-    pending_count = len(storage.get(source_id, []))
+    pending_count = get_pending_count(source_id)
 
     print("-" * 50)  # noqa: T201
     print(f"Simulated {count} webhook pushes successfully!")  # noqa: T201

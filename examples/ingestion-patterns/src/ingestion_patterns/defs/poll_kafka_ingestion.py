@@ -7,74 +7,28 @@ import pandas as pd
 from dagster._core.events import StepMaterializationData
 from dagster_duckdb import DuckDBResource
 
-from ingestion_patterns.resources.mock_apis import MockKafkaConsumer
-
-
-def _create_kafka_consumer(
-    topic: str,
-    consumer_group: str,
-    bootstrap_servers: str | None,
-):
-    """Create a Kafka consumer - either mock or real based on bootstrap_servers.
-
-    Args:
-        topic: Kafka topic to consume from
-        consumer_group: Consumer group ID
-        bootstrap_servers: Kafka bootstrap servers. If None or empty, uses mock.
-
-    Returns:
-        A consumer instance (mock or real confluent-kafka Consumer)
-    """
-    if not bootstrap_servers:
-        # Use mock consumer for testing/demo
-        return MockKafkaConsumer(topic, consumer_group)
-
-    # Use real Kafka consumer
-    # Lazy import to avoid requiring confluent-kafka for mock usage
-    try:
-        from confluent_kafka import Consumer
-    except ImportError as e:
-        raise ImportError(
-            "confluent-kafka is required for real Kafka connections. "
-            "Install with: pip install 'ingestion-patterns[kafka]'"
-        ) from e
-
-    return Consumer(
-        {
-            "bootstrap.servers": bootstrap_servers,
-            "group.id": consumer_group,
-            "auto.offset.reset": "earliest",
-            "enable.auto.commit": False,
-        }
-    )
+from ingestion_patterns.resources import KafkaConsumerResource
 
 
 class PollingConfig(dg.Config):
     """Configuration for polling-based ingestion."""
 
     kafka_topic: str = "transactions"
-    consumer_group: str = "dagster-ingestion"
     poll_interval_seconds: int = 60
     max_records_per_poll: int = 100
-    # Set to Kafka bootstrap servers (e.g., "localhost:9094") for real Kafka
-    # Leave empty to use mock consumer
-    bootstrap_servers: str = ""
 
 
 @dg.asset
 def poll_kafka_events(
     context: dg.AssetExecutionContext,
     config: PollingConfig,
+    kafka_consumer: KafkaConsumerResource,
 ) -> dict[str, Any]:
     """Poll Kafka topic for new events since last checkpoint.
 
     This asset maintains state (last processed offset) and only processes
     new messages, ensuring idempotency and efficiency.
-
-    Configure bootstrap_servers to connect to real Kafka, or leave empty for mock.
     """
-    using_real_kafka = bool(config.bootstrap_servers)
-
     # Load last processed offset from previous materialization
     last_event = context.instance.get_latest_materialization_event(context.asset_key)
 
@@ -88,34 +42,15 @@ def poll_kafka_events(
                 offset_value = metadata["last_offset"].value
                 start_offset = int(str(offset_value)) + 1
 
-    context.log.info(
-        f"Polling from offset {start_offset} ({'real Kafka' if using_real_kafka else 'mock'})"
-    )
+    context.log.info(f"Polling from offset {start_offset}")
 
-    # Create consumer (mock or real based on config)
-    consumer = _create_kafka_consumer(
-        config.kafka_topic,
-        config.consumer_group,
-        config.bootstrap_servers if using_real_kafka else None,
+    # Poll for messages using the resource
+    messages = kafka_consumer.poll_messages(
+        topic=config.kafka_topic,
+        timeout_seconds=config.poll_interval_seconds,
+        max_records=config.max_records_per_poll,
+        context=context,
     )
-
-    # Poll for messages
-    if using_real_kafka:
-        messages = _poll_real_kafka(
-            consumer,
-            config.kafka_topic,
-            config.poll_interval_seconds,
-            config.max_records_per_poll,
-            context,
-        )
-    else:
-        # Mock consumer
-        consumer.seek(start_offset)
-        messages = consumer.poll(
-            timeout_ms=config.poll_interval_seconds * 1000,
-            max_records=config.max_records_per_poll,
-        )
-        consumer.close()
 
     if not messages:
         context.log.info("No new messages")
@@ -171,7 +106,6 @@ def poll_kafka_events(
             "last_offset": last_processed_offset,
             "start_offset": start_offset,
             "poll_timestamp": datetime.now().isoformat(),
-            "using_real_kafka": using_real_kafka,
         }
     )
 
@@ -180,51 +114,6 @@ def poll_kafka_events(
         "last_offset": last_processed_offset,
         "count": len(parsed_messages),
     }
-
-
-def _poll_real_kafka(
-    consumer,
-    topic: str,
-    timeout_seconds: int,
-    max_records: int,
-    context: dg.AssetExecutionContext,
-) -> list[dict[str, Any]]:
-    """Poll messages from real Kafka using confluent-kafka Consumer."""
-    consumer.subscribe([topic])
-
-    messages = []
-    deadline = datetime.now().timestamp() + timeout_seconds
-
-    while len(messages) < max_records:
-        remaining_time = deadline - datetime.now().timestamp()
-        if remaining_time <= 0:
-            break
-
-        msg = consumer.poll(timeout=min(remaining_time, 1.0))
-
-        if msg is None:
-            continue
-
-        if msg.error():
-            context.log.warning(f"Kafka error: {msg.error()}")
-            continue
-
-        messages.append(
-            {
-                "offset": msg.offset(),
-                "partition": msg.partition(),
-                "timestamp": msg.timestamp()[1] if msg.timestamp() else 0,
-                "key": msg.key().decode("utf-8") if msg.key() else None,
-                "value": msg.value().decode("utf-8") if msg.value() else "{}",
-            }
-        )
-
-    # Commit offsets after successful processing
-    if messages:
-        consumer.commit()
-
-    consumer.close()
-    return messages
 
 
 @dg.asset
@@ -290,12 +179,16 @@ def process_kafka_events(
         events_df = pd.DataFrame(processed)
         with duckdb.get_connection() as conn:
             conn.execute("CREATE SCHEMA IF NOT EXISTS ingestion")
-            # Register DataFrame and create table
             conn.register("events_df", events_df)
-            conn.execute(
-                "CREATE TABLE IF NOT EXISTS ingestion.kafka_events AS SELECT * FROM events_df WHERE 1=0"
-            )
-            conn.execute("INSERT INTO ingestion.kafka_events SELECT * FROM events_df")
+            # Check if table exists
+            table_exists = conn.execute(
+                "SELECT 1 FROM information_schema.tables "
+                "WHERE table_schema='ingestion' AND table_name='kafka_events'"
+            ).fetchone()
+            if table_exists:
+                conn.execute("INSERT INTO ingestion.kafka_events SELECT * FROM events_df")
+            else:
+                conn.execute("CREATE TABLE ingestion.kafka_events AS SELECT * FROM events_df")
 
             result = conn.execute("SELECT COUNT(*) FROM ingestion.kafka_events").fetchone()
             total_count = result[0] if result else 0

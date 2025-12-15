@@ -865,6 +865,7 @@ dependencies = [
     { name = "dagster" },
     { name = "dagster-duckdb" },
     { name = "pandas" },
+    { name = "requests" },
 ]
 
 [package.optional-dependencies]
@@ -889,6 +890,7 @@ requires-dist = [
     { name = "dagster-duckdb", specifier = ">=0.25.0" },
     { name = "flask", marker = "extra == 'webhook'", specifier = ">=3.0.0" },
     { name = "pandas", specifier = ">=2.0.0" },
+    { name = "requests", specifier = ">=2.28.0" },
 ]
 provides-extras = ["kafka", "webhook"]
 

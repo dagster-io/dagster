@@ -6,13 +6,12 @@ import pandas as pd
 from dagster._core.events import StepMaterializationData
 from dagster_duckdb import DuckDBResource
 
-from ingestion_patterns.resources.mock_apis import MockAPIClient
+from ingestion_patterns.resources import APIClientResource
 
 
 class PullIngestionConfig(dg.Config):
     """Configuration for pull-based ingestion."""
 
-    source_api_url: str = "https://api.example.com/data"
     start_date: str | None = None  # ISO format
     end_date: str | None = None  # ISO format
     batch_size: int = 1000
@@ -23,6 +22,7 @@ def extract_source_data(
     context: dg.AssetExecutionContext,
     config: PullIngestionConfig,
     duckdb: DuckDBResource,
+    api_client: APIClientResource,
 ) -> pd.DataFrame:
     """Pull data from source system via API.
 
@@ -57,10 +57,7 @@ def extract_source_data(
 
     context.log.info(f"Pulling data from {start_date} to {end_date}")
 
-    # Initialize API client (in production, use actual client)
-    api_client = MockAPIClient(config.source_api_url)
-
-    # Pull data from API
+    # Pull data from API using the resource
     records = api_client.get_records(start_date, end_date)
 
     if not records:
@@ -73,10 +70,15 @@ def extract_source_data(
     with duckdb.get_connection() as conn:
         conn.execute("CREATE SCHEMA IF NOT EXISTS ingestion")
         conn.register("raw_df", df)
-        conn.execute(
-            "CREATE TABLE IF NOT EXISTS ingestion.raw_extract AS SELECT * FROM raw_df WHERE 1=0"
-        )
-        conn.execute("INSERT INTO ingestion.raw_extract SELECT * FROM raw_df")
+        # Check if table exists
+        table_exists = conn.execute(
+            "SELECT 1 FROM information_schema.tables "
+            "WHERE table_schema='ingestion' AND table_name='raw_extract'"
+        ).fetchone()
+        if table_exists:
+            conn.execute("INSERT INTO ingestion.raw_extract SELECT * FROM raw_df")
+        else:
+            conn.execute("CREATE TABLE ingestion.raw_extract AS SELECT * FROM raw_df")
         context.log.info(f"Stored {len(df)} records in ingestion.raw_extract")
 
     # Store metadata for next run
@@ -178,10 +180,15 @@ def load_to_storage(
     with duckdb.get_connection() as conn:
         conn.execute("CREATE SCHEMA IF NOT EXISTS ingestion")
         conn.register("final_df", df)
-        conn.execute(
-            "CREATE TABLE IF NOT EXISTS ingestion.final_data AS SELECT * FROM final_df WHERE 1=0"
-        )
-        conn.execute("INSERT INTO ingestion.final_data SELECT * FROM final_df")
+        # Check if table exists
+        table_exists = conn.execute(
+            "SELECT 1 FROM information_schema.tables "
+            "WHERE table_schema='ingestion' AND table_name='final_data'"
+        ).fetchone()
+        if table_exists:
+            conn.execute("INSERT INTO ingestion.final_data SELECT * FROM final_df")
+        else:
+            conn.execute("CREATE TABLE ingestion.final_data AS SELECT * FROM final_df")
 
         # Get total count
         result = conn.execute("SELECT COUNT(*) FROM ingestion.final_data").fetchone()

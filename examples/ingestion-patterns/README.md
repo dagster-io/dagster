@@ -13,16 +13,19 @@ ingestion-patterns/
 │   │   ├── push_webhook_ingestion.py # Push pattern (webhooks)
 │   │   ├── pull_api_ingestion.py     # Pull pattern (scheduled API)
 │   │   └── poll_kafka_ingestion.py   # Poll pattern (Kafka)
-│   └── resources/
-│       └── mock_apis.py              # Mock API clients and webhook storage
+│   └── resources/                    # Dagster resources
+│       ├── api_client.py             # HTTP API client resource
+│       ├── kafka_consumer.py         # Kafka consumer resource
+│       └── webhook_storage.py        # Webhook storage resource
 ├── scripts/
+│   ├── api_server.py                 # Sample data API server
 │   ├── kafka_producer.py             # Produce events to Kafka
 │   ├── webhook_server.py             # Flask webhook receiver server
-│   └── webhook_simulator.py          # Simulate webhooks (in-memory)
+│   └── webhook_simulator.py          # Simulate webhooks
 ├── tests/
 │   ├── test_definitions.py           # Definition loading tests
 │   └── test_assets.py                # Asset materialization tests
-├── docker-compose.yml                # Kafka + Kafka UI
+├── docker-compose.yml                # Kafka, API server, webhook server
 └── pyproject.toml                    # Project configuration
 ```
 
@@ -75,20 +78,39 @@ python scripts/webhook_simulator.py --count 10
 
 Then materialize `process_webhook_data` in the Dagster UI.
 
-**Option B: Run the webhook server**
+**Option B: Run the webhook server (via Docker)**
 
 ```bash
-# Terminal 1: Start the webhook server
-python scripts/webhook_server.py
+# Start all services including webhook server
+docker compose up -d
 
-# Terminal 2: Send webhooks via curl
-curl -X POST http://localhost:5050/webhook/my-source \
-  -H "Content-Type: application/json" \
-  -d '{"id": "event-001", "data": {"type": "order", "amount": 99.99}}'
-
-# Check pending payloads
-curl http://localhost:5050/webhook/my-source/pending
+# Verify webhook server is running
+curl http://localhost:5050/health
 ```
+
+**Step 1: Send a test webhook**
+
+```bash
+curl -X POST http://localhost:5050/webhook/test-source \
+  -H "Content-Type: application/json" \
+  -d '{"id": "evt-001", "timestamp": "2024-01-01T00:00:00", "data": {"key": "value"}}'
+```
+
+**Step 2: Check pending payloads**
+
+```bash
+curl http://localhost:5050/webhook/test-source/pending
+```
+
+**Step 3: Process in Dagster**
+
+In the Dagster UI, materialize `process_webhook_data` with config:
+
+```yaml
+source_id: "test-source"
+```
+
+Or enable the `webhook_pending_sensor` to auto-trigger when payloads are pending.
 
 ### Pull Pattern (Scheduled API)
 
@@ -230,14 +252,14 @@ Assets can be configured at runtime in the Dagster UI:
 
 ## Project Files
 
-| File                                            | Description                                                |
-| ----------------------------------------------- | ---------------------------------------------------------- |
-| `src/ingestion_patterns/definitions.py`         | Main definitions using `Definitions.merge` and `load_defs` |
-| `src/ingestion_patterns/defs/jobs.py`           | Jobs, schedules, and sensors                               |
-| `src/ingestion_patterns/resources/mock_apis.py` | Mock API client, Kafka consumer, webhook storage           |
-| `scripts/kafka_producer.py`                     | Produces events to real Kafka                              |
-| `scripts/webhook_server.py`                     | Flask server that receives webhooks                        |
-| `scripts/webhook_simulator.py`                  | Simulates webhooks to in-memory storage                    |
+| File                                    | Description                                                |
+| --------------------------------------- | ---------------------------------------------------------- |
+| `src/ingestion_patterns/definitions.py` | Main definitions using `Definitions.merge` and `load_defs` |
+| `src/ingestion_patterns/defs/jobs.py`   | Jobs, schedules, and sensors                               |
+| `src/ingestion_patterns/resources/`     | Dagster resources (API client, Kafka, webhook storage)     |
+| `scripts/kafka_producer.py`             | Produces events to real Kafka                              |
+| `scripts/webhook_server.py`             | Flask server that receives webhooks                        |
+| `scripts/webhook_simulator.py`          | Simulates webhooks to in-memory storage                    |
 
 ## Key Concepts Demonstrated
 

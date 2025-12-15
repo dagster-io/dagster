@@ -4,9 +4,11 @@ from pathlib import Path
 import dagster as dg
 import pandas as pd
 from dagster_duckdb import DuckDBResource
+from ingestion_patterns.defs.poll_kafka_ingestion import poll_kafka_events, process_kafka_events
 from ingestion_patterns.defs.pull_api_ingestion import extract_source_data
 from ingestion_patterns.defs.push_webhook_ingestion import process_webhook_data
-from ingestion_patterns.resources.mock_apis import clear_webhook_storage, receive_webhook
+
+from .conftest import MockAPIClientResource, MockKafkaConsumerResource, MockWebhookStorageResource
 
 
 def test_extract_source_data():
@@ -15,7 +17,10 @@ def test_extract_source_data():
         db_path = Path(tmpdir) / "test.duckdb"
         result = dg.materialize(
             [extract_source_data],
-            resources={"duckdb": DuckDBResource(database=str(db_path))},
+            resources={
+                "duckdb": DuckDBResource(database=str(db_path)),
+                "api_client": MockAPIClientResource(),
+            },
         )
         assert result.success
 
@@ -60,28 +65,30 @@ def test_validate_extracted_data_check_fails_missing_columns():
 
 def test_process_webhook_data_no_pending():
     """Test process_webhook_data with no pending payloads."""
-    # Clear any existing payloads
-    clear_webhook_storage("default")
+    mock_storage = MockWebhookStorageResource()
+    mock_storage.clear_all()
 
     with tempfile.TemporaryDirectory() as tmpdir:
         db_path = Path(tmpdir) / "test.duckdb"
         result = dg.materialize(
             [process_webhook_data],
-            resources={"duckdb": DuckDBResource(database=str(db_path))},
+            resources={
+                "duckdb": DuckDBResource(database=str(db_path)),
+                "webhook_storage": mock_storage,
+            },
         )
         assert result.success
 
 
 def test_process_webhook_data_with_payloads():
     """Test process_webhook_data with pending payloads."""
-    # Clear and add test payloads
-    clear_webhook_storage("default")
-
-    receive_webhook(
+    mock_storage = MockWebhookStorageResource()
+    mock_storage.clear_all()
+    mock_storage.add_payload(
         "default",
         {"id": "test-1", "timestamp": "2024-01-01T00:00:00", "data": {"key": "value1"}},
     )
-    receive_webhook(
+    mock_storage.add_payload(
         "default",
         {"id": "test-2", "timestamp": "2024-01-02T00:00:00", "data": {"key": "value2"}},
     )
@@ -90,6 +97,34 @@ def test_process_webhook_data_with_payloads():
         db_path = Path(tmpdir) / "test.duckdb"
         result = dg.materialize(
             [process_webhook_data],
-            resources={"duckdb": DuckDBResource(database=str(db_path))},
+            resources={
+                "duckdb": DuckDBResource(database=str(db_path)),
+                "webhook_storage": mock_storage,
+            },
+        )
+        assert result.success
+
+
+def test_poll_kafka_events():
+    """Test that poll_kafka_events asset materializes successfully."""
+    result = dg.materialize(
+        [poll_kafka_events],
+        resources={
+            "kafka_consumer": MockKafkaConsumerResource(),
+        },
+    )
+    assert result.success
+
+
+def test_process_kafka_events():
+    """Test the full Kafka ingestion pipeline."""
+    with tempfile.TemporaryDirectory() as tmpdir:
+        db_path = Path(tmpdir) / "test.duckdb"
+        result = dg.materialize(
+            [poll_kafka_events, process_kafka_events],
+            resources={
+                "duckdb": DuckDBResource(database=str(db_path)),
+                "kafka_consumer": MockKafkaConsumerResource(),
+            },
         )
         assert result.success
