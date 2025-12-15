@@ -13,7 +13,7 @@ from dagster._core.definitions.declarative_automation.automation_condition impor
 )
 from dagster._record import copy, record
 from dagster.components.resolved.errors import ResolutionException
-from dagster.components.resolved.scopes import DeprecatedScope, DgScope, EnvScope
+from dagster.components.resolved.scopes import DatetimeScope, DeprecatedScope, DgScope, EnvScope
 
 T = TypeVar("T")
 
@@ -69,6 +69,7 @@ class ResolutionContext:
             scope={
                 "env": EnvScope(),
                 "dg": DgScope(),
+                "datetime": DatetimeScope(),
                 # Backward compatibility - deprecated, will be removed in 1.13.0
                 "automation_condition": DeprecatedScope(
                     "automation_condition.*", "dg.AutomationCondition.*", automation_condition_obj

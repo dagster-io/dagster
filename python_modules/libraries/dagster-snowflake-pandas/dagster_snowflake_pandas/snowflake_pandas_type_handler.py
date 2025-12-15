@@ -48,7 +48,9 @@ def _convert_timestamp_to_string(
                     " store_timestamps_as_strings=False in the Snowflake I/O manager configuration"
                     " to store time data as TIMESTAMP types."
                 )
-        return s.dt.strftime("%Y-%m-%d %H:%M:%S.%f %z")
+        # Type error introduced by pandas-stubs 2.3.3.251201 (transitive dep from gql>=4 pin bump)
+        # where .dt accessor is incorrectly typed as Properties without strftime method
+        return s.dt.strftime("%Y-%m-%d %H:%M:%S.%f %z")  # type: ignore
     else:
         return s
 

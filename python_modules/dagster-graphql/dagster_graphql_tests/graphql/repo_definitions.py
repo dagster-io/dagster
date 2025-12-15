@@ -15,6 +15,7 @@ from dagster._config.pythonic_config import ConfigurableResource
 from dagster._core.definitions.asset_selection import AssetSelection
 from dagster._core.test_utils import environ
 from dagster_graphql.test.utils import define_out_of_process_context
+from pydantic import Field as PyField
 
 
 class MyResource(ConfigurableResource):
@@ -60,9 +61,31 @@ class MyOuterResource(ConfigurableResource):
     inner: MyInnerResource
 
 
+class ResourceWithSecrets(ConfigurableResource):
+    """A test resource with secret fields."""
+
+    username: str = PyField(description="the username", default="default_user")
+    password: str = PyField(
+        description="the password",
+        default="default_pass",
+        json_schema_extra={"dagster__is_secret": True},
+    )
+    api_key: str = PyField(
+        description="the api key",
+        default="secret_key_123",
+        json_schema_extra={"dagster__is_secret": True},
+    )
+
+
+@asset
+def database_asset(my_resource_with_secrets: ResourceWithSecrets):
+    """Test asset using database resource."""
+    pass
+
+
 with environ({"MY_STRING": "bar", "MY_OTHER_STRING": "foo"}):
     defs = Definitions(
-        assets=[my_asset, my_observable_source_asset],
+        assets=[my_asset, my_observable_source_asset, database_asset],
         resources={
             "foo": "a_string",
             "my_resource": MyResource(
@@ -74,6 +97,10 @@ with environ({"MY_STRING": "bar", "MY_OTHER_STRING": "foo"}):
             ),
             "my_outer_resource": MyOuterResource(
                 inner=MyInnerResource(a_str="wrapped"),
+            ),
+            "my_resource_with_secrets": ResourceWithSecrets(
+                username="admin",
+                password="secret123",
             ),
         },
         jobs=[my_asset_job],

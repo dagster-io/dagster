@@ -113,9 +113,9 @@ google-cloud-storage==3.7.0
 google-crc32c==1.7.1
 google-resumable-media==2.8.0
 googleapis-common-protos==1.72.0
-gql==3.5.3
+gql==4.0.0
 graphene==3.4.3
-graphql-core==3.2.6
+graphql-core==3.2.7
 graphql-relay==3.2.0
 grpc-google-iam-v1==0.14.3
 grpcio==1.76.0

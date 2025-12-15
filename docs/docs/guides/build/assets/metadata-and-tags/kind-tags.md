@@ -8,7 +8,7 @@ Kind tags can help you quickly identify the underlying system or technology used
 
 ## Adding kinds to an asset
 
-You may add up to three kinds to the `kinds` argument of an <PyObject section="assets" module="dagster" object="asset" decorator />, which can be useful to represent multiple technologies or systems that an asset is associated with. For example, an asset which is built by Python code and stored in Snowflake can be tagged with both `python` and `snowflake` kinds:
+You may add up to ten kinds to the `kinds` argument of an <PyObject section="assets" module="dagster" object="asset" decorator />, which can be useful to represent multiple technologies or systems that an asset is associated with. For example, an asset which is built by Python code and stored in Snowflake can be tagged with both `python` and `snowflake` kinds:
 
 <CodeExample path="docs_snippets/docs_snippets/concepts/metadata-tags/asset_kinds.py" title="src/<project_name>/defs/assets.py" />
 

@@ -180,7 +180,10 @@ class AssetGraphSubset(NamedTuple):
 
         for asset_key in other.asset_keys:
             if asset_key in other.non_partitioned_asset_keys:
-                check.invariant(asset_key not in self.partitions_subsets_by_asset_key)
+                check.invariant(
+                    asset_key not in self.partitions_subsets_by_asset_key,
+                    f"Asset {asset_key} is partitioned in one subset and non-partitioned in the other",
+                )
                 result_non_partitioned_asset_keys = oper(
                     result_non_partitioned_asset_keys, {asset_key}
                 )

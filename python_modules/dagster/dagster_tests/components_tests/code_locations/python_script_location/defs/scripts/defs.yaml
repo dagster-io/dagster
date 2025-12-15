@@ -6,8 +6,14 @@ attributes:
   assets:
     - key: a
       automation_condition: "{{ dg.AutomationCondition.eager() }}"
+      freshness_policy: "{{ dg.FreshnessPolicy.time_window(fail_window=datetime.timedelta(days=2), warn_window=datetime.timedelta(days=1)) }}"
     - key: b
       automation_condition: "{{ dg.AutomationCondition.on_cron('@daily') }}"
+      freshness_policy: "{{ dg.FreshnessPolicy.time_window(fail_window=datetime.timedelta(days=3)) }}"
+      deps: [up1, up2]
+    - key: b_cron
+      automation_condition: "{{ dg.AutomationCondition.on_cron('@daily') }}"
+      freshness_policy: "{{ dg.FreshnessPolicy.cron(deadline_cron='0 10 * * *', lower_bound_delta=datetime.timedelta(hours=1)) }}"
       deps: [up1, up2]
 ---
 type: dagster.components.lib.executable_component.python_script_component.PythonScriptComponent

@@ -12,6 +12,7 @@ from dagster_shared.yaml_utils import dump_run_config_yaml
 
 import dagster._check as check
 from dagster import __version__ as dagster_version
+from dagster._annotations import superseded
 from dagster._check import checked
 from dagster._cli.config_scaffolder import scaffold_job_config
 from dagster._cli.utils import (
@@ -300,6 +301,10 @@ _OP_SELECTION_HELP = (
 @job_name_option(name="job_name")
 @run_config_option(name="config", command_name="execute")
 @python_pointer_options
+@superseded(
+    additional_warn_text="Use 'dg launch --job <job_name>' instead.",
+    emit_runtime_warning=True,
+)
 def job_execute_command(
     tags: Optional[str],
     op_selection: Optional[str],

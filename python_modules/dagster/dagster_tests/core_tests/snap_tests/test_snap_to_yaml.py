@@ -12,6 +12,7 @@ from dagster._core.remote_origin import InProcessCodeLocationOrigin
 from dagster._core.remote_representation.external import RemoteRepository
 from dagster._core.snap.snap_to_yaml import default_values_yaml_from_type_snap
 from dagster._core.types.loadable_target_origin import LoadableTargetOrigin
+from pydantic import Field as PyField
 
 if TYPE_CHECKING:
     from dagster._core.remote_representation.external import RemoteJob
@@ -171,3 +172,49 @@ def test_print_root_complex_op_config(instance) -> None:
         a_default_int: 1
 """
     )
+
+
+def job_def_with_secret_config():
+    """Test that secret fields are masked in YAML output."""
+
+    class MyOpConfig(dg.Config):
+        username: str = PyField(default="admin", description="the username")
+        password: str = PyField(
+            default="secret123",
+            description="the password",
+            json_schema_extra={"dagster__is_secret": True},
+        )
+        api_key: str = PyField(
+            default="key_456",
+            description="the api key",
+            json_schema_extra={"dagster__is_secret": True},
+        )
+
+    @dg.op
+    def an_op(config: MyOpConfig):
+        pass
+
+    @dg.job
+    def a_job():
+        an_op()
+
+    return dg.Definitions(jobs=[a_job])
+
+
+def test_print_root_with_secret_fields(instance) -> None:
+    """Test that secret fields are masked with ******** in YAML output."""
+    repo = _remote_repository_for_function(instance, job_def_with_secret_config)
+    a_job = repo.get_full_job("a_job")
+    root_config_key = a_job.root_config_key
+    assert root_config_key
+    root_type = a_job.config_schema_snapshot.get_config_snap(root_config_key)
+    yaml_output = default_values_yaml_from_type_snap(a_job.config_schema_snapshot, root_type)
+
+    # Verify that secret fields are masked
+    assert "password: '********'" in yaml_output
+    assert "api_key: '********'" in yaml_output
+    # Verify that non-secret field is not masked
+    assert "username: admin" in yaml_output
+    # Verify that actual secret values are not in the output
+    assert "secret123" not in yaml_output
+    assert "key_456" not in yaml_output
