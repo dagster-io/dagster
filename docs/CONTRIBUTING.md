@@ -96,6 +96,7 @@ To link to an integration library, use the `integration` parameter in the PyObje
 Note that if the class name is different from the module name, you will need to prepend the class name to the object:
 
 ```
+
 <PyObject module="dagster_aws" integration="aws" section="libraries" object="s3.s3_pickle_io_manager" />
 ```
 
