@@ -22,6 +22,7 @@ This component is state-backed, meaning it fetches metadata from your Databricks
 ## Loading Databricks Jobs
 
 You can use the `DatabricksWorkspaceComponent` to load jobs from your workspace.
+Note: Tasks belonging to the same Databricks Job are grouped into a single Dagster Multi-Asset. This ensures that when you materialize the asset, the entire Databricks Job runs, preserving shared state between tasks.
 
 Filtering Jobs
 You can filter which jobs are included by providing a list of job IDs. Only the specified jobs will be represented as assets.
