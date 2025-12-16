@@ -271,7 +271,7 @@ helm upgrade -n <dagster-namespace> user-cloud dagster-cloud/dagster-cloud-agent
 
 You can verify that the agent is running by looking at its status in the Dagster+ UI at this address:
 
-`https://<org_name>.dagster.plus/<deployment>/deployment/health`
+`https://<org_name>.eu.dagster.cloud/<deployment>/deployment/health`
 
 :::tip
 
