@@ -380,6 +380,8 @@ import target from '../icon-svgs/target.svg';
 import team from '../icon-svgs/team.svg';
 import terminate from '../icon-svgs/terminate.svg';
 import test from '../icon-svgs/test.svg';
+import thumb_down from '../icon-svgs/thumb_down.svg';
+import thumb_up from '../icon-svgs/thumb_up.svg';
 import timeline from '../icon-svgs/timeline.svg';
 import timer from '../icon-svgs/timer.svg';
 import timestamp from '../icon-svgs/timestamp.svg';
@@ -803,6 +805,8 @@ export const Icons = {
   team,
   terminate,
   test,
+  thumb_down,
+  thumb_up,
   timeline,
   timer,
   timestamp,
