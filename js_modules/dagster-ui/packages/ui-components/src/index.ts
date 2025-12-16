@@ -1,5 +1,4 @@
 export * from './components/Alert';
-export * from './components/BaseButton';
 export * from './components/BaseTag';
 export * from './components/Box';
 export * from './components/Button';
@@ -41,7 +40,6 @@ export * from './components/Slider';
 export * from './components/Spinner';
 export * from './components/SpinnerWithText';
 export * from './components/SplitPanelContainer';
-export * from './components/StyledButton';
 export * from './components/SubwayDot';
 export * from './components/Suggest';
 export * from './components/Table';

@@ -1,8 +1,8 @@
 import {MouseEvent, ReactNode} from 'react';
 import {ExternalToast, toast} from 'sonner';
 
-import {BaseButton} from './BaseButton';
 import {Box} from './Box';
+import {Button} from './Button';
 import {Colors} from './Color';
 import {Icon, IconName} from './Icon';
 import styles from './css/Toaster.module.css';
@@ -63,13 +63,8 @@ const Toast = (props: ToastProps) => {
     }
 
     return (
-      <BaseButton
-        fillColor={Colors.backgroundGray()}
-        fillColorHover={Colors.backgroundGrayHover()}
-        textColor={Colors.textDefault()}
-        strokeColor={Colors.backgroundGray()}
-        strokeColorHover={Colors.backgroundGrayHover()}
-        label={action.text}
+      <Button
+        outlined
         className={styles.toastButton}
         onClick={(e) => {
           if (action.onClick) {
@@ -77,7 +72,9 @@ const Toast = (props: ToastProps) => {
           }
           toast.dismiss(id);
         }}
-      />
+      >
+        {action.text}
+      </Button>
     );
   };
 
