@@ -27,7 +27,7 @@ from dagster._core.definitions.freshness_policy import LegacyFreshnessPolicy
 from dagster._core.definitions.metadata import ArbitraryMetadataMapping
 from dagster._core.definitions.partitions.definition import PartitionsDefinition
 from dagster._core.definitions.partitions.mapping import PartitionMapping
-from dagster._core.definitions.resolved_asset_deps import ResolvedAssetDependencies
+from dagster._core.definitions.resolved_asset_deps import resolve_assets_def_deps
 from dagster._core.definitions.source_asset import SourceAsset
 from dagster._core.definitions.utils import DEFAULT_GROUP_NAME
 from dagster._core.selector.subset_selector import generate_asset_dep_graph
@@ -218,27 +218,8 @@ class AssetGraph(BaseAssetGraph[AssetNode]):
         ]
         all_keys = {k for asset_def in assets_defs for k in asset_def.keys}
 
-        # Resolve all asset dependencies. An asset dependency is resolved when its key is an
-        # AssetKey not subject to any further manipulation.
-        resolved_deps = ResolvedAssetDependencies(assets_defs, [])
-
-        asset_key_replacements = [
-            {
-                raw_key: normalized_key
-                for input_name, raw_key in ad.keys_by_input_name.items()
-                if (
-                    normalized_key := resolved_deps.get_resolved_asset_key_for_input(ad, input_name)
-                )
-                != raw_key
-            }
-            for ad in assets_defs
-        ]
-
-        # Only update the assets defs if we're actually replacing input asset keys
-        assets_defs = [
-            ad.with_attributes(asset_key_replacements=reps) if reps else ad
-            for ad, reps in zip(assets_defs, asset_key_replacements)
-        ]
+        # Resolve all asset dependency keys to their final values
+        assets_defs = resolve_assets_def_deps(assets_defs)
 
         # Create unexecutable external assets definitions for any referenced keys for which no
         # definition was provided.
