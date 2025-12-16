@@ -55,7 +55,7 @@ In this step, you'll configure and enable SSO for Azure AD in your Azure portal.
 
     :::info
 
-    For EU region customers, the URL will be `https://<organization_name>.dagster.plus/auth/saml/consume`
+    For EU region customers, the URL will be `https://<organization_name>.eu.dagster.cloud/auth/saml/consume`
 
     :::
 
@@ -94,7 +94,7 @@ dagster-cloud organization settings saml upload-identity-provider-metadata <path
 ```shell
 dagster-cloud organization settings saml upload-identity-provider-metadata <path/to/metadata> \
    --api-token=<user_token> \
-   --url https://<organization_name>.dagster.plus
+   --url https://<organization_name>.eu.dagster.cloud
 ```
 </TabItem>
 </Tabs>

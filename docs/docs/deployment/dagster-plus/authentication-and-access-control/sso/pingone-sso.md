@@ -62,12 +62,12 @@ To complete the steps in this guide, you'll need:
 
       :::info EU region
 
-      For EU region customers, the URL will be `https://<organization_name>.dagster.plus/auth/saml/consume`
+      For EU region customers, the URL will be `https://<organization_name>.eu.dagster.cloud/auth/saml/consume`
 
       :::
 
     - **Assertion Validity Duration**: Type `60`.
-      In the following example, the organization's name is `hooli` and the Dagster+ domain is `https://hooli.dagster.cloud` (or `https://hooli.dagster.plus` in the EU region):
+      In the following example, the organization's name is `hooli` and the Dagster+ domain is `https://hooli.dagster.cloud` (or `https://hooli.eu.dagster.cloud` in the EU region):
 
       ![Service Provider Details](/images/dagster-plus/features/authentication-and-access-control/pingone/service-provider-details.png)
 
