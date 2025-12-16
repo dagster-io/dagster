@@ -580,7 +580,7 @@ def test_get_pyproject_deps_requirements_multi_location_scenario() -> None:
             pyproject_content = """
         [project]
         name = "location1"
-        requires-python = ">=3.9,<3.14"
+        requires-python = ">=3.9,<3.15"
         version = "0.1.0"
         dependencies = [
             "dagster>=1.0.0",
