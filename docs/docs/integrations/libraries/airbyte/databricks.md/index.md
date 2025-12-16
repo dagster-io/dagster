@@ -55,9 +55,9 @@ attributes:
     token: "{{ env.DATABRICKS_TOKEN }}"
   assets_by_task_key:
     ingest_data_task:
-      key: "clean_ingestion"
-      group: "etl_pipeline"
-      description: "Ingests data from S3 to Delta Lake"
+      - key: "clean_ingestion"
+        group: "etl_pipeline"
+        description: "Ingests data from S3 to Delta Lake"
 ```
 
 Legacy Resources

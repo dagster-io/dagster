@@ -621,9 +621,10 @@ class ResolvedDatabricksServerlessConfig(Resolvable, Model):
 
 
 @whitelist_for_serdes
-class DatabricksJob(Model):
+@record
+class DatabricksJob:
     """Represents a Databricks Job structure for serialization."""
 
     job_id: int
-    name: str = "unknown_job"
-    tasks: Optional[list[dict[str, Any]]] = None
+    name: str
+    tasks: Optional[list[DatabricksBaseTask]] = None
