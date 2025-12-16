@@ -39,7 +39,7 @@ To complete the steps in this guide, you'll need:
 2. Scroll down to the **Advanced Sign-on settings** section.
 3. In the **Organization** field, enter your Dagster+ organization name. This is used to route the SAML response to the correct Dagster+ subdomain.
 
-For example, your organization name is `hooli` and your Dagster+ domain is `https://hooli.dagster.cloud` (or `https://hooli.dagster.plus` in the EU region). To configure this correctly, you'd enter `hooli` into the **Organization** field:
+For example, your organization name is `hooli` and your Dagster+ domain is `https://hooli.dagster.cloud` (or `https://hooli.eu.dagster.cloud` in the EU region). To configure this correctly, you'd enter `hooli` into the **Organization** field:
 
 ![Okta Subdomain Configuration](/images/dagster-plus/features/authentication-and-access-control/okta/subdomain-configuration.png)
 
