@@ -2,7 +2,7 @@
 title: Configuring CI/CD in Dagster+
 sidebar_label: CI/CD
 description: Implement CI/CD for your Dagster+ Serverless or Hybrid deployment with GitHub, GitLab, or another CI/CD provider.
-sidebar_position: 20
+sidebar_position: 30
 tags: [dagster-plus-feature]
 ---
 
