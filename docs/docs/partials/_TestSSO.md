@@ -10,7 +10,7 @@ Lastly, you'll test your SSO configuration:
 1. Navigate to your Dagster+ sign in page:
 
 - **US region:** `https://<organization_name>.dagster.cloud`
-- **EU region:** `https://<organization_name>.dagster.plus`
+- **EU region:** `https://<organization_name>.eu.dagster.cloud`
 
 2. Click the **Sign in with SSO** button.
 
