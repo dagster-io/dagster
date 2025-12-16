@@ -1,0 +1,5 @@
+type: data_platform_guide.databricks_delta.defs.components.lakehouse.component.LakehouseComponent
+attributes:
+  demo_mode: true
+  source_api_url: "https://api.example.com/sensors"
+  storage_path: "data/delta"

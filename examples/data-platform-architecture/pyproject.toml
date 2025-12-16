@@ -1,0 +1,51 @@
+[project]
+name = "data-platform-architecture"
+version = "0.1.0"
+description = "Dagster project demonstrating data platform architecture patterns"
+requires-python = ">=3.13"
+readme = "README.md"
+dependencies = [
+    "dagster>=1.9.0",
+    "dagster-webserver>=1.9.0",
+    "dagster-dbt>=0.28.0",
+    "dagster-dg-cli>=1.0.0",
+    "pandas>=2.0.0",
+    "pyarrow>=14.0.0",
+    "deltalake>=0.15.0",
+    "duckdb>=0.9.0",
+    "dbt-snowflake>=1.7.0",
+    "pytest>=7.0.0",
+    # Real cloud SDKs
+    "boto3>=1.34.0",
+    "snowflake-connector-python>=3.6.0",
+    "databricks-sql-connector>=3.0.0",
+    # Docker services
+    "psycopg2-binary>=2.9.0",
+    "httpx>=0.27.0",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=7.0.0",
+    "mypy>=1.0.0",
+    "ruff>=0.1.0",
+    "fastapi>=0.109.0",
+    "uvicorn>=0.27.0",
+]
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["data_platform_architecture"]
+
+[tool.dg]
+directory_type = "project"
+
+[tool.dg.project]
+root_module = "data_platform_architecture"
+registry_modules = [
+    "dagster.components.*",
+]
+

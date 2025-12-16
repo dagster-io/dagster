@@ -1,0 +1,9 @@
+type: data_platform_guide.snowflake_medallion.defs.components.medallion.component.MedallionComponent
+attributes:
+  demo_mode: true
+  account: ""
+  user: ""
+  password: ""
+  warehouse: ""
+  database: ""
+  schema: "PUBLIC"

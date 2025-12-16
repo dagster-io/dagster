@@ -1,0 +1,9 @@
+load_from:
+  # Main code location with ETL, ELT, and Lakehouse pipelines
+  - python_module: data_platform_architecture.definitions
+
+  # Isolated code location for Databricks Delta
+  - python_module: data_platform_architecture.data_platform_guide.databricks_delta.definitions
+
+  # Isolated code location for Snowflake dbt Medallion
+  - python_module: data_platform_architecture.data_platform_guide.snowflake_medallion.definitions
