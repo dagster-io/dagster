@@ -64,11 +64,11 @@ To complete the steps in this guide, you'll need:
 
       :::info EU region
 
-      For EU region customers, the URL will be `https://<organization_name>.dagster.plus`
+      For EU region customers, the URL will be `https://<organization_name>.eu.dagster.cloud`
 
       :::
 
-   2. Check the **Signed Response** box. The page should look similar to the image below. In this example, the organization's name is `hooli` and the Dagster+ domain is `https://hooli.dagster.cloud` (or `https://hooli.dagster.plus` in the EU region):
+   2. Check the **Signed Response** box. The page should look similar to the image below. In this example, the organization's name is `hooli` and the Dagster+ domain is `https://hooli.dagster.cloud` (or `https://hooli.eu.dagster.cloud` in the EU region):
 
       ![Service Provider Details](/images/dagster-plus/features/authentication-and-access-control/google-workspace/service-provider-details.png)
 

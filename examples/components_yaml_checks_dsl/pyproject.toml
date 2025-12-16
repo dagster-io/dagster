@@ -1,6 +1,6 @@
 [project]
 name = "components_yaml_checks_dsl"
-requires-python = ">=3.10,<3.14"
+requires-python = ">=3.10,<3.15"
 version = "0.1.0"
 dependencies = [
     "dagster",

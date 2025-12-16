@@ -49,7 +49,9 @@ helm --namespace dagster-cloud upgrade --install agent dagster-cloud/dagster-clo
 You can use Helm to do rolling upgrades of your Dagster+ agent. The version of the agent doesn't need to be the same as the version of Dagster used in your projects. The Dagster+ control plane is upgraded automatically but is backwards compatible with older versions of the agent.
 
 :::tip
+
 We recommend upgrading your Dagster+ agent every 6 months. The version of your agent is visible on the "Deployments", "Agents" tab https://your-org.dagster.plus/deployment/health. The current version of the agent matches the most [recent Dagster release](https://github.com/dagster-io/dagster/releases).
+
 :::
 
 ```yaml
@@ -405,7 +407,7 @@ dagsterCloud:
 
 If you want completely separate environments with their own asset graph, run history, and access controls you should create different Dagster+ deployments. Separate deployments are common for isolated tenants or separate dev, stage, and prod environments. Multiple deployments require a Dagster+ Pro plan. To create separate deployments:
 
-- Navigate to the deployments page for your organization: https://your-organizaiton.dagster.plus/org-settings/deployments
+- Navigate to the deployments page for your organization: https://your-organization.dagster.plus/org-settings/deployments
 
 - Click "New Deployment"
 

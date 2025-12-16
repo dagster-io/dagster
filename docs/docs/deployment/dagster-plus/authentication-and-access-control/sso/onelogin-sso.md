@@ -42,7 +42,7 @@ To follow the steps in this guide, you'll need:
 1. In OneLogin, open the application and navigate to its **Configuration**.
 2. In the **Dagster+ organisation name** field, enter your Dagster+ organization name. This is used to route the SAML response to the correct Dagster+ subdomain.
 
-   For example, your organization name is `hooli` and your Dagster+ domain is `https://hooli.dagster.cloud` (or `https://hooli.dagster.plus` in the EU region). To configure this correctly, you'd enter `hooli` into the **Subdomain** field.
+   For example, your organization name is `hooli` and your Dagster+ domain is `https://hooli.dagster.cloud` (or `https://hooli.eu.dagster.cloud` in the EU region). To configure this correctly, you'd enter `hooli` into the **Subdomain** field.
 
 3. When finished, click **Done**.
 
