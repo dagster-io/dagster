@@ -81,8 +81,8 @@ resource "aws_ecs_service" "dagster_daemon" {
   task_definition = aws_ecs_task_definition.dagster_daemon.arn
 
   network_configuration {
-    subnets          = var.daemon_subnet_ids
-    security_groups  = [aws_security_group.dagster.id]
+    subnets         = var.daemon_subnet_ids
+    security_groups = [aws_security_group.dagster.id]
     # when running in public subnet, consider setting assign_public_ip = true
     # however, this is not recommended for production as it exposes the container to the internet
     assign_public_ip = var.create_lb ? true : var.assign_public_ip
@@ -145,8 +145,8 @@ resource "aws_ecs_service" "dagster-webserver" {
   task_definition = aws_ecs_task_definition.dagster_webserver.arn
 
   network_configuration {
-    subnets          = var.webserver_subnet_ids
-    security_groups  = [aws_security_group.dagster.id]
+    subnets         = var.webserver_subnet_ids
+    security_groups = [aws_security_group.dagster.id]
     # when running in public subnet, consider setting assign_public_ip = true
     # however, this is not recommended for production as it exposes the container to the internet
     assign_public_ip = var.create_lb ? true : var.assign_public_ip
