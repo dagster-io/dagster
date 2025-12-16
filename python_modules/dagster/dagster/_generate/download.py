@@ -36,6 +36,7 @@ AVAILABLE_EXAMPLES = [
     "development_to_production",
     "feature_graph_backed_assets",
     "google_drive_factory",
+    "ingestion-patterns",
     "oss-metadata-to-plus",
     "project_analytics",
     "project_fully_featured",
