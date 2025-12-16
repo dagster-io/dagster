@@ -1,5 +1,6 @@
 import functools
 import hashlib
+import heapq
 import re
 from collections.abc import Iterable, Iterator, Sequence
 from datetime import date, datetime
@@ -37,6 +38,7 @@ from dagster._utils.schedules import (
     cron_string_iterator,
     is_valid_cron_schedule,
     reverse_cron_string_iterator,
+    schedule_execution_time_iterator,
 )
 
 if TYPE_CHECKING:
@@ -947,100 +949,56 @@ class TimeWindowPartitionsDefinition(PartitionsDefinition, IHaveNew):
 
     def _build_exclusion_iterator_list(
         self, boundary_timestamp: float, ascending: bool
-    ) -> list[tuple[Iterator[datetime], Optional[datetime]]]:
+    ) -> list[Iterator[datetime]]:
         if not self.exclusions:
             return []
 
-        iterator_list: list[tuple[Iterator[datetime], Optional[datetime]]] = []
-        excluded_timestamps = sorted(
-            [excl.timestamp for excl in self.exclusions if isinstance(excl, TimestampWithTimezone)],
-            reverse=not ascending,
-        )
-        if excluded_timestamps:
+        # Create a single iterator for filtered and sorted timestamps
+        def _timestamp_iter():
+            # Collect and sort timestamps, then filter based on boundary
+            timestamps = [
+                excl.timestamp
+                for excl in self.exclusions  # type: ignore
+                if isinstance(excl, TimestampWithTimezone)
+            ]
+            # Sort based on direction: ascending or descending
+            timestamps.sort(reverse=not ascending)
 
-            def _timestamp_iter():
-                for ts in excluded_timestamps:
-                    # advance to the boundary
-                    if (ascending and ts < boundary_timestamp) or (
-                        not ascending and ts > boundary_timestamp
-                    ):
-                        continue
-                    yield datetime_from_timestamp(ts, self.timezone)
+            for ts in timestamps:
+                # Filter based on boundary
+                if (ascending and ts < boundary_timestamp) or (
+                    not ascending and ts > boundary_timestamp
+                ):
+                    continue
+                yield datetime_from_timestamp(ts, self.timezone)
 
-            timestamp_iter = _timestamp_iter()
-            next_timestamp = next(timestamp_iter, None)
-            if next_timestamp is not None:
-                # there are explicit timestamps to still exclude
-                iterator_list.append((timestamp_iter, next_timestamp))
-
-        cron_exclusions = [exclusion for exclusion in self.exclusions if isinstance(exclusion, str)]
-        for exclusion in cron_exclusions:
-            if ascending:
-                cron_iterator = cron_string_iterator(
+        excluded_cron_strings = [excl for excl in self.exclusions if isinstance(excl, str)]
+        excluded_cron_strings_iters = (
+            [
+                schedule_execution_time_iterator(
                     start_timestamp=boundary_timestamp,
-                    cron_string=exclusion,
+                    cron_schedule=excluded_cron_strings,
                     execution_timezone=self.timezone,
+                    ascending=ascending,
                 )
-            else:
-                cron_iterator = reverse_cron_string_iterator(
-                    end_timestamp=boundary_timestamp,
-                    cron_string=exclusion,
-                    execution_timezone=self.timezone,
-                )
-            next_timestamp = next(cron_iterator)
-            iterator_list.append((cron_iterator, next_timestamp))
+            ]
+            if excluded_cron_strings
+            else []
+        )
 
-        return iterator_list
+        return [_timestamp_iter(), *excluded_cron_strings_iters]
 
     def _exclusion_iterator(self, start_timestamp: float) -> Iterator[datetime]:
-        # helper function that coalesces potentially multiple exclusion cron strings / timestamps
-        # into a single exclusion datetime iterator
-        if not self.exclusions:
-            return
-
         exclusion_iterators = self._build_exclusion_iterator_list(start_timestamp, ascending=True)
-        while exclusion_iterators:
-            # Find the iterator with the minimum timestamp
-            min_idx, (excl_iter, min_time) = min(
-                enumerate(exclusion_iterators),
-                key=lambda x: x[1][1].timestamp() if x[1][1] is not None else float("inf"),
-            )
-
-            if min_time is None:
-                break
-
-            yield min_time
-
-            next_time = next(excl_iter, None)
-            if next_time is None:
-                exclusion_iterators.pop(min_idx)
-            else:
-                exclusion_iterators[min_idx] = (excl_iter, next_time)
+        yield from heapq.merge(
+            *[excl_iter for excl_iter in exclusion_iterators], key=lambda x: x.timestamp()
+        )
 
     def _reverse_exclusion_iterator(self, end_timestamp: float) -> Iterator[datetime]:
-        # helper function that coalesces potentially multiple exclusion cron strings / timestamps
-        # into a single exclusion datetime iterator
-        if not self.exclusions:
-            return
-
         exclusion_iterators = self._build_exclusion_iterator_list(end_timestamp, ascending=False)
-        while exclusion_iterators:
-            # Find the iterator with the maximum timestamp
-            max_idx, (excl_iter, max_time) = max(
-                enumerate(exclusion_iterators),
-                key=lambda x: x[1][1].timestamp() if x[1][1] is not None else float("-inf"),
-            )
-
-            if max_time is None:
-                break
-
-            yield max_time
-
-            next_time = next(excl_iter, None)
-            if next_time is None:
-                exclusion_iterators.pop(max_idx)
-            else:
-                exclusion_iterators[max_idx] = (excl_iter, next_time)
+        yield from heapq.merge(
+            *[excl_iter for excl_iter in exclusion_iterators], key=lambda x: -x.timestamp()
+        )
 
     def _iterate_time_windows(
         self, start_timestamp: float, ignore_exclusions: bool = False

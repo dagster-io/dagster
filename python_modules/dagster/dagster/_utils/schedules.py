@@ -853,12 +853,12 @@ def schedule_execution_time_iterator(
         ]
         next_dates = [next(it) for it in iterators]
         while True:
-            # Choose earliest out of all subsequent datetimes.
-            earliest_next_date = min(next_dates)
-            yield earliest_next_date
-            # Increment all iterators that generated the earliest subsequent datetime.
+            # Choose earliest (ascending) or latest (descending) out of all subsequent datetimes.
+            selected_date = min(next_dates) if ascending else max(next_dates)
+            yield selected_date
+            # Increment all iterators that generated the selected datetime.
             for i, next_date in enumerate(next_dates):
-                if next_date == earliest_next_date:
+                if next_date == selected_date:
                     next_dates[i] = next(iterators[i])
 
 
