@@ -11,7 +11,7 @@ import DagsterPlus from '@site/docs/partials/\_DagsterPlus.md';
 
 This guide will cover three options for adding a new Dagster project (also known as a code location) to your Dagster+ deployment:
 
-- [Adding a Dagster project manually](#adding-a-new-project-manually)
+- [Adding a Dagster project manually](#adding-a-new-dagster-project-manually)
 - [Adding a Dagster project in a new Git repository](#adding-a-dagster-project-in-a-new-git-repository)
 - [Adding a new Dagster project to an existing Git monorepo](#adding-a-new-dagster-project-to-a-git-monorepo)
 
@@ -73,7 +73,6 @@ Next, authenticate the `dagster-cloud` Python client:
 
 Now add your Dagster project. The following example assumes you are running the command from the top-level working directory of your Dagster project with a project named "dagster_tutorial" structured as a Python module named "dagster_tutorial":
 
-
 <Tabs groupId="package-manager">
 
    <TabItem value="uv" label="uv">
@@ -129,8 +128,9 @@ Running the command multiple times with the same location name will _update_ the
 <TabItem value="hybrid" label="Dagster+ Hybrid">
 
 If you are using Dagster+ Hybrid, make sure you have deployed the code appropriately by:
+
 1. Building a Docker image and pushing it to an image registry.
-2. Running the `dg plus deploy configure` command from the Dagster project root to create a `dagster_cloud.yaml` file. 
+2. Running the `dg plus deploy configure` command from the Dagster project root to create a `dagster_cloud.yaml` file.
 
 Then run the following command, using the image URI which is available from your registry:
 
@@ -155,8 +155,8 @@ Many organizations use a Git monorepo to contain multiple Dagster projects. To a
 
 1. [Create a Dagster workspace](/guides/build/projects/workspaces/creating-workspaces) to hold your Dagster projects.
 2. Move your existing Dagster project(s) into the `/projects` directory of the workspace. If necessary, [convert the projects](/guides/build/projects/moving-to-components/migrating-project) to the new Dagster project structure.
-2. In the `/projects` directory of the workspace, [create a new Dagster project](/guides/build/projects/creating-projects) with the `dagster-create` CLI.
-3. Run the `dg plus deploy configure` command in the workspace root to create deployment configuration files for projects that need them.
+3. In the `/projects` directory of the workspace, [create a new Dagster project](/guides/build/projects/creating-projects) with the `dagster-create` CLI.
+4. Run the `dg plus deploy configure` command in the workspace root to create deployment configuration files for projects that need them.
 
 After following these steps, trigger the CI/CD process to add your project to Dagster+. Navigate to the _Deployments_ tab in Dagster+ to confirm your project was added.
 
