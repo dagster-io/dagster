@@ -4,8 +4,6 @@ import {Alert, Box, ErrorBoundary, Spinner, Tag} from '@dagster-io/ui-components
 import React, {useContext, useEffect, useMemo} from 'react';
 import {Link, Redirect, useLocation, useRouteMatch} from 'react-router-dom';
 import {useSetRecoilState} from 'recoil';
-import {observeEnabled} from 'shared/app/observeEnabled.oss';
-import {getAssetSelectionQueryString} from 'shared/asset-selection/useAssetSelectionState.oss';
 import {AssetPageHeader} from 'shared/assets/AssetPageHeader.oss';
 
 import {ASSET_NODE_CONFIG_FRAGMENT} from './AssetConfig';
@@ -271,12 +269,8 @@ const AssetViewImpl = ({assetKey, headerBreadcrumbs, writeAssetVisit, currentPat
     (definitionQueryResult.data?.assetOrError.__typename === 'Asset' &&
       !definitionQueryResult.data.assetOrError.hasDefinitionOrRecord)
   ) {
-    const assetSelection = getAssetSelectionQueryString();
-    let nextPath = `/assets/${currentPath.join('/')}?view=folder${assetSelection ? `&asset-selection=${assetSelection}` : ''}`;
-    if (observeEnabled()) {
-      // The new UI doesn't have folders. So instead set the asset selection to filter to assets prefixed with the current path.
-      nextPath = `/assets?asset-selection=key:"${currentPath.join('/')}/*"`;
-    }
+    // Set the asset selection to filter to assets prefixed with the current path.
+    const nextPath = `/assets?asset-selection=key:"${currentPath.join('/')}/*"`;
     // Redirect to the asset catalog
     return <Redirect to={nextPath} />;
   }

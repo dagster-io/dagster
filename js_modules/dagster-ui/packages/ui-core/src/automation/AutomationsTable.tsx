@@ -4,11 +4,7 @@ import * as React from 'react';
 
 import {ObserveAutomationScheduleRow} from './ObserveAutomationScheduleRow';
 import {ObserveAutomationSensorRow} from './ObserveAutomationSensorRow';
-import {VirtualizedAutomationHeader} from './VirtualizedAutomationRow';
-import {VirtualizedAutomationScheduleRow} from './VirtualizedAutomationScheduleRow';
-import {VirtualizedAutomationSensorRow} from './VirtualizedAutomationSensorRow';
 import {COMMON_COLLATOR} from '../app/Util';
-import {useFeatureFlags} from '../app/useFeatureFlags';
 import {OVERVIEW_COLLAPSED_KEY} from '../overview/OverviewExpansionKey';
 import {makeAutomationKey} from '../sensors/makeSensorKey';
 import {Container, Inner} from '../ui/VirtualizedTable';
@@ -36,13 +32,7 @@ type RowType =
   | {type: 'sensor'; repoAddress: RepoAddress; sensor: string}
   | {type: 'schedule'; repoAddress: RepoAddress; schedule: string};
 
-export const AutomationsTable = ({
-  repos,
-  headerCheckbox,
-  checkedKeys,
-  onToggleCheckFactory,
-}: Props) => {
-  const {flagUseNewObserveUIs} = useFeatureFlags();
+export const AutomationsTable = ({repos, checkedKeys, onToggleCheckFactory}: Props) => {
   const parentRef = React.useRef<HTMLDivElement | null>(null);
   const allKeys = React.useMemo(
     () => repos.map(({repoAddress}) => repoAddressAsHumanString(repoAddress)),
@@ -101,7 +91,6 @@ export const AutomationsTable = ({
   return (
     <div style={{overflow: 'hidden'}}>
       <Container ref={parentRef}>
-        {flagUseNewObserveUIs ? null : <VirtualizedAutomationHeader checkbox={headerCheckbox} />}
         <Inner $totalHeight={totalHeight}>
           {items.map(({index, key, size, start}) => {
             // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
@@ -127,25 +116,10 @@ export const AutomationsTable = ({
 
             if (type === 'sensor') {
               const sensorKey = makeAutomationKey(row.repoAddress, row.sensor);
-              if (flagUseNewObserveUIs) {
-                return (
-                  <Row $height={size} $start={start} key={key}>
-                    <ObserveAutomationSensorRow
-                      key={key}
-                      index={index}
-                      ref={rowVirtualizer.measureElement}
-                      name={row.sensor}
-                      checked={checkedKeys.has(sensorKey)}
-                      onToggleChecked={onToggleCheckFactory(sensorKey)}
-                      repoAddress={row.repoAddress}
-                    />
-                  </Row>
-                );
-              }
-
               return (
                 <Row $height={size} $start={start} key={key}>
-                  <VirtualizedAutomationSensorRow
+                  <ObserveAutomationSensorRow
+                    key={key}
                     index={index}
                     ref={rowVirtualizer.measureElement}
                     name={row.sensor}
@@ -160,25 +134,9 @@ export const AutomationsTable = ({
             if (type === 'schedule') {
               const scheduleKey = makeAutomationKey(row.repoAddress, row.schedule);
 
-              if (flagUseNewObserveUIs) {
-                return (
-                  <Row $height={size} $start={start} key={key}>
-                    <ObserveAutomationScheduleRow
-                      key={key}
-                      index={index}
-                      ref={rowVirtualizer.measureElement}
-                      name={row.schedule}
-                      checked={checkedKeys.has(scheduleKey)}
-                      onToggleChecked={onToggleCheckFactory(scheduleKey)}
-                      repoAddress={row.repoAddress}
-                    />
-                  </Row>
-                );
-              }
-
               return (
                 <Row $height={size} $start={start} key={key}>
-                  <VirtualizedAutomationScheduleRow
+                  <ObserveAutomationScheduleRow
                     key={key}
                     index={index}
                     ref={rowVirtualizer.measureElement}

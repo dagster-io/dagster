@@ -16,7 +16,6 @@ import uniq from 'lodash/uniq';
 import without from 'lodash/without';
 import * as React from 'react';
 import {useCallback, useMemo, useRef, useState} from 'react';
-import {observeEnabled} from 'shared/app/observeEnabled.oss';
 import {AssetSelectionInput} from 'shared/asset-selection/input/AssetSelectionInput.oss';
 import {CreateCatalogViewButton} from 'shared/assets/CreateCatalogViewButton.oss';
 import {useCatalogExtraDropdownOptions} from 'shared/assets/catalog/useCatalogExtraDropdownOptions.oss';
@@ -767,9 +766,7 @@ const AssetGraphExplorerWithData = ({
                       />
                     </Tooltip>
                   )}
-                  {viewType !== AssetGraphViewType.CATALOG && observeEnabled()
-                    ? toggleFullScreenButton
-                    : null}
+                  {viewType !== AssetGraphViewType.CATALOG ? toggleFullScreenButton : null}
                   {viewType === AssetGraphViewType.CATALOG ? (
                     <>
                       {toggleFullScreenButton}
