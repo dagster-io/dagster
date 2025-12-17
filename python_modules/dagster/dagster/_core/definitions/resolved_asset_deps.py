@@ -1,7 +1,11 @@
 from collections import defaultdict
-from collections.abc import Iterable, Sequence
-from typing import Optional
+from collections.abc import Iterable, Mapping, Sequence
+from typing import Any, Optional
 
+from dagster._core.definitions.assets.definition.asset_spec import (
+    SYSTEM_METADATA_KEY_AUTO_CREATED_STUB_ASSET,
+    AssetSpec,
+)
 from dagster._core.definitions.assets.definition.assets_definition import AssetsDefinition
 from dagster._core.definitions.events import AssetKey
 from dagster._core.definitions.metadata.metadata_set import TableMetadataSet
@@ -192,3 +196,41 @@ def resolve_assets_def_deps(assets_defs: list[AssetsDefinition]) -> list[AssetsD
         )
 
     return resolved_assets_defs
+
+
+def resolve_stub_assets_defs(assets_defs: list[AssetsDefinition]) -> list[AssetsDefinition]:
+    defined_keys: set[AssetKey] = set()
+    deps_metadata_by_key: dict[AssetKey, list[Mapping[str, Any]]] = defaultdict(list)
+
+    for assets_def in assets_defs:
+        for spec in assets_def.specs:
+            defined_keys.add(spec.key)
+            for dep in spec.deps:
+                deps_metadata_by_key[dep.asset_key].append(dep.metadata)
+        # treat the asset keys defined for asset checks as AssetDeps with no metadata
+        for check_spec in assets_def.check_specs:
+            deps_metadata_by_key[check_spec.asset_key].append({})
+
+    stub_assets_defs: list[AssetsDefinition] = []
+
+    # iterate through the set of keys that are a dependency but have no definition
+    for key in deps_metadata_by_key.keys() - defined_keys:
+        # combine metadata from all dependencies and error if there are conflicts
+        metadata = {}
+        for dep_metadata in deps_metadata_by_key[key]:
+            if not dep_metadata:
+                continue
+
+            # metadata set, but conflicts
+            if metadata and dep_metadata != metadata:
+                raise DagsterInvalidDefinitionError(
+                    f"Conflicting metadata found on AssetDeps referencing {key.to_string()}: {metadata} != {dep_metadata}. "
+                    "All metadata for AssetDeps referencing a given key must be identical or empty."
+                )
+            metadata = dict(dep_metadata)
+
+        # add in flag to indicate that this is a stub asset
+        metadata[SYSTEM_METADATA_KEY_AUTO_CREATED_STUB_ASSET] = True
+        stub_assets_defs.append(AssetsDefinition(specs=[AssetSpec(key=key, metadata=metadata)]))
+
+    return stub_assets_defs
