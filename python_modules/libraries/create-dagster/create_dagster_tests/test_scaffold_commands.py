@@ -402,7 +402,6 @@ def test_scaffold_project_use_editable_dagster_env_var_succeeds(monkeypatch) -> 
     with (
         ProxyRunner.test() as runner,
         runner.isolated_filesystem(),
-        environ({"DAGSTER_GIT_REPO_DIR": str(dagster_git_repo_dir)}),
     ):
         # We need to use subprocess rather than runner here because the environment variable affects
         # CLI defaults set at process startup.
@@ -415,6 +414,8 @@ def test_scaffold_project_use_editable_dagster_env_var_succeeds(monkeypatch) -> 
 
 
 def test_scaffold_project_normal_package_installation_works(monkeypatch) -> None:
+    dagster_git_repo_dir = discover_git_root(Path(__file__))
+    monkeypatch.setenv("DAGSTER_GIT_REPO_DIR", str(dagster_git_repo_dir))
     with ProxyRunner.test() as runner, runner.isolated_filesystem():
         result = runner.invoke_create_dagster("project", "--no-uv-sync", "foo-bar")
         assert_runner_result(result)
