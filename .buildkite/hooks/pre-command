@@ -1,12 +1,8 @@
 set -euo pipefail
 
-export DAGSTER_GIT_REPO_DIR=/workdir
-
 if [ -z "${PYTEST_CURRENT_TEST:-}" ]; then
   . ./.buildkite/buildkite-shared/buildkite_shared/scripts/docker_prune.sh
 fi
 
 export COMMAND_START_TIME="$(date +%s)"
 export STEP_SPAN_ID="$(echo $BUILDKITE_LABEL | sum | cut -f 1 -d \  )"
-
-
