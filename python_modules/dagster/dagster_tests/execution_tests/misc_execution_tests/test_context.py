@@ -9,10 +9,14 @@ from dagster import (
     AssetOut,
     DagsterInstance,
     OpExecutionContext,
+    build_op_context,
 )
 from dagster._check import CheckError
+from dagster._core.code_pointer import FileCodePointer
 from dagster._core.definitions.definitions_class import Definitions
 from dagster._core.definitions.partitions.definition.static import StaticPartitionsDefinition
+from dagster._core.origin import RemoteJobOrigin
+from dagster._core.storage.dagster_run import DagsterRun
 from dagster._core.storage.fs_io_manager import FilesystemIOManager
 
 
@@ -626,11 +630,6 @@ def test_load_asset_value_multiple_upstream_partition_keys():
 
 def test_location_name_property():
     """Test that location_name property correctly accesses remote_job_origin.location_name."""
-    from dagster import build_op_context
-    from dagster._core.origin import RemoteJobOrigin
-    from dagster._core.code_pointer import FileCodePointer
-    from dagster._core.storage.dagster_run import DagsterRun
-
     with dg.instance_for_test() as instance:
         # Test 1: When dagster_run is None, location_name should be None
         context_without_run = build_op_context()
