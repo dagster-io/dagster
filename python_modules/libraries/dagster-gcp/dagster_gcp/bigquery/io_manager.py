@@ -357,7 +357,8 @@ class BigQueryClient(DbClient):
 
         self.write_mode = write_mode
 
-    def delete_table_slice(self, context: OutputContext, table_slice: TableSlice, connection) -> None:
+    @staticmethod
+    def delete_table_slice(context: OutputContext, table_slice: TableSlice, connection) -> None:
         try:
             # If partitioned, keep existing behavior (delete matching partitions)
             if table_slice.partition_dimensions:
@@ -365,14 +366,15 @@ class BigQueryClient(DbClient):
                 return
 
             # Non-partitioned tables: behavior depends on configured write_mode
-            if self.write_mode == BigQueryWriteMode.TRUNCATE:
+            write_mode = context.resource_config.get("write_mode")
+            if write_mode == BigQueryWriteMode.TRUNCATE.value:
                 connection.query(
                     f"TRUNCATE TABLE `{table_slice.database}.{table_slice.schema}.{table_slice.table}`"
                 ).result()
-            elif self.write_mode == BigQueryWriteMode.APPEND:
+            elif write_mode == BigQueryWriteMode.APPEND.value:
                 # Do nothing; preserve existing data and append
                 return
-            elif self.write_mode == BigQueryWriteMode.REPLACE:
+            elif write_mode == BigQueryWriteMode.REPLACE.value:
                 connection.query(
                     f"DROP TABLE IF EXISTS `{table_slice.database}.{table_slice.schema}.{table_slice.table}`"
                 ).result()
