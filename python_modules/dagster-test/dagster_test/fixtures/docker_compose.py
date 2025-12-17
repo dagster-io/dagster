@@ -47,7 +47,8 @@ def docker_compose_cm(
 
 def dump_docker_compose_logs(context, docker_compose_yml):
     env = os.environ.copy()
-    env["DOCKER_API_VERSION"] = "1.41"
+    if env.get("BUILDKITE"):
+        env["DOCKER_API_VERSION"] = "1.41"
     if context:
         compose_command = ["docker", "--context", context, "compose"]
     else:
@@ -91,7 +92,8 @@ def docker_compose(docker_compose_cm):
 
 def docker_compose_up(docker_compose_yml, context, service, env_file, no_build: bool = False):
     docker_env = os.environ.copy()
-    docker_env["DOCKER_API_VERSION"] = "1.41"
+    if docker_env.get("BUILDKITE"):
+        docker_env["DOCKER_API_VERSION"] = "1.41"
     if context:
         compose_command = ["docker", "--context", context, "compose"]
     else:
@@ -118,7 +120,8 @@ def docker_compose_up(docker_compose_yml, context, service, env_file, no_build: 
 
 def docker_compose_down(docker_compose_yml, context, service, env_file):
     docker_env = os.environ.copy()
-    docker_env["DOCKER_API_VERSION"] = "1.41"
+    if docker_env.get("BUILDKITE"):
+        docker_env["DOCKER_API_VERSION"] = "1.41"
     if context:
         compose_command = ["docker", "--context", context, "compose"]
     else:
@@ -145,7 +148,8 @@ def docker_compose_down(docker_compose_yml, context, service, env_file):
 def list_containers():
     # TODO: Handle default container names: {project_name}_service_{task_number}
     env = os.environ.copy()
-    env["DOCKER_API_VERSION"] = "1.41"
+    if env.get("BUILDKITE"):
+        env["DOCKER_API_VERSION"] = "1.41"
     return (
         subprocess.check_output(["docker", "ps", "--format", "{{.Names}}"], env=env)
         .decode()
@@ -156,7 +160,8 @@ def list_containers():
 def current_container():
     container_id = subprocess.check_output(["cat", "/etc/hostname"]).strip().decode()
     env = os.environ.copy()
-    env["DOCKER_API_VERSION"] = "1.41"
+    if env.get("BUILDKITE"):
+        env["DOCKER_API_VERSION"] = "1.41"
     container = (
         subprocess.check_output(
             ["docker", "ps", "--filter", f"id={container_id}", "--format", "{{.Names}}"], env=env
@@ -171,7 +176,8 @@ def connect_container_to_network(container, network):
     # subprocess.run instead of subprocess.check_call so we don't fail when
     # trying to connect a container to a network that it's already connected to
     env = os.environ.copy()
-    env["DOCKER_API_VERSION"] = "1.41"
+    if env.get("BUILDKITE"):
+        env["DOCKER_API_VERSION"] = "1.41"
     try:
         subprocess.check_call(["docker", "network", "connect", network, container], env=env)
         logging.info(f"Connected {container} to network {network}.")
@@ -181,7 +187,8 @@ def connect_container_to_network(container, network):
 
 def disconnect_container_from_network(container, network):
     env = os.environ.copy()
-    env["DOCKER_API_VERSION"] = "1.41"
+    if env.get("BUILDKITE"):
+        env["DOCKER_API_VERSION"] = "1.41"
     try:
         subprocess.check_call(["docker", "network", "disconnect", network, container], env=env)
         logging.info(f"Disconnected {container} from network {network}.")
@@ -191,7 +198,8 @@ def disconnect_container_from_network(container, network):
 
 def hostnames(network):
     env = os.environ.copy()
-    env["DOCKER_API_VERSION"] = "1.41"
+    if env.get("BUILDKITE"):
+        env["DOCKER_API_VERSION"] = "1.41"
     hostnames = {}
     for container in list_containers():
         output = subprocess.check_output(["docker", "inspect", container], env=env)
