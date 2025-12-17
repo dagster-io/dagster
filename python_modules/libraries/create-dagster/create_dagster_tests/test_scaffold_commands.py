@@ -414,7 +414,7 @@ def test_scaffold_project_use_editable_dagster_env_var_succeeds(monkeypatch) -> 
 
 
 def test_scaffold_project_normal_package_installation_works(monkeypatch) -> None:
-    dagster_git_repo_dir = discover_git_root(Path(__file__))
+    dagster_git_repo_dir = discover_repo_root(Path(__file__))
     monkeypatch.setenv("DAGSTER_GIT_REPO_DIR", str(dagster_git_repo_dir))
     with ProxyRunner.test() as runner, runner.isolated_filesystem():
         result = runner.invoke_create_dagster("project", "--no-uv-sync", "foo-bar")
