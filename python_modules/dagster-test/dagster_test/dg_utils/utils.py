@@ -32,7 +32,7 @@ from dagster_dg_core.utils import (
     activate_venv,
     create_toml_node,
     delete_toml_node,
-    discover_git_root,
+    discover_repo_root,
     get_toml_node,
     get_venv_executable,
     has_toml_node,
@@ -53,7 +53,7 @@ STANDARD_TEST_COMPONENT_MODULE = "dagster_test.components"
 def install_editable_dagster_packages_to_venv(
     venv_path: Path, package_rel_paths: Sequence[str]
 ) -> None:
-    dagster_git_repo_dir = str(discover_git_root(Path(__file__)))
+    dagster_git_repo_dir = str(discover_repo_root(Path(__file__)))
     install_args: list[str] = []
     for path in package_rel_paths:
         full_path = Path(dagster_git_repo_dir) / "python_modules" / path
@@ -163,7 +163,7 @@ def isolated_example_workspace(
     project_config_file_type: ConfigFileType = "pyproject.toml",
 ) -> Iterator[Path]:
     runner = ProxyRunner(runner) if isinstance(runner, CliRunner) else runner
-    dagster_git_repo_dir = str(discover_git_root(Path(__file__)))
+    dagster_git_repo_dir = str(discover_repo_root(Path(__file__)))
     with (
         runner.isolated_filesystem(),
         clear_module_from_cache("foo_bar"),
@@ -238,7 +238,7 @@ def isolated_example_project_foo_bar(
     uv_sync_args = ["--uv-sync"] if uv_sync else ["--no-uv-sync"]
 
     runner = ProxyRunner(runner) if isinstance(runner, CliRunner) else runner
-    dagster_git_repo_dir = str(discover_git_root(Path(__file__)))
+    dagster_git_repo_dir = str(discover_repo_root(Path(__file__)))
     project_path = Path("foo-bar")
     if in_workspace:
         fs_context = isolated_example_workspace(runner)
