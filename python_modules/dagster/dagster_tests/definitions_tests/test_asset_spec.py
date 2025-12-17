@@ -263,7 +263,7 @@ def test_map_asset_specs_asset_with_ins_regression() -> None:
     spec = next(iter(my_asset.specs))
 
     new_spec = spec.replace_attributes(
-        deps={*spec.deps, dg.AssetDep("another_upstream")},
+        deps=[*spec.deps, dg.AssetDep("another_upstream")],
     )
 
     mapped_assets = dg.map_asset_specs(lambda s: new_spec, assets)
