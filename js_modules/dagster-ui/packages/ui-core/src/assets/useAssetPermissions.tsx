@@ -51,16 +51,12 @@ export const useAssetPermissions = (assetKeys: AssetKeyInput[], locationName: st
     }
 
     // Permission is allowed only if ALL assets allow it
-    const hasMaterializePermission = assetNodes.every((node) => node.hasMaterializePermission);
-    const hasWipePermission = assetNodes.every((node) => node.hasWipePermission);
-    const hasReportRunlessAssetEventPermission = assetNodes.every(
-      (node) => node.hasReportRunlessAssetEventPermission,
-    );
-
     return {
-      hasMaterializePermission,
-      hasWipePermission,
-      hasReportRunlessAssetEventPermission,
+      hasMaterializePermission: assetNodes.every((node) => node.hasMaterializePermission),
+      hasWipePermission: assetNodes.every((node) => node.hasWipePermission),
+      hasReportRunlessAssetEventPermission: assetNodes.every(
+        (node) => node.hasReportRunlessAssetEventPermission,
+      ),
       loading,
     };
   }, [data, loading, locationLoading, fallbackPermissions, assetKeys]);

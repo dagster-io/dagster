@@ -1,5 +1,5 @@
 import {Colors, Icon, MenuItem} from '@dagster-io/ui-components';
-import {useContext, useState} from 'react';
+import {Dispatch, SetStateAction, useContext, useState} from 'react';
 
 import {DeleteDynamicPartitionsDialog} from './DeleteDynamicPartitionsDialog';
 import {useAssetPermissions} from './useAssetPermissions';
@@ -7,7 +7,7 @@ import {CloudOSSContext} from '../app/CloudOSSContext';
 import {AssetKeyInput, PartitionDefinitionType} from '../graphql/types';
 import {RepoAddress} from '../workspace/types';
 
-export function useDeleteDynamicPartitionsDialog(
+export const useDeleteDynamicPartitionsDialog = (
   opts: {
     repoAddress: RepoAddress;
     assetKey: AssetKeyInput;
@@ -20,8 +20,8 @@ export function useDeleteDynamicPartitionsDialog(
     };
   } | null,
   refresh?: () => void,
-) {
-  const [showing, setShowing] = useState(false);
+) => {
+  const [isShowing, setIsShowing] = useState(false);
 
   const {
     featureContext: {canSeeWipeMaterializationAction},
@@ -31,11 +31,6 @@ export function useDeleteDynamicPartitionsDialog(
     (d) => d.type === PartitionDefinitionType.DYNAMIC,
   );
 
-  const {hasWipePermission} = useAssetPermissions(
-    opts?.assetKey ? [opts.assetKey] : [],
-    opts?.repoAddress.location || '',
-  );
-
   if (
     !opts ||
     !dynamicDimension?.dynamicPartitionsDefinitionName ||
@@ -43,7 +38,7 @@ export function useDeleteDynamicPartitionsDialog(
   ) {
     return {
       element: undefined,
-      dropdownOptions: [] as JSX.Element[],
+      dropdownOptions: [],
     };
   }
 
@@ -53,20 +48,44 @@ export function useDeleteDynamicPartitionsDialog(
         repoAddress={opts.repoAddress}
         assetKey={opts.assetKey}
         partitionsDefName={dynamicDimension.dynamicPartitionsDefinitionName}
-        isOpen={showing}
-        onClose={() => setShowing(false)}
+        isOpen={isShowing}
+        onClose={() => setIsShowing(false)}
         onComplete={refresh}
       />
     ),
     dropdownOptions: [
-      <MenuItem
+      <DeleteDynamicPartitionsMenuItem
         key="delete"
-        text="Delete partitions"
-        icon={<Icon name="delete" color={Colors.accentRed()} />}
-        disabled={!hasWipePermission}
-        intent="danger"
-        onClick={() => setShowing(true)}
+        setIsShowing={setIsShowing}
+        assetKeys={opts?.assetKey ? [opts.assetKey] : []}
+        locationName={opts?.repoAddress.location || ''}
       />,
     ],
   };
-}
+};
+
+type DeleteDynamicPartitionsMenuItemProps = {
+  assetKeys: AssetKeyInput[];
+  locationName: string;
+  setIsShowing: Dispatch<SetStateAction<boolean>>;
+};
+
+const DeleteDynamicPartitionsMenuItem = ({
+  assetKeys,
+  locationName,
+  setIsShowing,
+}: DeleteDynamicPartitionsMenuItemProps) => {
+  // this separate comp exists to defer this expensive query until
+  // the menuItem is rendered instead of when the hook is called
+  const {hasWipePermission} = useAssetPermissions(assetKeys, locationName);
+
+  return (
+    <MenuItem
+      text="Delete partitions"
+      icon={<Icon name="delete" color={Colors.accentRed()} />}
+      disabled={!hasWipePermission}
+      intent="danger"
+      onClick={() => setIsShowing(true)}
+    />
+  );
+};
