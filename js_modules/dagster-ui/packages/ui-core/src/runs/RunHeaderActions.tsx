@@ -1,6 +1,7 @@
 import {Button, Group, Icon, Menu, MenuItem, Popover, Tooltip} from '@dagster-io/ui-components';
 import {useContext, useState} from 'react';
 import {useHistory} from 'react-router-dom';
+import {AISummaryForRunMenuItem} from 'shared/runs/AISummaryForRunMenuItem.oss';
 import {RunAlertNotifications} from 'shared/runs/RunAlertNotifications.oss';
 import {RunMetricsDialog} from 'shared/runs/RunMetricsDialog.oss';
 
@@ -98,6 +99,7 @@ export const RunHeaderActions = ({run, isJob}: {run: RunFragment; isJob: boolean
               <Menu>
                 {!isExternalRun(run) ? (
                   <>
+                    <AISummaryForRunMenuItem run={run} />
                     <Tooltip
                       content="Loadable in dagster-webserver-debug"
                       position="left"
