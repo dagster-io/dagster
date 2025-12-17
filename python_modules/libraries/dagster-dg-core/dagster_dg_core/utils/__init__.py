@@ -145,12 +145,16 @@ def strip_activated_venv_from_env_vars(env: Mapping[str, str]) -> Mapping[str, s
     return {k: v for k, v in env.items() if not k == "VIRTUAL_ENV"}
 
 
-def discover_git_root(path: Path) -> Path:
+def discover_repo_root(path: Path) -> Path:
+    """Find the dagster repo root by looking for python_modules/dagster/.
+
+    This works even when dagster is a subfolder in a monorepo.
+    """
     while path != path.parent:
-        if (path / ".git").exists():
+        if (path / "python_modules" / "dagster").is_dir():
             return path
         path = path.parent
-    raise ValueError("Could not find git root")
+    raise ValueError("Could not find dagster repo root")
 
 
 def discover_venv(path: Path) -> Path:
