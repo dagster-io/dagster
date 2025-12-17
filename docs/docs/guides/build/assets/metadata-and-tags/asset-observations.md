@@ -6,6 +6,12 @@ sidebar_position: 5000
 
 An asset observation is an event that records metadata about a given asset. Unlike asset materializations, asset observations do not signify that an asset has been mutated.
 
+:::info Dagster+ credit consumption
+
+Asset observations do not count toward your Dagster+ credit usage. We recommend using asset observations when reporting events from external systems in Dagster instead of asset materializations to avoid consuming credits.
+
+:::
+
 ## Relevant APIs
 
 | Name                                   | Description                                                          |
