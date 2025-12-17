@@ -27,7 +27,7 @@ Dagster+ Serverless code will make requests from one of the following IP address
         54.68.25.27
         54.71.18.84
         ```
-</TabItem>
+    </TabItem>
     <TabItem value="eu-region" label="EU region">
         ```plain
         16.170.24.133
