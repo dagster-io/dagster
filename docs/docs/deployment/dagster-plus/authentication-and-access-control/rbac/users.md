@@ -25,7 +25,7 @@ In this guide, you'll learn how to manage users and their permissions using the 
 - **If using Google for Single sign-on (SSO)**, users must be added in Dagster+ before they can log in.
 - **If using an Identity Provider (IdP) like Okta for SSO**, users must be assigned to the Dagster app in the IdP to be able to log in to Dagster+. Refer to the [SSO setup guides](/deployment/dagster-plus/authentication-and-access-control/sso) for setup instructions for each of our supported IdP solutions.
 
-::: note
+:::note
 
 SCIM provisioning does not affect the ability to manage [service
 users](#service-users). Service users are always created and managed through the Dagster UI.
