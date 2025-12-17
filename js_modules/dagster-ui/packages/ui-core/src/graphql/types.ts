@@ -4869,6 +4869,7 @@ export type Run = PipelineRun &
   RunsFeedEntry & {
     __typename: 'Run';
     allPools: Maybe<Array<Scalars['String']['output']>>;
+    assetCheckEvaluations: Array<AssetCheckEvaluation>;
     assetCheckSelection: Maybe<Array<AssetCheckhandle>>;
     assetChecks: Maybe<Array<AssetCheckhandle>>;
     assetMaterializations: Array<MaterializationEvent>;
@@ -4912,6 +4913,10 @@ export type Run = PipelineRun &
     tags: Array<PipelineTag>;
     updateTime: Maybe<Scalars['Float']['output']>;
   };
+
+export type RunAssetCheckEvaluationsArgs = {
+  limit?: InputMaybe<Scalars['Int']['input']>;
+};
 
 export type RunCapturedLogsArgs = {
   fileKey: Scalars['String']['input'];
@@ -14228,6 +14233,10 @@ export const buildRun = (
   return {
     __typename: 'Run',
     allPools: overrides && overrides.hasOwnProperty('allPools') ? overrides.allPools! : [],
+    assetCheckEvaluations:
+      overrides && overrides.hasOwnProperty('assetCheckEvaluations')
+        ? overrides.assetCheckEvaluations!
+        : [],
     assetCheckSelection:
       overrides && overrides.hasOwnProperty('assetCheckSelection')
         ? overrides.assetCheckSelection!

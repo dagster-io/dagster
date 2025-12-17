@@ -108,6 +108,8 @@ if TYPE_CHECKING:
     from dagster_graphql.schema.asset_graph import GrapheneAssetNode
     from dagster_graphql.schema.partition_sets import GrapheneJobSelectionPartition
 
+from dagster_graphql.schema.asset_checks import GrapheneAssetCheckEvaluation
+
 UNSTARTED_STATUSES = [
     DagsterRunStatus.QUEUED,
     DagsterRunStatus.NOT_STARTED,
@@ -640,6 +642,10 @@ class GrapheneRun(graphene.ObjectType):
     hasUnconstrainedRootNodes = graphene.NonNull(graphene.Boolean)
     hasRunMetricsEnabled = graphene.NonNull(graphene.Boolean)
     externalJobSource = graphene.String()
+    asset_check_evaluations = graphene.Field(
+        non_null_list(GrapheneAssetCheckEvaluation),
+        limit=graphene.Argument(graphene.Int),
+    )
 
     class Meta:
         interfaces = (GraphenePipelineRun, GrapheneRunsFeedEntry)
@@ -899,6 +905,54 @@ class GrapheneRun(graphene.ObjectType):
         run_tags = self.dagster_run.tags
         return any(get_boolean_tag_value(run_tags.get(tag)) for tag in RUN_METRIC_TAGS)
 
+    def resolve_asset_check_evaluations(self, graphene_info, limit=None):
+        instance = graphene_info.context.instance
+        run_id = self.runId
+
+        try:
+            records = None
+
+            if hasattr(instance, "get_records_for_run"):
+                try:
+                    res = instance.get_records_for_run(
+                        run_id=run_id,
+                        of_type=DagsterEventType.ASSET_CHECK_EVALUATION,
+                    )
+                    records = getattr(res, "records", res)
+                except TypeError:
+                    res = instance.get_records_for_run(run_id=run_id)
+                    records = getattr(res, "records", res)
+
+            if not records:
+                return []
+
+            evaluations = []
+
+            for record in records:
+                # record may be EventLogRecord; unwrap to EventLogEntry
+                entry = getattr(record, "event_log_entry", record)
+                dagster_event = getattr(entry, "dagster_event", None)
+                if not dagster_event:
+                    continue
+
+                if dagster_event.event_type != DagsterEventType.ASSET_CHECK_EVALUATION:
+                    continue
+
+                # IMPORTANT: GrapheneAssetCheckEvaluation expects EventLogEntry, not evaluation data
+                evaluations.append(GrapheneAssetCheckEvaluation(entry))
+
+            # If there are >10 checks, only return failed ones
+            if len(evaluations) > 10:
+                evaluations = [e for e in evaluations if not e.success]
+
+            if limit is not None:
+                evaluations = evaluations[:limit]
+
+            return evaluations
+
+        except Exception:
+            # Non-nullable GraphQL field must never resolve to None
+            return []
 
 class GrapheneIPipelineSnapshotMixin:
     # Mixin this class to implement IPipelineSnapshot

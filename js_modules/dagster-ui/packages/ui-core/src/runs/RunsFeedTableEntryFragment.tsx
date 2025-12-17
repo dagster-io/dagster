@@ -35,6 +35,10 @@ export const RUNS_FEED_TABLE_ENTRY_FRAGMENT = gql`
         repositoryLocationName
         repositoryName
       }
+      assetCheckEvaluations {
+        checkName
+        success
+      }
       ...RunActionsMenuRunFragment
     }
     ... on PartitionBackfill {
