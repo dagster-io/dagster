@@ -12,7 +12,10 @@ The Dagster+ web interface, CLI, and GraphQL API use [AWS Cloudfront's content d
 
 The Dagster+ agent interacts with the following IP addresses:
 
-```
+<Tabs>
+<TabItem value="us-region" label="US region">
+
+```shell
 34.215.239.157
 35.165.239.109
 35.83.161.124
@@ -23,8 +26,22 @@ The Dagster+ agent interacts with the following IP addresses:
 54.188.126.120
 ```
 
+</TabItem>
+<TabItem value="eu-region" label="EU region">
+
+```shell
+16.170.24.133
+13.62.119.65
+56.228.54.244
+```
+
+</TabItem>
+</Tabs>
+
 :::note
-Additional IP addresses may be added over time. This list was last updated on **February 7, 2025**.
+
+Additional IP addresses may be added over time. This list was last updated on **December 17, 2025**.
+
 :::
 
 ## URLs
