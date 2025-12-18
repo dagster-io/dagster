@@ -8,7 +8,11 @@ def test_basic_op_definition():
     def noop_op(_):
         pass
 
-    op_snap = build_op_def_snap(noop_op)
+    @dg.job
+    def my_job():
+        noop_op()
+
+    op_snap = build_op_def_snap(noop_op, my_job)
 
     assert op_snap
     assert dg.deserialize_value(dg.serialize_value(op_snap), OpDefSnap) == op_snap
@@ -35,7 +39,11 @@ def test_op_definition_kitchen_sink():
         assert arg_two
         raise Exception("should not execute")
 
-    kitchen_sink_op_snap = build_op_def_snap(kitchen_sink_op)
+    @dg.job
+    def my_job():
+        kitchen_sink_op()
+
+    kitchen_sink_op_snap = build_op_def_snap(kitchen_sink_op, my_job)
 
     assert kitchen_sink_op_snap
     assert kitchen_sink_op_snap.name == "kitchen_sink_op"
@@ -86,7 +94,7 @@ def test_noop_graph_definition():
     def comp_graph():
         noop_op()
 
-    comp_solid_meta = build_graph_def_snap(comp_graph)
+    comp_solid_meta = build_graph_def_snap(comp_graph, comp_graph.to_job())
 
     assert isinstance(comp_solid_meta, GraphDefSnap)
     assert (
@@ -107,7 +115,7 @@ def test_basic_graph_definition():
     def comp_graph():
         take_one(return_one())
 
-    comp_solid_meta = build_graph_def_snap(comp_graph)
+    comp_solid_meta = build_graph_def_snap(comp_graph, comp_graph.to_job())
 
     assert isinstance(comp_solid_meta, GraphDefSnap)
     assert (
@@ -134,7 +142,7 @@ def test_complex_graph_definition():
     def comp_graph(this_number):
         take_many([return_one(), this_number, return_one.alias("return_one_also")()])
 
-    comp_solid_meta = build_graph_def_snap(comp_graph)
+    comp_solid_meta = build_graph_def_snap(comp_graph, comp_graph.to_job())
 
     assert isinstance(comp_solid_meta, GraphDefSnap)
     assert (

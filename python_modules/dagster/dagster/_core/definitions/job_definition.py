@@ -828,6 +828,10 @@ class JobDefinition(IHasInternalInit):
             asset_selection=frozenset(asset_selection) if asset_selection else None,
         )
 
+    @property
+    def is_asset_job(self) -> bool:
+        return bool(self.asset_layer and self.asset_layer.selected_asset_keys)
+
     def _get_partitions_def(
         self, selected_asset_keys: Optional[Iterable[AssetKey]]
     ) -> PartitionsDefinition:
