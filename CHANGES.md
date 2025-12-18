@@ -6,7 +6,7 @@
 
 - Optimized performance of calculating partition keys for time window partitions with exclusions.
 - `timedelta` and `datetime` are now available via the `datetime` context when rendering components (Thanks, [@stevenayers](https://github.com/stevenayers)!)
-- `FreshnessPolicy` is now available via the `dg` context when rendering components. (Thanks, [@stevenayers](@https://github.com/stevenayers)!)
+- `FreshnessPolicy` is now available via the `dg` context when rendering components. (Thanks, [@stevenayers](https://github.com/stevenayers)!)
 - Assets may now be annotated with up to 10 kinds (limit was previously 3).
 - Arbitrary resource parameters may now be hidden in the UI by setting `json_schema_extra={"dagster__is_secret": True}` on the corresponding `Field` definition in the resource class.
 - The `dg docs` cli group has been removed. The `integrations` subcommand has been moved to `dg utils integrations`.
