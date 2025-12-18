@@ -1,6 +1,0 @@
-type: dagster_dbt.components.dbt_project.DbtProjectComponent
-attributes:
-  project_dir: "src/data_platform_guide/snowflake_medallion/dbt_project"
-  profiles_dir: "src/data_platform_guide/snowflake_medallion/dbt_project"
-  target: "duckdb"
-  demo_mode: true
