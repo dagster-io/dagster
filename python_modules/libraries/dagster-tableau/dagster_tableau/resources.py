@@ -572,6 +572,7 @@ class BaseTableauWorkspace(ConfigurableResource):
     connected_app_secret_value: str = Field(
         ...,
         description="The secret value of the connected app used to connect to Tableau Workspace.",
+        json_schema_extra={"dagster__is_secret": True},
     )
     username: str = Field(..., description="The username to authenticate to Tableau Workspace.")
     site_name: str = Field(..., description="The name of the Tableau site to use.")
