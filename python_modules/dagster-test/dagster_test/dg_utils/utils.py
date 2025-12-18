@@ -11,7 +11,7 @@ import textwrap
 import time
 import traceback
 from collections.abc import Iterator, Sequence
-from contextlib import contextmanager, nullcontext, redirect_stderr, redirect_stdout
+from contextlib import ExitStack, contextmanager, nullcontext, redirect_stderr, redirect_stdout
 from dataclasses import dataclass
 from io import StringIO
 from pathlib import Path
@@ -32,7 +32,7 @@ from dagster_dg_core.utils import (
     activate_venv,
     create_toml_node,
     delete_toml_node,
-    discover_git_root,
+    discover_repo_root,
     get_toml_node,
     get_venv_executable,
     has_toml_node,
@@ -53,7 +53,7 @@ STANDARD_TEST_COMPONENT_MODULE = "dagster_test.components"
 def install_editable_dagster_packages_to_venv(
     venv_path: Path, package_rel_paths: Sequence[str]
 ) -> None:
-    dagster_git_repo_dir = str(discover_git_root(Path(__file__)))
+    dagster_git_repo_dir = str(discover_repo_root(Path(__file__)))
     install_args: list[str] = []
     for path in package_rel_paths:
         full_path = Path(dagster_git_repo_dir) / "python_modules" / path
@@ -163,7 +163,7 @@ def isolated_example_workspace(
     project_config_file_type: ConfigFileType = "pyproject.toml",
 ) -> Iterator[Path]:
     runner = ProxyRunner(runner) if isinstance(runner, CliRunner) else runner
-    dagster_git_repo_dir = str(discover_git_root(Path(__file__)))
+    dagster_git_repo_dir = str(discover_repo_root(Path(__file__)))
     with (
         runner.isolated_filesystem(),
         clear_module_from_cache("foo_bar"),
@@ -223,6 +223,9 @@ def isolated_example_project_foo_bar(
     use_editable_dagster: bool = True,
     include_entry_point: bool = False,
     uv_sync: bool = False,
+    use_uv_workspace: bool = False,
+    project_name: str = "foo-bar",
+    use_tempdir: bool = True,
 ) -> Iterator[Path]:
     """Scaffold a project named foo_bar in an isolated filesystem.
 
@@ -237,62 +240,108 @@ def isolated_example_project_foo_bar(
     """
     uv_sync_args = ["--uv-sync"] if uv_sync else ["--no-uv-sync"]
 
+    hyph_name = project_name
+    snake_name = project_name.replace("-", "_")
+
     runner = ProxyRunner(runner) if isinstance(runner, CliRunner) else runner
-    dagster_git_repo_dir = str(discover_git_root(Path(__file__)))
-    project_path = Path("foo-bar")
+    dagster_git_repo_dir = str(discover_repo_root(Path(__file__)))
+    project_path = Path(hyph_name)
     if in_workspace:
-        fs_context = isolated_example_workspace(runner)
-    else:
+        fs_context = isolated_example_workspace(
+            runner, workspace_config_file_type="pyproject.toml" if use_uv_workspace else "dg.toml"
+        )
+    elif use_tempdir:
         fs_context = runner.isolated_filesystem()
-    with fs_context, environ({"DAGSTER_GIT_REPO_DIR": dagster_git_repo_dir}):
+    else:
+        fs_context = nullcontext()
+
+    with ExitStack() as stack:
+        stack.enter_context(fs_context)
+        stack.enter_context(environ({"DAGSTER_GIT_REPO_DIR": dagster_git_repo_dir}))
+
+        if use_uv_workspace and not in_workspace:
+            raise Exception("Must set 'in_workspace' to use uv_workspace_dep")
+        elif use_uv_workspace:
+            stack.enter_context(
+                isolated_example_component_library_foo_bar(
+                    runner, library_name="test-lib-baz", use_tempdir=False
+                )
+            )
+            stack.enter_context(pushd(".."))  # pop out of library directory
+
+            # modify workspace config so it's a uv workspace that includes both the contents of
+            # "projects" and the "test-lib-baz" lib
+            # convert_dg_toml_to_pyproject_toml(Path("dg.toml"))
+            with modify_toml_as_dict(Path("pyproject.toml")) as toml:
+                toml["project"] = {
+                    "name": f"{snake_name}_workspace",
+                    "version": "0.1.0",
+                }
+                toml.setdefault("tool", {})["uv"] = {
+                    "sources": {
+                        "test-lib-baz": {"workspace": True},
+                    },
+                    "workspace": {
+                        "members": ["foo-bar", "test-lib-baz"],
+                        "exclude": [],
+                    },
+                }
+
         args = [
             "project",
-            "foo-bar",
+            hyph_name,
             *uv_sync_args,
             *(["--use-editable-dagster"] if use_editable_dagster else []),
         ]
         result = runner.invoke_create_dagster(*args)
+        assert_runner_result(result)
+
+        # inject the baz dependency
+        if use_uv_workspace:
+            with modify_toml_as_dict(Path(f"{hyph_name}/pyproject.toml")) as toml:
+                toml["project"]["dependencies"].append("test-lib-baz")
+                # toml["tool"]["uv"].setdefault("sources", {})["baz"]
 
         assert_runner_result(result)
         if config_file_type == "dg.toml":
             convert_pyproject_toml_to_dg_toml(
-                Path("foo-bar") / "pyproject.toml",
-                Path("foo-bar") / "dg.toml",
+                Path(hyph_name) / "pyproject.toml",
+                Path(hyph_name) / "dg.toml",
             )
 
-        module_parent_dir = Path("foo-bar").joinpath("src").resolve()
+        module_parent_dir = Path(hyph_name).joinpath("src").resolve()
         if package_layout == "root":
             # Move the src directory to the root of the project
-            curr_pkg_root = Path("foo-bar") / "src" / "foo_bar"
-            new_pkg_root = Path("foo-bar") / "foo_bar"
+            curr_pkg_root = Path(hyph_name) / "src" / snake_name
+            new_pkg_root = Path(hyph_name) / snake_name
             shutil.move(curr_pkg_root, new_pkg_root)
-            Path("foo-bar", "src").rmdir()
+            (Path(hyph_name) / "src").rmdir()
 
             # Adjust definitions.py to match root package layout
-            definitions_py = Path("foo-bar") / "foo_bar" / "definitions.py"
+            definitions_py = Path(hyph_name) / snake_name / "definitions.py"
             definitions_py.write_text(
                 definitions_py.read_text().replace(".parent.parent", ".parent")
             )
 
-            module_parent_dir = Path("foo-bar").resolve()
+            module_parent_dir = Path(hyph_name).resolve()
 
-            with modify_toml_as_dict(Path("foo-bar/pyproject.toml")) as toml:
-                create_toml_node(toml, ("tool", "hatch", "build", "packages"), ["foo_bar"])
+            with modify_toml_as_dict(Path(f"{hyph_name}/pyproject.toml")) as toml:
+                create_toml_node(toml, ("tool", "hatch", "build", "packages"), [snake_name])
 
             if not uv_sync:
                 # Reinstall to venv since package root changed
-                install_to_venv(Path("foo-bar/.venv"), ["-e", "foo-bar"])
+                install_to_venv(Path(f"{hyph_name}/.venv"), ["-e", hyph_name])
 
-        with clear_module_from_cache("foo_bar"), pushd(project_path):
+        with clear_module_from_cache(snake_name), pushd(project_path):
             for src_dir in component_dirs:
                 component_name = src_dir.name
-                components_dir = Path.cwd() / "src" / "foo_bar" / "defs" / component_name
+                components_dir = Path.cwd() / "src" / snake_name / "defs" / component_name
                 components_dir.mkdir(parents=True, exist_ok=True)
                 shutil.copytree(src_dir, components_dir, dirs_exist_ok=True)
 
             # Used for backcompat testing
             if include_entry_point:
-                _add_python_entry_point("foo_bar.components")
+                _add_python_entry_point(f"{snake_name}.components")
                 # reinstall to venv since we added an entry point
                 if Path(".venv").exists():
                     install_to_venv(Path(".venv"), ["-e", "."])
@@ -314,15 +363,24 @@ def isolated_example_project_foo_bar(
 @contextmanager
 def isolated_example_component_library_foo_bar(
     runner: Union[CliRunner, "ProxyRunner"],
-    components_module_name: str = "foo_bar.components",
+    library_name: str = "foo-bar",
+    components_module_name: Optional[str] = None,
+    uv_sync: bool = True,
+    use_tempdir: bool = True,
 ) -> Iterator[None]:
+    hyph_name = library_name  # noqa: F841
+    snake_name = library_name.replace("-", "_")
+    components_module_name = components_module_name or f"{snake_name}.components"
+
     runner = ProxyRunner(runner) if isinstance(runner, CliRunner) else runner
     with isolated_example_project_foo_bar(
         runner,
         in_workspace=False,
-        uv_sync=True,
+        uv_sync=uv_sync,
+        project_name=library_name,
+        use_tempdir=use_tempdir,
     ):
-        shutil.rmtree(Path("src/foo_bar/defs"))
+        shutil.rmtree(Path(f"src/{snake_name}/defs"))
 
         # Make it not a project
         with modify_toml_as_dict(Path("pyproject.toml")) as toml:
@@ -330,12 +388,13 @@ def isolated_example_component_library_foo_bar(
 
         _add_python_entry_point(components_module_name)
 
-        # Install the component library into our venv
-        venv_path = Path(".venv")
-        assert venv_path.exists()
-        install_to_venv(venv_path, ["-e", "."])
-        with activate_venv(venv_path):
-            yield
+        if uv_sync:
+            # Install the component library into our venv
+            venv_path = Path(".venv")
+            assert venv_path.exists()
+            install_to_venv(venv_path, ["-e", "."])
+            with activate_venv(venv_path):
+                yield
 
 
 def _add_python_entry_point(module_name: str):
@@ -402,9 +461,12 @@ def convert_pyproject_toml_to_dg_toml(pyproject_toml_path: Path, dg_toml_path: P
         pyproject_toml_path.write_text(tomlkit.dumps(pyproject_toml))
 
 
-def convert_dg_toml_to_pyproject_toml(dg_toml_path: Path, pyproject_toml_path: Path) -> None:
+def convert_dg_toml_to_pyproject_toml(
+    dg_toml_path: Path, pyproject_toml_path: Optional[Path] = None
+) -> None:
     """Convert a dg.toml file to a pyproject.toml file."""
     dg_toml = tomlkit.parse(dg_toml_path.read_text()).unwrap()
+    pyproject_toml_path = pyproject_toml_path or dg_toml_path.with_stem("pyproject.toml")
     if not pyproject_toml_path.exists():
         pyproject_toml_path.write_text(tomlkit.dumps({}))
     with modify_toml(pyproject_toml_path) as pyproject_toml:
