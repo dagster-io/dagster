@@ -1,6 +1,8 @@
+import {AssetHealthFragment} from '../../asset-data/types/AssetHealthDataProvider.types';
 import {
   AssetCheckExecutionResolvedStatus,
   AssetCheckSeverity,
+  AssetHealthStatus,
   ChangeReason,
   RunStatus,
   StaleCause,
@@ -10,6 +12,13 @@ import {
   buildAssetCheckEvaluation,
   buildAssetCheckExecution,
   buildAssetFreshnessInfo,
+  buildAssetHealth,
+  buildAssetHealthCheckDegradedMeta,
+  buildAssetHealthCheckUnknownMeta,
+  buildAssetHealthFreshnessMeta,
+  buildAssetHealthMaterializationDegradedNotPartitionedMeta,
+  buildAssetHealthMaterializationDegradedPartitionedMeta,
+  buildAssetHealthMaterializationHealthyPartitionedMeta,
   buildAssetKey,
   buildAssetNode,
   buildMaterializationEvent,
@@ -53,6 +62,147 @@ export const MockStaleReasonCode: StaleCause = {
 };
 
 const TIMESTAMP = `${new Date('2023-02-12 00:00:00').getTime()}`;
+
+// Health Data Fixtures - Helper function to create health data with custom asset key
+const createHealthData = (
+  assetKeyPath: string[],
+  healthStatus: AssetHealthStatus,
+  overrides: Partial<AssetHealthFragment> = {},
+): AssetHealthFragment => ({
+  __typename: 'Asset',
+  key: buildAssetKey({path: assetKeyPath}),
+  latestMaterializationTimestamp:
+    healthStatus === AssetHealthStatus.HEALTHY ? Number(TIMESTAMP) : null,
+  latestFailedToMaterializeTimestamp:
+    healthStatus === AssetHealthStatus.DEGRADED ? Number(TIMESTAMP) : null,
+  freshnessStatusChangedTimestamp: Number(TIMESTAMP),
+  assetHealth: buildAssetHealth({
+    assetHealth: healthStatus,
+    materializationStatus: healthStatus,
+    assetChecksStatus: AssetHealthStatus.HEALTHY,
+    freshnessStatus: AssetHealthStatus.HEALTHY,
+    materializationStatusMetadata: null,
+    assetChecksStatusMetadata: null,
+    freshnessStatusMetadata: buildAssetHealthFreshnessMeta({
+      lastMaterializedTimestamp:
+        healthStatus === AssetHealthStatus.HEALTHY ? Number(TIMESTAMP) : null,
+    }),
+  }),
+  ...overrides,
+});
+
+export const HealthDataHealthy = createHealthData(['asset1'], AssetHealthStatus.HEALTHY);
+
+export const HealthDataDegraded = createHealthData(['asset1'], AssetHealthStatus.DEGRADED, {
+  assetHealth: buildAssetHealth({
+    assetHealth: AssetHealthStatus.DEGRADED,
+    materializationStatus: AssetHealthStatus.DEGRADED,
+    assetChecksStatus: AssetHealthStatus.HEALTHY,
+    freshnessStatus: AssetHealthStatus.HEALTHY,
+    materializationStatusMetadata: buildAssetHealthMaterializationDegradedNotPartitionedMeta({
+      failedRunId: 'ABCDEF',
+    }),
+    assetChecksStatusMetadata: null,
+    freshnessStatusMetadata: buildAssetHealthFreshnessMeta({
+      lastMaterializedTimestamp: null,
+    }),
+  }),
+});
+
+export const HealthDataWithFailedChecks = createHealthData(['asset1'], AssetHealthStatus.DEGRADED, {
+  assetHealth: buildAssetHealth({
+    assetHealth: AssetHealthStatus.DEGRADED,
+    materializationStatus: AssetHealthStatus.HEALTHY,
+    assetChecksStatus: AssetHealthStatus.DEGRADED,
+    freshnessStatus: AssetHealthStatus.HEALTHY,
+    materializationStatusMetadata: null,
+    assetChecksStatusMetadata: buildAssetHealthCheckDegradedMeta({
+      numFailedChecks: 1,
+      numWarningChecks: 1,
+      totalNumChecks: 5,
+    }),
+    freshnessStatusMetadata: buildAssetHealthFreshnessMeta({
+      lastMaterializedTimestamp: Number(TIMESTAMP),
+    }),
+  }),
+});
+
+export const HealthDataOverdue = createHealthData(['asset1'], AssetHealthStatus.DEGRADED, {
+  assetHealth: buildAssetHealth({
+    assetHealth: AssetHealthStatus.DEGRADED,
+    materializationStatus: AssetHealthStatus.HEALTHY,
+    assetChecksStatus: AssetHealthStatus.HEALTHY,
+    freshnessStatus: AssetHealthStatus.DEGRADED,
+    materializationStatusMetadata: null,
+    assetChecksStatusMetadata: null,
+    freshnessStatusMetadata: buildAssetHealthFreshnessMeta({
+      lastMaterializedTimestamp: Number(TIMESTAMP),
+    }),
+  }),
+});
+
+export const HealthDataPartitionedDegraded = createHealthData(
+  ['asset1'],
+  AssetHealthStatus.DEGRADED,
+  {
+    assetHealth: buildAssetHealth({
+      assetHealth: AssetHealthStatus.DEGRADED,
+      materializationStatus: AssetHealthStatus.DEGRADED,
+      assetChecksStatus: AssetHealthStatus.HEALTHY,
+      freshnessStatus: AssetHealthStatus.HEALTHY,
+      materializationStatusMetadata: buildAssetHealthMaterializationDegradedPartitionedMeta({
+        numMissingPartitions: 849,
+        numFailedPartitions: 645,
+        totalNumPartitions: 1500,
+        latestFailedRunId: 'ABCDEF',
+      }),
+      assetChecksStatusMetadata: null,
+      freshnessStatusMetadata: buildAssetHealthFreshnessMeta({
+        lastMaterializedTimestamp: Number(TIMESTAMP),
+      }),
+    }),
+  },
+);
+
+export const HealthDataPartitionedHealthy = createHealthData(
+  ['asset1'],
+  AssetHealthStatus.HEALTHY,
+  {
+    assetHealth: buildAssetHealth({
+      assetHealth: AssetHealthStatus.HEALTHY,
+      materializationStatus: AssetHealthStatus.HEALTHY,
+      assetChecksStatus: AssetHealthStatus.HEALTHY,
+      freshnessStatus: AssetHealthStatus.HEALTHY,
+      materializationStatusMetadata: buildAssetHealthMaterializationHealthyPartitionedMeta({
+        numMissingPartitions: 0,
+        totalNumPartitions: 1500,
+        latestRunId: 'ABCDEF',
+      }),
+      assetChecksStatusMetadata: null,
+      freshnessStatusMetadata: buildAssetHealthFreshnessMeta({
+        lastMaterializedTimestamp: Number(TIMESTAMP),
+      }),
+    }),
+  },
+);
+
+export const HealthDataUnknown = createHealthData(['asset1'], AssetHealthStatus.UNKNOWN, {
+  latestMaterializationTimestamp: null,
+  latestFailedToMaterializeTimestamp: null,
+  freshnessStatusChangedTimestamp: null,
+  assetHealth: buildAssetHealth({
+    assetHealth: AssetHealthStatus.UNKNOWN,
+    materializationStatus: AssetHealthStatus.UNKNOWN,
+    assetChecksStatus: AssetHealthStatus.UNKNOWN,
+    freshnessStatus: AssetHealthStatus.UNKNOWN,
+    materializationStatusMetadata: null,
+    assetChecksStatusMetadata: buildAssetHealthCheckUnknownMeta({
+      numNotExecutedChecks: 3,
+      totalNumChecks: 3,
+    }),
+    freshnessStatusMetadata: null,
+  }),
+});
 
 export const AssetNodeFragmentBasic: AssetNodeFragment = buildAssetNode({
   assetKey: buildAssetKey({path: ['asset1']}),
@@ -282,8 +432,10 @@ export const LiveDataForNodeMaterializedWithChecks: LiveDataForNodeWithStaleData
 
 export const LiveDataForNodeMaterializedWithChecksOk: LiveDataForNodeWithStaleData = {
   ...LiveDataForNodeMaterializedWithChecks,
+  stepKey: 'asset7_5',
   assetChecks: LiveDataForNodeMaterializedWithChecks.assetChecks.filter(
-    (c) => c.executionForLatestMaterialization?.evaluation?.severity !== AssetCheckSeverity.ERROR,
+    (c) =>
+      c.executionForLatestMaterialization?.status === AssetCheckExecutionResolvedStatus.SUCCEEDED,
   ),
 };
 
@@ -716,109 +868,125 @@ export const AssetNodeScenariosBase = [
   {
     title: 'No Live Data',
     liveData: undefined,
+    healthData: undefined,
     definition: AssetNodeFragmentBasic,
-    expectedText: ['Loading'],
+    expectedText: ['Unknown'],
   },
 
   {
-    title: 'Run Started - Not Materializing Yet',
+    title: 'Run Started - Not Executing Yet',
     liveData: LiveDataForNodeRunStartedNotMaterializing,
+    healthData: HealthDataHealthy,
     definition: AssetNodeFragmentBasic,
-    expectedText: ['Materializing...', 'ABCDEF'],
+    expectedText: ['Executing...', 'ABCDEF'],
   },
   {
-    title: 'Run Started - Materializing',
+    title: 'Run Started - Executing',
     liveData: LiveDataForNodeRunStartedMaterializing,
+    healthData: HealthDataHealthy,
     definition: AssetNodeFragmentBasic,
-    expectedText: ['Materializing...', 'ABCDEF'],
+    expectedText: ['Executing...', 'ABCDEF'],
   },
 
   {
-    title: 'Run Failed to Materialize',
+    title: 'Run Failed to Execute',
     liveData: LiveDataForNodeRunFailed,
+    healthData: HealthDataDegraded,
     definition: AssetNodeFragmentBasic,
-    expectedText: ['Failed', 'Jan'],
+    expectedText: ['Degraded'],
   },
 
   {
-    title: 'Never Materialized',
+    title: 'Never Executed',
     liveData: LiveDataForNodeNeverMaterialized,
+    healthData: HealthDataUnknown,
     definition: AssetNodeFragmentBasic,
-    expectedText: ['Never materialized'],
+    expectedText: ['Not evaluated', 'Unknown'],
   },
 
   {
-    title: 'Never Materialized, Failed Check',
+    title: 'Never Executed, Failed Check',
     liveData: {
       ...LiveDataForNodeNeverMaterialized,
       assetChecks: LiveDataForNodeMaterializedWithChecks.assetChecks,
     },
+    healthData: HealthDataWithFailedChecks,
     definition: AssetNodeFragmentBasic,
-    expectedText: ['Never materialized'],
+    expectedText: ['1 / 5 Passed', 'Degraded'],
   },
 
   {
-    title: 'Materialized',
+    title: 'Executed',
     liveData: LiveDataForNodeMaterialized,
+    healthData: HealthDataHealthy,
     definition: AssetNodeFragmentBasic,
-    expectedText: ['Materialized', 'Feb'],
+    expectedText: ['Healthy', 'Passing'],
   },
 
   {
-    title: 'Materialized and Stale',
+    title: 'Executed and Stale',
     liveData: LiveDataForNodeMaterializedAndStale,
+    healthData: HealthDataHealthy,
     definition: AssetNodeFragmentBasic,
-    expectedText: ['Unsynced', 'Feb'],
+    expectedText: ['Unsynced', 'Healthy', 'Passing'],
   },
 
   {
-    title: 'Materialized and Stale and Overdue',
+    title: 'Executed and Stale and Overdue',
     liveData: LiveDataForNodeMaterializedAndStaleAndOverdue,
+    healthData: HealthDataOverdue,
     definition: AssetNodeFragmentBasic,
-    expectedText: ['Unsynced', 'Overdue', 'Feb'],
+    expectedText: ['Unsynced', 'Degraded', 'Failed'],
   },
 
   {
-    title: 'Materialized and Stale and Fresh',
+    title: 'Executed and Stale and Fresh',
     liveData: LiveDataForNodeMaterializedAndStaleAndFresh,
+    healthData: HealthDataHealthy,
     definition: AssetNodeFragmentBasic,
-    expectedText: ['Materialized'],
+    expectedText: ['Unsynced', 'Healthy'],
   },
 
   {
-    title: 'Materialized and Fresh',
+    title: 'Executed and Fresh',
     liveData: LiveDataForNodeMaterializedAndFresh,
+    healthData: HealthDataHealthy,
     definition: AssetNodeFragmentBasic,
-    expectedText: ['Materialized'],
+    expectedText: ['Healthy'],
   },
 
   {
-    title: 'Materialized and Overdue',
+    title: 'Executed and Overdue',
     liveData: LiveDataForNodeMaterializedAndOverdue,
+    healthData: HealthDataOverdue,
     definition: AssetNodeFragmentBasic,
-    expectedText: ['Overdue', 'Feb'],
+    expectedText: ['Degraded', 'Failed'],
   },
   {
-    title: 'Materialized and Failed and Overdue',
+    title: 'Executed and Failed and Overdue',
     liveData: LiveDataForNodeFailedAndOverdue,
+    healthData: HealthDataOverdue,
     definition: AssetNodeFragmentBasic,
-    expectedText: ['Failed, Overdue', 'Jan'],
+    expectedText: ['Failed', 'Degraded'],
   },
   {
-    title: 'Materialized with Checks (Ok)',
+    title: 'Executed with Checks (Ok)',
     liveData: LiveDataForNodeMaterializedWithChecksOk,
+    healthData: HealthDataHealthy,
     definition: AssetNodeFragmentBasic,
-    expectedText: ['Materialized', 'Checks'],
+    expectedText: ['Passing', 'Healthy', '1 / 1 Passed'],
   },
   {
-    title: 'Materialized with Checks (Failed)',
+    title: 'Executed with Checks (Failed)',
     liveData: LiveDataForNodeMaterializedWithChecks,
+    healthData: HealthDataWithFailedChecks,
     definition: AssetNodeFragmentBasic,
-    expectedText: ['Materialized', 'Checks'],
+    expectedText: ['Passing', 'Degraded', '1 / 5 Passed'],
   },
   {
     title: 'Changed in Branch',
     liveData: LiveDataForNodeMaterializedWithChecks,
+    healthData: HealthDataWithFailedChecks,
     definition: AssetNodeFragmentChangedInBranch,
     expectedText: ['New in branch'],
   },
@@ -828,6 +996,7 @@ export const AssetNodeScenariosBase = [
       ...LiveDataForNodeMaterialized,
       stepKey: 'very_long_asset_which_was_totally_reasonable_at_the_time',
     },
+    healthData: HealthDataHealthy,
     definition: {
       ...AssetNodeFragmentBasic,
       assetKey: buildAssetKey({path: ['very_long_asset_which_was_totally_reasonable_at_the_time']}),
@@ -837,6 +1006,7 @@ export const AssetNodeScenariosBase = [
   {
     title: 'Single owner - long team name',
     liveData: LiveDataForNodeMaterialized,
+    healthData: HealthDataHealthy,
     definition: {
       ...AssetNodeFragmentBasic,
       assetKey: buildAssetKey({path: ['very_long_asset_which_was_totally_reasonable_at_the_time']}),
@@ -851,6 +1021,7 @@ export const AssetNodeScenariosBase = [
   {
     title: 'Single owner - long user name',
     liveData: LiveDataForNodeMaterialized,
+    healthData: HealthDataHealthy,
     definition: {
       ...AssetNodeFragmentBasic,
       assetKey: buildAssetKey({path: ['very_long_asset_which_was_totally_reasonable_at_the_time']}),
@@ -868,13 +1039,15 @@ export const AssetNodeScenariosSource = [
   {
     title: 'Source Asset - No Live Data',
     liveData: undefined,
+    healthData: undefined,
     definition: AssetNodeFragmentSource,
-    expectedText: ['Loading'],
+    expectedText: ['Unknown'],
   },
 
   {
     title: 'Source Asset - Not Observable',
     liveData: LiveDataForNodeNeverMaterialized,
+    healthData: HealthDataUnknown,
     definition: {
       ...AssetNodeFragmentSource,
       isObservable: false,
@@ -888,6 +1061,7 @@ export const AssetNodeScenariosSource = [
   {
     title: 'Source Asset - Not Observable, No Description',
     liveData: LiveDataForNodeNeverMaterialized,
+    healthData: HealthDataUnknown,
     definition: {
       ...AssetNodeFragmentSource,
       isObservable: false,
@@ -902,28 +1076,32 @@ export const AssetNodeScenariosSource = [
   {
     title: 'Source Asset - Never Observed',
     liveData: LiveDataForNodeSourceNeverObserved,
+    healthData: HealthDataUnknown,
     definition: AssetNodeFragmentSource,
-    expectedText: ['Never observed', '–'],
+    expectedText: ['Unknown'],
   },
 
   {
     title: 'Source Asset - Overdue',
     liveData: LiveDataForNodeMaterializedAndOverdue,
+    healthData: HealthDataOverdue,
     definition: AssetNodeFragmentSourceOverdue,
-    expectedText: ['Overdue', 'Feb'],
+    expectedText: ['Degraded'],
   },
   {
     title: 'Source Asset - Observation Running',
     liveData: LiveDataForNodeSourceObservationRunning,
+    healthData: HealthDataHealthy,
     definition: AssetNodeFragmentSource,
-    expectedText: ['Observing...', 'ABCDEF'],
+    expectedText: ['Executing...', 'ABCDEF'],
   },
 
   {
     title: 'Source Asset - Observed, Up To Date',
     liveData: LiveDataForNodeSourceObservedUpToDate,
+    healthData: HealthDataHealthy,
     definition: AssetNodeFragmentSource,
-    expectedText: ['Observed', 'Feb'],
+    expectedText: ['Healthy'],
   },
 ];
 
@@ -931,50 +1109,57 @@ export const AssetNodeScenariosPartitioned = [
   {
     title: 'Partitioned Asset - Some Missing',
     liveData: LiveDataForNodePartitionedSomeMissing,
+    healthData: HealthDataPartitionedDegraded,
     definition: AssetNodeFragmentPartitioned,
-    expectedText: ['999+', '6', '1,500 partitions'],
+    expectedText: ['0% filled'],
   },
 
   {
     title: 'Partitioned Asset - Some Failed',
     liveData: LiveDataForNodePartitionedSomeFailed,
+    healthData: HealthDataPartitionedDegraded,
     definition: AssetNodeFragmentPartitioned,
-    expectedText: ['645', '849', '1,500 partitions'],
+    expectedText: ['849 failed'],
   },
 
   {
     title: 'Partitioned Asset - None Missing',
     liveData: LiveDataForNodePartitionedNoneMissing,
+    healthData: HealthDataPartitionedHealthy,
     definition: AssetNodeFragmentPartitioned,
-    expectedText: ['1,500 partitions', 'All'],
+    expectedText: ['Healthy'],
   },
 
   {
-    title: 'Never Materialized',
+    title: 'Never Executed',
     liveData: LiveDataForNodePartitionedNeverMaterialized,
+    healthData: HealthDataUnknown,
     definition: AssetNodeFragmentPartitioned,
-    expectedText: ['1,500 partitions'],
+    expectedText: ['0% filled', 'Unknown'],
   },
 
   {
-    title: 'Materializing...',
+    title: 'Executing...',
     liveData: LiveDataForNodePartitionedMaterializing,
+    healthData: HealthDataHealthy,
     definition: AssetNodeFragmentPartitioned,
-    expectedText: ['Materializing 5 partitions'],
+    expectedText: ['Executing 5 partitions'],
   },
 
   {
     title: 'Partitioned Asset - Overdue',
     liveData: LiveDataForNodePartitionedOverdue,
+    healthData: HealthDataOverdue,
     definition: AssetNodeFragmentPartitioned,
-    expectedText: ['All', 'Overdue'],
+    expectedText: ['100% filled', 'Failed', 'Degraded'],
   },
 
   {
     title: 'Partitioned Asset - Fresh',
     liveData: LiveDataForNodePartitionedFresh,
+    healthData: HealthDataPartitionedHealthy,
     definition: AssetNodeFragmentPartitioned,
-    expectedText: ['1,500 partitions', 'All'],
+    expectedText: ['100% filled', 'Passing'],
   },
 
   {
@@ -983,25 +1168,28 @@ export const AssetNodeScenariosPartitioned = [
       ...LiveDataForNodePartitionedFresh,
       assetChecks: LiveDataForNodeMaterializedWithChecks.assetChecks,
     },
+    healthData: HealthDataWithFailedChecks,
     definition: {
       ...AssetNodeFragmentPartitioned,
       changedReasons: [ChangeReason.NEW],
       kinds: ['ipynb'],
     },
-    expectedText: ['1,500 partitions', 'All', 'Checks'],
+    expectedText: ['100% filled', 'ipynb'],
   },
 
   {
     title: 'Partitioned Asset - Last Run Failed',
     liveData: LiveDataForNodePartitionedLatestRunFailed,
+    healthData: HealthDataDegraded,
     definition: AssetNodeFragmentPartitioned,
-    expectedText: ['4', '999+', '1,500 partitions'],
+    expectedText: ['100% filled', '1 failed', 'Degraded'],
   },
 
   {
     title: 'Partitioned Asset - Live Data Loading',
     liveData: undefined,
+    healthData: undefined,
     definition: AssetNodeFragmentPartitioned,
-    expectedText: ['Loading'],
+    expectedText: ['Unknown'],
   },
 ];
