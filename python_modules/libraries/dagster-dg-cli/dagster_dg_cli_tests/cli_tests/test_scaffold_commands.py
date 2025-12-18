@@ -178,6 +178,18 @@ def test_scaffold_defs_component_substring_single_match_success(selection: str) 
             assert "Exiting." in result.output
 
 
+def test_scaffold_project_uv_workspace():
+    with (
+        ProxyRunner.test(use_fixed_test_components=True) as runner,
+        # isolated_example_project_foo_bar(runner, in_workspace=True, uv_sync=True, use_uv_workspace=True),
+        isolated_example_project_foo_bar(
+            runner, in_workspace=True, uv_sync=True, use_uv_workspace=True
+        ),
+    ):
+        # Make sure venv created in uv workspace root
+        assert Path("../.venv").exists()
+
+
 def test_scaffold_defs_component_unregistered_success() -> None:
     """Ensure that a valid python symbol reference to a component type still works even if it is not registered."""
     with ProxyRunner.test() as runner, isolated_example_project_foo_bar(runner):

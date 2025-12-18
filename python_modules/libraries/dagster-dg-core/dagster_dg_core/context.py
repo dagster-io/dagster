@@ -11,6 +11,7 @@ import dagster_shared.check as check
 from dagster_shared.record import record
 from dagster_shared.serdes.serdes import whitelist_for_serdes
 from dagster_shared.seven import resolve_module_pattern
+from dagster_shared.utils import find_uv_workspace_root
 from dagster_shared.utils.config import get_canonical_defs_module_name
 from packaging.version import Version
 from typing_extensions import Self
@@ -301,6 +302,43 @@ class DgContext:
         if not self.is_project:
             raise DgError("`project_name` is only available in a Dagster project context")
         return self.root_path.name
+
+    @cached_property
+    def package_name(self) -> str:
+        """Returns the package name from [project].name in pyproject.toml.
+
+        This is the name used by uv/pip and may differ from the directory name.
+        """
+        if not self.is_project:
+            raise DgError("`package_name` is only available in a Dagster project context")
+
+        import tomlkit
+
+        if self.pyproject_toml_path.exists():
+            toml = tomlkit.parse(self.pyproject_toml_path.read_text())
+            if has_toml_node(toml, ("project", "name")):
+                return get_toml_node(toml, ("project", "name"), str)
+
+        raise DgError(f"Cannot find [project].name in {self.pyproject_toml_path}")
+
+    @cached_property
+    def uv_workspace_root(self) -> Optional[Path]:
+        """Walk up directories to find a uv workspace root.
+
+        Returns the workspace root path or None if not found.
+        A uv workspace is identified by [tool.uv.workspace] in pyproject.toml.
+        """
+        result = find_uv_workspace_root(self.root_path)
+        return result[0] if result else None
+
+    @property
+    def build_root_path(self) -> Path:
+        """Returns the root path for build operations.
+
+        If in a uv workspace, returns the workspace root.
+        Otherwise, returns the project/workspace root_path.
+        """
+        return self.uv_workspace_root or self.root_path
 
     @cached_property
     def project_python_executable(self) -> Path:
