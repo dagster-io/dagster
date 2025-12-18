@@ -1,6 +1,6 @@
 ---
 title: Dagster+ EU
-description: TK
+description: With Dagster+ EU, your control plane, metadata, and operational data reside in European data centers.
 sidebar_position: 200
 tags: [dagster-plus-feature]
 ---
