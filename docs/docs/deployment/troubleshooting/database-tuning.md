@@ -45,7 +45,6 @@ The clean-up job does two things:
 - Deletes DEBUG logs older than one week, and INFO/WARNING logs older than two months.
 - Deletes unimportant event_logs one month after they were created.
 
-
 ```python
 from textwrap import dedent
 
@@ -251,11 +250,9 @@ JOIN
 
 From the [Postgresql documentation](https://www.postgresql.org/docs/current/routine-vacuuming.html#VACUUM-FOR-SPACE-RECOVERY):
 
-
 > The standard form of VACUUM removes dead row versions in tables and indexes and marks the space available for future reuse. **However, it will not return the space to the operating system**, except in the special case where one or more pages at the end of a table become entirely free and an exclusive table lock can be easily obtained. In contrast, VACUUM FULL actively **compacts tables by writing a complete new version of the table file with no dead space**. This minimizes the size of the table, but can take a long time. **It also requires extra disk space for the new copy of the table, until the operation completes.**
 
 > The usual goal of routine vacuuming is to do standard VACUUMs often enough to avoid needing VACUUM FULL. The autovacuum daemon attempts to work this way, and in fact will never issue VACUUM FULL. In this approach, **the idea is not to keep tables at their minimum size, but to maintain steady-state usage of disk space: each table occupies space equivalent to its minimum size plus however much space gets used up between vacuum runs. Although VACUUM FULL can be used to shrink a table back to its minimum size and return the disk space to the operating system, there is not much point in this if the table will just grow again in the future.** Thus, moderately-frequent standard VACUUM runs are a better approach than infrequent VACUUM FULL runs for maintaining heavily-updated tables.
-
 
 ## Step 3: Shrink the datbase with `pg_repack`
 
@@ -266,6 +263,7 @@ Running `pg_repack` on the database can cut the overall disk usage in a few hour
 If you are using Azure, you will first need to enable pg_repack in the Azure UI, under azure.extensions. For more information, see the [Azure docs](https://learn.microsoft.com/en-us/azure/postgresql/extensions/how-to-allow-extensions?tabs=allow-extensions-portal#allow-extensions).
 
 Additional Azure documentation:
+
 - [Azure Psqlflex documentation](https://learn.microsoft.com/en-us/azure/postgresql/flexible-server/service-overview)
 - [Full vacuum using pg_repack in Azure Database for PostgreSQL](https://learn.microsoft.com/en-us/azure/postgresql/flexible-server/how-to-perform-fullvacuum-pg-repack)
 
@@ -323,46 +321,46 @@ Additional Azure documentation:
 
 5. View before/after stats:
 
-    ```sql
-    SELECT
-        relname AS table_name,
-        pg_size_pretty(pg_relation_size(quote_ident(schemaname) || '.' || quote_ident(relname))) AS table_size,
-        pg_size_pretty(pg_indexes_size(quote_ident(schemaname) || '.' || quote_ident(relname))) AS indexes_size,
-        pg_size_pretty(pg_total_relation_size(quote_ident(schemaname) || '.' || quote_ident(relname))) AS total_size
-    FROM
-        pg_stat_user_tables
-    WHERE
-        schemaname = 'dagster'
-    ORDER BY
-        table_name
+   ```sql
+   SELECT
+       relname AS table_name,
+       pg_size_pretty(pg_relation_size(quote_ident(schemaname) || '.' || quote_ident(relname))) AS table_size,
+       pg_size_pretty(pg_indexes_size(quote_ident(schemaname) || '.' || quote_ident(relname))) AS indexes_size,
+       pg_size_pretty(pg_total_relation_size(quote_ident(schemaname) || '.' || quote_ident(relname))) AS total_size
+   FROM
+       pg_stat_user_tables
+   WHERE
+       schemaname = 'dagster'
+   ORDER BY
+       table_name
 
-    >
+   >
 
-    table_name                    |table_size|indexes_size|total_size|  Before / After  |table_size|indexes_size|total_size|
-    ------------------------------+----------+------------+----------+                  +----------+------------+----------+
-    alembic_version               |8192 bytes|16 kB       |56 kB     |                  |8192 bytes|16 kB       |24 kB     |
-    asset_check_executions        |0 bytes   |24 kB       |32 kB     |                  |0 bytes   |24 kB       |32 kB     |
-    asset_daemon_asset_evaluations|4056 kB   |1480 kB     |37 MB     |                  |2920 kB   |632 kB      |29 MB     |
-    asset_event_tags              |2361 MB   |2359 MB     |4721 MB   |                  |2268 MB   |1888 MB     |4157 MB   |
-    asset_keys                    |24 MB     |608 kB      |37 MB     |                  |3408 kB   |208 kB      |10 MB     |
-    backfill_tags                 |208 kB    |160 kB      |408 kB    |                  |192 kB    |160 kB      |384 kB    |
-    bulk_actions                  |6848 kB   |752 kB      |12 MB     |                  |4704 kB   |480 kB      |7488 kB   |
-    concurrency_limits            |0 bytes   |16 kB       |24 kB     |                  |0 bytes   |16 kB       |24 kB     |
-    concurrency_slots             |0 bytes   |16 kB       |40 kB     |                  |0 bytes   |8192 bytes  |16 kB     |
-    daemon_heartbeats             |2152 kB   |80 kB       |2392 kB   |                  |56 kB     |32 kB       |128 kB    |
-    dynamic_partitions            |1112 kB   |1184 kB     |2336 kB   |                  |1080 kB   |1056 kB     |2168 kB   |
-    event_logs                    |137 GB    |31 GB       |169 GB    |        !         |44 GB     |5986 MB     |51 GB     |
-    instance_info                 |8192 bytes|16 kB       |64 kB     |                  |8192 bytes|16 kB       |32 kB     |
-    instigators                   |22 MB     |560 kB      |29 MB     |                  |776 kB    |104 kB      |1632 kB   |
-    job_ticks                     |446 MB    |83 MB       |633 MB    |                  |446 MB    |83 MB       |633 MB    |
-    jobs                          |23 MB     |568 kB      |29 MB     |                  |808 kB    |104 kB      |1680 kB   |
-    kvs                           |1384 kB   |32 kB       |1456 kB   |                  |32 kB     |32 kB       |104 kB    |
-    pending_steps                 |0 bytes   |16 kB       |24 kB     |                  |0 bytes   |16 kB       |24 kB     |
-    run_tags                      |4114 MB   |8488 MB     |12 GB     |                  |4052 MB   |6740 MB     |11 GB     |
-    runs                          |4899 MB   |1199 MB     |7535 MB   |                  |4562 MB   |685 MB      |6516 MB   |
-    secondary_indexes             |8192 bytes|32 kB       |80 kB     |                  |8192 bytes|32 kB       |48 kB     |
-    snapshots                     |231 MB    |29 MB       |400 MB    |                  |216 MB    |23 MB       |379 MB    |
-    ```
+   table_name                    |table_size|indexes_size|total_size|  Before / After  |table_size|indexes_size|total_size|
+   ------------------------------+----------+------------+----------+                  +----------+------------+----------+
+   alembic_version               |8192 bytes|16 kB       |56 kB     |                  |8192 bytes|16 kB       |24 kB     |
+   asset_check_executions        |0 bytes   |24 kB       |32 kB     |                  |0 bytes   |24 kB       |32 kB     |
+   asset_daemon_asset_evaluations|4056 kB   |1480 kB     |37 MB     |                  |2920 kB   |632 kB      |29 MB     |
+   asset_event_tags              |2361 MB   |2359 MB     |4721 MB   |                  |2268 MB   |1888 MB     |4157 MB   |
+   asset_keys                    |24 MB     |608 kB      |37 MB     |                  |3408 kB   |208 kB      |10 MB     |
+   backfill_tags                 |208 kB    |160 kB      |408 kB    |                  |192 kB    |160 kB      |384 kB    |
+   bulk_actions                  |6848 kB   |752 kB      |12 MB     |                  |4704 kB   |480 kB      |7488 kB   |
+   concurrency_limits            |0 bytes   |16 kB       |24 kB     |                  |0 bytes   |16 kB       |24 kB     |
+   concurrency_slots             |0 bytes   |16 kB       |40 kB     |                  |0 bytes   |8192 bytes  |16 kB     |
+   daemon_heartbeats             |2152 kB   |80 kB       |2392 kB   |                  |56 kB     |32 kB       |128 kB    |
+   dynamic_partitions            |1112 kB   |1184 kB     |2336 kB   |                  |1080 kB   |1056 kB     |2168 kB   |
+   event_logs                    |137 GB    |31 GB       |169 GB    |        !         |44 GB     |5986 MB     |51 GB     |
+   instance_info                 |8192 bytes|16 kB       |64 kB     |                  |8192 bytes|16 kB       |32 kB     |
+   instigators                   |22 MB     |560 kB      |29 MB     |                  |776 kB    |104 kB      |1632 kB   |
+   job_ticks                     |446 MB    |83 MB       |633 MB    |                  |446 MB    |83 MB       |633 MB    |
+   jobs                          |23 MB     |568 kB      |29 MB     |                  |808 kB    |104 kB      |1680 kB   |
+   kvs                           |1384 kB   |32 kB       |1456 kB   |                  |32 kB     |32 kB       |104 kB    |
+   pending_steps                 |0 bytes   |16 kB       |24 kB     |                  |0 bytes   |16 kB       |24 kB     |
+   run_tags                      |4114 MB   |8488 MB     |12 GB     |                  |4052 MB   |6740 MB     |11 GB     |
+   runs                          |4899 MB   |1199 MB     |7535 MB   |                  |4562 MB   |685 MB      |6516 MB   |
+   secondary_indexes             |8192 bytes|32 kB       |80 kB     |                  |8192 bytes|32 kB       |48 kB     |
+   snapshots                     |231 MB    |29 MB       |400 MB    |                  |216 MB    |23 MB       |379 MB    |
+   ```
 
 ## Resources
 
