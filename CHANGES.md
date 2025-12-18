@@ -4,7 +4,6 @@
 
 ### New
 
-- All dagster libraries have been updated to support Python 3.14.
 - Optimized performance of calculating partition keys for time window partitions with exclusions.
 - `timedelta` and `datetime` are now available via the `datetime` context when rendering components (Thanks, [@stevenayers](https://github.com/stevenayers)!)
 - `FreshnessPolicy` is now available via the `dg` context when rendering components. (Thanks, [@stevenayers](@https://github.com/stevenayers)!)
