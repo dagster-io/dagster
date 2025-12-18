@@ -1083,3 +1083,35 @@ def test_custom_run_tags() -> None:
         runs = instance.get_runs()
         for run in runs:
             assert run.tags["foo"] == "bar"
+
+
+# Scenario with 10 unpartitioned assets for testing MAX_ASSETS_PER_RUN_REQUEST chunking
+ten_assets = ScenarioSpec(asset_specs=[dg.AssetSpec(f"asset_{i}") for i in range(10)])
+
+
+def test_max_assets_per_run_request_chunking() -> None:
+    """Test that the MAX_ASSETS_PER_RUN_REQUEST env var correctly chunks run requests."""
+    # Without chunking, all 10 assets should be in a single run request
+    ten_assets_scenario = AssetDaemonScenario(
+        id="ten_assets_all_missing",
+        initial_spec=ten_assets.with_all_eager(),
+        execution_fn=lambda state: state.evaluate_tick().assert_requested_runs(
+            run_request(asset_keys=[f"asset_{i}" for i in range(10)])
+        ),
+    )
+
+    ten_assets_scenario.evaluate_fast()
+
+    # With MAX_ASSETS_PER_RUN_REQUEST set to 3, we should get 4 run requests (3 + 3 + 3 + 1)
+    with environ({"MAX_ASSETS_PER_RUN_REQUEST": "3"}):
+        chunked_scenario = AssetDaemonScenario(
+            id="ten_assets_chunked",
+            initial_spec=ten_assets.with_all_eager(),
+            execution_fn=lambda state: state.evaluate_tick().assert_requested_runs(
+                run_request(asset_keys=["asset_0", "asset_1", "asset_2"]),
+                run_request(asset_keys=["asset_3", "asset_4", "asset_5"]),
+                run_request(asset_keys=["asset_6", "asset_7", "asset_8"]),
+                run_request(asset_keys=["asset_9"]),
+            ),
+        )
+        chunked_scenario.evaluate_fast()

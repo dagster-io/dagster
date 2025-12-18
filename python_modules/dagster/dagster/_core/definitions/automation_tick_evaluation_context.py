@@ -1,5 +1,6 @@
 import datetime
 import logging
+import os
 from collections import defaultdict
 from collections.abc import Iterable, Mapping, Sequence
 from typing import TYPE_CHECKING, AbstractSet, Any, Optional, cast  # noqa: UP035
@@ -324,6 +325,8 @@ def _build_run_requests_from_partitions_def_mapping(
 ) -> Sequence[RunRequest]:
     run_requests = []
 
+    max_assets_per_run = int(os.getenv("MAX_ASSETS_PER_RUN_REQUEST", "0"))
+
     for (partitions_def, partition_key), entity_keys in mapping.items():
         tags = {**(run_tags or {})}
         if partition_key is not None:
@@ -333,20 +336,32 @@ def _build_run_requests_from_partitions_def_mapping(
 
         for entity_keys_for_repo in asset_graph.split_entity_keys_by_repository(entity_keys):
             asset_check_keys = [k for k in entity_keys_for_repo if isinstance(k, AssetCheckKey)]
-            run_requests.append(
-                # Do not call run_request.with_resolved_tags_and_config as the partition key is
-                # valid and there is no config.
-                # Calling with_resolved_tags_and_config is costly in asset reconciliation as it
-                # checks for valid partition keys.
-                RunRequest(
-                    asset_selection=[k for k in entity_keys_for_repo if isinstance(k, AssetKey)],
-                    partition_key=partition_key,
-                    tags=tags,
-                    # if selecting no asset_check_keys, just pass in `None` to allow required
-                    # checks to be included
-                    asset_check_keys=asset_check_keys or None,
+            asset_keys = sorted([k for k in entity_keys_for_repo if isinstance(k, AssetKey)])
+
+            if asset_check_keys or not max_assets_per_run:
+                # Don't chunk asset keys if there is an explicit list of asset check keys
+                asset_key_chunks = [asset_keys]
+            else:
+                asset_key_chunks = [
+                    asset_keys[i : i + max_assets_per_run]
+                    for i in range(0, len(asset_keys), max_assets_per_run)
+                ]
+
+            for asset_key_chunk in asset_key_chunks:
+                run_requests.append(
+                    # Do not call run_request.with_resolved_tags_and_config as the partition key is
+                    # valid and there is no config.
+                    # Calling with_resolved_tags_and_config is costly in asset reconciliation as it
+                    # checks for valid partition keys.
+                    RunRequest(
+                        asset_selection=asset_key_chunk,
+                        partition_key=partition_key,
+                        tags=tags,
+                        # if selecting no asset_check_keys, just pass in `None` to allow required
+                        # checks to be included
+                        asset_check_keys=asset_check_keys or None,
+                    )
                 )
-            )
 
     # We don't make public guarantees about sort order, but make an effort to provide a consistent
     # ordering that puts earlier time partitions before later time partitions. Note that, with dates
