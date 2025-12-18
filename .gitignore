@@ -138,11 +138,6 @@ docs/gatsby/**/public
 # Next stuff
 docs/next/.mdx-data
 docs/next/public/sitemap.xml
-# Data
-data
-# Don't ignore data folders in examples
-!examples/*/data
-!examples/**/**/data
 
 # Dask
 dask-worker-space
