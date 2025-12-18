@@ -1,6 +1,6 @@
 ---
 title: Branch deployments
-sidebar_position: 30
+sidebar_position: 40
 description: With branch deployments, Dagster+ creates a corresponding ephemeral preview deployment of your Dagster code for each pull or merge request to show what your pipeline will look like after the change is merged.
 canonicalUrl: '/deployment/dagster-plus/deploying-code/branch-deployments'
 slug: '/deployment/dagster-plus/deploying-code/branch-deployments'

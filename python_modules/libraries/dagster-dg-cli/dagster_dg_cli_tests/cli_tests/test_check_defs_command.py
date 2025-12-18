@@ -1,7 +1,7 @@
 from pathlib import Path
 
 import pytest
-from dagster_dg_core.utils import activate_venv, discover_git_root, is_windows, pushd
+from dagster_dg_core.utils import activate_venv, discover_repo_root, is_windows, pushd
 from dagster_shared.utils import environ
 from dagster_test.components.test_utils.test_cases import BASIC_INVALID_VALUE, BASIC_MISSING_VALUE
 from dagster_test.dg_utils.utils import (
@@ -16,7 +16,7 @@ from dagster_test.dg_utils.utils import (
 
 @pytest.mark.skipif(is_windows(), reason="Temporarily skipping (signal issues in CLI)..")
 def test_check_defs_workspace_context_success():
-    dagster_git_repo_dir = str(discover_git_root(Path(__file__)))
+    dagster_git_repo_dir = str(discover_repo_root(Path(__file__)))
     with (
         ProxyRunner.test() as runner,
         isolated_example_workspace(runner, create_venv=True),
@@ -155,7 +155,7 @@ def test_implicit_yaml_check_from_dg_check_defs_disallowed_in_workspace_context(
 @pytest.mark.skipif(is_windows(), reason="Temporarily skipping (signal issues in CLI)..")
 def test_check_defs_uses_active_venv_when_flag_set():
     """Test that check defs command logs the active venv Python when --use-active-venv is set."""
-    dagster_git_repo_dir = str(discover_git_root(Path(__file__)))
+    dagster_git_repo_dir = str(discover_repo_root(Path(__file__)))
     with (
         ProxyRunner.test() as runner,
         isolated_example_workspace(runner, create_venv=True) as workspace_path,

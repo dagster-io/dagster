@@ -3579,6 +3579,10 @@
       "destination": "/deployment/management/build-yaml"
     },
     {
+      "source": "/deployment/code-locations/dagster-plus-code-locations",
+      "destination": "/deployment/dagster-plus/deploying-code/adding-project-to-dagster-plus"
+    },
+    {
       "source": "/guides/deploy/code-locations",
       "destination": "/guides/build/projects"
     },

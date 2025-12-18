@@ -249,7 +249,7 @@ def test_map_asset_specs_additional_deps() -> None:
     )
 
     c_asset = next(iter(asset for asset in mapped_assets if asset.key == my_other_asset.key))
-    assert set(next(iter(c_asset.specs)).deps) == {dg.AssetDep("a"), dg.AssetDep("b")}
+    assert next(iter(c_asset.specs)).deps == [dg.AssetDep("a"), dg.AssetDep("b")]
 
 
 def test_map_asset_specs_asset_with_ins_regression() -> None:
@@ -263,7 +263,7 @@ def test_map_asset_specs_asset_with_ins_regression() -> None:
     spec = next(iter(my_asset.specs))
 
     new_spec = spec.replace_attributes(
-        deps={*spec.deps, dg.AssetDep("another_upstream")},
+        deps=[*spec.deps, dg.AssetDep("another_upstream")],
     )
 
     mapped_assets = dg.map_asset_specs(lambda s: new_spec, assets)

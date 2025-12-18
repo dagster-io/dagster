@@ -221,7 +221,7 @@ def _build_artifact_for_project(
         dg_context.build_config,
     )
 
-    build_directory = dg_context.root_path
+    build_directory = dg_context.build_root_path
     if merged_build_config.get("directory"):
         build_directory = Path(check.not_none(merged_build_config["directory"]))
         assert build_directory.is_absolute(), "Build directory must be an absolute path"
@@ -229,7 +229,9 @@ def _build_artifact_for_project(
     dockerfile_path = get_dockerfile_path(dg_context, workspace_context)
     if not os.path.exists(dockerfile_path):
         click.echo(f"No Dockerfile found - scaffolding a default one at {dockerfile_path}.")
-        create_deploy_dockerfile(dockerfile_path, python_version, use_editable_dagster)
+        create_deploy_dockerfile(
+            dockerfile_path, python_version, use_editable_dagster, dg_context.package_name
+        )
     else:
         click.echo(f"Building using Dockerfile at {dockerfile_path}.")
 

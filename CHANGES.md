@@ -1,5 +1,32 @@
 # Changelog
 
+## 1.12.7 (core) / 0.28.7 (libraries)
+
+### New
+
+- Optimized performance of calculating partition keys for time window partitions with exclusions.
+- `timedelta` and `datetime` are now available via the `datetime` context when rendering components (Thanks, [@stevenayers](https://github.com/stevenayers)!)
+- `FreshnessPolicy` is now available via the `dg` context when rendering components. (Thanks, [@stevenayers](@https://github.com/stevenayers)!)
+- Assets may now be annotated with up to 10 kinds (limit was previously 3).
+- Arbitrary resource parameters may now be hidden in the UI by setting `json_schema_extra={"dagster__is_secret": True}` on the corresponding `Field` definition in the resource class.
+- The `dg docs` cli group has been removed. The `integrations` subcommand has been moved to `dg utils integrations`.
+- Bumped the `gql` dependency in `dagster-graphql` to be inclusive of v4 for broader transitive dependency compatibility
+- [dagster-omni] Fix issue where retries would terminate while asynchronously gathering metadata.
+- [dagster-tableau] The value of resource parameter `TableauWorkspace.connected_app_secret_value` is now hidden in the UI.
+- [dagster-tableau] Updated extraction logic to handle hidden sheets. The materializable data sources connected to these sheets are now successfully detected and included as materializable data assets. (Thanks, [@miriamcastel](https://github.com/miriamcastel)!)
+
+### Bugfixes
+
+- Fix an AttributeError when calling `map_asset_specs` on assets defined using the `ins` parameter. (Thanks, [@Jongwan93](https://github.com/Jongwan93)!)
+- Fix an issue where backfill runs that incorrectly created unpartitioned materializations of a partitioned asset, or partitioned materializations of an unpartitioned asset due to incorrect asset business logic would move the backfill into an invalid state. Now, the backfill will detect this case and fail the backfill.
+- Fixed an issue with `dg plus deploy refresh-defs-state` which could cause errors when refreshing state for components that required CLIs that were only available in the project environment.
+- [dagster-dbt] Fixed issue that could cause errors when emitting events for a dbt Cloud job run.
+
+### Dagster Plus
+
+- Dagster Plus Pro users can now create service users. Service users are accounts that can
+  authenticate API requests but that are not tied to any particular human user.
+
 ## 1.12.6 (core) / 0.28.6 (libraries)
 
 ### New
