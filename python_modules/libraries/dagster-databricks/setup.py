@@ -31,9 +31,9 @@ setup(
     include_package_data=True,
     python_requires=">=3.10,<3.15",
     install_requires=[
-        f"dagster{pin}",
-        f"dagster-pipes{pin}",
-        f"dagster-pyspark{pin}",
+        "dagster==1.12.7",
+        "dagster-pipes==1.12.7",
+        "dagster-pyspark==0.28.7",
         "databricks-sdk>=0.41,<0.61.0",  # dbt-databricks is pinned to this version
     ],
     zip_safe=False,
