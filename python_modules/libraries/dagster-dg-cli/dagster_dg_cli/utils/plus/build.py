@@ -73,7 +73,9 @@ def get_agent_type(cli_config: Optional[DagsterPlusCliConfig] = None) -> DgPlusA
         )
 
 
-def create_deploy_dockerfile(dst_path: Path, python_version: str, use_editable_dagster: bool):
+def create_deploy_dockerfile(
+    dst_path: Path, python_version: str, use_editable_dagster: bool, package_name: str
+):
     # defer for import performance
     import jinja2
 
@@ -93,5 +95,5 @@ def create_deploy_dockerfile(dst_path: Path, python_version: str, use_editable_d
     template = env.get_template(os.path.basename(dockerfile_template_path))
 
     with open(dst_path, "w", encoding="utf8") as f:
-        f.write(template.render(python_version=python_version))
+        f.write(template.render(python_version=python_version, package_arg=package_name))
         f.write("\n")
