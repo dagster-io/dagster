@@ -1,12 +1,12 @@
-import {Colors, Group, Spinner} from '@dagster-io/ui-components';
+import {Box, Colors, Spinner} from '@dagster-io/ui-components';
 import styled from 'styled-components';
 
 export const LoadingOverlay = ({isLoading, message}: {isLoading: boolean; message: string}) => (
   <LoadingOverlayContainer isLoading={isLoading}>
-    <Group direction="row" spacing={8} alignItems="center">
+    <Box flex={{direction: 'row', gap: 8, alignItems: 'center'}}>
       <Spinner purpose="body-text" />
       <div>{message}</div>
-    </Group>
+    </Box>
   </LoadingOverlayContainer>
 );
 

@@ -1,5 +1,5 @@
+import {Box} from '../Box';
 import {Button} from '../Button';
-import {Group} from '../Group';
 import {Icon} from '../Icon';
 import {Menu, MenuItem} from '../Menu';
 import {GlobalPopoverStyle, Popover} from '../Popover';
@@ -14,7 +14,7 @@ export const Default = () => {
   return (
     <>
       <GlobalPopoverStyle />
-      <Group direction="column" spacing={8} padding={8}>
+      <Box flex={{direction: 'column', gap: 8, alignItems: 'flex-start'}} padding={8}>
         <Popover
           position="bottom-left"
           content={
@@ -29,7 +29,7 @@ export const Default = () => {
             Do important things
           </Button>
         </Popover>
-      </Group>
+      </Box>
     </>
   );
 };

@@ -1,4 +1,4 @@
-import {Alert, ButtonLink, Colors, Group, Mono} from '@dagster-io/ui-components';
+import {Alert, Box, ButtonLink, Colors, Mono} from '@dagster-io/ui-components';
 import * as React from 'react';
 
 import {gql, useQuery} from '../apollo-client';
@@ -38,7 +38,7 @@ function messageForLaunchBackfillError(data: LaunchPartitionBackfillMutation | n
   }
 
   return (
-    <Group direction="column" spacing={4}>
+    <Box flex={{direction: 'column', gap: 4}}>
       <div>An unexpected error occurred. This backfill was not launched.</div>
       {errors ? (
         <ButtonLink
@@ -53,7 +53,7 @@ function messageForLaunchBackfillError(data: LaunchPartitionBackfillMutation | n
           View error
         </ButtonLink>
       ) : null}
-    </Group>
+    </Box>
   );
 }
 

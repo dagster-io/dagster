@@ -1,4 +1,4 @@
-import {ExternalAnchorButton, Group, Icon} from '@dagster-io/ui-components';
+import {Box, ExternalAnchorButton, Icon} from '@dagster-io/ui-components';
 
 import {AnchorButton} from '../AnchorButton';
 
@@ -10,7 +10,7 @@ export default {
 
 export const Default = () => {
   return (
-    <Group direction="column" spacing={8}>
+    <Box flex={{direction: 'column', gap: 8, alignItems: 'flex-start'}}>
       <AnchorButton to="/">Button</AnchorButton>
       <AnchorButton to="/" icon={<Icon name="star" />}>
         Button
@@ -22,13 +22,13 @@ export const Default = () => {
         Button
       </AnchorButton>
       <AnchorButton to="/" icon={<Icon name="cached" />} />
-    </Group>
+    </Box>
   );
 };
 
 export const Intent = () => {
   return (
-    <Group direction="column" spacing={8}>
+    <Box flex={{direction: 'column', gap: 8, alignItems: 'flex-start'}}>
       <AnchorButton to="/" icon={<Icon name="star" />}>
         No intent set
       </AnchorButton>
@@ -47,13 +47,13 @@ export const Intent = () => {
       <AnchorButton to="/" icon={<Icon name="star" />} intent="none">
         None
       </AnchorButton>
-    </Group>
+    </Box>
   );
 };
 
 export const Outlined = () => {
   return (
-    <Group direction="column" spacing={8}>
+    <Box flex={{direction: 'column', gap: 8, alignItems: 'flex-start'}}>
       <AnchorButton to="/" outlined icon={<Icon name="star" />}>
         No intent set
       </AnchorButton>
@@ -72,13 +72,13 @@ export const Outlined = () => {
       <AnchorButton to="/" outlined icon={<Icon name="star" />} intent="none">
         None
       </AnchorButton>
-    </Group>
+    </Box>
   );
 };
 
 export const ExternalButton = () => {
   return (
-    <Group direction="column" spacing={8}>
+    <Box flex={{direction: 'column', gap: 8, alignItems: 'flex-start'}}>
       <ExternalAnchorButton href="https://html5zombo.com/">Button</ExternalAnchorButton>
       <ExternalAnchorButton href="https://html5zombo.com/" icon={<Icon name="star" />}>
         Button
@@ -94,6 +94,6 @@ export const ExternalButton = () => {
         Button
       </ExternalAnchorButton>
       <ExternalAnchorButton href="https://html5zombo.com/" icon={<Icon name="cached" />} />
-    </Group>
+    </Box>
   );
 };

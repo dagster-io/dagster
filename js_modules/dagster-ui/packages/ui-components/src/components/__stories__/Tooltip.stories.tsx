@@ -5,7 +5,6 @@ import {Button} from '../Button';
 import {Checkbox} from '../Checkbox';
 import {Colors} from '../Color';
 import {CustomTooltipProvider} from '../CustomTooltipProvider';
-import {Group} from '../Group';
 import {Icon} from '../Icon';
 import {GlobalTooltipStyle, Tooltip} from '../Tooltip';
 
@@ -40,10 +39,9 @@ export const Default = () => {
   );
 
   return (
-    <Group spacing={8} direction="column">
+    <Box flex={{direction: 'column', gap: 8, alignItems: 'flex-start'}}>
       <CustomTooltipProvider />
       <GlobalTooltipStyle />
-
       <p style={{color: Colors.textLight()}}>
         Use the <code>Tooltip</code> component to attach additional explanations, descriptions, and
         context to controls, icons, etc.
@@ -75,9 +73,7 @@ export const Default = () => {
       >
         Tooltip with Block Content
       </Tooltip>
-
       <hr />
-
       <p style={{color: Colors.textLight()}}>
         Use the <code>data-tooltip</code> attribute to expand truncated job, op names, etc. on
         hover. These are highly stylable via <code>data-tooltip-style</code> so they can look like
@@ -104,7 +100,6 @@ export const Default = () => {
           {name}
         </div>
       ))}
-
       <span
         data-tooltip="fetch_from_redshift_cloud_prod"
         data-tooltip-style={JSON.stringify(JOB_STYLES)}
@@ -112,7 +107,7 @@ export const Default = () => {
       >
         fetch_from_redshift…
       </span>
-    </Group>
+    </Box>
   );
 };
 

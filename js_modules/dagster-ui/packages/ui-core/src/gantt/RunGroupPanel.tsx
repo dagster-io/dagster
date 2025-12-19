@@ -1,4 +1,4 @@
-import {Box, ButtonLink, Colors, FontFamily, Group, Icon} from '@dagster-io/ui-components';
+import {Box, ButtonLink, Colors, FontFamily, Icon} from '@dagster-io/ui-components';
 import {useEffect} from 'react';
 import {Link} from 'react-router-dom';
 import styled from 'styled-components';
@@ -60,7 +60,7 @@ export const RunGroupPanel = ({
 
   if (group.__typename === 'PythonError') {
     return (
-      <Group direction="row" spacing={8} padding={8}>
+      <Box flex={{direction: 'row', gap: 8}} padding={8}>
         <Icon name="warning" color={Colors.accentYellow()} />
         <div style={{fontSize: '13px'}}>
           The run group for this run could not be loaded.{' '}
@@ -77,7 +77,7 @@ export const RunGroupPanel = ({
             View error
           </ButtonLink>
         </div>
-      </Group>
+      </Box>
     );
   }
 

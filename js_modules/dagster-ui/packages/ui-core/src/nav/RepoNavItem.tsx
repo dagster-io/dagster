@@ -5,7 +5,6 @@ import {
   Dialog,
   DialogFooter,
   DialogHeader,
-  Group,
   Icon,
   Spinner,
   Tooltip,
@@ -100,7 +99,7 @@ const SingleRepoSummary = ({repo, onlyRepo}: {repo: RepoSelectorOption; onlyRepo
   const repoAddress = buildRepoAddress(repo.repository.name, repo.repositoryLocation.name);
   const isDunder = repoAddress.name === DUNDER_REPO_NAME;
   return (
-    <Group direction="row" spacing={4} alignItems="center">
+    <Box flex={{direction: 'row', gap: 4, alignItems: 'center'}}>
       <SingleRepoNameLink
         to={workspacePathFromAddress(repoAddress)}
         title={repoAddressAsHumanString(repoAddress)}
@@ -154,7 +153,7 @@ const SingleRepoSummary = ({repo, onlyRepo}: {repo: RepoSelectorOption; onlyRepo
           );
         }}
       />
-    </Group>
+    </Box>
   );
 };
 

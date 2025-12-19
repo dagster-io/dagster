@@ -1,4 +1,4 @@
-import {Box, Colors, Group, Icon, Mono, NonIdealState, Table} from '@dagster-io/ui-components';
+import {Box, Colors, Icon, Mono, NonIdealState, Table} from '@dagster-io/ui-components';
 import {Link} from 'react-router-dom';
 import styled from 'styled-components';
 
@@ -96,17 +96,15 @@ export const LatestMaterializationMetadata = ({
                               isJob={isThisThingAJob(repo, latestRun.pipelineName)}
                             />
                           </Box>
-                          <Group
-                            direction="row"
+                          <Box
+                            flex={{direction: 'row', gap: 8, alignItems: 'center'}}
                             padding={{left: 8}}
-                            spacing={8}
-                            alignItems="center"
                           >
                             <Icon name="linear_scale" color={Colors.accentGray()} />
                             <Link to={linkToRunEvent(latestRun, latestEvent)}>
                               {latestEvent.stepKey}
                             </Link>
-                          </Group>
+                          </Box>
                         </>
                       )}
                     </div>

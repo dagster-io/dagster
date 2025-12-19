@@ -3,7 +3,6 @@ import {
   Checkbox,
   Colors,
   FontFamily,
-  Group,
   Icon,
   Spinner,
   SplitPanelContainer,
@@ -381,12 +380,10 @@ const GanttChartInner = React.memo((props: GanttChartInnerProps) => {
         {lostWebsocket ? (
           <WebsocketWarning>
             <Box flex={{justifyContent: 'space-around'}} margin={{bottom: 12}}>
-              <Group
-                direction="row"
-                spacing={8}
+              <Box
+                flex={{direction: 'row', gap: 8, alignItems: 'flex-start'}}
                 background={Colors.backgroundYellow()}
                 padding={{vertical: 8, horizontal: 12}}
-                alignItems="flex-start"
               >
                 <Icon name="warning" color={Colors.accentYellow()} />
                 <div style={{maxWidth: '400px', whiteSpace: 'normal', overflow: 'hidden'}}>
@@ -395,7 +392,7 @@ const GanttChartInner = React.memo((props: GanttChartInnerProps) => {
                     {` Verify that your instance is responding to requests at ${rootServerURI} and reload the page.`}
                   </span>
                 </div>
-              </Group>
+              </Box>
             </Box>
           </WebsocketWarning>
         ) : null}

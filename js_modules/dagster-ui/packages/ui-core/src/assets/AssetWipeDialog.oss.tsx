@@ -7,7 +7,6 @@ import {
   Dialog,
   DialogBody,
   DialogFooter,
-  Group,
   ifPlural,
 } from '@dagster-io/ui-components';
 import {memo, useMemo} from 'react';
@@ -69,7 +68,7 @@ export const AssetWipeDialogInner = memo(
         );
       } else if (!isWiping) {
         return (
-          <Group direction="column" spacing={16}>
+          <Box flex={{direction: 'column', gap: 16}}>
             <div>
               Are you sure you want to wipe materializations for{' '}
               {numberFormatter.format(assetKeys.length)}{' '}
@@ -81,7 +80,7 @@ export const AssetWipeDialogInner = memo(
               Catalog. Software-defined assets will remain unless their definition is also deleted.
             </div>
             <strong>This action cannot be undone.</strong>
-          </Group>
+          </Box>
         );
       }
       const value = assetKeys.length > 0 ? (wipedCount + failedCount) / assetKeys.length : 1;

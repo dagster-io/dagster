@@ -7,7 +7,6 @@ import {
   DialogBody,
   DialogFooter,
   FontFamily,
-  Group,
   Icon,
   Table,
   Tooltip,
@@ -122,14 +121,14 @@ export const MetadataEntry = ({
   switch (entry.__typename) {
     case 'PathMetadataEntry':
       return (
-        <Group direction="row" spacing={8} alignItems="center">
+        <Box flex={{direction: 'row', gap: 8, alignItems: 'center'}}>
           <MetadataEntryAction title="Copy to clipboard" onClick={(e) => copyValue(e, entry.path)}>
             {entry.path}
           </MetadataEntryAction>
           <IconButton onClick={(e) => copyValue(e, entry.path)}>
             <Icon name="copy_to_clipboard" color={Colors.accentGray()} />
           </IconButton>
-        </Group>
+        </Box>
       );
 
     case 'JsonMetadataEntry':
@@ -160,14 +159,14 @@ export const MetadataEntry = ({
 
     case 'UrlMetadataEntry':
       return (
-        <Group direction="row" spacing={8} alignItems="center">
+        <Box flex={{direction: 'row', gap: 8, alignItems: 'center'}}>
           <MetadataEntryAction href={entry.url} title="Open in a new tab" target="_blank">
             {entry.url}
           </MetadataEntryAction>
           <a href={entry.url} target="_blank" rel="noreferrer">
             <Icon name="link" color={Colors.accentGray()} />
           </a>
-        </Group>
+        </Box>
       );
     case 'TextMetadataEntry':
       return <>{entry.text}</>;
@@ -266,14 +265,14 @@ export const MetadataEntry = ({
         return <NotebookButton path={entry.path} repoLocation={repoLocation} />;
       }
       return (
-        <Group direction="row" spacing={8} alignItems="center">
+        <Box flex={{direction: 'row', gap: 8, alignItems: 'center'}}>
           <MetadataEntryAction title="Copy to clipboard" onClick={(e) => copyValue(e, entry.path)}>
             {entry.path}
           </MetadataEntryAction>
           <IconButton onClick={(e) => copyValue(e, entry.path)}>
             <Icon name="copy_to_clipboard" color={Colors.accentGray()} />
           </IconButton>
-        </Group>
+        </Box>
       );
     case 'CodeReferencesMetadataEntry':
       return (
