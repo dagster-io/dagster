@@ -1,7 +1,6 @@
 import {Box, Button, Dialog, DialogBody, DialogFooter} from '@dagster-io/ui-components';
 import * as React from 'react';
 import {useMemo, useState} from 'react';
-import {SummarizeErrorWithAIButton} from 'shared/runs/SummarizeErrorWithAIButton.oss';
 
 import {CellTruncationProvider} from './CellTruncationProvider';
 import {
@@ -77,21 +76,9 @@ export const Structured = (props: StructuredProps) => {
     };
   }, [metadata, node]);
 
-  const buttons = useMemo(() => {
-    if ('error' in node && node.error) {
-      return <SummarizeErrorWithAIButton error={node.error} outlined={false} intent="primary" />;
-    }
-    return null;
-  }, [node]);
-
   return (
-    <CellTruncationProvider style={style} onExpand={() => setExpanded(true)} buttons={buttons}>
-      <StructuredMemoizedContent
-        node={node}
-        metadata={metadata}
-        highlighted={highlighted}
-        buttons={buttons}
-      />
+    <CellTruncationProvider style={style} onExpand={() => setExpanded(true)}>
+      <StructuredMemoizedContent node={node} metadata={metadata} highlighted={highlighted} />
       <Dialog
         title={title}
         isOpen={expanded}
@@ -255,7 +242,6 @@ interface StructuredMemoizedContentProps {
   node: LogsRowStructuredFragment;
   metadata: IRunMetadataDict;
   highlighted: boolean;
-  buttons: React.ReactNode;
 }
 
 const StructuredMemoizedContent = React.memo((props: StructuredMemoizedContentProps) => {

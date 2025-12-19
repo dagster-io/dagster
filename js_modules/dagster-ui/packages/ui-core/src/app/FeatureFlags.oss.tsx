@@ -4,7 +4,6 @@ export enum FeatureFlag {
   flagSidebarResources = 'flagSidebarResources',
   flagDisableAutoLoadDefaults = 'flagDisableAutoLoadDefaults',
   flagUseNewObserveUIs = 'flagUseNewObserveUIs',
-  flagMarketplace = 'flagMarketplace',
   flagAssetGraphGroupsPerCodeLocation = 'flagAssetGraphGroupsPerCodeLocation',
   flagNavigationUpdate = 'flagNavigationUpdate',
   flagAssetCatalogSidebar = 'flagAssetCatalogSidebar',

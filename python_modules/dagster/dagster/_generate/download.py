@@ -37,6 +37,7 @@ AVAILABLE_EXAMPLES = [
     "feature_graph_backed_assets",
     "google_drive_factory",
     "ingestion-patterns",
+    "project_databricks_and_snowflake",
     "oss-metadata-to-plus",
     "project_analytics",
     "project_fully_featured",

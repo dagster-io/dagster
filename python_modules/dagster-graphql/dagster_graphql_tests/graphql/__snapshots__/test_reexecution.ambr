@@ -13,6 +13,10 @@
         'runId': '<runId dummy value>',
         'status': 'STARTING',
         'tags': list([
+          dict({
+            'key': 'dagster/code_location',
+            'value': 'test_location',
+          }),
         ]),
       }),
     }),
@@ -32,6 +36,10 @@
         'runId': '<runId dummy value>',
         'status': 'STARTING',
         'tags': list([
+          dict({
+            'key': 'dagster/code_location',
+            'value': 'test_location',
+          }),
         ]),
       }),
     }),
