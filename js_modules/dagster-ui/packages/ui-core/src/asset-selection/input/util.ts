@@ -1,5 +1,5 @@
 import {IconName} from '@dagster-io/ui-components';
-import {observeEnabled} from 'shared/app/observeEnabled.oss';
+import {assetHealthEnabled} from 'shared/app/assetHealthEnabled.oss';
 
 import {assertUnreachable} from '../../app/Util';
 import {AssetGraphQueryItem} from '../../asset-graph/types';
@@ -81,7 +81,7 @@ export const getAttributesMap = (assets: AssetGraphQueryItem[]) => {
     kind: kinds,
     code_location: codeLocations,
   };
-  if (observeEnabled()) {
+  if (assetHealthEnabled()) {
     const statuses = [
       AssetHealthStatus.HEALTHY,
       AssetHealthStatus.DEGRADED,

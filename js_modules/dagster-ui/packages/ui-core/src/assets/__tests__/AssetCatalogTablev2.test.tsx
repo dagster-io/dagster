@@ -33,8 +33,8 @@ import {AssetCatalogV2VirtualizedTable} from '../catalog/AssetCatalogV2Virtualiz
 import {AssetRecordsQuery, AssetRecordsQueryVariables} from '../types/useAllAssets.types';
 import {ASSET_RECORDS_QUERY, AssetRecord} from '../useAllAssets';
 
-jest.mock('../../app/observeEnabled.oss', () => ({
-  observeEnabled: jest.fn(() => true),
+jest.mock('../../app/assetHealthEnabled.oss', () => ({
+  assetHealthEnabled: jest.fn(() => true),
 }));
 
 jest.mock('../../util/idb-lru-cache', () => {

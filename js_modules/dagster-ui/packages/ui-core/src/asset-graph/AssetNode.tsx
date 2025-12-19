@@ -3,24 +3,29 @@ import clsx from 'clsx';
 import isEqual from 'lodash/isEqual';
 import * as React from 'react';
 import {Link} from 'react-router-dom';
-import {observeEnabled} from 'shared/app/observeEnabled.oss';
+import {assetHealthEnabled} from 'shared/app/assetHealthEnabled.oss';
 import {UserDisplay} from 'shared/runs/UserDisplay.oss';
 import styled, {CSSObject} from 'styled-components';
 
+import {gql} from '../apollo-client';
 import {labelForFacet} from './AssetNodeFacets';
 import {AssetNodeFacet} from './AssetNodeFacetsUtil';
 import {AssetNodeFreshnessRow, AssetNodeFreshnessRowOld} from './AssetNodeFreshnessRow';
 import {AssetNodeHealthRow} from './AssetNodeHealthRow';
 import {AssetNodeMenuProps, useAssetNodeMenu} from './AssetNodeMenu';
 import {assetNodeLatestEventContent, buildAssetNodeStatusContent} from './AssetNodeStatusContent';
-import {LiveDataForNode, LiveDataForNodeWithStaleData} from './Utils';
-import {gql} from '../apollo-client';
 import {ContextMenuWrapper} from './ContextMenuWrapper';
+import {LiveDataForNode, LiveDataForNodeWithStaleData} from './Utils';
+import {withMiddleTruncation} from '../app/Util';
 import {useAssetAutomationData} from '../asset-data/AssetAutomationDataProvider';
+import {useAssetHealthData} from '../asset-data/AssetHealthDataProvider';
 import {useAssetLiveData} from '../asset-data/AssetLiveDataProvider';
 import {AssetAutomationFragment} from '../asset-data/types/AssetAutomationDataProvider.types';
+import {statusToIconAndColor} from '../assets/AssetHealthSummary';
 import {EvaluationUserLabel} from '../assets/AutoMaterializePolicyPage/EvaluationConditionalLabel';
 import {EvaluationDetailDialog} from '../assets/AutoMaterializePolicyPage/EvaluationDetailDialog';
+import {ChangedReasonsTag, MinimalNodeChangedDot} from '../assets/ChangedReasons';
+import {MinimalNodeStaleDot, StaleReasonsTag, isAssetStale} from '../assets/Stale';
 import {AssetChecksStatusSummary} from '../assets/asset-checks/AssetChecksStatusSummary';
 import {assetDetailsPathForKey} from '../assets/assetDetailsPathForKey';
 import {AssetKind} from '../graph/KindTags';
@@ -29,11 +34,6 @@ import {markdownToPlaintext} from '../ui/markdownToPlaintext';
 import styles from './css/AssetNode.module.css';
 import {ASSET_NODE_NAME_MAX_LENGTH, ASSET_NODE_TAGS_HEIGHT} from './layout';
 import {AssetNodeFragment} from './types/AssetNode.types';
-import {withMiddleTruncation} from '../app/Util';
-import {useAssetHealthData} from '../asset-data/AssetHealthDataProvider';
-import {statusToIconAndColor} from '../assets/AssetHealthSummary';
-import {ChangedReasonsTag, MinimalNodeChangedDot} from '../assets/ChangedReasons';
-import {MinimalNodeStaleDot, StaleReasonsTag, isAssetStale} from '../assets/Stale';
 
 interface Props2025 {
   definition: AssetNodeFragment;
@@ -46,7 +46,13 @@ export const ASSET_NODE_HOVER_EXPAND_HEIGHT = 3;
 
 export const AssetNode = React.memo((props: Props2025) => {
   const {liveData} = useAssetLiveData(props.definition.assetKey);
-  return <AssetNodeWithLiveData {...props} liveData={liveData} hasAssetHealth={observeEnabled()} />;
+  return (
+    <AssetNodeWithLiveData
+      {...props}
+      liveData={liveData}
+      assetHealthEnabled={assetHealthEnabled()}
+    />
+  );
 }, isEqual);
 
 export const AssetNodeWithLiveData = ({
@@ -56,10 +62,10 @@ export const AssetNodeWithLiveData = ({
   onChangeAssetSelection,
   liveData,
   automationData,
-  hasAssetHealth,
+  assetHealthEnabled,
 }: Props2025 & {liveData: LiveDataForNodeWithStaleData | undefined} & {
   automationData?: AssetAutomationFragment | undefined;
-  hasAssetHealth: boolean;
+  assetHealthEnabled: boolean;
 }) => {
   return (
     <AssetNodeContainer $selected={selected}>
@@ -126,7 +132,7 @@ export const AssetNodeWithLiveData = ({
           </AssetNodeRow>
         )}
         {facets.has(AssetNodeFacet.Freshness) &&
-          (hasAssetHealth ? (
+          (assetHealthEnabled ? (
             <AssetNodeFreshnessRow definition={definition} liveData={liveData} />
           ) : (
             <AssetNodeFreshnessRowOld liveData={liveData} />
@@ -135,7 +141,7 @@ export const AssetNodeWithLiveData = ({
           <AssetNodeAutomationRow definition={definition} automationData={automationData} />
         )}
         {facets.has(AssetNodeFacet.Status) &&
-          (hasAssetHealth ? (
+          (assetHealthEnabled ? (
             <AssetNodeHealthRow definition={definition} liveData={liveData} />
           ) : (
             <AssetNodeStatusRow definition={definition} liveData={liveData} />
@@ -487,7 +493,7 @@ type AssetNodeMinimalProps = {
 };
 
 export const AssetNodeMinimal = (props: AssetNodeMinimalProps) => {
-  return observeEnabled() ? (
+  return assetHealthEnabled() ? (
     <AssetNodeMinimalWithHealth {...props} />
   ) : (
     <AssetNodeMinimalWithoutHealth {...props} />
