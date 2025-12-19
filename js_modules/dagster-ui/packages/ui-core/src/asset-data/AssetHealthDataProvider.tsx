@@ -86,7 +86,7 @@ export function useAssetHealthData(assetKey: AssetKeyInput, thread: LiveDataThre
    * Instead we'll just return an empty asset health fragment.
    */
   const {allAssetKeys} = useAllAssetsNodes();
-  const shouldSkip = !allAssetKeys.has(tokenForAssetKey(assetKey));
+  const shouldSkip = !process.env.STORYBOOK && !allAssetKeys.has(tokenForAssetKey(assetKey));
   const result = AssetHealthData.useLiveDataSingle(tokenForAssetKey(assetKey), thread, shouldSkip);
   useBlockTraceUntilTrue('useAssetHealthData', !!result.liveData, {skip: shouldSkip});
   const liveData = useMemo(() => {

@@ -2,14 +2,12 @@ import {Box, Colors, FontFamily, Icon, Tooltip} from '@dagster-io/ui-components'
 import isEqual from 'lodash/isEqual';
 import * as React from 'react';
 import {Link} from 'react-router-dom';
-import {observeEnabled} from 'shared/app/observeEnabled.oss';
 import styled, {CSSObject} from 'styled-components';
 
 import {ASSET_NODE_HOVER_EXPAND_HEIGHT} from './AssetNode2025';
 import {AssetNodeFacet} from './AssetNodeFacetsUtil';
 import {AssetNodeHealthRow} from './AssetNodeHealthRow';
 import {AssetNodeMenuProps, useAssetNodeMenu} from './AssetNodeMenu';
-import {buildAssetNodeStatusContent} from './AssetNodeStatusContent';
 import {ContextMenuWrapper} from './ContextMenuWrapper';
 import {LiveDataForNode} from './Utils';
 import {
@@ -71,11 +69,8 @@ export const AssetNode = React.memo(({definition, selected, onChangeAssetSelecti
             <PartitionCountTags definition={definition} liveData={liveData} />
           )}
         </Box>
-        {observeEnabled() ? (
-          <AssetNodeHealthRow definition={definition} liveData={liveData} />
-        ) : (
-          <AssetNodeStatusRow definition={definition} liveData={liveData} />
-        )}
+        <AssetNodeHealthRow definition={definition} liveData={liveData} />
+
         {hasChecks && <AssetNodeChecksRow definition={definition} liveData={liveData} />}
       </AssetNodeBox>
       <Box
@@ -132,28 +127,6 @@ export const AssetNodeRowBox = styled(Box)`
   }
 `;
 
-interface StatusRowProps {
-  definition: AssetNodeFragment;
-  liveData: LiveDataForNode | undefined;
-}
-
-const AssetNodeStatusRow = ({definition, liveData}: StatusRowProps) => {
-  const {content, background} = buildAssetNodeStatusContent({
-    assetKey: definition.assetKey,
-    definition,
-    liveData,
-  });
-  return (
-    <AssetNodeRowBox
-      background={background}
-      padding={{horizontal: 8}}
-      flex={{justifyContent: 'space-between', alignItems: 'center', gap: 6}}
-    >
-      {content}
-    </AssetNodeRowBox>
-  );
-};
-
 export const AssetNodeContextMenuWrapper = React.memo(
   ({children, ...menuProps}: AssetNodeMenuProps & {children: React.ReactNode}) => {
     const {dialog, menu} = useAssetNodeMenu(menuProps);
@@ -208,20 +181,7 @@ type AssetNodeMinimalProps = {
   height: number;
 };
 
-export const AssetNodeMinimal = (props: AssetNodeMinimalProps) => {
-  return observeEnabled() ? (
-    <AssetNodeMinimalWithHealth {...props} />
-  ) : (
-    <AssetNodeMinimalOld {...props} />
-  );
-};
-
-export const AssetNodeMinimalWithHealth = ({
-  definition,
-  facets,
-  height,
-  selected,
-}: AssetNodeMinimalProps) => {
+export const AssetNodeMinimal = ({definition, facets, height, selected}: AssetNodeMinimalProps) => {
   const {isMaterializable, assetKey} = definition;
   const {liveData} = useAssetLiveData(assetKey);
   const {liveData: healthData} = useAssetHealthData(assetKey);
@@ -277,75 +237,6 @@ export const AssetNodeMinimalWithHealth = ({
           $isMaterializable={isMaterializable}
           $background={backgroundColor}
           $border={borderColor}
-          $inProgress={!!inProgressRuns}
-          $isQueued={!!queuedRuns}
-          $height={nodeHeight}
-        >
-          {isChanged ? (
-            <MinimalNodeChangedDot changedReasons={definition.changedReasons} assetKey={assetKey} />
-          ) : null}
-          {isStale ? <MinimalNodeStaleDot assetKey={assetKey} liveData={liveData} /> : null}
-          <MinimalName style={{fontSize: 24}} $isMaterializable={isMaterializable}>
-            {withMiddleTruncation(displayName, {maxLength: 18})}
-          </MinimalName>
-        </MinimalAssetNodeBox>
-      </TooltipStyled>
-    </MinimalAssetNodeContainer>
-  );
-};
-
-export const AssetNodeMinimalOld = ({
-  definition,
-  facets,
-  height,
-  selected,
-}: AssetNodeMinimalProps) => {
-  const {isMaterializable, assetKey} = definition;
-  const {liveData} = useAssetLiveData(assetKey);
-
-  const {border, background} = buildAssetNodeStatusContent({assetKey, definition, liveData});
-  // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-  const displayName = assetKey.path[assetKey.path.length - 1]!;
-
-  const isChanged = definition.changedReasons.length;
-  const isStale = isAssetStale(liveData);
-
-  const queuedRuns = liveData?.unstartedRunIds.length;
-  const inProgressRuns = liveData?.inProgressRunIds.length;
-
-  // old design
-  let paddingTop = height / 2 - 52;
-  let nodeHeight = 86;
-
-  if (facets !== null) {
-    const topTagsPresent = facets.has(AssetNodeFacet.UnsyncedTag);
-    const bottomTagsPresent = facets.has(AssetNodeFacet.KindTag);
-    paddingTop = ASSET_NODE_VERTICAL_MARGIN + (topTagsPresent ? ASSET_NODE_TAGS_HEIGHT : 0);
-    nodeHeight =
-      height -
-      ASSET_NODE_VERTICAL_MARGIN * 2 -
-      (topTagsPresent ? ASSET_NODE_TAGS_HEIGHT : ASSET_NODE_HOVER_EXPAND_HEIGHT) -
-      (bottomTagsPresent ? ASSET_NODE_TAGS_HEIGHT : 0);
-
-    // Ensure that we have room for the label, even if it makes the minimal format larger.
-    if (nodeHeight < 38) {
-      nodeHeight = 38;
-    }
-  }
-
-  return (
-    <MinimalAssetNodeContainer $selected={selected} style={{paddingTop}}>
-      <TooltipStyled
-        content={displayName}
-        canShow={displayName.length > 14}
-        targetTagName="div"
-        position="top"
-      >
-        <MinimalAssetNodeBox
-          $selected={selected}
-          $isMaterializable={isMaterializable}
-          $background={background}
-          $border={border}
           $inProgress={!!inProgressRuns}
           $isQueued={!!queuedRuns}
           $height={nodeHeight}

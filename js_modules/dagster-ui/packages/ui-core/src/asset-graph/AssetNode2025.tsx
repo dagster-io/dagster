@@ -3,7 +3,6 @@ import clsx from 'clsx';
 import isEqual from 'lodash/isEqual';
 import * as React from 'react';
 import {Link} from 'react-router-dom';
-import {observeEnabled} from 'shared/app/observeEnabled.oss';
 import {UserDisplay} from 'shared/runs/UserDisplay.oss';
 
 import {
@@ -15,9 +14,9 @@ import {
 } from './AssetNode';
 import {labelForFacet} from './AssetNodeFacets';
 import {AssetNodeFacet} from './AssetNodeFacetsUtil';
-import {AssetNodeFreshnessRow, AssetNodeFreshnessRowOld} from './AssetNodeFreshnessRow';
+import {AssetNodeFreshnessRow} from './AssetNodeFreshnessRow';
 import {AssetNodeHealthRow} from './AssetNodeHealthRow';
-import {assetNodeLatestEventContent, buildAssetNodeStatusContent} from './AssetNodeStatusContent';
+import {assetNodeLatestEventContent} from './AssetNodeStatusContent';
 import {LiveDataForNode, LiveDataForNodeWithStaleData} from './Utils';
 import styles from './css/AssetNode2025.module.css';
 import {ASSET_NODE_TAGS_HEIGHT} from './layout';
@@ -123,21 +122,15 @@ export const AssetNodeWithLiveData = ({
             <PartitionsFacetContent definition={definition} liveData={liveData} />
           </AssetNodeRow>
         )}
-        {facets.has(AssetNodeFacet.Freshness) &&
-          (observeEnabled() ? (
-            <AssetNodeFreshnessRow definition={definition} liveData={liveData} />
-          ) : (
-            <AssetNodeFreshnessRowOld liveData={liveData} />
-          ))}
+        {facets.has(AssetNodeFacet.Freshness) && (
+          <AssetNodeFreshnessRow definition={definition} liveData={liveData} />
+        )}
         {facets.has(AssetNodeFacet.Automation) && (
           <AssetNodeAutomationRow definition={definition} automationData={automationData} />
         )}
-        {facets.has(AssetNodeFacet.Status) &&
-          (observeEnabled() ? (
-            <AssetNodeHealthRow definition={definition} liveData={liveData} />
-          ) : (
-            <AssetNodeStatusRow definition={definition} liveData={liveData} />
-          ))}
+        {facets.has(AssetNodeFacet.Status) && (
+          <AssetNodeHealthRow definition={definition} liveData={liveData} />
+        )}
       </AssetNodeBox>
       {facets.has(AssetNodeFacet.KindTag) && (
         <Box
@@ -317,29 +310,6 @@ export const AssetNodeRow = ({
     >
       {label ? <span style={{color: Colors.textLight()}}>{label}</span> : undefined}
       {children ? children : <span style={{color: Colors.textLighter()}}>–</span>}
-    </AssetNodeRowBox>
-  );
-};
-
-const AssetNodeStatusRow = ({
-  definition,
-  liveData,
-}: {
-  definition: AssetNodeFragment;
-  liveData: LiveDataForNode | undefined;
-}) => {
-  const {content, background} = buildAssetNodeStatusContent({
-    assetKey: definition.assetKey,
-    definition,
-    liveData,
-  });
-  return (
-    <AssetNodeRowBox
-      background={background}
-      padding={{horizontal: 8}}
-      flex={{justifyContent: 'space-between', alignItems: 'center', gap: 6}}
-    >
-      {content}
     </AssetNodeRowBox>
   );
 };
