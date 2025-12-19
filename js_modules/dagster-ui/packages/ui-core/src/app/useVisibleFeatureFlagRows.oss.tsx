@@ -16,10 +16,6 @@ export const useVisibleFeatureFlagRows = (): FeatureFlagRow[] => [
     flagType: FeatureFlag.flagAssetNodeFacets,
   },
   {
-    key: 'Display integrations marketplace',
-    flagType: FeatureFlag.flagMarketplace,
-  },
-  {
     key: 'Disable WebSockets',
     flagType: FeatureFlag.flagDisableWebsockets,
   },
