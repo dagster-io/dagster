@@ -12,10 +12,6 @@ export const useVisibleFeatureFlagRows = (): FeatureFlagRow[] => [
     flagType: FeatureFlag.flagSidebarResources,
   },
   {
-    key: 'Display faceted asset graph nodes',
-    flagType: FeatureFlag.flagAssetNodeFacets,
-  },
-  {
     key: 'Disable WebSockets',
     flagType: FeatureFlag.flagDisableWebsockets,
   },

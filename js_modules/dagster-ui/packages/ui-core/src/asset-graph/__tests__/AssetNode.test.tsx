@@ -10,7 +10,7 @@ import {AssetLiveDataProvider} from '../../asset-data/AssetLiveDataProvider';
 import {AssetStaleStatusData} from '../../asset-data/AssetStaleStatusDataProvider';
 import {AssetHealthFragment} from '../../asset-data/types/AssetHealthDataProvider.types';
 import {StaleCause, buildAssetKey, buildAssetNode, buildStaleCause} from '../../graphql/types';
-import {AssetNode2025} from '../AssetNode2025';
+import {AssetNode} from '../AssetNode';
 import {AllAssetNodeFacets} from '../AssetNodeFacets';
 import {tokenForAssetKey} from '../Utils';
 import {
@@ -90,7 +90,7 @@ describe('AssetNode', function () {
           <MockedProvider>
             <AssetLiveDataProvider>
               <SetCacheEntry />
-              <AssetNode2025
+              <AssetNode
                 facets={new Set(AllAssetNodeFacets)}
                 definition={definitionCopy}
                 selected={false}
