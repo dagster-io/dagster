@@ -1,5 +1,5 @@
 import {MockedProvider} from '@apollo/client/testing';
-import {Box, Checkbox} from '@dagster-io/ui-components';
+import {Box} from '@dagster-io/ui-components';
 import {useState} from 'react';
 
 import {AssetBaseData} from '../../asset-data/AssetBaseDataProvider';
@@ -16,14 +16,13 @@ import {
   buildStaleCause,
 } from '../../graphql/types';
 import {AssetNode, AssetNodeMinimal} from '../AssetNode';
-import {AssetNode2025} from '../AssetNode2025';
 import {AllAssetNodeFacets} from '../AssetNodeFacets';
 import {AssetNodeFacetsPicker} from '../AssetNodeFacetsPicker';
 import {AssetNodeFacet} from '../AssetNodeFacetsUtil';
 import {AssetNodeLink} from '../ForeignNode';
 import {tokenForAssetKey} from '../Utils';
 import * as Mocks from '../__fixtures__/AssetNode.fixtures';
-import {getAssetNodeDimensions, getAssetNodeDimensions2025} from '../layout';
+import {getAssetNodeDimensions} from '../layout';
 
 // eslint-disable-next-line import/no-default-export
 export default {
@@ -72,7 +71,6 @@ function SetCacheEntry({
 }
 
 export const LiveStates = () => {
-  const [newDesign, setNewDesign] = useState<boolean>(true);
   const [facets, setFacets] = useState<Set<AssetNodeFacet>>(new Set(AllAssetNodeFacets));
 
   const caseWithLiveData = (scenario: AssetNodeScenario) => {
@@ -87,9 +85,7 @@ export const LiveStates = () => {
       ? [scenario.liveData.stepKey]
       : JSON.parse(scenario.definition.id);
 
-    const dimensions = newDesign
-      ? getAssetNodeDimensions2025(facets)
-      : getAssetNodeDimensions(definitionCopy);
+    const dimensions = getAssetNodeDimensions(facets);
 
     return (
       <>
@@ -111,11 +107,7 @@ export const LiveStates = () => {
               overflowY: 'hidden',
             }}
           >
-            {newDesign ? (
-              <AssetNode2025 definition={definitionCopy} selected={false} facets={facets} />
-            ) : (
-              <AssetNode definition={definitionCopy} selected={false} />
-            )}
+            <AssetNode definition={definitionCopy} selected={false} facets={facets} />
           </div>
           <div
             style={{
@@ -130,7 +122,7 @@ export const LiveStates = () => {
                 definition={definitionCopy}
                 selected={false}
                 height={82}
-                facets={newDesign ? facets : null}
+                facets={facets}
               />
             </div>
           </div>
@@ -142,12 +134,7 @@ export const LiveStates = () => {
   return (
     <MockedProvider>
       <AssetLiveDataProvider>
-        <Checkbox
-          checked={newDesign}
-          label="New 2025 Design"
-          onChange={() => setNewDesign(!newDesign)}
-        />
-        {newDesign ? <AssetNodeFacetsPicker value={facets} onChange={setFacets} /> : undefined}
+        <AssetNodeFacetsPicker value={facets} onChange={setFacets} />
         <h2>Base Assets</h2>
         <Box flex={{gap: 20, wrap: 'wrap', alignItems: 'flex-start'}}>
           {Mocks.AssetNodeScenariosBase.map(caseWithLiveData)}
@@ -181,7 +168,8 @@ export const PartnerTags = () => {
     const def = {...Mocks.AssetNodeFragmentBasic, kinds: [computeKind]};
     const liveData = Mocks.LiveDataForNodeMaterialized;
 
-    const dimensions = getAssetNodeDimensions(def);
+    const facets = new Set(AllAssetNodeFacets);
+    const dimensions = getAssetNodeDimensions(facets);
     const assetKey = buildAssetKey({path: [liveData.stepKey]});
 
     return (
@@ -198,7 +186,7 @@ export const PartnerTags = () => {
               background: `linear-gradient(to bottom, transparent 49%, gray 50%, transparent 51%)`,
             }}
           >
-            <AssetNode definition={def} selected={false} />
+            <AssetNode facets={facets} definition={def} selected={false} />
           </div>
         </Box>
       </>

@@ -11,7 +11,6 @@ import {AssetEdges} from '../asset-graph/AssetEdges';
 import {AssetGraphBackgroundContextMenu} from '../asset-graph/AssetGraphBackgroundContextMenu';
 import {MINIMAL_SCALE} from '../asset-graph/AssetGraphExplorer';
 import {AssetNode, AssetNodeContextMenuWrapper, AssetNodeMinimal} from '../asset-graph/AssetNode';
-import {AssetNode2025} from '../asset-graph/AssetNode2025';
 import {AssetNodeFacetSettingsButton} from '../asset-graph/AssetNodeFacetSettingsButton';
 import {useSavedAssetNodeFacets} from '../asset-graph/AssetNodeFacets';
 import {ExpandedGroupNode, GroupOutline} from '../asset-graph/ExpandedGroupNode';
@@ -57,7 +56,7 @@ const AssetNodeLineageGraphInner = ({
   const [direction, setDirection] = useLayoutDirectionState();
   const [facets, setFacets] = useSavedAssetNodeFacets();
 
-  const {flagAssetNodeFacets, flagAssetGraphGroupsPerCodeLocation} = useFeatureFlags();
+  const {flagAssetGraphGroupsPerCodeLocation} = useFeatureFlags();
 
   const {layout, loading} = useAssetLayout(
     assetGraphData,
@@ -66,9 +65,9 @@ const AssetNodeLineageGraphInner = ({
       () => ({
         direction,
         flagAssetGraphGroupsPerCodeLocation,
-        facets: flagAssetNodeFacets ? Array.from(facets) : false,
+        facets: Array.from(facets),
       }),
-      [direction, facets, flagAssetGraphGroupsPerCodeLocation, flagAssetNodeFacets],
+      [direction, facets, flagAssetGraphGroupsPerCodeLocation],
     ),
   );
   const viewportEl = useRef<SVGViewportRef>();
@@ -115,9 +114,7 @@ const AssetNodeLineageGraphInner = ({
         additionalToolbarElements={
           <>
             <AssetGraphSettingsButton direction={direction} setDirection={setDirection} />
-            {flagAssetNodeFacets ? (
-              <AssetNodeFacetSettingsButton value={facets} onChange={setFacets} />
-            ) : undefined}
+            <AssetNodeFacetSettingsButton value={facets} onChange={setFacets} />
           </>
         }
       >
@@ -189,10 +186,10 @@ const AssetNodeLineageGraphInner = ({
                   >
                     {!graphNode ? (
                       <AssetNodeLink assetKey={{path}} />
-                    ) : scale < MINIMAL_SCALE || (flagAssetNodeFacets && facets.size === 0) ? (
+                    ) : scale < MINIMAL_SCALE || facets.size === 0 ? (
                       <AssetNodeContextMenuWrapper {...contextMenuProps}>
                         <AssetNodeMinimal
-                          facets={flagAssetNodeFacets ? facets : null}
+                          facets={facets}
                           definition={graphNode.definition}
                           selected={graphNode.id === assetGraphId}
                           height={bounds.height}
@@ -200,18 +197,11 @@ const AssetNodeLineageGraphInner = ({
                       </AssetNodeContextMenuWrapper>
                     ) : (
                       <AssetNodeContextMenuWrapper {...contextMenuProps}>
-                        {flagAssetNodeFacets ? (
-                          <AssetNode2025
-                            facets={facets}
-                            definition={graphNode.definition}
-                            selected={graphNode.id === assetGraphId}
-                          />
-                        ) : (
-                          <AssetNode
-                            definition={graphNode.definition}
-                            selected={graphNode.id === assetGraphId}
-                          />
-                        )}
+                        <AssetNode
+                          facets={facets}
+                          definition={graphNode.definition}
+                          selected={graphNode.id === assetGraphId}
+                        />
                       </AssetNodeContextMenuWrapper>
                     )}
                   </foreignObject>

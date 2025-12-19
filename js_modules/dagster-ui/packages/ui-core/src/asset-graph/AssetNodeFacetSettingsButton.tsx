@@ -1,7 +1,7 @@
 import {Box, Button, Colors, Dialog, DialogFooter, Icon} from '@dagster-io/ui-components';
 import {useState} from 'react';
 
-import {AssetNodeWithLiveData} from './AssetNode2025';
+import {AssetNodeWithLiveData} from './AssetNode';
 import {AssetNodeFacetDefaults} from './AssetNodeFacets';
 import {AssetNodeFacetsPicker} from './AssetNodeFacetsPicker';
 import {AssetNodeFacet} from './AssetNodeFacetsUtil';

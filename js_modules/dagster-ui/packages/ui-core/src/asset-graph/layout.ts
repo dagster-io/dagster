@@ -3,7 +3,6 @@ import * as dagre from 'dagre';
 import {AssetNodeFacet} from './AssetNodeFacetsUtil';
 import {GraphData, GraphId, GraphNode, groupIdForNode, isGroupId} from './Utils';
 import type {IBounds, IPoint} from '../graph/common';
-import {ChangeReason} from '../graphql/types';
 
 export type AssetLayoutDirection = 'vertical' | 'horizontal';
 
@@ -59,7 +58,7 @@ export type LayoutAssetGraphOptions = {
   direction: AssetLayoutDirection;
   flagAssetGraphGroupsPerCodeLocation: boolean;
   overrides?: Partial<LayoutAssetGraphConfig>;
-  facets?: AssetNodeFacet[] | false;
+  facets: AssetNodeFacet[];
 };
 
 export const Config = {
@@ -120,7 +119,7 @@ export const layoutAssetGraphImpl = (
 ): AssetGraphLayout => {
   const g = new dagre.graphlib.Graph({compound: true});
   const config = Object.assign({}, Config[opts.direction], opts.overrides || {});
-  const facets = opts.facets ? new Set<AssetNodeFacet>(opts.facets) : false;
+  const facets = new Set<AssetNodeFacet>(opts.facets);
 
   g.setGraph(config);
   g.setDefaultEdgeLabel(() => ({}));
@@ -168,9 +167,7 @@ export const layoutAssetGraphImpl = (
     if (!groupsPresent || expandedGroupsSet.has(groupIdForNode(node))) {
       const label =
         config.nodeHeight === 'auto'
-          ? facets !== false
-            ? getAssetNodeDimensions2025(facets)
-            : getAssetNodeDimensions(node.definition)
+          ? getAssetNodeDimensions(facets)
           : {width: ASSET_NODE_WIDTH, height: config.nodeHeight};
 
       g.setNode(node.id, label);
@@ -352,35 +349,7 @@ export const ASSET_NODE_STATUS_ROW_HEIGHT = 25;
 
 export const ASSET_NODE_NAME_MAX_LENGTH = 31;
 
-export const getAssetNodeDimensions = (def: {
-  assetKey: {path: string[]};
-  opNames: string[];
-  isMaterializable: boolean;
-  isObservable: boolean;
-  isPartitioned: boolean;
-  graphName: string | null;
-  description?: string | null;
-  computeKind: string | null;
-  changedReasons?: ChangeReason[];
-}) => {
-  let height = 0;
-
-  height += ASSET_NODE_TAGS_HEIGHT; // top tags
-
-  height += 76; // box padding + border + name + description
-
-  if (def.isPartitioned && def.isMaterializable) {
-    height += ASSET_NODE_STATUS_ROW_HEIGHT;
-  }
-
-  height += ASSET_NODE_STATUS_ROW_HEIGHT; // status row
-  height += ASSET_NODE_STATUS_ROW_HEIGHT; // checks row
-  height += ASSET_NODE_TAGS_HEIGHT; // bottom tags
-
-  return {width: ASSET_NODE_WIDTH, height};
-};
-
-export const getAssetNodeDimensions2025 = (facets: Set<AssetNodeFacet>) => {
+export const getAssetNodeDimensions = (facets: Set<AssetNodeFacet>) => {
   let height = 0;
 
   if (facets.size === 0) {
