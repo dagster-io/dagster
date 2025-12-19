@@ -1,6 +1,6 @@
 import dagster as dg
 from dagster._core.snap import DependencyStructureIndex, GraphDefSnap, build_graph_def_snap
-from dagster._core.snap.node import OpDefSnap, build_op_def_snap
+from dagster._core.snap.node import OpDefSnap, build_node_defs_snapshot, build_op_def_snap
 
 
 def test_basic_op_definition():
@@ -154,3 +154,84 @@ def test_complex_graph_definition():
     assert index.get_invocation("take_many")
     assert index.get_upstream_outputs("take_many", "items")[0].node_name == "return_one"
     assert index.get_upstream_outputs("take_many", "items")[1].node_name == "return_one_also"
+
+
+def test_asset_job_omits_output_description_and_metadata():
+    @dg.asset(description="my description", metadata={"foo": "bar"})
+    def my_asset():
+        return 1
+
+    @dg.asset
+    def my_other_asset(my_asset):
+        return my_asset + 1
+
+    # Test with define_asset_job
+    asset_job = dg.define_asset_job("my_asset_job", selection=[my_asset, my_other_asset])
+    defs = dg.Definitions(assets=[my_asset, my_other_asset], jobs=[asset_job])
+    job_def = defs.get_job_def("my_asset_job")
+
+    assert job_def.is_asset_job
+
+    # Build snapshots and find the my_asset op snap
+    node_defs_snapshot = build_node_defs_snapshot(job_def)
+    my_asset_op_snap = next(s for s in node_defs_snapshot.op_def_snaps if s.name == "my_asset")
+    output_snap = my_asset_op_snap.get_output_snap("result")
+
+    assert output_snap.description is None
+    assert output_snap.metadata == {}
+
+    # Test with implicit global asset job from Definitions
+    defs_implicit = dg.Definitions(assets=[my_asset, my_other_asset])
+    implicit_job = defs_implicit.get_implicit_global_asset_job_def()
+
+    assert implicit_job.is_asset_job
+
+    node_defs_snapshot_implicit = build_node_defs_snapshot(implicit_job)
+    my_asset_op_snap_implicit = next(
+        s for s in node_defs_snapshot_implicit.op_def_snaps if s.name == "my_asset"
+    )
+    output_snap_implicit = my_asset_op_snap_implicit.get_output_snap("result")
+
+    assert output_snap_implicit.description is None
+    assert output_snap_implicit.metadata == {}
+
+    # Test with graph_asset - verifies build_graph_def_snap also strips metadata
+    @dg.op
+    def inner_op():
+        return 1
+
+    @dg.graph_asset(description="graph asset description", metadata={"graph_key": "graph_value"})
+    def my_graph_asset():
+        return inner_op()
+
+    defs_with_graph = dg.Definitions(assets=[my_graph_asset])
+    graph_asset_job = defs_with_graph.get_implicit_global_asset_job_def()
+
+    assert graph_asset_job.is_asset_job
+
+    node_defs_snapshot_graph = build_node_defs_snapshot(graph_asset_job)
+    # Graph assets create a GraphDefSnap, not an OpDefSnap
+    my_graph_asset_snap = next(
+        s for s in node_defs_snapshot_graph.graph_def_snaps if s.name == "my_graph_asset"
+    )
+    graph_output_snap = my_graph_asset_snap.get_output_snap("result")
+
+    assert graph_output_snap.description is None
+    assert graph_output_snap.metadata == {}
+
+    # Verify that non-asset jobs still include description and metadata
+    @dg.op(out=dg.Out(description="op description", metadata={"key": "value"}))
+    def my_op():
+        return 1
+
+    @dg.job
+    def my_regular_job():
+        my_op()
+
+    assert not my_regular_job.is_asset_job
+
+    my_op_snap = build_op_def_snap(my_op, my_regular_job)
+    regular_output_snap = my_op_snap.get_output_snap("result")
+
+    assert regular_output_snap.description == "op description"
+    assert regular_output_snap.metadata == {"key": dg.TextMetadataValue("value")}
