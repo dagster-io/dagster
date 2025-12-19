@@ -39,13 +39,19 @@ jest.mock('../../assets/useAllAssets', () => ({
   useAllAssetsNodes: () => ({allAssetKeys: mockAllAssetKeys, loading: false}),
 }));
 
+jest.mock('../../app/observeEnabled.oss', () => ({
+  observeEnabled: jest.fn(() => true),
+}));
+
 /** The tests in this file mirror the stories in the storybook. If you've made
  * changes to the AssetNode rendering, consider opening the storybook and updating
  * the `expectedText` for each scenario to match what is rendered. Then these tests
  * should all pass.
  * */
 describe('AssetNode', function () {
-  beforeEach(function () {});
+  afterAll(() => {
+    jest.unmock('../../app/observeEnabled.oss');
+  });
 
   Scenarios.forEach((scenario: AssetNodeScenario) =>
     it(`renders ${scenario.expectedText.join(',')} when ${scenario.title}`, async () => {

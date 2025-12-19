@@ -1,5 +1,5 @@
 import {MockedProvider} from '@apollo/client/testing';
-import {Box} from '@dagster-io/ui-components';
+import {Box, Checkbox} from '@dagster-io/ui-components';
 import {useState} from 'react';
 
 import {AssetBaseData} from '../../asset-data/AssetBaseDataProvider';
@@ -15,7 +15,12 @@ import {
   buildAssetNode,
   buildStaleCause,
 } from '../../graphql/types';
-import {AssetNode, AssetNodeMinimal} from '../AssetNode';
+import {
+  AssetNode,
+  AssetNodeMinimalWithHealth,
+  AssetNodeMinimalWithoutHealth,
+  AssetNodeWithLiveData,
+} from '../AssetNode';
 import {AllAssetNodeFacets} from '../AssetNodeFacets';
 import {AssetNodeFacetsPicker} from '../AssetNodeFacetsPicker';
 import {AssetNodeFacet} from '../AssetNodeFacetsUtil';
@@ -71,6 +76,7 @@ function SetCacheEntry({
 }
 
 export const LiveStates = () => {
+  const [hasAssetHealth, setHasAssetHealth] = useState(true);
   const [facets, setFacets] = useState<Set<AssetNodeFacet>>(new Set(AllAssetNodeFacets));
 
   const caseWithLiveData = (scenario: AssetNodeScenario) => {
@@ -107,7 +113,13 @@ export const LiveStates = () => {
               overflowY: 'hidden',
             }}
           >
-            <AssetNode definition={definitionCopy} selected={false} facets={facets} />
+            <AssetNodeWithLiveData
+              liveData={scenario.liveData}
+              definition={definitionCopy}
+              selected={false}
+              facets={facets}
+              hasAssetHealth={hasAssetHealth}
+            />
           </div>
           <div
             style={{
@@ -118,12 +130,21 @@ export const LiveStates = () => {
             }}
           >
             <div style={{position: 'absolute', width: dimensions.width, transform: 'scale(0.4)'}}>
-              <AssetNodeMinimal
-                definition={definitionCopy}
-                selected={false}
-                height={82}
-                facets={facets}
-              />
+              {hasAssetHealth ? (
+                <AssetNodeMinimalWithHealth
+                  definition={definitionCopy}
+                  selected={false}
+                  height={82}
+                  facets={facets}
+                />
+              ) : (
+                <AssetNodeMinimalWithoutHealth
+                  definition={definitionCopy}
+                  selected={false}
+                  height={82}
+                  facets={facets}
+                />
+              )}
             </div>
           </div>
         </Box>
@@ -134,6 +155,12 @@ export const LiveStates = () => {
   return (
     <MockedProvider>
       <AssetLiveDataProvider>
+        <Checkbox
+          checked={hasAssetHealth}
+          label="Asset Health Available (Cloud)"
+          onChange={() => setHasAssetHealth(!hasAssetHealth)}
+        />
+
         <AssetNodeFacetsPicker value={facets} onChange={setFacets} />
         <h2>Base Assets</h2>
         <Box flex={{gap: 20, wrap: 'wrap', alignItems: 'flex-start'}}>
@@ -186,7 +213,13 @@ export const PartnerTags = () => {
               background: `linear-gradient(to bottom, transparent 49%, gray 50%, transparent 51%)`,
             }}
           >
-            <AssetNode facets={facets} definition={def} selected={false} />
+            <AssetNodeWithLiveData
+              liveData={liveData}
+              facets={facets}
+              definition={def}
+              selected={false}
+              hasAssetHealth
+            />
           </div>
         </Box>
       </>
