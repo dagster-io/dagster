@@ -117,9 +117,9 @@ export const layoutAssetGraphImpl = (
   graphData: GraphData,
   opts: LayoutAssetGraphOptions,
 ): AssetGraphLayout => {
-  const facets = new Set<AssetNodeFacet>(opts.facets);
   const g = new dagre.graphlib.Graph({compound: true});
   const config = Object.assign({}, Config[opts.direction], opts.overrides || {});
+  const facets = new Set<AssetNodeFacet>(opts.facets);
 
   g.setGraph(config);
   g.setDefaultEdgeLabel(() => ({}));
