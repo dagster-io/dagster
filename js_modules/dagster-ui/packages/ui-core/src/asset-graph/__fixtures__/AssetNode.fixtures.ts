@@ -2,12 +2,14 @@ import {AssetHealthFragment} from '../../asset-data/types/AssetHealthDataProvide
 import {
   AssetCheckExecutionResolvedStatus,
   AssetCheckSeverity,
+  AssetHealth,
   AssetHealthStatus,
   ChangeReason,
   RunStatus,
   StaleCause,
   StaleCauseCategory,
   StaleStatus,
+  buildAsset,
   buildAssetCheck,
   buildAssetCheckEvaluation,
   buildAssetCheckExecution,
@@ -67,29 +69,29 @@ const TIMESTAMP = `${new Date('2023-02-12 00:00:00').getTime()}`;
 const createHealthData = (
   assetKeyPath: string[],
   healthStatus: AssetHealthStatus,
-  overrides: Partial<AssetHealthFragment> = {},
-): AssetHealthFragment => ({
-  __typename: 'Asset',
-  key: buildAssetKey({path: assetKeyPath}),
-  latestMaterializationTimestamp:
-    healthStatus === AssetHealthStatus.HEALTHY ? Number(TIMESTAMP) : null,
-  latestFailedToMaterializeTimestamp:
-    healthStatus === AssetHealthStatus.DEGRADED ? Number(TIMESTAMP) : null,
-  freshnessStatusChangedTimestamp: Number(TIMESTAMP),
-  assetHealth: buildAssetHealth({
-    assetHealth: healthStatus,
-    materializationStatus: healthStatus,
-    assetChecksStatus: AssetHealthStatus.HEALTHY,
-    freshnessStatus: AssetHealthStatus.HEALTHY,
-    materializationStatusMetadata: null,
-    assetChecksStatusMetadata: null,
-    freshnessStatusMetadata: buildAssetHealthFreshnessMeta({
-      lastMaterializedTimestamp:
-        healthStatus === AssetHealthStatus.HEALTHY ? Number(TIMESTAMP) : null,
+  overrides: Partial<AssetHealthFragment> & {assetHealth?: AssetHealth} = {},
+): AssetHealthFragment =>
+  buildAsset({
+    key: buildAssetKey({path: assetKeyPath}),
+    latestMaterializationTimestamp:
+      healthStatus === AssetHealthStatus.HEALTHY ? Number(TIMESTAMP) : null,
+    latestFailedToMaterializeTimestamp:
+      healthStatus === AssetHealthStatus.DEGRADED ? Number(TIMESTAMP) : null,
+    freshnessStatusChangedTimestamp: Number(TIMESTAMP),
+    assetHealth: buildAssetHealth({
+      assetHealth: healthStatus,
+      materializationStatus: healthStatus,
+      assetChecksStatus: AssetHealthStatus.HEALTHY,
+      freshnessStatus: AssetHealthStatus.HEALTHY,
+      materializationStatusMetadata: null,
+      assetChecksStatusMetadata: null,
+      freshnessStatusMetadata: buildAssetHealthFreshnessMeta({
+        lastMaterializedTimestamp:
+          healthStatus === AssetHealthStatus.HEALTHY ? Number(TIMESTAMP) : null,
+      }),
     }),
-  }),
-  ...overrides,
-});
+    ...overrides,
+  });
 
 export const HealthDataHealthy = createHealthData(['asset1'], AssetHealthStatus.HEALTHY);
 

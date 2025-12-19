@@ -8,7 +8,13 @@ import {AssetLiveDataProvider} from '../../asset-data/AssetLiveDataProvider';
 import {AssetStaleStatusData} from '../../asset-data/AssetStaleStatusDataProvider';
 import {AssetHealthFragment} from '../../asset-data/types/AssetHealthDataProvider.types';
 import {KNOWN_TAGS} from '../../graph/OpTags';
-import {StaleCause, buildAssetKey, buildAssetNode, buildStaleCause} from '../../graphql/types';
+import {
+  AssetKey,
+  StaleCause,
+  buildAssetKey,
+  buildAssetNode,
+  buildStaleCause,
+} from '../../graphql/types';
 import {AssetNode, AssetNodeMinimal} from '../AssetNode';
 import {AssetNode2025} from '../AssetNode2025';
 import {AllAssetNodeFacets} from '../AssetNodeFacets';
@@ -33,6 +39,38 @@ interface AssetNodeScenario {
   expectedText: string[];
 }
 
+function SetCacheEntry({
+  assetKey,
+  liveData,
+  healthData,
+}: {
+  assetKey: AssetKey;
+  liveData: any;
+  healthData?: AssetHealthFragment;
+}) {
+  const key = tokenForAssetKey(assetKey);
+
+  // // Set up live data cache if available
+  if (liveData) {
+    const entry = {[key]: liveData};
+    AssetBaseData.manager._updateCache(entry);
+
+    const staleEntry = {
+      [key]: buildAssetNode({
+        assetKey,
+        staleCauses: liveData.staleCauses.map((cause: StaleCause) => buildStaleCause(cause)),
+        staleStatus: liveData.staleStatus,
+      }),
+    };
+    AssetStaleStatusData.manager._updateCache(staleEntry);
+  }
+  if (healthData) {
+    const healthEntry = {[key]: {...healthData, key: assetKey}};
+    AssetHealthData.manager._updateCache(healthEntry);
+  }
+  return null;
+}
+
 export const LiveStates = () => {
   const [newDesign, setNewDesign] = useState<boolean>(true);
   const [facets, setFacets] = useState<Set<AssetNodeFacet>>(new Set(AllAssetNodeFacets));
@@ -53,41 +91,13 @@ export const LiveStates = () => {
       ? getAssetNodeDimensions2025(facets)
       : getAssetNodeDimensions(definitionCopy);
 
-    function SetCacheEntry() {
-      const key = tokenForAssetKey(definitionCopy.assetKey);
-      (window as any).AssetHealthData = AssetHealthData.manager;
-
-      // // Set up live data cache if available
-      if (scenario.liveData) {
-        const entry = {[key]: scenario.liveData};
-        AssetBaseData.manager._updateCache(entry);
-
-        const staleEntry = {
-          [key]: buildAssetNode({
-            assetKey: definitionCopy.assetKey,
-            staleCauses: scenario.liveData.staleCauses.map((cause: StaleCause) =>
-              buildStaleCause(cause),
-            ),
-            staleStatus: scenario.liveData.staleStatus,
-          }),
-        };
-        AssetStaleStatusData.manager._updateCache(staleEntry);
-      }
-      if (scenario.healthData) {
-        const healthEntry = {
-          [key]: {
-            ...scenario.healthData,
-            key: definitionCopy.assetKey,
-          },
-        };
-        AssetHealthData.manager._updateCache(healthEntry);
-      }
-      return null;
-    }
-
     return (
       <>
-        <SetCacheEntry />
+        <SetCacheEntry
+          healthData={scenario.healthData}
+          liveData={scenario.liveData}
+          assetKey={definitionCopy.assetKey}
+        />
         <Box flex={{direction: 'column', gap: 8, alignItems: 'flex-start'}}>
           <code style={{marginTop: 20}}>
             <strong>{scenario.title}</strong>
@@ -171,41 +181,12 @@ export const PartnerTags = () => {
     const def = {...Mocks.AssetNodeFragmentBasic, kinds: [computeKind]};
     const liveData = Mocks.LiveDataForNodeMaterialized;
 
-    function SetCacheEntry() {
-      const assetKey = buildAssetKey({path: [liveData.stepKey]});
-      const key = tokenForAssetKey(assetKey);
-
-      // Set up live data cache
-      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-      const entry = {[key]: liveData!};
-      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-      const {staleStatus, staleCauses} = liveData!;
-      const staleEntry = {
-        [key]: buildAssetNode({
-          assetKey,
-          staleCauses: staleCauses.map((cause) => buildStaleCause(cause)),
-          staleStatus,
-        }),
-      };
-      AssetStaleStatusData.manager._updateCache(staleEntry);
-      AssetBaseData.manager._updateCache(entry);
-
-      // Set up health data cache - use healthy data for partner tags demo
-      const healthEntry = {
-        [key]: {
-          ...Mocks.HealthDataHealthy,
-          key: assetKey,
-        },
-      };
-      AssetHealthData.manager._updateCache(healthEntry);
-      return null;
-    }
-
     const dimensions = getAssetNodeDimensions(def);
+    const assetKey = buildAssetKey({path: [liveData.stepKey]});
 
     return (
       <>
-        <SetCacheEntry />
+        <SetCacheEntry liveData={liveData} assetKey={assetKey} />
         <Box flex={{direction: 'column', gap: 0, alignItems: 'flex-start'}}>
           <strong>{computeKind}</strong>
           <div

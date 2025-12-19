@@ -60,10 +60,8 @@ describe('AssetNode', function () {
         const key = tokenForAssetKey(definitionCopy.assetKey);
 
         if (scenario.liveData) {
-          // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-          const entry = {[key]: scenario.liveData!};
-          // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-          const {staleStatus, staleCauses} = scenario.liveData!;
+          const entry = {[key]: scenario.liveData};
+          const {staleStatus, staleCauses} = scenario.liveData;
           const staleEntry = {
             [key]: buildAssetNode({
               assetKey: definitionCopy.assetKey,
