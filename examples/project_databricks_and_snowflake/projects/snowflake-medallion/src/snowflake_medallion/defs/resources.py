@@ -17,8 +17,11 @@ class SnowflakeResource(ConfigurableResource):
 
     def query(self, sql: str) -> pd.DataFrame:
         if self.demo_mode:
-            return pd.DataFrame()
-        return pd.DataFrame()
+            return pd.DataFrame({"result": ["demo_query_result"]})
+        raise NotImplementedError(
+            "Real Snowflake connection not implemented in this example. "
+            "Set SNOWFLAKE_ACCOUNT to use demo mode."
+        )
 
 
 def create_dbt_resource(demo_mode: bool = False) -> DbtCliResource:

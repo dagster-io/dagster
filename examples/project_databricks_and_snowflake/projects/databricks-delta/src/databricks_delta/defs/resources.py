@@ -12,8 +12,11 @@ class DatabricksResource(ConfigurableResource):
 
     def query(self, sql: str) -> pd.DataFrame:
         if self.demo_mode:
-            return pd.DataFrame()
-        return pd.DataFrame()
+            return pd.DataFrame({"result": ["demo_query_result"]})
+        raise NotImplementedError(
+            "Real Databricks connection not implemented in this example. "
+            "Set DATABRICKS_SERVER_HOSTNAME to use demo mode."
+        )
 
 
 class DeltaStorageResource(ConfigurableResource):
@@ -28,12 +31,18 @@ class DeltaStorageResource(ConfigurableResource):
     ) -> str:
         if self.demo_mode:
             return f"{self.storage_path}/{table_name}"
-        return f"{self.storage_path}/{table_name}"
+        raise NotImplementedError(
+            "Real Delta Lake storage not implemented in this example. "
+            "Unset DELTA_STORAGE_PATH to use demo mode."
+        )
 
     def read_delta_table(self, table_name: str) -> pd.DataFrame:
         if self.demo_mode:
             return pd.DataFrame()
-        return pd.DataFrame()
+        raise NotImplementedError(
+            "Real Delta Lake storage not implemented in this example. "
+            "Unset DELTA_STORAGE_PATH to use demo mode."
+        )
 
 
 databricks_resource = DatabricksResource(

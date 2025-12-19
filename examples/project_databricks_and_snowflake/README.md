@@ -1,18 +1,20 @@
-# Multi-Platform Data
+# Databricks and Snowflake Example
 
 A Dagster workspace demonstrating how to build heterogeneous data platforms using multiple code locations. This project showcases production data platform patterns with Databricks Delta Lake and Snowflake dbt medallion architectures as separate projects within a workspace.
 
 ## Project Structure
 
 ```
-multi-platform-data/
+project_databricks_and_snowflake/
 ├── dg.toml                           # Workspace configuration
+├── dagster_cloud.yaml                # Dagster+ deployment configuration
 ├── deployments/
 │   └── local/
 │       └── pyproject.toml            # Local environment for dg commands
 ├── projects/
 │   ├── databricks-delta/             # Code location 1
 │   │   ├── pyproject.toml
+│   │   ├── tests/
 │   │   └── src/databricks_delta/
 │   │       ├── definitions.py
 │   │       └── defs/
@@ -20,13 +22,13 @@ multi-platform-data/
 │   │           └── resources.py
 │   └── snowflake-medallion/          # Code location 2
 │       ├── pyproject.toml
+│       ├── tests/
 │       └── src/snowflake_medallion/
 │           ├── definitions.py
 │           ├── dbt_project/
 │           └── defs/
 │               ├── components/medallion/
 │               └── resources.py
-├── tests/
 ├── .env.example
 ├── pyproject.toml
 └── README.md
@@ -71,7 +73,7 @@ cp .env.example .env
 From the workspace root with the local environment activated:
 
 ```bash
-cd /path/to/multi-platform-data
+cd /path/to/project_databricks_and_snowflake
 source deployments/local/.venv/bin/activate
 dg dev
 ```
@@ -150,3 +152,21 @@ cd projects/snowflake-medallion
 source .venv/bin/activate
 pytest tests/ -v
 ```
+
+## Deploying to Dagster+
+
+This project includes a `dagster_cloud.yaml` file for deploying to Dagster+. The configuration defines both code locations with their respective environment variables and secrets.
+
+### Setup
+
+1. Configure environment variables in Dagster+:
+   - Add non-sensitive variables (account names, hostnames) as environment variables
+   - Add sensitive values (tokens, passwords) as secrets
+
+2. Deploy using the Dagster+ CLI or GitHub integration:
+
+```bash
+dagster-cloud workspace sync
+```
+
+For more details, see the [Dagster+ deployment documentation](https://docs.dagster.io/dagster-plus/deployment/code-locations/dagster-cloud-yaml).

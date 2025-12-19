@@ -11,7 +11,7 @@ cleaned as (
     select
         customer_id,
         lower(trim(email)) as email,
-        try_to_timestamp(created_at) as created_at,
+        cast(created_at as timestamp) as created_at,
         case
             when age between 0 and 150 then age
             else null
@@ -25,13 +25,23 @@ cleaned as (
         and customer_id is not null
 ),
 
-deduplicated as (
-    select *
+ranked as (
+    select
+        *,
+        row_number() over (
+            partition by customer_id
+            order by _load_timestamp desc
+        ) as rn
     from cleaned
-    qualify row_number() over (
-        partition by customer_id
-        order by _load_timestamp desc
-    ) = 1
 )
 
-select * from deduplicated
+select
+    customer_id,
+    email,
+    created_at,
+    age,
+    status,
+    region,
+    _load_timestamp
+from ranked
+where rn = 1

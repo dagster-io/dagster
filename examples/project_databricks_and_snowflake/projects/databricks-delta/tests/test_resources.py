@@ -10,7 +10,8 @@ def test_databricks_resource_demo_mode():
     resource = DatabricksResource(demo_mode=True)
     df = resource.query("SELECT 1")
     assert isinstance(df, pd.DataFrame)
-    assert df.empty
+    assert not df.empty
+    assert "result" in df.columns
 
 
 def test_delta_storage_resource_demo_mode():

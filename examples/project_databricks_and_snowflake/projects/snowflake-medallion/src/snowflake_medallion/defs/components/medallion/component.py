@@ -1,9 +1,24 @@
+from collections.abc import Mapping
 from pathlib import Path
+from typing import Any, Optional
 
-from dagster import Component, Definitions, Model, Resolvable
-from dagster_dbt import DbtCliResource, dbt_assets
+from dagster import AssetSpec, Component, Definitions, Model, Resolvable
+from dagster_dbt import DagsterDbtTranslator, DbtCliResource, dbt_assets
 
 from ...resources import SnowflakeResource, create_dbt_resource
+
+
+class SnowflakeKindTranslator(DagsterDbtTranslator):
+    """Custom translator that always shows Snowflake as the kind, even in demo mode."""
+
+    def get_asset_spec(
+        self,
+        manifest: Mapping[str, Any],
+        unique_id: str,
+        project: Optional[Any],
+    ) -> AssetSpec:
+        spec = super().get_asset_spec(manifest, unique_id, project)
+        return spec.replace_attributes(kinds={"snowflake", "dbt"})
 
 
 class MedallionComponentParams(Model):
@@ -42,7 +57,9 @@ class MedallionComponent(Component, MedallionComponentParams, Resolvable):
                 },
             )
 
-        @dbt_assets(manifest=manifest_path)
+        @dbt_assets(
+            manifest=manifest_path, dagster_dbt_translator=SnowflakeKindTranslator()
+        )
         def medallion_dbt_assets(context, dbt: DbtCliResource):
             yield from dbt.cli(["build"], context=context).stream()
 
