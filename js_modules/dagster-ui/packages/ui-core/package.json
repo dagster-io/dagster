@@ -172,7 +172,7 @@
     "react-router-dom": "^5.3.0",
     "react-router-dom-v5-compat": "^6.3.0",
     "resize-observer-polyfill": "^1.5.1",
-    "storybook": "^9.1.8",
+    "storybook": "^9.1.17",
     "styled-components": "^5.3.3",
     "ts-node": "10.9.2",
     "ts-prune": "0.10.3",
