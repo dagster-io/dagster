@@ -2,7 +2,6 @@ import {
   Alert,
   Box,
   Colors,
-  Group,
   Heading,
   Icon,
   MiddleTruncate,
@@ -298,7 +297,6 @@ export const AssetPartitionDetail = ({
           }
         />
       )}
-
       <Box
         style={{display: 'grid', gridTemplateColumns: '1fr 1fr 1fr 1fr', gap: 16, minHeight: 76}}
         border="bottom"
@@ -355,10 +353,10 @@ export const AssetPartitionDetail = ({
                   isJob={isThisThingAJob(repo, latestEventRun.pipelineName)}
                 />
               </Box>
-              <Group direction="row" spacing={8} alignItems="center">
+              <Box flex={{direction: 'row', gap: 8, alignItems: 'center'}}>
                 <Icon name="linear_scale" color={Colors.accentGray()} />
                 <Link to={linkToRunEvent(latestEventRun, latest)}>{latest.stepKey}</Link>
-              </Group>
+              </Box>
             </Box>
           ) : (
             'None'

@@ -1,7 +1,7 @@
 import * as React from 'react';
 
+import {Box} from '../Box';
 import {Colors} from '../Color';
-import {Group} from '../Group';
 import {Tooltip} from '../Tooltip';
 
 const SOLID_STYLES: React.CSSProperties = {
@@ -29,7 +29,7 @@ export default {
 
 export const Default = () => {
   return (
-    <Group spacing={8} direction="column">
+    <Box flex={{direction: 'column', gap: 8}}>
       <p style={{color: Colors.textLight()}}>
         Use the <code>data-tooltip</code> attribute to expand truncated job, op names, etc. on
         hover. These are highly stylable via <code>data-tooltip-style</code> so they can look like
@@ -64,6 +64,6 @@ export const Default = () => {
       >
         fetch_from_redshift…
       </span>
-    </Group>
+    </Box>
   );
 };

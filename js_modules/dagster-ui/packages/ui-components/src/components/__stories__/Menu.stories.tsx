@@ -1,7 +1,7 @@
 import styled from 'styled-components';
 
+import {Box} from '../Box';
 import {Colors} from '../Color';
-import {Group} from '../Group';
 import {Menu, MenuDivider, MenuItem} from '../Menu';
 
 // eslint-disable-next-line import/no-default-export
@@ -12,7 +12,7 @@ export default {
 
 export const Default = () => {
   return (
-    <Group direction="column" spacing={8} padding={8}>
+    <Box flex={{direction: 'column', gap: 8, alignItems: 'flex-start'}} padding={8}>
       <Container style={{width: '180px'}}>
         <Menu>
           <MenuItem text="Item 01" />
@@ -46,7 +46,7 @@ export const Default = () => {
           <MenuItem intent="danger" icon="delete" text="Delete" />
         </Menu>
       </Container>
-    </Group>
+    </Box>
   );
 };
 

@@ -15,7 +15,6 @@ export * from './components/Delayed';
 export * from './components/Dialog';
 export * from './components/DisclosureTriangleButton';
 export * from './components/ErrorBoundary';
-export * from './components/Group';
 export * from './components/HorizontalControls';
 export * from './components/HoverButton';
 export * from './components/Icon';

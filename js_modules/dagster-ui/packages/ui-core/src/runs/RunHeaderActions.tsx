@@ -1,4 +1,4 @@
-import {Button, Group, Icon, Menu, MenuItem, Popover, Tooltip} from '@dagster-io/ui-components';
+import {Box, Button, Icon, Menu, MenuItem, Popover, Tooltip} from '@dagster-io/ui-components';
 import {useContext, useState} from 'react';
 import {useHistory} from 'react-router-dom';
 import {AISummaryForRunMenuItem} from 'shared/runs/AISummaryForRunMenuItem.oss';
@@ -71,7 +71,7 @@ export const RunHeaderActions = ({run, isJob}: {run: RunFragment; isJob: boolean
 
   return (
     <div>
-      <Group direction="row" spacing={8}>
+      <Box flex={{direction: 'row', gap: 8}}>
         <RunAlertNotifications runId={run.id} />
         {jobLink.disabledReason ? (
           <Tooltip content={jobLink.disabledReason}>
@@ -149,7 +149,7 @@ export const RunHeaderActions = ({run, isJob}: {run: RunFragment; isJob: boolean
             <Button icon={<Icon name="expand_more" />} />
           </Popover>
         ) : null}
-      </Group>
+      </Box>
       <RunConfigDialog
         isOpen={visibleDialog === 'config'}
         onClose={() => setVisibleDialog(null)}
