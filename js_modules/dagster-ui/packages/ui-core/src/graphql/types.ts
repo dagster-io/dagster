@@ -4914,10 +4914,6 @@ export type Run = PipelineRun &
     updateTime: Maybe<Scalars['Float']['output']>;
   };
 
-export type RunAssetCheckEvaluationsArgs = {
-  limit?: InputMaybe<Scalars['Int']['input']>;
-};
-
 export type RunCapturedLogsArgs = {
   fileKey: Scalars['String']['input'];
 };

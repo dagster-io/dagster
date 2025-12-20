@@ -644,7 +644,6 @@ class GrapheneRun(graphene.ObjectType):
     externalJobSource = graphene.String()
     asset_check_evaluations = graphene.Field(
         non_null_list(GrapheneAssetCheckEvaluation),
-        limit=graphene.Argument(graphene.Int),
     )
 
     class Meta:
@@ -905,7 +904,7 @@ class GrapheneRun(graphene.ObjectType):
         run_tags = self.dagster_run.tags
         return any(get_boolean_tag_value(run_tags.get(tag)) for tag in RUN_METRIC_TAGS)
 
-    def resolve_asset_check_evaluations(self, graphene_info, limit=None):
+    def resolve_asset_check_evaluations(self, graphene_info):
         instance = graphene_info.context.instance
         run_id = self.runId
 
@@ -941,18 +940,12 @@ class GrapheneRun(graphene.ObjectType):
                 # IMPORTANT: GrapheneAssetCheckEvaluation expects EventLogEntry, not evaluation data
                 evaluations.append(GrapheneAssetCheckEvaluation(entry))
 
-            # If there are >10 checks, only return failed ones
-            if len(evaluations) > 10:
-                evaluations = [e for e in evaluations if not e.success]
-
-            if limit is not None:
-                evaluations = evaluations[:limit]
-
             return evaluations
 
         except Exception:
             # Non-nullable GraphQL field must never resolve to None
             return []
+
 
 class GrapheneIPipelineSnapshotMixin:
     # Mixin this class to implement IPipelineSnapshot
