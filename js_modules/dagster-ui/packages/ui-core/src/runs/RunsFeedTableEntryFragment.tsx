@@ -37,6 +37,7 @@ export const RUNS_FEED_TABLE_ENTRY_FRAGMENT = gql`
       }
       assetCheckEvaluations {
         checkName
+        severity
         success
       }
       ...RunActionsMenuRunFragment

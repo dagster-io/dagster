@@ -65,6 +65,7 @@ export type RunsFeedTableEntryFragment_Run = {
   assetCheckEvaluations: Array<{
     __typename: 'AssetCheckEvaluation';
     checkName: string;
+    severity: Types.AssetCheckSeverity;
     success: boolean;
   }>;
   tags: Array<{__typename: 'PipelineTag'; key: string; value: string}>;
