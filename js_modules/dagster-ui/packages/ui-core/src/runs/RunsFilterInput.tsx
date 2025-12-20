@@ -33,6 +33,9 @@ import {
 } from '../ui/BaseFilters/useSuggestionFilter';
 import {TimeRangeState, useTimeRangeFilter} from '../ui/BaseFilters/useTimeRangeFilter';
 import {useRepositoryOptions} from '../workspace/WorkspaceContext/util';
+import {buildRepoAddress} from '../workspace/buildRepoAddress';
+import {repoAddressAsHumanString} from '../workspace/repoAddressAsString';
+import {repoAddressFromPath} from '../workspace/repoAddressFromPath';
 
 export interface RunsFilterInputProps {
   loading?: boolean;
@@ -50,6 +53,7 @@ export type RunFilterTokenType =
   | 'snapshotId'
   | 'tag'
   | 'backfill'
+  | 'code_location'
   | 'created_date_before'
   | 'created_date_after';
 
@@ -184,7 +188,12 @@ const CREATED_BY_TAGS = [
 ];
 
 // Exclude these tags from the "tag" filter because they're already being fetched by other filters.
-const tagsToExclude = [...CREATED_BY_TAGS, DagsterTag.Backfill, DagsterTag.Partition];
+const tagsToExclude = [
+  ...CREATED_BY_TAGS,
+  DagsterTag.Backfill,
+  DagsterTag.Partition,
+  DagsterTag.RepositoryLabelTag,
+];
 
 export const useRunsFilterInput = ({tokens, onChange, enabledFilters}: RunsFilterInputProps) => {
   const {options} = useRepositoryOptions();
@@ -244,6 +253,7 @@ export const useRunsFilterInput = ({tokens, onChange, enabledFilters}: RunsFilte
   const isBackfillsFilterEnabled = !enabledFilters || enabledFilters?.includes('backfill');
   const isPartitionsFilterEnabled = !enabledFilters || enabledFilters?.includes('partition');
   const isJobFilterEnabled = !enabledFilters || enabledFilters?.includes('job');
+  const isCodeLocationFilterEnabled = !enabledFilters || enabledFilters?.includes('code_location');
 
   const onFocus = useCallback(() => {
     fetchTagKeys();
@@ -263,6 +273,24 @@ export const useRunsFilterInput = ({tokens, onChange, enabledFilters}: RunsFilte
     fetchPartitionValues,
     isBackfillsFilterEnabled,
   ]);
+
+  const codeLocationValues = useMemo(() => {
+    return options.map((option) => {
+      const repoAddress = buildRepoAddress(option.repository.name, option.repositoryLocation.name);
+      const valueForTag = `${option.repository.name}@${option.repositoryLocation.name}`;
+      const humanString = repoAddressAsHumanString(repoAddress);
+      return {
+        label: humanString,
+        final: true,
+        value: {
+          key: `${DagsterTag.RepositoryLabelTag}=${valueForTag}`,
+          type: DagsterTag.RepositoryLabelTag,
+          value: valueForTag,
+        },
+        match: [humanString],
+      };
+    });
+  }, [options]);
 
   const createdByValues = useMemo(
     () => [
@@ -587,6 +615,57 @@ export const useRunsFilterInput = ({tokens, onChange, enabledFilters}: RunsFilte
     },
   });
 
+  const codeLocationFilter = useSuggestionFilter({
+    name: 'Code location',
+    icon: 'folder',
+    initialSuggestions: codeLocationValues,
+    allowMultipleSelections: false,
+    renderLabel: ({value}) => {
+      const repoAddress = repoAddressFromPath(value.value);
+      const labelValue = repoAddress
+        ? repoAddressAsHumanString(repoAddress)
+        : 'Unknown code location';
+      return (
+        <Box flex={{direction: 'row', gap: 4, alignItems: 'center'}}>
+          <Icon name="folder" />
+          <TruncatedTextWithFullTextOnHover text={labelValue} />
+        </Box>
+      );
+    },
+    getStringValue: ({value}) => {
+      const repoAddress = repoAddressFromPath(value);
+      return repoAddress ? repoAddressAsHumanString(repoAddress) : 'Unknown code location';
+    },
+    state: useMemo(() => {
+      return tokens
+        .filter(
+          ({token, value}) =>
+            token === 'tag' && value.split('=')[0] === DagsterTag.RepositoryLabelTag,
+        )
+        .map(({value}) => tagValueToFilterObject(value));
+    }, [tokens]),
+    setState: (values) => {
+      onChange([
+        ...tokens.filter((token) => {
+          if (token.token !== 'tag') {
+            return true;
+          }
+          return token.value.split('=')[0] !== DagsterTag.RepositoryLabelTag;
+        }),
+        ...Array.from(values).map((value) => ({
+          token: 'tag' as const,
+          value: `${value.type}=${value.value}`,
+        })),
+      ]);
+    },
+    getKey: ({key}) => key,
+    isMatch: ({value}, query) => value.toLowerCase().includes(query.toLowerCase()),
+    matchType: 'any-of',
+    onSuggestionClicked: async (value) => {
+      return [{value}];
+    },
+  });
+
   const createdDateFilter = useTimeRangeFilter({
     name: 'Created date',
     activeFilterTerm: 'Created',
@@ -735,6 +814,7 @@ export const useRunsFilterInput = ({tokens, onChange, enabledFilters}: RunsFilte
       isStatusFilterEnabled ? statusFilter : null,
       launchedByFilter,
       createdDateFilter,
+      isCodeLocationFilterEnabled ? codeLocationFilter : null,
       isJobFilterEnabled ? jobFilter : null,
       isJobFilterEnabled && pipelines.length > 0 ? pipelinesFilter : null,
       isIDFilterEnabled ? idFilter : null,
