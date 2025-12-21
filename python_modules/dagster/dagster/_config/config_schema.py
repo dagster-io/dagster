@@ -68,10 +68,10 @@ class ConfigSchema:
        :py:class:`~dagster.Shape`. Values of the dictionary are resolved recursively
        according to the same rules. For example:
 
-       * ``{'some_config': str}`` is equivalent to ``Shape({'some_config: str})``.
+       * ``{'some_config': str}`` is equivalent to ``Shape({'some_config': str})``.
 
        * ``{'some_config1': {'some_config2': str}}`` is equivalent to
-            ``Shape({'some_config1: Shape({'some_config2: str})})``.
+            ``Shape({'some_config1': Shape({'some_config2': str})})``.
 
     #. A bare python list of length one, whose single element will be wrapped in a
        :py:class:`~dagster.Array` is resolved recursively according to the same
