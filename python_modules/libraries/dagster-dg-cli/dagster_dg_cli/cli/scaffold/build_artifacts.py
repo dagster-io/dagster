@@ -76,7 +76,7 @@ def _resolve_config_for_build_artifacts(
 @click.option(
     "--python-version",
     "python_version",
-    type=click.Choice(["3.9", "3.10", "3.11", "3.12", "3.13"]),
+    type=click.Choice(["3.9", "3.10", "3.11", "3.12", "3.13", "3.14"]),
     help=(
         "Python version used to deploy the project. If not set, defaults to the calling process's Python minor version."
     ),

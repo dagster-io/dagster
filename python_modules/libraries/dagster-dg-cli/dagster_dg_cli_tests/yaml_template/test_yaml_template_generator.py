@@ -3,15 +3,20 @@
 from pathlib import Path
 
 import dagster as dg
-from dagster_dbt.components.dbt_project.component import DbtProjectComponent
+import pytest
 from dagster_dg_cli.utils.yaml_template_generator import (
     generate_defs_yaml_example_values,
     generate_defs_yaml_schema,
 )
 from dagster_fivetran.components.workspace_component.component import FivetranAccountComponent
+from dagster_shared import seven
 from dagster_sling.components.sling_replication_collection.component import (
     SlingReplicationCollectionComponent,
 )
+
+# dbt-core doesn't support Python 3.14
+if not seven.IS_PYTHON_3_14:
+    from dagster_dbt.components.dbt_project.component import DbtProjectComponent
 
 
 class TestYamlTemplateGenerator:
@@ -145,6 +150,7 @@ class TestYamlTemplateGenerator:
             f"Generated example values do not match expected output.\n\nGenerated:\n{example_result}\n\nExpected:\n{expected_example}"
         )
 
+    @pytest.mark.skipif(seven.IS_PYTHON_3_14, reason="dbt-core doesn't support Python 3.14")
     def test_dbt_project_component_template(self):
         """Test generation of DbtProjectComponent template using actual component class."""
         # Get schema from the actual component class
