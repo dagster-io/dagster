@@ -272,7 +272,7 @@ Additional Azure documentation:
 1. Install the `pg_repack` client (the one that matching your Postgres version).
 
    ```shell
-   brew install postgresql@14 pqxn
+   brew install postgresql@14 pgxn
    pgxn install pg_repack==1.4.7
    ```
 
