@@ -1,7 +1,7 @@
 ---
 title: Avoiding pod eviction in Kubernetes deployments
 description: How to handle pod eviction in Kubernetes deployments.
-sidebar_position: 4400
+sidebar_position: 400
 ---
 
 When Dagster is run in Kubernetes environments, pod evictions can occur due to resource constraints or node scaling operations. To prevent runs from hanging indefinitely, you can implement the following solutions:

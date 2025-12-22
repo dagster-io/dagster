@@ -5,7 +5,7 @@ sidebar_position: 100
 title: Testing assets with asset checks
 ---
 
-Asset checks are tests that verify specific properties of your data assets, allowing you to execute data quality checks on your data. For example, you can create checks to:
+Asset checks are tests that verify specific properties of your data [assets](/guides/build/assets), allowing you to execute data quality checks on your data. For example, you can create checks to:
 
 - Ensure a particular column doesn't contain null values
 - Verify that a tabular asset adheres to a specified schema
@@ -13,9 +13,9 @@ Asset checks are tests that verify specific properties of your data assets, allo
 
 Each asset check should test only a single asset property to keep tests uncomplicated, reusable, and easy to track over time.
 
-:::note
+:::info Dagster+ credit consumption
 
-This article assumes familiarity with [assets](/guides/build/assets).
+Asset checks do not count toward your Dagster+ credit usage.
 
 :::
 
