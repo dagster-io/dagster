@@ -12,10 +12,10 @@ The Dagster+ web interface, CLI, and GraphQL API use [AWS Cloudfront's content d
 
 The Dagster+ agent interacts with the following IP addresses:
 
-<Tabs>
-<TabItem value="us-region" label="US region">
+<Tabs groupId="region">
+  <TabItem value="us-region" label="US region">
 
-```shell
+```plain
 34.215.239.157
 35.165.239.109
 35.83.161.124
@@ -26,29 +26,30 @@ The Dagster+ agent interacts with the following IP addresses:
 54.188.126.120
 ```
 
-</TabItem>
-<TabItem value="eu-region" label="EU region">
+  </TabItem>
+  <TabItem value="eu-region" label="EU region">
 
-```shell
-16.170.24.133
-13.62.119.65
-56.228.54.244
+```plain
+13.50.180.120
+13.51.19.57
+13.60.164.107
+13.62.96.222
+13.62.107.201
+51.21.15.208
 ```
 
-</TabItem>
+  </TabItem>
 </Tabs>
 
 :::note
-
 Additional IP addresses may be added over time. This list was last updated on **December 17, 2025**.
-
 :::
 
 ## URLs
 
 In addition to these IP addresses, the following URLs also need to be allowed egress access from your agent:
 
-<Tabs>
+<Tabs groupId="region">
     <TabItem value="us-region" label="US region">
         - `cloud-prod-object-snapshots.s3.amazonaws.com`
         - `cloud-prod-compute-logs.s3.amazonaws.com` - Only required if compute logs are being sent to Dagster+'s control plane. Not needed if you've configured compute logs to be sent to your own blob storage. See [Managing compute logs and error messages](/deployment/dagster-plus/management/managing-compute-logs-and-error-messages) for more details.

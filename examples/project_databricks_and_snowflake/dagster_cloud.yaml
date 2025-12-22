@@ -1,0 +1,33 @@
+# Dagster+ deployment configuration
+# See: https://docs.dagster.io/dagster-plus/deployment/code-locations/dagster-cloud-yaml
+
+locations:
+  - location_name: databricks-delta
+    code_source:
+      package_name: databricks_delta
+    build:
+      directory: ./projects/databricks-delta
+    container_context:
+      k8s:
+        env_vars:
+          - DATABRICKS_SERVER_HOSTNAME
+          - DATABRICKS_HTTP_PATH
+          - DELTA_STORAGE_PATH
+        env_secrets:
+          - DATABRICKS_TOKEN
+
+  - location_name: snowflake-medallion
+    code_source:
+      package_name: snowflake_medallion
+    build:
+      directory: ./projects/snowflake-medallion
+    container_context:
+      k8s:
+        env_vars:
+          - SNOWFLAKE_ACCOUNT
+          - SNOWFLAKE_USER
+          - SNOWFLAKE_WAREHOUSE
+          - SNOWFLAKE_DATABASE
+          - SNOWFLAKE_SCHEMA
+        env_secrets:
+          - SNOWFLAKE_PASSWORD

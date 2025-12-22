@@ -2008,7 +2008,7 @@ __metadata:
     rollup-plugin-polyfill-node: "npm:^0.8.0"
     rollup-plugin-styles: "npm:^4.0.0"
     sonner: "npm:^2.0.1"
-    storybook: "npm:^9.1.8"
+    storybook: "npm:^9.1.17"
     typescript: "npm:5.9.2"
     webpack: "npm:^5.94.0"
     yaml: "npm:2.4.0"
@@ -2153,7 +2153,7 @@ __metadata:
     remark-gfm: "npm:3.0.1"
     resize-observer-polyfill: "npm:^1.5.1"
     spark-md5: "npm:^3.0.2"
-    storybook: "npm:^9.1.8"
+    storybook: "npm:^9.1.17"
     strip-markdown: "npm:^6.0.0"
     styled-components: "npm:^5.3.3"
     subscriptions-transport-ws: "npm:^0.9.15"
@@ -18583,9 +18583,9 @@ __metadata:
   languageName: node
   linkType: hard
 
-"storybook@npm:^9.1.8":
-  version: 9.1.8
-  resolution: "storybook@npm:9.1.8"
+"storybook@npm:^9.1.17":
+  version: 9.1.17
+  resolution: "storybook@npm:9.1.17"
   dependencies:
     "@storybook/global": "npm:^5.0.0"
     "@testing-library/jest-dom": "npm:^6.6.3"
@@ -18606,7 +18606,7 @@ __metadata:
       optional: true
   bin:
     storybook: ./bin/index.cjs
-  checksum: 10/2a134b951c54b6ba0c2551542b3c655923430ffdfc36530d53c9b57b73720108fb65e10a835f3ff368e22327941da89cedccfa4159c83eaa7d16a8b70370ba5c
+  checksum: 10/fa7d56a7cf0c6849c8130f5b7b3fcbd6615216fce94dc4ff363a5622f7091f74dac7fe3e983cecc90b3cee922f8ca30b9997b5bb936c644971cb8d20262bc038
   languageName: node
   linkType: hard
 

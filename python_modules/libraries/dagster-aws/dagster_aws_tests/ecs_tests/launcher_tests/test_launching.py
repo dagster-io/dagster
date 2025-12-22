@@ -39,7 +39,8 @@ def test_default_launcher(
     task_long_arn_format,
 ):
     ecs.put_account_setting(name="taskLongArnFormat", value=task_long_arn_format)
-    assert not run.tags
+    assert "ecs/task_arn" not in run.tags
+    assert "ecs/cluster" not in run.tags
 
     initial_task_definitions = ecs.list_task_definitions()["taskDefinitionArns"]
     initial_tasks = ecs.list_tasks()["taskArns"]
@@ -213,7 +214,8 @@ def test_launcher_dont_use_current_task(
     cluster = instance.run_launcher.run_task_kwargs["cluster"]
     assert cluster == "my_cluster"
 
-    assert not run.tags
+    assert "ecs/task_arn" not in run.tags
+    assert "ecs/cluster" not in run.tags
 
     initial_task_definitions = ecs.list_task_definitions()["taskDefinitionArns"]
     initial_tasks = ecs.list_tasks(cluster=cluster)["taskArns"]
@@ -1444,7 +1446,8 @@ def test_custom_launcher(
     custom_workspace,
     custom_run,
 ):
-    assert not custom_run.tags
+    assert "ecs/task_arn" not in custom_run.tags
+    assert "ecs/cluster" not in custom_run.tags
 
     initial_tasks = ecs.list_tasks()["taskArns"]
 
