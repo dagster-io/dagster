@@ -2,15 +2,15 @@ from collections.abc import Callable, Mapping, Sequence
 from typing import Any, Optional
 
 from dagster import (
+    AbstractSet,
     AssetsDefinition,
     AssetSpec,
     BackfillPolicy,
+    HookDefinition,
     PartitionsDefinition,
     TimeWindowPartitionsDefinition,
     _check as check,
     multi_asset,
-    AbstractSet,
-    HookDefinition,
 )
 from dagster._core.errors import DagsterInvariantViolationError
 from dlt.extract.source import DltSource
