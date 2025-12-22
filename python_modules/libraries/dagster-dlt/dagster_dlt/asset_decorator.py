@@ -2,9 +2,11 @@ from collections.abc import Callable, Mapping, Sequence
 from typing import Any, Optional
 
 from dagster import (
+    AbstractSet,
     AssetsDefinition,
     AssetSpec,
     BackfillPolicy,
+    HookDefinition,
     PartitionsDefinition,
     TimeWindowPartitionsDefinition,
     _check as check,
@@ -62,6 +64,7 @@ def dlt_assets(
     dagster_dlt_translator: Optional[DagsterDltTranslator] = None,
     partitions_def: Optional[PartitionsDefinition] = None,
     backfill_policy: Optional[BackfillPolicy] = None,
+    hooks: Optional[AbstractSet[HookDefinition]] = None,
     op_tags: Optional[Mapping[str, Any]] = None,
     pool: Optional[str] = None,
 ) -> Callable[[Callable[..., Any]], AssetsDefinition]:
@@ -168,6 +171,7 @@ def dlt_assets(
         partitions_def=partitions_def,
         backfill_policy=backfill_policy,
         op_tags=op_tags,
+        hooks=hooks,
         specs=specs,
         pool=pool,
     )
