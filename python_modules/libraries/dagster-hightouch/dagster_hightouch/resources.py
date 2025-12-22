@@ -1,0 +1,282 @@
+import datetime
+import logging
+import time
+from typing import Any
+from urllib.parse import urljoin
+
+import requests
+from dagster import ConfigurableResource, Failure, get_dagster_logger
+from dagster._annotations import public
+from pydantic import Field, PrivateAttr
+
+from dagster_hightouch.types import HightouchOutput
+from dagster_hightouch.utils import parse_sync_run_details
+
+HIGHTOUCH_API_BASE = "https://api.hightouch.io/api/v1/"
+DEFAULT_POLL_INTERVAL = 3
+TERMINAL_STATUSES = ["cancelled", "failed", "success", "warning", "interrupted"]
+PENDING_STATUSES = [
+    "queued",
+    "querying",
+    "processing",
+    "reporting",
+    "pending",
+]
+SUCCESS = "success"
+WARNING = "warning"
+
+
+class HightouchClient:
+    """This class exposes methods on top of the Hightouch REST API."""
+
+    def __init__(
+        self,
+        api_key: str,
+        log: logging.Logger = get_dagster_logger(),
+        request_max_retries: int = 3,
+        request_retry_delay: float = 0.25,
+    ):
+        self._log = log
+        self._api_key = api_key
+        self._request_max_retries = request_max_retries
+        self._request_retry_delay = request_retry_delay
+
+    @property
+    def api_base_url(self) -> str:
+        return HIGHTOUCH_API_BASE
+
+    def make_request(self, method: str, endpoint: str, params: dict[str, Any] | None = None):
+        """Creates and sends a request to the desired Hightouch API endpoint.
+
+        Args:
+            method (str): The http method use for this request (e.g. "GET", "POST").
+            endpoint (str): The Hightouch API endpoint to send this request to.
+            params (Optional(dict): Query parameters to pass to the API endpoint
+
+        Returns:
+            Dict[str, Any]: Parsed json data from the response to this request
+        """
+        from dagster_hightouch.version import __version__
+
+        user_agent = f"HightouchDagsterOp/{__version__}"
+        headers = {"Authorization": f"Bearer {self._api_key}", "User-Agent": user_agent}
+
+        num_retries = 0
+        while True:
+            try:
+                response = requests.request(
+                    method=method,
+                    url=urljoin(self.api_base_url, endpoint),
+                    headers=headers,
+                    params=params,
+                )
+                response.raise_for_status()
+                resp_dict = response.json()
+                return resp_dict["data"] if "data" in resp_dict else resp_dict
+            except requests.RequestException as e:
+                self._log.error("Request to Hightouch API failed: %s", e)
+                if num_retries == self._request_max_retries:
+                    break
+                num_retries += 1
+                time.sleep(self._request_retry_delay)
+
+        raise Failure("Exceeded max number of retries.")
+
+    def get_sync_run_details(self, sync_id: str, sync_request_id: str) -> list[dict[str, Any]]:
+        """Get details about a given sync run from the Hightouch API.
+
+        Args:
+            sync_id (str): The Hightouch Sync ID.
+            sync_request_id (str): The Hightouch Sync Request ID.
+
+        Returns:
+            Dict[str, Any]: Parsed json data from the response
+        """
+        params = {"runId": sync_request_id}
+        return self.make_request(method="GET", endpoint=f"syncs/{sync_id}/runs", params=params)
+
+    def get_destination_details(self, destination_id: str) -> dict[str, Any]:
+        """Get details about a destination from the Hightouch API.
+
+        Args:
+            destination_id (str): The Hightouch Destination ID
+
+        Returns:
+            Dict[str, Any]: Parsed json data from the response
+        """
+        return self.make_request(method="GET", endpoint=f"destinations/{destination_id}")
+
+    def get_sync_details(self, sync_id: str) -> dict[str, Any]:
+        """Get details about a given sync from the Hightouch API.
+
+        Args:
+            sync_id (str): The Hightouch Sync ID.
+
+        Returns:
+            Dict[str, Any]: Parsed json data from the response
+        """
+        return self.make_request(method="GET", endpoint=f"syncs/{sync_id}")
+
+    def start_sync(self, sync_id: str) -> str:
+        """Trigger a sync and initiate a sync run.
+
+        Args:
+            sync_id (str): The Hightouch Sync ID.
+
+        Returns:
+            str: The sync request ID created by the Hightouch API.
+        """
+        return self.make_request(method="POST", endpoint=f"syncs/{sync_id}/trigger")["id"]
+
+    def poll_sync(
+        self,
+        sync_id: str,
+        sync_request_id: str,
+        fail_on_warning: bool = False,
+        poll_interval: float = DEFAULT_POLL_INTERVAL,
+        poll_timeout: float | None = None,
+    ) -> tuple[dict[str, Any], dict[str, Any], dict[str, Any]]:
+        """Poll for the completion of a sync.
+
+        Args:
+            sync_id (str): The Hightouch Sync ID
+            sync_request_id (str): The Hightouch Sync Request ID to poll against.
+            fail_on_warning (bool): Whether a warning is considered a failure for this sync.
+            poll_interval (float): The time in seconds that will be waited between succcessive polls
+            poll_timeout (float): The maximum time that will be waited before this operation
+                times out.
+
+        Returns:
+            Dict[str, Any]: Parsed json output from the API
+        """
+        poll_start = datetime.datetime.now()
+        while True:
+            sync_run_details = self.get_sync_run_details(sync_id, sync_request_id)[0]
+
+            self._log.debug(sync_run_details)
+            run = parse_sync_run_details(sync_run_details)
+            self._log.info(
+                f"Polling Hightouch Sync {sync_id}. Current status: {run.status}. "
+                f"{100 * run.completion_ratio}% completed."
+            )
+
+            if run.status in TERMINAL_STATUSES:
+                self._log.info(f"Sync request status: {run.status}. Polling complete")
+                if run.error:
+                    self._log.info("Sync Request Error: %s", run.error)
+
+                if run.status == SUCCESS:
+                    break
+                if run.status == WARNING and not fail_on_warning:
+                    break
+                raise Failure(
+                    f"Sync {sync_id} for request: {sync_request_id} failed with status: "
+                    f"{run.status} and error:  {run.error}"
+                )
+            if run.status not in PENDING_STATUSES:
+                self._log.warning(
+                    "Unexpected status: %s returned for sync %s and request %s. Will try "
+                    "again, but if you see this error, please let someone at Hightouch know.",
+                    run.status,
+                    sync_id,
+                    sync_request_id,
+                )
+            if poll_timeout and datetime.datetime.now() > poll_start + datetime.timedelta(
+                seconds=poll_timeout
+            ):
+                raise Failure(
+                    f"Sync {sync_id} for request: {sync_request_id}' time out after "
+                    f"{datetime.datetime.now() - poll_start}. Last status was {run.status}."
+                )
+
+            time.sleep(poll_interval)
+        sync_details = self.get_sync_details(sync_id)
+        destination_details = self.get_destination_details(sync_details["destinationId"])
+
+        return (sync_details, sync_run_details, destination_details)
+
+    def sync_and_poll(
+        self,
+        sync_id: str,
+        fail_on_warning: bool = False,
+        poll_interval: float = DEFAULT_POLL_INTERVAL,
+        poll_timeout: float | None = None,
+    ) -> HightouchOutput:
+        """Initialize a sync run for the given sync id, and polls until it completes.
+
+        Args:
+            sync_id (str): The Hightouch Sync ID
+            sync_request_id (str): The Hightouch Sync Request ID to poll against.
+            fail_on_warning (bool): Whether a warning is considered a failure for this sync.
+            poll_interval (float): The time in seconds that will be waited between succcessive polls
+            poll_timeout (float): The maximum time that will be waited before this operation
+                times out.
+
+        Returns:
+            :py:class:`~HightouchOutput`:
+                Object containing details about the Hightouch sync run
+        """
+        sync_request_id = self.start_sync(sync_id)
+        sync_details, sync_run_details, destination_details = self.poll_sync(
+            sync_id,
+            sync_request_id,
+            fail_on_warning=fail_on_warning,
+            poll_interval=poll_interval,
+            poll_timeout=poll_timeout,
+        )
+
+        return HightouchOutput(sync_details, sync_run_details, destination_details)
+
+
+@public
+class HightouchResource(ConfigurableResource):
+    """This resource allows users to programmatically interface with the Hightouch REST API to trigger
+    syncs and monitor their progress.
+    """
+
+    api_key: str = Field(
+        ..., description="Hightouch API Key. You can find this on the Hightouch settings page"
+    )
+    request_max_retries: int = Field(
+        default=3,
+        description="The maximum times requests to Hightouch the API should be retried before failing.",
+    )
+    request_retry_delay: float = Field(
+        default=0.25,
+        description="Time (in seconds) to wait between each request retry.",
+    )
+
+    _client: HightouchClient = PrivateAttr()
+
+    def setup_for_execution(self, context) -> None:
+        self._client = HightouchClient(
+            api_key=self.api_key,
+            log=context.log or get_dagster_logger(),
+            request_max_retries=self.request_max_retries,
+            request_retry_delay=self.request_retry_delay,
+        )
+
+    def sync_and_poll(
+        self,
+        sync_id: str,
+        fail_on_warning: bool = False,
+        poll_interval: float = DEFAULT_POLL_INTERVAL,
+        poll_timeout: float | None = None,
+    ) -> HightouchOutput:
+        """Trigger a sync and poll until completion.
+
+        Args:
+            sync_id (str): The Hightouch Sync ID.
+            fail_on_warning (bool): Whether to consider warnings a failure for this sync.
+            poll_interval (float): The time in seconds that will be waited between successive polls.
+            poll_timeout (float): The maximum time that will be waited before this operation times out.
+
+        Returns:
+            HightouchOutput: Object containing details about the Hightouch sync run.
+        """
+        return self._client.sync_and_poll(
+            sync_id=sync_id,
+            fail_on_warning=fail_on_warning,
+            poll_interval=poll_interval,
+            poll_timeout=poll_timeout,
+        )
