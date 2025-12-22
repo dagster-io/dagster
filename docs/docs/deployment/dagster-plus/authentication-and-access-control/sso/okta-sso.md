@@ -41,11 +41,11 @@ To complete the steps in this guide, you'll need:
 
 For example, your organization name is `hooli` and your Dagster+ domain is `https://hooli.dagster.cloud` (or `https://hooli.eu.dagster.cloud` in the EU region). To configure this correctly, you'd enter `hooli` into the **Organization** field:
 
-```
+
 :::note
 If you have an EU Dagster+ organization, enter <org_name>.eu in the Organization. So hooli in the EU would be hooli.eu
 :::
-```
+
 
 ![Okta Subdomain Configuration](/images/dagster-plus/features/authentication-and-access-control/okta/subdomain-configuration.png)
 
