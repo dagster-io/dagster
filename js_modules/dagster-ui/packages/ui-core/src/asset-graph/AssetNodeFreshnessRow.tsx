@@ -1,6 +1,6 @@
 import {Box, Colors, Icon} from '@dagster-io/ui-components';
 
-import {AssetNodeRow} from './AssetNode2025';
+import {AssetNodeRow} from './AssetNode';
 import {labelForFacet} from './AssetNodeFacets';
 import {AssetNodeFacet} from './AssetNodeFacetsUtil';
 import {LiveDataForNode} from './Utils';

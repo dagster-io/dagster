@@ -26,7 +26,6 @@ import {AssetEdges} from './AssetEdges';
 import {AssetGraphBackgroundContextMenu} from './AssetGraphBackgroundContextMenu';
 import {AssetGraphJobSidebar} from './AssetGraphJobSidebar';
 import {AssetNode, AssetNodeContextMenuWrapper, AssetNodeMinimal} from './AssetNode';
-import {AssetNode2025} from './AssetNode2025';
 import {AssetNodeFacetSettingsButton} from './AssetNodeFacetSettingsButton';
 import {useSavedAssetNodeFacets} from './AssetNodeFacets';
 import {AssetNodeMenuProps} from './AssetNodeMenu';
@@ -79,10 +78,7 @@ import {LoadingSpinner} from '../ui/Loading';
 import {isIframe} from '../util/isIframe';
 import {AssetGraphExplorerSidebar} from './sidebar/Sidebar';
 import {AssetGraphQueryItem} from './types';
-import {WorkspaceAssetFragment} from '../workspace/WorkspaceContext/types/WorkspaceQueries.types';
 import {buildRepoPathForHuman} from '../workspace/buildRepoAddress';
-
-type AssetNode = WorkspaceAssetFragment;
 
 type Props = {
   options: GraphExplorerOptions;
@@ -196,7 +192,7 @@ const AssetGraphExplorerWithData = ({
   const [direction, setDirection] = useLayoutDirectionState();
   const [facets, setFacets] = useSavedAssetNodeFacets();
 
-  const {flagAssetNodeFacets, flagAssetGraphGroupsPerCodeLocation} = useFeatureFlags();
+  const {flagAssetGraphGroupsPerCodeLocation} = useFeatureFlags();
 
   const [expandedGroups, setExpandedGroups] = useQueryAndLocalStoragePersistedState<string[]>({
     localStorageKey: `asset-graph-open-graph-nodes-${viewType}-${explorerPath.pipelineName}`,
@@ -222,9 +218,9 @@ const AssetGraphExplorerWithData = ({
       () => ({
         direction,
         flagAssetGraphGroupsPerCodeLocation,
-        facets: flagAssetNodeFacets ? Array.from(facets) : false,
+        facets: Array.from(facets),
       }),
-      [direction, facets, flagAssetGraphGroupsPerCodeLocation, flagAssetNodeFacets],
+      [direction, facets, flagAssetGraphGroupsPerCodeLocation],
     ),
     dataLoading,
   );
@@ -492,9 +488,7 @@ const AssetGraphExplorerWithData = ({
             hideEdgesToNodesOutsideQuery={fetchOptions.hideEdgesToNodesOutsideQuery}
             setHideEdgesToNodesOutsideQuery={setHideEdgesToNodesOutsideQuery}
           />
-          {flagAssetNodeFacets ? (
-            <AssetNodeFacetSettingsButton value={facets} onChange={setFacets} />
-          ) : undefined}
+          <AssetNodeFacetSettingsButton value={facets} onChange={setFacets} />
         </>
       }
       onClick={onClickBackground}
@@ -638,10 +632,10 @@ const AssetGraphExplorerWithData = ({
                 >
                   {!graphNode ? (
                     <AssetNodeLink assetKey={{path}} />
-                  ) : scale < MINIMAL_SCALE || (flagAssetNodeFacets && facets.size === 0) ? (
+                  ) : scale < MINIMAL_SCALE || facets.size === 0 ? (
                     <AssetNodeContextMenuWrapper {...contextMenuProps}>
                       <AssetNodeMinimal
-                        facets={flagAssetNodeFacets ? facets : null}
+                        facets={facets}
                         definition={graphNode.definition}
                         selected={selectedGraphNodes.includes(graphNode)}
                         height={bounds.height}
@@ -649,20 +643,12 @@ const AssetGraphExplorerWithData = ({
                     </AssetNodeContextMenuWrapper>
                   ) : (
                     <AssetNodeContextMenuWrapper {...contextMenuProps}>
-                      {flagAssetNodeFacets ? (
-                        <AssetNode2025
-                          facets={facets}
-                          definition={graphNode.definition}
-                          selected={selectedGraphNodes.includes(graphNode)}
-                          onChangeAssetSelection={onChangeAssetSelection}
-                        />
-                      ) : (
-                        <AssetNode
-                          definition={graphNode.definition}
-                          selected={selectedGraphNodes.includes(graphNode)}
-                          onChangeAssetSelection={onChangeAssetSelection}
-                        />
-                      )}
+                      <AssetNode
+                        facets={facets}
+                        definition={graphNode.definition}
+                        selected={selectedGraphNodes.includes(graphNode)}
+                        onChangeAssetSelection={onChangeAssetSelection}
+                      />
                     </AssetNodeContextMenuWrapper>
                   )}
                 </foreignObject>

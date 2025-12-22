@@ -2,7 +2,7 @@ import {Box, Colors, ConfigTypeSchema, Icon, Spinner} from '@dagster-io/ui-compo
 import {Link} from 'react-router-dom';
 import {AddToFavoritesButton} from 'shared/asset-graph/AddToFavoritesButton.oss';
 
-import {AutomationConditionEvaluationLink} from './AssetNode2025';
+import {AutomationConditionEvaluationLink} from './AssetNode';
 import {GraphNode, displayNameForAssetKey, nodeDependsOnSelf, stepKeyForAsset} from './Utils';
 import {gql, useQuery} from '../apollo-client';
 import {SidebarAssetQuery, SidebarAssetQueryVariables} from './types/SidebarAssetInfo.types';
