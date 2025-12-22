@@ -9,6 +9,8 @@ from dagster import (
     TimeWindowPartitionsDefinition,
     _check as check,
     multi_asset,
+    AbstractSet,
+    HookDefinition,
 )
 from dagster._core.errors import DagsterInvariantViolationError
 from dlt.extract.source import DltSource
@@ -62,6 +64,7 @@ def dlt_assets(
     dagster_dlt_translator: Optional[DagsterDltTranslator] = None,
     partitions_def: Optional[PartitionsDefinition] = None,
     backfill_policy: Optional[BackfillPolicy] = None,
+    hooks: Optional[AbstractSet[HookDefinition]] = None,
     op_tags: Optional[Mapping[str, Any]] = None,
     pool: Optional[str] = None,
 ) -> Callable[[Callable[..., Any]], AssetsDefinition]:
@@ -168,6 +171,7 @@ def dlt_assets(
         partitions_def=partitions_def,
         backfill_policy=backfill_policy,
         op_tags=op_tags,
+        hooks=hooks,
         specs=specs,
         pool=pool,
     )
