@@ -43,7 +43,9 @@ For example, your organization name is `hooli` and your Dagster+ domain is `http
 
 
 :::note
-If you have an EU Dagster+ organization, enter <org_name>.eu in the Organization. So hooli in the EU would be hooli.eu
+
+If you have an EU Dagster+ organization, enter `<org_name>.eu` in the Organization field. For example, the `hooli` organization in the EU would be `hooli.eu`.
+
 :::
 
 
