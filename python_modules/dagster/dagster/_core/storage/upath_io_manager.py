@@ -383,7 +383,7 @@ class UPathIOManager(IOManager):
 
             return results_without_errors
 
-        awaited_objects = asyncio.get_event_loop().run_until_complete(collect())
+        awaited_objects = asyncio.run(collect())
 
         return {
             partition_key: awaited_object
