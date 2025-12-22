@@ -1,4 +1,4 @@
-import {Group} from '../Group';
+import {Box} from '../Box';
 import {NonIdealState} from '../NonIdealState';
 
 // eslint-disable-next-line import/no-default-export
@@ -9,7 +9,7 @@ export default {
 
 export const Default = () => {
   return (
-    <Group spacing={24} direction="column">
+    <Box flex={{direction: 'column', gap: 24, alignItems: 'flex-start'}}>
       <NonIdealState icon="star" title="This run is currently queued." />
       <NonIdealState
         icon="star"
@@ -33,12 +33,11 @@ export const Default = () => {
           </div>
         }
       />
-
       <NonIdealState
         icon="error"
         title="Query Error"
         description="This is an example error message, in reality they're probably longer than this."
       />
-    </Group>
+    </Box>
   );
 };

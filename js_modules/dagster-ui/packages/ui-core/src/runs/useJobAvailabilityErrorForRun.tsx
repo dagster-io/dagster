@@ -1,4 +1,4 @@
-import {Group, IconName} from '@dagster-io/ui-components';
+import {Box, IconName} from '@dagster-io/ui-components';
 
 import {buildRepoAddress, buildRepoPathForHuman} from '../workspace/buildRepoAddress';
 import {repoAddressAsHumanString} from '../workspace/repoAddressAsString';
@@ -60,7 +60,7 @@ export const useJobAvailabilityErrorForRun = (
       return {
         icon: 'warning',
         tooltip: (
-          <Group direction="column" spacing={4}>
+          <Box flex={{direction: 'column', gap: 4}}>
             <div>{`The original run loaded "${run.pipelineName}" from ${
               originRepoName || 'a different code location'
             }.`}</div>
@@ -69,7 +69,7 @@ export const useJobAvailabilityErrorForRun = (
                 Original definition in: <strong>{originRepoName}</strong>
               </div>
             ) : null}
-          </Group>
+          </Box>
         ),
         disabled: false,
       };
@@ -89,7 +89,7 @@ export const useJobAvailabilityErrorForRun = (
   const repoLocationForRun = run.repositoryOrigin?.repositoryLocationName;
 
   const tooltip = (
-    <Group direction="column" spacing={8}>
+    <Box flex={{direction: 'column', gap: 8}}>
       <div>{`"${run.pipelineName}" is not available in your definitions.`}</div>
       {repoForRun && repoLocationForRun ? (
         <div>{`Load definitions for ${buildRepoPathForHuman(
@@ -97,7 +97,7 @@ export const useJobAvailabilityErrorForRun = (
           repoLocationForRun,
         )} and try again.`}</div>
       ) : null}
-    </Group>
+    </Box>
   );
 
   return {

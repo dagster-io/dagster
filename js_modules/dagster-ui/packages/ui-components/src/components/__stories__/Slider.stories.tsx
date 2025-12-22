@@ -1,7 +1,7 @@
 import {useState} from 'react';
 
+import {Box} from '../Box';
 import {Colors} from '../Color';
-import {Group} from '../Group';
 import {MultiSlider, Slider} from '../Slider';
 
 // eslint-disable-next-line import/no-default-export
@@ -15,9 +15,8 @@ export const Sizes = () => {
   const [minValue, setMinValue] = useState(1);
 
   return (
-    <Group direction="column" spacing={32}>
+    <Box flex={{direction: 'column', gap: 32, alignItems: 'flex-start'}}>
       <Slider value={value} onChange={setValue} max={10} labelStepSize={2} />
-
       <Slider
         vertical
         min={0}
@@ -27,7 +26,6 @@ export const Sizes = () => {
         labelRenderer={false}
         onChange={setValue}
       />
-
       <MultiSlider
         min={0}
         max={10}
@@ -44,7 +42,6 @@ export const Sizes = () => {
       >
         <MultiSlider.Handle value={value} type="full" intentAfter="primary" />
       </MultiSlider>
-
       <MultiSlider
         min={0}
         max={10}
@@ -64,6 +61,6 @@ export const Sizes = () => {
         <MultiSlider.Handle value={minValue} type="full" intentAfter="primary" />
         <MultiSlider.Handle value={value} type="full" intentBefore="primary" />
       </MultiSlider>
-    </Group>
+    </Box>
   );
 };

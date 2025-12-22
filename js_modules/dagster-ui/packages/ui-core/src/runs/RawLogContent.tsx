@@ -1,4 +1,4 @@
-import {Colors, FontFamily, Group, Icon, Spinner} from '@dagster-io/ui-components';
+import {Box, Colors, FontFamily, Icon, Spinner} from '@dagster-io/ui-components';
 import Ansi from 'ansi-to-react';
 import * as React from 'react';
 import styled, {createGlobalStyle} from 'styled-components';
@@ -58,7 +58,7 @@ export const RawLogContent = React.memo((props: Props) => {
   }
   const warning = isTruncated ? (
     <FileWarning>
-      <Group direction="row" spacing={8} alignItems="center">
+      <Box flex={{direction: 'row', gap: 8, alignItems: 'center'}}>
         <Icon name="warning" color={Colors.accentYellow()} />
         <div>
           This log has exceeded the 5MB limit.{' '}
@@ -68,7 +68,7 @@ export const RawLogContent = React.memo((props: Props) => {
             </a>
           ) : null}
         </div>
-      </Group>
+      </Box>
     </FileWarning>
   ) : null;
 
@@ -82,10 +82,10 @@ export const RawLogContent = React.memo((props: Props) => {
               onMouseOver={cancelHideWarning}
               onMouseOut={scheduleHideWarning}
             >
-              <Group direction="row" spacing={8} alignItems="center">
+              <Box flex={{direction: 'row', gap: 8, alignItems: 'center'}}>
                 <Icon name="arrow_upward" color={Colors.accentPrimary()} />
                 Scroll to top
-              </Group>
+              </Box>
             </ScrollToTop>
           </ScrollToast>
         ) : null}

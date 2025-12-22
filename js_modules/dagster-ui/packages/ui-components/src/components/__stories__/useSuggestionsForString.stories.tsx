@@ -1,8 +1,8 @@
 import * as React from 'react';
 
+import {Box} from '../Box';
 import {ButtonLink} from '../ButtonLink';
 import {Colors} from '../Color';
-import {Group} from '../Group';
 import {useSuggestionsForString} from '../useSuggestionsForString';
 
 // eslint-disable-next-line import/no-default-export
@@ -40,7 +40,7 @@ export const Example = () => {
   );
 
   return (
-    <Group direction="column" spacing={12}>
+    <Box flex={{direction: 'column', gap: 12, alignItems: 'flex-start'}}>
       <input
         type="text"
         value={value}
@@ -68,6 +68,6 @@ export const Example = () => {
           </div>
         ))}
       </div>
-    </Group>
+    </Box>
   );
 };

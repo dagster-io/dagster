@@ -1,12 +1,4 @@
-import {
-  Box,
-  Code,
-  Group,
-  MetadataTableWIP,
-  PageHeader,
-  Subtitle1,
-  Tag,
-} from '@dagster-io/ui-components';
+import {Box, Code, MetadataTableWIP, PageHeader, Subtitle1, Tag} from '@dagster-io/ui-components';
 import {Link} from 'react-router-dom';
 import {ScheduleAlertDetails} from 'shared/schedules/ScheduleAlertDetails.oss';
 import styled from 'styled-components';
@@ -88,14 +80,14 @@ export const ScheduleDetails = (props: {
             <td>Latest tick</td>
             <td>
               {latestTick ? (
-                <Group direction="row" spacing={8} alignItems="center">
+                <Box flex={{direction: 'row', gap: 8, alignItems: 'center'}}>
                   <TimestampDisplay
                     timestamp={latestTick.timestamp}
                     timezone={executionTimezone}
                     timeFormat={TIME_FORMAT}
                   />
                   <TickStatusTag tick={latestTick} tickResultType="runs" />
-                </Group>
+                </Box>
               ) : (
                 'Schedule has never run'
               )}
@@ -159,14 +151,14 @@ export const ScheduleDetails = (props: {
             <td>Schedule</td>
             <td>
               {cronSchedule ? (
-                <Group direction="row" spacing={8}>
+                <Box flex={{direction: 'row', gap: 8}}>
                   <span>
                     {humanCronString(cronSchedule, {
                       longTimezoneName: executionTimezone || 'UTC',
                     })}
                   </span>
                   <Code>({cronSchedule})</Code>
-                </Group>
+                </Box>
               ) : (
                 <div>&mdash;</div>
               )}

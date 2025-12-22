@@ -1,11 +1,11 @@
 import {
+  Box,
   Button,
   ButtonLink,
   Colors,
   Dialog,
   DialogBody,
   DialogFooter,
-  Group,
   TextArea,
 } from '@dagster-io/ui-components';
 import {useState} from 'react';
@@ -51,7 +51,7 @@ export const EditCursorDialog = ({
       await showSharedToaster({
         intent: 'danger',
         message: (
-          <Group direction="row" spacing={8}>
+          <Box flex={{direction: 'row', gap: 8}}>
             <div>Could not set cursor value.</div>
             <ButtonLink
               color={Colors.accentReversed()}
@@ -70,7 +70,7 @@ export const EditCursorDialog = ({
             >
               View error
             </ButtonLink>
-          </Group>
+          </Box>
         ),
       });
     }

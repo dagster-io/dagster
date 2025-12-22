@@ -1,6 +1,5 @@
 import {Box} from '../Box';
 import {Colors} from '../Color';
-import {Group} from '../Group';
 import {ProgressBar} from '../ProgressBar';
 
 // eslint-disable-next-line import/no-default-export
@@ -11,15 +10,15 @@ export default {
 
 export const Sizes = () => {
   return (
-    <Group direction="column" spacing={32}>
+    <Box flex={{direction: 'column', gap: 32, alignItems: 'flex-start'}}>
       <Box padding={20} border="all">
-        <Group direction="column" spacing={16}>
+        <Box flex={{direction: 'column', gap: 16}}>
           <ProgressBar intent="primary" value={0.1} animate={true} />
           <ProgressBar intent="primary" value={0.7} />
-        </Group>
+        </Box>
       </Box>
       <Box padding={20} border="all">
-        <Group direction="column" spacing={16}>
+        <Box flex={{direction: 'column', gap: 16}}>
           <ProgressBar
             intent="primary"
             value={0.1}
@@ -27,8 +26,8 @@ export const Sizes = () => {
             fillColor={Colors.accentBlue()}
           />
           <ProgressBar intent="primary" value={0.7} fillColor={Colors.accentBlue()} />
-        </Group>
+        </Box>
       </Box>
-    </Group>
+    </Box>
   );
 };

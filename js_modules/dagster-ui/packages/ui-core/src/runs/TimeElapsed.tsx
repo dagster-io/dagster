@@ -1,4 +1,4 @@
-import {Colors, Group, Icon} from '@dagster-io/ui-components';
+import {Box, Colors, Icon} from '@dagster-io/ui-components';
 import {useCallback, useEffect, useRef, useState} from 'react';
 
 import {formatElapsedTimeWithMsec, formatElapsedTimeWithoutMsec} from '../app/Util';
@@ -46,7 +46,7 @@ export const TimeElapsed = (props: Props) => {
   const startTime = startUnix ? startUnix * 1000 : 0;
 
   return (
-    <Group direction="row" spacing={4} alignItems="center">
+    <Box flex={{direction: 'row', gap: 4, alignItems: 'center'}}>
       <Icon name="timer" color={Colors.textLight()} />
       <span style={{fontVariantNumeric: 'tabular-nums'}}>
         {startTime
@@ -55,6 +55,6 @@ export const TimeElapsed = (props: Props) => {
             : formatElapsedTimeWithoutMsec((endTime || Date.now()) - startTime)
           : '–'}
       </span>
-    </Group>
+    </Box>
   );
 };

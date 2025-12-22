@@ -1,4 +1,4 @@
-import {Group} from '@dagster-io/ui-components';
+import {Box} from '@dagster-io/ui-components';
 
 import {gql, useMutation} from '../../apollo-client';
 import {BackfillActionsBackfillFragment} from './types/BackfillFragments.types';
@@ -32,12 +32,12 @@ export function useReexecuteBackfill(
     } else if (data && data.reexecutePartitionBackfill.__typename === 'UnauthorizedError') {
       await showSharedToaster({
         message: (
-          <Group direction="column" spacing={4}>
+          <Box flex={{direction: 'column', gap: 4}}>
             <div>
               Attempted to re-execute the backfill in read-only mode. This backfill was not
               launched.
             </div>
-          </Group>
+          </Box>
         ),
         icon: 'error',
         intent: 'danger',

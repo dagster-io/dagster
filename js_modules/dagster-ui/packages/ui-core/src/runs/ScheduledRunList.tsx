@@ -1,4 +1,4 @@
-import {Alert, ButtonLink, Colors, Group} from '@dagster-io/ui-components';
+import {Alert, Box, ButtonLink, Colors} from '@dagster-io/ui-components';
 
 import {gql} from '../apollo-client';
 import {ScheduledRunsListQuery} from './types/ScheduledRunList.types';
@@ -22,7 +22,7 @@ export const ScheduledRunList = ({result}: {result: ScheduledRunsListQuery}) => 
       <Alert
         intent="warning"
         title={
-          <Group direction="row" spacing={4}>
+          <Box flex={{direction: 'row', gap: 4}}>
             <div>Could not load scheduled ticks.</div>
             <ButtonLink
               color={Colors.linkDefault()}
@@ -36,7 +36,7 @@ export const ScheduledRunList = ({result}: {result: ScheduledRunsListQuery}) => 
             >
               View error
             </ButtonLink>
-          </Group>
+          </Box>
         }
       />
     );

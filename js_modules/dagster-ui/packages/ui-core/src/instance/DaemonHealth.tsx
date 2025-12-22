@@ -1,11 +1,11 @@
 import {
+  Box,
   Button,
   ButtonLink,
   Colors,
   Dialog,
   DialogBody,
   DialogFooter,
-  Group,
   Tag,
   Trace,
 } from '@dagster-io/ui-components';
@@ -80,7 +80,7 @@ export const DaemonHealth = (props: Props) => {
             style={{maxWidth: '80%', minWidth: '70%'}}
           >
             <DialogBody>
-              <Group direction="column" spacing={12}>
+              <Box flex={{direction: 'column', gap: 12}}>
                 {errorCount === 1 ? (
                   <div>
                     <strong>{daemon.daemonType}</strong> daemon logged an error.
@@ -91,21 +91,21 @@ export const DaemonHealth = (props: Props) => {
                   </div>
                 )}
                 <Trace>
-                  <Group direction="column" spacing={12}>
+                  <Box flex={{direction: 'column', gap: 12}}>
                     <div>{errors[page]?.message}</div>
                     <div>{errors[page]?.stack}</div>
-                  </Group>
+                  </Box>
                 </Trace>
-              </Group>
+              </Box>
             </DialogBody>
             <DialogFooter
               left={
                 errorCount > 1 ? (
-                  <Group direction="row" spacing={12} alignItems="center">
+                  <Box flex={{direction: 'row', gap: 12, alignItems: 'center'}}>
                     <ButtonLink onClick={prev}>&larr; Previous</ButtonLink>
                     <span>{`${page + 1} of ${errorCount}`}</span>
                     <ButtonLink onClick={next}>Next &rarr;</ButtonLink>
-                  </Group>
+                  </Box>
                 ) : (
                   <div />
                 )
@@ -128,9 +128,9 @@ export const DaemonHealth = (props: Props) => {
   };
 
   return (
-    <Group direction="row" spacing={8} alignItems="center">
+    <Box flex={{direction: 'row', gap: 8, alignItems: 'center'}}>
       <DaemonHealthTag daemon={daemon} />
       {metadata()}
-    </Group>
+    </Box>
   );
 };
