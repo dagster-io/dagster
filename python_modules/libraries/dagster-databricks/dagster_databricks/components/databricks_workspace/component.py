@@ -1,4 +1,3 @@
-import re
 from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Annotated, Any, Optional
@@ -32,10 +31,11 @@ from dagster_databricks.components.databricks_asset_bundle.component import (
     DatabricksWorkspaceArgs,
     resolve_databricks_workspace,
 )
-from dagster_databricks.components.databricks_asset_bundle.configs import DatabricksJob
+from dagster_databricks.components.databricks_asset_bundle.configs import DatabricksBaseTask, DatabricksJob
 from dagster_databricks.components.databricks_asset_bundle.resource import DatabricksWorkspace
 from dagster_databricks.components.databricks_workspace.schema import ResolvedDatabricksFilter
 
+from dagster_databricks.utils import snake_case
 
 @whitelist_for_serdes
 @record
@@ -43,13 +43,6 @@ class DatabricksWorkspaceData:
     """Container for serialized Databricks workspace state."""
 
     jobs: list[DatabricksJob]
-
-
-def _snake_case(name: str) -> str:
-    name = re.sub(r"[^a-zA-Z0-9]+", "_", str(name))
-    name = re.sub(r"([a-z0-9])([A-Z])", r"\1_\2", name)
-    return name.lower().strip("_")
-
 
 @beta
 @dataclass
@@ -88,9 +81,6 @@ class DatabricksWorkspaceComponent(StateBackedComponent, Resolvable):
 
     async def write_state_to_path(self, state_path: Path) -> None:
         """Async implementation of state fetching."""
-        if not self.workspace:
-            return
-
         jobs = await self.workspace.fetch_jobs(self.databricks_filter)
 
         data = DatabricksWorkspaceData(jobs=jobs)
@@ -109,16 +99,14 @@ class DatabricksWorkspaceComponent(StateBackedComponent, Resolvable):
         for job in jobs_state:
             job_specs = []
             task_key_map = {}
-
             tasks = job.tasks or []
 
             for task in tasks:
-                current_task_key = getattr(task, "task_key", "unknown")
-                specs = self.get_asset_specs(job_name=job.name, task=task)
+                specs = self.get_asset_specs(task=task, job_name=job.name)
 
                 for spec in specs:
                     job_specs.append(spec)
-                    task_key_map[spec.key] = current_task_key
+                    task_key_map[spec.key] = task.task_key
 
             if job_specs:
                 asset_def = self._create_job_asset_def(job, job_specs, task_key_map)
@@ -136,9 +124,16 @@ class DatabricksWorkspaceComponent(StateBackedComponent, Resolvable):
             client = self.workspace.get_client()
             selected_keys = context.selected_asset_keys
 
-            context.log.info(f"Triggering Databricks job {job.job_id} for keys: {selected_keys}")
-            run = client.jobs.run_now(job_id=job.job_id)
+            tasks_to_run = [
+                task_key for task_key, specs in (self.assets_by_task_key or {}).items()
+                if any(spec.key in selected_keys for spec in specs)
+            ]
+            context.log.info(f"Triggering Databricks job {job.job_id} for tasks: {tasks_to_run}")
 
+            run = client.jobs.run_now(
+                job_id=job.job_id,
+                only=tasks_to_run if tasks_to_run else None
+            )
             if run.run_page_url:
                 context.log.info(f"Run URL: {run.run_page_url}")
 
@@ -156,34 +151,50 @@ class DatabricksWorkspaceComponent(StateBackedComponent, Resolvable):
 
             for spec in specs:
                 if spec.key in selected_keys:
-                    task_key = task_key_map.get(spec.key)
+                    current_task_key = next(
+                        (t_key for t_key, t_specs in (self.assets_by_task_key or {}).items() 
+                        if any(s.key == spec.key for s in t_specs)), 
+                        "unknown"
+                    )
                     yield MaterializeResult(
                         asset_key=spec.key,
                         metadata={
                             "dagster-databricks/job_id": MetadataValue.int(job.job_id),
                             "dagster-databricks/run_id": MetadataValue.int(run.run_id),
                             "dagster-databricks/run_url": MetadataValue.url(run.run_page_url or ""),
-                            "dagster-databricks/task_key": task_key,
+                            "dagster-databricks/task_key": current_task_key,
                         },
                     )
 
         return _execution_fn
 
-    def get_asset_specs(self, job_name: str, task: Any) -> list[AssetSpec]:
+    def get_asset_specs(self, task: DatabricksBaseTask, job_name: str) -> list[AssetSpec]:
         """Return a list of AssetSpec objects for the given task."""
-        task_key = getattr(task, "task_key", None)
+        task_key = task.task_key
 
-        if task_key and self.assets_by_task_key and task_key in self.assets_by_task_key:
-            return self.assets_by_task_key[task_key]
+        if self.assets_by_task_key and task_key in self.assets_by_task_key:
+            return [
+                spec.merge_attributes(
+                    kinds={"databricks"},
+                    metadata={
+                        "dagster-databricks/task_key": task_key,
+                        "dagster-databricks/job_name": job_name,
+                    },
+                )
+                for spec in self.assets_by_task_key[task_key]
+            ]
 
-        clean_job = _snake_case(job_name)
-        clean_task = _snake_case(task_key or "unknown")
+        clean_job = snake_case(job_name)
+        clean_task = snake_case(task_key)
 
         return [
             AssetSpec(
                 key=AssetKey([clean_job, clean_task]),
-                description=f"Databricks task {clean_task} in job {job_name}",
+                description=f"Databricks task {task_key} in job {job_name}",
                 kinds={"databricks"},
-                metadata={"task_key": task_key, "job_name": job_name} if task_key else {},
+                metadata={
+                    "dagster-databricks/task_key": task_key,
+                    "dagster-databricks/job_name": job_name,
+                },
             )
         ]

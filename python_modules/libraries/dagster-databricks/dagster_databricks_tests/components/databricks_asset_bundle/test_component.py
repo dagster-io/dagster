@@ -190,9 +190,9 @@ def test_load_component(
             databricks_assets = assets[0]
             assert isinstance(databricks_assets, AssetsDefinition)
 
-            test_component_defs_path_as_python_str = str(
-                os.path.relpath(sandbox.defs_folder_path, start=sandbox.project_root)
-            ).replace("/", "_")
+            test_component_defs_path_as_python_str = snake_case(
+                str(os.path.relpath(sandbox.defs_folder_path, start=sandbox.project_root))
+            )
             test_op_name = (
                 custom_op_name if custom_op_name else test_component_defs_path_as_python_str
             )

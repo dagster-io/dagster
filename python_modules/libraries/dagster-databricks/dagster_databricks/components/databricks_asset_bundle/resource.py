@@ -60,9 +60,7 @@ class DatabricksWorkspace(ConfigurableResource):
         async with aiohttp.ClientSession(headers=headers) as session:
             list_url = f"{base_url}{DATABRICKS_JOBS_API_PATH}list"
             async with session.get(list_url) as resp:
-                if resp.status != 200:
-                    text = await resp.text()
-                    raise Exception(f"Failed to fetch jobs list: {text}")
+                resp.raise_for_status()
                 data = await resp.json()
                 all_jobs_lite = data.get("jobs", [])
 
