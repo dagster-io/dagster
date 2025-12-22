@@ -714,11 +714,12 @@ LIBRARY_PACKAGES_WITH_CUSTOM_CONFIG: list[PackageSpec] = [
             for deps_factor in ["dbt17", "dbt18", "dbt19", "dbt110"]
             for command_factor in ["cloud", "core-main", "core-derived-metadata"]
         ],
+        # dbt does not support Python 3.14 yet
         # dbt-core 1.7's protobuf<5 constraint conflicts with the grpc requirement for Python 3.13+
         unsupported_python_versions=(
             lambda tox_factor: [AvailablePythonVersion.V3_13, AvailablePythonVersion.V3_14]
             if tox_factor and tox_factor.factor.startswith("dbt17")
-            else []
+            else [AvailablePythonVersion.V3_14]
         ),
     ),
     PackageSpec(
@@ -731,6 +732,8 @@ LIBRARY_PACKAGES_WITH_CUSTOM_CONFIG: list[PackageSpec] = [
             "SNOWFLAKE_USER",
             "SNOWFLAKE_BUILDKITE_PASSWORD",
         ],
+        # dbt does not support Python 3.14 yet
+        unsupported_python_versions=[AvailablePythonVersion.V3_14],
     ),
     PackageSpec(
         "python_modules/libraries/dagster-snowflake",
@@ -1011,6 +1014,8 @@ LIBRARY_PACKAGES_WITH_CUSTOM_CONFIG: list[PackageSpec] = [
             "KS_DBT_CLOUD_PROJECT_ID",
             "KS_DBT_CLOUD_ENVIRONMENT_ID",
         ],
+        # dbt does not support Python 3.14 yet
+        unsupported_python_versions=[AvailablePythonVersion.V3_14],
     ),
     PackageSpec(
         ".buildkite/dagster-buildkite",

@@ -2,6 +2,7 @@ import inspect
 from typing import TYPE_CHECKING, Any, Union, get_type_hints
 
 from dagster_airbyte.managed.generated import destinations, sources
+from dagster_airbyte.managed.types import GeneratedAirbyteDestination, GeneratedAirbyteSource
 
 if TYPE_CHECKING:
     from dagster_airbyte import AirbyteDestination, AirbyteSource
@@ -50,7 +51,9 @@ def test_destination_constructors():
         if source == "GeneratedAirbyteDestination":
             continue
 
-        if inspect.isclass(possible_class):
+        if inspect.isclass(possible_class) and issubclass(
+            possible_class, GeneratedAirbyteDestination
+        ):
             obj: AirbyteDestination = instantiate(possible_class)
 
             # Make sure that the name flows through correctly
@@ -70,7 +73,7 @@ def test_source_constructors():
         if source == "GeneratedAirbyteSource":
             continue
 
-        if inspect.isclass(possible_class):
+        if inspect.isclass(possible_class) and issubclass(possible_class, GeneratedAirbyteSource):
             obj: AirbyteSource = instantiate(possible_class)
 
             # Make sure that the name flows through correctly
