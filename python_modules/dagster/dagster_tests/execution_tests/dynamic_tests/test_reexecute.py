@@ -700,11 +700,27 @@ def test_crash() -> None:
         run_proc.start()
         time.sleep(0.1)
 
-        while run_proc.is_alive() and not instance.run_storage.get_cursor_values({"boom"}):
+        # Wait for cursor value to be set, with a timeout
+        # The cursor signals that the job has reached the point we want to test
+        max_wait = 10  # seconds
+        start = time.time()
+        while time.time() - start < max_wait:
+            cursor_values = instance.run_storage.get_cursor_values({"boom"})
+            if cursor_values:
+                break
+            if not run_proc.is_alive():
+                # Process died before setting cursor - wait a bit more in case of lag
+                time.sleep(0.5)
+                cursor_values = instance.run_storage.get_cursor_values({"boom"})
+                break
             time.sleep(0.1)
+
         run_proc.kill()
         run_proc.join()
-        run_id = instance.run_storage.get_cursor_values({"boom"})["boom"]
+
+        cursor_values = instance.run_storage.get_cursor_values({"boom"})
+        assert cursor_values, "Process exited before setting cursor value 'boom'"
+        run_id = cursor_values["boom"]
         run = instance.get_run_by_id(run_id)
         assert run
         instance.report_run_failed(run)

@@ -476,10 +476,16 @@ gcp_creds_extra_cmds = (
 EXAMPLE_PACKAGES_WITH_CUSTOM_CONFIG: list[PackageSpec] = [
     PackageSpec(
         "examples/assets_smoke_test",
+        unsupported_python_versions=[
+            AvailablePythonVersion.V3_14,  # dbt-core incompatible
+        ],
     ),
     PackageSpec(
         "examples/deploy_docker",
         pytest_extra_cmds=deploy_docker_example_extra_cmds,
+        unsupported_python_versions=[
+            AvailablePythonVersion.V3_14,  # Docker client version mismatch in 3.14 container
+        ],
     ),
     PackageSpec(
         "examples/docs_snippets",
@@ -505,6 +511,9 @@ EXAMPLE_PACKAGES_WITH_CUSTOM_CONFIG: list[PackageSpec] = [
     ),
     PackageSpec(
         "examples/with_great_expectations",
+        unsupported_python_versions=[
+            AvailablePythonVersion.V3_14,  # great_expectations incompatible
+        ],
     ),
     PackageSpec(
         "examples/with_pyspark",
@@ -525,6 +534,9 @@ EXAMPLE_PACKAGES_WITH_CUSTOM_CONFIG: list[PackageSpec] = [
     PackageSpec(
         "examples/assets_modern_data_stack",
         pytest_tox_factors=[ToxFactor("pypi")],
+        unsupported_python_versions=[
+            AvailablePythonVersion.V3_14,  # dbt-core incompatible
+        ],
     ),
     PackageSpec(
         "examples/assets_dbt_python",
@@ -546,6 +558,9 @@ EXAMPLE_PACKAGES_WITH_CUSTOM_CONFIG: list[PackageSpec] = [
     PackageSpec(
         "examples/quickstart_etl",
         pytest_tox_factors=[ToxFactor("pypi")],
+        unsupported_python_versions=[
+            AvailablePythonVersion.V3_14,  # PyO3 max supported version is 3.13
+        ],
     ),
     PackageSpec(
         "examples/use_case_repository",
@@ -711,15 +726,17 @@ LIBRARY_PACKAGES_WITH_CUSTOM_CONFIG: list[PackageSpec] = [
         "python_modules/libraries/dagster-dbt",
         pytest_tox_factors=[
             ToxFactor(f"{deps_factor}-{command_factor}", splits=3)
-            for deps_factor in ["dbt17", "dbt18", "dbt19", "dbt110"]
+            for deps_factor in ["dbt17", "dbt18", "dbt19", "dbt110", "dbt111"]
             for command_factor in ["cloud", "core-main", "core-derived-metadata"]
         ],
-        # dbt does not support Python 3.14 yet
         # dbt-core 1.7's protobuf<5 constraint conflicts with the grpc requirement for Python 3.13+
+        # dbt-core is incompatible with Python 3.14
         unsupported_python_versions=(
-            lambda tox_factor: [AvailablePythonVersion.V3_13, AvailablePythonVersion.V3_14]
-            if tox_factor and tox_factor.factor.startswith("dbt17")
-            else [AvailablePythonVersion.V3_14]
+            lambda tox_factor: (
+                [AvailablePythonVersion.V3_13, AvailablePythonVersion.V3_14]
+                if tox_factor and tox_factor.factor.startswith("dbt17")
+                else [AvailablePythonVersion.V3_14]
+            )
         ),
     ),
     PackageSpec(
@@ -732,8 +749,9 @@ LIBRARY_PACKAGES_WITH_CUSTOM_CONFIG: list[PackageSpec] = [
             "SNOWFLAKE_USER",
             "SNOWFLAKE_BUILDKITE_PASSWORD",
         ],
-        # dbt does not support Python 3.14 yet
-        unsupported_python_versions=[AvailablePythonVersion.V3_14],
+        unsupported_python_versions=[
+            AvailablePythonVersion.V3_14,  # dbt-core incompatible
+        ],
     ),
     PackageSpec(
         "python_modules/libraries/dagster-snowflake",
@@ -902,6 +920,9 @@ LIBRARY_PACKAGES_WITH_CUSTOM_CONFIG: list[PackageSpec] = [
     ),
     PackageSpec(
         "python_modules/libraries/dagster-ge",
+        unsupported_python_versions=[
+            AvailablePythonVersion.V3_14,  # great_expectations incompatible
+        ],
     ),
     PackageSpec(
         "python_modules/libraries/dagster-k8s",
@@ -927,6 +948,9 @@ LIBRARY_PACKAGES_WITH_CUSTOM_CONFIG: list[PackageSpec] = [
             ToxFactor("storage_tests", splits=2),
             ToxFactor("storage_tests_sqlalchemy_1_3", splits=2),
         ],
+        unsupported_python_versions=[
+            AvailablePythonVersion.V3_14,  # mysql-connector-python incompatible
+        ],
         always_run_if=has_storage_test_fixture_changes,
     ),
     PackageSpec(
@@ -936,6 +960,9 @@ LIBRARY_PACKAGES_WITH_CUSTOM_CONFIG: list[PackageSpec] = [
     PackageSpec(
         "python_modules/libraries/dagster-snowflake-pyspark",
         env_vars=["SNOWFLAKE_ACCOUNT", "SNOWFLAKE_BUILDKITE_PASSWORD"],
+        unsupported_python_versions=[
+            AvailablePythonVersion.V3_14,  # pyspark<4 not available
+        ],
     ),
     PackageSpec(
         "python_modules/libraries/dagster-snowflake-polars",
@@ -1014,8 +1041,9 @@ LIBRARY_PACKAGES_WITH_CUSTOM_CONFIG: list[PackageSpec] = [
             "KS_DBT_CLOUD_PROJECT_ID",
             "KS_DBT_CLOUD_ENVIRONMENT_ID",
         ],
-        # dbt does not support Python 3.14 yet
-        unsupported_python_versions=[AvailablePythonVersion.V3_14],
+        unsupported_python_versions=[
+            AvailablePythonVersion.V3_14,  # dbt-core incompatible
+        ],
     ),
     PackageSpec(
         ".buildkite/dagster-buildkite",
