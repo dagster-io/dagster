@@ -143,7 +143,7 @@ def build_bigquery_io_manager(
     """
 
     @dagster_maintained_io_manager
-    @io_manager(config_schema=BigQueryIOManager.to_config_schema())  # pyright: ignore[reportArgumentType]
+    @io_manager(config_schema=BigQueryIOManager.to_config_schema())
     def bigquery_io_manager(init_context):
         """I/O Manager for storing outputs in a BigQuery database.
 
@@ -158,16 +158,21 @@ def build_bigquery_io_manager(
         * dataset -> schema
         * table -> table
         """
+        resource_config = init_context.resource_config or {}
+        write_mode = resource_config.get("write_mode")
+
         mgr = DbIOManager(
             type_handlers=type_handlers,
-            db_client=BigQueryClient(write_mode=init_context.resource_config.get("write_mode")),
+            db_client=BigQueryClient(write_mode=write_mode),
             io_manager_name="BigQueryIOManager",
-            database=init_context.resource_config["project"],
-            schema=init_context.resource_config.get("dataset"),
+            database=resource_config.get("project"),
+            schema=resource_config.get("dataset"),
             default_load_type=default_load_type,
         )
-        if init_context.resource_config.get("gcp_credentials"):
-            with setup_gcp_creds(init_context.resource_config.get("gcp_credentials")):
+
+        gcp_creds = resource_config.get("gcp_credentials")
+        if gcp_creds:
+            with setup_gcp_creds(gcp_creds):
                 yield mgr
         else:
             yield mgr
@@ -366,8 +371,9 @@ class BigQueryClient(DbClient):
                 return
 
             # Non-partitioned tables: behavior depends on configured write_mode
-            write_mode = context.resource_config.get("write_mode")
-            if write_mode == BigQueryWriteMode.TRUNCATE.value:
+            resource_config = getattr(context, "resource_config", {}) or {}
+            write_mode = resource_config.get("write_mode")
+            if write_mode == BigQueryWriteMode.TRUNCATE.value or write_mode is None:
                 connection.query(
                     f"TRUNCATE TABLE `{table_slice.database}.{table_slice.schema}.{table_slice.table}`"
                 ).result()
@@ -401,10 +407,12 @@ class BigQueryClient(DbClient):
 
     @staticmethod
     @contextmanager
-    def connect(context, _):  # pyright: ignore[reportIncompatibleMethodOverride]
+    def connect(context, _):
+        config = context.resource_config or {}
+
         conn = bigquery.Client(
-            project=context.resource_config.get("project"),
-            location=context.resource_config.get("location"),
+            project=config.get("project"),
+            location=config.get("location"),
         )
 
         yield conn

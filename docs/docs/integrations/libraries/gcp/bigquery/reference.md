@@ -51,9 +51,9 @@ By default, the BigQuery I/O manager performs a `TRUNCATE` operation when writin
 
 You can configure the `write_mode` to handle these scenarios:
 
-* `"truncate"` (default): Truncates the table before inserting data. Schema is preserved.
-* `"replace"`: Drops the table and recreates it. This allows schema evolution.
-* `"append"`: Inserts data without deleting existing rows.
+- `"truncate"` (default): Truncates the table before inserting data. Schema is preserved.
+- `"replace"`: Drops the table and recreates it. This allows schema evolution.
+- `"append"`: Inserts data without deleting existing rows.
 
 :::note
 

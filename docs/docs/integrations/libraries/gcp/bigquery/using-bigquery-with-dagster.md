@@ -72,9 +72,9 @@ You can also specify a `location` where computation should take place.
 
 By default, the BigQuery I/O manager truncates data when writing to an existing table. You can change this behavior using the `write_mode` configuration option:
 
-* `truncate` (default): Deletes all rows in the table but keeps the schema.
-* `replace`: Drops the table and creates a new one. Useful when the schema changes.
-* `append`: Appends data to the existing table without deleting rows.
+- `truncate` (default): Deletes all rows in the table but keeps the schema.
+- `replace`: Drops the table and creates a new one. Useful when the schema changes.
+- `append`: Appends data to the existing table without deleting rows.
 
 ```python
 from dagster_gcp import BigQueryIOManager
