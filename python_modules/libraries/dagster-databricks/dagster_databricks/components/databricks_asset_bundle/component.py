@@ -34,7 +34,6 @@ from dagster_databricks.components.databricks_asset_bundle.resource import Datab
 from dagster_databricks.components.databricks_asset_bundle.scaffolder import (
     DatabricksAssetBundleScaffolder,
 )
-
 from dagster_databricks.utils import snake_case
 
 
@@ -242,8 +241,8 @@ class DatabricksAssetBundleComponent(Component, Resolvable):
 
     def build_defs(self, context: ComponentLoadContext) -> Definitions:
         component_defs_path_as_python_str = snake_case(
-        str(os.path.relpath(context.component_path.file_path, start=context.project_root))
-)
+            str(os.path.relpath(context.component_path.file_path, start=context.project_root))
+        )
 
         databricks_assets = []
         for task_key, asset_specs in self.asset_specs_by_task_key.items():

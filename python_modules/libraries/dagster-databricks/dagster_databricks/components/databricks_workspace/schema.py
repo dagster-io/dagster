@@ -29,7 +29,8 @@ def resolve_databricks_filter(context, config: DatabricksFilterConfig) -> Databr
         allowed_ids = set(config.include_jobs.job_ids)
 
         def include_job(job: DatabricksJobInfo) -> bool:
-            return job.job_id in allowed_ids
+            job_id = job.get("job_id") if isinstance(job, dict) else job.job_id
+            return job_id in allowed_ids
     else:
 
         def include_job(job: DatabricksJobInfo) -> bool:

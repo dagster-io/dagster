@@ -31,11 +31,14 @@ from dagster_databricks.components.databricks_asset_bundle.component import (
     DatabricksWorkspaceArgs,
     resolve_databricks_workspace,
 )
-from dagster_databricks.components.databricks_asset_bundle.configs import DatabricksBaseTask, DatabricksJob
+from dagster_databricks.components.databricks_asset_bundle.configs import (
+    DatabricksBaseTask,
+    DatabricksJob,
+)
 from dagster_databricks.components.databricks_asset_bundle.resource import DatabricksWorkspace
 from dagster_databricks.components.databricks_workspace.schema import ResolvedDatabricksFilter
-
 from dagster_databricks.utils import snake_case
+
 
 @whitelist_for_serdes
 @record
@@ -43,6 +46,7 @@ class DatabricksWorkspaceData:
     """Container for serialized Databricks workspace state."""
 
     jobs: list[DatabricksJob]
+
 
 @beta
 @dataclass
@@ -125,14 +129,14 @@ class DatabricksWorkspaceComponent(StateBackedComponent, Resolvable):
             selected_keys = context.selected_asset_keys
 
             tasks_to_run = [
-                task_key for task_key, specs in (self.assets_by_task_key or {}).items()
+                task_key
+                for task_key, specs in (self.assets_by_task_key or {}).items()
                 if any(spec.key in selected_keys for spec in specs)
             ]
             context.log.info(f"Triggering Databricks job {job.job_id} for tasks: {tasks_to_run}")
 
             run = client.jobs.run_now(
-                job_id=job.job_id,
-                only=tasks_to_run if tasks_to_run else None
+                job_id=job.job_id, only=tasks_to_run if tasks_to_run else None
             )
             if run.run_page_url:
                 context.log.info(f"Run URL: {run.run_page_url}")
@@ -152,9 +156,12 @@ class DatabricksWorkspaceComponent(StateBackedComponent, Resolvable):
             for spec in specs:
                 if spec.key in selected_keys:
                     current_task_key = next(
-                        (t_key for t_key, t_specs in (self.assets_by_task_key or {}).items() 
-                        if any(s.key == spec.key for s in t_specs)), 
-                        "unknown"
+                        (
+                            t_key
+                            for t_key, t_specs in (self.assets_by_task_key or {}).items()
+                            if any(s.key == spec.key for s in t_specs)
+                        ),
+                        "unknown",
                     )
                     yield MaterializeResult(
                         asset_key=spec.key,
