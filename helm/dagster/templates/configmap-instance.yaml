@@ -121,6 +121,16 @@ data:
       {{- end }}
     {{- end }}
 
+    {{- if .Values.defsStateStorage }}
+    {{- $defsStateStorageType := .Values.defsStateStorage.type }}
+    defs_state_storage:
+      {{- if eq $defsStateStorageType "BlobStorageStateStorage" }}
+        {{- include "dagsterYaml.defsStateStorage.blobStorage" . | indent 6 -}}
+      {{- else if eq $defsStateStorageType "CustomDefsStateStorage" }}
+        {{- include "dagsterYaml.defsStateStorage.custom" . | indent 6 -}}
+      {{- end }}
+    {{- end }}
+
     {{- $sensors := .Values.dagsterDaemon.sensors }}
     {{- if and (.Values.dagsterDaemon.enabled) ($sensors.useThreads) }}
     sensors:
