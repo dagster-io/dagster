@@ -1,10 +1,10 @@
 ---
-title: Database tuning
+title: Cleaning older data from your Dagster database
 sidebar_position: 500
-description: TK
+description: How to bulk delete older data from your Dagster database to reduce its size.
 ---
 
-TK - intro
+This guide covers bulk deleting older data from your Dagster database to reduce its size.
 
 :::note
 
