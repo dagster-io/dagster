@@ -406,17 +406,23 @@ class DagsterGraphQLClient:
         else:
             raise Exception(f"Unexpected query result type {query_result_type}")
 
-    def terminate_run(self, run_id: str):
+    def terminate_run(self, run_id: str, force: bool = False):
         """Terminates a pipeline run. This method it is useful when you would like to stop a pipeline run
         based on a external event.
 
         Args:
             run_id (str): The run id of the pipeline run to terminate
+            force (bool, optional): if false, run will be terminated using terminatePolicy SAFE_TERMINATE.
+                 If true, terminatePolicy is MARK_AS_CANCELED_IMMEDIATELY, Defaults to false.
         """
         check.str_param(run_id, "run_id")
 
         res_data: dict[str, dict[str, Any]] = self._execute(
-            TERMINATE_RUN_JOB_MUTATION, {"runId": run_id}
+            TERMINATE_RUN_JOB_MUTATION,
+            {
+                "runId": run_id,
+                "terminatePolicy": "MARK_AS_CANCELED_IMMEDIATELY" if force else "SAFE_TERMINATE",
+            },
         )
 
         query_result: dict[str, Any] = res_data["terminateRun"]
@@ -429,18 +435,23 @@ class DagsterGraphQLClient:
         else:
             raise DagsterGraphQLClientError(query_result_type, query_result["message"])
 
-    def terminate_runs(self, run_ids: list[str]):
+    def terminate_runs(self, run_ids: list[str], force: bool = False):
         """Terminates a list of pipeline runs. This method it is useful when you would like to stop a list of pipeline runs
         based on a external event.
 
         Args:
             run_ids (List[str]): The list run ids of the pipeline runs to terminate
+            force (bool, optional): if false, run will be terminated using terminatePolicy SAFE_TERMINATE.
+                 If true, terminatePolicy is MARK_AS_CANCELED_IMMEDIATELY, Defaults to false.
         """
         check.list_param(run_ids, "run_ids", of_type=str)
 
         res_data: dict[str, dict[str, Any]] = self._execute(
             TERMINATE_RUNS_JOB_MUTATION,
-            {"runIds": run_ids},
+            {
+                "runIds": run_ids,
+                "terminatePolicy": "MARK_AS_CANCELED_IMMEDIATELY" if force else "SAFE_TERMINATE",
+            },
         )
 
         query_result: dict[str, Any] = res_data["terminateRuns"]
