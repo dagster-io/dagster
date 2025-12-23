@@ -91,6 +91,8 @@ export type RunsFeedRootQuery = {
                 checkName: string;
                 severity: Types.AssetCheckSeverity;
                 success: boolean;
+                timestamp: number;
+                assetKey: {__typename: 'AssetKey'; path: Array<string>};
               }>;
               tags: Array<{__typename: 'PipelineTag'; key: string; value: string}>;
               assetSelection: Array<{__typename: 'AssetKey'; path: Array<string>}> | null;
@@ -104,4 +106,4 @@ export type RunsFeedRootQuery = {
       };
 };
 
-export const RunsFeedRootQueryVersion = '282e5f8bed5df756b068ef7819c587d6ace1c571ac96b78a1b25f17240acd765';
+export const RunsFeedRootQueryVersion = 'b7881e7d7362156df85d720bd3ce800957218cb5c6ffc5b81752fa7528e3d6b0';

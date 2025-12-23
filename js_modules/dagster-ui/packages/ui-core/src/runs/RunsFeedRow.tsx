@@ -15,7 +15,7 @@ import styled from 'styled-components';
 import {CreatedByTagCell} from './CreatedByTag';
 import {RunActionsMenu} from './RunActionsMenu';
 import {RunRowTags} from './RunRowTags';
-import {RunStatusTag, RunStatusTagWithStats} from './RunStatusTag';
+import {RunChecksTagWithPopover, RunStatusTag, RunStatusTagWithStats} from './RunStatusTag';
 import {RunTableTargetHeader} from './RunTableTargetHeader';
 import {DagsterTag} from './RunTag';
 import {RunTags} from './RunTags';
@@ -166,13 +166,14 @@ export const RunsFeedRow = ({
         <CreatedByTagCell tags={entry.tags || []} onAddTag={onAddTag} repoAddress={repoAddress} />
       </RowCell>
       <RowCell>
-        <div>
           {entry.__typename === 'PartitionBackfill' ? (
             <RunStatusTag status={entry.runStatus} />
           ) : (
+            <Box flex={{direction: 'row', gap: 8, alignItems: 'center'}}>
             <RunStatusTagWithStats status={entry.runStatus} runId={entry.id} />
-          )}
-        </div>
+            <RunChecksTagWithPopover evaluations={entry.assetCheckEvaluations} />
+          </Box>
+        )}
       </RowCell>
       <RowCell style={{flexDirection: 'column', gap: 4}}>
         <RunTime run={runTime} />
