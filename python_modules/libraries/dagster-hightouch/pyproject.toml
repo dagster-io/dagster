@@ -4,7 +4,7 @@ description = "Dagster library for Hightouch"
 readme = "README.md"
 requires-python = ">=3.10"
 dependencies = [
-    "dagster>=0.14",
+    "dagster>=1.8.0",
     "requests>=2.0",
 ]
 dynamic = ["version"]

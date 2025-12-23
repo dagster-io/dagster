@@ -1,30 +1,28 @@
 import os
 from collections.abc import Mapping
-from typing import Any
+from typing import Any, Optional
 
 import dagster as dg
 from dagster.components import Component, Model, Resolvable, ResolvedAssetSpec
-from dagster_dbt import get_asset_key_for_model
-from dagster_hightouch import HightouchResource
+from pydantic import Field
 
+from .resources import HightouchResource
 
-def dbt_asset_key(model_name: str) -> dg.AssetKey:
-    from dagster_open_platform.defs.dbt.assets import get_dbt_non_partitioned_models
-
-    return get_asset_key_for_model([get_dbt_non_partitioned_models()], model_name)
-
-
-class DopHightouchSyncComponent(Component, Resolvable, Model):
+class HightouchSyncComponent(Component, Resolvable, Model):
     asset: ResolvedAssetSpec
-    sync_id_env_var: str
+    sync_id: str = Field(description="The ID of the Hightouch sync, or an environment variable starting with $")
 
     @classmethod
     def get_additional_scope(cls) -> Mapping[str, Any]:
-        return {"dbt_asset_key": dbt_asset_key}
+        return {}
 
-    def build_defs(self, context) -> dg.Definitions:
+    def build_defs(self, context: dg.ComponentBuildContext) -> dg.Definitions:
         # Create a unique function name based on the asset key to avoid conflicts
         # when multiple Hightouch components are loaded
+        actual_sync_id = self.sync_id
+        if actual_sync_id.startswith("$"):
+            actual_sync_id = os.getenv(actual_sync_id[1:], "")
+
         asset_key_str = "_".join(self.asset.key.path)
         function_name = f"hightouch_sync_{asset_key_str}"
 
@@ -33,16 +31,17 @@ class DopHightouchSyncComponent(Component, Resolvable, Model):
             specs=[self.asset],
         )
         def _assets(hightouch: HightouchResource):
-            result = hightouch.sync_and_poll(os.getenv(self.sync_id_env_var, ""))
+            result = hightouch.sync_and_poll(actual_sync_id)
+
             yield dg.MaterializeResult(
                 asset_key=self.asset.key,
                 metadata={
-                    "sync_details": result.sync_details,
-                    "sync_run_details": result.sync_run_details,
-                    "destination_details": result.destination_details,
+                    "sync_details": dg.MetadataValue.json(result.sync_details),
+                    "sync_run_details": dg.MetadataValue.json(result.sync_run_details),
+                    "destination_details": dg.MetadataValue.json(result.destination_details),
                     "query_size": result.sync_run_details.get("querySize"),
                     "completion_ratio": result.sync_run_details.get("completionRatio"),
-                    "failed_rows": result.sync_run_details.get("failedRows", {}).get("addedCount"),
+                    "failed_rows": result.sync_run_details.get("failedRows", {}).get("addedCount", 0),
                 },
             )
 
