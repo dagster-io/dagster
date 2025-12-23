@@ -221,6 +221,13 @@ def scaffold_command(
 
     generate_project(dir_abspath, excludes=excludes)
     click.echo(_styled_success_statement(name, dir_abspath))
+    click.echo(
+        click.style("Next steps:", fg="green")
+        + "\n1. Navigate to your project directory:"
+        + click.style(f"\n   cd {name}", fg="blue")
+        + "\n2. Start the Dagster development server with your project:"
+        + click.style(f"\n   dagster dev --project {name}", fg="blue")
+    )
 
 
 @project_cli.command(
