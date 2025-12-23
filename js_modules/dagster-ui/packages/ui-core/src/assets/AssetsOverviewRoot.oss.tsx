@@ -1,7 +1,7 @@
 // eslint-disable-next-line no-restricted-imports
 import {BreadcrumbProps} from '@blueprintjs/core';
 import {Box} from '@dagster-io/ui-components';
-import React, {useMemo} from 'react';
+import {useMemo} from 'react';
 import {useHistory, useParams} from 'react-router-dom';
 import {observeEnabled} from 'shared/app/observeEnabled.oss';
 import {AssetGlobalLineageLink, AssetPageHeader} from 'shared/assets/AssetPageHeader.oss';

@@ -1,5 +1,5 @@
 import {Box, Button, Colors, Icon, JoinedButtons, TextInput} from '@dagster-io/ui-components';
-import React, {useLayoutEffect, useState} from 'react';
+import {useLayoutEffect, useState} from 'react';
 
 export const LineageDepthControl = ({
   value,

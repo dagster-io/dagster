@@ -98,15 +98,15 @@ const Constants = ['true', 'false', 'on', 'off', 'yes', 'no'];
 export const RegExps = {
   KEYWORD: new RegExp('\\b((' + Constants.join(')|(') + '))$', 'i'),
   DICT_COLON: /^:\s*/,
-  // eslint-disable-next-line no-useless-escape
+
   DICT_KEY: /^\s*(?:[,\[\]{}&*!|>'"%@`][^\s'":]|[^,\[\]{}#&*!|>'"%@`])[^# ,]*?(?=\s*:)/,
-  // eslint-disable-next-line no-useless-escape
+
   QUOTED_STRING: /^('([^']|\\.)*'?|"([^"\\]|\\.)*"?)/,
-  // eslint-disable-next-line no-useless-escape
+
   BLOCKSTART_PIPE_OR_ARROW: /^\s*(\||\>)\s*/,
-  // eslint-disable-next-line no-useless-escape
+
   NUMBER: /^\s*-?[0-9\.]+(?![0-9\.]+)$/,
-  // eslint-disable-next-line no-useless-escape
+
   VARIABLE: /^\s*(\&|\*)[a-z0-9\._-]+$/i,
 };
 

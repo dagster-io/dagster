@@ -63,7 +63,6 @@ export const INSTIGATION_STATE_FRAGMENT = gql`
       ...RunStatusFragment
       ...RunTimeFragment
     }
-    status
     ticks(limit: 1) {
       id
       cursor

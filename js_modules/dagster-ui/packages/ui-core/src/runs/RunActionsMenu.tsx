@@ -474,7 +474,6 @@ export const PIPELINE_ENVIRONMENT_QUERY = gql`
         pipelineName
         pipelineSnapshotId
         runConfigYaml
-        pipelineName
         parentPipelineSnapshotId
         repositoryOrigin {
           id

@@ -476,4 +476,4 @@ export type AssetCheckAutomationListQuery = {
     | null;
 };
 
-export const AssetCheckAutomationListQueryVersion = '20db85486a5118c9f4a21546f4e08677ee66dee26fde80f033e30500a5fcfe2f';
+export const AssetCheckAutomationListQueryVersion = '96ee49b9705f97bba87a7854956d527146b7152f615e7d68e9e2bcab336f0f66';

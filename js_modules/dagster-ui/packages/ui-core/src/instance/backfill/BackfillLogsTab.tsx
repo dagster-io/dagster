@@ -1,5 +1,5 @@
 import {Box, NonIdealState, Spinner} from '@dagster-io/ui-components';
-import React, {useMemo} from 'react';
+import {useMemo} from 'react';
 
 import {BackfillLogsPageQuery, BackfillLogsPageQueryVariables} from './types/BackfillLogsTab.types';
 import {BackfillDetailsBackfillFragment} from './types/useBackfillDetailsQuery.types';

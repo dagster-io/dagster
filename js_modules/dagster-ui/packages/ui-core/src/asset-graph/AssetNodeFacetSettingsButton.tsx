@@ -122,6 +122,7 @@ const ExampleLiveData: LiveDataForNodeWithStaleData = {
 
 const ExampleAutomationData: AssetAutomationFragment = {
   __typename: 'AssetNode',
+  id: '["example_asset"]',
   assetKey: {__typename: 'AssetKey', path: ['example_asset']},
   automationCondition: {
     __typename: 'AutomationCondition',
