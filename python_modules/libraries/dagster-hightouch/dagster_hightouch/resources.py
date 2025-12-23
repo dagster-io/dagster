@@ -1,7 +1,7 @@
 import datetime
 import logging
 import time
-from typing import Any
+from typing import Any, Optional
 from urllib.parse import urljoin
 
 import requests
@@ -305,11 +305,31 @@ class ConfigurableHightouchResource(ConfigurableResource):
     api_key: str
     request_max_retries: int = 3
     request_retry_delay: float = 0.25
+    fail_on_warning: bool = False
+    poll_interval: float = DEFAULT_POLL_INTERVAL
+    poll_timeout: Optional[float] = None
 
-    def sync_and_poll(self, sync_id: str) -> HightouchOutput:
+    def sync_and_poll(
+        self,
+        sync_id: str,
+        fail_on_warning: Optional[bool] = None,
+        poll_interval: Optional[float] = None,
+        poll_timeout: Optional[float] = None,
+    ) -> HightouchOutput:
         inner_resource = HightouchResource(
             api_key=self.api_key,
             request_max_retries=self.request_max_retries,
             request_retry_delay=self.request_retry_delay,
         )
-        return inner_resource.sync_and_poll(sync_id)
+        return inner_resource.sync_and_poll(
+            sync_id=sync_id,
+            fail_on_warning=fail_on_warning
+            if fail_on_warning is not None
+            else self.fail_on_warning,
+            poll_interval=poll_interval
+            if poll_interval is not None
+            else self.poll_interval,
+            poll_timeout=poll_timeout
+            if poll_timeout is not None
+            else self.poll_timeout,
+        )

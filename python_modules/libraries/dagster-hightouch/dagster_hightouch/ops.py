@@ -17,7 +17,7 @@ from .resources import DEFAULT_POLL_INTERVAL, HightouchOutput
     ),
     config_schema={
         "sync_id": Field(
-            str, is_required=True, description="The Sync ID that this op will triger."
+            str, is_required=True, description="The Sync ID that this op will trigger."
         ),
         "poll_interval": Field(
             float,

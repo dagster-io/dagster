@@ -49,12 +49,13 @@ class HightouchSyncComponent(Component, Resolvable, Model):
         return {}
 
     def build_defs(self, context: ComponentLoadContext) -> dg.Definitions:
-        # Create a unique function name based on the asset key to avoid conflicts
-        # when multiple Hightouch components are loaded
+        # Create a unique function name based on the asset key to avoid conflicts when multiple Hightouch components are loaded
         actual_sync_id = self.sync_id
         if actual_sync_id.startswith("$"):
-            actual_sync_id = os.getenv(actual_sync_id[1:], "")
-
+            env_var_name = actual_sync_id[1:]
+            actual_sync_id = os.getenv(env_var_name)
+            if not actual_sync_id:
+                raise ValueError(f"Environment variable '{env_var_name}' not found.")
         asset_key_str = "_".join(self.asset.key.path)
         function_name = f"hightouch_sync_{asset_key_str}"
 
@@ -65,11 +66,22 @@ class HightouchSyncComponent(Component, Resolvable, Model):
         def _assets(hightouch: ConfigurableHightouchResource):
             result = hightouch.sync_and_poll(actual_sync_id)
 
+            # Summing all failed rows (adds, changes, removes) for accurate reporting
+            failed_rows = result.sync_run_details.get("failedRows", {})
+            total_failed = sum(
+                failed_rows.get(k, 0)
+                for k in ["addedCount", "changedCount", "removedCount"]
+            )
+
             yield dg.MaterializeResult(
                 asset_key=self.asset.key,
                 metadata={
                     "sync_details": dg.MetadataValue.json(result.sync_details),
                     "sync_run_details": dg.MetadataValue.json(result.sync_run_details),
+                    "total_failed_rows": total_failed,
+                    "failed_adds": failed_rows.get("addedCount", 0),
+                    "failed_changes": failed_rows.get("changedCount", 0),
+                    "failed_removes": failed_rows.get("removedCount", 0),
                     "destination_details": dg.MetadataValue.json(
                         result.destination_details
                     ),
