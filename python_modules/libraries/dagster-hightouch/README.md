@@ -62,3 +62,16 @@ def ht_sfdc_job():
 # And we schedule it to run every 30 mins.
 every_30_schedule = ScheduleDefinition(job=ht_sfdc_job, cron_schedule="*/30 * * * *")
 ```
+
+### Components (Modern)
+
+You can now use Hightouch as a Dagster Component. This allows you to define syncs in YAML.
+
+```yaml
+# code/component.yaml
+type: HightouchSyncComponent
+attributes:
+  sync_id: "12345"
+  asset:
+    key: ["hightouch", "my_sync_asset"]
+```

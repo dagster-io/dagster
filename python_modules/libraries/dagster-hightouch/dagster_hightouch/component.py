@@ -3,12 +3,34 @@ from collections.abc import Mapping
 from typing import Any, Optional
 
 import dagster as dg
-from dagster.components import Component, Model, Resolvable, ResolvedAssetSpec
+from dagster.components import Component, Model, Resolvable, ResolvedAssetSpec, ComponentLoadContext
 from pydantic import Field
 
-from .resources import HightouchResource
+from .resources import ConfigurableHightouchResource
 
 class HightouchSyncComponent(Component, Resolvable, Model):
+    """
+    Represents a Hightouch sync as a Dagster asset.
+
+    This component allows you to trigger a Hightouch sync and monitor its completion
+    as part of your Dagster asset graph. When materialized, it calls the Hightouch API,
+    polls for completion, and reports metadata such as rows processed and sync status.
+
+    Attributes:
+        sync_id (str): The ID of the Hightouch sync. Can be a literal string or
+            an environment variable (e.g., "$HIGHTOUCH_SYNC_ID").
+        asset (ResolvedAssetSpec): The specification of the asset that this
+            sync produces.
+
+    Example:
+        .. code-block:: yaml
+
+            type: HightouchSyncComponent
+            attributes:
+              sync_id: "12345"
+              asset:
+                key: ["marketing", "salesforce_sync"]
+    """
     asset: ResolvedAssetSpec
     sync_id: str = Field(description="The ID of the Hightouch sync, or an environment variable starting with $")
 
@@ -16,7 +38,7 @@ class HightouchSyncComponent(Component, Resolvable, Model):
     def get_additional_scope(cls) -> Mapping[str, Any]:
         return {}
 
-    def build_defs(self, context: dg.ComponentBuildContext) -> dg.Definitions:
+    def build_defs(self, context: ComponentLoadContext) -> dg.Definitions:
         # Create a unique function name based on the asset key to avoid conflicts
         # when multiple Hightouch components are loaded
         actual_sync_id = self.sync_id
@@ -30,7 +52,7 @@ class HightouchSyncComponent(Component, Resolvable, Model):
             name=function_name,
             specs=[self.asset],
         )
-        def _assets(hightouch: HightouchResource):
+        def _assets(hightouch: ConfigurableHightouchResource):
             result = hightouch.sync_and_poll(actual_sync_id)
 
             yield dg.MaterializeResult(
