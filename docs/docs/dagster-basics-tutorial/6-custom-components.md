@@ -52,7 +52,7 @@ Next, add the interface to the `dg.Component` class. In this case, there will be
     etl_steps: list[ETL]
 ```
 
-The rest of the code will look very similar to the asset definitions you wrote earlier. The `build_defs` method constructs a `Definitions` object containing all the Dagster objects created by the component. Based on the interface defined at the class level, you will generate multiple ETL assets. The final Dagster object to include is the `resource` that the assets rely on, which can also be set with an attribute.
+The rest of the code will look very similar to the asset definitions you wrote earlier. The `build_defs` method constructs a `Definitions` object containing all the Dagster objects created by the component. Based on the interface defined at the class level, you will generate multiple ETL assets. The final Dagster object to include is the `resource` that the assets rely on, which can also be set with an attribute. To avoid a closure-over-loop-variable bug when generating assets, the implementation uses a small factory function.
 
 <CodeExample
   path="docs_snippets/docs_snippets/guides/tutorials/dagster_tutorial/src/dagster_tutorial/components/tutorial.py"
@@ -61,10 +61,6 @@ The rest of the code will look very similar to the asset definitions you wrote e
   endBefore="end_tutorial_component"
   title="src/etl_tutorial/components/tutorial.py"
 />
-
-:::caution Python closure gotcha
-When creating multiple assets in a loop, avoid capturing the loop variable directly inside the asset function. Python closures capture by reference, so without care all assets may reference the last item. The implementation above uses a small factory function (`create_asset(etl_config)`) so each generated asset closes over its own `etl_config`.
-:::
 
 Run the check again to ensure that the component code is correct:
 
