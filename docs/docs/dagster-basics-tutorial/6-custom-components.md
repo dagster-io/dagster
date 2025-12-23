@@ -62,6 +62,10 @@ The rest of the code will look very similar to the asset definitions you wrote e
   title="src/etl_tutorial/components/tutorial.py"
 />
 
+:::caution Python closure gotcha
+When creating multiple assets in a loop, avoid capturing the loop variable directly inside the asset function. Python closures capture by reference, so without care all assets may reference the last item. The implementation above uses a small factory function (`create_asset(etl_config)`) so each generated asset closes over its own `etl_config`.
+:::
+
 Run the check again to ensure that the component code is correct:
 
 <CliInvocationExample path="docs_snippets/docs_snippets/guides/tutorials/dagster_tutorial/commands/dg-check-defs.txt" />
