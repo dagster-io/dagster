@@ -4,9 +4,9 @@ sidebar_position: 300
 title: Data freshness checks
 ---
 
-import Beta from '@site/docs/partials/\_Beta.md';
+import SupersededFreshnessChecks from '@site/docs/partials/\_SupersededFreshnessChecks.md';
 
-<Beta />
+<SupersededFreshnessChecks />
 
 Freshness checks provide a way to identify data assets that are overdue for an update. For example, you can use freshness checks to identify stale assets caused by:
 
