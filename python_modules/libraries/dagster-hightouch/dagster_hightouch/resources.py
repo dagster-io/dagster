@@ -28,7 +28,12 @@ WARNING = "warning"
 
 class HightouchResource:
     """
-    this class exposes methods on top of the Hightouch REST API.
+    Client for the Hightouch REST API.
+
+    This class provides methods to interface with Hightouch endpoints,
+    primarily for triggering syncs and polling for their status.
+
+    Note: For modern Dagster pipelines, use :class:`ConfigurableHightouchResource`.
     """
 
     def __init__(
@@ -278,6 +283,17 @@ def ht_resource(context) -> HightouchResource:
 
 
 class ConfigurableHightouchResource(ConfigurableResource):
+    """
+    A resource for connecting to the Hightouch API using pythonic configuration.
+
+    This resource is the recommended way to manage Hightouch connections in
+    modern Dagster (1.0+).
+
+    Attributes:
+        api_key (str): Your Hightouch API key.
+        request_max_retries (int): Maximum number of retries for API requests. Defaults to 3.
+        request_retry_delay (float): Delay between retries in seconds. Defaults to 0.25.
+    """
     api_key: str
     request_max_retries: int = 3
     request_retry_delay: float = 0.25
