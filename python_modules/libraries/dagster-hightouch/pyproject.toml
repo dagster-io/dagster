@@ -1,25 +1,27 @@
 [project]
 name = "dagster-hightouch"
-requires-python = ">=3.10,<3.14"
-version = "1!0+dev"
+description = "Dagster library for Hightouch"
+readme = "README.md"
+requires-python = ">=3.10"
 dependencies = [
-    "dagster",
-    "requests",
-    "python-dateutil",
+    "dagster>=0.14",
+    "requests>=2.0",
+]
+dynamic = ["version"]
+
+[tool.uv]
+dev-dependencies = [
+    "pyright>=1.1.386",
+    "pytest",
+    "ruff>=0.7.2",
 ]
 
 [build-system]
-requires = ["hatchling"]
-build-backend = "hatchling.build"
+requires = ["setuptools>=42"]
+build-backend = "setuptools.build_meta"
 
-[tool.hatch.build.targets.wheel]
-force-include = { "pyproject.toml" = "pyproject.toml" }
+[tool.setuptools]
+packages = ["dagster_hightouch"]
 
-[tool.dg]
-directory_type = "library"
-
-[tool.dg.library]
-root_module = "dagster_hightouch"
-registry_modules = [
-    "dagster_hightouch.component",
-]
+[tool.setuptools.dynamic]
+version = {attr = "dagster_hightouch.__version__"}

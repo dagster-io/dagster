@@ -1,75 +1,64 @@
-# dagster-hightouch
+## dagster-hightouch
 
-A Dagster library for integrating with Hightouch, providing both legacy ops/assets API and modern Declarative Components.
+A Dagster library for triggering syncs in Hightouch.
 
-## Installation
+### Installation
 
-Install the library using pip:
+To install the library, use pip alongside your existing Dagster environment.
 
 ```bash
 pip install dagster-hightouch
 ```
 
-## Configuration
+### Configuration
 
-Configure your Hightouch API key as a resource:
+First, you'll need to specify your [Hightouch API](https://hightouch.com/docs/developer-tools/api-guide/) key as a resource.
 
 ```python
-from dagster_hightouch import HightouchResource
+# resources.py
+from dagster_hightouch.resources import ht_resource as hightouch_resource
 
-defs = Definitions(
-    resources={
-        "hightouch": HightouchResource(api_key="your-api-key"),
-    },
-    # ... other definitions
+ht_resource = hightouch_resource.configured(
+    {"api_key": "555555-4444-3333-2222-1111111111"},
 )
 ```
 
-## Usage
+### Ops
 
-### Using the HightouchSyncComponent (Declarative Components)
-
-Create a YAML configuration file for your component:
-
-```yaml
-# components/hightouch_sync.yaml
-type: dagster_hightouch.HightouchSyncComponent
-attributes:
-  asset:
-    key: ["hightouch", "my_sync"]
-    description: "Sync data to my destination"
-  sync_id_env_var: "HIGHTOUCH_SYNC_ID"
-```
-
-Then, load the component in your definitions:
+The `hightouch_sync_op` will call the Hightouch API to trigger
+a sync and monitor it until it completes.
 
 ```python
-import dagster as dg
+from dagster import ScheduleDefinition, get_dagster_logger, job
+from dagster_hightouch.ops import hightouch_sync_op
+from .resources import ht_resource
 
-defs = dg.components.load_defs("components/hightouch_sync.yaml")
-```
+# Sync IDs are set as constants. You can also use
+# the sync slug, read the documentation for other
+# options.
 
-Set the environment variable `HIGHTOUCH_SYNC_ID` to the ID of the Hightouch sync you want to trigger.
+HT_WS = "23620"
+HT_ORG = "39619"
 
-### Legacy Ops/Assets API
-
-For backward compatibility, you can use the `hightouch_sync_op`:
-
-```python
-from dagster_hightouch import hightouch_sync_op, HightouchResource
-
-@dg.job
-def my_job():
-    hightouch_sync_op.configured({"sync_id": "your-sync-id"})()
-
-defs = dg.Definitions(
-    jobs=[my_job],
-    resources={"hightouch": HightouchResource(api_key="your-api-key")},
+# We define two configured sync ops
+run_ht_sync_workspaces = hightouch_sync_op.configured(
+    {"sync_id": HT_WS}, name="hightouch_sfdc_workspaces"
 )
+run_ht_sync_orgs = hightouch_sync_op.configured(
+    {"sync_id": HT_ORG}, name="hightouch_sfdc_organizations"
+)
+
+# And create a job with the defined resources, specifying the dependencies.
+@job(
+    resource_defs={
+        "hightouch": ht_resource,
+    }
+)
+def ht_sfdc_job():
+
+    ht_orgs = run_ht_sync_orgs(start_after=ht_contacts)
+    run_ht_sync_workspaces(start_after=ht_orgs)
+
+# And we schedule it to run every 30 mins.
+every_30_schedule = ScheduleDefinition(job=ht_sfdc_job, cron_schedule="*/30 * * * *")
 ```
-
-## API Reference
-
-- `HightouchSyncComponent`: Declarative component for triggering Hightouch syncs.
-- `HightouchResource`: Resource for interacting with the Hightouch API.
-- `hightouch_sync_op`: Legacy op for triggering syncs.P
