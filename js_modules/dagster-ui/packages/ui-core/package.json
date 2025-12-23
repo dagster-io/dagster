@@ -42,6 +42,7 @@
   },
   "dependencies": {
     "@koale/useworker": "^4.0.2",
+    "@radix-ui/react-tooltip": "^1.2.8",
     "@tanstack/react-virtual": "^3.0.1",
     "@testing-library/react-hooks": "^7.0.2",
     "@vx/shape": "^0.0.192",

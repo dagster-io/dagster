@@ -550,12 +550,7 @@ export const AssetNodeMinimalWithHealth = ({
 
   return (
     <MinimalAssetNodeContainer $selected={selected} style={{paddingTop}}>
-      <TooltipStyled
-        content={displayName}
-        canShow={displayName.length > 14}
-        targetTagName="div"
-        position="top"
-      >
+      <Tooltip content={displayName} canShow={displayName.length > 14} position="top">
         <MinimalAssetNodeBox
           $selected={selected}
           $isMaterializable={isMaterializable}
@@ -573,7 +568,7 @@ export const AssetNodeMinimalWithHealth = ({
             {withMiddleTruncation(displayName, {maxLength: 18})}
           </MinimalName>
         </MinimalAssetNodeBox>
-      </TooltipStyled>
+      </Tooltip>
     </MinimalAssetNodeContainer>
   );
 };
@@ -619,12 +614,7 @@ export const AssetNodeMinimalWithoutHealth = ({
 
   return (
     <MinimalAssetNodeContainer $selected={selected} style={{paddingTop}}>
-      <TooltipStyled
-        content={displayName}
-        canShow={displayName.length > 14}
-        targetTagName="div"
-        position="top"
-      >
+      <Tooltip content={displayName} canShow={displayName.length > 14} position="top">
         <MinimalAssetNodeBox
           $selected={selected}
           $isMaterializable={isMaterializable}
@@ -642,7 +632,7 @@ export const AssetNodeMinimalWithoutHealth = ({
             {withMiddleTruncation(displayName, {maxLength: 18})}
           </MinimalName>
         </MinimalAssetNodeBox>
-      </TooltipStyled>
+      </Tooltip>
     </MinimalAssetNodeContainer>
   );
 };
@@ -858,8 +848,4 @@ export const AssetDescription = styled.div<{$color: string}>`
   text-overflow: ellipsis;
   color: ${(p) => p.$color};
   font-size: 12px;
-`;
-
-const TooltipStyled = styled(Tooltip)`
-  height: 100%;
 `;
