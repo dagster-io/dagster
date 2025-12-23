@@ -234,7 +234,7 @@ const RunChecksPopoverContent = ({
   }, [evaluations]);
 
   return (
-    <Box padding={12} flex={{direction: 'column', gap: 6}}>
+    <Box padding={12} flex={{direction: 'column', gap: 6}} style={{maxWidth: 420}}>
       <Body2>{summaryText}</Body2>
 
       <Box
@@ -246,9 +246,15 @@ const RunChecksPopoverContent = ({
         }}
       >
         {sorted.map((e) => (
-          <Box key={evaluationKey(e)} flex={{direction: 'row', alignItems: 'center', gap: 8}}>
+          <Box
+            key={evaluationKey(e)}
+            flex={{direction: 'row', alignItems: 'center', gap: 8}}
+            style={{minWidth: 0}}
+          >
             {iconForEvaluation(e)}
-            <CaptionMono style={{whiteSpace: 'normal', overflowWrap: 'anywhere'}}>
+            <CaptionMono
+              style={{flex: 1, minWidth: 0, whiteSpace: 'normal', overflowWrap: 'anywhere'}}
+            >
               {e.checkName}
             </CaptionMono>
           </Box>
