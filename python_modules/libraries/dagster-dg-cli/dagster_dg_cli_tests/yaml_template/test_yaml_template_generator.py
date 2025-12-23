@@ -14,10 +14,6 @@ from dagster_sling.components.sling_replication_collection.component import (
     SlingReplicationCollectionComponent,
 )
 
-# dbt-core doesn't support Python 3.14
-if not seven.IS_PYTHON_3_14:
-    from dagster_dbt.components.dbt_project.component import DbtProjectComponent
-
 
 class TestYamlTemplateGenerator:
     @property
@@ -150,10 +146,15 @@ class TestYamlTemplateGenerator:
             f"Generated example values do not match expected output.\n\nGenerated:\n{example_result}\n\nExpected:\n{expected_example}"
         )
 
-    @pytest.mark.skipif(seven.IS_PYTHON_3_14, reason="dbt-core doesn't support Python 3.14")
     def test_dbt_project_component_template(self):
         """Test generation of DbtProjectComponent template using actual component class."""
         # Get schema from the actual component class
+        # dbt-core doesn't support Python 3.14
+        if seven.IS_PYTHON_3_14:
+            pytest.skip("dbt-core doesn't support Python 3.14")
+
+        from dagster_dbt.components.dbt_project.component import DbtProjectComponent
+
         schema = self.get_component_schema(DbtProjectComponent)
 
         # Test schema generation
