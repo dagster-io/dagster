@@ -2,15 +2,103 @@ from collections import defaultdict
 from collections.abc import Iterable, Mapping, Sequence
 from typing import Any, Optional
 
+from dagster_shared.record import record
+
 from dagster._core.definitions.assets.definition.asset_spec import (
     SYSTEM_METADATA_KEY_AUTO_CREATED_STUB_ASSET,
     AssetSpec,
 )
 from dagster._core.definitions.assets.definition.assets_definition import AssetsDefinition
 from dagster._core.definitions.events import AssetKey
-from dagster._core.definitions.metadata.metadata_set import TableMetadataSet
+from dagster._core.definitions.metadata.metadata_set import StorageMetadataSet
 from dagster._core.errors import DagsterInvalidDefinitionError
 from dagster._utils.warnings import beta_warning
+
+
+@record
+class StorageMatch:
+    """A potential match for storage-based dependency resolution."""
+
+    storage_kind: Optional[str]
+    storage_metadata: Optional[dict[str, Any]]
+    asset_key: AssetKey
+
+    def matches(self, dep_storage: StorageMetadataSet) -> bool:
+        """Check if this match is compatible with the given dependency storage metadata.
+
+        A match is compatible if all non-None fields in dep_storage match this instance.
+        Fields that are None in dep_storage are not considered (they don't constrain the match).
+        """
+        if dep_storage.storage_kind is not None and self.storage_kind != dep_storage.storage_kind:
+            return False
+        if (
+            dep_storage.storage_metadata is not None
+            and self.storage_metadata != dep_storage.storage_metadata
+        ):
+            return False
+        return True
+
+
+def build_storage_address_index(
+    specs: Iterable[AssetSpec],
+) -> dict[str, list[StorageMatch]]:
+    """Build a mapping from storage_address to list of potential matches.
+
+    Each match includes the storage_kind, storage_metadata, and asset key, allowing
+    for disambiguation when multiple assets share the same storage_address.
+    """
+    index: dict[str, list[StorageMatch]] = defaultdict(list)
+    for spec in specs:
+        storage = StorageMetadataSet.extract(spec.metadata)
+        if storage.storage_address is not None:
+            index[storage.storage_address].append(
+                StorageMatch(
+                    storage_kind=storage.storage_kind,
+                    storage_metadata=storage.storage_metadata,
+                    asset_key=spec.key,
+                )
+            )
+    return index
+
+
+def resolve_storage_match(
+    dep_storage: StorageMetadataSet,
+    index: dict[str, list[StorageMatch]],
+    dep_key: AssetKey,
+    spec_key: AssetKey,
+) -> Optional[AssetKey]:
+    """Resolve a dependency's storage metadata to an upstream asset key.
+
+    Matching logic:
+    - Match primarily on storage_address
+    - Filter candidates using storage_kind and storage_metadata when provided
+    - If exactly one match remains, return it
+    - If multiple matches remain, raise an ambiguity error
+    """
+    if dep_storage.storage_address is None:
+        return None
+
+    candidates = index.get(dep_storage.storage_address, [])
+    if not candidates:
+        return None
+
+    # Filter candidates using storage_kind and storage_metadata when provided
+    matches = [m for m in candidates if m.matches(dep_storage)]
+
+    if len(matches) == 1:
+        return matches[0].asset_key
+
+    if len(matches) == 0:
+        # No matches after filtering - storage_kind or storage_metadata didn't match any candidate
+        return None
+
+    # Ambiguous - multiple matches remain
+    raise DagsterInvalidDefinitionError(
+        f'Multiple upstream assets found with storage address "{dep_storage.storage_address}": '
+        f"{[m.asset_key for m in matches]}. "
+        f"Specify storage_kind and/or storage_metadata on the dependency to disambiguate. "
+        f"Unable to resolve dependency {dep_key.to_string()} for asset {spec_key.to_string()}."
+    )
 
 
 def resolve_similar_asset_names(
@@ -117,12 +205,8 @@ def resolve_assets_def_deps(assets_defs: list[AssetsDefinition]) -> list[AssetsD
         if spec.group_name is not None:
             keys_by_group_and_name[(spec.group_name, spec.key.path[-1])].append(spec.key)
 
-    # build mapping from table name to asset keys
-    keys_by_table_name: dict[Optional[str], list[AssetKey]] = defaultdict(list)
-    for spec in specs:
-        table_name = TableMetadataSet.extract(spec.metadata).table_name
-        if table_name is not None:
-            keys_by_table_name[table_name].append(spec.key)
+    # build mapping from storage address to potential matches
+    storage_address_index = build_storage_address_index(specs)
 
     # analyze each assets definition for unresolved dependencies and attempt to resolve them
     warned = False
@@ -137,7 +221,7 @@ def resolve_assets_def_deps(assets_defs: list[AssetsDefinition]) -> list[AssetsD
 
                 input_name = assets_def.input_names_by_node_key.get(dep.asset_key)
                 input_def = assets_def.node_def.input_def_named(input_name) if input_name else None
-                table_name = TableMetadataSet.extract(dep.metadata).table_name
+                dep_storage = StorageMetadataSet.extract(dep.metadata)
 
                 # attempt to match by name and group
                 matching_asset_keys = keys_by_group_and_name[
@@ -163,20 +247,17 @@ def resolve_assets_def_deps(assets_defs: list[AssetsDefinition]) -> list[AssetsD
                         warned = True
                     continue
 
-                # attempt to match by table name
-                matching_asset_keys = keys_by_table_name[table_name]
-                if len(matching_asset_keys) > 0:
-                    if len(matching_asset_keys) > 1:
-                        raise DagsterInvalidDefinitionError(
-                            f'Multiple upstream assets found with table name "{table_name}": {matching_asset_keys}. '
-                            f"Unable to resolve dependency {dep.asset_key.to_string()} for asset {spec.key.to_string()}."
-                        )
-                    replacements[dep.asset_key] = matching_asset_keys[0]
+                # attempt to match by storage address
+                resolved_key = resolve_storage_match(
+                    dep_storage, storage_address_index, dep.asset_key, spec.key
+                )
+                if resolved_key is not None:
+                    replacements[dep.asset_key] = resolved_key
                     if not warned:
                         beta_warning(
                             f"Asset {spec.key.to_string()}'s dependency"
                             f" '{input_name or dep.asset_key.to_string()}' was resolved to upstream asset"
-                            f" {matching_asset_keys[0].to_string()}, because the table name matches. This is a beta functionality that may change in a"
+                            f" {resolved_key.to_string()}, because the storage address matches. This is a beta functionality that may change in a"
                             " future release"
                         )
                         warned = True
