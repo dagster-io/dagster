@@ -85,11 +85,14 @@ def check_yaml(
             continue
 
         defs_yaml_path = component_dir / "defs.yaml"
+        defs_yml_path = component_dir / "defs.yml"
         component_yaml_path = component_dir / "component.yaml"
 
         yaml_path = (
             defs_yaml_path
             if defs_yaml_path.exists()
+            else defs_yml_path
+            if defs_yml_path.exists()
             else component_yaml_path
             if component_yaml_path.exists()
             else None
