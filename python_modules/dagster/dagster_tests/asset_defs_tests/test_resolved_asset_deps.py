@@ -1,6 +1,6 @@
 import dagster as dg
 import pytest
-from dagster._core.definitions.metadata.metadata_set import TableMetadataSet
+from dagster._core.definitions.metadata.metadata_set import StorageMetadataSet, TableMetadataSet
 from dagster._core.definitions.resolved_asset_deps import resolve_assets_def_deps
 from dagster._core.errors import DagsterInvalidDefinitionError
 
@@ -206,3 +206,72 @@ def test_table_name_match_chain():
         deps = list(spec.deps)
         assert len(deps) == 1
         assert deps[0].asset_key == dg.AssetKey(["second"])
+
+
+def test_storage_address_match():
+    @dg.asset(
+        key=dg.AssetKey(["foo", "bar", "baz"]),
+        metadata={**StorageMetadataSet(storage_address="foo.bar.baz")},
+    )
+    def asset1(): ...
+
+    @dg.asset(
+        deps=[dg.AssetDep("blah", metadata={**StorageMetadataSet(storage_address="foo.bar.baz")})],
+    )
+    def asset2(): ...
+
+    resolved_assets = resolve_assets_def_deps([asset1, asset2])
+    spec = next(iter(resolved_assets[1].specs))
+    assert next(iter(spec.deps)).asset_key == dg.AssetKey(["foo", "bar", "baz"])
+
+
+def test_storage_address_disambiguated_by_kind():
+    @dg.asset(
+        key=dg.AssetKey(["snowflake_asset"]),
+        metadata={**StorageMetadataSet(storage_address="db.table", storage_kind="snowflake")},
+    )
+    def snowflake_asset(): ...
+
+    @dg.asset(
+        key=dg.AssetKey(["bigquery_asset"]),
+        metadata={**StorageMetadataSet(storage_address="db.table", storage_kind="bigquery")},
+    )
+    def bigquery_asset(): ...
+
+    @dg.asset(
+        deps=[
+            dg.AssetDep(
+                "x",
+                metadata={
+                    **StorageMetadataSet(storage_address="db.table", storage_kind="snowflake")
+                },
+            )
+        ],
+    )
+    def downstream(): ...
+
+    resolved_assets = resolve_assets_def_deps([snowflake_asset, bigquery_asset, downstream])
+    spec = next(iter(resolved_assets[2].specs))
+    assert next(iter(spec.deps)).asset_key == dg.AssetKey(["snowflake_asset"])
+
+
+def test_storage_address_ambiguous_raises_error():
+    @dg.asset(
+        key=dg.AssetKey(["asset1"]),
+        metadata={**StorageMetadataSet(storage_address="db.table", storage_kind="snowflake")},
+    )
+    def asset1(): ...
+
+    @dg.asset(
+        key=dg.AssetKey(["asset2"]),
+        metadata={**StorageMetadataSet(storage_address="db.table", storage_kind="bigquery")},
+    )
+    def asset2(): ...
+
+    @dg.asset(
+        deps=[dg.AssetDep("x", metadata={**StorageMetadataSet(storage_address="db.table")})],
+    )
+    def downstream(): ...
+
+    with pytest.raises(DagsterInvalidDefinitionError, match="Multiple upstream assets found"):
+        resolve_assets_def_deps([asset1, asset2, downstream])
