@@ -51,13 +51,13 @@ By default, asset keys are generated from the task name. You can override the ke
 type: dagster_databricks.DatabricksWorkspaceComponent
 attributes:
   workspace:
-    host: "{{ env.DATABRICKS_HOST }}"
-    token: "{{ env.DATABRICKS_TOKEN }}"
+    host: '{{ env.DATABRICKS_HOST }}'
+    token: '{{ env.DATABRICKS_TOKEN }}'
   assets_by_task_key:
     ingest_data_task:
-      - key: "clean_ingestion"
-        group: "etl_pipeline"
-        description: "Ingests data from S3 to Delta Lake"
+      - key: 'clean_ingestion'
+        group: 'etl_pipeline'
+        description: 'Ingests data from S3 to Delta Lake'
 ```
 
 Legacy Resources
