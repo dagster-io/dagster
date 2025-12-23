@@ -145,14 +145,7 @@ export const LaunchButtonDropdown = ({
         content={
           <Menu>
             {options.map((option, idx) => (
-              <Tooltip
-                key={idx}
-                hoverOpenDelay={300}
-                position="left"
-                openOnTargetFocus={false}
-                targetTagName="div"
-                content={option.tooltip || ''}
-              >
+              <Tooltip key={idx} position="left" content={option.tooltip || ''}>
                 <LaunchMenuItem
                   text={option.title}
                   disabled={option.disabled}
@@ -220,13 +213,7 @@ const ButtonWithConfiguration = ({
   };
 
   return (
-    <Tooltip
-      position="left"
-      openOnTargetFocus={false}
-      targetTagName="div"
-      canShow={!!tooltip}
-      content={tooltip || ''}
-    >
+    <Tooltip position="left" canShow={!!tooltip} content={tooltip || ''}>
       <ButtonContainer
         role="button"
         intent="primary"

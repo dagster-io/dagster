@@ -161,7 +161,7 @@ const ReloadButton = ({repoAddress}: {repoAddress: RepoAddress}) => {
         };
 
         return (
-          <Tooltip placement="right" content={tooltipContent()} useDisabledButtonTooltipFix>
+          <Tooltip placement="right" content={tooltipContent()}>
             <ReloadButtonInner disabled={!hasReloadPermission} onClick={tryReload}>
               {reloading ? (
                 <Spinner purpose="body-text" />

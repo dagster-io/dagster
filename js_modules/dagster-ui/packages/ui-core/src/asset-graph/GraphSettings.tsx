@@ -378,10 +378,7 @@ export const ToggleShowStubAssetsMenuItem = () => {
         <Box flex={{direction: 'row', gap: 4, alignItems: 'center'}}>
           <Body>{showStubAssets ? 'Hide' : 'Show'} stub assets </Body>
           <div style={{marginLeft: 8}}>
-            <Tooltip
-              content="Stub assets are placeholder assets that Dagster automatically creates to represent dependencies that aren't defined in your current code location. "
-              targetTagName="div"
-            >
+            <Tooltip content="Stub assets are placeholder assets that Dagster automatically creates to represent dependencies that aren't defined in your current code location. ">
               <Icon name="info" />
             </Tooltip>
           </div>

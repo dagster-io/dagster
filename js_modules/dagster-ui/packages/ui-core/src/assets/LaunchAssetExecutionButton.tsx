@@ -276,7 +276,7 @@ export const LaunchAssetExecutionButton = ({
   ) {
     // If all options are disabled, just show the button with no dropdown.
     return (
-      <Tooltip content={firstOption.disabledReason} position="bottom-right">
+      <Tooltip content={firstOption.disabledReason} placement="bottom-end">
         <Button
           intent={primary ? 'primary' : undefined}
           icon={firstOption.icon}
@@ -307,7 +307,6 @@ export const LaunchAssetExecutionButton = ({
               : 'Shift+click to add configuration'
           }
           placement="left"
-          useDisabledButtonTooltipFix
         >
           {iconOnly ? (
             <UnstyledButton
@@ -351,7 +350,6 @@ export const LaunchAssetExecutionButton = ({
                 <Tooltip
                   canShow={!!secondOption.disabledReason}
                   content={secondOption.disabledReason || ''}
-                  useDisabledButtonTooltipFix
                   position="left"
                 >
                   <MenuItem

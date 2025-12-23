@@ -121,14 +121,17 @@ describe('LaunchAssetExecutionButton', () => {
     });
 
     it('should be disabled if the selection is empty', async () => {
+      const user = userEvent.setup();
       renderButton({
         scope: {selected: []},
       });
       const button = await screen.findByTestId('materialize-button');
       expect(button).toBeDisabled();
 
-      userEvent.hover(button);
-      expect(await screen.findByText('Select one or more assets to materialize')).toBeDefined();
+      await user.hover(button);
+      expect(
+        await screen.findByRole('tooltip', {name: /Select one or more assets to materialize/i}),
+      ).toBeVisible();
     });
   });
 
@@ -179,14 +182,17 @@ describe('LaunchAssetExecutionButton', () => {
     });
 
     it('should be disabled if the entire selection is non-executable assets', async () => {
+      const user = userEvent.setup();
       renderButton({
         scope: {selected: [UNPARTITIONED_NON_EXECUTABLE_ASSET]},
       });
       const button = await screen.findByTestId('materialize-button');
       expect(button).toBeDisabled();
 
-      userEvent.hover(button);
-      expect(await screen.findByText('External assets cannot be materialized')).toBeDefined();
+      await user.hover(button);
+      expect(
+        await screen.findByRole('tooltip', {name: /External assets cannot be materialized/i}),
+      ).toBeVisible();
     });
   });
 
@@ -263,16 +269,19 @@ describe('LaunchAssetExecutionButton', () => {
 
     describe('permissions', () => {
       it('should be disabled if you do not have permission to execute assets', async () => {
+        const user = userEvent.setup();
         renderButton({
           scope: {all: [{...UNPARTITIONED_ASSET, hasMaterializePermission: false}]},
         });
         const button = await screen.findByTestId('materialize-button');
         expect(button).toBeDisabled();
 
-        userEvent.hover(button);
+        await user.hover(button);
         expect(
-          await screen.findByText('You do not have permission to materialize assets'),
-        ).toBeDefined();
+          await screen.findByRole('tooltip', {
+            name: /You do not have permission to materialize assets/i,
+          }),
+        ).toBeVisible();
       });
     });
 

@@ -162,7 +162,6 @@ export const ReloadButton = ({location}: {location: string}) => {
             <Tooltip
               content={hasReloadPermission ? '' : NO_RELOAD_PERMISSION_TEXT}
               canShow={!hasReloadPermission}
-              useDisabledButtonTooltipFix
             >
               <Button
                 icon={<Icon name="code_location_reload" />}
