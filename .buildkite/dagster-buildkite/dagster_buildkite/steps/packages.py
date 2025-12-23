@@ -690,24 +690,34 @@ LIBRARY_PACKAGES_WITH_CUSTOM_CONFIG: list[PackageSpec] = [
             ToxFactor("gql_v3"),
             ToxFactor("gql_v3_5"),
         ],
-        unsupported_python_versions=(
-            lambda tox_factor: (
+        unsupported_python_versions=lambda tox_factor: (
+            # test suites particularly likely to crash and/or hang
+            # due to https://github.com/grpc/grpc/issues/31885
+            (
                 [AvailablePythonVersion.V3_11]
-                if (
-                    tox_factor
-                    and tox_factor.factor
-                    in {
-                        # test suites particularly likely to crash and/or hang
-                        # due to https://github.com/grpc/grpc/issues/31885
-                        "sqlite_instance_managed_grpc_env",
-                        "sqlite_instance_deployed_grpc_env",
-                        "sqlite_instance_code_server_cli_grpc_env",
-                        "sqlite_instance_multi_location",
-                        "postgres-instance_multi_location",
-                        "postgres-instance_managed_grpc_env",
-                        "postgres-instance_deployed_grpc_env",
-                    }
-                )
+                if tox_factor
+                and tox_factor.factor
+                in {
+                    "sqlite_instance_managed_grpc_env",
+                    "sqlite_instance_deployed_grpc_env",
+                    "sqlite_instance_code_server_cli_grpc_env",
+                    "sqlite_instance_multi_location",
+                    "postgres-instance_multi_location",
+                    "postgres-instance_managed_grpc_env",
+                }
+                else []
+            )
+            # postgres grpc tests hit "too many clients" on 3.14,
+            # likely due to gRPC subprocess connection cleanup issues
+            + (
+                [AvailablePythonVersion.V3_14]
+                if tox_factor
+                and tox_factor.factor
+                in {
+                    "postgres-instance_deployed_grpc_env",
+                    "postgres-instance_managed_grpc_env",
+                    "postgres-instance_multi_location",
+                }
                 else []
             )
         ),
@@ -812,6 +822,14 @@ LIBRARY_PACKAGES_WITH_CUSTOM_CONFIG: list[PackageSpec] = [
         ],
         env_vars=["SHELL"],
         always_run_if=has_dg_or_component_integration_changes,
+        # general tests depend on dagster-dbt which does not support Python 3.14
+        unsupported_python_versions=(
+            lambda tox_factor: (
+                [AvailablePythonVersion.V3_14]
+                if (tox_factor and tox_factor.factor == "general")
+                else []
+            )
+        ),
     ),
     PackageSpec(
         "python_modules/libraries/dagster-dg-cli",
@@ -917,6 +935,8 @@ LIBRARY_PACKAGES_WITH_CUSTOM_CONFIG: list[PackageSpec] = [
             "GCP_PROJECT_ID",
         ],
         pytest_extra_cmds=gcp_creds_extra_cmds,
+        # spark-bigquery connector not yet compatible with Spark 4.x (required for PySpark on 3.14)
+        unsupported_python_versions=[AvailablePythonVersion.V3_14],
     ),
     PackageSpec(
         "python_modules/libraries/dagster-ge",

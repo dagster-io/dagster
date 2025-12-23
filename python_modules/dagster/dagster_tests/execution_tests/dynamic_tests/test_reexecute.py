@@ -6,6 +6,7 @@ import pytest
 from dagster import AssetSelection, OpExecutionContext, ReexecutionOptions, in_process_executor
 from dagster._core.definitions.assets.graph.asset_graph import AssetGraph
 from dagster._core.instance import DagsterInstance
+from dagster_shared.seven import IS_PYTHON_3_14
 
 
 @dg.op
@@ -692,6 +693,7 @@ def _execute_crashy_job():
     dg.execute_job(dg.reconstructable(crashy_job), instance=DagsterInstance.get())
 
 
+@pytest.mark.skipif(IS_PYTHON_3_14, reason="multiprocessing.Process behaves differently on 3.14")
 def test_crash() -> None:
     with dg.instance_for_test() as instance:
         run_proc = Process(
