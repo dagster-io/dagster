@@ -6,7 +6,14 @@ from urllib.parse import urljoin
 
 import requests
 
-from dagster import Failure, Field, StringSource, get_dagster_logger, resource, ConfigurableResource
+from dagster import (
+    Failure,
+    Field,
+    StringSource,
+    get_dagster_logger,
+    resource,
+    ConfigurableResource,
+)
 
 import dagster_hightouch
 from . import utils
@@ -294,6 +301,7 @@ class ConfigurableHightouchResource(ConfigurableResource):
         request_max_retries (int): Maximum number of retries for API requests. Defaults to 3.
         request_retry_delay (float): Delay between retries in seconds. Defaults to 0.25.
     """
+
     api_key: str
     request_max_retries: int = 3
     request_retry_delay: float = 0.25
@@ -302,7 +310,6 @@ class ConfigurableHightouchResource(ConfigurableResource):
         inner_resource = HightouchResource(
             api_key=self.api_key,
             request_max_retries=self.request_max_retries,
-            request_retry_delay=self.request_retry_delay
+            request_retry_delay=self.request_retry_delay,
         )
         return inner_resource.sync_and_poll(sync_id)
-

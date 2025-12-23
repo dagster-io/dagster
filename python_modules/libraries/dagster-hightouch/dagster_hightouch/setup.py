@@ -5,7 +5,9 @@ from setuptools import find_packages, setup
 
 def get_version() -> str:
     version: dict[str, str] = {}
-    with open(Path(__file__).parent / "dagster_hightouch/version.py", encoding="utf8") as fp:
+    with open(
+        Path(__file__).parent / "dagster_hightouch/version.py", encoding="utf8"
+    ) as fp:
         exec(fp.read(), version)
 
     return version["__version__"]
