@@ -1,4 +1,3 @@
-/* eslint-disable */
 const {RuleTester} = require('@typescript-eslint/rule-tester');
 
 const ruleTester = new RuleTester();

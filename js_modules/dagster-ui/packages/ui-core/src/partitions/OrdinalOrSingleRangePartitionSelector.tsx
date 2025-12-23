@@ -1,4 +1,3 @@
-// eslint-disable-next-line no-restricted-imports
 import {Box, ButtonGroup, Icon} from '@dagster-io/ui-components';
 import {useState} from 'react';
 

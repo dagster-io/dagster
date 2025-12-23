@@ -55,6 +55,7 @@ function init() {
           if (!result[key]) {
             result[key] = {
               __typename: 'Asset',
+              id: key,
               key: {
                 __typename: 'AssetKey',
                 ...tokenToAssetKey(key),
@@ -260,6 +261,7 @@ export const ASSETS_HEALTH_INFO_QUERY = gql`
   }
 
   fragment AssetHealthFragment on Asset {
+    id
     key {
       path
     }
@@ -336,6 +338,7 @@ export function __resetForJest() {
 function buildEmptyAssetHealthFragment(key: string): AssetHealthFragment {
   return {
     __typename: 'Asset',
+    id: key,
     key: {
       __typename: 'AssetKey',
       ...tokenToAssetKey(key),

@@ -1,6 +1,6 @@
 import {Box, Caption, Colors, MiddleTruncate, NonIdealState, Tag} from '@dagster-io/ui-components';
 import {useVirtualizer} from '@tanstack/react-virtual';
-import React, {useRef} from 'react';
+import {useRef} from 'react';
 import {Link} from 'react-router-dom';
 import styled from 'styled-components';
 

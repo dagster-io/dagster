@@ -73,6 +73,7 @@ describe('AssetHealthDataProvider integration tests', () => {
         // Asset without definition should get an empty fragment
         expect(resultWithoutDef.current.liveData).toEqual({
           __typename: 'Asset',
+          id: tokenForAssetKey(assetWithoutDefinition),
           key: expect.objectContaining({
             __typename: 'AssetKey',
             path: ['asset_without_def'],
@@ -145,6 +146,7 @@ describe('AssetHealthDataProvider integration tests', () => {
         // Assets without definitions should have empty fragments
         expect(result.current.liveDataByNode[tokenForAssetKey(assetWithoutDef1)]).toEqual({
           __typename: 'Asset',
+          id: tokenForAssetKey(assetWithoutDef1),
           key: expect.objectContaining({
             __typename: 'AssetKey',
             path: ['asset3'],
@@ -157,6 +159,7 @@ describe('AssetHealthDataProvider integration tests', () => {
 
         expect(result.current.liveDataByNode[tokenForAssetKey(assetWithoutDef2)]).toEqual({
           __typename: 'Asset',
+          id: tokenForAssetKey(assetWithoutDef2),
           key: expect.objectContaining({
             __typename: 'AssetKey',
             path: ['asset4'],
@@ -197,6 +200,7 @@ describe('AssetHealthDataProvider integration tests', () => {
 
         expect(result.current.liveDataByNode[tokenForAssetKey(asset1)]).toEqual({
           __typename: 'Asset',
+          id: tokenForAssetKey(asset1),
           key: expect.objectContaining({
             __typename: 'AssetKey',
             path: ['asset1'],
@@ -209,6 +213,7 @@ describe('AssetHealthDataProvider integration tests', () => {
 
         expect(result.current.liveDataByNode[tokenForAssetKey(asset2)]).toEqual({
           __typename: 'Asset',
+          id: tokenForAssetKey(asset2),
           key: expect.objectContaining({
             __typename: 'AssetKey',
             path: ['asset2'],
@@ -316,6 +321,7 @@ describe('AssetHealthDataProvider integration tests', () => {
       await waitFor(() => {
         expect(result.current.liveData).toEqual({
           __typename: 'Asset',
+          id: tokenForAssetKey(complexAsset),
           key: expect.objectContaining({
             __typename: 'AssetKey',
             path: ['namespace', 'deeply', 'nested', 'asset'],
@@ -345,6 +351,7 @@ describe('AssetHealthDataProvider integration tests', () => {
       await waitFor(() => {
         expect(result.current.liveData).toEqual({
           __typename: 'Asset',
+          id: tokenForAssetKey(specialAsset),
           key: expect.objectContaining({
             __typename: 'AssetKey',
             path: ['asset-with-dashes', 'asset_with_underscores'],

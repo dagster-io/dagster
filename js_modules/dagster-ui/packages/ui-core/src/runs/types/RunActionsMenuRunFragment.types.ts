@@ -23,6 +23,7 @@ export type RunActionsMenuRunFragment = {
   tags: Array<{__typename: 'PipelineTag'; key: string; value: string}>;
   repositoryOrigin: {
     __typename: 'RepositoryOrigin';
+    id: string;
     repositoryName: string;
     repositoryLocationName: string;
   } | null;

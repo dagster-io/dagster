@@ -38,6 +38,7 @@ function init() {
         if (!result[key]) {
           result[key] = {
             __typename: 'AssetNode',
+            id: key,
             assetKey: {
               __typename: 'AssetKey',
               ...tokenToAssetKey(key),
@@ -90,6 +91,7 @@ export const ASSETS_INSTIGATOR_QUERY = gql`
   }
 
   fragment AssetAutomationFragment on AssetNode {
+    id
     assetKey {
       path
     }

@@ -1,4 +1,3 @@
-// eslint-disable-next-line no-restricted-imports
 import {GraphQLError} from 'graphql';
 
 import {AppStackTraceLink} from '../AppError';

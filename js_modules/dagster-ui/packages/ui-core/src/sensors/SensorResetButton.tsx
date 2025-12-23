@@ -1,5 +1,4 @@
 import {Button, Tooltip} from '@dagster-io/ui-components';
-import * as React from 'react';
 
 import {RESET_SENSOR_MUTATION, displaySensorMutationErrors} from './SensorMutations';
 import {useMutation} from '../apollo-client';

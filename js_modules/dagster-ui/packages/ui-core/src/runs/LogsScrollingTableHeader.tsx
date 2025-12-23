@@ -164,7 +164,6 @@ export const HeaderContainer = styled.div`
   line-height: 32px;
 `;
 
-// eslint-disable-next-line no-unexpected-multiline
 const HeaderDragHandle = styled.div<{
   side: 'left' | 'right';
   isDraggable: boolean;

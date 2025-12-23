@@ -1,5 +1,3 @@
-// eslint-disable-next-line no-restricted-imports
-
 import {isCanonicalColumnSchemaEntry} from '../metadata/TableSchema';
 import {AssetColumnLineageQuery} from './lineage/types/useColumnLineageDataForAssets.types';
 
