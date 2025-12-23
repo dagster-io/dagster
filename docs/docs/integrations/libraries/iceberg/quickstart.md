@@ -1,7 +1,7 @@
 ---
 title: Quickstart
 description: Dagster supports saving and loading Iceberg tables as assets using I/O managers.
-sidebar_position: 100
+sidebar_position: 2
 ---
 
 <p>{frontMatter.description}</p>

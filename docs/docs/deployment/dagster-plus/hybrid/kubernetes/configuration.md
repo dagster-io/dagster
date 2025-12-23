@@ -157,7 +157,7 @@ Refer to the following guides for more info about environment variables:
 
 By default, each Dagster job will run in its own Kubernetes pod, with each op running in its own subprocess within the pod.
 
-You can also configure your Dagster job with the <PyObject section="libraries" module="dagster_k8s" object="k8s_job_executor" /> to run each op in its own Kubernetes pod. For example:
+You can also configure your Dagster job with the <PyObject section="libraries" integration="k8s" module="dagster_k8s" object="k8s_job_executor" /> to run each op in its own Kubernetes pod. For example:
 
 ```python
 # jobs.py

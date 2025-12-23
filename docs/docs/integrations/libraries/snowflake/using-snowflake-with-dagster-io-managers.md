@@ -58,9 +58,9 @@ You can also provide some optional configuration to further customize the Snowfl
 
 With this configuration, if you materialized an asset called `iris_dataset`, the Snowflake I/O manager would be permissioned with the role `writer` and would store the data in the `FLOWERS.IRIS.IRIS_DATASET` table in the `PLANTS` warehouse.
 
-Finally, in the <PyObject section="definitions" module="dagster" object="Definitions" /> object, we assign the <PyObject section="libraries" module="dagster_snowflake_pandas" object="SnowflakePandasIOManager" /> to the `io_manager` key. `io_manager` is a reserved key to set the default I/O manager for your assets.
+Finally, in the <PyObject section="definitions" module="dagster" object="Definitions" /> object, we assign the <PyObject section="libraries" integration="snowflake" module="dagster_snowflake_pandas" object="SnowflakePandasIOManager" /> to the `io_manager` key. `io_manager` is a reserved key to set the default I/O manager for your assets.
 
-For more info about each of the configuration values, refer to the <PyObject section="libraries" module="dagster_snowflake_pandas" object="SnowflakePandasIOManager" /> API documentation.
+For more info about each of the configuration values, refer to the <PyObject section="libraries" integration="snowflake" module="dagster_snowflake_pandas" object="SnowflakePandasIOManager" /> API documentation.
 
 ## Step 2: Create tables in Snowflake
 

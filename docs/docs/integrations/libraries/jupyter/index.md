@@ -1,6 +1,7 @@
 ---
 title: Dagster & Jupyter Notebooks
 sidebar_label: Jupyter Notebooks
+sidebar_position: 1
 description: Dagstermill eliminates the tedious "productionization" of Jupyter notebooks.
 tags: [dagster-supported, compute]
 source: https://github.com/dagster-io/dagster/tree/master/python_modules/libraries/dagstermill

@@ -80,16 +80,16 @@ Dagster offers built-in library implementations for I/O managers for popular dat
 | ------------------------------------------------------------------------------------------ | ----------------------------------------------------------------------------- |
 | <PyObject section="io-managers" module="dagster" object="FilesystemIOManager" />                                 | Default I/O manager. Stores outputs as pickle files on the local file system. |
 | <PyObject section="io-managers" module="dagster" object="InMemoryIOManager" />                                   | Stores outputs in memory. Primarily useful for unit testing.                  |
-| <PyObject section="libraries" module="dagster_aws" object="s3.S3PickleIOManager" />                            | Stores outputs as pickle files in Amazon Web Services S3.                     |
-| <PyObject section="libraries" module="dagster_azure" object="adls2.ConfigurablePickledObjectADLS2IOManager" /> | Stores outputs as pickle files in Azure ADLS2.                                |
-| <PyObject section="libraries" module="dagster_gcp" object="GCSPickleIOManager" />                              | Stores outputs as pickle files in Google Cloud Platform GCS.                  |
-| <PyObject section="libraries" module="dagster_gcp_pandas" object="BigQueryPandasIOManager" />                  | Stores Pandas DataFrame outputs in Google Cloud Platform BigQuery.            |
-| <PyObject section="libraries" module="dagster_gcp_pyspark" object="BigQueryPySparkIOManager" />                | Stores PySpark DataFrame outputs in Google Cloud Platform BigQuery.           |
-| <PyObject section="libraries" module="dagster_snowflake_pandas" object="SnowflakePandasIOManager" />           | Stores Pandas DataFrame outputs in Snowflake.                                 |
-| <PyObject section="libraries" module="dagster_snowflake_pyspark" object="SnowflakePySparkIOManager" />         | Stores PySpark DataFrame outputs in Snowflake.                                |
-| <PyObject section="libraries" module="dagster_duckdb_pandas" object="DuckDBPandasIOManager" />                 | Stores Pandas DataFrame outputs in DuckDB.                                    |
-| <PyObject section="libraries" module="dagster_duckdb_pyspark" object="DuckDBPySparkIOManager" />               | Stores PySpark DataFrame outputs in DuckDB.                                   |
-| <PyObject section="libraries" module="dagster_duckdb_polars" object="DuckDBPolarsIOManager" />                 | Stores Polars DataFrame outputs in DuckDB.                                    |                                       |
+| <PyObject section="libraries" integration="aws" module="dagster_aws" object="s3.S3PickleIOManager" />                            | Stores outputs as pickle files in Amazon Web Services S3.                     |
+| <PyObject section="libraries" integration="azure" module="dagster_azure" object="adls2.ConfigurablePickledObjectADLS2IOManager" /> | Stores outputs as pickle files in Azure ADLS2.                                |
+| <PyObject section="libraries" integration="gcp" module="dagster_gcp" object="GCSPickleIOManager" />                              | Stores outputs as pickle files in Google Cloud Platform GCS.                  |
+| <PyObject section="libraries" integration="gcp" module="dagster_gcp_pandas" object="BigQueryPandasIOManager" />                  | Stores Pandas DataFrame outputs in Google Cloud Platform BigQuery.            |
+| <PyObject section="libraries" integration="gcp" module="dagster_gcp_pyspark" object="BigQueryPySparkIOManager" />                | Stores PySpark DataFrame outputs in Google Cloud Platform BigQuery.           |
+| <PyObject section="libraries" integration="snowflake" module="dagster_snowflake_pandas" object="SnowflakePandasIOManager" />           | Stores Pandas DataFrame outputs in Snowflake.                                 |
+| <PyObject section="libraries" integration="snowflake" module="dagster_snowflake_pyspark" object="SnowflakePySparkIOManager" />         | Stores PySpark DataFrame outputs in Snowflake.                                |
+| <PyObject section="libraries" integration="duckdb" module="dagster_duckdb_pandas" object="DuckDBPandasIOManager" />                 | Stores Pandas DataFrame outputs in DuckDB.                                    |
+| <PyObject section="libraries" integration="duckdb" module="dagster_duckdb_pyspark" object="DuckDBPySparkIOManager" />               | Stores PySpark DataFrame outputs in DuckDB.                                   |
+| <PyObject section="libraries" integration="duckdb" module="dagster_duckdb_polars" object="DuckDBPolarsIOManager" />                 | Stores Polars DataFrame outputs in DuckDB.                                    |                                       |
 
 ## Next steps
 

@@ -63,7 +63,7 @@ def ge_validation_op_factory(
     runtime_method_type: Literal["batch_data", "path", "query"] = "batch_data",
     extra_kwargs: Optional[Mapping[str, Any]] = None,
 ) -> OpDefinition:
-    """Generates ops for interacting with Great Expectations.
+    """Generates ops for interacting with `Great Expectations <https://greatexpectations.io/>`_.
 
     Args:
         name (str): the name of the op

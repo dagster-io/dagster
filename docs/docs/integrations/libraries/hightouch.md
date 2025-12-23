@@ -1,6 +1,7 @@
 ---
 title: Dagster & Hightouch
 sidebar_label: Hightouch
+sidebar_position: 1
 description: With this integration you can trigger Hightouch syncs and monitor them from within Dagster. Fine-tune when Hightouch syncs kick-off, visualize their dependencies, and monitor the steps in your data activation workflow.
 tags: [community-supported, etl]
 source: https://github.com/dagster-io/community-integrations/tree/main/libraries/dagster-hightouch
