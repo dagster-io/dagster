@@ -1,12 +1,19 @@
 import os
 from collections.abc import Mapping
-from typing import Any, Optional
+from typing import Any
 
 import dagster as dg
-from dagster.components import Component, Model, Resolvable, ResolvedAssetSpec, ComponentLoadContext
+from dagster.components import (
+    Component,
+    Model,
+    Resolvable,
+    ResolvedAssetSpec,
+    ComponentLoadContext,
+)
 from pydantic import Field
 
 from .resources import ConfigurableHightouchResource
+
 
 class HightouchSyncComponent(Component, Resolvable, Model):
     """
@@ -31,8 +38,11 @@ class HightouchSyncComponent(Component, Resolvable, Model):
               asset:
                 key: ["marketing", "salesforce_sync"]
     """
+
     asset: ResolvedAssetSpec
-    sync_id: str = Field(description="The ID of the Hightouch sync, or an environment variable starting with $")
+    sync_id: str = Field(
+        description="The ID of the Hightouch sync, or an environment variable starting with $"
+    )
 
     @classmethod
     def get_additional_scope(cls) -> Mapping[str, Any]:
@@ -60,10 +70,14 @@ class HightouchSyncComponent(Component, Resolvable, Model):
                 metadata={
                     "sync_details": dg.MetadataValue.json(result.sync_details),
                     "sync_run_details": dg.MetadataValue.json(result.sync_run_details),
-                    "destination_details": dg.MetadataValue.json(result.destination_details),
+                    "destination_details": dg.MetadataValue.json(
+                        result.destination_details
+                    ),
                     "query_size": result.sync_run_details.get("querySize"),
                     "completion_ratio": result.sync_run_details.get("completionRatio"),
-                    "failed_rows": result.sync_run_details.get("failedRows", {}).get("addedCount", 0),
+                    "failed_rows": result.sync_run_details.get("failedRows", {}).get(
+                        "addedCount", 0
+                    ),
                 },
             )
 
