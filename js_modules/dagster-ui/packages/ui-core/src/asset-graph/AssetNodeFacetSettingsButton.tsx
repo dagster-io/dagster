@@ -1,6 +1,6 @@
 import {Box, Button, Colors, Dialog, DialogFooter, Icon} from '@dagster-io/ui-components';
 import {useState} from 'react';
-import {observeEnabled} from 'shared/app/observeEnabled.oss';
+import {assetHealthEnabled} from 'shared/app/assetHealthEnabled.oss';
 
 import {AssetNodeWithLiveData} from './AssetNode';
 import {AssetNodeFacetDefaults} from './AssetNodeFacets';
@@ -184,7 +184,7 @@ export const AssetNodeFacetSettingsButton = ({
                 definition={ExampleAssetNode}
                 liveData={ExampleLiveData}
                 automationData={ExampleAutomationData}
-                hasAssetHealth={observeEnabled()}
+                assetHealthEnabled={assetHealthEnabled()}
               />
             </div>
           </Box>
