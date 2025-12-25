@@ -4,17 +4,15 @@ import {NavLink} from 'react-router-dom';
 import {AppTopNavRightOfLogo} from 'shared/app/AppTopNav/AppTopNavRightOfLogo.oss';
 import styled from 'styled-components';
 
-import {MarketplaceTopNavLink} from '../../integrations/MarketplaceTopNavLink';
-import {SearchTopNavItem} from '../../search/SearchTopNavItem';
-import {useFeatureFlags} from '../useFeatureFlags';
+import {useFullScreen} from './AppTopNavContext';
 import {GhostDaggyWithTooltip} from './GhostDaggy';
 import {
   reloadFnForWorkspace,
   useRepositoryLocationReload,
 } from '../../nav/useRepositoryLocationReload';
+import {SearchTopNavItem} from '../../search/SearchTopNavItem';
 import {LayoutContext} from '../LayoutProvider';
 import {ShortcutHandler} from '../ShortcutHandler';
-import {useFullScreen} from './AppTopNavContext';
 
 interface Props {
   children?: React.ReactNode;
@@ -30,7 +28,6 @@ export const AppTopNav = ({children, allowGlobalReload = false}: Props) => {
 };
 
 const AppTopNavImpl = ({children, allowGlobalReload = false}: Props) => {
-  const {flagMarketplace} = useFeatureFlags();
   const {reloading, tryReload} = useRepositoryLocationReload({
     scope: 'workspace',
     reloadFn: reloadFnForWorkspace,
@@ -57,7 +54,6 @@ const AppTopNavImpl = ({children, allowGlobalReload = false}: Props) => {
           </ShortcutHandler>
         ) : null}
         <SearchTopNavItem />
-        {flagMarketplace ? <MarketplaceTopNavLink /> : null}
         {children}
       </Box>
     </AppTopNavContainer>

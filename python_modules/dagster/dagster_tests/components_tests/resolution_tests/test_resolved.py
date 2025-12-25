@@ -625,3 +625,28 @@ def test_dicts():
 
     with pytest.raises(ResolutionException, match="dict key type must be str"):
         BadHasDict.resolve_from_dict({"thing": {"a": {"name": "a", "value": {"key": "a"}}}})
+
+
+def test_default_factory():
+    @dataclass
+    class TargetDataclass(dg.Resolvable):
+        items: dict = field(default_factory=dict)
+
+    # empty yaml should produce an instance with the default dict
+    t = TargetDataclass.resolve_from_yaml("")
+    assert isinstance(t.items, dict)
+    assert t.items == {}
+    t = TargetDataclass.resolve_from_dict({"items": {"a": "b"}})
+    assert t.items == {"a": "b"}
+
+    class TargetModel(dg.Model, dg.Resolvable):
+        some_field: list[str] = Field(default_factory=list)
+
+    t = TargetModel.resolve_from_yaml("")
+    assert isinstance(t.some_field, list)
+    assert t.some_field == []
+    assert TargetModel.resolve_from_yaml("""
+some_field:
+  - a
+  - b
+""").some_field == ["a", "b"]

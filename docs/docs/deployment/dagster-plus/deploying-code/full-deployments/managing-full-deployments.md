@@ -9,7 +9,7 @@ Full deployments are independent deployment instances with separately managed pe
 
 When a Dagster+ organization is created, a single deployment named `prod` will also be created. To create additional full deployments, you must sign up for a [Pro plan](https://dagster.io/pricing).
 
-Each full deployment can have one or multiple [code locations](/deployment/code-locations).
+Each full deployment can have one or multiple [code locations](/guides/build/projects).
 
 :::note Full deployments vs branch deployments
 

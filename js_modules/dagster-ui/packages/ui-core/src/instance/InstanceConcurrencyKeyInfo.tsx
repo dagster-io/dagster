@@ -24,13 +24,17 @@ import {
 import * as React from 'react';
 import {Link, useHistory} from 'react-router-dom';
 
-import {gql, useMutation, useQuery} from '../apollo-client';
-import {POOL_DETAILS_QUERY} from './PoolDetailsQuery';
-import {RunsFeedTableWithFilters} from '../runs/RunsFeedTable';
+import {useMutation, useQuery} from '../apollo-client';
 import {
-  SetConcurrencyLimitMutation,
-  SetConcurrencyLimitMutationVariables,
-} from './types/InstanceConcurrency.types';
+  DELETE_CONCURRENCY_LIMIT_MUTATION,
+  FREE_CONCURRENCY_SLOTS_MUTATION,
+  RUNS_FOR_CONCURRENCY_KEY_QUERY,
+  SET_CONCURRENCY_LIMIT_MUTATION,
+} from './ConcurrencyQueries';
+import {POOL_DETAILS_QUERY} from './PoolDetailsQuery';
+import {useTrackPageView} from '../app/analytics';
+import {failedStatuses, inProgressStatuses, queuedStatuses} from '../runs/RunStatuses';
+import {RunsFeedTableWithFilters} from '../runs/RunsFeedTable';
 import {
   DeleteConcurrencyLimitMutation,
   DeleteConcurrencyLimitMutationVariables,
@@ -38,7 +42,9 @@ import {
   FreeConcurrencySlotsMutationVariables,
   RunsForConcurrencyKeyQuery,
   RunsForConcurrencyKeyQueryVariables,
-} from './types/InstanceConcurrencyKeyInfo.types';
+  SetConcurrencyLimitMutation,
+  SetConcurrencyLimitMutationVariables,
+} from './types/ConcurrencyQueries.types';
 import {
   ConcurrencyLimitFragment,
   ConcurrencyStepFragment,
@@ -51,11 +57,9 @@ import {
   QueryRefreshCountdown,
   useQueryRefreshAtInterval,
 } from '../app/QueryRefresh';
-import {useTrackPageView} from '../app/analytics';
 import {RunStatus} from '../graphql/types';
 import {useDocumentTitle} from '../hooks/useDocumentTitle';
 import {RunStatusDot} from '../runs/RunStatusDots';
-import {failedStatuses, inProgressStatuses, queuedStatuses} from '../runs/RunStatuses';
 import {DagsterTag} from '../runs/RunTag';
 import {titleForRun} from '../runs/RunUtils';
 import {TimeElapsed} from '../runs/TimeElapsed';
@@ -628,34 +632,3 @@ const PendingStepRow = ({
     </tr>
   );
 };
-
-const SET_CONCURRENCY_LIMIT_MUTATION = gql`
-  mutation SetConcurrencyLimit($concurrencyKey: String!, $limit: Int!) {
-    setConcurrencyLimit(concurrencyKey: $concurrencyKey, limit: $limit)
-  }
-`;
-
-const DELETE_CONCURRENCY_LIMIT_MUTATION = gql`
-  mutation DeleteConcurrencyLimit($concurrencyKey: String!) {
-    deleteConcurrencyLimit(concurrencyKey: $concurrencyKey)
-  }
-`;
-
-export const FREE_CONCURRENCY_SLOTS_MUTATION = gql`
-  mutation FreeConcurrencySlots($runId: String!, $stepKey: String) {
-    freeConcurrencySlots(runId: $runId, stepKey: $stepKey)
-  }
-`;
-
-const RUNS_FOR_CONCURRENCY_KEY_QUERY = gql`
-  query RunsForConcurrencyKeyQuery($filter: RunsFilter, $limit: Int) {
-    pipelineRunsOrError(filter: $filter, limit: $limit) {
-      ... on Runs {
-        results {
-          id
-          status
-        }
-      }
-    }
-  }
-`;

@@ -14,7 +14,6 @@ import uniq from 'lodash/uniq';
 import React, {useContext, useMemo, useState} from 'react';
 import {Link} from 'react-router-dom';
 import {observeEnabled} from 'shared/app/observeEnabled.oss';
-import {MaterializeButton} from 'shared/assets/MaterializeButton.oss';
 import {useLaunchWithTelemetry} from 'shared/launchpad/useLaunchWithTelemetry.oss';
 
 import {ASSET_NODE_CONFIG_FRAGMENT} from './AssetConfig';
@@ -319,7 +318,7 @@ export const LaunchAssetExecutionButton = ({
               {firstOption.icon}
             </UnstyledButton>
           ) : (
-            <MaterializeButton
+            <Button
               intent={primary ? 'primary' : undefined}
               data-testid={testId('materialize-button')}
               onClick={(e) => firstAction(firstOption.assetKeys, e)}
@@ -338,7 +337,7 @@ export const LaunchAssetExecutionButton = ({
               }
             >
               {firstOption.label}
-            </MaterializeButton>
+            </Button>
           )}
         </Tooltip>
 

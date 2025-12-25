@@ -1,6 +1,7 @@
 ---
 title: Dagster & Salesforce
 sidebar_label: Salesforce
+sidebar_position: 1
 description: >
   The Salesforce integration provides resources for interacting with the Salesforce API, including querying data, managing records, and performing bulk operations. It supports multiple authentication methods and uses the Salesforce Bulk API 2.0 for efficient large-scale data operations.
 tags: [community-supported]

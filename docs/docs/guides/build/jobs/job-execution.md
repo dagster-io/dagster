@@ -143,7 +143,7 @@ For example, the following job will execute at most two ops at once with the `da
 
 :::note
 
-These limits are only applied on a per-run basis. You can apply op concurrency limits across multiple runs using the <PyObject section="libraries" module="dagster_celery" object="celery_executor" /> or <PyObject section="libraries" module="dagster_celery_k8s" object="celery_k8s_job_executor" />.
+These limits are only applied on a per-run basis. You can apply op concurrency limits across multiple runs using the <PyObject section="libraries" integration="celery" module="dagster_celery" object="celery_executor" /> or <PyObject section="libraries" integration="celery" module="dagster_celery_k8s" object="celery_k8s_job_executor" />.
 
 Refer to the [Managing concurrency in data pipelines guide](/guides/operate/managing-concurrency) for more info about op concurrency, and how to limit run concurrency.
 

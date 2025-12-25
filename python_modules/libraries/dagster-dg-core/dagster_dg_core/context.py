@@ -1,6 +1,7 @@
 import datetime
 import logging
 import re
+import shlex
 from collections.abc import Iterable, Mapping
 from functools import cached_property
 from pathlib import Path
@@ -10,6 +11,7 @@ import dagster_shared.check as check
 from dagster_shared.record import record
 from dagster_shared.serdes.serdes import whitelist_for_serdes
 from dagster_shared.seven import resolve_module_pattern
+from dagster_shared.utils import find_uv_workspace_root
 from dagster_shared.utils.config import get_canonical_defs_module_name
 from packaging.version import Version
 from typing_extensions import Self
@@ -55,6 +57,7 @@ OLD_DG_PLUGIN_ENTRY_POINT_GROUPS = [
     "dagster_dg.plugin",
     "dagster_dg_cli.plugin",
 ]
+DG_PROJECT_PYTHON_EXECUTABLE_ENV_VAR: Final = "DG_PROJECT_PYTHON_EXECUTABLE"
 
 
 def _should_capture_components_cli_stderr() -> bool:
@@ -300,12 +303,65 @@ class DgContext:
             raise DgError("`project_name` is only available in a Dagster project context")
         return self.root_path.name
 
+    @cached_property
+    def package_name(self) -> str:
+        """Returns the package name from [project].name in pyproject.toml.
+
+        This is the name used by uv/pip and may differ from the directory name.
+        """
+        if not self.is_project:
+            raise DgError("`package_name` is only available in a Dagster project context")
+
+        import tomlkit
+
+        if self.pyproject_toml_path.exists():
+            toml = tomlkit.parse(self.pyproject_toml_path.read_text())
+            if has_toml_node(toml, ("project", "name")):
+                return get_toml_node(toml, ("project", "name"), str)
+
+        raise DgError(f"Cannot find [project].name in {self.pyproject_toml_path}")
+
+    @cached_property
+    def uv_workspace_root(self) -> Optional[Path]:
+        """Walk up directories to find a uv workspace root.
+
+        Returns the workspace root path or None if not found.
+        A uv workspace is identified by [tool.uv.workspace] in pyproject.toml.
+        """
+        result = find_uv_workspace_root(self.root_path)
+        return result[0] if result else None
+
     @property
+    def build_root_path(self) -> Path:
+        """Returns the root path for build operations.
+
+        If in a uv workspace, returns the workspace root.
+        Otherwise, returns the project/workspace root_path.
+        """
+        return self.uv_workspace_root or self.root_path
+
+    @cached_property
     def project_python_executable(self) -> Path:
         if not self.is_project:
             raise DgError(
                 "`project_python_executable` is only available in a Dagster project context"
             )
+
+        # This is a temporary "backdoor" to satisfy users who want to auto-discover non-standard virtual
+        # environments for their dg projects. Here is how it works:
+        # - If a `.env` file is present in the project root, it looks for the following variables:
+        #   - `DG_PROJECT_PYTHON_EXECUTABLE`: if this variable is set, its value is used as the python
+        #     executable path
+        # - If no `.env` file is present or if the variable is not set, fall back to default
+        #   behavior (assume .venv in project root).
+        env_path = Path(self.root_path / ".env")
+        if env_path.exists():
+            content = env_path.read_text()
+            for line in content.splitlines():
+                stripped_line = line.strip()
+                if stripped_line.startswith(f"{DG_PROJECT_PYTHON_EXECUTABLE_ENV_VAR}="):
+                    return self.root_path / shlex.split(stripped_line)[0].split("=", 1)[1]
+
         return self.root_path / get_venv_executable(Path(".venv"))
 
     @cached_property

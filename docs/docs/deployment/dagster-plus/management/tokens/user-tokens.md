@@ -7,7 +7,7 @@ tags: [dagster-plus-feature]
 
 import ThemedImage from '@theme/ThemedImage';
 
-In this guide, we'll walk you through creating, viewing, editing, and revoking user tokens in Dagster+.
+In this guide, we'll walk you through creating, viewing, editing, and revoking user tokens in Dagster+. The below guide applies to both human users and [service users](/deployment/dagster-plus/authentication-and-access-control/rbac/users#service-users).
 
 ## Creating and revoking your own user tokens
 

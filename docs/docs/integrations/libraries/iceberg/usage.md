@@ -1,7 +1,7 @@
 ---
 title: Usage
 description: This guide walks through common scenarios for using Iceberg with Dagster.
-sidebar_position: 300
+sidebar_position: 4
 ---
 
 <p>{frontMatter.description}</p>
@@ -134,7 +134,7 @@ In the above example:
 
 ## Using different compute engines to read from and write to Iceberg
 
-`dagster-iceberg` supports several compute engines out-of-the-box. You can [find detailed examples of how to use each engine in the API docs](/api/libraries/dagster-iceberg#io-managers).
+`dagster-iceberg` supports several compute engines out-of-the-box. You can [find detailed examples of how to use each engine in the API docs](/integrations/libraries/iceberg/dagster-iceberg#io-managers).
 
 <Tabs>
   <TabItem value="pyarrow" label="PyArrow Tables">
@@ -167,7 +167,7 @@ In the above example:
 
 ## Executing custom SQL commands
 
-In addition to the Iceberg I/O manager, Dagster also provides an <PyObject section="libraries" object="resource.IcebergTableResource" module="dagster_iceberg" /> for executing custom SQL queries.
+In addition to the Iceberg I/O manager, Dagster also provides an <PyObject section="libraries" integration="iceberg" object="resource.IcebergTableResource" module="dagster_iceberg" /> for executing custom SQL queries.
 
 <CodeExample path="docs_snippets/docs_snippets/integrations/iceberg/executing_custom_sql.py" language="python" />
 

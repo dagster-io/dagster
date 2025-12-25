@@ -1,6 +1,7 @@
 ---
 title: Dagster & Apprise
 sidebar_label: Apprise
+sidebar_position: 1
 description: Send notifications across 70+ notification services (Discord, Telegram, Jira, email, and more) from Dagster using the Apprise library.
 tags: [community-supported, alerting]
 source: https://github.com/dagster-io/community-integrations/tree/main/libraries/dagster-apprise

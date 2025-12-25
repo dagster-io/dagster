@@ -1321,6 +1321,29 @@ def get_asset_backfill_iteration_materialized_subset(
                     for record in materializations_result.records
                     if record.run_id in run_ids_in_backfill
                 ]
+
+                # Validate partition consistency for materializations in this backfill
+                asset_is_partitioned_in_target = (
+                    asset_key in asset_backfill_data.target_subset.partitions_subsets_by_asset_key
+                )
+                asset_is_non_partitioned_in_target = (
+                    asset_key in asset_backfill_data.target_subset.non_partitioned_asset_keys
+                )
+
+                for record in materialization_records_in_backfill:
+                    if asset_is_partitioned_in_target and record.partition_key is None:
+                        raise DagsterBackfillFailedError(
+                            f"Asset {asset_key.to_user_string()} is partitioned in the backfill target "
+                            f"subset, but received an unpartitioned materialization from run {record.run_id}. "
+                            f"All materializations for this asset in this backfill must be partitioned."
+                        )
+                    elif asset_is_non_partitioned_in_target and record.partition_key is not None:
+                        raise DagsterBackfillFailedError(
+                            f"Asset {asset_key.to_user_string()} is unpartitioned in the backfill target "
+                            f"subset, but received a partitioned materialization (partition_key={record.partition_key}) "
+                            f"from run {record.run_id}. All materializations for this asset in this backfill must be unpartitioned."
+                        )
+
                 recently_materialized_asset_partitions |= AssetGraphSubset.from_asset_partition_set(
                     {
                         AssetKeyPartitionKey(asset_key, record.partition_key)
@@ -1619,14 +1642,13 @@ def _execute_asset_backfill_iteration_inner(
             f"The following assets were considered for materialization but not requested:\n\n{not_requested_str}"
         )
 
-    run_requests = [
-        rr._replace(run_config=run_config)
-        for rr in build_run_requests_with_backfill_policies(
-            asset_partitions=asset_partitions_to_request,
-            asset_graph=asset_graph,
-            dynamic_partitions_store=instance_queryer,
-        )
-    ]
+    run_requests = build_run_requests_with_backfill_policies(
+        asset_partitions=asset_partitions_to_request,
+        asset_graph=asset_graph,
+        dynamic_partitions_store=instance_queryer,
+    )
+    if run_config is not None:
+        run_requests = [rr._replace(run_config=run_config) for rr in run_requests]
 
     if request_roots:
         check.invariant(

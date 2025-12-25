@@ -1,5 +1,3 @@
-// eslint-disable-next-line no-restricted-imports
-
 import {buildErrorChainLink, buildPythonError} from '../../graphql/types';
 import {PythonErrorInfo} from '../PythonErrorInfo';
 

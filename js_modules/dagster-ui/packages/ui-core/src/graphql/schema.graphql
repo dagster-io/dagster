@@ -82,6 +82,7 @@ enum DagsterEventType {
   LOGS_CAPTURED
   FRESHNESS_STATE_EVALUATION
   FRESHNESS_STATE_CHANGE
+  CODE_LOCATION_UPDATED
 }
 
 type ExecutionStepFailureEvent implements MessageEvent & StepEvent & ErrorEvent {
@@ -1138,15 +1139,18 @@ type AssetHealthMaterializationDegradedPartitionedMeta {
   numFailedPartitions: Int!
   numMissingPartitions: Int!
   totalNumPartitions: Int!
+  latestRunId: String
+  latestFailedRunId: String
 }
 
 type AssetHealthMaterializationHealthyPartitionedMeta {
   numMissingPartitions: Int!
   totalNumPartitions: Int!
+  latestRunId: String
 }
 
 type AssetHealthMaterializationDegradedNotPartitionedMeta {
-  failedRunId: String!
+  failedRunId: String
 }
 
 union AssetHealthCheckMeta =
@@ -2053,6 +2057,7 @@ type ConfigTypeField {
   configType: ConfigType!
   configTypeKey: String!
   isRequired: Boolean!
+  isSecret: Boolean!
   defaultValueAsJson: String
 }
 
@@ -2496,6 +2501,7 @@ type ConfiguredValue {
 enum ConfiguredValueType {
   VALUE
   ENV_VAR
+  SECRET
 }
 
 type NestedResourceEntry {
@@ -4025,9 +4031,9 @@ type AutomationConditionEvaluationNode {
 }
 
 type SinceConditionMetadata {
-  triggerEvaluationId: Int
+  triggerEvaluationId: ID
   triggerTimestamp: Float
-  resetEvaluationId: Int
+  resetEvaluationId: ID
   resetTimestamp: Float
 }
 

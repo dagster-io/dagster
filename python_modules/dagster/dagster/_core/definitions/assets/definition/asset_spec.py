@@ -97,8 +97,8 @@ class AssetExecutionType(Enum):
 
 
 def validate_kind_tags(kinds: Optional[AbstractSet[str]]) -> None:
-    if kinds is not None and len(kinds) > 3:
-        raise DagsterInvalidDefinitionError("Assets can have at most three kinds currently.")
+    if kinds is not None and len(kinds) > 10:
+        raise DagsterInvalidDefinitionError("Assets can have at most ten kinds currently.")
 
 
 @hidden_param(

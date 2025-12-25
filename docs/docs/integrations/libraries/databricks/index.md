@@ -1,64 +1,43 @@
 ---
-title: Databricks (Component)
+title: Dagster & Databricks
 sidebar_label: Databricks
-description: The dagster-databricks library provides a DatabricksWorkspaceComponent to represent Databricks jobs as assets.
-tags: [dagster-supported, component, databricks]
+sidebar_position: 1
+description: The Databricks integration library provides the `PipesDatabricksClient` resource, enabling you to launch Databricks jobs directly from Dagster assets and ops. This integration allows you to pass parameters to Databricks code while Dagster receives real-time events, such as logs, asset checks, and asset materializations, from the initiated jobs. With minimal code changes required on the job side, this integration is both efficient and easy to implement.
+tags: [dagster-supported, compute]
 source: https://github.com/dagster-io/dagster/tree/master/python_modules/libraries/dagster-databricks
-pypi: https://pypi.org/project/dagster-databricks
+pypi: https://pypi.org/project/dagster-databricks/
 sidebar_custom_props:
   logo: images/integrations/databricks.svg
 partnerlink: https://databricks.com/
-slug: /integrations/libraries/databricks
+canonicalUrl: '/integrations/libraries/databricks'
+slug: '/integrations/libraries/databricks'
 ---
 
-import Beta from '@site/docs/partials/_Beta.md';
+<p>{frontMatter.description}</p>
 
-<Beta />
+## Installation
 
-The `dagster-databricks` library provides the `DatabricksWorkspaceComponent`, which allows you to automatically discover Databricks jobs and represent them as assets in Dagster.
+<PackageInstallInstructions packageName="dagster-databricks" />
 
-This component is state-backed, meaning it fetches metadata from your Databricks workspace and caches it to avoid repeated API calls.
+## All-purpose compute example
 
-## Loading Databricks Jobs
+<CodeExample path="docs_snippets/docs_snippets/integrations/databricks/dagster_code.py" language="python" />
 
-You can use the `DatabricksWorkspaceComponent` to load jobs from your workspace.
-Note: Tasks belonging to the same Databricks Job are grouped into a single Dagster Multi-Asset. This ensures that when you materialize the asset, the entire Databricks Job runs, preserving shared state between tasks.
+<CodeExample path="docs_snippets/docs_snippets/integrations/databricks/databricks_code.py" language="python" />
 
-Filtering Jobs
-You can filter which jobs are included by providing a list of job IDs. Only the specified jobs will be represented as assets.
+## Serverless compute example
 
-```yaml
-type: dagster_databricks.DatabricksWorkspaceComponent
-attributes:
-  workspace:
-    host: "{{ env.DATABRICKS_HOST }}"
-    token: "{{ env.DATABRICKS_TOKEN }}"
+Using pipes with Databricks serverless compute is slightly different. First, you can't specify library dependencies, you must instead define dagster-pipes as a dependency in the notebook environment.
 
-type: dagster_databricks.DatabricksWorkspaceComponent
-attributes:
-  workspace:
-    host: "{{ env.DATABRICKS_HOST }}"
-    token: "{{ env.DATABRICKS_TOKEN }}"
-  databricks_filter:
-    include_jobs:
-      job_ids: [12345, 67890]
-```
+Second, You must use Volumes for context loading and message writing, since dbfs is incompatible with serverless compute.
 
-Customizing Assets
-By default, asset keys are generated from the task name. You can override the key, group, and description for specific tasks using assets_by_task_key.
+<CodeExample path="docs_snippets/docs_snippets/integrations/databricks/dagster_code_serverless.py" language="python" />
 
-```yaml
-type: dagster_databricks.DatabricksWorkspaceComponent
-attributes:
-  workspace:
-    host: "{{ env.DATABRICKS_HOST }}"
-    token: "{{ env.DATABRICKS_TOKEN }}"
-  assets_by_task_key:
-    ingest_data_task:
-      - key: "clean_ingestion"
-        group: "etl_pipeline"
-        description: "Ingests data from S3 to Delta Lake"
-```
+<CodeExample
+  path="docs_snippets/docs_snippets/integrations/databricks/databricks_code_serverless.py"
+  language="python"
+/>
 
-Legacy Resources
-For information on using the legacy Pythonic resources (`DatabricksClientResource`) and ops, see the [Pythonic Resources](/integrations/libraries/databricks/pythonic-resources) page.
+## About Databricks
+
+**Databricks** is a unified data analytics platform that simplifies and accelerates the process of building big data and AI solutions. It integrates seamlessly with Apache Spark and offers support for various data sources and formats. Databricks provides powerful tools to create, run, and manage data pipelines, making it easier to handle complex data engineering tasks. Its collaborative and scalable environment is ideal for data engineers, scientists, and analysts who need to process and analyze large datasets efficiently.

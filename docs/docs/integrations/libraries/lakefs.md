@@ -1,6 +1,7 @@
 ---
 title: Dagster & LakeFS
 sidebar_label: LakeFS
+sidebar_position: 1
 description: By integrating with lakeFS, a big data scale version control system, you can leverage the versioning capabilities of lakeFS to track changes to your data. This integration allows you to have a complete lineage of your data, from the initial raw data to the transformed and processed data, making it easier to understand and reproduce data transformations.
 tags: [community-supported, storage]
 source:

@@ -321,6 +321,7 @@ ban-relative-imports = "all"
 # There is an __init__.py.tmpl
 "python_modules/dagster/dagster/_generate/templates/REPO_NAME_PLACEHOLDER/REPO_NAME_PLACEHOLDER/assets.py" = ["INP001"]
 
+
 [tool.ruff.lint.pydocstyle]
 
 # Enforce google-style docstrings. This is equivalent to ignoring a large number of pydocstyle (D)

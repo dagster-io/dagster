@@ -1,7 +1,8 @@
 import functools
 import hashlib
+import heapq
 import re
-from collections.abc import Iterable, Sequence
+from collections.abc import Iterable, Iterator, Sequence
 from datetime import date, datetime
 from functools import cached_property
 from typing import TYPE_CHECKING, Optional, Union, cast
@@ -37,6 +38,7 @@ from dagster._utils.schedules import (
     cron_string_iterator,
     is_valid_cron_schedule,
     reverse_cron_string_iterator,
+    schedule_execution_time_iterator,
 )
 
 if TYPE_CHECKING:
@@ -945,6 +947,59 @@ class TimeWindowPartitionsDefinition(PartitionsDefinition, IHaveNew):
             day_offset=day_offset,
         )
 
+    def _build_exclusion_iterator_list(
+        self, boundary_timestamp: float, ascending: bool
+    ) -> list[Iterator[datetime]]:
+        if not self.exclusions:
+            return []
+
+        # Create a single iterator for filtered and sorted timestamps
+        def _timestamp_iter():
+            # Collect and sort timestamps, then filter based on boundary
+            timestamps = [
+                excl.timestamp
+                for excl in self.exclusions  # type: ignore
+                if isinstance(excl, TimestampWithTimezone)
+            ]
+            # Sort based on direction: ascending or descending
+            timestamps.sort(reverse=not ascending)
+
+            for ts in timestamps:
+                # Filter based on boundary
+                if (ascending and ts < boundary_timestamp) or (
+                    not ascending and ts > boundary_timestamp
+                ):
+                    continue
+                yield datetime_from_timestamp(ts, self.timezone)
+
+        excluded_cron_strings = [excl for excl in self.exclusions if isinstance(excl, str)]
+        excluded_cron_strings_iters = (
+            [
+                schedule_execution_time_iterator(
+                    start_timestamp=boundary_timestamp,
+                    cron_schedule=excluded_cron_strings,
+                    execution_timezone=self.timezone,
+                    ascending=ascending,
+                )
+            ]
+            if excluded_cron_strings
+            else []
+        )
+
+        return [_timestamp_iter(), *excluded_cron_strings_iters]
+
+    def _exclusion_iterator(self, start_timestamp: float) -> Iterator[datetime]:
+        exclusion_iterators = self._build_exclusion_iterator_list(start_timestamp, ascending=True)
+        yield from heapq.merge(
+            *[excl_iter for excl_iter in exclusion_iterators], key=lambda x: x.timestamp()
+        )
+
+    def _reverse_exclusion_iterator(self, end_timestamp: float) -> Iterator[datetime]:
+        exclusion_iterators = self._build_exclusion_iterator_list(end_timestamp, ascending=False)
+        yield from heapq.merge(
+            *[excl_iter for excl_iter in exclusion_iterators], key=lambda x: -x.timestamp()
+        )
+
     def _iterate_time_windows(
         self, start_timestamp: float, ignore_exclusions: bool = False
     ) -> Iterable[TimeWindow]:
@@ -958,10 +1013,34 @@ class TimeWindowPartitionsDefinition(PartitionsDefinition, IHaveNew):
         while curr_time.timestamp() < start_timestamp:
             curr_time = next(iterator)
 
+        exclusion_iter = None
+        next_excluded_time = None
+        if not ignore_exclusions:
+            exclusion_iter = self._exclusion_iterator(start_timestamp)
+            next_excluded_time = next(exclusion_iter, None)
+
         while True:
             next_time = next(iterator)
-            if not self.is_window_start_excluded(curr_time) or ignore_exclusions:
+
+            is_excluded = False
+            if exclusion_iter and next_excluded_time:
+                curr_timestamp = curr_time.timestamp()
+
+                while (
+                    next_excluded_time is not None
+                    and next_excluded_time.timestamp() < curr_timestamp
+                ):
+                    next_excluded_time = next(exclusion_iter, None)
+
+                if (
+                    next_excluded_time is not None
+                    and next_excluded_time.timestamp() == curr_timestamp
+                ):
+                    is_excluded = True
+
+            if not is_excluded:
                 yield TimeWindow(curr_time, next_time)
+
             curr_time = next_time
 
     def _reverse_iterate_time_windows(
@@ -986,10 +1065,34 @@ class TimeWindowPartitionsDefinition(PartitionsDefinition, IHaveNew):
         while curr_time.timestamp() > end_timestamp:
             curr_time = next(iterator)
 
+        exclusion_iter = None
+        next_excluded_time = None
+        if not ignore_exclusions:
+            exclusion_iter = self._reverse_exclusion_iterator(end_timestamp)
+            next_excluded_time = next(exclusion_iter, None)
+
         while True:
             prev_time = next(iterator)
-            if not self.is_window_start_excluded(prev_time) or ignore_exclusions:
+
+            is_excluded = False
+            if exclusion_iter and next_excluded_time is not None:
+                prev_timestamp = prev_time.timestamp()
+
+                while (
+                    next_excluded_time is not None
+                    and next_excluded_time.timestamp() > prev_timestamp
+                ):
+                    next_excluded_time = next(exclusion_iter, None)
+
+                if (
+                    next_excluded_time is not None
+                    and next_excluded_time.timestamp() == prev_timestamp
+                ):
+                    is_excluded = True
+
+            if not is_excluded:
                 yield TimeWindow(prev_time, curr_time)
+
             curr_time = prev_time
 
     def get_partition_key_for_timestamp(self, timestamp: float, end_closed: bool = False) -> str:

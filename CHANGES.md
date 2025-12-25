@@ -1,5 +1,81 @@
 # Changelog
 
+## 1.12.7 (core) / 0.28.7 (libraries)
+
+### New
+
+- Optimized performance of calculating partition keys for time window partitions with exclusions.
+- `timedelta` and `datetime` are now available via the `datetime` context when rendering components (Thanks, [@stevenayers](https://github.com/stevenayers)!)
+- `FreshnessPolicy` is now available via the `dg` context when rendering components. (Thanks, [@stevenayers](https://github.com/stevenayers)!)
+- Assets may now be annotated with up to 10 kinds (limit was previously 3).
+- Arbitrary resource parameters may now be hidden in the UI by setting `json_schema_extra={"dagster__is_secret": True}` on the corresponding `Field` definition in the resource class.
+- The `dg docs` cli group has been removed. The `integrations` subcommand has been moved to `dg utils integrations`.
+- Bumped the `gql` dependency in `dagster-graphql` to be inclusive of v4 for broader transitive dependency compatibility
+- [dagster-omni] Fix issue where retries would terminate while asynchronously gathering metadata.
+- [dagster-tableau] The value of resource parameter `TableauWorkspace.connected_app_secret_value` is now hidden in the UI.
+- [dagster-tableau] Updated extraction logic to handle hidden sheets. The materializable data sources connected to these sheets are now successfully detected and included as materializable data assets. (Thanks, [@miriamcastel](https://github.com/miriamcastel)!)
+
+### Bugfixes
+
+- Fix an AttributeError when calling `map_asset_specs` on assets defined using the `ins` parameter. (Thanks, [@Jongwan93](https://github.com/Jongwan93)!)
+- Fix an issue where backfill runs that incorrectly created unpartitioned materializations of a partitioned asset, or partitioned materializations of an unpartitioned asset due to incorrect asset business logic would move the backfill into an invalid state. Now, the backfill will detect this case and fail the backfill.
+- Fixed an issue with `dg plus deploy refresh-defs-state` which could cause errors when refreshing state for components that required CLIs that were only available in the project environment.
+- [dagster-dbt] Fixed issue that could cause errors when emitting events for a dbt Cloud job run.
+
+### Dagster Plus
+
+- Dagster Plus Pro users can now create service users. Service users are accounts that can
+  authenticate API requests but that are not tied to any particular human user.
+
+## 1.12.6 (core) / 0.28.6 (libraries)
+
+### New
+
+- All CLI commands under `dagster project` have been removed. `create-dagster` should be used instead.
+- [ui] Added a new Partitions facet to the Asset Lineage Graph.
+- [ui] More details are now displayed for `SINCE` conditions in evaluation tables for automation conditions.
+- [dagster-dbt] Added dbt cloud logs to stdout after the run completes in dbt cloud.
+- [dagster-tableau] Improved resilience when fetching Tableau workspace data. The integration now skips individual workbooks that fail to return data and logs a warning, rather than failing the entire operation. (Thanks, [@miriamcastel](https://github.com/miriamcastel)!)
+
+### Bugfixes
+
+- Fixed an issue that would cause errors when attempting to create subclasses of `Resolved` that had fields using `default_factory` arguments.
+- Fixed an issue with `dg plus deploy refresh-defs-state` which could cause errors when refreshing state for components that required CLIs that were only available in the project environment.
+- [ui] Fixed Snowflake connection by changing the private key encoding from PEM to DER format. Snowflake requires unencrypted RSA private keys to be in DER format as bytes.
+- [dagster-dbt] Updated `DbtCliResource` to use the `project_dir` attribute from the `DbtProject` instance rather than passing the entire `DbtProject` object.
+- [dagster-tableau][dagster-sigma] Fixed bug that would cause templated env vars to not be resolved when specified in yaml.
+
+## 1.12.5 (core) / 0.28.5 (libraries)
+
+### New
+
+- Increased the version of NextJS used by the Dagster webserver and the `dg docs serve` command to `15.5.7`. While these applications are unaffected by https://nextjs.org/blog/CVE-2025-66478 due to not using React 19, this upgrade ensures that dagster packages will not be flagged for that CVE by vulnerability scanners.
+
+## 1.12.4 (core) / 0.28.4 (libraries)
+
+### New
+
+- CI workflows for Gitlab projects can now be scaffolded using `dg plus deploy configure`.
+- "/" characters are now allowed in concurrency pool names.
+- Pod wait timeout for K8sPipeClient can now be specified (Thanks, [@abhinavDhulipala](https://github.com/abhinavDhulipala)!)
+- New `kind` tag icon for Zendesk (Thanks, [@kporter13](https://github.com/kporter13)!)
+- [dagster-tableau] Added `enable_embedded_datasource_refresh` and `enable_published_datsource_refresh` options to the `TableauComponent`, which allow creating materializable assets for the associated datasource types.
+
+### Bugfixes
+
+- Fixed an issue where passing in JSON serializable enums to JsonMetadataValue would sometimes result in an error.
+- Fixed an issue that would cause `SensorDefinition` subclasses (e.g. `AutomationConditionSensorDefinition`, `RunStatusSensorDefinition`) to be converted to having the wrong `sensor_type` property when produced from a `Component`.
+- Fixed an issue where the `Flower` config map was included in the Helm chart even when `Flower` was disabled (Thanks, [@LoHertel](https://github.com/LoHertel)!)
+- [dagster-dbt] Fixed a `FileExistsError` on Windows when reloading `dbt` project definitions by ensuring the local project directory creation handles pre-existing directories (Thanks, [@Jongwan93](https://github.com/Jongwan93)!)
+- [dagster-tableau] Fixed a KeyError that occurred when using `workbook_selector_fn` to filter assets. Now dependencies are only accessed if they exist in the workspace data. (Thanks, [@miriamcastel](https://github.com/miriamcastel)!)
+- [dagster-tableau] Fixed an issue where `workbook_selector_fn` was only applied to the first 100 workbooks.
+- [dagster-tableau] The workbook is now part of the asset key prefix to avoid naming collisions.
+- [dagster-tableau] Fixed an issue where workbook names with dots `.` were improperly handled.
+
+### Documentation
+
+- Updated `dagster-iceberg` docs to include recently-added features. (Thanks, [@zyd14](https://github.com/zyd14)!)
+
 ## 1.12.3 (core) / 0.28.3 (libraries)
 
 ### New

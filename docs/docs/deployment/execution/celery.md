@@ -6,7 +6,7 @@ title: Executing Dagster on Celery
 
 [Celery](https://docs.celeryq.dev) is an open-source Python distributed task queue system, with support for a variety of queues (brokers) and result persistence strategies (backends).
 
-The `dagster-celery` executor uses Celery to satisfy three common requirements when running jobs in production:
+The [`dagster-celery`](/integrations/libraries/celery) executor uses Celery to satisfy three common requirements when running jobs in production:
 
 - Parallel execution capacity that scales horizontally across multiple compute nodes.
 - Separate queues to isolate execution and control external resource usage at the op level.
@@ -77,9 +77,9 @@ When using the Celery executor for job runs, you'll need to use storage that's a
 
 To do this, include an appropriate I/O manager in the job's resource. For example, any of the following I/O managers would be suitable:
 
-- <PyObject section="libraries" module="dagster_aws" object="s3.s3_pickle_io_manager" />
-- <PyObject section="libraries" module="dagster_azure" object="adls2.adls2_pickle_io_manager" />
-- <PyObject section="libraries" module="dagster_gcp" object="gcs_pickle_io_manager" />
+- <PyObject section="libraries" integration="aws" module="dagster_aws" object="s3.s3_pickle_io_manager" />
+- <PyObject section="libraries" integration="azure" module="dagster_azure" object="adls2.adls2_pickle_io_manager" />
+- <PyObject section="libraries" integration="gcp" module="dagster_gcp" object="gcs_pickle_io_manager" />
 
 ### Step 3: Supply executor and worker config
 
@@ -101,7 +101,7 @@ Lastly, you'll need to make sure that the Dagster code you want the workers to e
 1. Present in the workers' environment, and
 2. The code is in sync with the code present on the node running the webserver
 
-The easiest way to do this is typically to package the code into a Python module and to configure your project's [`workspace.yaml`](/deployment/code-locations/workspace-yaml) to have the webserver load from that module.
+The easiest way to do this is typically to package the code into a Python module and to configure your project's [`workspace.yaml`](/guides/build/projects/workspaces/workspace-yaml) to have the webserver load from that module.
 
 In Part 1, we accomplished this by starting the webserver with the `-f` parameter:
 

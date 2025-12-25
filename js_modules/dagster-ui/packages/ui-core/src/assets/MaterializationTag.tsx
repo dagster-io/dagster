@@ -1,4 +1,3 @@
-// eslint-disable-next-line no-restricted-imports
 import {Box, Colors, Tag} from '@dagster-io/ui-components';
 
 import {AssetKey} from './types';

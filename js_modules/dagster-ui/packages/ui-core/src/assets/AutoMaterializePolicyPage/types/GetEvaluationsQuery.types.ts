@@ -358,6 +358,14 @@ export type PartitionedAssetConditionEvaluationNodeFragment = {
     | {__typename: 'AssetKey'; path: Array<string>};
 };
 
+export type SinceMetadataFragment = {
+  __typename: 'SinceConditionMetadata';
+  triggerEvaluationId: string | null;
+  triggerTimestamp: number | null;
+  resetEvaluationId: string | null;
+  resetTimestamp: number | null;
+};
+
 export type NewEvaluationNodeFragment = {
   __typename: 'AutomationConditionEvaluationNode';
   uniqueId: string;
@@ -377,6 +385,13 @@ export type NewEvaluationNodeFragment = {
         assetKey: {__typename: 'AssetKey'; path: Array<string>};
       }
     | {__typename: 'AssetKey'; path: Array<string>};
+  sinceMetadata: {
+    __typename: 'SinceConditionMetadata';
+    triggerEvaluationId: string | null;
+    triggerTimestamp: number | null;
+    resetEvaluationId: string | null;
+    resetTimestamp: number | null;
+  } | null;
 };
 
 export type AssetConditionEvaluationRecordFragment = {
@@ -808,6 +823,13 @@ export type AssetConditionEvaluationRecordFragment = {
           assetKey: {__typename: 'AssetKey'; path: Array<string>};
         }
       | {__typename: 'AssetKey'; path: Array<string>};
+    sinceMetadata: {
+      __typename: 'SinceConditionMetadata';
+      triggerEvaluationId: string | null;
+      triggerTimestamp: number | null;
+      resetEvaluationId: string | null;
+      resetTimestamp: number | null;
+    } | null;
   }>;
 };
 
@@ -1287,6 +1309,13 @@ export type GetEvaluationsQuery = {
                   assetKey: {__typename: 'AssetKey'; path: Array<string>};
                 }
               | {__typename: 'AssetKey'; path: Array<string>};
+            sinceMetadata: {
+              __typename: 'SinceConditionMetadata';
+              triggerEvaluationId: string | null;
+              triggerTimestamp: number | null;
+              resetEvaluationId: string | null;
+              resetTimestamp: number | null;
+            } | null;
           }>;
         }>;
       }
@@ -1755,6 +1784,13 @@ export type GetSlimEvaluationsQuery = {
                   assetKey: {__typename: 'AssetKey'; path: Array<string>};
                 }
               | {__typename: 'AssetKey'; path: Array<string>};
+            sinceMetadata: {
+              __typename: 'SinceConditionMetadata';
+              triggerEvaluationId: string | null;
+              triggerTimestamp: number | null;
+              resetEvaluationId: string | null;
+              resetTimestamp: number | null;
+            } | null;
           }>;
         }>;
       }
@@ -2198,10 +2234,10 @@ export type GetAssetEvaluationDetailsQuery = {
   }>;
 };
 
-export const GetEvaluationsQueryVersion = '6f11895405c56daf5e285c229a5b1001d9d13b331a50c0fc813d098612c79f73';
+export const GetEvaluationsQueryVersion = '2348b2cff16099bec42d9140ab77c85e1433b5c88a3d8640883b8a86983671a9';
 
-export const GetSlimEvaluationsQueryVersion = '69b542f3c69432a5355b6c84aebf0a3b7f74de9e1a5ddb84e6edd61785fe08e9';
+export const GetSlimEvaluationsQueryVersion = 'f581133a6e798d3b5e7182c79cb5af2ef40695ccb7fd12cef7d88ed1d5c80789';
 
-export const GetEvaluationsSpecificPartitionQueryVersion = '76a87a5537dcf49c1ffe23adecc103ed34fb89dbfa907a233d398a5d63217150';
+export const GetEvaluationsSpecificPartitionQueryVersion = 'c72a1a3166f8d3e477aafcda3892116cdd0372d80a41ade6d73e99120ad4e9ef';
 
 export const GetAssetEvaluationDetailsQueryVersion = 'd4538f5b4ae52ff2694f9ad6cb6e18fa265e4448107185fbc0601054064c9633';

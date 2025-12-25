@@ -12,7 +12,7 @@ This article focuses on using an out-of-the-box Kubernetes resource. For further
 
 :::
 
-This article covers how to use [Dagster Pipes](/guides/build/external-pipelines) with Dagster's [Kubernetes integration](/integrations/libraries/kubernetes) to launch Kubernetes pods and execute external code.
+This article covers how to use [Dagster Pipes](/guides/build/external-pipelines) with Dagster's [Kubernetes integration](/integrations/libraries/k8s) to launch Kubernetes pods and execute external code.
 
 Pipes allows your code to interact with Dagster outside of a full Dagster environment. Instead, the environment only needs to contain [`dagster-pipes`](https://pypi.org/project/dagster-pipes), a single-file Python package with no dependencies that can be installed from PyPI or easily vendored. `dagster-pipes` handles streaming `stdout`/`stderr` and Dagster events back to the orchestration process.
 
@@ -87,15 +87,15 @@ The metadata format shown above (`{"raw_value": value, "type": type}`) is part o
 
 Let's review what this code does:
 
-- Imports <PyObject section="libraries" object="open_dagster_pipes" module="dagster_pipes" /> from `dagster_pipes`
+- Imports <PyObject section="libraries" integration="pipes" object="open_dagster_pipes" module="dagster_pipes" /> from `dagster_pipes`
 
-- **Initializes the Dagster Pipes context (<PyObject section="libraries" object="open_dagster_pipes" module="dagster_pipes" />), which yields an instance of <PyObject section="libraries" object="PipesContext" module="dagster_pipes" /> called `pipes`.**
+- **Initializes the Dagster Pipes context (<PyObject section="libraries" integration="pipes" object="open_dagster_pipes" module="dagster_pipes" />), which yields an instance of <PyObject section="libraries" integration="pipes" object="PipesContext" module="dagster_pipes" /> called `pipes`.**
 
-  We're using the default context loader (<PyObject section="libraries" object="PipesDefaultContextLoader" module="dagster_pipes" />) and message writer (<PyObject section="libraries" object="PipesDefaultMessageWriter" module="dagster_pipes" />) in this example. These objects establish communication between the orchestration and external process. On the orchestration end, these match a corresponding `PipesContextInjector` and `PipesMessageReader`, which are instantiated inside the <PyObject section="libraries" module="dagster_k8s" object="PipesK8sClient" />.
+  We're using the default context loader (<PyObject section="libraries" integration="pipes" object="PipesDefaultContextLoader" module="dagster_pipes" />) and message writer (<PyObject section="libraries" integration="pipes" object="PipesDefaultMessageWriter" module="dagster_pipes" />) in this example. These objects establish communication between the orchestration and external process. On the orchestration end, these match a corresponding `PipesContextInjector` and `PipesMessageReader`, which are instantiated inside the <PyObject section="libraries" integration="k8s" module="dagster_k8s" object="PipesK8sClient" />.
 
-- **Inside the body of the context manager (<PyObject section="libraries" object="open_dagster_pipes" module="dagster_pipes" />), retrieve a log and report an asset materialization.** These calls use the temporary communications channels established by <PyObject section="libraries" object="PipesDefaultContextLoader" module="dagster_pipes" /> and <PyObject section="libraries" object="PipesDefaultMessageWriter" module="dagster_pipes" />. To see the full range of what you can do with the <PyObject section="libraries" object="PipesContext" module="dagster_pipes" />, see the API docs or the general [Pipes documentation](/guides/build/external-pipelines).
+- **Inside the body of the context manager (<PyObject section="libraries" integration="pipes" object="open_dagster_pipes" module="dagster_pipes" />), retrieve a log and report an asset materialization.** These calls use the temporary communications channels established by <PyObject section="libraries" integration="pipes" object="PipesDefaultContextLoader" module="dagster_pipes" /> and <PyObject section="libraries" integration="pipes" object="PipesDefaultMessageWriter" module="dagster_pipes" />. To see the full range of what you can do with the <PyObject section="libraries" integration="pipes" object="PipesContext" module="dagster_pipes" />, see the API docs or the general [Pipes documentation](/guides/build/external-pipelines).
 
-At this point you can execute the rest of your Kubernetes code as normal, invoking various <PyObject section="libraries" object="PipesContext" module="dagster_pipes" /> APIs as needed.
+At this point you can execute the rest of your Kubernetes code as normal, invoking various <PyObject section="libraries" integration="pipes" object="PipesContext" module="dagster_pipes" /> APIs as needed.
 
 ### Step 1.2: Define and build the container image
 
@@ -155,14 +155,14 @@ Here's what we did in this example:
 
 - Provided <PyObject section="execution" module="dagster" object="AssetExecutionContext" /> as the `context` argument to the asset. This object provides access to system APIs such as resources, config, and logging.
 
-- Specified a resource for the asset to use, <PyObject section="libraries" module="dagster_k8s" object="PipesK8sClient" />, which is a pre-built Dagster resource that allows you to quickly get Pipes working with Kubernetes.
+- Specified a resource for the asset to use, <PyObject section="libraries" integration="k8s" module="dagster_k8s" object="PipesK8sClient" />, which is a pre-built Dagster resource that allows you to quickly get Pipes working with Kubernetes.
 
   We also specified the following for the resource:
 
   - `context` - The asset's `context` (<PyObject section="execution" module="dagster" object="AssetExecutionContext" />) data
   - `image` - The Kubernetes image we created in [Step 1](#step-1-define-the-external-kubernetes-code-container)
 
-  These arguments are passed to the `run` method of <PyObject section="libraries" module="dagster_k8s" object="PipesK8sClient" />, which submits the provided cluster information to the Kubernetes API and then runs the specified `image`.
+  These arguments are passed to the `run` method of <PyObject section="libraries" integration="k8s" module="dagster_k8s" object="PipesK8sClient" />, which submits the provided cluster information to the Kubernetes API and then runs the specified `image`.
 
 - Returned a <PyObject section="assets" module="dagster" object="MaterializeResult" /> object representing the result of execution. This is obtained by calling `get_materialize_result` on the `PipesClientCompletedInvocation` object returned by `run` after the execution in Kubernetes has completed.
 {/* TODO replace `PipesClientCompletedInvocation` with <PyObject section="pipes" module="dagster" object="PipesClientCompletedInvocation" /> */}
@@ -171,7 +171,7 @@ Here's what we did in this example:
 
 Depending on your Kubernetes setup, there may be a few additional things you need to do:
 
--  **If the default behavior doesn't target the correct cluster**, supply the `load_incluster_config`, `kubeconfig_file`, and `kube_context` arguments on <PyObject section="libraries" module="dagster_k8s" object="PipesK8sClient" />
+-  **If the default behavior doesn't target the correct cluster**, supply the `load_incluster_config`, `kubeconfig_file`, and `kube_context` arguments on <PyObject section="libraries" integration="k8s" module="dagster_k8s" object="PipesK8sClient" />
 - **If you need to alter default spec behaviors**, use arguments on `PipesK8sClient.run` such as `base_pod_spec`.
 
 :::
@@ -182,7 +182,7 @@ import ScaffoldResource from '@site/docs/partials/\_ScaffoldResource.md';
 
 <ScaffoldResource />
 
-Next, you'll add the asset and Kubernetes resource to your project's code location via the <PyObject section="definitions" module="dagster" object="Definitions" /> object. This makes the resource available to [other Dagster definitions in the project](/deployment/code-locations).
+Next, you'll add the asset and Kubernetes resource to your project's code location via the <PyObject section="definitions" module="dagster" object="Definitions" /> object. This makes the resource available to [other Dagster definitions in the project](/guides/build/projects).
 
 Copy and paste the following to the bottom of `resources.py`:
 

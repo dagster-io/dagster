@@ -6,6 +6,9 @@ title: Setting up Okta SSO for Dagster+
 tags: [dagster-plus-feature]
 ---
 
+import EuRegionUrlNote from '@site/docs/partials/\_EuRegionUrlNote.md';
+import TestSSO from '@site/docs/partials/\_TestSSO.md';
+
 In this guide, you'll configure Okta to use single sign-on (SSO) with your Dagster+ organization.
 
 <details>
@@ -36,7 +39,13 @@ To complete the steps in this guide, you'll need:
 2. Scroll down to the **Advanced Sign-on settings** section.
 3. In the **Organization** field, enter your Dagster+ organization name. This is used to route the SAML response to the correct Dagster+ subdomain.
 
-For example, your organization name is `hooli` and your Dagster+ domain is `https://hooli.dagster.cloud`. To configure this correctly, you'd enter `hooli` into the **Organization** field:
+For example, your organization name is `hooli` and your Dagster+ domain is `https://hooli.dagster.cloud` (or `https://hooli.eu.dagster.cloud` in the EU region). To configure this correctly, you'd enter `hooli` into the **Organization** field:
+
+:::note
+
+If you have an EU Dagster+ organization, enter `<org_name>.eu` in the Organization field. For example, the `hooli` organization in the EU would be `hooli.eu`.
+
+:::
 
 ![Okta Subdomain Configuration](/images/dagster-plus/features/authentication-and-access-control/okta/subdomain-configuration.png)
 
@@ -61,7 +70,9 @@ Next, you'll save and upload the application's SAML metadata to Dagster+. This w
    In Chrome and Edge, the file will be downloaded as an XML file. In Firefox, choose **Save Page As > Save as type**, then select **All files**.
 
    :::note
+
    Copying and pasting the metadata can cause formatting issues that will prevent successful setup. Saving the page directly from the browser will avoid this.
+
    :::
 
 5. After you've downloaded the metadata file, upload it to Dagster+ using the `dagster-cloud` CLI:
@@ -72,6 +83,8 @@ Next, you'll save and upload the application's SAML metadata to Dagster+. This w
       --url https://<organization_name>.dagster.cloud
    ```
 
+   <EuRegionUrlNote />
+
 ## Step 4: Grant access to users \{#grant-access}
 
 Next, you'll assign users to the Dagster+ application in Okta. This will allow them to log in using their Okta credentials when the single sign-on flow is initiated.
@@ -79,8 +92,6 @@ Next, you'll assign users to the Dagster+ application in Okta. This will allow t
 1. In the Dagster+ application, navigate to **Assignments**.
 2. Click **Assign > Assign to People**.
 3. For each user you want to have access to Dagster+, click **Assign** then **Save and Go Back**.
-
-import TestSSO from '@site/docs/partials/\_TestSSO.md';
 
 <TestSSO />
 

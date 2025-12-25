@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-var-requires */
 // eslint-disable-next-line no-restricted-imports
 import {Popover2, Popover2Props} from '@blueprintjs/popover2';
 import deepmerge from 'deepmerge';

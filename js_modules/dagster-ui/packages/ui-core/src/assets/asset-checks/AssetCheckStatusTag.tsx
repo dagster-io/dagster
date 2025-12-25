@@ -7,7 +7,6 @@ import {
   Popover,
   Spinner,
   Tag,
-  intentToFillColor,
 } from '@dagster-io/ui-components';
 import {Link} from 'react-router-dom';
 
@@ -95,9 +94,9 @@ export const CheckStatusRow = ({
         <CheckRow
           icon={
             isWarn ? (
-              <Icon name="warning_outline" color={intentToFillColor('warning')} />
+              <Icon name="warning_outline" color={Colors.accentYellow()} />
             ) : (
-              <Icon name="cancel" color={intentToFillColor('danger')} />
+              <Icon name="cancel" color={Colors.accentRed()} />
             )
           }
           checkName={assetCheck.name}
@@ -110,9 +109,9 @@ export const CheckStatusRow = ({
         <CheckRow
           icon={
             isWarn ? (
-              <Icon name="changes_present" color={intentToFillColor('warning')} />
+              <Icon name="changes_present" color={Colors.accentYellow()} />
             ) : (
-              <Icon name="changes_present" color={intentToFillColor('danger')} />
+              <Icon name="changes_present" color={Colors.accentRed()} />
             )
           }
           checkName={assetCheck.name}
@@ -123,7 +122,7 @@ export const CheckStatusRow = ({
     case AssetCheckExecutionResolvedStatus.SUCCEEDED:
       return (
         <CheckRow
-          icon={<Icon name="check_circle" color={intentToFillColor('success')} />}
+          icon={<Icon name="check_circle" color={Colors.accentGreen()} />}
           checkName={assetCheck.name}
           timestamp={timestamp}
           assetKey={assetKey}

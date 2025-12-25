@@ -398,10 +398,11 @@ class TimeWindowPartitionsSubset(
             "num_partitions would become inaccurate if the partitions_defs had different cron"
             " schedules",
         )
+        self_as_dict = self._asdict()
         return TimeWindowPartitionsSubset(
             partitions_def=partitions_def,
-            num_partitions=self.num_partitions,
-            included_time_windows=self.included_time_windows,
+            num_partitions=self_as_dict["num_partitions"],
+            included_time_windows=self_as_dict["included_time_windows"],
         )
 
     def __repr__(self) -> str:
@@ -576,7 +577,7 @@ class TimeWindowPartitionsSubset(
         # note that we rarely serialize subsets on the user code side of a serialization boundary,
         # and so this conversion is rarely necessary.
         partitions_def = self.partitions_def
-        if type(self.partitions_def) != TimeWindowPartitionsSubset:
+        if type(self.partitions_def) != TimeWindowPartitionsDefinition:
             partitions_def = TimeWindowPartitionsSnap.from_def(
                 partitions_def
             ).get_partitions_definition()

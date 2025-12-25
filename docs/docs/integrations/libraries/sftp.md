@@ -1,6 +1,7 @@
 ---
 title: Dagster & SFTP
 sidebar_label: SFTP
+sidebar_position: 1
 description: >
   The SFTP integration provides a high-performance resource for file transfer operations with support for parallel transfers, batch operations, and advanced filtering capabilities. Built with asyncSSH for optimal performance.
 tags: [community-supported]

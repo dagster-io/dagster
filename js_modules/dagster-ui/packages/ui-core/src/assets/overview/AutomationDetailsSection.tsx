@@ -1,5 +1,5 @@
 import {Body, Box, Popover, Tag} from '@dagster-io/ui-components';
-import React, {useMemo} from 'react';
+import {useMemo} from 'react';
 
 import {insitigatorsByType} from '../AssetNodeInstigatorTag';
 import {AttributeAndValue, SectionEmptyState, SectionSkeleton, isEmptyChildren} from './Common';

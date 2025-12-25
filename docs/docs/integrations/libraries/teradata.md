@@ -1,6 +1,7 @@
 ---
 title: Dagster & Teradata
 sidebar_label: Teradata
+sidebar_position: 1
 description: The community-supported Teradata package provides an integration with Teradata Vantage.
 tags: [community-supported, storage]
 source: https://github.com/dagster-io/community-integrations/tree/main/libraries/dagster-teradata
@@ -92,7 +93,7 @@ dagster-quickstart
         __init__.py
 ```
 
-Refer [here](/guides/build/projects/dagster-project-file-reference) to know more above this directory structure.
+Refer [here](/guides/build/projects/project-structure/project-overview) to know more above this directory structure.
 
 ## Create Sample Data
 

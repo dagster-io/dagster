@@ -6,6 +6,8 @@ sidebar_position: 8220
 tags: [dagster-plus-feature]
 ---
 
+import TestSSO from '@site/docs/partials/\_TestSSO.md';
+
 In this guide, you'll configure Microsoft Entra ID (formerly Azure Active Directory) to use single sign-on (SSO) with your Dagster+ organization.
 
 <details>
@@ -47,9 +49,15 @@ In this step, you'll configure and enable SSO for Azure AD in your Azure portal.
 
     Copy and paste the following URL, replacing `<organization_name>` with your Dagster+ organization name:
 
-    ```
+    ```shell
     https://<organization_name>.dagster.cloud/auth/saml/consume
     ```
+
+    :::info
+
+    For EU region customers, the URL will be `https://<organization_name>.eu.dagster.cloud/auth/saml/consume`
+
+    :::
 
 5.  Click **Set additional URLs**.
 6.  In the **Sign-on URL** field, copy and paste the URL you entered in the **Identifier** and **Reply URL** fields.
@@ -74,11 +82,22 @@ In this step, you'll configure and enable SSO for Azure AD in your Azure portal.
 
 After you've downloaded the SAML metadata file, upload it to Dagster+ using the `dagster-cloud` CLI:
 
+<Tabs groupId="region">
+<TabItem value="us" label="US">
 ```shell
 dagster-cloud organization settings saml upload-identity-provider-metadata <path/to/metadata> \
    --api-token=<user_token> \
    --url https://<organization_name>.dagster.cloud
 ```
+</TabItem>
+<TabItem value="eu" label="EU">
+```shell
+dagster-cloud organization settings saml upload-identity-provider-metadata <path/to/metadata> \
+   --api-token=<user_token> \
+   --url https://<organization_name>.eu.dagster.cloud
+```
+</TabItem>
+</Tabs>
 
 ## Step 4: create a test user \{#test-user}
 
@@ -92,8 +111,6 @@ In this section, you'll create a test user in the Azure portal.
    - **User name**: Enter `B.Simon@contoso.com`.
    - Select the **Show password** checkbox and write down the value displayed in the **Password** box.
 5. Click **Create**.
-
-import TestSSO from '@site/docs/partials/\_TestSSO.md';
 
 <TestSSO />
 

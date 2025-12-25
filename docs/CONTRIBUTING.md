@@ -76,16 +76,28 @@ H3 heading
 
 ### Linking to API docs with `PyObject`
 
-To create a link to the Python API docs, use the [`PyObject` component](https://github.com/dagster-io/dagster/blob/master/docs/src/components/PyObject.tsx). The following `PyObject` will result in a URL of `https://docs.dagster.io/api/dagster/assets#dagster.MaterializeResult`:
+To create a link to the Python API docs, use the [`PyObject` component](https://github.com/dagster-io/dagster/blob/master/docs/src/components/PyObject.tsx).
+
+#### Dagster core
+
+The following `PyObject` will result in a URL of `https://docs.dagster.io/api/dagster/assets#dagster.MaterializeResult`:
 
 ```
 <PyObject module="dagster" section="assets" object="MaterializeResult" />
 ```
 
-Note that if the class name is different from the module, you will need to prepend the class name to the object:
+#### Integrations
+
+To link to an integration library, use the `integration` parameter in the PyObject. The `module` should be the name of the library and the `integration` should be the directory that contains the API doc:
 
 ```
-<PyObject module="dagster_aws" section="libraries" object="s3.s3_pickle_io_manager" />
+<PyObject section="libraries" integration="dbt" module="dagster_dbt" object="DbtProject" />
+
+Note that if the class name is different from the module name, you will need to prepend the class name to the object:
+
+```
+
+<PyObject module="dagster_aws" integration="aws" section="libraries" object="s3.s3_pickle_io_manager" />
 ```
 
 #### Properties
@@ -95,6 +107,7 @@ Required properties:
 - `module`: The module name
 - `section`: The section name in the docs (i.e. the name of the page)
 - `object`: The class or method
+- `integration`: The name of the integration, which should be the same as the directory that contains the integration API doc. Required for integration libraries.
 
 Optional properties:
 

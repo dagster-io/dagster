@@ -1,4 +1,4 @@
 # dagster-celery-docker
 
 The docs for `dagster-celery-docker` can be found
-[here](https://docs.dagster.io/api/python-api/libraries/dagster-celery_docker).
+[here](https://docs.dagster.io/integrations/libraries/celery/dagster-celery_docker).

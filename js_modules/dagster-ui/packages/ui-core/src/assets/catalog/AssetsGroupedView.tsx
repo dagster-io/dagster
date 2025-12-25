@@ -1,5 +1,6 @@
 import {
   Box,
+  Colors,
   Container,
   Icon,
   IconName,
@@ -197,6 +198,7 @@ const getListItems = weakMapMemoize(
                 ? (label as KnownTagType)
                 : propertyToLabelAndIcon[selectedTab].icon
             }
+            color={Colors.textDefault()}
             size={24}
           />
         );

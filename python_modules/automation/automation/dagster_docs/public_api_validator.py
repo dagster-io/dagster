@@ -47,7 +47,7 @@ class PublicApiValidator:
     def __init__(self, dagster_root: Path):
         self.dagster_root = dagster_root
         self.python_modules_dir = dagster_root / "python_modules"
-        self.rst_docs_dir = dagster_root / "docs" / "sphinx" / "sections" / "api" / "apidocs"
+        self.rst_docs_dir = dagster_root / "docs" / "sphinx" / "sections"
         self._package_paths_cache: Optional[dict[str, Path]] = None
 
     def _discover_packages(self) -> dict[str, Path]:
@@ -338,13 +338,13 @@ class PublicApiValidator:
         """
         relative_path = rst_file.relative_to(self.rst_docs_dir)
 
-        if relative_path.parts[0] == "dagster":
+        if relative_path.parts[1] == "dagster":
             return "dagster"
-        elif relative_path.parts[0] == "libraries":
+        elif relative_path.parts[1] == "libraries" or relative_path.parts[1] == "graphql":
             if len(relative_path.parts) > 1:
                 # For library RST files like libraries/dagster-airlift.rst,
                 # assume symbols are exported at library top-level: dagster_airlift
-                lib_file = relative_path.parts[1]
+                lib_file = relative_path.parts[3]
                 if lib_file.endswith(".rst"):
                     lib_name = lib_file[:-4].replace("-", "_")  # Remove .rst and convert dashes
                     return lib_name

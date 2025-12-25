@@ -430,11 +430,13 @@ export type AssetHealthFreshnessMeta = {
 
 export type AssetHealthMaterializationDegradedNotPartitionedMeta = {
   __typename: 'AssetHealthMaterializationDegradedNotPartitionedMeta';
-  failedRunId: Scalars['String']['output'];
+  failedRunId: Maybe<Scalars['String']['output']>;
 };
 
 export type AssetHealthMaterializationDegradedPartitionedMeta = {
   __typename: 'AssetHealthMaterializationDegradedPartitionedMeta';
+  latestFailedRunId: Maybe<Scalars['String']['output']>;
+  latestRunId: Maybe<Scalars['String']['output']>;
   numFailedPartitions: Scalars['Int']['output'];
   numMissingPartitions: Scalars['Int']['output'];
   totalNumPartitions: Scalars['Int']['output'];
@@ -442,6 +444,7 @@ export type AssetHealthMaterializationDegradedPartitionedMeta = {
 
 export type AssetHealthMaterializationHealthyPartitionedMeta = {
   __typename: 'AssetHealthMaterializationHealthyPartitionedMeta';
+  latestRunId: Maybe<Scalars['String']['output']>;
   numMissingPartitions: Scalars['Int']['output'];
   totalNumPartitions: Scalars['Int']['output'];
 };
@@ -1036,6 +1039,7 @@ export type ConfigTypeField = {
   defaultValueAsJson: Maybe<Scalars['String']['output']>;
   description: Maybe<Scalars['String']['output']>;
   isRequired: Scalars['Boolean']['output'];
+  isSecret: Scalars['Boolean']['output'];
   name: Scalars['String']['output'];
 };
 
@@ -1063,6 +1067,7 @@ export type ConfiguredValue = {
 
 export enum ConfiguredValueType {
   ENV_VAR = 'ENV_VAR',
+  SECRET = 'SECRET',
   VALUE = 'VALUE',
 }
 
@@ -1112,6 +1117,7 @@ export enum DagsterEventType {
   ASSET_OBSERVATION = 'ASSET_OBSERVATION',
   ASSET_STORE_OPERATION = 'ASSET_STORE_OPERATION',
   ASSET_WIPED = 'ASSET_WIPED',
+  CODE_LOCATION_UPDATED = 'CODE_LOCATION_UPDATED',
   ENGINE_EVENT = 'ENGINE_EVENT',
   FRESHNESS_STATE_CHANGE = 'FRESHNESS_STATE_CHANGE',
   FRESHNESS_STATE_EVALUATION = 'FRESHNESS_STATE_EVALUATION',
@@ -5556,9 +5562,9 @@ export type ShutdownRepositoryLocationSuccess = {
 
 export type SinceConditionMetadata = {
   __typename: 'SinceConditionMetadata';
-  resetEvaluationId: Maybe<Scalars['Int']['output']>;
+  resetEvaluationId: Maybe<Scalars['ID']['output']>;
   resetTimestamp: Maybe<Scalars['Float']['output']>;
-  triggerEvaluationId: Maybe<Scalars['Int']['output']>;
+  triggerEvaluationId: Maybe<Scalars['ID']['output']>;
   triggerTimestamp: Maybe<Scalars['Float']['output']>;
 };
 
@@ -7027,6 +7033,14 @@ export const buildAssetHealthMaterializationDegradedPartitionedMeta = (
   relationshipsToOmit.add('AssetHealthMaterializationDegradedPartitionedMeta');
   return {
     __typename: 'AssetHealthMaterializationDegradedPartitionedMeta',
+    latestFailedRunId:
+      overrides && overrides.hasOwnProperty('latestFailedRunId')
+        ? overrides.latestFailedRunId!
+        : 'explicabo',
+    latestRunId:
+      overrides && overrides.hasOwnProperty('latestRunId')
+        ? overrides.latestRunId!
+        : 'perspiciatis',
     numFailedPartitions:
       overrides && overrides.hasOwnProperty('numFailedPartitions')
         ? overrides.numFailedPartitions!
@@ -7052,6 +7066,8 @@ export const buildAssetHealthMaterializationHealthyPartitionedMeta = (
   relationshipsToOmit.add('AssetHealthMaterializationHealthyPartitionedMeta');
   return {
     __typename: 'AssetHealthMaterializationHealthyPartitionedMeta',
+    latestRunId:
+      overrides && overrides.hasOwnProperty('latestRunId') ? overrides.latestRunId! : 'eveniet',
     numMissingPartitions:
       overrides && overrides.hasOwnProperty('numMissingPartitions')
         ? overrides.numMissingPartitions!
@@ -8154,6 +8170,7 @@ export const buildConfigTypeField = (
     description:
       overrides && overrides.hasOwnProperty('description') ? overrides.description! : 'esse',
     isRequired: overrides && overrides.hasOwnProperty('isRequired') ? overrides.isRequired! : true,
+    isSecret: overrides && overrides.hasOwnProperty('isSecret') ? overrides.isSecret! : false,
     name: overrides && overrides.hasOwnProperty('name') ? overrides.name! : 'odit',
   };
 };
@@ -15510,13 +15527,13 @@ export const buildSinceConditionMetadata = (
     resetEvaluationId:
       overrides && overrides.hasOwnProperty('resetEvaluationId')
         ? overrides.resetEvaluationId!
-        : 8424,
+        : 'c8e7ab7b-aed5-4c32-81a4-f5360700738c',
     resetTimestamp:
       overrides && overrides.hasOwnProperty('resetTimestamp') ? overrides.resetTimestamp! : 5.31,
     triggerEvaluationId:
       overrides && overrides.hasOwnProperty('triggerEvaluationId')
         ? overrides.triggerEvaluationId!
-        : 2168,
+        : '2f6e3f88-605f-4ca0-9629-9e9354410433',
     triggerTimestamp:
       overrides && overrides.hasOwnProperty('triggerTimestamp')
         ? overrides.triggerTimestamp!

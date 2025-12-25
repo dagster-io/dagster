@@ -1,7 +1,8 @@
 import {Box, Button, Colors, Dialog, DialogFooter, Icon} from '@dagster-io/ui-components';
 import {useState} from 'react';
+import {assetHealthEnabled} from 'shared/app/assetHealthEnabled.oss';
 
-import {AssetNodeWithLiveData} from './AssetNode2025';
+import {AssetNodeWithLiveData} from './AssetNode';
 import {AssetNodeFacetDefaults} from './AssetNodeFacets';
 import {AssetNodeFacetsPicker} from './AssetNodeFacetsPicker';
 import {AssetNodeFacet} from './AssetNodeFacetsUtil';
@@ -66,7 +67,7 @@ const ExampleAssetNode: AssetNodeFragment = {
   isAutoCreatedStub: false,
   id: '["asset1"]',
   isObservable: false,
-  isPartitioned: false,
+  isPartitioned: true,
   isMaterializable: true,
   jobNames: ['job1'],
   opNames: ['asset1'],
@@ -110,13 +111,19 @@ const ExampleLiveData: LiveDataForNodeWithStaleData = {
     __typename: 'AssetFreshnessInfo',
     currentMinutesLate: 12,
   },
-  partitionStats: null,
+  partitionStats: {
+    numMaterialized: 90,
+    numMaterializing: 0,
+    numPartitions: 100,
+    numFailed: 2,
+  },
   opNames: [],
   assetChecks: ExampleAssetChecks,
 };
 
 const ExampleAutomationData: AssetAutomationFragment = {
   __typename: 'AssetNode',
+  id: '["example_asset"]',
   assetKey: {__typename: 'AssetKey', path: ['example_asset']},
   automationCondition: {
     __typename: 'AutomationCondition',
@@ -177,6 +184,7 @@ export const AssetNodeFacetSettingsButton = ({
                 definition={ExampleAssetNode}
                 liveData={ExampleLiveData}
                 automationData={ExampleAutomationData}
+                assetHealthEnabled={assetHealthEnabled()}
               />
             </div>
           </Box>

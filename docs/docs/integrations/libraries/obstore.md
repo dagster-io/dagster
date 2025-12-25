@@ -1,6 +1,7 @@
 ---
 title: Dagster & obstore
 sidebar_label: obstore
+sidebar_position: 1
 description: The community-supported obstore package provides an integration with obstore, providing three lean integrations with object stores, ADLS, GCS & S3.
 tags: [community-supported, storage]
 source: https://github.com/dagster-io/community-integrations/tree/main/libraries/dagster-obstore

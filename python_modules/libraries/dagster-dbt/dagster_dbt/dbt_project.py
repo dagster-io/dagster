@@ -132,6 +132,42 @@ class DagsterDbtProjectPreparer(DbtProjectPreparer):
             .wait()
         )
 
+        # Remove seed entries from partial_parse to force re-parsing at runtime.
+        # This ensures seeds get correct root_path based on current project location.
+        self._invalidate_seeds_in_partial_parse(project)
+
+    def _invalidate_seeds_in_partial_parse(self, project: "DbtProject") -> None:
+        """Remove seed entries from partial_parse.msgpack to force re-parsing.
+
+        Seeds contain root_path which is an absolute path from build time. When state
+        is generated in one environment (e.g., CI/CD) and used in another (e.g., deployed
+        container), the root_path points to the wrong location and seed loading fails.
+
+        By removing seed entries from the cache, dbt will re-parse them at runtime with
+        the correct current project path. Models keep their cached data for fast loading.
+        """
+        import msgpack
+
+        partial_parse_path = project.project_dir / project.target_path / "partial_parse.msgpack"
+        if not partial_parse_path.exists():
+            return
+
+        with open(partial_parse_path, "rb") as f:
+            data = msgpack.unpack(f, raw=False, strict_map_key=False)
+
+        # Remove seed nodes
+        seed_node_ids = [k for k in data.get("nodes", {}).keys() if k.startswith("seed.")]
+        for seed_id in seed_node_ids:
+            del data["nodes"][seed_id]
+
+        # Remove seed file entries (CSVs)
+        seed_file_ids = [k for k in data.get("files", {}).keys() if k.lower().endswith(".csv")]
+        for file_id in seed_file_ids:
+            del data["files"][file_id]
+
+        with open(partial_parse_path, "wb") as f:
+            msgpack.pack(data, f)
+
 
 @record_custom
 class DbtProject(IHaveNew):

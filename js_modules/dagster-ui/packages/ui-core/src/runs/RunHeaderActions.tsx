@@ -1,6 +1,7 @@
 import {Button, Group, Icon, Menu, MenuItem, Popover, Tooltip} from '@dagster-io/ui-components';
 import {useContext, useState} from 'react';
 import {useHistory} from 'react-router-dom';
+import {AISummaryForRunMenuItem} from 'shared/runs/AISummaryForRunMenuItem.oss';
 import {RunAlertNotifications} from 'shared/runs/RunAlertNotifications.oss';
 import {RunMetricsDialog} from 'shared/runs/RunMetricsDialog.oss';
 
@@ -17,11 +18,11 @@ import {RunFragment} from './types/RunFragments.types';
 import {AppContext} from '../app/AppContext';
 import {showSharedToaster} from '../app/DomUtils';
 import {RunStatus} from '../graphql/types';
-import {FREE_CONCURRENCY_SLOTS_MUTATION} from '../instance/InstanceConcurrencyKeyInfo';
+import {FREE_CONCURRENCY_SLOTS_MUTATION} from '../instance/ConcurrencyQueries';
 import {
   FreeConcurrencySlotsMutation,
   FreeConcurrencySlotsMutationVariables,
-} from '../instance/types/InstanceConcurrencyKeyInfo.types';
+} from '../instance/types/ConcurrencyQueries.types';
 import {AnchorButton} from '../ui/AnchorButton';
 import {workspacePipelineLinkForRun, workspacePipelinePath} from '../workspace/workspacePath';
 
@@ -98,6 +99,7 @@ export const RunHeaderActions = ({run, isJob}: {run: RunFragment; isJob: boolean
               <Menu>
                 {!isExternalRun(run) ? (
                   <>
+                    <AISummaryForRunMenuItem run={run} />
                     <Tooltip
                       content="Loadable in dagster-webserver-debug"
                       position="left"

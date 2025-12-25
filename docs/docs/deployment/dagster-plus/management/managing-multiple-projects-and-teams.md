@@ -31,16 +31,22 @@ Refer to the following table for more information, including the pros and cons o
 
 ### Deployment configuration
 
-Whether you use a single repository or multiple, you can use a [`dagster_cloud.yaml` file](/deployment/code-locations/dagster-cloud-yaml) to define the code locations to deploy. For each repository, follow the [steps appropriate to your CI/CD provider](/deployment/dagster-plus/deploying-code/ci-cd/ci-cd-in-hybrid) and include only the code locations that are relevant to the repository in your CI/CD workflow.
+Whether you use a single repository or multiple, you can use a [`build.yaml` file](/deployment/dagster-plus/management/build-yaml) to define the code locations to deploy. For each repository, follow the [steps appropriate to your CI/CD provider](/deployment/dagster-plus/deploying-code/configuring-ci-cd) and include only the code locations that are relevant to the repository in your CI/CD workflow.
+
+:::note
+
+If you have an older Dagster+ deployment, you may have a `dagster_cloud.yaml` file instead of a `build.yaml` file.
+
+:::
 
 #### Example with GitHub CI/CD on Hybrid deployment
 
 1. **For each repository**, use the CI/CD workflow provided in [Dagster+ Hybrid quickstart repository](https://github.com/dagster-io/dagster-cloud-hybrid-quickstart/blob/main/.github/workflows/dagster-cloud-deploy.yml).
 
-2. **For each project in the repository**, configure a code location in the [`dagster_cloud.yaml` file](/deployment/code-locations/dagster-cloud-yaml):
+2. **For each project in the repository**, configure a code location in the [`build.yaml` file](/deployment/dagster-plus/management/build-yaml):
 
    ```yaml
-   # dagster_cloud.yml
+   # build.yml
    locations:
      - location_name: project_a
        code_source:

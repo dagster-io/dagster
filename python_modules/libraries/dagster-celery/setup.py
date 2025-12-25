@@ -29,7 +29,7 @@ setup(
     ],
     packages=find_packages(exclude=["dagster_celery_tests*"]),
     entry_points={"console_scripts": ["dagster-celery = dagster_celery.cli:main"]},
-    python_requires=">=3.10,<3.14",
+    python_requires=">=3.10,<3.15",
     install_requires=[
         f"dagster{pin}",
         "celery>=4.3.0",

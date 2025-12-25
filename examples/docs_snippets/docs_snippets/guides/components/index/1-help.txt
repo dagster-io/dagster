@@ -20,7 +20,6 @@ Usage: dg [OPTIONS] COMMAND [ARGS]...
 │ api        Make REST-like API calls to Dagster Plus.                                                                 │
 │ check      Commands for checking the integrity of your Dagster code.                                                 │
 │ dev        Start a local instance of Dagster.                                                                        │
-│ docs       Commands for generating docs from your Dagster code.                                                      │
 │ launch     Launch a Dagster run.                                                                                     │
 │ list       Commands for listing Dagster entities.                                                                    │
 │ plus       Commands for interacting with Dagster Plus.                                                               │

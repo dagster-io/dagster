@@ -85,6 +85,6 @@ For more information on customizing loggers, see "[Customizing Dagster's built-i
 
 ## Integrating external loggers
 
-In addition to built-in loggers, you can also integrate external loggers to augment Dagster's default logs and configure them to display in the UI. Other options, such as custom handlers and formatters, can be configured in your project's `dagster.yaml`.
+In addition to built-in loggers, you can also integrate external loggers to augment Dagster's default logs. Other options, such as custom handlers and formatters, can be configured in your project's `dagster.yaml`.
 
-Refer to the [Python logging guide](/guides/log-debug/logging/python-logging) for more information and examples.
+For more information and examples, see the [Python logging guide](/guides/log-debug/logging/python-logging).

@@ -1,5 +1,3 @@
-// eslint-disable-next-line no-restricted-imports
-
 import {Button} from '../Button';
 import {Group} from '../Group';
 import {showToast} from '../Toaster';

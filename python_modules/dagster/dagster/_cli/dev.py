@@ -20,7 +20,7 @@ from dagster_shared.ipc import (
 )
 from dagster_shared.serdes import serialize_value
 
-from dagster._annotations import deprecated
+from dagster._annotations import deprecated, superseded
 from dagster._cli.proxy_server_manager import ProxyServerManager
 from dagster._cli.utils import assert_no_remaining_opts, get_possibly_temporary_instance_for_cli
 from dagster._cli.workspace.cli_target import WorkspaceOpts, workspace_opts_to_load_target
@@ -109,6 +109,10 @@ _CHECK_SUBPROCESS_INTERVAL = 5
 @workspace_options
 @deprecated(
     breaking_version="2.0", subject="--dagit-port and --dagit-host args", emit_runtime_warning=False
+)
+@superseded(
+    additional_warn_text="Use 'dg dev' instead.",
+    emit_runtime_warning=True,
 )
 def dev_command(
     code_server_log_level: str,

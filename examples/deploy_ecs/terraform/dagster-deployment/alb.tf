@@ -1,6 +1,6 @@
 locals {
   dagster_webserver_lb_dns_name = var.create_lb ? aws_lb.dagster_webserver[0].dns_name : null
-  lb_target_group_arn = var.create_lb ? aws_lb_target_group.dagster_webserver[0].arn : var.lb_target_group_arn
+  lb_target_group_arn           = var.create_lb ? aws_lb_target_group.dagster_webserver[0].arn : var.lb_target_group_arn
 }
 
 resource "aws_lb" "dagster_webserver" {
@@ -14,7 +14,7 @@ resource "aws_lb" "dagster_webserver" {
 }
 
 resource "aws_lb_target_group" "dagster_webserver" {
-  count       = var.create_lb ? 1 : 0
+  count = var.create_lb ? 1 : 0
   # no longer than 6 characters
   name_prefix = "dgweb-"
   port        = 80

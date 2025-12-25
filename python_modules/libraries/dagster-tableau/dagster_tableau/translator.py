@@ -121,7 +121,7 @@ class TableauWorkspaceData:
                 if workbook.content_type == TableauContentType.WORKBOOK
             },
             sheets_by_id={
-                sheet.properties["luid"]: sheet
+                sheet.properties["luid"] or sheet.properties["id"]: sheet
                 for sheet in content_data
                 if sheet.content_type == TableauContentType.SHEET
             },
@@ -241,6 +241,7 @@ class DagsterTableauTranslator:
                 )
             ).key
             for data_source_id in data_source_ids
+            if data_source_id in data.workspace_data.data_sources_by_id
         ]
 
         workbook_id = data.properties["workbook"]["luid"]
@@ -280,6 +281,7 @@ class DagsterTableauTranslator:
                 )
             ).key
             for sheet_id in sheet_ids
+            if sheet_id in data.workspace_data.sheets_by_id
         ]
 
         dashboard_upstream_data_source_ids = data.properties.get("data_source_ids", [])
@@ -292,6 +294,7 @@ class DagsterTableauTranslator:
                 )
             ).key
             for data_source_id in dashboard_upstream_data_source_ids
+            if data_source_id in data.workspace_data.data_sources_by_id
         ]
 
         upstream_keys = sheet_keys + data_source_keys

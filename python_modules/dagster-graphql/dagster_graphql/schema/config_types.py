@@ -7,6 +7,9 @@ from dagster._core.snap import ConfigFieldSnap, ConfigTypeSnap
 
 from dagster_graphql.schema.util import ResolveInfo, non_null_list
 
+# Constant for masking secret values in GraphQL responses
+SECRET_MASK_VALUE = "********"
+
 GrapheneConfigTypeUnion = Union[
     "GrapheneEnumConfigType",
     "GrapheneCompositeConfigType",
@@ -357,6 +360,7 @@ class GrapheneConfigTypeField(graphene.ObjectType):
     config_type = graphene.NonNull(GrapheneConfigType)
     config_type_key = graphene.NonNull(graphene.String)
     is_required = graphene.NonNull(graphene.Boolean)
+    is_secret = graphene.NonNull(graphene.Boolean)
     default_value_as_json = graphene.String()
 
     class Meta:
@@ -384,7 +388,14 @@ class GrapheneConfigTypeField(graphene.ObjectType):
         return to_config_type(self._get_config_type, self._field_snap.type_key)
 
     def resolve_default_value_as_json(self, _graphene_info: ResolveInfo) -> Optional[str]:
+        # Mask default values for secret fields
+        if self._field_snap.is_secret:
+            # Return JSON-encoded mask if there's a default value
+            return f'"{SECRET_MASK_VALUE}"' if self._field_snap.default_value_as_json_str else None
         return self._field_snap.default_value_as_json_str
+
+    def resolve_is_secret(self, _graphene_info: ResolveInfo) -> bool:
+        return self._field_snap.is_secret or False
 
 
 class GrapheneCompositeConfigType(graphene.ObjectType):
