@@ -1961,8 +1961,16 @@ def _get_cant_run_because_of_parent_reason(
     if parent_node.partitions_def != candidate_node.partitions_def:
         return f"parent {parent_node.key.to_user_string()} and {candidate_node.key.to_user_string()} have different partitions definitions so they cannot be materialized in the same run. {candidate_node.key.to_user_string()} can be materialized once {parent_node.key.to_user_string()} is materialized."
 
-    parent_target_subset = target_subset.get_asset_subset(parent_asset_key, asset_graph)
-    candidate_target_subset = target_subset.get_asset_subset(candidate_asset_key, asset_graph)
+    parent_target_subset = (
+        target_subset.get_asset_subset(parent_asset_key)
+        or asset_graph_view.get_empty_subset(key=parent_asset_key).convert_to_serializable_subset()
+    )
+    candidate_target_subset = (
+        target_subset.get_asset_subset(candidate_asset_key)
+        or asset_graph_view.get_empty_subset(
+            key=candidate_asset_key
+        ).convert_to_serializable_subset()
+    )
 
     num_parent_partitions_being_requested_this_tick = parent_being_requested_this_tick_subset.size
 
