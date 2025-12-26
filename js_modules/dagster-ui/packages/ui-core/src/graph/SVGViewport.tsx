@@ -648,12 +648,11 @@ const SVGViewportInner = forwardRef<SVGViewportRef, SVGViewportProps>(
               data-testid={testId('zoom-slider')}
             >
               <Slider
-                vertical
+                orientation="vertical"
                 min={getMinZoom()}
                 max={getMaxZoom()}
-                stepSize={0.001}
+                step={0.001}
                 value={scale}
-                labelRenderer={false}
                 onChange={(next: number) => {
                   const el = element.current;
                   if (!el) {
