@@ -733,7 +733,8 @@ def _attach_sql_model_code_reference(
 
     # attempt to get root_path, which is removed from manifests in newer dbt versions
     relative_path = Path(dbt_resource_props["original_file_path"])
-    abs_path = project.project_dir.joinpath(relative_path).resolve()
+    project_dir = Path(project.project_dir)
+    abs_path = project_dir.joinpath(relative_path).resolve()
 
     return {
         **existing_metadata,
