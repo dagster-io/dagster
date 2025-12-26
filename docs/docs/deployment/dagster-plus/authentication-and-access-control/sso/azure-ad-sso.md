@@ -32,8 +32,10 @@ In this step, you'll add the Dagster Cloud app to your list of managed SaaS apps
 2. On the left navigation pane, click the **Azure Active Directory** service.
 3. Navigate to **Enterprise Applications** and then **All Applications**.
 4. Click **New application**.
-5. In the **Add from the gallery** section, type **Dagster+** in the search box.
+
+5. In the **Add from the gallery** section, type **Dagster Cloud** in the search box.
 6. Select **Dagster Cloud** from the results panel and then add the app. Wait a few seconds while the app is added to your tenant.
+
 
 ## Step 2: configure SSO in Azure AD \{#configure-sso}
 
