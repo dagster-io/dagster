@@ -1766,7 +1766,7 @@ def test_asset_backfill_submit_runs_in_chunks(
     for asset_key in asset_selection:
         assert (
             backfill.get_asset_backfill_data(asset_graph)
-            .requested_subset.get_partitions_subset(asset_key, asset_graph)
+            .requested_subset.get_partitions_subset(asset_key)
             .get_partition_keys()
             == target_partitions
         )

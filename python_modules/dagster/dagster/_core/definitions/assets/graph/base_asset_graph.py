@@ -746,7 +746,11 @@ class BaseAssetGraph(ABC, Generic[T_AssetNode]):
 
         queued_subsets_by_asset_key: dict[AssetKey, Optional[PartitionsSubset]] = {
             initial_asset_key: (
-                initial_subset.get_partitions_subset(initial_asset_key, self)
+                (
+                    initial_subset.get_partitions_subset(initial_asset_key)
+                    if initial_asset_key in initial_subset.partitions_subsets_by_asset_key
+                    else check.not_none(self.get(initial_asset_key).partitions_def).empty_subset()
+                )
                 if self.get(initial_asset_key).is_partitioned
                 else None
             ),
