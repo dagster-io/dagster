@@ -246,3 +246,89 @@ def get_branch_deployment_name(client: IGraphQLClient, repo_name: str, branch_na
         )
 
     return deployment_name
+
+
+# GraphQL query for getting deployment settings
+GET_DEPLOYMENT_SETTINGS_QUERY = """
+query CliDeploymentSettings {
+    deploymentSettings {
+        settings
+    }
+}
+"""
+
+# GraphQL mutation for setting deployment settings
+SET_DEPLOYMENT_SETTINGS_MUTATION = """
+mutation CliSetDeploymentSettings($deploymentSettings: DeploymentSettingsInput!) {
+    setDeploymentSettings(deploymentSettings: $deploymentSettings) {
+        __typename
+        ... on DeploymentSettings {
+            settings
+        }
+        ... on UnauthorizedError {
+            message
+        }
+        ... on PythonError {
+            message
+            stack
+        }
+    }
+}
+"""
+
+
+def get_deployment_settings(client: IGraphQLClient) -> dict[str, Any]:
+    """Get current deployment settings.
+
+    Args:
+        client: GraphQL client
+
+    Returns:
+        Dictionary containing deployment settings
+
+    Raises:
+        click.ClickException: If unable to retrieve settings
+    """
+    result = client.execute(GET_DEPLOYMENT_SETTINGS_QUERY)
+
+    deployment_settings = result.get("deploymentSettings")
+    if not deployment_settings:
+        raise click.ClickException(f"Unable to retrieve deployment settings: {result}")
+
+    settings = deployment_settings.get("settings")
+    if settings is None:
+        raise click.ClickException("Deployment settings are None")
+
+    return settings
+
+
+def set_deployment_settings(
+    client: IGraphQLClient,
+    settings: dict[str, Any],
+) -> dict[str, Any]:
+    """Set deployment settings.
+
+    Args:
+        client: GraphQL client
+        settings: Settings dictionary to apply
+
+    Returns:
+        Updated settings dictionary
+
+    Raises:
+        click.ClickException: If the mutation fails
+    """
+    result = client.execute(
+        SET_DEPLOYMENT_SETTINGS_MUTATION,
+        variables={"deploymentSettings": {"settings": settings}},
+    )
+
+    settings_data = result.get("setDeploymentSettings")
+    if not settings_data:
+        raise click.ClickException(f"Unable to set deployment settings: {result}")
+
+    if settings_data.get("__typename") != "DeploymentSettings":
+        error_message = settings_data.get("message", "Unknown error")
+        raise click.ClickException(f"Failed to set deployment settings: {error_message}")
+
+    return settings_data.get("settings", {})
