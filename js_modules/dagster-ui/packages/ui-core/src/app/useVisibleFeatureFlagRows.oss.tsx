@@ -24,10 +24,6 @@ export const useVisibleFeatureFlagRows = (): FeatureFlagRow[] => [
     flagType: FeatureFlag.flagAssetGraphGroupsPerCodeLocation,
   },
   {
-    key: 'Use new navigation layout',
-    flagType: FeatureFlag.flagNavigationUpdate,
-  },
-  {
     key: 'Use new catalog layout (beta)',
     flagType: FeatureFlag.flagAssetCatalogSidebar,
   },
