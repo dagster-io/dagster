@@ -7,7 +7,6 @@ import {
   GlobalPopoverStyle,
   GlobalSuggestStyle,
   GlobalThemeStyle,
-  GlobalTooltipStyle,
   Toaster,
   themeToClassName,
 } from '@dagster-io/ui-components';
@@ -102,7 +101,6 @@ export const GlobalStyleProvider = () => {
       <GlobalGeistMono />
       <GlobalStyle />
       <GlobalThemeStyle />
-      <GlobalTooltipStyle />
       <GlobalPopoverStyle />
       <GlobalDialogStyle />
       <GlobalSuggestStyle />

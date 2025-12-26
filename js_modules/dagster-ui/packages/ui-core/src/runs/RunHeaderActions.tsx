@@ -74,7 +74,7 @@ export const RunHeaderActions = ({run, isJob}: {run: RunFragment; isJob: boolean
       <Group direction="row" spacing={8}>
         <RunAlertNotifications runId={run.id} />
         {jobLink.disabledReason ? (
-          <Tooltip content={jobLink.disabledReason} useDisabledButtonTooltipFix>
+          <Tooltip content={jobLink.disabledReason}>
             <Button icon={<Icon name={jobLink.icon} />} disabled>
               {jobLink.label}
             </Button>
@@ -88,7 +88,7 @@ export const RunHeaderActions = ({run, isJob}: {run: RunFragment; isJob: boolean
           View tags and config
         </Button>
         {run.allPools && run.allPools.length ? (
-          <Tooltip content="View pools" position="top" targetTagName="div">
+          <Tooltip content="View pools" position="top">
             <Button icon={<Icon name="concurrency" />} onClick={() => setVisibleDialog('pools')} />
           </Tooltip>
         ) : null}
@@ -100,11 +100,7 @@ export const RunHeaderActions = ({run, isJob}: {run: RunFragment; isJob: boolean
                 {!isExternalRun(run) ? (
                   <>
                     <AISummaryForRunMenuItem run={run} />
-                    <Tooltip
-                      content="Loadable in dagster-webserver-debug"
-                      position="left"
-                      targetTagName="div"
-                    >
+                    <Tooltip content="Loadable in dagster-webserver-debug" position="left">
                       <MenuItem
                         text="Download debug file"
                         icon="download_for_offline"

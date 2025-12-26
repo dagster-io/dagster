@@ -1,7 +1,6 @@
 import {Colors, Icon, Spinner, Tooltip} from '@dagster-io/ui-components';
 import {memo, useContext} from 'react';
 
-import {WarningTooltip} from './WarningTooltip';
 import {DeploymentStatusContext} from '../instance/DeploymentStatusProvider';
 
 export const WorkspaceStatus = memo(({placeholder}: {placeholder: boolean}) => {
@@ -20,12 +19,12 @@ export const WorkspaceStatus = memo(({placeholder}: {placeholder: boolean}) => {
   }
 
   return (
-    <WarningTooltip
+    <Tooltip
       content={codeLocations.content}
       position="bottom"
       modifiers={{offset: {enabled: true, options: {offset: [0, 28]}}}}
     >
       <Icon name="warning" color={Colors.accentYellow()} />
-    </WarningTooltip>
+    </Tooltip>
   );
 });
