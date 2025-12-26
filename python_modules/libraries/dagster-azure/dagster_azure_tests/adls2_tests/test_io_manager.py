@@ -23,8 +23,6 @@ from dagster import (
 from dagster._core.definitions.assets.definition.assets_definition import AssetsDefinition
 from dagster._core.definitions.definitions_class import Definitions
 from dagster._core.definitions.job_base import InMemoryJob
-from dagster._core.definitions.partitions.definition import StaticPartitionsDefinition
-from dagster._core.definitions.source_asset import SourceAsset
 from dagster._core.definitions.unresolved_asset_job_definition import define_asset_job
 from dagster._core.events import DagsterEventType
 from dagster._core.execution.api import create_execution_plan, execute_plan
@@ -81,10 +79,6 @@ def define_inty_job(adls_io_resource=adls2_resource):
 
 
 @pytest.mark.nettest
-@pytest.mark.skip(
-    "Blob this depends on does not exist. See"
-    " https://linear.app/elementl/issue/CORE-83/test-adls2-pickle-io-manager-deletes-recursively-disabled-reenable-it"
-)
 def test_adls2_pickle_io_manager_deletes_recursively(storage_account, file_system, credential):
     job = define_inty_job()
 
@@ -151,10 +145,6 @@ def test_adls2_pickle_io_manager_deletes_recursively(storage_account, file_syste
 
 
 @pytest.mark.nettest
-@pytest.mark.skip(
-    "Blob this depends on does not exist. See"
-    " https://linear.app/elementl/issue/CORE-83/test-adls2-pickle-io-manager-deletes-recursively-disabled-reenable-it"
-)
 def test_adls2_pickle_io_manager_execution(storage_account, file_system, credential):
     job = define_inty_job()
 
@@ -235,10 +225,7 @@ def test_adls2_pickle_io_manager_execution(storage_account, file_system, credent
     assert io_manager.load_input(context) == 2
 
 
-@pytest.mark.skip(
-    "Blob this depends on does not exist. See"
-    " https://linear.app/elementl/issue/CORE-83/test-adls2-pickle-io-manager-deletes-recursively-disabled-reenable-it"
-)
+@pytest.mark.nettest
 def test_asset_io_manager(storage_account, file_system, credential):
     # if you add new assets to this test, make sure that the output names include _id so that we don't
     # run into issues with the azure leasing system in CI
@@ -261,37 +248,20 @@ def test_asset_io_manager(storage_account, file_system, credential):
 
     @asset(
         name=f"upstream_{_id}",
-        ins={"asset3": AssetIn(asset_key=AssetKey([f"asset3_{_id}"]))},  # pyright: ignore[reportCallIssue]
+        ins={"asset3": AssetIn(key=AssetKey([f"asset3_{_id}"]))},
     )
     def upstream(asset3):
         return asset3 + 1
 
-    SourceAsset(f"source1_{_id}", partitions_def=StaticPartitionsDefinition(["foo", "bar"]))
-
-    # prepopulate storage with source asset
-    io_manager = PickledObjectADLS2IOManager(
-        file_system=file_system,
-        adls2_client=create_adls2_client(storage_account, credential),
-        blob_client=create_blob_client(storage_account, credential),
-        lease_client_constructor=DataLakeLeaseClient,
-    )
-    for partition_key in ["foo", "bar"]:
-        context = build_output_context(
-            step_key=f"source1_{_id}",
-            name="result",
-            run_id=make_new_run_id(),
-            dagster_type=resolve_dagster_type(int),
-            partition_key=partition_key,
-        )
-        io_manager.handle_output(context, 1)
-
     @asset(
         name=f"downstream_{_id}",
-        ins={"upstream": AssetIn(asset_key=AssetKey([f"upstream_{_id}"]))},  # pyright: ignore[reportCallIssue]
+        ins={
+            "upstream": AssetIn(key=AssetKey([f"upstream_{_id}"])),
+        },
     )
-    def downstream(upstream, source):
+    def downstream(upstream):
         assert upstream == 7
-        return 1 + upstream + source["foo"] + source["bar"]
+        return 1 + upstream
 
     asset_job = Definitions(
         assets=[upstream, downstream, AssetsDefinition.from_graph(graph_asset)],
@@ -310,6 +280,11 @@ def test_asset_io_manager(storage_account, file_system, credential):
             },
         }
     }
+
+    result = asset_job.execute_in_process(run_config=run_config)
+    assert result.success
+
+    # overwriting the same bucket still works
 
     result = asset_job.execute_in_process(run_config=run_config)
     assert result.success
