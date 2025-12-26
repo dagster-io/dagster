@@ -196,7 +196,7 @@ class RepositoryDefinition:
 
     def validate_loadable(self):
         self.load_all_definitions()
-        self.asset_graph.validate_partition_mappings()
+        self.asset_graph.validate_partitions()
 
     @public
     @property

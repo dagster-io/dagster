@@ -638,10 +638,18 @@ class BaseAssetGraph(ABC, Generic[T_AssetNode]):
             and not self.has_materializable_parents(key)
         }
 
-    def validate_partition_mappings(self):
+    def validate_partitions(self):
         for node in self.asset_nodes:
             if node.is_external:
                 continue
+
+            if node.partitions_def:
+                try:
+                    node.partitions_def.validate_partition_definition()
+                except Exception as e:
+                    raise DagsterInvalidDefinitionError(
+                        f"Invalid partition definition for {node.key.to_user_string()}"
+                    ) from e
 
             parents = self.get_parents(node)
             for parent in parents:
