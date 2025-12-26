@@ -1,3 +1,4 @@
+import json
 from typing import Callable, ContextManager  # noqa: UP035
 
 from dagster import job, op, repository
@@ -292,3 +293,64 @@ def test_executor_launch(instance_cm: Callable[..., ContextManager[DagsterInstan
                     break
 
             assert found_executor_args_var
+
+
+def test_executor_container_overrides(instance_cm: Callable[..., ContextManager[DagsterInstance]]):
+    with instance_cm() as instance:
+        recon_job = reconstructable(bar)
+        loadable_target_origin = LoadableTargetOrigin(python_file=__file__, attribute="bar_repo")
+
+        executor = _get_executor(
+            instance,
+            reconstructable(bar),
+        )
+
+        with in_process_test_workspace(
+            instance, loadable_target_origin, container_image="testing/dagster"
+        ) as workspace:
+            location = workspace.get_code_location(workspace.code_location_names[0])
+            repo_handle = RepositoryHandle.from_location(
+                repository_name="bar_repo",
+                code_location=location,
+            )
+            fake_remote_job = remote_job_from_recon_job(
+                recon_job,
+                op_selection=None,
+                repository_handle=repo_handle,
+            )
+
+            run = create_run_for_test(
+                instance,
+                job_name="bar",
+                remote_job_origin=fake_remote_job.get_remote_origin(),
+                job_code_origin=recon_job.get_python_origin(),
+            )
+            step_handler_context = _step_handler_context(
+                job_def=reconstructable(bar),
+                dagster_run=run,
+                instance=instance,
+                executor=executor,
+            )
+
+            # Test with ecs/container_overrides step tag
+            container_overrides = {
+                "resourceRequirements": [{"type": "GPU", "value": "1"}],
+            }
+            step_tags = {"ecs/container_overrides": json.dumps(container_overrides)}
+
+            run_task_kwargs = executor._step_handler._get_run_task_kwargs(  # type: ignore  # noqa: SLF001
+                run,
+                ["my-command"],
+                "test_step",
+                step_tags,
+                step_handler_context,
+                executor._step_handler._get_container_context(step_handler_context),  # type: ignore  # noqa: SLF001
+            )
+
+            run_container_overrides = run_task_kwargs["overrides"]["containerOverrides"][0]
+
+            assert run_container_overrides["name"] == "run"
+            assert run_container_overrides["command"] == ["my-command"]
+            assert run_container_overrides["resourceRequirements"] == [
+                {"type": "GPU", "value": "1"}
+            ]

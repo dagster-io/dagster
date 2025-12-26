@@ -244,6 +244,7 @@ class EcsStepHandler(StepHandler):
         ]
 
         task_overrides = self._get_task_overrides(step_tags) or {}
+        step_container_overrides = self._get_container_overrides(step_tags)
 
         task_overrides["containerOverrides"] = task_overrides.get("containerOverrides", [])
 
@@ -270,6 +271,8 @@ class EcsStepHandler(StepHandler):
                 container_overrides["environment"] = (
                     container_overrides.get("environment", []) + executor_env_vars
                 )
+                # merge step container overrides (e.g., resourceRequirements)
+                container_overrides.update(step_container_overrides)
                 break
         # if no existing container overrides for the executor container, add new container overrides
         else:
@@ -278,6 +281,7 @@ class EcsStepHandler(StepHandler):
                     "name": executor_container_name,
                     "command": args,
                     "environment": executor_env_vars,
+                    **step_container_overrides,
                 }
             )
 
@@ -307,6 +311,12 @@ class EcsStepHandler(StepHandler):
             overrides = deep_merge_dicts(overrides, json.loads(tag_overrides))
 
         return overrides
+
+    def _get_container_overrides(self, step_tags: Mapping[str, str]) -> dict[str, Any]:
+        if tag_overrides := step_tags.get("ecs/container_overrides"):
+            return json.loads(tag_overrides)
+
+        return {}
 
     def _get_step_id(self, step_handler_context: StepHandlerContext):
         """Step ID is used to identify the ECS task in the ECS cluster.

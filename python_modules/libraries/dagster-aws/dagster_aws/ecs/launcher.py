@@ -522,6 +522,7 @@ class EcsRunLauncher(RunLauncher[T_DagsterInstance], ConfigurableClass):
         cpu_and_memory_overrides = self.get_cpu_and_memory_overrides(container_context, run)
 
         task_overrides = self._get_task_overrides(container_context, run)
+        run_container_overrides = self._get_container_overrides(run)
 
         container_overrides: list[dict[str, Any]] = [
             {
@@ -529,6 +530,7 @@ class EcsRunLauncher(RunLauncher[T_DagsterInstance], ConfigurableClass):
                 "command": command,
                 # containerOverrides expects cpu/memory as integers
                 **{k: int(v) for k, v in cpu_and_memory_overrides.items()},
+                **run_container_overrides,
             }
         ]
 
@@ -625,6 +627,14 @@ class EcsRunLauncher(RunLauncher[T_DagsterInstance], ConfigurableClass):
             overrides["ephemeralStorage"] = {"sizeInGiB": int(ephemeral_storage)}
 
         return overrides
+
+    def _get_container_overrides(self, run: DagsterRun) -> Mapping[str, Any]:
+        tag_overrides = run.tags.get("ecs/container_overrides")
+
+        if tag_overrides:
+            return json.loads(tag_overrides)
+
+        return {}
 
     def _get_run_task_kwargs_from_run(self, run: DagsterRun) -> Mapping[str, Any]:
         run_task_kwargs = run.tags.get("ecs/run_task_kwargs")
