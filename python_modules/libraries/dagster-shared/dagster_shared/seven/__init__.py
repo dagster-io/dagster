@@ -24,6 +24,7 @@ from dagster_shared.seven.temp_dir import get_system_temp_directory as get_syste
 IS_WINDOWS = os.name == "nt"
 IS_PYTHON_3_12 = (sys.version_info[0], sys.version_info[1]) == (3, 12)
 IS_PYTHON_3_13 = (sys.version_info[0], sys.version_info[1]) == (3, 13)
+IS_PYTHON_3_14 = (sys.version_info[0], sys.version_info[1]) == (3, 14)
 
 # TODO implement a generic import by name -- see https://stackoverflow.com/questions/301134/how-to-import-a-module-given-its-name
 

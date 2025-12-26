@@ -71,7 +71,10 @@ def test_staggered_no_ops(tmp_path: str):
         time.sleep(0.025)
 
     for proc in procs:
-        proc.join(timeout=1)
-        assert proc.exitcode == 0
+        # 10 second timeout allows for slower process startup on some Python versions
+        proc.join(timeout=10)
+        assert proc.exitcode == 0, (
+            f"Process {proc.name} did not exit cleanly (exitcode={proc.exitcode})"
+        )
 
     assert test_file_path.read_text()

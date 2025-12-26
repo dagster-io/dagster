@@ -255,10 +255,13 @@ def test_glue_pipes_interruption_forwarding(long_glue_job, glue_asset, pipes_glu
             job_run_id = next(iter(pipes_glue_client._client._job_runs.keys()))  # noqa
             return_dict[0] = pipes_glue_client._client.get_job_run(long_glue_job, job_run_id)  # noqa
 
-    with multiprocessing.Manager() as manager:
+    # Use fork context explicitly - Python 3.14 changed the default to spawn on macOS,
+    # which requires pickling the target function (local functions can't be pickled)
+    ctx = multiprocessing.get_context("fork")
+    with ctx.Manager() as manager:
         return_dict = manager.dict()
 
-        p = multiprocessing.Process(
+        p = ctx.Process(
             target=materialize_asset,
             args=(
                 {"SLEEP_SECONDS": "10"},

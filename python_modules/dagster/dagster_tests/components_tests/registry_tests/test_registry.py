@@ -20,6 +20,7 @@ from dagster.components.core.package_entry import (
 )
 from dagster.components.core.snapshot import get_package_entry_snap
 from dagster_dg_core.utils import get_venv_executable
+from dagster_shared import seven
 from dagster_shared.serdes.objects import EnvRegistryKey
 
 ensure_dagster_tests_import()
@@ -101,6 +102,9 @@ def _get_editable_package_root(pkg_name: str) -> str:
 # ########################
 
 
+@pytest.mark.skipif(
+    seven.IS_PYTHON_3_14, reason="uses dagster_dbt, but dbt-core doesn't support 3.14"
+)
 def test_components_from_dagster():
     common_deps: list[str] = []
     for pkg_name in [
