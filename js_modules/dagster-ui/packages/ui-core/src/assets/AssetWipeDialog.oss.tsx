@@ -1,5 +1,3 @@
-// eslint-disable-next-line no-restricted-imports
-import {ProgressBar} from '@blueprintjs/core';
 import {
   Body1,
   Box,
@@ -8,6 +6,7 @@ import {
   DialogBody,
   DialogFooter,
   Group,
+  ProgressBar,
   ifPlural,
 } from '@dagster-io/ui-components';
 import {memo, useMemo} from 'react';
@@ -88,7 +87,7 @@ export const AssetWipeDialogInner = memo(
       return (
         <Box flex={{gap: 8, direction: 'column'}}>
           <div>Wiping...</div>
-          <ProgressBar intent="primary" value={Math.max(0.1, value)} animate={value < 1} />
+          <ProgressBar value={Math.max(0.1, value) * 100} animate={value < 100} />
           <NavigationBlock message="Wiping in progress, please do not navigate away yet." />
         </Box>
       );

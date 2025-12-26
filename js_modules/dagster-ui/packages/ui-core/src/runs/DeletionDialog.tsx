@@ -1,5 +1,3 @@
-// eslint-disable-next-line no-restricted-imports
-import {ProgressBar} from '@blueprintjs/core';
 import {
   Button,
   Colors,
@@ -9,6 +7,7 @@ import {
   Group,
   Icon,
   Mono,
+  ProgressBar,
 } from '@dagster-io/ui-components';
 import {useEffect, useReducer, useRef} from 'react';
 
@@ -172,7 +171,7 @@ export const DeletionDialog = (props: Props) => {
         return (
           <Group direction="column" spacing={8}>
             <div>Deleting…</div>
-            <ProgressBar intent="primary" value={Math.max(0.1, value)} animate={value < 1} />
+            <ProgressBar value={Math.max(0.1, value) * 100} animate={value < 100} />
             {state.step === 'deleting' ? (
               <NavigationBlock message="Deletion in progress, please do not navigate away yet." />
             ) : null}
