@@ -21,6 +21,7 @@ from dagster._core.storage.dagster_run import (
     DagsterRunStatus,
 )
 from dagster._core.types.loadable_target_origin import LoadableTargetOrigin
+from dagster._utils.env import environ
 
 
 def test_queued_job_origin_check():
@@ -79,3 +80,46 @@ def test_runs_filter_supports_nonempty_run_ids():
 
     with pytest.raises(CheckError):
         dg.RunsFilter(run_ids=[])
+
+
+@pytest.mark.parametrize(
+    "env,expected_tags",
+    [
+        ({}, {"dagster/job": "foo", "dagster/run-id": "a_run_id", "dagster/user": "a_user"}),
+        (
+            {"DAGSTER_EXECUTION_THE_ATTRIBUTE": "bar"},
+            {
+                "dagster/the-attribute": "bar",
+                "dagster/job": "foo",
+                "dagster/run-id": "a_run_id",
+                "dagster/user": "a_user",
+            },
+        ),
+        (
+            {
+                "SUPER_SECRET_ENV_VAR": "super-secret-value",
+                "DAGSTER_CLOUD_DEPLOYMENT_NAME": "deployment-name",
+                "DAGSTER_CLOUD_GIT_REPO": "git-repo",
+                "DAGSTER_CLOUD_GIT_BRANCH": "git-branch",
+                "DAGSTER_CLOUD_GIT_SHA": "git-sha",
+                "DAGSTER_EXECUTION_THE_ATTRIBUTE": "bar",
+                "DAGSTER_EXECUTION_THE_OTHER_ATTRIBUTE": "qux",
+            },
+            {
+                "dagster/the-attribute": "bar",
+                "dagster/the-other-attribute": "qux",
+                "dagster/deployment-name": "deployment-name",
+                "dagster/git-repo": "git-repo",
+                "dagster/git-branch": "git-branch",
+                "dagster/git-sha": "git-sha",
+                "dagster/job": "foo",
+                "dagster/run-id": "a_run_id",
+                "dagster/user": "a_user",
+            },
+        ),
+    ],
+)
+def test_dagster_execution_metadata_tags(env: dict[str, str], expected_tags: dict[str, str]):
+    with environ(env):
+        run = dg.DagsterRun("foo", "a_run_id", tags={"dagster/user": "a_user"})
+        assert run.dagster_execution_info == expected_tags
