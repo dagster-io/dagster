@@ -1,80 +1,58 @@
-// eslint-disable-next-line no-restricted-imports
-import {
-  MultiSlider as BlueprintMultiSlider,
-  MultiSliderProps as BlueprintMultiSliderProps,
-  Slider as BlueprintSlider,
-  SliderProps as BlueprintSliderProps,
-} from '@blueprintjs/core';
+import * as RadixSlider from '@radix-ui/react-slider';
 import * as React from 'react';
-import styled, {css} from 'styled-components';
 
 import {Colors} from './Color';
+import styles from './css/Slider.module.css';
 
-interface SliderProps extends BlueprintSliderProps {
-  fillColor?: string;
+interface Props {
+  value: number;
+  onChange: (value: number) => void;
+  min?: number;
+  max?: number;
+  step: number;
+  orientation?: 'horizontal' | 'vertical';
+  trackColor?: string;
+  rangeColor?: string;
+  disabled?: boolean;
+  name?: string;
 }
 
-export const Slider = ({fillColor = Colors.accentGray(), ...rest}: SliderProps) => {
-  return <StyledSlider {...rest} intent="none" $fillColor={fillColor} />;
+export const Slider = (props: Props) => {
+  const {
+    value,
+    onChange,
+    min = 0,
+    max = 100,
+    step,
+    orientation = 'horizontal',
+    trackColor = Colors.backgroundGray(),
+    rangeColor = Colors.accentGray(),
+    disabled = false,
+    name,
+  } = props;
+
+  const style = {
+    '--slider-track-color': trackColor,
+    '--slider-range-color': rangeColor,
+  } as React.CSSProperties;
+
+  return (
+    <RadixSlider.Root
+      className={styles.slider}
+      style={style}
+      value={[value]}
+      onValueChange={([first]) => first !== undefined && onChange(first)}
+      min={min}
+      max={max}
+      step={step}
+      disabled={disabled}
+      orientation={orientation}
+      name={name}
+    >
+      <RadixSlider.Track className={styles.track}>
+        <RadixSlider.Range className={styles.range} />
+      </RadixSlider.Track>
+      <RadixSlider.Thumb className={styles.thumb} />
+    </RadixSlider.Root>
+  );
 };
-
-interface MultiSliderProps extends BlueprintMultiSliderProps {
-  fillColor?: string;
-  children: React.ReactNode;
-}
-
-export const MultiSlider = ({fillColor = Colors.accentGray(), ...rest}: MultiSliderProps) => {
-  return <StyledMultiSlider {...rest} intent="none" $fillColor={fillColor} />;
-};
-
-MultiSlider.Handle = BlueprintMultiSlider.Handle;
-
-export const SliderStyles = css<{$fillColor: string}>`
-  .bp5-slider-track {
-    height: 8px;
-    .bp5-slider-progress {
-      background-color: ${(p) => p.$fillColor};
-      opacity: 0.4;
-      height: 8px;
-    }
-    .bp5-slider-progress.bp5-intent-primary {
-      background-color: ${(p) => p.$fillColor};
-      opacity: 1;
-      height: 8px;
-    }
-  }
-  &.bp5-vertical {
-    width: 20px;
-    min-width: 20px;
-  }
-  &.bp5-vertical .bp5-slider-track,
-  &.bp5-vertical .bp5-slider-track .bp5-slider-progress {
-    height: initial;
-    width: 8px;
-  }
-  .bp5-slider-handle {
-    width: 18px;
-    height: 18px;
-    border-radius: 50%;
-    border: 2px solid ${Colors.accentGray()};
-    background: ${Colors.backgroundLighter()};
-    box-shadow: none;
-    &:hover {
-      border: 2px solid ${Colors.accentGrayHover()};
-      box-shadow: ${Colors.shadowDefault()} 0px 2px 12px 0px;
-    }
-
-    .bp5-slider-label {
-      background: ${Colors.accentBlue()};
-      box-shadow: 0 1px 4px ${Colors.shadowDefault()};
-      padding: 4px 8px;
-    }
-  }
-`;
-
-const StyledMultiSlider = styled(BlueprintMultiSlider)<{$fillColor: string}>`
-  ${SliderStyles}
-`;
-const StyledSlider = styled(BlueprintSlider)<{$fillColor: string}>`
-  ${SliderStyles}
-`;

@@ -31,9 +31,8 @@ export const Simple = () => {
       <Slider
         min={200}
         max={600}
-        stepSize={10}
+        step={10}
         value={controlledWidth}
-        labelRenderer={false}
         onChange={(value) => setControlledWidth(value)}
       />
       <div ref={sizer} style={{width: controlledWidth}}>
@@ -147,9 +146,8 @@ export const Containers = () => {
       <Slider
         min={200}
         max={600}
-        stepSize={10}
+        step={10}
         value={controlledWidth}
-        labelRenderer={false}
         onChange={(value) => setControlledWidth(value)}
       />
       <div ref={sizer} style={{width: controlledWidth}}>
