@@ -4,6 +4,8 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Any, NamedTuple, Optional
 
+import click
+
 from dagster_shared.merger import deep_merge_dicts
 from dagster_shared.utils.config import get_dg_config_path, load_config, write_config
 
@@ -144,7 +146,10 @@ class DagsterPlusCliConfig:
     @property
     def organization_url(self) -> str:
         if not self.organization:
-            raise Exception("Organization not set")
+            raise click.UsageError(
+                "Organization not specified. To specify an organization, use the --organization option "
+                "or run `dg plus login`."
+            )
         if self.url is None:
             return f"{DAGSTER_CLOUD_BASE_URL}/{self.organization}"
         return f"{self.url}/{self.organization}"
