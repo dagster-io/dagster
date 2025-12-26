@@ -711,7 +711,7 @@ LIBRARY_PACKAGES_WITH_CUSTOM_CONFIG: list[PackageSpec] = [
         "python_modules/libraries/dagster-dbt",
         pytest_tox_factors=[
             ToxFactor(f"{deps_factor}-{command_factor}", splits=3)
-            for deps_factor in ["dbt17", "dbt18", "dbt19", "dbt110"]
+            for deps_factor in ["dbt17", "dbt18", "dbt19", "dbt110", "dbt111"]
             for command_factor in ["cloud", "core-main", "core-derived-metadata"]
         ],
         # dbt-core 1.7's protobuf<5 constraint conflicts with the grpc requirement for Python 3.13+
