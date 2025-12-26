@@ -217,7 +217,11 @@ def my_job():
   my_op()
 ```
 
-The run launcher will always override the `name` and `command` fields of the container. so you cannot override these values. If you use the `ecs/cpu` or `ecs/memory` tags together with `ecs/container_overrides`, the values from the dedicated tags will be merged together, with values `ecs/container_overrides` breaking any ties.
+:::note
+
+The run launcher will always override the `name` and `command` fields of the container, so you cannot override these values. If you use the `ecs/cpu` or `ecs/memory` tags together with `ecs/container_overrides`, the values from the dedicated tags will be merged together, with values from `ecs/container_overrides` breaking any ties.
+
+:::
 
 ### Secrets management in ECS
 
