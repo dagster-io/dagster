@@ -31,6 +31,7 @@ export * from './components/Page';
 export * from './components/PageHeader';
 export * from './components/Popover';
 export * from './components/ProductTour';
+export * from './components/ProgressBar';
 export * from './components/Radio';
 export * from './components/RefreshableCountdown';
 export * from './components/RoundedButton';

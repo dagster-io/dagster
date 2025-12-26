@@ -1,6 +1,7 @@
+import {useEffect, useState} from 'react';
+
 import {Box} from '../Box';
 import {Colors} from '../Color';
-import {Group} from '../Group';
 import {ProgressBar} from '../ProgressBar';
 
 // eslint-disable-next-line import/no-default-export
@@ -10,25 +11,34 @@ export default {
 };
 
 export const Sizes = () => {
+  const [value, setValue] = useState(0);
+
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setValue((value) => (value < 100 ? value + 1 : value));
+    }, 200);
+    return () => clearInterval(interval);
+  }, []);
+
   return (
-    <Group direction="column" spacing={32}>
+    <Box flex={{direction: 'column', gap: 32}}>
       <Box padding={20} border="all">
-        <Group direction="column" spacing={16}>
-          <ProgressBar intent="primary" value={0.1} animate={true} />
-          <ProgressBar intent="primary" value={0.7} />
-        </Group>
+        <Box flex={{direction: 'column', gap: 16}}>
+          <ProgressBar value={10} animate fillColor={Colors.accentGray()} />
+          <ProgressBar value={70} fillColor={Colors.accentGray()} />
+        </Box>
       </Box>
       <Box padding={20} border="all">
-        <Group direction="column" spacing={16}>
-          <ProgressBar
-            intent="primary"
-            value={0.1}
-            animate={true}
-            fillColor={Colors.accentBlue()}
-          />
-          <ProgressBar intent="primary" value={0.7} fillColor={Colors.accentBlue()} />
-        </Group>
+        <Box flex={{direction: 'column', gap: 16}}>
+          <ProgressBar value={10} animate />
+          <ProgressBar value={70} />
+        </Box>
       </Box>
-    </Group>
+      <Box padding={20} border="all">
+        <Box flex={{direction: 'column', gap: 16}}>
+          <ProgressBar value={value} animate fillColor={Colors.accentGreen()} />
+        </Box>
+      </Box>
+    </Box>
   );
 };
