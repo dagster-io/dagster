@@ -1,5 +1,4 @@
 import os
-import re
 from collections import defaultdict
 from dataclasses import dataclass, field
 from functools import cached_property
@@ -35,17 +34,7 @@ from dagster_databricks.components.databricks_asset_bundle.resource import Datab
 from dagster_databricks.components.databricks_asset_bundle.scaffolder import (
     DatabricksAssetBundleScaffolder,
 )
-
-
-def snake_case(name: str) -> str:
-    """Convert a string to snake_case."""
-    # Remove file extension if present
-    name = Path(name).stem
-    # Replace special characters and spaces with underscores
-    name = re.sub(r"[^a-zA-Z0-9]+", "_", name)
-    # Convert CamelCase to snake_case
-    name = re.sub(r"([a-z0-9])([A-Z])", r"\1_\2", name)
-    return name.lower().strip("_")
+from dagster_databricks.utils import snake_case
 
 
 @dataclass
@@ -251,9 +240,9 @@ class DatabricksAssetBundleComponent(Component, Resolvable):
         )
 
     def build_defs(self, context: ComponentLoadContext) -> Definitions:
-        component_defs_path_as_python_str = str(
-            os.path.relpath(context.component_path.file_path, start=context.project_root)
-        ).replace("/", "_")
+        component_defs_path_as_python_str = snake_case(
+            str(os.path.relpath(context.component_path.file_path, start=context.project_root))
+        )
 
         databricks_assets = []
         for task_key, asset_specs in self.asset_specs_by_task_key.items():
