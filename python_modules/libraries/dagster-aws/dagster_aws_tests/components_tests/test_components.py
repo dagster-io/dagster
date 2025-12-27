@@ -35,3 +35,13 @@ def test_credentials_resolution():
     component = S3ResourceComponent(credentials=raw_config, resource_key="s3")
     assert isinstance(component.credentials, Boto3CredentialsComponent)
     assert getattr(component.credentials, "region_name") == "eu-central-1"
+
+
+def test_templated_credentials():
+    # Simulate a case where credentials come from a template/env var string
+    config = {
+        "credentials": "{{ my_creds_env_var }}",
+        "resource_key": "s3_templated",
+    }
+    component = S3ResourceComponent(**config)
+    assert component.credentials == "{{ my_creds_env_var }}"

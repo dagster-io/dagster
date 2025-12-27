@@ -1,7 +1,7 @@
-from typing import Any, cast
+from typing import Any, Optional, cast
 
 import dagster as dg
-from dagster._annotations import preview, public
+from dagster._annotations import preview, public  # ייבוא נכון מה-Namespace הפנימי
 from pydantic import BaseModel, create_model
 
 from dagster_aws.components.utils import copy_fields_from_model
@@ -12,13 +12,10 @@ def _copy_fields_to_model(
     copy_from: type[BaseModel], copy_to: type[BaseModel], new_model_cls_name: str
 ) -> type[BaseModel]:
     field_definitions = copy_fields_from_model(copy_from)
-    return cast(
-        "type[BaseModel]",
-        create_model(
-            new_model_cls_name,
-            __base__=copy_to,
-            **cast("dict[str, Any]", field_definitions),
-        ),
+    return create_model(
+        new_model_cls_name,
+        __base__=copy_to,
+        **cast("dict[str, Any]", field_definitions),
     )
 
 
@@ -27,10 +24,29 @@ class Boto3CredentialsComponentBase(dg.Component, dg.Resolvable, dg.Model):
         return dg.Definitions()
 
 
-Boto3CredentialsComponent = public(preview)(
-    _copy_fields_to_model(
-        copy_from=ResourceWithBoto3Configuration,
-        copy_to=Boto3CredentialsComponentBase,
-        new_model_cls_name="Boto3CredentialsComponent",
-    )
+# יצירת המודל הגנרי
+_Boto3Dynamic = _copy_fields_to_model(
+    ResourceWithBoto3Configuration, Boto3CredentialsComponentBase, "Boto3CredentialsComponent"
 )
+
+
+@public
+@preview
+class Boto3CredentialsComponent(cast("Any", _Boto3Dynamic)):
+    pass
+
+
+# תיקון הירושה: S3Resource חייב לרשת מ-Boto3 כדי לעבור isinstance
+class S3CredentialsComponentBase(Boto3CredentialsComponent):
+    use_unsigned_session: Optional[bool] = None
+
+
+_S3Dynamic = _copy_fields_to_model(
+    ResourceWithBoto3Configuration, S3CredentialsComponentBase, "S3CredentialsComponent"
+)
+
+
+@public
+@preview
+class S3CredentialsComponent(cast("Any", _S3Dynamic)):
+    pass
