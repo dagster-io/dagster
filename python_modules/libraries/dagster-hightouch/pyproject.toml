@@ -1,0 +1,39 @@
+[project]
+name = "dagster-hightouch"
+description = "Dagster library for Hightouch"
+readme = "README.md"
+requires-python = ">=3.10"
+license = { text = "Apache-2.0" }
+dependencies = [
+    "dagster>=1.8.0",
+    "requests>=2.0",
+    "python-dateutil>=2.8.0",
+]
+dynamic = ["version"]
+
+[project.entry-points."dagster.components"]
+dagster_hightouch = "dagster_hightouch"
+
+[project.entry-points."dagster_dg_cli.plugin"]
+dagster_hightouch = "dagster_hightouch"
+
+[tool.uv]
+dev-dependencies = [
+    "pyright>=1.1.386",
+    "pytest",
+    "ruff==0.11.5",
+    "dagster-components",
+]
+
+[build-system]
+requires = ["setuptools>=42"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools]
+packages = ["dagster_hightouch"]
+
+[tool.setuptools.dynamic]
+version = {attr = "dagster_hightouch.__version__"}
+
+[tool.ruff]
+required-version = "==0.11.5"
