@@ -1,7 +1,7 @@
 from typing import Any, Optional, cast
 
 import dagster as dg
-from dagster._annotations import preview, public  # ייבוא נכון מה-Namespace הפנימי
+from dagster._annotations import preview, public
 from pydantic import BaseModel, create_model
 
 from dagster_aws.components.utils import copy_fields_from_model
@@ -24,7 +24,6 @@ class Boto3CredentialsComponentBase(dg.Component, dg.Resolvable, dg.Model):
         return dg.Definitions()
 
 
-# יצירת המודל הגנרי
 _Boto3Dynamic = _copy_fields_to_model(
     ResourceWithBoto3Configuration, Boto3CredentialsComponentBase, "Boto3CredentialsComponent"
 )
@@ -36,7 +35,6 @@ class Boto3CredentialsComponent(cast("Any", _Boto3Dynamic)):
     pass
 
 
-# תיקון הירושה: S3Resource חייב לרשת מ-Boto3 כדי לעבור isinstance
 class S3CredentialsComponentBase(Boto3CredentialsComponent):
     use_unsigned_session: Optional[bool] = None
 

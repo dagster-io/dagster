@@ -2,7 +2,11 @@ from unittest.mock import MagicMock
 
 import dagster as dg
 
-from dagster_aws.components import Boto3CredentialsComponent, S3ResourceComponent
+from dagster_aws.components import (
+    Boto3CredentialsComponent,
+    S3CredentialsComponent,
+    S3ResourceComponent,
+)
 from dagster_aws.s3.resources import S3Resource
 
 
@@ -32,9 +36,12 @@ def test_s3_resource_component_load():
 
 def test_credentials_resolution():
     raw_config = {"region_name": "eu-central-1"}
-    component = S3ResourceComponent(credentials=raw_config, resource_key="s3")
+    creds = S3CredentialsComponent(**raw_config)
+
+    component = S3ResourceComponent(credentials=creds, resource_key="s3")
+
     assert isinstance(component.credentials, Boto3CredentialsComponent)
-    assert getattr(component.credentials, "region_name") == "eu-central-1"
+    assert component.credentials.region_name == "eu-central-1"
 
 
 def test_templated_credentials():
