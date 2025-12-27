@@ -1,7 +1,9 @@
 // eslint-disable-next-line no-restricted-imports
-import {Popover2, Popover2Props} from '@blueprintjs/popover2';
+import {
+  Popover as BlueprintPopover,
+  PopoverProps as BlueprintPopoverProps,
+} from '@blueprintjs/core';
 import deepmerge from 'deepmerge';
-import * as React from 'react';
 import {createGlobalStyle, css} from 'styled-components';
 
 import {Colors} from './Color';
@@ -104,13 +106,9 @@ export const GlobalPopoverStyle = createGlobalStyle`
 // Overwrite arrays instead of concatting them.
 const overwriteMerge = (destination: any[], source: any[]) => source;
 
-interface Props extends Popover2Props {
-  children: React.ReactNode;
-}
-
-export const Popover = (props: Props) => {
+export const Popover = (props: BlueprintPopoverProps) => {
   return (
-    <Popover2
+    <BlueprintPopover
       minimal
       autoFocus={false}
       enforceFocus={false}

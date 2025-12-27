@@ -3,6 +3,7 @@ import {
   HoverButton,
   Icon,
   Menu,
+  MenuDivider,
   MenuItem,
   Popover,
   Spinner,
@@ -24,6 +25,7 @@ import {showSharedToaster} from '../app/DomUtils';
 import {AssetKeyInput} from '../graphql/types';
 import {MenuLink} from '../ui/MenuLink';
 import {RepoAddress} from '../workspace/types';
+
 interface Props {
   path: string[];
   definition: AssetTableDefinitionFragment | null;
@@ -89,7 +91,6 @@ export const AssetActionMenu = memo((props: Props) => {
           <Menu>
             {executeItem}
             <AddToFavoritesMenuItem assetKey={{path}} />
-
             <MenuLink
               text="Show in group"
               to={
@@ -134,6 +135,7 @@ export const AssetActionMenu = memo((props: Props) => {
                   />
                 ))
               : undefined}
+            <MenuDivider />
             {wipe.dropdownOptions}
             {deletePartitions.dropdownOptions}
           </Menu>
