@@ -185,6 +185,20 @@ class OpExecutionContext(AbstractComputeExecutionContext):
 
     @public
     @property
+    def location_name(self) -> Optional[str]:
+        """Optional[str]: The name of the code location for this run.
+
+        This is the name of the code location (repository location) from which
+        the job/pipeline was loaded. Returns None if the job was not loaded from
+        a remote code location (e.g., in tests or when running locally without
+        a code location).
+        """
+        if self.dagster_run and self.dagster_run.remote_job_origin:
+            return self.dagster_run.remote_job_origin.location_name
+        return None
+
+    @public
+    @property
     def run_config(self) -> Mapping[str, object]:
         """dict: The run config for the current execution."""
         return self._step_execution_context.run_config

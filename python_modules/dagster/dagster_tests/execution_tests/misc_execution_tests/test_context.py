@@ -9,10 +9,14 @@ from dagster import (
     AssetOut,
     DagsterInstance,
     OpExecutionContext,
+    build_op_context,
 )
 from dagster._check import CheckError
+from dagster._core.code_pointer import FileCodePointer
 from dagster._core.definitions.definitions_class import Definitions
 from dagster._core.definitions.partitions.definition.static import StaticPartitionsDefinition
+from dagster._core.origin import RemoteJobOrigin
+from dagster._core.storage.dagster_run import DagsterRun
 from dagster._core.storage.fs_io_manager import FilesystemIOManager
 
 
@@ -622,3 +626,47 @@ def test_load_asset_value_multiple_upstream_partition_keys():
         result = global_asset_job.execute_in_process(asset_selection=[downstream_asset.key])
         assert result.success
         assert result.output_for_node("downstream_asset") == 6
+
+
+def test_location_name_property():
+    """Test that location_name property correctly accesses remote_job_origin.location_name."""
+    with dg.instance_for_test() as instance:
+        # Test 1: When dagster_run is None, location_name should be None
+        context_without_run = build_op_context()
+        assert context_without_run.location_name is None
+
+        # Test 2: When dagster_run exists but remote_job_origin is None, location_name should be None
+        run_without_origin = DagsterRun(
+            job_name="test_job",
+            run_id="test_run_without_origin",
+            remote_job_origin=None,
+        )
+        instance.add_run(run_without_origin)
+
+        context_without_origin = build_op_context(
+            dagster_run=run_without_origin,
+            instance=instance,
+        )
+        assert context_without_origin.location_name is None
+
+        # Test 3: When remote_job_origin exists with location_name, it should be returned
+        remote_origin = RemoteJobOrigin(
+            code_pointer=FileCodePointer(
+                python_file="/fake/path/to/file.py",
+                fn_name="fake_job",
+            ),
+            location_name="test_location_name",
+        )
+
+        run_with_origin = DagsterRun(
+            job_name="test_job",
+            run_id="test_run_with_origin",
+            remote_job_origin=remote_origin,
+        )
+        instance.add_run(run_with_origin)
+
+        context_with_origin = build_op_context(
+            dagster_run=run_with_origin,
+            instance=instance,
+        )
+        assert context_with_origin.location_name == "test_location_name"
