@@ -642,7 +642,7 @@ class GrapheneRun(graphene.ObjectType):
     hasUnconstrainedRootNodes = graphene.NonNull(graphene.Boolean)
     hasRunMetricsEnabled = graphene.NonNull(graphene.Boolean)
     externalJobSource = graphene.String()
-    asset_check_evaluations = graphene.Field(
+    assetCheckEvaluations = graphene.Field(
         non_null_list(GrapheneAssetCheckEvaluation),
     )
 
@@ -904,23 +904,16 @@ class GrapheneRun(graphene.ObjectType):
         run_tags = self.dagster_run.tags
         return any(get_boolean_tag_value(run_tags.get(tag)) for tag in RUN_METRIC_TAGS)
 
-    def resolve_asset_check_evaluations(self, graphene_info):
+    def resolve_assetCheckEvaluations(self, graphene_info):
         instance = graphene_info.context.instance
         run_id = self.runId
 
         try:
-            records = None
-
-            if hasattr(instance, "get_records_for_run"):
-                try:
-                    res = instance.get_records_for_run(
-                        run_id=run_id,
-                        of_type=DagsterEventType.ASSET_CHECK_EVALUATION,
-                    )
-                    records = getattr(res, "records", res)
-                except TypeError:
-                    res = instance.get_records_for_run(run_id=run_id)
-                    records = getattr(res, "records", res)
+            res = instance.event_log_storage.get_records_for_run(
+                run_id=run_id,
+                of_type=DagsterEventType.ASSET_CHECK_EVALUATION,
+            )
+            records = getattr(res, "records", res) or []
 
             if not records:
                 return []
@@ -928,7 +921,6 @@ class GrapheneRun(graphene.ObjectType):
             evaluations = []
 
             for record in records:
-                # record may be EventLogRecord; unwrap to EventLogEntry
                 entry = getattr(record, "event_log_entry", record)
                 dagster_event = getattr(entry, "dagster_event", None)
                 if not dagster_event:
@@ -937,13 +929,11 @@ class GrapheneRun(graphene.ObjectType):
                 if dagster_event.event_type != DagsterEventType.ASSET_CHECK_EVALUATION:
                     continue
 
-                # IMPORTANT: GrapheneAssetCheckEvaluation expects EventLogEntry, not evaluation data
                 evaluations.append(GrapheneAssetCheckEvaluation(entry))
 
             return evaluations
 
         except Exception:
-            # Non-nullable GraphQL field must never resolve to None
             return []
 
 
