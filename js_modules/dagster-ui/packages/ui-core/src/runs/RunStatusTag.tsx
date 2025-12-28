@@ -195,7 +195,7 @@ const severityRank = (s: AssetCheckSeverity) => {
 export const RunChecksTag = ({label, intent}: {label: string; intent: ChecksTagIntent}) => {
   return (
     <Tag intent={intent}>
-      <CaptionMono>{label}</CaptionMono>
+      <CaptionMono style={{whiteSpace: 'nowrap'}}>{label}</CaptionMono>
     </Tag>
   );
 };

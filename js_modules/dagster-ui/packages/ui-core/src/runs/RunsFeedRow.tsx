@@ -165,11 +165,14 @@ export const RunsFeedRow = ({
       <RowCell>
         <CreatedByTagCell tags={entry.tags || []} onAddTag={onAddTag} repoAddress={repoAddress} />
       </RowCell>
-      <RowCell>
-          {entry.__typename === 'PartitionBackfill' ? (
-            <RunStatusTag status={entry.runStatus} />
-          ) : (
-            <Box flex={{direction: 'row', gap: 8, alignItems: 'center'}}>
+      <RowCell style={{minWidth: 0}}>
+        {entry.__typename === 'PartitionBackfill' ? (
+          <RunStatusTag status={entry.runStatus} />
+        ) : (
+          <Box
+            flex={{direction: 'row', gap: 8, alignItems: 'center', wrap: 'wrap'}}
+            style={{minWidth: 0}}
+          >
             <RunStatusTagWithStats status={entry.runStatus} runId={entry.id} />
             <RunChecksTagWithPopover evaluations={entry.assetCheckEvaluations} />
           </Box>
@@ -202,7 +205,7 @@ export const RunsFeedRow = ({
 };
 
 const TEMPLATE_COLUMNS =
-  '60px minmax(0, 1.5fr) minmax(0, 1.2fr) minmax(0, 1fr) 140px 170px 120px 132px';
+  '60px minmax(0, 1.5fr) minmax(0, 1.2fr) minmax(0, 1fr) minmax(160px, 1fr) 170px 120px 132px';
 
 export const RunsFeedTableHeader = ({checkbox}: {checkbox: React.ReactNode}) => {
   return (
