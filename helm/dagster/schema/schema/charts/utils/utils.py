@@ -45,9 +45,7 @@ class BaseModel(PydanticBaseModel):
 
 
 def create_definition_ref(definition: str, version: str = SupportedKubernetes.V1_19.value) -> str:
-    return (
-        f"https://raw.githubusercontent.com/yannh/kubernetes-json-schema/master/v{version}/_definitions.json#/definitions/{definition}"
-    )
+    return f"https://raw.githubusercontent.com/yannh/kubernetes-json-schema/master/v{version}/_definitions.json#/definitions/{definition}"
 
 
 def create_json_schema_conditionals(
