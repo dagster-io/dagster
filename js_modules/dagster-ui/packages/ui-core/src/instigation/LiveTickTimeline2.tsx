@@ -93,7 +93,6 @@ export const LiveTickTimeline = <T extends HistoryTickFragment | AssetDaemonTick
         startX,
       };
     });
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [minX, now, ticksReversed, fullRange, viewport.width]);
 
   const timeTickGridDelta = Math.max((maxX - minX) / 25, tickGrid);

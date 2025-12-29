@@ -58,7 +58,6 @@ const PartitionedAssetConditionEvaluationNodeFragment = gql`
     numTrue
     uniqueId
     childUniqueIds
-    numTrue
     numCandidates
     entityKey {
       ...EntityKeyFragment

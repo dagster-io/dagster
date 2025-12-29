@@ -597,6 +597,7 @@ const ResourceEntry = (props: {name: string; url?: string; description?: string}
 
 const RESOURCE_DETAILS_FRAGMENT = gql`
   fragment ResourceDetailsFragment on ResourceDetails {
+    id
     name
     description
     configFields {
@@ -615,6 +616,7 @@ const RESOURCE_DETAILS_FRAGMENT = gql`
       name
       type
       resource {
+        id
         name
         resourceType
         description
@@ -623,6 +625,7 @@ const RESOURCE_DETAILS_FRAGMENT = gql`
     parentResources {
       name
       resource {
+        id
         name
         resourceType
         description

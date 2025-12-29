@@ -7,6 +7,7 @@
 #   regardless of the preceding command's exit status.
 
 pyright:
+	ulimit -Sn 4096 # pyright build uses a lot of open files
 	python scripts/run-pyright.py --all
 
 install_prettier:
@@ -16,11 +17,13 @@ install_pyright:
 	uv pip install -e 'python_modules/dagster[pyright]' -e 'python_modules/dagster-pipes' -e 'python_modules/libraries/dagster-shared'
 
 rebuild_pyright:
+	ulimit -Sn 4096 # pyright build uses a lot of open files
 	python scripts/run-pyright.py --all --rebuild
 
 # Skip typecheck so that this can be used to test if all requirements can successfully be resolved
 # in CI independently of typechecking.
 rebuild_pyright_pins:
+	ulimit -Sn 4096 # pyright build uses a lot of open files
 	python scripts/run-pyright.py --update-pins --skip-typecheck
 
 quick_pyright:

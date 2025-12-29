@@ -2234,10 +2234,10 @@ export type GetAssetEvaluationDetailsQuery = {
   }>;
 };
 
-export const GetEvaluationsQueryVersion = '4eb403a42b1bb779b1feec6194349cca0142d417169e95f70c1e238e61d7cb19';
+export const GetEvaluationsQueryVersion = '2348b2cff16099bec42d9140ab77c85e1433b5c88a3d8640883b8a86983671a9';
 
-export const GetSlimEvaluationsQueryVersion = '96e56c9cf54a559d037df2f6e7f677672ba86af76daf4ff1644dc8063d3d775e';
+export const GetSlimEvaluationsQueryVersion = 'f581133a6e798d3b5e7182c79cb5af2ef40695ccb7fd12cef7d88ed1d5c80789';
 
-export const GetEvaluationsSpecificPartitionQueryVersion = '76a87a5537dcf49c1ffe23adecc103ed34fb89dbfa907a233d398a5d63217150';
+export const GetEvaluationsSpecificPartitionQueryVersion = 'c72a1a3166f8d3e477aafcda3892116cdd0372d80a41ade6d73e99120ad4e9ef';
 
 export const GetAssetEvaluationDetailsQueryVersion = 'd4538f5b4ae52ff2694f9ad6cb6e18fa265e4448107185fbc0601054064c9633';

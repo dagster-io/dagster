@@ -15,7 +15,7 @@ import {
 } from '@dagster-io/ui-components';
 import React, {useCallback, useMemo} from 'react';
 import {Link} from 'react-router-dom';
-import {observeEnabled} from 'shared/app/observeEnabled.oss';
+import {assetHealthEnabled} from 'shared/app/assetHealthEnabled.oss';
 
 import {assetDetailsPathForKey} from './assetDetailsPathForKey';
 import {useAllAssetsNodes} from './useAllAssets';
@@ -41,7 +41,7 @@ import {numberFormatter} from '../ui/formatters';
 
 export const AssetHealthSummary = React.memo(
   ({assetKey, iconOnly}: {assetKey: {path: string[]}; iconOnly?: boolean}) => {
-    if (!observeEnabled()) {
+    if (!assetHealthEnabled()) {
       return null;
     }
 

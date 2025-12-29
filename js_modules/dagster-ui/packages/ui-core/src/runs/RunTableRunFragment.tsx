@@ -34,7 +34,6 @@ export const RUN_TABLE_RUN_FRAGMENT = gql`
         path
       }
     }
-    status
     tags {
       ...RunTagsFragment
     }

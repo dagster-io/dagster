@@ -1,5 +1,6 @@
 import {Box, Button, Colors, Dialog, DialogFooter, Icon} from '@dagster-io/ui-components';
 import {useState} from 'react';
+import {assetHealthEnabled} from 'shared/app/assetHealthEnabled.oss';
 
 import {AssetNodeWithLiveData} from './AssetNode';
 import {AssetNodeFacetDefaults} from './AssetNodeFacets';
@@ -122,6 +123,7 @@ const ExampleLiveData: LiveDataForNodeWithStaleData = {
 
 const ExampleAutomationData: AssetAutomationFragment = {
   __typename: 'AssetNode',
+  id: '["example_asset"]',
   assetKey: {__typename: 'AssetKey', path: ['example_asset']},
   automationCondition: {
     __typename: 'AutomationCondition',
@@ -182,6 +184,7 @@ export const AssetNodeFacetSettingsButton = ({
                 definition={ExampleAssetNode}
                 liveData={ExampleLiveData}
                 automationData={ExampleAutomationData}
+                assetHealthEnabled={assetHealthEnabled()}
               />
             </div>
           </Box>

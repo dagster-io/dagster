@@ -4,6 +4,7 @@ import * as Types from '../../graphql/types';
 
 export type ResourceEntryFragment = {
   __typename: 'ResourceDetails';
+  id: string;
   name: string;
   description: string | null;
   resourceType: string;
@@ -51,4 +52,4 @@ export type WorkspaceResourcesQuery = {
     | {__typename: 'RepositoryNotFoundError'};
 };
 
-export const WorkspaceResourcesQueryVersion = 'c5f1870a354eb3cf1a94291c56f4477d3462fcece7145bd372b07ef1563f7bd6';
+export const WorkspaceResourcesQueryVersion = 'fe04102e3d1c1951f1424fcb20e83c6ee21705ff170c716480a261d3cb7f73b1';

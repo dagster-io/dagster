@@ -1,5 +1,5 @@
 import {useMemo} from 'react';
-import {observeEnabled} from 'shared/app/observeEnabled.oss';
+import {assetHealthEnabled} from 'shared/app/assetHealthEnabled.oss';
 
 import {ApolloClient, gql, useApolloClient} from '../apollo-client';
 import {showCustomAlert} from '../app/CustomAlertProvider';
@@ -11,12 +11,12 @@ import {AssetKeyInput} from '../graphql/types';
 import {liveDataFactory} from '../live-data-provider/Factory';
 import {LiveDataThreadID} from '../live-data-provider/LiveDataThread';
 import {useBlockTraceUntilTrue} from '../performance/TraceContext';
+import {weakMapMemoize} from '../util/weakMapMemoize';
 import {
   AssetHealthFragment,
   AssetHealthQuery,
   AssetHealthQueryVariables,
 } from './types/AssetHealthDataProvider.types';
-import {weakMapMemoize} from '../util/weakMapMemoize';
 
 const BATCH_SIZE = 250;
 const PARALLEL_FETCHES = 4;
@@ -55,6 +55,7 @@ function init() {
           if (!result[key]) {
             result[key] = {
               __typename: 'Asset',
+              id: key,
               key: {
                 __typename: 'AssetKey',
                 ...tokenToAssetKey(key),
@@ -188,12 +189,12 @@ function shouldBlockTrace(
   return currentDataCount === expectedDataCount;
 }
 
-// Get assets health data, with an `observeEnabled` check included to effectively no-op any users
+// Get assets health data, with an `assetHealthEnabled` check included to effectively no-op any users
 // who are not gated in.
 export function useAssetsHealthData({assetKeys, ...rest}: AssetsHealthDataConfig) {
   return useAssetsHealthDataWithoutGateCheck({
     ...rest,
-    assetKeys: observeEnabled() ? assetKeys : EMPTY_ARRAY,
+    assetKeys: assetHealthEnabled() ? assetKeys : EMPTY_ARRAY,
   });
 }
 
@@ -260,6 +261,7 @@ export const ASSETS_HEALTH_INFO_QUERY = gql`
   }
 
   fragment AssetHealthFragment on Asset {
+    id
     key {
       path
     }
@@ -336,6 +338,7 @@ export function __resetForJest() {
 function buildEmptyAssetHealthFragment(key: string): AssetHealthFragment {
   return {
     __typename: 'Asset',
+    id: key,
     key: {
       __typename: 'AssetKey',
       ...tokenToAssetKey(key),

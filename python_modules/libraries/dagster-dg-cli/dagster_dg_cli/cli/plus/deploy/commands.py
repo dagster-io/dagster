@@ -8,6 +8,7 @@ from typing import TYPE_CHECKING, Optional
 
 import click
 from dagster_cloud_cli.types import SnapshotBaseDeploymentCondition
+from dagster_cloud_cli.utils import SUPPORTED_PYTHON_VERSIONS
 from dagster_dg_core.config import DgRawCliConfig, normalize_cli_config
 from dagster_dg_core.context import DgContext
 from dagster_dg_core.shared_options import (
@@ -95,7 +96,7 @@ org_and_deploy_option_group = make_option_group(
 @click.option(
     "--python-version",
     "python_version",
-    type=click.Choice(["3.9", "3.10", "3.11", "3.12"]),
+    type=click.Choice(SUPPORTED_PYTHON_VERSIONS),
     help=(
         "Python version used to deploy the project. If not set, defaults to the calling process's Python minor version."
     ),
@@ -341,7 +342,7 @@ def start_deploy_session_command(
 @click.option(
     "--python-version",
     "python_version",
-    type=click.Choice(["3.9", "3.10", "3.11", "3.12"]),
+    type=click.Choice(SUPPORTED_PYTHON_VERSIONS),
     help=(
         "Python version used to deploy the project. If not set, defaults to the calling process's Python minor version."
     ),

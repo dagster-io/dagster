@@ -123,6 +123,7 @@ export const AssetMaterializationUpstreamTable = ({
 
 export const ASSET_MATERIALIZATION_UPSTREAM_TABLE_FRAGMENT = gql`
   fragment AssetMaterializationUpstreamTableFragment on AssetNode {
+    id
     assetMaterializationUsedData(timestampMillis: $timestamp) {
       ...MaterializationUpstreamDataVersionFragment
     }

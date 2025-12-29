@@ -8,6 +8,7 @@ from pathlib import Path
 from typing import Optional
 
 import click
+from dagster_cloud_cli.utils import SUPPORTED_PYTHON_VERSIONS
 from dagster_dg_core.config import normalize_cli_config
 from dagster_dg_core.context import DgContext
 from dagster_dg_core.shared_options import dg_editable_dagster_options, dg_global_options
@@ -76,7 +77,7 @@ def _resolve_config_for_build_artifacts(
 @click.option(
     "--python-version",
     "python_version",
-    type=click.Choice(["3.9", "3.10", "3.11", "3.12", "3.13"]),
+    type=click.Choice(SUPPORTED_PYTHON_VERSIONS),
     help=(
         "Python version used to deploy the project. If not set, defaults to the calling process's Python minor version."
     ),

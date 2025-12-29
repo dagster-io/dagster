@@ -191,25 +191,21 @@ export const AssetGraphExplorerSidebar = React.memo(
         renderedNodes.findIndex((node) => nodePathKey(lastSelectedNode) === nodePathKey(node)),
     ]);
 
-    const indexOfLastSelectedNode = React.useMemo(
-      () => {
-        if (!selectedNode) {
-          return -1;
+    const indexOfLastSelectedNode = React.useMemo(() => {
+      if (!selectedNode) {
+        return -1;
+      }
+      return renderedNodes.findIndex((node) => {
+        // If you select a node via the search dropdown or from the graph directly then
+        // selectedNode will have an `id` field and not a path. The nodes in renderedNodes
+        // will always have a path so we need to explicitly check if the id's match
+        if (!('path' in selectedNode)) {
+          return node.id === selectedNode.id;
+        } else {
+          return nodePathKey(node) === nodePathKey(selectedNode);
         }
-        return renderedNodes.findIndex((node) => {
-          // If you select a node via the search dropdown or from the graph directly then
-          // selectedNode will have an `id` field and not a path. The nodes in renderedNodes
-          // will always have a path so we need to explicitly check if the id's match
-          if (!('path' in selectedNode)) {
-            return node.id === selectedNode.id;
-          } else {
-            return nodePathKey(node) === nodePathKey(selectedNode);
-          }
-        });
-      },
-      // eslint-disable-next-line react-hooks/exhaustive-deps
-      [renderedNodes, selectedNode],
-    );
+      });
+    }, [renderedNodes, selectedNode]);
     const indexOfLastSelectedNodeRef = React.useRef(indexOfLastSelectedNode);
     indexOfLastSelectedNodeRef.current = indexOfLastSelectedNode;
 

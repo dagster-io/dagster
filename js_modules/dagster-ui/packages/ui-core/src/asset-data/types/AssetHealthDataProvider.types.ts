@@ -82,6 +82,7 @@ export type AssetHealthQuery = {
 
 export type AssetHealthFragment = {
   __typename: 'Asset';
+  id: string;
   latestMaterializationTimestamp: number | null;
   latestFailedToMaterializeTimestamp: number | null;
   freshnessStatusChangedTimestamp: number | null;
@@ -180,4 +181,4 @@ export type AssetHealthFreshnessMetaFragment = {
   lastMaterializedTimestamp: number | null;
 };
 
-export const AssetHealthQueryVersion = '35734c1a0cdd13fe842f34a973f65c52ff39dac4f26f6d737e296dc2c6725698';
+export const AssetHealthQueryVersion = 'e06ca48f7c8e64526e1178b901ba13db9697654e42f861ddba39e1b0045ba4ad';

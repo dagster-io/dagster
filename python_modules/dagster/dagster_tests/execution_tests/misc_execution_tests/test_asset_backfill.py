@@ -2111,14 +2111,9 @@ def test_asset_backfill_selects_only_existent_partitions():
 
     target_subset = backfill_data.target_subset
     assert target_subset.get_partitions_subset(
-        upstream_hourly_partitioned_asset.key, asset_graph
+        upstream_hourly_partitioned_asset.key
     ).get_partition_keys() == ["2023-01-09-00:00"]
-    assert (
-        len(
-            target_subset.get_partitions_subset(downstream_daily_partitioned_asset.key, asset_graph)
-        )
-        == 0
-    )
+    assert downstream_daily_partitioned_asset.key not in target_subset.asset_keys
 
 
 def test_asset_backfill_throw_error_on_invalid_upstreams():
@@ -2221,15 +2216,13 @@ def test_asset_backfill_cancellation():
     )
     assert (
         canceling_backfill_data.materialized_subset.get_partitions_subset(
-            upstream_hourly_partitioned_asset.key, asset_graph
+            upstream_hourly_partitioned_asset.key
         ).get_partition_keys()
         == targeted_partitions
     )
     assert (
-        canceling_backfill_data.materialized_subset.get_partitions_subset(
-            downstream_daily_partitioned_asset.key, asset_graph
-        ).get_partition_keys()
-        == []
+        downstream_daily_partitioned_asset.key
+        not in canceling_backfill_data.materialized_subset.asset_keys
     )
 
 

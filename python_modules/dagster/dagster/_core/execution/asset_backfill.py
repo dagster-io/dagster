@@ -331,12 +331,18 @@ class AssetBackfillData(NamedTuple):
 
         Orders keys in the same topological level alphabetically.
         """
-        nodes: list[BaseAssetNode] = [asset_graph.get(key) for key in self.target_subset.asset_keys]
+        nodes: list[BaseAssetNode] = [
+            asset_graph.get(key) for key in self.target_subset.asset_keys if asset_graph.has(key)
+        ]
         return [
             item
             for items_by_level in toposort({node.key: node.parent_keys for node in nodes})
             for item in sorted(items_by_level)
             if item in self.target_subset.asset_keys
+        ] + [
+            asset_key
+            for asset_key in self.target_subset.asset_keys
+            if not asset_graph.has(asset_key)
         ]
 
     def get_backfill_status_per_asset_key(
@@ -350,15 +356,23 @@ class AssetBackfillData(NamedTuple):
         def _get_status_for_asset_key(
             asset_key: AssetKey,
         ) -> Union[PartitionedAssetBackfillStatus, UnpartitionedAssetBackfillStatus]:
-            if asset_graph.get(asset_key).is_partitioned:
-                materialized_subset = self.materialized_subset.get_partitions_subset(
-                    asset_key, asset_graph
+            target_subset = check.not_none(self.target_subset.get_asset_subset(asset_key))
+
+            if target_subset.is_partitioned:
+                materialized_subset = (
+                    self.materialized_subset.get_partitions_subset(asset_key)
+                    if asset_key in self.materialized_subset.asset_keys
+                    else target_subset.subset_value.empty_subset()
                 )
-                failed_subset = self.failed_and_downstream_subset.get_partitions_subset(
-                    asset_key, asset_graph
+                failed_subset = (
+                    self.failed_and_downstream_subset.get_partitions_subset(asset_key)
+                    if asset_key in self.failed_and_downstream_subset.asset_keys
+                    else target_subset.subset_value.empty_subset()
                 )
-                requested_subset = self.requested_subset.get_partitions_subset(
-                    asset_key, asset_graph
+                requested_subset = (
+                    self.requested_subset.get_partitions_subset(asset_key)
+                    if asset_key in self.requested_subset.asset_keys
+                    else target_subset.subset_value.empty_subset()
                 )
 
                 # The failed subset includes partitions that failed and their downstream partitions.
@@ -371,7 +385,7 @@ class AssetBackfillData(NamedTuple):
 
                 return PartitionedAssetBackfillStatus(
                     asset_key,
-                    len(self.target_subset.get_partitions_subset(asset_key, asset_graph)),
+                    len(self.target_subset.get_partitions_subset(asset_key)),
                     {
                         AssetBackfillStatus.MATERIALIZED: len(materialized_subset),
                         AssetBackfillStatus.FAILED: len(failed_subset - materialized_subset),
@@ -1961,8 +1975,16 @@ def _get_cant_run_because_of_parent_reason(
     if parent_node.partitions_def != candidate_node.partitions_def:
         return f"parent {parent_node.key.to_user_string()} and {candidate_node.key.to_user_string()} have different partitions definitions so they cannot be materialized in the same run. {candidate_node.key.to_user_string()} can be materialized once {parent_node.key.to_user_string()} is materialized."
 
-    parent_target_subset = target_subset.get_asset_subset(parent_asset_key, asset_graph)
-    candidate_target_subset = target_subset.get_asset_subset(candidate_asset_key, asset_graph)
+    parent_target_subset = (
+        target_subset.get_asset_subset(parent_asset_key)
+        or asset_graph_view.get_empty_subset(key=parent_asset_key).convert_to_serializable_subset()
+    )
+    candidate_target_subset = (
+        target_subset.get_asset_subset(candidate_asset_key)
+        or asset_graph_view.get_empty_subset(
+            key=candidate_asset_key
+        ).convert_to_serializable_subset()
+    )
 
     num_parent_partitions_being_requested_this_tick = parent_being_requested_this_tick_subset.size
 
