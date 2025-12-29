@@ -1,5 +1,15 @@
 # Changelog
 
+## 1.12.8 (core) / 0.28.8 (libraries)
+
+### New
+
+- `dg plus deploy` commands now support Python 3.13 and Python 3.14.
+
+### Bugfixes
+
+- Fixed an issue where the Dagster Helm chart and Dagster+ agent helm chart could no longer deploy using Helm without adding the `--skip-schema-validation` flag to the Helm deploy command. Thanks [@kang8](https://github.com/kang8)!
+
 ## 1.12.7 (core) / 0.28.7 (libraries)
 
 ### New
