@@ -9,7 +9,7 @@ from pydantic import (
 
 
 class SupportedKubernetes(str, Enum):
-    V1_18 = "1.18.0"
+    V1_19 = "1.19.0"
 
 
 class ConfigurableClass(PydanticBaseModel, extra="forbid"):
@@ -44,10 +44,21 @@ class BaseModel(PydanticBaseModel):
                     value["anyOf"].append({"type": "null"})
 
 
-def create_definition_ref(definition: str, version: str = SupportedKubernetes.V1_18.value) -> str:
-    return (
-        f"https://kubernetesjsonschema.dev/v{version}/_definitions.json#/definitions/{definition}"
-    )
+# Key used to mark Kubernetes definition references in the schema.
+# These are converted to $ref values by the CLI when generating the final schema,
+# embedding the actual definitions from the local kubernetes definitions file.
+# The definitions are sourced from https://github.com/yannh/kubernetes-json-schema (Apache-2.0 License)
+# and downloaded using helm/dagster/schema/scripts/update_kubernetes_definitions.py
+KUBERNETES_REF_KEY = "$__kubernetes_ref"
+
+
+def create_definition_ref(definition: str) -> dict[str, str]:
+    """Create a placeholder reference to a Kubernetes schema definition.
+
+    Returns a dict with a special key that will be converted to a proper $ref
+    by the CLI during schema generation.
+    """
+    return {KUBERNETES_REF_KEY: definition}
 
 
 def create_json_schema_conditionals(

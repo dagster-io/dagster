@@ -4,6 +4,7 @@ from typing import Any, Optional, Union
 from pydantic import BaseModel, RootModel
 
 from schema.charts.utils.utils import (
+    KUBERNETES_REF_KEY,
     BaseModel as BaseModelWithNullableRequiredFields,
     create_definition_ref,
 )
@@ -11,22 +12,18 @@ from schema.charts.utils.utils import (
 
 class Annotations(RootModel[dict[str, str]]):
     model_config = {
-        "json_schema_extra": {
-            "$ref": create_definition_ref(
-                "io.k8s.apimachinery.pkg.apis.meta.v1.ObjectMeta/properties/annotations"
-            )
-        }
+        "json_schema_extra": create_definition_ref(
+            "io.k8s.apimachinery.pkg.apis.meta.v1.ObjectMeta/properties/annotations"
+        )
     }
 
 
 class Labels(BaseModel):
     model_config = {
         "extra": "allow",
-        "json_schema_extra": {
-            "$ref": create_definition_ref(
-                "io.k8s.apimachinery.pkg.apis.meta.v1.ObjectMeta/properties/labels"
-            )
-        },
+        "json_schema_extra": create_definition_ref(
+            "io.k8s.apimachinery.pkg.apis.meta.v1.ObjectMeta/properties/labels"
+        ),
     }
 
 
@@ -66,7 +63,7 @@ class NodeSelector(RootModel[dict[str, str]]):
     model_config = {
         "json_schema_extra": {
             "extra": "allow",
-            "$ref": create_definition_ref("io.k8s.api.core.v1.PodSpec/properties/nodeSelector"),
+            **create_definition_ref("io.k8s.api.core.v1.PodSpec/properties/nodeSelector"),
         }
     }
 
@@ -74,7 +71,7 @@ class NodeSelector(RootModel[dict[str, str]]):
 class Affinity(RootModel[dict[str, Any]]):
     model_config = {
         "json_schema_extra": {
-            "$ref": create_definition_ref("io.k8s.api.core.v1.Affinity"),
+            **create_definition_ref("io.k8s.api.core.v1.Affinity"),
             "additionalProperties": True,
         }
     }
@@ -82,8 +79,8 @@ class Affinity(RootModel[dict[str, Any]]):
 
 def _tolerations_schema_extra(schema: dict[str, Any], _model: type["Tolerations"]) -> None:
     schema.setdefault(
-        "$ref",
-        create_definition_ref("io.k8s.api.core.v1.PodSpec/properties/tolerations"),
+        KUBERNETES_REF_KEY,
+        "io.k8s.api.core.v1.PodSpec/properties/tolerations",
     )
     if "items" in schema:
         schema["items"]["additionalProperties"] = True
@@ -96,7 +93,7 @@ class Tolerations(RootModel[list[dict[str, Any]]]):
 class PodSecurityContext(RootModel[dict[str, Any]]):
     model_config = {
         "json_schema_extra": {
-            "$ref": create_definition_ref("io.k8s.api.core.v1.PodSecurityContext"),
+            **create_definition_ref("io.k8s.api.core.v1.PodSecurityContext"),
             "additionalProperties": True,
         }
     }
@@ -105,7 +102,7 @@ class PodSecurityContext(RootModel[dict[str, Any]]):
 class SecurityContext(
     RootModel[dict[str, Any]],
     json_schema_extra={
-        "$ref": create_definition_ref("io.k8s.api.core.v1.SecurityContext"),
+        **create_definition_ref("io.k8s.api.core.v1.SecurityContext"),
         "additionalProperties": True,
     },
 ):
@@ -115,14 +112,14 @@ class SecurityContext(
 class InitContainer(BaseModel):
     model_config = {
         "extra": "allow",
-        "json_schema_extra": {"$ref": create_definition_ref("io.k8s.api.core.v1.Container")},
+        "json_schema_extra": create_definition_ref("io.k8s.api.core.v1.Container"),
     }
 
 
 class Resources(RootModel[dict[str, Any]]):
     model_config = {
         "json_schema_extra": {
-            "$ref": create_definition_ref("io.k8s.api.core.v1.ResourceRequirements"),
+            **create_definition_ref("io.k8s.api.core.v1.ResourceRequirements"),
             "additionalProperties": True,
         }
     }
@@ -131,14 +128,14 @@ class Resources(RootModel[dict[str, Any]]):
 class LivenessProbe(BaseModel):
     model_config = {
         "extra": "allow",
-        "json_schema_extra": {"$ref": create_definition_ref("io.k8s.api.core.v1.Probe")},
+        "json_schema_extra": create_definition_ref("io.k8s.api.core.v1.Probe"),
     }
 
 
 class ReadinessProbe(BaseModel):
     model_config = {
         "extra": "allow",
-        "json_schema_extra": {"$ref": create_definition_ref("io.k8s.api.core.v1.Probe")},
+        "json_schema_extra": create_definition_ref("io.k8s.api.core.v1.Probe"),
     }
 
 
@@ -147,78 +144,68 @@ class StartupProbe(BaseModel):
 
     model_config = {
         "extra": "allow",
-        "json_schema_extra": {
-            "$ref": create_definition_ref("io.k8s.api.core.v1.Probe"),
-        },
+        "json_schema_extra": create_definition_ref("io.k8s.api.core.v1.Probe"),
     }
 
 
 class SecretRef(BaseModel):
     model_config = {
         "extra": "allow",
-        "json_schema_extra": {
-            "$ref": create_definition_ref("io.k8s.api.core.v1.LocalObjectReference")
-        },
+        "json_schema_extra": create_definition_ref("io.k8s.api.core.v1.LocalObjectReference"),
     }
 
 
 class SecretEnvSource(BaseModel):
     model_config = {
         "extra": "allow",
-        "json_schema_extra": {"$ref": create_definition_ref("io.k8s.api.core.v1.SecretEnvSource")},
+        "json_schema_extra": create_definition_ref("io.k8s.api.core.v1.SecretEnvSource"),
     }
 
 
 class ConfigMapEnvSource(BaseModel):
     model_config = {
         "extra": "allow",
-        "json_schema_extra": {
-            "$ref": create_definition_ref("io.k8s.api.core.v1.ConfigMapEnvSource")
-        },
+        "json_schema_extra": create_definition_ref("io.k8s.api.core.v1.ConfigMapEnvSource"),
     }
 
 
 class VolumeMount(BaseModel):
     model_config = {
         "extra": "allow",
-        "json_schema_extra": {"$ref": create_definition_ref("io.k8s.api.core.v1.VolumeMount")},
+        "json_schema_extra": create_definition_ref("io.k8s.api.core.v1.VolumeMount"),
     }
 
 
 class Volume(BaseModel):
     model_config = {
         "extra": "allow",
-        "json_schema_extra": {"$ref": create_definition_ref("io.k8s.api.core.v1.Volume")},
+        "json_schema_extra": create_definition_ref("io.k8s.api.core.v1.Volume"),
     }
 
 
 class ResourceRequirements(BaseModel):
     model_config = {
         "extra": "allow",
-        "json_schema_extra": {
-            "$ref": create_definition_ref("io.k8s.api.core.v1.ResourceRequirements")
-        },
+        "json_schema_extra": create_definition_ref("io.k8s.api.core.v1.ResourceRequirements"),
     }
 
 
 class EnvVar(BaseModel):
     model_config = {
         "extra": "allow",
-        "json_schema_extra": {"$ref": create_definition_ref("io.k8s.api.core.v1.EnvVar")},
+        "json_schema_extra": create_definition_ref("io.k8s.api.core.v1.EnvVar"),
     }
 
 
 class Container(BaseModel):
     model_config = {
         "extra": "allow",
-        "json_schema_extra": {"$ref": create_definition_ref("io.k8s.api.core.v1.Container")},
+        "json_schema_extra": create_definition_ref("io.k8s.api.core.v1.Container"),
     }
 
 
 class DeploymentStrategy(BaseModel):
     model_config = {
         "extra": "allow",
-        "json_schema_extra": {
-            "$ref": create_definition_ref("io.k8s.api.apps.v1.DeploymentStrategy")
-        },
+        "json_schema_extra": create_definition_ref("io.k8s.api.apps.v1.DeploymentStrategy"),
     }
