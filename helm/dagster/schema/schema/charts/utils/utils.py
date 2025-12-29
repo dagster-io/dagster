@@ -9,7 +9,7 @@ from pydantic import (
 
 
 class SupportedKubernetes(str, Enum):
-    V1_18 = "1.18.0"
+    V1_19 = "1.19.0"
 
 
 class ConfigurableClass(PydanticBaseModel, extra="forbid"):
@@ -44,9 +44,9 @@ class BaseModel(PydanticBaseModel):
                     value["anyOf"].append({"type": "null"})
 
 
-def create_definition_ref(definition: str, version: str = SupportedKubernetes.V1_18.value) -> str:
+def create_definition_ref(definition: str, version: str = SupportedKubernetes.V1_19.value) -> str:
     return (
-        f"https://kubernetesjsonschema.dev/v{version}/_definitions.json#/definitions/{definition}"
+        f"https://raw.githubusercontent.com/yannh/kubernetes-json-schema/master/v{version}/_definitions.json#/definitions/{definition}"
     )
 
 
