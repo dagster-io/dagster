@@ -35,8 +35,8 @@ setup(
     include_package_data=True,
     python_requires=">=3.10,<3.15",
     install_requires=[
-        "dagster==1.12.7",
-        "dagster_pandas==0.28.7",
+        "dagster==1.12.8",
+        "dagster_pandas==0.28.8",
         "db-dtypes",  # Required as per https://github.com/googleapis/python-bigquery/issues/1188
         "google-api-python-client",
         "google-cloud-bigquery>=1.28.3",  # earliest version that imports without protobuf errors
