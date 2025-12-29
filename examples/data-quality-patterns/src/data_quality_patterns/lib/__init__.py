@@ -1,6 +1,6 @@
 """Reusable data quality validation library."""
 
-from data_quality_patterns.lib.expectations import GE_AVAILABLE, create_ge_dataset
+from data_quality_patterns.lib.expectations import create_ge_dataset
 from data_quality_patterns.lib.quality_metrics import (
     QualityMetrics,
     calculate_completeness,
@@ -21,7 +21,6 @@ from data_quality_patterns.lib.validators import (
 
 __all__ = [
     "EMAIL_PATTERN",
-    "GE_AVAILABLE",
     "QualityMetrics",
     "calculate_completeness",
     "calculate_quality_score",
