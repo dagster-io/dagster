@@ -6,15 +6,15 @@ A comprehensive Dagster project demonstrating data quality validation across all
 
 This project covers all 7 dimensions of data quality:
 
-| Dimension | Description | Implementation |
-|-----------|-------------|----------------|
-| **Accuracy** | Data correctly represents real-world entities | Python checks for name patterns, age ranges |
-| **Completeness** | All required data is present | Python + dbt `not_null` tests |
-| **Consistency** | Data is uniform across datasets | Python checks for region code formats |
-| **Timeliness** | Data is up-to-date and available | `FreshnessPolicy` on assets |
-| **Validity** | Data conforms to formats and rules | Python + Great Expectations checks |
-| **Uniqueness** | No unwanted duplicates | Python + dbt `unique` tests |
-| **Integrity** | Relationships between data maintained | Python + dbt `relationships` tests |
+| Dimension        | Description                                   | Implementation                              |
+| ---------------- | --------------------------------------------- | ------------------------------------------- |
+| **Accuracy**     | Data correctly represents real-world entities | Python checks for name patterns, age ranges |
+| **Completeness** | All required data is present                  | Python + dbt `not_null` tests               |
+| **Consistency**  | Data is uniform across datasets               | Python checks for region code formats       |
+| **Timeliness**   | Data is up-to-date and available              | `FreshnessPolicy` on assets                 |
+| **Validity**     | Data conforms to formats and rules            | Python + Great Expectations checks          |
+| **Uniqueness**   | No unwanted duplicates                        | Python + dbt `unique` tests                 |
+| **Integrity**    | Relationships between data maintained         | Python + dbt `relationships` tests          |
 
 ## Project Structure
 
@@ -94,6 +94,7 @@ Open http://localhost:3000 to view the Dagster UI.
 ### 4. Materialize Assets
 
 In the Dagster UI:
+
 1. Navigate to the **Assets** page
 2. Select `raw_customers`, `raw_orders`, and `raw_products`
 3. Click **Materialize** to generate data with quality issues
@@ -105,29 +106,29 @@ In the Dagster UI:
 
 Located in `src/data_quality_patterns/defs/assets/python_checks.py`:
 
-| Check | Dimension | Description |
-|-------|-----------|-------------|
-| `check_accuracy_names` | Accuracy | Detects placeholder/test names |
-| `check_accuracy_age` | Accuracy | Validates age ranges (0-120) |
-| `check_completeness_email` | Completeness | Requires 95% email coverage |
-| `check_completeness_amount` | Completeness | Requires 98% amount coverage |
-| `check_consistency_region` | Consistency | Validates region codes (US, EU, APAC, LATAM) |
-| `check_validity_email` | Validity | Validates email format |
-| `check_validity_amount` | Validity | Validates positive amounts |
-| `check_uniqueness_customer_id` | Uniqueness | Detects duplicate customers |
-| `check_uniqueness_order_id` | Uniqueness | Detects duplicate orders |
-| `check_integrity_customer_ref` | Integrity | Validates customer foreign keys |
+| Check                          | Dimension    | Description                                  |
+| ------------------------------ | ------------ | -------------------------------------------- |
+| `check_accuracy_names`         | Accuracy     | Detects placeholder/test names               |
+| `check_accuracy_age`           | Accuracy     | Validates age ranges (0-120)                 |
+| `check_completeness_email`     | Completeness | Requires 95% email coverage                  |
+| `check_completeness_amount`    | Completeness | Requires 98% amount coverage                 |
+| `check_consistency_region`     | Consistency  | Validates region codes (US, EU, APAC, LATAM) |
+| `check_validity_email`         | Validity     | Validates email format                       |
+| `check_validity_amount`        | Validity     | Validates positive amounts                   |
+| `check_uniqueness_customer_id` | Uniqueness   | Detects duplicate customers                  |
+| `check_uniqueness_order_id`    | Uniqueness   | Detects duplicate orders                     |
+| `check_integrity_customer_ref` | Integrity    | Validates customer foreign keys              |
 
 ### Great Expectations Checks
 
 Located in `src/data_quality_patterns/defs/assets/ge_checks.py`:
 
-| Check | Dimension | Description |
-|-------|-----------|-------------|
-| `ge_check_sku_unique` | Uniqueness | Product SKU uniqueness |
-| `ge_check_name_not_null` | Completeness | Product name presence |
-| `ge_check_price_positive` | Validity | Price range validation |
-| `ge_check_category_valid` | Consistency | Category value validation |
+| Check                     | Dimension    | Description               |
+| ------------------------- | ------------ | ------------------------- |
+| `ge_check_sku_unique`     | Uniqueness   | Product SKU uniqueness    |
+| `ge_check_name_not_null`  | Completeness | Product name presence     |
+| `ge_check_price_positive` | Validity     | Price range validation    |
+| `ge_check_category_valid` | Consistency  | Category value validation |
 
 ### dbt Tests as Asset Checks
 
@@ -141,6 +142,7 @@ Defined in `dbt_project/models/*/schema.yml`:
 ### Freshness Policies
 
 Raw data assets have `FreshnessPolicy` attached for timeliness monitoring:
+
 - Fail window: 24 hours
 - Warn window: 12 hours
 
@@ -156,6 +158,7 @@ df = generate_customers(n=100, failure_rate=0.15, seed=42)
 ```
 
 Quality issues introduced:
+
 - **Uniqueness**: Duplicate customer IDs
 - **Completeness**: Missing email addresses
 - **Validity**: Invalid email formats
@@ -175,6 +178,7 @@ pytest tests/test_asset_checks.py -v
 ```
 
 Tests verify that:
+
 - Quality checks correctly identify issues in random data
 - Clean data passes all checks
 - Validators work as expected
@@ -202,6 +206,7 @@ ruff check . --fix --isolated  # Auto-fix issues
 ### Project Configuration
 
 The project uses:
+
 - `pyproject.toml` for dependency management (uv/hatch)
 - `tool.dagster` for Dagster configuration
 - `tool.dg` for dg CLI configuration

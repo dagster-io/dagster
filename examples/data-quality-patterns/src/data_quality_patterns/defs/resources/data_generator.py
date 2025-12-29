@@ -113,7 +113,7 @@ def generate_customers(
 
         # Age - may have accuracy issues
         if has_accuracy_issue:
-            age = random.choice([-5, 0, 150, 200, 999])  # Invalid ages
+            age = random.choice([-5, -1, 150, 200, 999])  # Invalid ages (outside 0-120 range)
         else:
             age = random.randint(18, 80)
 
@@ -264,4 +264,3 @@ def generate_products(
         data.append(record)
 
     return pd.DataFrame(data)
-

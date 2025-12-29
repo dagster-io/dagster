@@ -11,9 +11,9 @@ across multiple dimensions:
 
 import dagster as dg
 import pandas as pd
+from great_expectations.dataset import PandasDataset
 
 from data_quality_patterns.defs.assets.raw_data import raw_products
-from data_quality_patterns.lib.expectations import GE_AVAILABLE, create_ge_dataset
 
 
 @dg.asset_check(asset=raw_products, name="ge_check_sku_unique")
@@ -22,21 +22,7 @@ def ge_check_sku_unique(
     raw_products: pd.DataFrame,
 ) -> dg.AssetCheckResult:
     """Great Expectations check: SKU values are unique."""
-    if not GE_AVAILABLE:
-        return dg.AssetCheckResult(
-            passed=True,
-            severity=dg.AssetCheckSeverity.WARN,
-            description="Great Expectations not installed, skipping check",
-        )
-
-    ge_df = create_ge_dataset(raw_products)
-    if ge_df is None:
-        return dg.AssetCheckResult(
-            passed=False,
-            severity=dg.AssetCheckSeverity.WARN,
-            description="Failed to create Great Expectations dataset",
-        )
-
+    ge_df = PandasDataset(raw_products)
     result = ge_df.expect_column_values_to_be_unique("sku")
 
     if result["success"]:
@@ -62,21 +48,7 @@ def ge_check_name_not_null(
     raw_products: pd.DataFrame,
 ) -> dg.AssetCheckResult:
     """Great Expectations check: Product names are not null (completeness)."""
-    if not GE_AVAILABLE:
-        return dg.AssetCheckResult(
-            passed=True,
-            severity=dg.AssetCheckSeverity.WARN,
-            description="Great Expectations not installed, skipping check",
-        )
-
-    ge_df = create_ge_dataset(raw_products)
-    if ge_df is None:
-        return dg.AssetCheckResult(
-            passed=False,
-            severity=dg.AssetCheckSeverity.WARN,
-            description="Failed to create Great Expectations dataset",
-        )
-
+    ge_df = PandasDataset(raw_products)
     result = ge_df.expect_column_values_to_not_be_null("name")
 
     if result["success"]:
@@ -101,21 +73,7 @@ def ge_check_price_positive(
     raw_products: pd.DataFrame,
 ) -> dg.AssetCheckResult:
     """Great Expectations check: Prices are positive (validity/accuracy)."""
-    if not GE_AVAILABLE:
-        return dg.AssetCheckResult(
-            passed=True,
-            severity=dg.AssetCheckSeverity.WARN,
-            description="Great Expectations not installed, skipping check",
-        )
-
-    ge_df = create_ge_dataset(raw_products)
-    if ge_df is None:
-        return dg.AssetCheckResult(
-            passed=False,
-            severity=dg.AssetCheckSeverity.WARN,
-            description="Failed to create Great Expectations dataset",
-        )
-
+    ge_df = PandasDataset(raw_products)
     result = ge_df.expect_column_values_to_be_between(
         "price", min_value=0.01, max_value=10000, mostly=0.9
     )
@@ -142,21 +100,7 @@ def ge_check_category_valid(
     raw_products: pd.DataFrame,
 ) -> dg.AssetCheckResult:
     """Great Expectations check: Categories are from valid set (consistency)."""
-    if not GE_AVAILABLE:
-        return dg.AssetCheckResult(
-            passed=True,
-            severity=dg.AssetCheckSeverity.WARN,
-            description="Great Expectations not installed, skipping check",
-        )
-
-    ge_df = create_ge_dataset(raw_products)
-    if ge_df is None:
-        return dg.AssetCheckResult(
-            passed=False,
-            severity=dg.AssetCheckSeverity.WARN,
-            description="Failed to create Great Expectations dataset",
-        )
-
+    ge_df = PandasDataset(raw_products)
     valid_categories = ["Electronics", "Clothing", "Home", "Sports", "Books"]
     result = ge_df.expect_column_values_to_be_in_set("category", valid_categories)
 

@@ -49,8 +49,7 @@ def raw_customers(
     # Store in DuckDB for dbt to access
     with duckdb.get_connection() as conn:
         conn.execute("CREATE SCHEMA IF NOT EXISTS raw")
-        conn.execute("DROP TABLE IF EXISTS raw.customers")
-        conn.execute("CREATE TABLE raw.customers AS SELECT * FROM df")
+        conn.execute("CREATE OR REPLACE TABLE raw.customers AS SELECT * FROM df")
 
     context.add_output_metadata(
         {
@@ -67,7 +66,6 @@ def raw_customers(
 @dg.asset(
     group_name="raw_data",
     compute_kind="python",
-    deps=[raw_customers],
     freshness_policy=daily_freshness_policy,
 )
 def raw_orders(
@@ -102,8 +100,7 @@ def raw_orders(
     # Store in DuckDB for dbt to access
     with duckdb.get_connection() as conn:
         conn.execute("CREATE SCHEMA IF NOT EXISTS raw")
-        conn.execute("DROP TABLE IF EXISTS raw.orders")
-        conn.execute("CREATE TABLE raw.orders AS SELECT * FROM df")
+        conn.execute("CREATE OR REPLACE TABLE raw.orders AS SELECT * FROM df")
 
     context.add_output_metadata(
         {
@@ -137,8 +134,7 @@ def raw_products(
     # Store in DuckDB
     with duckdb.get_connection() as conn:
         conn.execute("CREATE SCHEMA IF NOT EXISTS raw")
-        conn.execute("DROP TABLE IF EXISTS raw.products")
-        conn.execute("CREATE TABLE raw.products AS SELECT * FROM df")
+        conn.execute("CREATE OR REPLACE TABLE raw.products AS SELECT * FROM df")
 
     context.add_output_metadata(
         {

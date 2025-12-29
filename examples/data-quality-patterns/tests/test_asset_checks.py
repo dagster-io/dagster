@@ -37,9 +37,7 @@ def test_raw_data_generates_with_issues():
         has_duplicates = df["customer_id"].duplicated().any()
 
         # With seed=42 and failure_rate=0.15, we expect some issues
-        assert has_null_emails or has_duplicates, (
-            "Expected quality issues in generated data"
-        )
+        assert has_null_emails or has_duplicates, "Expected quality issues in generated data"
 
 
 def test_check_detects_uniqueness_issues(sample_customer_data_with_issues):
@@ -84,13 +82,9 @@ def test_check_detects_consistency_issues(sample_customer_data_with_issues):
     assert not result.passed, "Check should fail due to inconsistent region"
 
 
-def test_check_detects_integrity_issues(
-    sample_customer_data, sample_order_data_with_issues
-):
+def test_check_detects_integrity_issues(sample_customer_data, sample_order_data_with_issues):
     """Test that integrity check detects invalid foreign key references."""
-    result = check_integrity_customer_ref(
-        None, sample_order_data_with_issues, sample_customer_data
-    )
+    result = check_integrity_customer_ref(None, sample_order_data_with_issues, sample_customer_data)
 
     # The fixture has "CUST-INVALID" which doesn't exist in customers
     assert not result.passed, "Check should fail due to invalid customer reference"
@@ -104,4 +98,3 @@ def test_check_passes_with_clean_data(sample_customer_data):
     assert check_validity_email(None, sample_customer_data).passed
     assert check_uniqueness_customer_id(None, sample_customer_data).passed
     assert check_consistency_region(None, sample_customer_data).passed
-

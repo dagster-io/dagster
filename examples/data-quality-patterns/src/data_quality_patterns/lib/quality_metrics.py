@@ -173,4 +173,3 @@ def calculate_quality_score(
         quality_score=quality_score,
         record_count=len(df),
     )
-

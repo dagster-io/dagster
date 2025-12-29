@@ -1,6 +1,5 @@
 """Tests for random data generators."""
 
-
 from data_quality_patterns.defs.resources.data_generator import (
     generate_customers,
     generate_orders,
@@ -61,9 +60,7 @@ def test_generate_orders_basic():
 def test_generate_orders_with_invalid_refs():
     """Test that order generator introduces integrity issues."""
     valid_customer_ids = ["CUST-00001", "CUST-00002"]
-    df = generate_orders(
-        n=50, customer_ids=valid_customer_ids, failure_rate=0.5, seed=42
-    )
+    df = generate_orders(n=50, customer_ids=valid_customer_ids, failure_rate=0.5, seed=42)
 
     # Should have some invalid customer references
     invalid_refs = ~df["customer_id"].isin(valid_customer_ids)
@@ -80,4 +77,3 @@ def test_generate_products_basic():
     assert "price" in df.columns
     assert "category" in df.columns
     assert "in_stock" in df.columns
-

@@ -109,4 +109,3 @@ def sample_order_data_with_issues() -> pd.DataFrame:
             "status": ["completed", "pending", "completed", "pending"],
         }
     )
-

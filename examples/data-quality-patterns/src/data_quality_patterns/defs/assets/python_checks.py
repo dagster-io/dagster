@@ -89,7 +89,9 @@ def check_accuracy_age(
         return dg.AssetCheckResult(
             passed=False,
             severity=dg.AssetCheckSeverity.ERROR,
-            description=f"Found {len(invalid_records)} records with invalid ages",
+            description=warnings[0]
+            if warnings
+            else f"Found {len(invalid_records)} records with invalid ages",
             metadata={
                 "invalid_count": len(invalid_records),
                 "invalid_ages": invalid_records["age"].tolist(),
@@ -220,13 +222,15 @@ def check_validity_email(
     validity_rate = calculate_validity(raw_customers, "email")
     threshold = 0.90
 
-    invalid_records, _ = validate_email_format(raw_customers, "email")
+    invalid_records, errors = validate_email_format(raw_customers, "email")
 
     if validity_rate < threshold:
         return dg.AssetCheckResult(
             passed=False,
             severity=dg.AssetCheckSeverity.ERROR,
-            description=f"Email validity {validity_rate:.1%} below threshold {threshold:.0%}",
+            description=errors[0]
+            if errors
+            else f"Email validity {validity_rate:.1%} below threshold {threshold:.0%}",
             metadata={
                 "validity_rate": float(validity_rate),
                 "invalid_count": len(invalid_records),
@@ -281,14 +285,16 @@ def check_uniqueness_customer_id(
 ) -> dg.AssetCheckResult:
     """Check that customer IDs are unique (uniqueness)."""
     uniqueness_rate = calculate_uniqueness(raw_customers, "customer_id")
-    duplicate_records, _ = check_uniqueness(raw_customers, ["customer_id"])
+    duplicate_records, errors = check_uniqueness(raw_customers, ["customer_id"])
 
     if not duplicate_records.empty:
         duplicate_ids = duplicate_records["customer_id"].unique().tolist()
         return dg.AssetCheckResult(
             passed=False,
             severity=dg.AssetCheckSeverity.ERROR,
-            description=f"Found {len(duplicate_ids)} duplicate customer IDs",
+            description=errors[0]
+            if errors
+            else f"Found {len(duplicate_ids)} duplicate customer IDs",
             metadata={
                 "uniqueness_rate": float(uniqueness_rate),
                 "duplicate_ids": duplicate_ids[:10],  # First 10
@@ -310,13 +316,13 @@ def check_uniqueness_order_id(
 ) -> dg.AssetCheckResult:
     """Check that order IDs are unique (uniqueness)."""
     uniqueness_rate = calculate_uniqueness(raw_orders, "order_id")
-    duplicate_records, _ = check_uniqueness(raw_orders, ["order_id"])
+    duplicate_records, errors = check_uniqueness(raw_orders, ["order_id"])
 
     if not duplicate_records.empty:
         return dg.AssetCheckResult(
             passed=False,
             severity=dg.AssetCheckSeverity.ERROR,
-            description="Found duplicate order IDs",
+            description=errors[0] if errors else "Found duplicate order IDs",
             metadata={
                 "uniqueness_rate": float(uniqueness_rate),
                 "duplicate_count": len(duplicate_records),
@@ -335,7 +341,11 @@ def check_uniqueness_order_id(
 # ============================================================================
 
 
-@dg.asset_check(asset=raw_orders, name="check_integrity_customer_ref", additional_ins={"raw_customers": dg.AssetIn("raw_customers")})
+@dg.asset_check(
+    asset=raw_orders,
+    name="check_integrity_customer_ref",
+    additional_ins={"raw_customers": dg.AssetIn("raw_customers")},
+)
 def check_integrity_customer_ref(
     context: dg.AssetCheckExecutionContext,
     raw_orders: pd.DataFrame,

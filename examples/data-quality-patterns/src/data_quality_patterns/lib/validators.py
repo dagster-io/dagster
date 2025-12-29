@@ -1,6 +1,5 @@
 """Reusable validation functions for data quality checks."""
 
-
 import pandas as pd
 
 EMAIL_PATTERN = r"^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$"
@@ -21,9 +20,7 @@ def validate_email_format(
     if email_column not in df.columns:
         return pd.DataFrame(), [f"Email column '{email_column}' not found"]
 
-    invalid_mask = df[email_column].notna() & ~df[email_column].str.match(
-        EMAIL_PATTERN, na=False
-    )
+    invalid_mask = df[email_column].notna() & ~df[email_column].str.match(EMAIL_PATTERN, na=False)
     invalid_records = df[invalid_mask]
 
     errors = []
@@ -67,9 +64,7 @@ def validate_date_format(
 
     errors = []
     if invalid_ids:
-        errors.append(
-            f"Invalid date format: {len(invalid_ids)} records (IDs: {invalid_ids})"
-        )
+        errors.append(f"Invalid date format: {len(invalid_ids)} records (IDs: {invalid_ids})")
 
     return invalid_ids, errors
 
@@ -108,9 +103,7 @@ def check_uniqueness(
 
     missing_cols = [col for col in unique_columns if col not in df.columns]
     if missing_cols:
-        return pd.DataFrame(), [
-            f"Columns not found for uniqueness check: {missing_cols}"
-        ]
+        return pd.DataFrame(), [f"Columns not found for uniqueness check: {missing_cols}"]
 
     duplicates = df.duplicated(subset=unique_columns, keep=False)
     duplicate_records = df[duplicates]
@@ -165,8 +158,7 @@ def check_age_range(
             )
         else:
             warnings.append(
-                f"Age out of reasonable range ({min_age}-{max_age}): "
-                f"{len(invalid_records)} records"
+                f"Age out of reasonable range ({min_age}-{max_age}): {len(invalid_records)} records"
             )
 
     return invalid_records, warnings
@@ -212,4 +204,3 @@ def clean_dataframe(
         df_clean = df_clean.drop_duplicates(subset=unique_columns, keep="first")
 
     return df_clean
-

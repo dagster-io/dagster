@@ -183,4 +183,3 @@ def test_calculate_quality_score():
     assert metrics.completeness == 1.0
     assert metrics.validity == 1.0
     assert metrics.uniqueness == 1.0
-
