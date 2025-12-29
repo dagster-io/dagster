@@ -1,0 +1,50 @@
+version: 2
+
+models:
+  - name: stg_customers
+    description: Staged customer data from raw source
+    config:
+      tags: ["staging"]
+    columns:
+      - name: customer_id
+        description: Unique customer identifier
+        data_tests:
+          - unique:
+              config:
+                severity: warn
+          - not_null:
+              config:
+                severity: warn
+      - name: email
+        description: Customer email address
+        data_tests:
+          - not_null:
+              config:
+                severity: warn
+
+  - name: stg_orders
+    description: Staged order data from raw source
+    config:
+      tags: ["staging"]
+    columns:
+      - name: order_id
+        description: Unique order identifier
+        data_tests:
+          - unique:
+              config:
+                severity: warn
+          - not_null:
+              config:
+                severity: warn
+      - name: customer_id
+        description: Reference to customer
+        data_tests:
+          - not_null:
+              config:
+                severity: warn
+      - name: amount
+        description: Order amount
+        data_tests:
+          - not_null:
+              config:
+                severity: warn
