@@ -14,13 +14,13 @@ slug: '/integrations/libraries/hightouch'
 
 The Hightouch integration allows data engineers to trigger and monitor syncs from their data warehouse to various SaaS destinations using the `ConfigurableHightouchResource` and the modern `HightouchSyncComponent`.
 
-### Installation
+## Installation
 
 <PackageInstallInstructions packageName="dagster-hightouch" />
 
-### Examples
+## Examples
 
-#### Using the Hightouch Sync Component (Modern)
+### Using the Hightouch Sync Component (Modern)
 
 The `HightouchSyncComponent` allows you to define Hightouch syncs as Dagster assets declaratively. This is the recommended approach for modern Dagster projects.
 
@@ -57,5 +57,6 @@ def sync_job():
     hightouch_sync_op()
 ```
 
-About Hightouch
-Hightouch is a leading Reverse ETL platform that syncs data from your data warehouse to the operational tools your business teams use every day, such as Salesforce, HubSpot, and Marketo. By integrating Hightouch with Dagster, you can ensure that your downstream SaaS tools are always populated with the freshest data from your pipelines.
+## About Hightouch
+
+[Hightouch](https://hightouch.com/) is a leading Reverse ETL platform that syncs data from your data warehouse to the operational tools your business teams use every day, such as Salesforce, HubSpot, and Marketo. By integrating Hightouch with Dagster, you can ensure that your downstream SaaS tools are always populated with the freshest data from your pipelines.
