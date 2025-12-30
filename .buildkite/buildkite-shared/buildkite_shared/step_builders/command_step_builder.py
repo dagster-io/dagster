@@ -385,8 +385,7 @@ class CommandStepBuilder:
             if "gke" in queue:
                 docker_image = "us-central1-docker.pkg.dev/dagster-production/buildkite-images/docker:20.10.16-dind"
             else:
-                # Use ECR pull-through cache for Docker Hub images in AWS
-                docker_image = "968703565975.dkr.ecr.us-west-2.amazonaws.com/dockerhub/library/docker:20.10.16-dind"
+                docker_image = "public.ecr.aws/docker/library/docker:20.10.16-dind"
 
             sidecars.append(
                 {
