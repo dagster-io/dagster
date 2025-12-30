@@ -55,7 +55,11 @@ You can configure the `write_mode` to handle these scenarios:
 * `"replace"`: Drops the table and recreates it. This allows schema evolution.
 * `"append"`: Inserts data without deleting existing rows.
 
-Note: For partitioned assets, the write mode is ignored, and the I/O manager will replace data in the targeted partitions.
+:::note
+
+For partitioned assets, the write mode is ignored, and the I/O manager will replace data in the targeted partitions.
+
+:::
 
 ```python
 from dagster_gcp import BigQueryIOManager
