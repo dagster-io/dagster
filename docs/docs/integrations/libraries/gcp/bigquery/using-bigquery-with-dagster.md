@@ -68,7 +68,7 @@ You can also specify a `location` where computation should take place.
   endBefore="end_example"
 />
 
-### Configuring Write Modes
+#### Configuring write modes
 
 By default, the BigQuery I/O manager truncates data when writing to an existing table. You can change this behavior using the `write_mode` configuration option:
 
