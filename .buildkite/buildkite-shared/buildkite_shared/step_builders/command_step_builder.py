@@ -380,9 +380,17 @@ class CommandStepBuilder:
 
         sidecars = []
         if self._requires_docker:
+            # Determine docker image based on queue (GKE vs EKS)
+            queue = self._step.get("agents", {}).get("queue", "")
+            if "gke" in queue:
+                docker_image = "us-central1-docker.pkg.dev/dagster-production/buildkite-images/docker:20.10.16-dind"
+            else:
+                # Use ECR pull-through cache for Docker Hub images in AWS
+                docker_image = "968703565975.dkr.ecr.us-west-2.amazonaws.com/dockerhub/library/docker:20.10.16-dind"
+
             sidecars.append(
                 {
-                    "image": "public.ecr.aws/docker/library/docker:20.10.16-dind",
+                    "image": docker_image,
                     "command": ["dockerd-entrypoint.sh"],
                     "resources": {
                         "requests": {
