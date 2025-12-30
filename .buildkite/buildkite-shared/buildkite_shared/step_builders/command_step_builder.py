@@ -382,7 +382,7 @@ class CommandStepBuilder:
         if self._requires_docker:
             sidecars.append(
                 {
-                    "image": "public.ecr.aws/docker/library/docker:20.10.16-dind",
+                    "image": "us-central1-docker.pkg.dev/dagster-production/buildkite-images/docker:20.10.16-dind",
                     "command": ["dockerd-entrypoint.sh"],
                     "resources": {
                         "requests": {
