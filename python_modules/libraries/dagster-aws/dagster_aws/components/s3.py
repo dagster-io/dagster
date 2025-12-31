@@ -11,6 +11,8 @@ from dagster_aws.s3.resources import S3Resource
 @public
 @preview
 class S3ResourceComponent(dg.Component, dg.Resolvable, dg.Model):
+    """A component that provides an S3Resource for interacting with Amazon S3."""
+
     credentials: Union[S3CredentialsComponent, str]
     resource_key: Optional[str] = None
 
