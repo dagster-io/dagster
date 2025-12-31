@@ -40,6 +40,46 @@ setup(
     extras_require={
         "stubs": [
             "google-cloud-storage",
-        ]
+        ],
+        # Storage extras - dataframes is the base, others depend on it
+        "storage-dataframes": [
+            "narwhals>=1.23.0",
+        ],
+        "storage-duckdb": [
+            f"dagster-pipes[storage-dataframes]{pin}",
+            "ibis-framework[duckdb]>=9.0.0",
+        ],
+        "storage-postgres": [
+            f"dagster-pipes[storage-dataframes]{pin}",
+            "ibis-framework[postgres]>=9.0.0",
+        ],
+        "storage-snowflake": [
+            f"dagster-pipes[storage-dataframes]{pin}",
+            "ibis-framework[snowflake]>=9.0.0",
+            "sqlglot",
+        ],
+        # Object store extras (S3, GCS, Azure)
+        "storage-s3": [
+            f"dagster-pipes[storage-dataframes]{pin}",
+            "obstore>=0.4.0",
+            "pyarrow",
+        ],
+        "storage-gcs": [
+            f"dagster-pipes[storage-dataframes]{pin}",
+            "obstore>=0.4.0",
+            "pyarrow",
+        ],
+        "storage-azure": [
+            f"dagster-pipes[storage-dataframes]{pin}",
+            "obstore>=0.4.0",
+            "pyarrow",
+        ],
+        "test": [
+            f"dagster-pipes[storage-duckdb,storage-postgres,storage-snowflake,storage-s3]{pin}",
+            "pyarrow",
+            "pandas",
+            "polars",
+            "numpy",
+        ],
     },
 )
