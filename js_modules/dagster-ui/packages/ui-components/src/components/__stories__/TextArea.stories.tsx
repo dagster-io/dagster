@@ -1,7 +1,7 @@
 import {useState} from 'react';
 
 import {Colors} from '../Color';
-import {TextArea} from '../TextInput';
+import {TextArea} from '../TextArea';
 
 // eslint-disable-next-line import/no-default-export
 export default {
@@ -16,7 +16,7 @@ export const Default = () => {
       placeholder="Type anything…"
       value={value}
       onChange={(e) => setValue(e.target.value)}
-      $resize="none"
+      resize="none"
     />
   );
 };
@@ -28,7 +28,7 @@ export const Resize = () => {
       placeholder="Type anything…"
       value={value}
       onChange={(e) => setValue(e.target.value)}
-      $resize="vertical"
+      resize="vertical"
     />
   );
 };
@@ -40,8 +40,21 @@ export const StrokeColor = () => {
       placeholder="Type anything…"
       value={value}
       onChange={(e) => setValue(e.target.value)}
-      $resize="none"
-      $strokeColor={Colors.accentRed()}
+      resize="none"
+      strokeColor={Colors.accentRed()}
+    />
+  );
+};
+
+export const Disabled = () => {
+  const [value, setValue] = useState('This textarea is disabled');
+  return (
+    <TextArea
+      placeholder="Type anything…"
+      value={value}
+      onChange={(e) => setValue(e.target.value)}
+      resize="vertical"
+      disabled
     />
   );
 };

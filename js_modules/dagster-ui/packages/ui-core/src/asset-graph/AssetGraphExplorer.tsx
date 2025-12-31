@@ -8,7 +8,6 @@ import {
   NonIdealState,
   Spinner,
   SplitPanelContainer,
-  TextInputContainer,
   Tooltip,
 } from '@dagster-io/ui-components';
 import pickBy from 'lodash/pickBy';
@@ -934,9 +933,6 @@ const GraphQueryInputFlexWrap = styled.div`
   flex: 1;
 
   > div {
-    ${TextInputContainer} {
-      width: 100%;
-    }
     > * {
       display: block;
       width: 100%;

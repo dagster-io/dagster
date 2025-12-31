@@ -47,6 +47,7 @@ export * from './components/Tabs';
 export * from './components/Tag';
 export * from './components/TagSelector';
 export * from './components/Text';
+export * from './components/TextArea';
 export * from './components/TextInput';
 export * from './components/Toaster';
 export * from './components/TokenizingField';

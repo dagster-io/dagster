@@ -1,0 +1,4 @@
+.textarea {
+  composes: textInputBase from './TextInput.module.css';
+  resize: var(--text-area-resize, vertical);
+}

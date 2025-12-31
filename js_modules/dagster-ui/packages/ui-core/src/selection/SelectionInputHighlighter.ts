@@ -1,4 +1,4 @@
-import {Colors, FontFamily, TextInputStyles} from '@dagster-io/ui-components';
+import {Colors, FontFamily} from '@dagster-io/ui-components';
 import {ParserRuleContext} from 'antlr4ts';
 import {AbstractParseTreeVisitor} from 'antlr4ts/tree/AbstractParseTreeVisitor';
 import CodeMirror from 'codemirror';
@@ -240,7 +240,43 @@ export const SelectionAutoCompleteInputCSS = css`
     padding: 0;
   }
   width: 100%;
-  ${TextInputStyles}
+
+  /* Inline TextInputStyles */
+  background-color: ${Colors.backgroundDefault()};
+  border: none;
+  box-shadow: ${Colors.borderDefault()} inset 0px 0px 0px 1px;
+  outline: none;
+  border-radius: 8px;
+  color: ${Colors.textDefault()};
+  flex-grow: 1;
+  font-size: 14px;
+  line-height: 20px;
+  padding: 6px 6px 6px 12px;
+  margin: 0;
+  transition: box-shadow 150ms;
+
+  ::placeholder {
+    color: ${Colors.textLighter()};
+  }
+
+  :disabled {
+    box-shadow: ${Colors.keylineDefault()} inset 0px 0px 0px 1px;
+    background-color: ${Colors.backgroundLight()};
+    color: ${Colors.textDisabled()};
+  }
+
+  :disabled::placeholder {
+    color: ${Colors.textDisabled()};
+  }
+
+  :focus {
+    box-shadow:
+      ${Colors.borderDefault()} inset 0px 0px 0px 1px,
+      ${Colors.keylineDefault()} inset 2px 2px 1.5px,
+      ${Colors.focusRing()} 0 0 0 2px;
+    outline: none;
+  }
+
   flex-shrink: 1;
   overflow: auto;
 

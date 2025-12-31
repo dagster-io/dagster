@@ -92,7 +92,7 @@ export const EditCursorDialog = ({
       <DialogBody>
         <TextArea
           value={cursorValue}
-          $resize="vertical"
+          resize="vertical"
           onChange={(e) => setCursorValue(e.target.value)}
           style={{width: '100%'}}
         />
