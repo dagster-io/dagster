@@ -32,7 +32,12 @@ T_NamespacedKVSet = TypeVar("T_NamespacedKVSet", bound="NamespacedKVSet")
 
 
 def is_raw_metadata_type(t: type) -> bool:
-    return issubclass(t, MetadataValue) or t in DIRECTLY_WRAPPED_METADATA_TYPES
+    try:
+        return issubclass(t, MetadataValue) or t in DIRECTLY_WRAPPED_METADATA_TYPES
+    except TypeError:
+        # Handle generic types like dict[str, Any] which fail issubclass check
+        origin = getattr(t, "__origin__", None)
+        return origin is not None and origin in (dict, list)
 
 
 class NamespacedKVSet(ABC, DagsterModel):
@@ -196,6 +201,27 @@ class TableMetadataSet(NamespacedMetadataSet):
     @classmethod
     def current_key_by_legacy_key(cls) -> Mapping[str, str]:
         return {"relation_identifier": "table_name"}
+
+
+class StorageMetadataSet(NamespacedMetadataSet):
+    """Metadata entry which supplies a storage address for an asset.
+
+    Args:
+        storage_address (Optional[str]): The storage address for the asset.
+    """
+
+    storage_kind: Optional[str] = None
+    storage_address: Optional[str] = None
+    storage_metadata: Optional[dict[str, Any]] = None
+
+    @classmethod
+    def namespace(cls) -> str:
+        return "dagster"
+
+    @classmethod
+    def current_key_by_legacy_key(cls) -> Mapping[str, str]:
+        # this allows us to extract a StorageMetadataSet from a TableMetadataSet
+        return {"table_name": "storage_address"}
 
 
 class UriMetadataSet(NamespacedMetadataSet):
