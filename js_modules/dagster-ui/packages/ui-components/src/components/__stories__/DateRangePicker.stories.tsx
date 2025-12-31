@@ -1,5 +1,4 @@
 import {TZDate} from '@date-fns/tz';
-import {Meta} from '@storybook/nextjs';
 import {endOfDay} from 'date-fns';
 import memoize from 'lodash/memoize';
 import {useState} from 'react';
@@ -11,7 +10,7 @@ import {DateRange, DayPickerWrapper} from '../DayPickerWrapper';
 export default {
   title: 'DayPickerWrapper',
   component: DayPickerWrapper,
-} as Meta<typeof DayPickerWrapper>;
+};
 
 const buildFormatter = memoize(
   (timeZone: string) =>
