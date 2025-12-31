@@ -72,6 +72,9 @@ export const AssetActionMenu = memo((props: Props) => {
         }
       : null,
   );
+
+  const additionalMenuItems = [...wipe.dropdownOptions, ...deletePartitions.dropdownOptions];
+
   return (
     <>
       {launchpadElement}
@@ -135,9 +138,12 @@ export const AssetActionMenu = memo((props: Props) => {
                   />
                 ))
               : undefined}
-            <MenuDivider />
-            {wipe.dropdownOptions}
-            {deletePartitions.dropdownOptions}
+            {additionalMenuItems.length && (
+              <>
+                <MenuDivider />
+                {additionalMenuItems}
+              </>
+            )}
           </Menu>
         }
       >

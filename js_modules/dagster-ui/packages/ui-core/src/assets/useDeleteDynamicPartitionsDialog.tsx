@@ -1,5 +1,5 @@
 import {Colors, Icon, MenuItem} from '@dagster-io/ui-components';
-import {Dispatch, SetStateAction, useContext, useState} from 'react';
+import {useContext, useState} from 'react';
 
 import {DeleteDynamicPartitionsDialog} from './DeleteDynamicPartitionsDialog';
 import {useAssetPermissions} from './useAssetPermissions';
@@ -56,9 +56,9 @@ export const useDeleteDynamicPartitionsDialog = (
     dropdownOptions: [
       <DeleteDynamicPartitionsMenuItem
         key="delete"
-        setIsShowing={setIsShowing}
         assetKeys={opts?.assetKey ? [opts.assetKey] : []}
         locationName={opts?.repoAddress.location || ''}
+        onClick={() => setIsShowing(true)}
       />,
     ],
   };
@@ -67,13 +67,13 @@ export const useDeleteDynamicPartitionsDialog = (
 type DeleteDynamicPartitionsMenuItemProps = {
   assetKeys: AssetKeyInput[];
   locationName: string;
-  setIsShowing: Dispatch<SetStateAction<boolean>>;
+  onClick: () => void;
 };
 
 const DeleteDynamicPartitionsMenuItem = ({
   assetKeys,
   locationName,
-  setIsShowing,
+  onClick,
 }: DeleteDynamicPartitionsMenuItemProps) => {
   // this separate comp exists to defer this expensive query until
   // the menuItem is rendered instead of when the hook is called
@@ -85,7 +85,7 @@ const DeleteDynamicPartitionsMenuItem = ({
       icon={<Icon name="delete" color={Colors.accentRed()} />}
       disabled={!hasWipePermission}
       intent="danger"
-      onClick={() => setIsShowing(true)}
+      onClick={onClick}
     />
   );
 };

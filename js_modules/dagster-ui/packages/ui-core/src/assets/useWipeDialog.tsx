@@ -1,5 +1,5 @@
 import {Colors, Icon, MenuItem} from '@dagster-io/ui-components';
-import {Dispatch, SetStateAction, useContext, useState} from 'react';
+import {useContext, useState} from 'react';
 import {AssetWipeDialog} from 'shared/assets/AssetWipeDialog.oss';
 
 import {useAssetPermissions} from './useAssetPermissions';
@@ -8,7 +8,7 @@ import {AssetKeyInput} from '../graphql/types';
 
 export const useWipeDialog = (
   opts: {assetKey: AssetKeyInput; repository: {location: {name: string}} | null} | null,
-  refresh?: VoidFunction,
+  refresh?: () => void,
 ) => {
   const [isShowing, setIsShowing] = useState(false);
 
@@ -30,9 +30,9 @@ export const useWipeDialog = (
         ? [
             <WipeDialogMenuItem
               key="wipe"
-              setIsShowing={setIsShowing}
               assetKeys={opts?.assetKey ? [opts.assetKey] : []}
               locationName={opts?.repository?.location.name || ''}
+              onClick={() => setIsShowing(true)}
             />,
           ]
         : [],
@@ -42,10 +42,10 @@ export const useWipeDialog = (
 type WipeDialogMenuItemProps = {
   assetKeys: AssetKeyInput[];
   locationName: string;
-  setIsShowing: Dispatch<SetStateAction<boolean>>;
+  onClick: () => void;
 };
 
-const WipeDialogMenuItem = ({assetKeys, locationName, setIsShowing}: WipeDialogMenuItemProps) => {
+const WipeDialogMenuItem = ({assetKeys, locationName, onClick}: WipeDialogMenuItemProps) => {
   // this separate comp exists to defer this expensive query until
   // the menuItem is rendered instead of when the hook is called
   const {hasWipePermission} = useAssetPermissions(assetKeys, locationName);
@@ -56,7 +56,7 @@ const WipeDialogMenuItem = ({assetKeys, locationName, setIsShowing}: WipeDialogM
       icon={<Icon name="delete" color={Colors.accentRed()} />}
       disabled={!hasWipePermission}
       intent="danger"
-      onClick={() => setIsShowing(true)}
+      onClick={onClick}
     />
   );
 };
