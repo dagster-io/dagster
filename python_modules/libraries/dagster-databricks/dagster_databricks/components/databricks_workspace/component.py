@@ -14,8 +14,8 @@ from dagster import (
     ResolvedAssetSpec,
     multi_asset,
 )
-from dagster._annotations import beta
 from dagster._serdes import whitelist_for_serdes
+from dagster._symbol_annotations.lifecycle import preview
 from dagster.components import Resolver
 from dagster.components.component.state_backed_component import StateBackedComponent
 from dagster.components.utils.defs_state import (
@@ -48,7 +48,7 @@ class DatabricksWorkspaceData:
     jobs: list[DatabricksJob]
 
 
-@beta
+@preview
 @dataclass
 class DatabricksWorkspaceComponent(StateBackedComponent, Resolvable):
     """Component that fetches Databricks workspace jobs and exposes them as assets."""

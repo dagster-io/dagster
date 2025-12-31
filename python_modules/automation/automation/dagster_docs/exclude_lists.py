@@ -219,6 +219,7 @@ EXCLUDE_MISSING_PUBLIC = {
     "dagster_census.CensusOutput",
     "dagster_census.CensusResource",
     "dagster_databricks.DatabricksAssetBundleComponent",
+    "dagster_databricks.DatabricksWorkspaceComponent",
     "dagster_databricks.DatabricksClient",
     "dagster_databricks.DatabricksError",
     "dagster_databricks.PipesDatabricksClient",
