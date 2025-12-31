@@ -1,5 +1,6 @@
 import pickle
 import random
+import re
 from collections.abc import Sequence
 from datetime import datetime, timedelta, timezone
 from typing import Optional, cast
@@ -2607,3 +2608,48 @@ def test_multiple_cron_and_timestamp_exclusions():
         "2024-02-12",  # Mon
         "2024-02-09",  # Fri (skip Sat 10, Sun 11)
     ]
+
+
+def test_validate_partition_definition():
+    partitions_def = dg.TimeWindowPartitionsDefinition(
+        start="2025-01-01",
+        fmt="%Y-%m-%d",
+        cron_schedule="0 0 * * *",
+    )
+    partitions_def.validate_partition_definition()
+
+    invalid_partitions_def = dg.TimeWindowPartitionsDefinition(
+        start="2025-01-01",
+        fmt="%Y-%m-%d",
+        cron_schedule="0 0,6 * * *",
+    )
+    with pytest.raises(
+        dg.DagsterInvalidDefinitionError,
+        match=re.escape(
+            "This partition set contains multiple time ranges that map to the same partition key. This usually indicates that the partition set's format string (%Y-%m-%d) is not granular enough to produce a unique key for each time in the cron schedule (0 0,6 * * *)."
+        ),
+    ):
+        invalid_partitions_def.validate_partition_definition()
+
+    with freeze_time(create_datetime(2025, 1, 1)):
+        partitions_def_in_the_future = dg.TimeWindowPartitionsDefinition(
+            start="2025-02-01",
+            fmt="%Y-%m-%d",
+            cron_schedule="0 0 * * *",
+        )
+        assert partitions_def_in_the_future.get_first_partition_key() is None
+        assert partitions_def_in_the_future.get_last_partition_key() is None
+
+        partitions_def_in_the_future.validate_partition_definition()
+
+    partitions_def_with_a_single_partition = dg.TimeWindowPartitionsDefinition(
+        start="2025-02-01",
+        end="2025-02-02",
+        fmt="%Y-%m-%d",
+        cron_schedule="0 0 * * *",
+    )
+    assert len(partitions_def_with_a_single_partition.get_partition_keys()) == 1
+    assert partitions_def_with_a_single_partition.get_first_partition_key() == "2025-02-01"
+    assert partitions_def_with_a_single_partition.get_next_partition_key("2025-02-01") is None
+
+    partitions_def_with_a_single_partition.validate_partition_definition()

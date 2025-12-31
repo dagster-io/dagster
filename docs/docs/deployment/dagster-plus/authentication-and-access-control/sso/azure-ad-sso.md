@@ -24,22 +24,22 @@ To complete the steps in this guide, you'll need:
 
 </details>
 
-## Step 1: add the Dagster+ app in Azure AD \{#dagster-app}
+## Step 1: add the Dagster Cloud app in Azure AD \{#dagster-app}
 
-In this step, you'll add the Dagster+ app to your list of managed SaaS apps in Azure AD.
+In this step, you'll add the Dagster Cloud app to your list of managed SaaS apps in Azure AD.
 
 1. Sign in to the Azure portal.
 2. On the left navigation pane, click the **Azure Active Directory** service.
 3. Navigate to **Enterprise Applications** and then **All Applications**.
 4. Click **New application**.
-5. In the **Add from the gallery** section, type **Dagster+** in the search box.
-6. Select **Dagster+** from the results panel and then add the app. Wait a few seconds while the app is added to your tenant.
+5. In the **Add from the gallery** section, type **Dagster Cloud** in the search box.
+6. Select **Dagster Cloud** from the results panel and then add the app. Wait a few seconds while the app is added to your tenant.
 
 ## Step 2: configure SSO in Azure AD \{#configure-sso}
 
 In this step, you'll configure and enable SSO for Azure AD in your Azure portal.
 
-1.  On the **Dagster+** application integration page, locate the **Manage** section and select **single sign-on**.
+1.  On the **Dagster Cloud** application integration page, locate the **Manage** section and select **single sign-on**.
 2.  On the **Select a single sign-on method** page, select **SAML**.
 3.  On the **Set up single sign-on with SAML** page, click the pencil icon for **Basic SAML Configuration** to edit the settings.
 

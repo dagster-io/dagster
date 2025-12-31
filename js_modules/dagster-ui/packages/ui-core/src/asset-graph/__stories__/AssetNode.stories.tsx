@@ -76,7 +76,7 @@ function SetCacheEntry({
 }
 
 export const LiveStates = () => {
-  const [hasAssetHealth, setHasAssetHealth] = useState(true);
+  const [assetHealthEnabled, setAssetHealthEnabled] = useState(true);
   const [facets, setFacets] = useState<Set<AssetNodeFacet>>(new Set(AllAssetNodeFacets));
 
   const caseWithLiveData = (scenario: AssetNodeScenario) => {
@@ -118,7 +118,7 @@ export const LiveStates = () => {
               definition={definitionCopy}
               selected={false}
               facets={facets}
-              hasAssetHealth={hasAssetHealth}
+              assetHealthEnabled={assetHealthEnabled}
             />
           </div>
           <div
@@ -130,7 +130,7 @@ export const LiveStates = () => {
             }}
           >
             <div style={{position: 'absolute', width: dimensions.width, transform: 'scale(0.4)'}}>
-              {hasAssetHealth ? (
+              {assetHealthEnabled ? (
                 <AssetNodeMinimalWithHealth
                   definition={definitionCopy}
                   selected={false}
@@ -156,9 +156,9 @@ export const LiveStates = () => {
     <MockedProvider>
       <AssetLiveDataProvider>
         <Checkbox
-          checked={hasAssetHealth}
+          checked={assetHealthEnabled}
           label="Asset Health Available (Cloud)"
-          onChange={() => setHasAssetHealth(!hasAssetHealth)}
+          onChange={() => setAssetHealthEnabled(!assetHealthEnabled)}
         />
 
         <AssetNodeFacetsPicker value={facets} onChange={setFacets} />
@@ -218,7 +218,7 @@ export const PartnerTags = () => {
               facets={facets}
               definition={def}
               selected={false}
-              hasAssetHealth
+              assetHealthEnabled
             />
           </div>
         </Box>

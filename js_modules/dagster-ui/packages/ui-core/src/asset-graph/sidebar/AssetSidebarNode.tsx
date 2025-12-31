@@ -1,6 +1,6 @@
 import {Box, Colors, Icon, UnstyledButton} from '@dagster-io/ui-components';
 import * as React from 'react';
-import {observeEnabled} from 'shared/app/observeEnabled.oss';
+import {assetHealthEnabled} from 'shared/app/assetHealthEnabled.oss';
 import styled from 'styled-components';
 
 import {StatusDot, StatusDotNode} from './StatusDot';
@@ -109,7 +109,7 @@ const AssetSidebarAssetLabel = ({
         isSelected={isSelected}
         isLastSelected={isLastSelected}
         icon={
-          observeEnabled() ? (
+          assetHealthEnabled() ? (
             <div style={{marginLeft: -8, marginRight: -8}}>
               <AssetHealthSummary iconOnly assetKey={node.assetKey} />
             </div>

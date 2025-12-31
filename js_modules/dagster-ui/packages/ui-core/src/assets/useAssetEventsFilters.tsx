@@ -1,6 +1,6 @@
 import {Box, Icon} from '@dagster-io/ui-components';
 import React, {useCallback, useMemo} from 'react';
-import {observeEnabled} from 'shared/app/observeEnabled.oss';
+import {assetHealthEnabled} from 'shared/app/assetHealthEnabled.oss';
 
 import {AssetKey} from './types';
 import {useQueryPersistedState} from '../hooks/useQueryPersistedState';
@@ -187,7 +187,7 @@ export const useAssetEventsFilters = ({assetKey, assetNode}: Config) => {
       // No need to show the type filter for assets with only observations
       // No need to show the status filter, only failed materializations count as Failure
       filters.push(typeFilter);
-      if (observeEnabled()) {
+      if (assetHealthEnabled()) {
         filters.push(statusFilter);
       }
     }

@@ -58,8 +58,8 @@ def test_import_perf():
     # if `tuna` output is unfriendly, another way to debug imports is to open `/tmp/import.txt`
     # using https://kmichel.github.io/python-importtime-graph/
     assert not expensive_imports, (
-        "The following expensive libraries were imported with the top-level `dagster` module, "
-        f"slowing down any process that imports Dagster: {', '.join(expensive_imports)}; to debug, "
+        "The following expensive libraries were imported with the top-level `dagster_dg_cli` module, "
+        f"slowing down any process that imports dg: {', '.join(expensive_imports)}; to debug, "
         "`pip install tuna`, then run "
         "`python -X importtime python_modules/libraries/dagster-dg-cli/dagster_dg_cli_tests/cli_tests/import_perf_tests/simple_import.py noop &> /tmp/import.txt && tuna /tmp/import.txt`."
     )

@@ -51,4 +51,4 @@ Depending on your use case or if you're using Dagster+, you may also need to add
 ## CI/CD configuration files
 
 - For **OSS deployments**, you can add your own CI/CD files as needed.
-- For **Dagter+ deployments**, you can use the [`dg plus deploy configure` CLI command](/api/clis/dg-cli/dg-plus#configure) to generate CI/CD files for GitHub or GitLab, or set your system to use the necessary `dg deploy` CLI commands if you use a different Git provider. For more information, see the [Dagster+ CI/CD documentation](/deployment/dagster-plus/deploying-code/configuring-ci-cd).
+- For **Dagster+ deployments**, you can use the [`dg plus deploy configure` CLI command](/api/clis/dg-cli/dg-plus#configure) to generate CI/CD files for GitHub or GitLab, or set your system to use the necessary `dg deploy` CLI commands if you use a different Git provider. For more information, see the [Dagster+ CI/CD documentation](/deployment/dagster-plus/deploying-code/configuring-ci-cd).

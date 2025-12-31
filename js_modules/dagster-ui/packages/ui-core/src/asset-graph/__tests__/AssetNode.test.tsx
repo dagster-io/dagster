@@ -39,8 +39,8 @@ jest.mock('../../assets/useAllAssets', () => ({
   useAllAssetsNodes: () => ({allAssetKeys: mockAllAssetKeys, loading: false}),
 }));
 
-jest.mock('../../app/observeEnabled.oss', () => ({
-  observeEnabled: jest.fn(() => true),
+jest.mock('../../app/assetHealthEnabled.oss', () => ({
+  assetHealthEnabled: jest.fn(() => true),
 }));
 
 /** The tests in this file mirror the stories in the storybook. If you've made
@@ -50,7 +50,7 @@ jest.mock('../../app/observeEnabled.oss', () => ({
  * */
 describe('AssetNode', function () {
   afterAll(() => {
-    jest.unmock('../../app/observeEnabled.oss');
+    jest.unmock('../../app/assetHealthEnabled.oss');
   });
 
   Scenarios.forEach((scenario: AssetNodeScenario) =>

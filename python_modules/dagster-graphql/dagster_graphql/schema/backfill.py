@@ -29,7 +29,6 @@ from dagster._core.storage.tags import (
 )
 from dagster._core.workspace.permissions import Permissions
 from dagster_shared import seven
-from dagster_shared.error import DagsterError
 
 from dagster_graphql.implementation.fetch_partition_sets import (
     partition_status_counts_from_run_partition_data,
@@ -252,7 +251,7 @@ class GrapheneAssetBackfillData(graphene.ObjectType):
             root_partitions_subset = self._backfill_job.get_target_root_partitions_subset(
                 graphene_info.context
             )
-        except DagsterError:
+        except Exception:
             logging.getLogger("dagster").warning(
                 "Error generating root target partitions", exc_info=True
             )
