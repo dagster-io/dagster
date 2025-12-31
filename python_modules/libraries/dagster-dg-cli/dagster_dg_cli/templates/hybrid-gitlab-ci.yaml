@@ -4,6 +4,8 @@
 variables:
   # The organization name in Dagster Cloud
   DAGSTER_CLOUD_ORGANIZATION: TEMPLATE_ORGANIZATION_NAME
+  # The Dagster Cloud URL for your organization (e.g., https://myorg.dagster.cloud or https://myorg.eu.dagster.cloud for EU)
+  DAGSTER_CLOUD_URL: TEMPLATE_DAGSTER_CLOUD_URL
   # The API token from https://dagster.cloud/ should be stored in a CI/CD Variable called DAGSTER_CLOUD_API_TOKEN
   DAGSTER_CLOUD_API_TOKEN: $DAGSTER_CLOUD_API_TOKEN
 

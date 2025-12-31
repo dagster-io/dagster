@@ -14,9 +14,36 @@ import yaml
 from click.testing import CliRunner
 from dagster_dg_cli.cli.plus import plus_group
 from dagster_dg_cli.utils.plus import gql
-from dagster_shared.plus.config import DagsterPlusCliConfig
+from dagster_shared.plus.config import DagsterPlusCliConfig, get_dagster_cloud_base_url_for_region
 
 from dagster_dg_cli_tests.cli_tests.plus_tests.utils import mock_gql_response
+
+# ########################
+# ##### UNIT TESTS FOR REGION URL HELPER
+# ########################
+
+
+def test_get_dagster_cloud_base_url_for_region_us():
+    """Test that US region returns the default URL."""
+    assert get_dagster_cloud_base_url_for_region("us") == "https://dagster.cloud"
+    assert get_dagster_cloud_base_url_for_region("US") == "https://dagster.cloud"
+
+
+def test_get_dagster_cloud_base_url_for_region_eu():
+    """Test that EU region returns the EU URL."""
+    assert get_dagster_cloud_base_url_for_region("eu") == "https://eu.dagster.cloud"
+    assert get_dagster_cloud_base_url_for_region("EU") == "https://eu.dagster.cloud"
+
+
+def test_get_dagster_cloud_base_url_for_region_none():
+    """Test that None region returns the default URL."""
+    assert get_dagster_cloud_base_url_for_region(None) == "https://dagster.cloud"
+
+
+def test_get_dagster_cloud_base_url_for_region_invalid():
+    """Test that invalid region raises an error."""
+    with pytest.raises(ValueError, match="Unknown region"):
+        get_dagster_cloud_base_url_for_region("invalid")
 
 
 @pytest.fixture()
@@ -165,6 +192,7 @@ def test_setup_command_web(fixture_name, request: pytest.FixtureRequest):
 
         if fixture_name == "setup_cloud_cli_config":
             assert yaml.safe_load(filepath.read_text()) == {
+                "url": "https://dagster.cloud",
                 "organization": "hooli",
                 "user_token": "abc123",
                 "default_deployment": "hooli-dev",
@@ -174,6 +202,7 @@ def test_setup_command_web(fixture_name, request: pytest.FixtureRequest):
                 "cli": {
                     "existing_key": "existing_value",
                     "plus": {
+                        "url": "https://dagster.cloud",
                         "organization": "hooli",
                         "user_token": "abc123",
                         "default_deployment": "hooli-dev",
@@ -184,6 +213,7 @@ def test_setup_command_web(fixture_name, request: pytest.FixtureRequest):
             assert tomlkit.parse(filepath.read_text()) == {
                 "cli": {
                     "plus": {
+                        "url": "https://dagster.cloud",
                         "organization": "hooli",
                         "user_token": "abc123",
                         "default_deployment": "hooli-dev",
@@ -202,3 +232,129 @@ def test_setup_command_web(fixture_name, request: pytest.FixtureRequest):
                     },
                 }
             }
+
+
+@responses.activate
+def test_login_with_region_eu(setup_dg_cli_config):
+    """Test that dg plus login --region eu uses the EU URL and stores it in config."""
+    # Mock the GraphQL endpoint for EU region
+    responses.add(
+        responses.POST,
+        "https://eu.dagster.cloud/hooli/graphql",
+        json={
+            "data": {
+                "fullDeployments": [
+                    {"deploymentName": "hooli-dev"},
+                    {"deploymentName": "hooli-prod"},
+                ]
+            }
+        },
+    )
+    responses.add_passthru("http://localhost:4000/callback")
+    runner = CliRunner()
+
+    filepath = setup_dg_cli_config
+
+    with (
+        mock.patch(
+            "dagster_shared.utils.find_free_port",
+            mock.Mock(return_value=4000),
+        ),
+        mock.patch(
+            "dagster_shared.plus.login_server._generate_nonce",
+            mock.Mock(return_value="ABCDEFGH"),
+        ),
+        mock.patch("dagster_dg_cli.cli.plus.login.webbrowser.open", mock.Mock(return_value=True)),
+    ):
+        q = queue.Queue()
+
+        def respond_with_callback():
+            time.sleep(0.25)
+            response = requests.post(
+                "http://localhost:4000/callback",
+                headers={"Content-Type": "application/json"},
+                data=json.dumps({"nonce": "ABCDEFGH", "organization": "hooli", "token": "abc123"}),
+            )
+            q.put(response)
+
+        th = threading.Thread(target=respond_with_callback)
+        th.start()
+
+        # Use --region eu flag
+        result = runner.invoke(plus_group, ["login", "--region", "eu"], input="hooli-dev\n")
+        th.join()
+
+        assert result.exit_code == 0, result.output + " : " + str(result.exception)
+
+        # Verify the EU URL is stored in config
+        config = DagsterPlusCliConfig.get()
+        assert config.organization == "hooli"
+        assert config.user_token == "abc123"
+        assert config.default_deployment == "hooli-dev"
+        assert config.url == "https://eu.dagster.cloud"
+
+        # Verify the config file contents
+        assert tomlkit.parse(filepath.read_text()) == {
+            "cli": {
+                "plus": {
+                    "url": "https://eu.dagster.cloud",
+                    "organization": "hooli",
+                    "user_token": "abc123",
+                    "default_deployment": "hooli-dev",
+                }
+            }
+        }
+
+
+@responses.activate
+def test_login_with_region_us(setup_dg_cli_config):
+    """Test that dg plus login --region us uses the US URL and stores it in config."""
+    # Mock the GraphQL endpoint for US region
+    responses.add(
+        responses.POST,
+        "https://dagster.cloud/hooli/graphql",
+        json={
+            "data": {
+                "fullDeployments": [
+                    {"deploymentName": "hooli-dev"},
+                ]
+            }
+        },
+    )
+    responses.add_passthru("http://localhost:4000/callback")
+    runner = CliRunner()
+
+    with (
+        mock.patch(
+            "dagster_shared.utils.find_free_port",
+            mock.Mock(return_value=4000),
+        ),
+        mock.patch(
+            "dagster_shared.plus.login_server._generate_nonce",
+            mock.Mock(return_value="ABCDEFGH"),
+        ),
+        mock.patch("dagster_dg_cli.cli.plus.login.webbrowser.open", mock.Mock(return_value=True)),
+    ):
+        q = queue.Queue()
+
+        def respond_with_callback():
+            time.sleep(0.25)
+            response = requests.post(
+                "http://localhost:4000/callback",
+                headers={"Content-Type": "application/json"},
+                data=json.dumps({"nonce": "ABCDEFGH", "organization": "hooli", "token": "abc123"}),
+            )
+            q.put(response)
+
+        th = threading.Thread(target=respond_with_callback)
+        th.start()
+
+        # Use --region us flag
+        result = runner.invoke(plus_group, ["login", "--region", "us"], input="hooli-dev\n")
+        th.join()
+
+        assert result.exit_code == 0, result.output + " : " + str(result.exception)
+
+        # Verify the US URL is stored in config
+        config = DagsterPlusCliConfig.get()
+        assert config.url == "https://dagster.cloud"

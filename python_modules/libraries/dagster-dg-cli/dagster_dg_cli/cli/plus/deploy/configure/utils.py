@@ -39,14 +39,24 @@ class DgPlusDeployConfigureOptions:
     git_provider: Optional[GitProvider]
     use_editable_dagster: bool
     python_version: Optional[str]
+    dagster_cloud_url: Optional[str] = (
+        None  # Base URL for Dagster Cloud (e.g., https://eu.dagster.cloud)
+    )
+    region: Optional[str] = None  # Geographic region (us, eu) - resolved from --region or config
     pex_deploy: Optional[bool] = None  # Only used for serverless
     registry_url: Optional[str] = None  # Only used for hybrid
 
 
 def detect_agent_type_and_platform(
     plus_config: Optional[DagsterPlusCliConfig],
+    region: Optional[str],
 ) -> tuple[Optional[DgPlusAgentType], Optional[DgPlusAgentPlatform]]:
     """Attempt to detect agent type and platform from Dagster Plus deployment.
+
+    Args:
+        plus_config: The Dagster Plus CLI config (must have user_token and organization)
+        region: Optional region override (e.g., "eu"). If provided, uses this region
+                for the GraphQL API call instead of the region in plus_config.
 
     Returns:
         Tuple of (agent_type, platform). Both will be None if detection fails.
@@ -58,7 +68,7 @@ def detect_agent_type_and_platform(
         from dagster_dg_cli.utils.plus.build import get_agent_type_and_platform_from_graphql
         from dagster_dg_cli.utils.plus.gql_client import DagsterPlusGraphQLClient
 
-        gql_client = DagsterPlusGraphQLClient.from_config(plus_config)
+        gql_client = DagsterPlusGraphQLClient.from_config(plus_config, region)
         detected_type, detected_platform = get_agent_type_and_platform_from_graphql(gql_client)
         return detected_type, detected_platform
     except Exception:

@@ -20,6 +20,45 @@ class DagsterPlusConfigInfo(NamedTuple):
 
 DAGSTER_CLOUD_BASE_URL = "https://dagster.cloud"
 
+# Supported regions and their base URLs
+DAGSTER_CLOUD_REGIONS = {
+    "us": "https://dagster.cloud",
+    "eu": "https://eu.dagster.cloud",
+}
+
+
+def get_dagster_cloud_base_url_for_region(region: Optional[str]) -> str:
+    """Get the Dagster Cloud base URL for a given region.
+
+    Args:
+        region: The region identifier (e.g., "us", "eu"). If None, defaults to "us".
+
+    Returns:
+        The base URL for the specified region.
+    """
+    if region is None:
+        return DAGSTER_CLOUD_BASE_URL
+    region_lower = region.lower()
+    if region_lower not in DAGSTER_CLOUD_REGIONS:
+        raise ValueError(
+            f"Unknown region: {region}. Supported regions are: {', '.join(DAGSTER_CLOUD_REGIONS.keys())}"
+        )
+    return DAGSTER_CLOUD_REGIONS[region_lower]
+
+
+def get_region_from_url(url: Optional[str]) -> Optional[str]:
+    """Derive region from a Dagster Cloud URL.
+
+    Args:
+        url: A Dagster Cloud URL (e.g., "https://eu.dagster.cloud")
+
+    Returns:
+        The region identifier ("eu") or None for default US region.
+    """
+    if url and "eu.dagster.cloud" in url:
+        return "eu"
+    return None
+
 
 def _get_dagster_plus_config_path_and_raw_config() -> Optional[DagsterPlusConfigInfo]:
     cloud_config_path = get_dagster_cloud_cli_config_path()

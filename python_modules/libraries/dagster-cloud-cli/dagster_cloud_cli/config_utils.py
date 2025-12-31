@@ -144,10 +144,34 @@ def get_url(ctx: Optional[Context] = None) -> Optional[str]:
     return os.getenv(URL_ENV_VAR_NAME)
 
 
-def get_org_url(organization: str, dagster_env: Optional[str]):
+def get_org_url(
+    organization: str,
+    dagster_env: Optional[str] = None,
+    region: Optional[str] = None,
+):
+    """Construct organization URL with optional environment and region.
+
+    Args:
+        organization: The organization name
+        dagster_env: Environment suffix (staging, canary, etc.) - adds {dagster_env} subdomain
+        region: Geographic region (us, eu) - "eu" adds .eu subdomain, "us" or None uses default
+
+    Examples:
+        get_org_url("myorg") -> "https://myorg.dagster.cloud"
+        get_org_url("myorg", region="eu") -> "https://myorg.eu.dagster.cloud"
+        get_org_url("myorg", dagster_env="staging") -> "https://myorg.staging.dagster.cloud"
+        get_org_url("myorg", dagster_env="staging", region="eu") -> "https://myorg.staging.eu.dagster.cloud"
+    """
+    # Build the base domain
+    if region and region.lower() == "eu":
+        base_domain = "eu.dagster.cloud"
+    else:
+        base_domain = "dagster.cloud"
+
+    # Add dagster_env subdomain if provided
     if dagster_env:
-        return f"https://{organization}.{dagster_env}.dagster.cloud"
-    return f"https://{organization}.dagster.cloud"
+        return f"https://{organization}.{dagster_env}.{base_domain}"
+    return f"https://{organization}.{base_domain}"
 
 
 # Typer Option definitions for common CLI config options (organization, deployment, user token)

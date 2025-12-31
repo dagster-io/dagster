@@ -4,6 +4,7 @@ import textwrap
 from typing import cast
 
 import click
+from dagster_cloud_cli.config_utils import get_org_url
 from dagster_dg_core.config import merge_build_configs
 from dagster_dg_core.utils import exit_with_error
 
@@ -124,6 +125,12 @@ def configure_github_actions_impl(config: DgPlusDeployConfigureOptions) -> None:
         else HYBRID_GITHUB_ACTION_FILE.read_text()
     )
 
+    # Construct the full Dagster Cloud URL for the organization
+    # Format: https://{org}.dagster.cloud or https://{org}.eu.dagster.cloud
+    dagster_cloud_url = (
+        get_org_url(config.organization_name, config.region) if config.organization_name else None
+    )
+
     template = (
         template.replace(
             "TEMPLATE_ORGANIZATION_NAME",
@@ -140,6 +147,10 @@ def configure_github_actions_impl(config: DgPlusDeployConfigureOptions) -> None:
         .replace(
             "TEMPLATE_DAGSTER_CLOUD_ACTION_VERSION",
             get_cli_version_or_main(),
+        )
+        .replace(
+            "TEMPLATE_DAGSTER_CLOUD_URL",
+            dagster_cloud_url or "",
         )
     )
 
@@ -238,6 +249,12 @@ def configure_gitlab_ci_impl(config: DgPlusDeployConfigureOptions) -> None:
         else HYBRID_GITLAB_CI_FILE.read_text()
     )
 
+    # Construct the full Dagster Cloud URL for the organization
+    # Format: https://{org}.dagster.cloud or https://{org}.eu.dagster.cloud
+    gitlab_dagster_cloud_url = (
+        get_org_url(config.organization_name, config.region) if config.organization_name else None
+    )
+
     template = (
         template.replace(
             "TEMPLATE_ORGANIZATION_NAME",
@@ -250,6 +267,10 @@ def configure_gitlab_ci_impl(config: DgPlusDeployConfigureOptions) -> None:
         .replace(
             "TEMPLATE_PROJECT_DIR",
             str(config.dg_context.root_path.relative_to(config.git_root)),
+        )
+        .replace(
+            "TEMPLATE_DAGSTER_CLOUD_URL",
+            gitlab_dagster_cloud_url or "",
         )
     )
 

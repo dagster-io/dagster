@@ -31,14 +31,31 @@ def _resolve_config_for_github_actions(
     git_root: Optional[Path],
     dg_context: DgContext,
     cli_config,
+    region: Optional[str] = None,
 ) -> DgPlusDeployConfigureOptions:
     """Resolve config for legacy github-actions command.
 
     This command prompts in the legacy order: org, deployment, agent type (no platform).
     """
-    from dagster_shared.plus.config import DagsterPlusCliConfig
+    from dagster_shared.plus.config import (
+        DagsterPlusCliConfig,
+        get_dagster_cloud_base_url_for_region,
+        get_region_from_url,
+    )
 
     plus_config = DagsterPlusCliConfig.get() if DagsterPlusCliConfig.exists() else None
+
+    # Determine region and dagster_cloud_url: region flag takes precedence, then derive from config URL
+    resolved_region = region
+    if resolved_region is None and plus_config and plus_config.url:
+        resolved_region = get_region_from_url(plus_config.url)
+
+    if resolved_region:
+        dagster_cloud_url = get_dagster_cloud_base_url_for_region(resolved_region)
+    elif plus_config:
+        dagster_cloud_url = plus_config.url
+    else:
+        dagster_cloud_url = None
 
     # Prompt for org and deployment FIRST (legacy order)
     resolved_organization = resolve_organization(None, plus_config)
@@ -82,6 +99,8 @@ def _resolve_config_for_github_actions(
         skip_confirmation_prompt=False,
         git_provider=GitProvider.GITHUB,
         use_editable_dagster=False,
+        dagster_cloud_url=dagster_cloud_url,
+        region=resolved_region,
     )
 
 
@@ -91,9 +110,16 @@ def _resolve_config_for_github_actions(
     context_settings={"help_option_names": ["-h", "--help"]},
 )
 @click.option("--git-root", type=Path, help="Path to the git root of the repository")
+@click.option(
+    "--region",
+    type=click.Choice(["us", "eu"], case_sensitive=False),
+    help="Dagster Cloud region (us or eu)",
+)
 @dg_global_options
 @cli_telemetry_wrapper
-def scaffold_github_actions_command(git_root: Optional[Path], **global_options: object) -> None:
+def scaffold_github_actions_command(
+    git_root: Optional[Path], region: Optional[str], **global_options: object
+) -> None:
     """Scaffold a GitHub Actions workflow for a Dagster project.
 
     This command will create a GitHub Actions workflow in the `.github/workflows` directory.
@@ -109,6 +135,7 @@ def scaffold_github_actions_command(git_root: Optional[Path], **global_options: 
         git_root=git_root,
         dg_context=dg_context,
         cli_config=cli_config,
+        region=region,
     )
 
     configure_ci_impl(config)

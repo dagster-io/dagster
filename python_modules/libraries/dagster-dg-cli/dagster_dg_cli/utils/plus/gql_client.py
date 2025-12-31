@@ -4,7 +4,11 @@ from collections.abc import Mapping
 from typing import TYPE_CHECKING, Any, Optional
 
 import click
-from dagster_shared.plus.config import DagsterPlusCliConfig
+from dagster_shared.plus.config import (
+    DAGSTER_CLOUD_BASE_URL,
+    DagsterPlusCliConfig,
+    get_dagster_cloud_base_url_for_region,
+)
 
 if TYPE_CHECKING:
     from dagster_cloud_cli.commands.ci.state import LocationState
@@ -59,9 +63,24 @@ class DagsterPlusGraphQLClient(IGraphQLClient):
         )
 
     @classmethod
-    def from_config(cls, config: DagsterPlusCliConfig):
+    def from_config(cls, config: DagsterPlusCliConfig, region: Optional[str]):
+        """Create a GraphQL client from config, with optional region override.
+
+        Args:
+            config: The Dagster Plus CLI config
+            region: Optional region override (e.g., "eu"). If provided, overrides
+                    the URL from config.
+        """
+        # Determine base URL: region override > config.url > default
+        if region:
+            base_url = get_dagster_cloud_base_url_for_region(region)
+        elif config.url:
+            base_url = config.url
+        else:
+            base_url = DAGSTER_CLOUD_BASE_URL
+
         return cls(
-            url=f"{config.organization_url}/graphql",
+            url=f"{base_url}/{config.organization}/graphql",
             headers={
                 k: v
                 for k, v in {

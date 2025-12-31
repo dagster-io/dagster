@@ -305,7 +305,11 @@ def test_scaffold_github_actions_command_success_serverless(
         assert result.exit_code == 0, result.output + " " + str(result.exception)
 
         assert Path(".github/workflows/dagster-plus-deploy.yml").exists()
-        assert "hooli" in Path(".github/workflows/dagster-plus-deploy.yml").read_text()
+        workflow_content = Path(".github/workflows/dagster-plus-deploy.yml").read_text()
+        assert "hooli" in workflow_content
+        # Verify DAGSTER_CLOUD_URL is included with default US region format
+        assert "DAGSTER_CLOUD_URL:" in workflow_content
+        assert "https://hooli.dagster.cloud" in workflow_content
         assert not Path("dagster_cloud.yaml").exists()
         assert "https://github.com/hooli/example-repo/settings/secrets/actions" in result.output
 
@@ -316,6 +320,66 @@ def test_scaffold_github_actions_command_success_serverless(
         )
     finally:
         version.__version__ = current_version
+
+
+@responses.activate
+def test_scaffold_github_actions_command_with_region_eu(
+    setup_populated_git_workspace: ProxyRunner,
+    monkeypatch,
+):
+    """Test that scaffold github-actions with --region eu includes the EU URL."""
+    mock_gql_response(
+        query=gql.DEPLOYMENT_INFO_QUERY,
+        json_data={"data": {"currentDeployment": {"agentType": "SERVERLESS"}}},
+    )
+    with tempfile.TemporaryDirectory() as cloud_config_dir:
+        monkeypatch.setenv("DG_CLI_CONFIG", str(Path(cloud_config_dir) / "dg.toml"))
+        monkeypatch.setenv("DAGSTER_CLOUD_CLI_CONFIG", str(Path(cloud_config_dir) / "config"))
+
+        runner = setup_populated_git_workspace
+        # Use --region eu flag and provide organization/deployment via prompts
+        result = runner.invoke(
+            "scaffold", "github-actions", "--region", "eu", input="my-eu-org\nprod\nserverless\n"
+        )
+        assert result.exit_code == 0, result.output + " " + str(result.exception)
+
+        assert Path(".github/workflows/dagster-plus-deploy.yml").exists()
+        workflow_content = Path(".github/workflows/dagster-plus-deploy.yml").read_text()
+
+        # Verify the EU URL format is used
+        assert "DAGSTER_CLOUD_URL:" in workflow_content
+        assert "https://my-eu-org.eu.dagster.cloud" in workflow_content
+        assert "DAGSTER_CLOUD_ORGANIZATION:" in workflow_content
+        assert "my-eu-org" in workflow_content
+
+        validate_github_actions_workflow(Path(".github/workflows/dagster-plus-deploy.yml"))
+
+
+@responses.activate
+def test_scaffold_github_actions_command_uses_url_from_config(
+    dg_plus_cli_config_eu,
+    setup_populated_git_workspace: ProxyRunner,
+):
+    """Test that scaffold github-actions reads the URL from config when no --region is specified."""
+    mock_gql_response(
+        query=gql.DEPLOYMENT_INFO_QUERY,
+        json_data={"data": {"currentDeployment": {"agentType": "SERVERLESS"}}},
+        url="https://eu.dagster.cloud/hooli-eu/graphql",
+    )
+    runner = setup_populated_git_workspace
+    result = runner.invoke("scaffold", "github-actions")
+    assert result.exit_code == 0, result.output + " " + str(result.exception)
+
+    assert Path(".github/workflows/dagster-plus-deploy.yml").exists()
+    workflow_content = Path(".github/workflows/dagster-plus-deploy.yml").read_text()
+
+    # Verify the EU URL format is used based on config
+    assert "DAGSTER_CLOUD_URL:" in workflow_content
+    assert "https://hooli-eu.eu.dagster.cloud" in workflow_content
+    assert "DAGSTER_CLOUD_ORGANIZATION:" in workflow_content
+    assert "hooli-eu" in workflow_content
+
+    validate_github_actions_workflow(Path(".github/workflows/dagster-plus-deploy.yml"))
 
 
 @responses.activate

@@ -15,7 +15,11 @@ from dagster_dg_core.context import DgContext
 from dagster_dg_core.shared_options import dg_editable_dagster_options, dg_global_options
 from dagster_dg_core.utils import DgClickCommand, DgClickGroup, exit_with_error
 from dagster_dg_core.utils.telemetry import cli_telemetry_wrapper
-from dagster_shared.plus.config import DagsterPlusCliConfig
+from dagster_shared.plus.config import (
+    DagsterPlusCliConfig,
+    get_dagster_cloud_base_url_for_region,
+    get_region_from_url,
+)
 
 from dagster_dg_cli.cli.plus.constants import DgPlusAgentPlatform, DgPlusAgentType
 from dagster_dg_cli.cli.plus.deploy.configure.configure_build_artifacts import (
@@ -34,14 +38,22 @@ def resolve_agent_type_and_platform(
     agent_type: Optional[DgPlusAgentType],
     agent_platform: Optional[DgPlusAgentPlatform],
     plus_config: Optional[DagsterPlusCliConfig],
+    region: Optional[str] = None,
 ) -> tuple[DgPlusAgentType, Optional[DgPlusAgentPlatform]]:
-    """Resolve agent type and platform from config or prompts (for deployment-config commands)."""
+    """Resolve agent type and platform from config or prompts (for deployment-config commands).
+
+    Args:
+        agent_type: Explicit agent type if provided via CLI flag
+        agent_platform: Explicit agent platform if provided via CLI flag
+        plus_config: The Dagster Plus CLI config for GraphQL auto-detection
+        region: Optional region override for GraphQL API calls
+    """
     resolved_type = agent_type
     resolved_platform = agent_platform
 
     # Try to detect from Plus config via GraphQL
     if resolved_type is None and plus_config:
-        detected_type, detected_platform = detect_agent_type_and_platform(plus_config)
+        detected_type, detected_platform = detect_agent_type_and_platform(plus_config, region)
         resolved_type = detected_type
         if resolved_platform is None:
             resolved_platform = detected_platform
@@ -157,6 +169,21 @@ def resolve_python_version(python_version: Optional[str]) -> str:
     return python_version or f"3.{sys.version_info.minor}"
 
 
+def resolve_dagster_cloud_url(
+    region: Optional[str],
+    plus_config: Optional[DagsterPlusCliConfig],
+) -> Optional[str]:
+    """Resolve Dagster Cloud URL from region flag or existing config.
+
+    Priority: explicit region flag > existing config URL > None (will use default US)
+    """
+    if region is not None:
+        return get_dagster_cloud_base_url_for_region(region)
+    if plus_config and plus_config.url:
+        return plus_config.url
+    return None
+
+
 def _resolve_config_with_prompts(
     agent_type: Optional[DgPlusAgentType],
     agent_platform: Optional[DgPlusAgentPlatform],
@@ -171,6 +198,7 @@ def _resolve_config_with_prompts(
     cli_config,
     pex_deploy: Optional[bool] = None,
     registry_url: Optional[str] = None,
+    region: Optional[str] = None,
 ) -> DgPlusDeployConfigureOptions:
     """Resolve all configuration for deployment-config commands, prompting for missing values.
 
@@ -179,11 +207,21 @@ def _resolve_config_with_prompts(
     """
     plus_config = DagsterPlusCliConfig.get() if DagsterPlusCliConfig.exists() else None
 
-    # Resolve agent type and platform
+    # Resolve region FIRST - from CLI flag or from config URL
+    # This is needed before GraphQL calls so they go to the correct region
+    resolved_region = region
+    if resolved_region is None and plus_config and plus_config.url:
+        resolved_region = get_region_from_url(plus_config.url)
+
+    # Resolve Dagster Cloud URL from region or config
+    resolved_dagster_cloud_url = resolve_dagster_cloud_url(region, plus_config)
+
+    # Resolve agent type and platform (may make GraphQL calls using resolved_region)
     resolved_agent_type, resolved_agent_platform = resolve_agent_type_and_platform(
         agent_type,
         agent_platform,
         plus_config,
+        region=resolved_region,
     )
 
     # Resolve git provider
@@ -229,6 +267,8 @@ def _resolve_config_with_prompts(
         skip_confirmation_prompt=skip_confirmation_prompt,
         git_provider=resolved_git_provider,
         use_editable_dagster=use_editable_dagster,
+        dagster_cloud_url=resolved_dagster_cloud_url,
+        region=resolved_region,
         pex_deploy=resolved_pex_deploy,
         registry_url=registry_url,
     )
@@ -245,12 +285,19 @@ def _resolve_config_with_prompts(
     type=click.Choice(["github", "gitlab"]),
     help="Git provider for CI/CD scaffolding",
 )
+@click.option(
+    "--region",
+    type=click.Choice(["us", "eu"], case_sensitive=False),
+    default=None,
+    help="Dagster Cloud region (us or eu). If not specified, uses the URL from your config (set during `dg plus login`).",
+)
 @dg_global_options
 @cli_telemetry_wrapper
 @click.pass_context
 def deploy_configure_group(
     ctx: click.Context,
     git_provider: Optional[str],
+    region: Optional[str],
     **global_options: object,
 ) -> None:
     """Scaffold deployment configuration files for Dagster Plus.
@@ -283,6 +330,7 @@ def deploy_configure_group(
         dg_context=dg_context,
         cli_config=cli_config,
         pex_deploy=None,
+        region=region,
     )
 
     configure_build_artifacts_impl(config)
@@ -320,6 +368,12 @@ def deploy_configure_group(
     help="Enable PEX-based fast deploys (default: True). If disabled, Docker builds will be used.",
 )
 @click.option(
+    "--region",
+    type=click.Choice(["us", "eu"], case_sensitive=False),
+    default=None,
+    help="Dagster Cloud region (us or eu). If not specified, uses the URL from your config (set during `dg plus login`).",
+)
+@click.option(
     "-y",
     "--yes",
     "skip_confirmation_prompt",
@@ -336,6 +390,7 @@ def deploy_configure_serverless(
     deployment: Optional[str],
     git_root: Optional[Path],
     pex_deploy: bool,
+    region: Optional[str],
     skip_confirmation_prompt: bool,
     use_editable_dagster: Optional[str],
     **global_options: object,
@@ -362,6 +417,7 @@ def deploy_configure_serverless(
         dg_context=dg_context,
         cli_config=cli_config,
         pex_deploy=pex_deploy,
+        region=region,
     )
 
     configure_build_artifacts_impl(config)
@@ -403,6 +459,12 @@ def deploy_configure_serverless(
     help="Path to the git repository root",
 )
 @click.option(
+    "--region",
+    type=click.Choice(["us", "eu"], case_sensitive=False),
+    default=None,
+    help="Dagster Cloud region (us or eu). If not specified, uses the URL from your config (set during `dg plus login`).",
+)
+@click.option(
     "-y",
     "--yes",
     "skip_confirmation_prompt",
@@ -420,6 +482,7 @@ def deploy_configure_hybrid(
     organization: Optional[str],
     deployment: Optional[str],
     git_root: Optional[Path],
+    region: Optional[str],
     skip_confirmation_prompt: bool,
     use_editable_dagster: Optional[str],
     **global_options: object,
@@ -450,6 +513,7 @@ def deploy_configure_hybrid(
         dg_context=dg_context,
         cli_config=cli_config,
         registry_url=registry_url,
+        region=region,
     )
 
     configure_build_artifacts_impl(config)

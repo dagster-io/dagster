@@ -1,23 +1,37 @@
 import webbrowser
+from typing import Optional
 
 import click
 from dagster_dg_core.utils import DgClickCommand
 from dagster_dg_core.utils.telemetry import cli_telemetry_wrapper
-from dagster_shared.plus.config import DagsterPlusCliConfig
+from dagster_shared.plus.config import DagsterPlusCliConfig, get_dagster_cloud_base_url_for_region
 
 from dagster_dg_cli.utils.plus.gql import FULL_DEPLOYMENTS_QUERY
 from dagster_dg_cli.utils.plus.gql_client import DagsterPlusGraphQLClient
 
 
 @click.command(name="login", cls=DgClickCommand)
+@click.option(
+    "--region",
+    type=click.Choice(["us", "eu"], case_sensitive=False),
+    default=None,
+    help="Dagster Cloud region (us or eu). Required for EU users. Defaults to us.",
+)
 @cli_telemetry_wrapper
-def login_command() -> None:
+def login_command(region: Optional[str]) -> None:
     """Login to Dagster Plus."""
     # Import login server only when the command is actually used
     from dagster_shared.plus.login_server import start_login_server
 
-    org_url = DagsterPlusCliConfig.get().url if DagsterPlusCliConfig.exists() else None
-    server, url = start_login_server(org_url)
+    # Determine base URL: explicit region > existing config > default (us)
+    if region is not None:
+        base_url = get_dagster_cloud_base_url_for_region(region)
+    elif DagsterPlusCliConfig.exists():
+        base_url = DagsterPlusCliConfig.get().url
+    else:
+        base_url = None  # Will default to us in start_login_server
+
+    server, url = start_login_server(base_url)
 
     try:
         webbrowser.open(url, new=0, autoraise=True)
@@ -32,10 +46,13 @@ def login_command() -> None:
     new_org = server.get_organization()
     new_api_token = server.get_token()
 
+    # Store the base URL that was used for login
+    stored_url = base_url if base_url else get_dagster_cloud_base_url_for_region("us")
+
     config = DagsterPlusCliConfig(
         organization=new_org,
         user_token=new_api_token,
-        url=org_url,
+        url=stored_url,
     )
     config.write()
     click.echo(f"Authorized for organization {new_org}\n")
@@ -58,6 +75,6 @@ def login_command() -> None:
         organization=config.organization,
         user_token=config.user_token,
         default_deployment=selected_deployment,
-        url=org_url,
+        url=config.url,
     )
     config.write()

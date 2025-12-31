@@ -22,3 +22,25 @@ def dg_plus_cli_config(monkeypatch):
         monkeypatch.setenv("DG_CLI_CONFIG", config_path)
         monkeypatch.setenv("DAGSTER_CLOUD_CLI_CONFIG", str(Path(tmp_cloud_dir) / "config"))
         yield config_path
+
+
+@pytest.fixture()
+def dg_plus_cli_config_eu(monkeypatch):
+    """Fixture for EU region config with URL already set."""
+    with (
+        tempfile.TemporaryDirectory() as tmp_dg_dir,
+        tempfile.TemporaryDirectory() as tmp_cloud_dir,
+    ):
+        config_path = Path(tmp_dg_dir) / "dg.toml"
+        config_path.write_text(
+            """
+            [cli.plus]
+            url = "https://eu.dagster.cloud"
+            organization = "hooli-eu"
+            user_token = "abc123"
+            default_deployment = "hooli-dev"
+            """
+        )
+        monkeypatch.setenv("DG_CLI_CONFIG", config_path)
+        monkeypatch.setenv("DAGSTER_CLOUD_CLI_CONFIG", str(Path(tmp_cloud_dir) / "config"))
+        yield config_path
