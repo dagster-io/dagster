@@ -1,5 +1,5 @@
 from functools import cached_property
-from typing import Any, Optional, Union, cast
+from typing import Optional, Union
 
 import dagster as dg
 from dagster._annotations import preview, public
@@ -20,7 +20,7 @@ class S3ResourceComponent(dg.Component, dg.Resolvable, dg.Model):
             return S3Resource()
 
         creds_data = self.credentials.model_dump(exclude_none=True)
-        return S3Resource(**cast("dict[str, Any]", creds_data))
+        return S3Resource(**creds_data)
 
     def build_defs(self, context: dg.ComponentLoadContext) -> dg.Definitions:
         if self.resource_key:
