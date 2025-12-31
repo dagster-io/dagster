@@ -1,8 +1,9 @@
 from functools import cached_property
-from typing import Optional, Union
+from typing import Union
 
 import dagster as dg
 from dagster._annotations import preview, public
+from pydantic import Field
 
 from dagster_aws.components.credentials import S3CredentialsComponent
 from dagster_aws.s3.resources import S3Resource
@@ -13,8 +14,14 @@ from dagster_aws.s3.resources import S3Resource
 class S3ResourceComponent(dg.Component, dg.Resolvable, dg.Model):
     """A component that provides an S3Resource for interacting with Amazon S3."""
 
-    credentials: Union[S3CredentialsComponent, str]
-    resource_key: Optional[str] = None
+    credentials: Union[S3CredentialsComponent, str] = Field(
+        description="Credentials for connecting to S3. Can be an inline configuration or a string template."
+    )
+
+    resource_key: str = Field(
+        default="s3",
+        description="The key under which the S3 resource will be bound to the definitions.",
+    )
 
     @cached_property
     def _resource(self) -> S3Resource:

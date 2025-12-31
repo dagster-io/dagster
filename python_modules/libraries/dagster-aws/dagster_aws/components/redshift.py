@@ -1,5 +1,5 @@
 from functools import cached_property
-from typing import Optional, Union
+from typing import Union
 
 import dagster as dg
 from dagster._annotations import preview, public
@@ -17,12 +17,17 @@ class RedshiftClientResourceComponent(dg.Component, dg.Resolvable, dg.Model):
     credentials: Union[RedshiftCredentialsComponent, str] = Field(
         description="Redshift credentials - inline configuration or reference."
     )
-    resource_key: Optional[str] = Field(
-        default=None, description="The key under which the resource will be bound."
+    resource_key: str = Field(
+        default="redshift",
+        description="The key under which the Redshift resource will be bound to the definitions.",
     )
 
     @cached_property
     def _resource(self) -> RedshiftClientResource:
+        if isinstance(self.credentials, str):
+            raise ValueError(
+                "Redshift credentials cannot be a raw string template without connection details."
+            )
         creds_data = (
             self.credentials.model_dump(exclude_none=True)
             if not isinstance(self.credentials, str)

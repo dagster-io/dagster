@@ -20,6 +20,8 @@ from dagster_aws.s3.resources import S3Resource
 from dagster_aws.ssm.resources import ParameterStoreResource, ParameterStoreTag, SSMResource
 from dagster_aws.utils import ResourceWithBoto3Configuration
 
+# --- Section 1: Metadata & Field Sync Tests ---
+
 
 @pytest.mark.parametrize(
     "component_class, resource_class",
@@ -31,66 +33,104 @@ from dagster_aws.utils import ResourceWithBoto3Configuration
     ],
 )
 def test_component_fields_sync_with_resource(component_class, resource_class):
-    """Ensures component configuration fields stay in sync with resource classes."""
+    """Ensure component configuration fields stay in sync with the original resource classes.
+    This covers 4 different credential/resource types.
+    """
     component_fields = set(component_class.model_fields.keys())
     resource_fields = set(resource_class.model_fields.keys())
-    assert resource_fields.issubset(component_fields)
+
+    assert resource_fields.issubset(component_fields), (
+        f"Missing fields in {component_class.__name__}: {resource_fields - component_fields}"
+    )
 
 
-def test_s3_resource_component_load():
-    """Test that S3ResourceComponent correctly instantiates an S3Resource."""
+# --- Section 2: S3 Component Tests ---
+
+
+def test_s3_resource_load_and_fields():
+    """Verify S3 component correctly instantiates resource with specific fields."""
     creds = S3CredentialsComponent(region_name="us-east-1", max_attempts=5)
-    component = S3ResourceComponent(credentials=creds, resource_key="my_s3_resource")
+    component = S3ResourceComponent(credentials=creds, resource_key="my_s3")
 
     defs = component.build_defs(MagicMock(spec=dg.ComponentLoadContext))
-
     assert defs.resources is not None
-    resource = defs.resources["my_s3_resource"]
+    resource = defs.resources["my_s3"]
 
     assert isinstance(resource, S3Resource)
     assert resource.region_name == "us-east-1"
     assert resource.max_attempts == 5
 
 
-def test_athena_resource_component_load():
-    """Test that AthenaClientResourceComponent correctly instantiates an AthenaClientResource."""
-    config = {
-        "credentials": {"workgroup": "test_wg", "region_name": "us-east-1"},
-        "resource_key": "my_athena",
-    }
-    component = AthenaClientResourceComponent(**config)
+def test_s3_resource_default_key():
+    """Verify that S3 component uses the default 's3' key when omitted."""
+    component = S3ResourceComponent(credentials="{{ env_var('AWS_CREDS') }}")
     defs = component.build_defs(MagicMock(spec=dg.ComponentLoadContext))
-
     assert defs.resources is not None
-    resource = defs.resources["my_athena"]
+    assert "s3" in defs.resources
+    assert isinstance(defs.resources["s3"], S3Resource)
+
+
+# --- Section 3: Athena Component Tests ---
+
+
+def test_athena_resource_load():
+    """Verify Athena component correctly instantiates its resource."""
+    creds = AthenaCredentialsComponent(workgroup="test_wg", region_name="us-west-2")
+    component = AthenaClientResourceComponent(credentials=creds)
+
+    defs = component.build_defs(MagicMock(spec=dg.ComponentLoadContext))
+    assert defs.resources is not None
+    resource = defs.resources["athena"]
+
     assert isinstance(resource, AthenaClientResource)
     assert resource.workgroup == "test_wg"
 
 
-def test_redshift_resource_component_load():
-    """Test that RedshiftClientResourceComponent correctly instantiates a RedshiftClientResource."""
-    config = {
-        "credentials": {"host": "my_host", "user": "admin"},
-        "resource_key": "my_redshift",
-    }
-    component = RedshiftClientResourceComponent(**config)
-    defs = component.build_defs(MagicMock(spec=dg.ComponentLoadContext))
+# --- Section 4: Redshift Component Tests ---
 
+
+def test_redshift_resource_load():
+    """Verify Redshift component correctly instantiates its resource with connection details."""
+    creds = RedshiftCredentialsComponent(host="my-cluster", database="dev", user="admin")
+    component = RedshiftClientResourceComponent(credentials=creds, resource_key="my_redshift")
+
+    defs = component.build_defs(MagicMock(spec=dg.ComponentLoadContext))
     assert defs.resources is not None
     resource = defs.resources["my_redshift"]
+
     assert isinstance(resource, RedshiftClientResource)
-    assert resource.host == "my_host"
+    assert resource.host == "my-cluster"
 
 
-def test_ssm_parameter_store_tags_load():
-    """Validates that nested ParameterStoreTags can be instantiated."""
+def test_redshift_template_error_handling():
+    """Verify Redshift raises a ValueError when a raw template is used (missing connection details)."""
+    component = RedshiftClientResourceComponent(credentials="{{ env_var('REDSHIFT_URL') }}")
+
+    with pytest.raises(ValueError, match="Redshift credentials cannot be a raw string template"):
+        _ = component.build_defs(MagicMock(spec=dg.ComponentLoadContext))
+
+
+# --- Section 5: SSM & Parameter Store Tests ---
+
+
+def test_ssm_resource_load():
+    """Verify standard SSM component load."""
     creds = Boto3CredentialsComponent(region_name="us-east-1")
+    component = SSMResourceComponent(credentials=creds)
 
-    tags = [ParameterStoreTag(key="Environment", values=["Production"])]
-    assert tags[0].key == "Environment"
+    defs = component.build_defs(MagicMock(spec=dg.ComponentLoadContext))
+    assert defs.resources is not None
+    resources = defs.resources
+    assert isinstance(resources["ssm"], SSMResource)
+
+
+def test_parameter_store_resource_and_tags():
+    """Verify Parameter Store component load and nested tag resolution."""
+    creds = Boto3CredentialsComponent(region_name="us-east-1")
+    tags = [ParameterStoreTag(key="Project", values=["Dagster"])]
 
     component = ParameterStoreResourceComponent(
-        credentials=creds, parameters=["/my/param"], resource_key="ps"
+        credentials=creds, parameters=["/prod/db/url"], resource_key="ps"
     )
 
     defs = component.build_defs(MagicMock(spec=dg.ComponentLoadContext))
@@ -98,51 +138,38 @@ def test_ssm_parameter_store_tags_load():
     resource = defs.resources["ps"]
 
     assert isinstance(resource, ParameterStoreResource)
-    assert resource.parameters == ["/my/param"]
+    assert resource.parameters == ["/prod/db/url"]
+    assert tags[0].key == "Project"
 
 
-def test_ssm_resource_component_load():
-    """Test that SSM components correctly instantiate their resources."""
-    creds = Boto3CredentialsComponent(region_name="us-east-1")
-
-    ssm_comp = SSMResourceComponent(credentials=creds, resource_key="ssm")
-    ssm_defs = ssm_comp.build_defs(MagicMock(spec=dg.ComponentLoadContext))
-
-    assert ssm_defs.resources is not None
-    assert isinstance(ssm_defs.resources["ssm"], SSMResource)
-
-    ps_comp = ParameterStoreResourceComponent(
-        credentials=creds, parameters=["/my/param"], resource_key="ps"
-    )
-    ps_defs = ps_comp.build_defs(MagicMock(spec=dg.ComponentLoadContext))
-
-    assert ps_defs.resources is not None
-    resource = ps_defs.resources["ps"]
-    assert isinstance(resource, ParameterStoreResource)
-    assert resource.parameters == ["/my/param"]
+# --- Section 6: General Architecture Tests (Templates & Objects) ---
 
 
-def test_component_no_resource_key():
-    """Spec Requirement: Return empty Definitions() if resource_key is not set."""
-    creds = Boto3CredentialsComponent(region_name="us-east-1")
-    component = SSMResourceComponent(credentials=creds, resource_key=None)
-
-    defs = component.build_defs(MagicMock(spec=dg.ComponentLoadContext))
-    assert not defs.resources or len(defs.resources) == 0
-
-
-def test_credentials_resolution():
-    """Test that the component correctly resolves a directly passed Credentials object."""
-    raw_config = {"region_name": "eu-central-1"}
-    creds = S3CredentialsComponent(**raw_config)
-
-    component = S3ResourceComponent(credentials=creds, resource_key="s3")
+def test_direct_credential_object_resolution():
+    """Verify that passing a typed Credential object is correctly handled."""
+    creds = S3CredentialsComponent(region_name="eu-west-1")
+    component = S3ResourceComponent(credentials=creds)
 
     assert isinstance(component.credentials, Boto3CredentialsComponent)
-    assert component.credentials.region_name == "eu-central-1"
+    assert component.credentials.region_name == "eu-west-1"
 
 
-def test_templated_credentials():
-    """Test that the component supports string-based credentials (templates)."""
-    component = S3ResourceComponent(credentials="{{ my_template }}", resource_key="s3")
-    assert component.credentials == "{{ my_template }}"
+def test_string_template_fallback_logic():
+    """Verify that string templates allow the component to return a default resource instance."""
+    component = S3ResourceComponent(credentials="{{ my_template }}")
+
+    defs = component.build_defs(MagicMock(spec=dg.ComponentLoadContext))
+    # Should not crash and should produce an S3Resource
+    assert defs.resources is not None
+    assert isinstance(defs.resources["s3"], S3Resource)
+
+
+def test_custom_resource_key_override():
+    """Verify that a user-provided resource_key overrides any default value."""
+    creds = S3CredentialsComponent(region_name="us-east-1")
+    component = S3ResourceComponent(credentials=creds, resource_key="my_custom_key")
+
+    defs = component.build_defs(MagicMock(spec=dg.ComponentLoadContext))
+    assert defs.resources is not None
+    assert "my_custom_key" in defs.resources
+    assert "s3" not in defs.resources

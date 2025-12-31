@@ -18,7 +18,7 @@ class SSMResourceComponent(dg.Component, dg.Resolvable, dg.Model):
         description="AWS credentials - inline configuration or reference to a credentials component."
     )
     resource_key: Optional[str] = Field(
-        default=None, description="The key under which the resource will be bound in Definitions."
+        default="ssm", description="The key under which the resource will be bound in Definitions."
     )
 
     @cached_property
@@ -48,7 +48,8 @@ class ParameterStoreResourceComponent(dg.Component, dg.Resolvable, dg.Model):
         default=None, description="List of parameter names to fetch."
     )
     resource_key: Optional[str] = Field(
-        default=None, description="The key under which the resource will be bound in Definitions."
+        default="parameter_store",
+        description="The key under which the ParameterStore resource will be bound to the definitions.",
     )
 
     @cached_property
