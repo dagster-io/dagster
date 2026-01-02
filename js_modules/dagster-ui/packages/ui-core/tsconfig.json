@@ -12,7 +12,7 @@
     "sourceMap": true,
     "allowJs": true,
     "jsx": "react-jsx",
-    "moduleResolution": "node",
+    "moduleResolution": "bundler",
     "forceConsistentCasingInFileNames": true,
     "noImplicitReturns": true,
     "noUncheckedIndexedAccess": true,
