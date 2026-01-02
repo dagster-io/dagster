@@ -1,4 +1,4 @@
-acryl-datahub==1.3.1.4
+acryl-datahub==1.3.1.5
 adbc-driver-manager==1.9.0
 adbc-driver-snowflake==1.9.0
 agate==1.9.1
@@ -56,7 +56,7 @@ avro==1.12.1
 avro-gen3==0.7.16
 aws-sam-translator==1.106.0
 aws-xray-sdk==2.15.0
-azure-ai-ml==1.30.0
+azure-ai-ml==1.31.0
 azure-common==1.1.28
 azure-core==1.37.0
 azure-core-tracing-opentelemetry==1.0.0b12
@@ -69,7 +69,6 @@ azure-storage-file-datalake==12.22.0
 azure-storage-file-share==12.23.1
 babel==2.17.0
 backoff==2.2.1
-backports-tarfile==1.2.0
 bcrypt==5.0.0
 beautifulsoup4==4.14.3
 billiard==4.2.4
@@ -77,9 +76,9 @@ bleach==6.3.0
 blinker==1.9.0
 bokeh==3.8.1
 boto3==1.41.5
-boto3-stubs-lite==1.42.17
+boto3-stubs-lite==1.42.19
 botocore==1.41.5
-botocore-stubs==1.42.17
+botocore-stubs==1.42.19
 build==1.3.0
 cachecontrol==0.14.4
 cached-property==2.0.1
@@ -88,7 +87,7 @@ cachetools==6.2.4
 caio==0.9.25
 callee==0.3.1
 cattrs==23.1.2
-celery==5.6.0
+celery==5.6.1
 certifi==2025.11.12
 cffi==2.0.0
 cfn-lint==1.43.1
@@ -219,9 +218,9 @@ debugpy==1.8.19
 decopatch==1.4.10
 decorator==5.2.1
 deepdiff==7.0.1
-deepeval==3.7.6
+deepeval==3.7.8
 defusedxml==0.7.1
-deltalake==1.2.1
+deltalake==1.3.0
 deprecated==1.3.1
 deprecation==2.1.0
 -e examples/development_to_production
@@ -243,7 +242,6 @@ durationpy==0.10
 ecdsa==0.19.1
 email-validator==2.3.0
 entrypoints==0.4
-exceptiongroup==1.3.1
 execnet==2.1.2
 executing==2.2.1
 expandvars==1.1.2
@@ -252,7 +250,7 @@ fastapi==0.128.0
 fastavro==1.12.1
 fastjsonschema==2.21.2
 -e examples/feature_graph_backed_assets
-filelock==3.20.1
+filelock==3.20.2
 flaky==3.8.1
 flask==2.2.5
 flask-appbuilder==4.5.3
@@ -275,7 +273,7 @@ fsspec==2024.3.0
 gcp-storage-emulator==2024.8.3
 gitdb==4.0.12
 github3-py==4.0.1
-gitpython==3.1.45
+gitpython==3.1.46
 giturlparse==0.14.0
 google-ai-generativelanguage==0.6.15
 google-api-core==2.28.1
@@ -345,7 +343,7 @@ jinja2==3.1.6
 jiter==0.12.0
 jmespath==1.0.1
 joblib==1.5.3
-json5==0.12.1
+json5==0.13.0
 jsondiff==2.2.1
 jsonpatch==1.33
 jsonpath-ng==1.7.0
@@ -367,7 +365,7 @@ jupyterlab-widgets==3.0.16
 keyring==25.7.0
 -e python_modules/libraries/dagster-airlift/kitchen-sink
 kiwisolver==1.4.9
-kombu==5.6.1
+kombu==5.6.2
 kopf==1.39.1
 kubernetes==33.1.0
 kubernetes-asyncio==33.3.0
@@ -376,7 +374,7 @@ langchain-community==0.3.31
 langchain-core==0.3.81
 langchain-openai==0.3.35
 langchain-text-splitters==0.3.11
-langsmith==0.5.1
+langsmith==0.5.2
 lark==1.3.1
 lazy-object-proxy==1.12.0
 leather==0.4.1
@@ -490,7 +488,7 @@ pendulum==3.1.0
 -e python_modules/libraries/dagster-airlift/perf-harness
 pex==2.59.5
 pexpect==4.9.0
-pillow==12.0.0
+pillow==12.1.0
 pip==25.3
 platformdirs==4.5.1
 plotly==6.5.0
@@ -527,8 +525,8 @@ pyfiglet==1.0.4
 pyflakes==3.4.0
 pygments==2.19.2
 pyjwt==2.10.1
-pymdown-extensions==10.19.1
-pynacl==1.6.1
+pymdown-extensions==10.20
+pynacl==1.6.2
 pyopenssl==25.3.0
 pyparsing==3.3.1
 pypd==1.1.0
@@ -595,7 +593,7 @@ scipy==1.16.3
 scrapbook==0.5.0
 seaborn==0.13.2
 semver==3.0.4
-send2trash==1.8.3
+send2trash==2.0.0
 sentry-sdk==2.48.0
 setproctitle==1.3.7
 setuptools==70.3.0
@@ -617,12 +615,12 @@ snowflake-sqlalchemy==1.8.2
 snowplow-tracker==1.1.0
 sortedcontainers==2.4.0
 soupsieve==2.8.1
-sphinx==9.0.4
-sphinx-autodoc-typehints==3.6.0
+sphinx==9.1.0
+sphinx-autodoc-typehints==3.6.1
 sphinx-jinja2-compat==0.4.1
 sphinx-prompt==1.10.2
 sphinx-tabs==3.4.5
-sphinx-toolbox==4.1.0
+sphinx-toolbox==4.1.1
 sphinxcontrib-applehelp==2.0.0
 sphinxcontrib-devhelp==2.0.0
 sphinxcontrib-htmlhelp==2.1.0
@@ -635,7 +633,7 @@ sqlalchemy-utils==0.42.1
 sqlglot==28.0.0
 sqlglotrs==0.7.3
 sqlparse==0.5.5
-sse-starlette==3.1.1
+sse-starlette==3.1.2
 sshpubkeys==3.3.1
 sshtunnel==0.4.0
 stack-data==0.6.3
@@ -691,7 +689,7 @@ types-pytz==2025.2.0.20251108
 types-pyyaml==6.0.12.20250915
 types-requests==2.32.4.20250913
 types-s3transfer==0.16.0
-types-setuptools==80.9.0.20251223
+types-setuptools==80.9.0.20250822
 types-simplejson==3.20.0.20250822
 types-six==1.17.0.20251009
 types-sqlalchemy==1.4.53.34
@@ -719,7 +717,7 @@ wandb==0.23.1
 watchdog==6.0.0
 watchfiles==1.1.1
 wcwidth==0.2.14
-weaviate-client==4.19.0
+weaviate-client==4.19.2
 webcolors==25.10.0
 webencodings==0.5.1
 websocket-client==1.9.0
