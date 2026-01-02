@@ -31,6 +31,7 @@ import {
 } from './types/AssetPartitionDetail.types';
 import {AssetObservationFragment} from './types/useRecentAssetEvents.types';
 import {
+  ASSET_FAILED_TO_MATERIALIZE_FRAGMENT,
   ASSET_OBSERVATION_FRAGMENT,
   ASSET_SUCCESSFUL_MATERIALIZATION_FRAGMENT,
 } from './useRecentAssetEvents';
@@ -56,28 +57,28 @@ export const AssetPartitionDetailLoader = (props: {assetKey: AssetKey; partition
     {variables: {assetKey: props.assetKey, partitionKey: props.partitionKey}},
   );
 
-  const {materializations, observations, hasLineage, latestRunForPartition} = useMemo(() => {
-    if (result.data?.assetNodeOrError?.__typename !== 'AssetNode') {
+  const {allEvents, hasLineage, latestRunForPartition, latestMaterialization} = useMemo(() => {
+    if (result.data?.assetOrError?.__typename !== 'Asset') {
       return {
-        materializations: [],
-        observations: [],
+        allEvents: [],
         hasLineage: false,
         latestRunForPartition: null,
+        latestMaterialization: null,
       };
     }
 
+    const events = [...(result.data.assetOrError.assetEventHistory?.results || [])].sort(
+      (a, b) => Number(b.timestamp) - Number(a.timestamp),
+    );
+
+    const materializations = events.filter((e) => e.__typename === 'MaterializationEvent');
+    const hasLineage = materializations.some((m) => m.assetLineage.length > 0);
+
     return {
-      stepKey: stepKeyForAsset(result.data.assetNodeOrError),
-      latestRunForPartition: result.data.assetNodeOrError.latestRunForPartition,
-      materializations: [...result.data.assetNodeOrError.assetMaterializations].sort(
-        (a, b) => Number(b.timestamp) - Number(a.timestamp),
-      ),
-      observations: [...result.data.assetNodeOrError.assetObservations].sort(
-        (a, b) => Number(b.timestamp) - Number(a.timestamp),
-      ),
-      hasLineage: result.data.assetNodeOrError.assetMaterializations.some(
-        (m) => m.assetLineage.length > 0,
-      ),
+      latestRunForPartition: result.data.assetOrError.definition?.latestRunForPartition ?? null,
+      allEvents: events,
+      hasLineage,
+      latestMaterialization: materializations[0] ?? null,
     };
   }, [result.data]);
 
@@ -94,8 +95,6 @@ export const AssetPartitionDetailLoader = (props: {assetKey: AssetKey; partition
     };
   }, [stale.data]);
 
-  const latest = materializations[0];
-
   if (result.loading || !result.data) {
     return <AssetPartitionDetailEmpty partitionKey={props.partitionKey} />;
   }
@@ -109,12 +108,10 @@ export const AssetPartitionDetailLoader = (props: {assetKey: AssetKey; partition
       staleCauses={staleCauses}
       assetKey={props.assetKey}
       group={{
-        latest: latest || null,
-        timestamp: latest?.timestamp,
+        latest: latestMaterialization,
+        timestamp: latestMaterialization?.timestamp,
         partition: props.partitionKey,
-        all: [...materializations, ...observations].sort(
-          (a, b) => Number(b.timestamp) - Number(a.timestamp),
-        ),
+        all: allEvents,
       }}
     />
   );
@@ -122,24 +119,35 @@ export const AssetPartitionDetailLoader = (props: {assetKey: AssetKey; partition
 
 export const ASSET_PARTITION_DETAIL_QUERY = gql`
   query AssetPartitionDetailQuery($assetKey: AssetKeyInput!, $partitionKey: String!) {
-    assetNodeOrError(assetKey: $assetKey) {
-      ... on AssetNode {
+    assetOrError(assetKey: $assetKey) {
+      ... on Asset {
         id
-        opNames
-        latestRunForPartition(partition: $partitionKey) {
+        definition {
           id
-          ...AssetPartitionLatestRunFragment
-        }
-        assetMaterializations(partitions: [$partitionKey]) {
-          ... on MaterializationEvent {
-            runId
-            ...AssetSuccessfulMaterializationFragment
+          opNames
+          latestRunForPartition(partition: $partitionKey) {
+            id
+            ...AssetPartitionLatestRunFragment
           }
         }
-        assetObservations(partitions: [$partitionKey]) {
-          ... on ObservationEvent {
-            runId
-            ...AssetObservationFragment
+        assetEventHistory(
+          partitions: [$partitionKey]
+          limit: 1000
+          eventTypeSelectors: [MATERIALIZATION, OBSERVATION, FAILED_TO_MATERIALIZE]
+        ) {
+          results {
+            ... on MaterializationEvent {
+              runId
+              ...AssetSuccessfulMaterializationFragment
+            }
+            ... on ObservationEvent {
+              runId
+              ...AssetObservationFragment
+            }
+            ... on FailedToMaterializeEvent {
+              runId
+              ...AssetFailedToMaterializeFragment
+            }
           }
         }
       }
@@ -153,6 +161,7 @@ export const ASSET_PARTITION_DETAIL_QUERY = gql`
 
   ${ASSET_SUCCESSFUL_MATERIALIZATION_FRAGMENT}
   ${ASSET_OBSERVATION_FRAGMENT}
+  ${ASSET_FAILED_TO_MATERIALIZE_FRAGMENT}
 `;
 
 export const ASSET_PARTITION_STALE_QUERY = gql`
