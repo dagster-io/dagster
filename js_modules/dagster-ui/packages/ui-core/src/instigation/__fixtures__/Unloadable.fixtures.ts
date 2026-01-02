@@ -1,8 +1,10 @@
-import {InstigationStatus, InstigationType} from '../../graphql/types';
-import {InstigationStateFragment} from '../types/InstigationUtils.types';
+import {
+  InstigationStatus,
+  InstigationType,
+  buildInstigationState,
+} from '../../graphql/types';
 
-export const unloadableSchedule: InstigationStateFragment = {
-  __typename: 'InstigationState',
+export const unloadableSchedule = buildInstigationState({
   id: 'my-schedule',
   selectorId: '',
   name: 'my-schedule',
@@ -16,10 +18,9 @@ export const unloadableSchedule: InstigationStateFragment = {
   typeSpecificData: null,
   runs: [],
   ticks: [],
-};
+});
 
-export const unloadableSensor: InstigationStateFragment = {
-  __typename: 'InstigationState',
+export const unloadableSensor = buildInstigationState({
   id: 'my-sensor',
   selectorId: '',
   name: 'my-sensor',
@@ -33,4 +34,4 @@ export const unloadableSensor: InstigationStateFragment = {
   typeSpecificData: null,
   runs: [],
   ticks: [],
-};
+});
