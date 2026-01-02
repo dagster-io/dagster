@@ -50,3 +50,10 @@
     -e python_modules/libraries/dagster-snowflake-pandas/
     -e python_modules/libraries/dagster-snowflake-polars/
     -e python_modules/libraries/dagster-snowflake-pyspark/
+
+### CONSTRAINED BEYOND RUNTIME
+# The packages listed here are constrained beyond what is necessary for runtime
+# compatibility. Even though Dagster supports a wider range of versions at
+# runtime, some of these versions have bugged or incomplete type annotations
+# that trigger type errors
+types-setuptools==80.9.0.20250822  # Pinned due to overly strict _DictLike types in newer versions (20251223) causing false positives in setup.py files
