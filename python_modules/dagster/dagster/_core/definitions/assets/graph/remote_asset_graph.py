@@ -514,6 +514,48 @@ class RemoteAssetGraph(BaseAssetGraph[TRemoteAssetNode], ABC, Generic[TRemoteAss
     def get_checks_for_asset(self, asset_key: AssetKey) -> Sequence[RemoteAssetCheckNode]:
         return self._asset_check_nodes_by_asset_key.get(asset_key, [])
 
+    @cached_property
+    def _asset_keys_by_normalized_table_name(self) -> Mapping[str, AbstractSet[AssetKey]]:
+        from dagster._core.definitions.metadata.metadata_set import TableMetadataSet
+
+        by_table_name = defaultdict(set)
+        for node in self.asset_nodes:
+            table_name = TableMetadataSet.get_table_name(node.metadata)
+            if table_name:
+                by_table_name[table_name.lower()].add(node.key)
+
+        return by_table_name
+
+    def get_assets_for_same_table(self, asset_key: AssetKey) -> AbstractSet[TRemoteAssetNode]:
+        """Returns all asset keys that have the same dagster/table_name metadata as the given asset key.
+
+        Comparison is case-insensitive, so 'DB.SCHEMA.TABLE' matches 'db.schema.table'.
+
+        Args:
+            asset_key: The asset key to find matching table assets for.
+
+        Returns:
+            A set of asset nodes (excluding the node for the input key) that share the same
+            table_name metadata.
+            Returns an empty set if the asset has no table_name metadata.
+        """
+        if not self.has(asset_key):
+            return set()
+
+        from dagster._core.definitions.metadata.metadata_set import TableMetadataSet
+
+        input_node = self.get(asset_key)
+        input_table_name = TableMetadataSet.get_table_name(input_node.metadata)
+
+        if not input_table_name:
+            return set()
+
+        return {
+            self.get(key)
+            for key in self._asset_keys_by_normalized_table_name[input_table_name.lower()]
+            - {asset_key}
+        }
+
     def get_check_keys_for_assets(
         self, asset_keys: AbstractSet[AssetKey]
     ) -> AbstractSet[AssetCheckKey]:

@@ -13,7 +13,10 @@ from dagster._core.definitions.assets.graph.base_asset_graph import (
     BaseAssetGraph,
     BaseAssetNode,
 )
-from dagster._core.definitions.assets.graph.remote_asset_graph import RemoteAssetGraph
+from dagster._core.definitions.assets.graph.remote_asset_graph import (
+    RemoteAssetGraph,
+    RemoteWorkspaceAssetGraph,
+)
 from dagster._core.definitions.events import AssetKeyPartitionKey
 from dagster._core.definitions.partitions.context import partition_loading_context
 from dagster._core.definitions.partitions.definition import PartitionsDefinition
@@ -1004,3 +1007,49 @@ def test_serdes() -> None:
 
     check = next(iter(asset_graph.get_checks_for_asset(dg.AssetKey("a"))))
     assert check == dg.deserialize_value(dg.serialize_value(check))
+
+
+def test_get_assets_for_same_table() -> None:
+    @dg.asset(metadata={"dagster/table_name": "db.schema.table_a"})
+    def asset1(): ...
+
+    @dg.asset(
+        metadata={"dagster/table_name": "DB.SCHEMA.TABLE_A"}
+    )  # uppercase, should match asset1
+    def asset2(): ...
+
+    @dg.asset(metadata={"dagster/table_name": "db.schema.table_b"})
+    def asset3(): ...
+
+    @dg.asset  # no table_name metadata
+    def asset4(): ...
+
+    assets = [asset1, asset2, asset3, asset4]
+
+    @dg.repository
+    def repo():
+        return assets
+
+    workspace = mock_workspace_from_repos([repo])
+    asset_graph = workspace.asset_graph
+    assert isinstance(asset_graph, RemoteWorkspaceAssetGraph)
+
+    # Test: asset1 should find asset2 (same table, case-insensitive), not itself or others
+    result = asset_graph.get_assets_for_same_table(asset1.key)
+    assert result == {asset_graph.get(asset2.key)}
+
+    # Test: asset2 (uppercase) should find asset1 (lowercase)
+    result = asset_graph.get_assets_for_same_table(asset2.key)
+    assert result == {asset_graph.get(asset1.key)}
+
+    # Test: asset3 has unique table, should return empty
+    result = asset_graph.get_assets_for_same_table(asset3.key)
+    assert result == set()
+
+    # Test: asset4 has no table_name, should return empty
+    result = asset_graph.get_assets_for_same_table(asset4.key)
+    assert result == set()
+
+    # Test: non-existent key should return empty
+    result = asset_graph.get_assets_for_same_table(dg.AssetKey("nonexistent"))
+    assert result == set()

@@ -197,6 +197,13 @@ class TableMetadataSet(NamespacedMetadataSet):
     def current_key_by_legacy_key(cls) -> Mapping[str, str]:
         return {"relation_identifier": "table_name"}
 
+    @classmethod
+    def get_table_name(cls, metadata: Mapping[str, Any]) -> Optional[str]:
+        metadata_value = metadata.get(
+            "dagster/table_name", metadata.get("dagster/relation_identifier")
+        )
+        return cls._extract_value(field_name="table_name", value=metadata_value)
+
 
 class UriMetadataSet(NamespacedMetadataSet):
     """Metadata entry which supplies a URI address for an asset.
