@@ -8,6 +8,7 @@ import {
   LaunchBackfillParams,
   PartitionDefinitionType,
   PartitionRangeStatus,
+  Query,
   buildAssetCheck,
   buildAssetChecks,
   buildAssetKey,
@@ -607,7 +608,7 @@ export const PartitionHealthAssetMocks = [
 
 export function buildLaunchAssetLoaderMock(
   assetKeys: AssetKeyInput[],
-  overrides: Partial<LaunchAssetLoaderQuery> = {},
+  overrides: Partial<Query> & Partial<LaunchAssetLoaderQuery> = {},
 ): MockedResponse<LaunchAssetLoaderQuery> {
   return {
     request: {

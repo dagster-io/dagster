@@ -1,8 +1,4 @@
-import {
-  InstigationStatus,
-  InstigationType,
-  buildInstigationState,
-} from '../../graphql/types';
+import {InstigationStatus, InstigationType, buildInstigationState} from '../../graphql/types';
 
 export const unloadableSchedule = buildInstigationState({
   id: 'my-schedule',
