@@ -1,5 +1,4 @@
 from functools import cached_property
-from typing import Union
 
 import dagster as dg
 from dagster._annotations import preview, public
@@ -14,9 +13,7 @@ from dagster_aws.s3.resources import S3Resource
 class S3ResourceComponent(dg.Component, dg.Resolvable, dg.Model):
     """A component that provides an S3Resource for interacting with Amazon S3."""
 
-    credentials: Union[S3CredentialsComponent, str] = Field(
-        description="Credentials for connecting to S3. Can be an inline configuration or a string template."
-    )
+    credentials: S3CredentialsComponent = Field(description="Credentials for connecting to S3.")
 
     resource_key: str = Field(
         default="s3",
@@ -25,11 +22,8 @@ class S3ResourceComponent(dg.Component, dg.Resolvable, dg.Model):
 
     @cached_property
     def _resource(self) -> S3Resource:
-        if isinstance(self.credentials, str):
-            return S3Resource()
-
-        creds_data = self.credentials.model_dump(exclude_none=True)
-        return S3Resource(**creds_data)
+        """Resolves credentials and returns a configured S3 resource."""
+        return S3Resource(**self.credentials.render_as_dict())
 
     def build_defs(self, context: dg.ComponentLoadContext) -> dg.Definitions:
         if self.resource_key:

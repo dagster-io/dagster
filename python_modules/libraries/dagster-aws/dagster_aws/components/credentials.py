@@ -1,8 +1,20 @@
-from typing import Optional, Union
+from typing import Optional
 
 import dagster as dg
 from dagster._annotations import preview, public
-from pydantic import Field
+from pydantic import Field, BaseModel
+
+
+class CredentialsRenderMixin:
+    """A mixin to provide shared dictionary rendering logic for AWS credentials."""
+
+    def render_as_dict(self) -> dict:
+        """
+        Returns the credentials as a dictionary, excluding None values.
+        Uses by_alias=True to support fields like Redshift's 'schema'.
+        """
+        assert isinstance(self, BaseModel)
+        return self.model_dump(exclude_none=True, by_alias=True)
 
 
 @public
@@ -28,14 +40,14 @@ class Boto3CredentialsComponent(dg.Component, dg.Resolvable, dg.Model):
     profile_name: Optional[str] = Field(
         default=None, description="Specifies a profile to connect that session"
     )
-    use_ssl: Union[bool, str] = Field(
+    use_ssl: bool = Field(
         default=True, description="Whether or not to use SSL. By default, SSL is used."
     )
-    verify: Optional[Union[bool, str]] = Field(
+    verify: Optional[bool] = Field(
         default=True,
         description="Whether or not to verify SSL certificates. By default SSL certificates are verified.",
     )
-    max_attempts: Union[int, str] = Field(
+    max_attempts: int = Field(
         default=5,
         description=(
             "This provides Boto3's retry handler with a value of maximum retry attempts, where the"
@@ -46,6 +58,10 @@ class Boto3CredentialsComponent(dg.Component, dg.Resolvable, dg.Model):
         default=None, description="Specifies the retry mode to use for the Boto3 session."
     )
 
+    def render_as_dict(self) -> dict:
+        """Returns the credentials as a dictionary, excluding None values."""
+        return self.model_dump(exclude_none=True)
+
     def build_defs(self, context: dg.ComponentLoadContext) -> dg.Definitions:
         return dg.Definitions()
 
@@ -55,7 +71,7 @@ class Boto3CredentialsComponent(dg.Component, dg.Resolvable, dg.Model):
 class S3CredentialsComponent(Boto3CredentialsComponent):
     """Configuration for S3-specific credentials, including unsigned session support."""
 
-    use_unsigned_session: Optional[Union[bool, str]] = Field(
+    use_unsigned_session: Optional[bool] = Field(
         default=None, description="Specifies whether to use an unsigned S3 session."
     )
 
@@ -72,14 +88,14 @@ class AthenaCredentialsComponent(Boto3CredentialsComponent):
             " https://docs.aws.amazon.com/athena/latest/ug/manage-queries-control-costs-with-workgroups.html"
         ),
     )
-    polling_interval: Union[int, str] = Field(
+    polling_interval: int = Field(
         default=5,
         description=(
             "Time in seconds between checks to see if a query execution is finished. 5 seconds"
             " by default. Must be non-negative."
         ),
     )
-    max_polls: Union[int, str] = Field(
+    max_polls: int = Field(
         default=120,
         description=(
             "Number of times to poll before timing out. 120 attempts by default. When coupled"
@@ -101,7 +117,7 @@ class RedshiftCredentialsComponent(dg.Component, dg.Resolvable, dg.Model):
     """Credentials and connection configuration for Redshift."""
 
     host: Optional[str] = Field(default=None, description="Redshift host")
-    port: Union[int, str] = Field(default=5439, description="Redshift port")
+    port: int = Field(default=5439, description="Redshift port")
     user: Optional[str] = Field(default=None, description="Username for Redshift connection")
     password: Optional[str] = Field(default=None, description="Password for Redshift connection")
     database: Optional[str] = Field(
@@ -111,10 +127,8 @@ class RedshiftCredentialsComponent(dg.Component, dg.Resolvable, dg.Model):
             " the database."
         ),
     )
-    autocommit: Optional[Union[bool, str]] = Field(
-        default=None, description="Whether to autocommit queries"
-    )
-    connect_timeout: Union[int, str] = Field(
+    autocommit: Optional[bool] = Field(default=None, description="Whether to autocommit queries")
+    connect_timeout: int = Field(
         default=5, description="Timeout for connection to Redshift cluster. Defaults to 5 seconds."
     )
     sslmode: Optional[str] = Field(
@@ -124,6 +138,10 @@ class RedshiftCredentialsComponent(dg.Component, dg.Resolvable, dg.Model):
             " https://docs.aws.amazon.com/redshift/latest/mgmt/connecting-ssl-support.html"
         ),
     )
+
+    def render_as_dict(self) -> dict:
+        """Returns the credentials as a dictionary, excluding None values."""
+        return self.model_dump(exclude_none=True)
 
     def build_defs(self, context: dg.ComponentLoadContext) -> dg.Definitions:
         return dg.Definitions()

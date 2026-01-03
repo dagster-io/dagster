@@ -1,5 +1,5 @@
 from functools import cached_property
-from typing import Optional, Union
+from typing import Optional
 
 import dagster as dg
 from dagster._annotations import preview, public
@@ -14,8 +14,8 @@ from dagster_aws.ssm.resources import ParameterStoreResource, SSMResource
 class SSMResourceComponent(dg.Component, dg.Resolvable, dg.Model):
     """A component that provides an SSMResource for interacting with AWS Systems Manager."""
 
-    credentials: Union[Boto3CredentialsComponent, str] = Field(
-        description="AWS credentials - inline configuration or reference to a credentials component."
+    credentials: Boto3CredentialsComponent = Field(
+        description="AWS credentials - inline configuration."
     )
     resource_key: Optional[str] = Field(
         default="ssm", description="The key under which the resource will be bound in Definitions."
@@ -23,12 +23,8 @@ class SSMResourceComponent(dg.Component, dg.Resolvable, dg.Model):
 
     @cached_property
     def _resource(self) -> SSMResource:
-        creds_data = (
-            self.credentials.model_dump(exclude_none=True)
-            if not isinstance(self.credentials, str)
-            else {}
-        )
-        return SSMResource(**creds_data)
+        """Resolves credentials and returns a configured SSM resource."""
+        return SSMResource(**self.credentials.render_as_dict())
 
     def build_defs(self, context: dg.ComponentLoadContext) -> dg.Definitions:
         if self.resource_key:
@@ -41,11 +37,11 @@ class SSMResourceComponent(dg.Component, dg.Resolvable, dg.Model):
 class ParameterStoreResourceComponent(dg.Component, dg.Resolvable, dg.Model):
     """A component that provides a ParameterStoreResource for fetching parameters from AWS SSM Parameter Store."""
 
-    credentials: Union[Boto3CredentialsComponent, str] = Field(
-        description="AWS credentials - inline configuration or reference to a credentials component."
+    credentials: Boto3CredentialsComponent = Field(
+        description="AWS credentials - inline configuration."
     )
     parameters: Optional[list[str]] = Field(
-        default=None, description="List of parameter names to fetch."
+        default=[], description="List of parameter names to fetch."
     )
     resource_key: Optional[str] = Field(
         default="parameter_store",
@@ -54,11 +50,7 @@ class ParameterStoreResourceComponent(dg.Component, dg.Resolvable, dg.Model):
 
     @cached_property
     def _resource(self) -> ParameterStoreResource:
-        creds_data = (
-            self.credentials.model_dump(exclude_none=True)
-            if not isinstance(self.credentials, str)
-            else {}
-        )
+        creds_data = self.credentials.render_as_dict()
         return ParameterStoreResource(
             **creds_data,
             parameters=self.parameters or [],

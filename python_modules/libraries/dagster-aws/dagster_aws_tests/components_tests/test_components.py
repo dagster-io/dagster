@@ -1,8 +1,10 @@
+import os
 from unittest.mock import MagicMock
 
 import dagster as dg
+import jinja2
 import pytest
-
+import yaml
 from dagster_aws.athena.resources import AthenaClientResource, ResourceWithAthenaConfig
 from dagster_aws.components import (
     AthenaClientResourceComponent,
@@ -17,10 +19,20 @@ from dagster_aws.components import (
 )
 from dagster_aws.redshift.resources import RedshiftClientResource
 from dagster_aws.s3.resources import S3Resource
-from dagster_aws.ssm.resources import ParameterStoreResource, ParameterStoreTag, SSMResource
+from dagster_aws.ssm.resources import ParameterStoreResource, SSMResource
 from dagster_aws.utils import ResourceWithBoto3Configuration
 
-# --- Section 1: Metadata & Field Sync Tests ---
+
+def load_component_defs(yaml_content: str, component_class) -> dg.Definitions:
+    """
+    Simulates the Dagster component loading process.
+    """
+    template = jinja2.Template(yaml_content)
+    rendered_yaml = template.render(env_var=lambda key: os.environ.get(key, ""))
+    config = yaml.safe_load(rendered_yaml)
+
+    component = component_class(**config)
+    return component.build_defs(MagicMock(spec=dg.ComponentLoadContext))
 
 
 @pytest.mark.parametrize(
@@ -33,8 +45,9 @@ from dagster_aws.utils import ResourceWithBoto3Configuration
     ],
 )
 def test_component_fields_sync_with_resource(component_class, resource_class):
-    """Ensure component configuration fields stay in sync with the original resource classes.
-    This covers 4 different credential/resource types.
+    """
+    Ensure component configuration fields stay in sync with the original resource classes.
+    This validates that the component exposes all necessary fields from the underlying resource.
     """
     component_fields = set(component_class.model_fields.keys())
     resource_fields = set(resource_class.model_fields.keys())
@@ -44,15 +57,22 @@ def test_component_fields_sync_with_resource(component_class, resource_class):
     )
 
 
-# --- Section 2: S3 Component Tests ---
+# --- S3 Component Tests ---
 
 
-def test_s3_resource_load_and_fields():
-    """Verify S3 component correctly instantiates resource with specific fields."""
-    creds = S3CredentialsComponent(region_name="us-east-1", max_attempts=5)
-    component = S3ResourceComponent(credentials=creds, resource_key="my_s3")
+def test_s3_resource_load_from_yaml(monkeypatch):
+    """Verify S3 component correctly resolves env vars and types via YAML loading."""
+    monkeypatch.setenv("AWS_REGION", "us-east-1")
+    monkeypatch.setenv("MAX_ATTEMPTS", "5")
 
-    defs = component.build_defs(MagicMock(spec=dg.ComponentLoadContext))
+    yaml_content = """
+credentials:
+  region_name: "{{ env_var('AWS_REGION') }}"
+  max_attempts: "{{ env_var('MAX_ATTEMPTS') }}"
+resource_key: "my_s3"
+"""
+    defs = load_component_defs(yaml_content, S3ResourceComponent)
+    assert defs.resources is not None
     assert defs.resources is not None
     resource = defs.resources["my_s3"]
 
@@ -62,23 +82,31 @@ def test_s3_resource_load_and_fields():
 
 
 def test_s3_resource_default_key():
-    """Verify that S3 component uses the default 's3' key when omitted."""
-    component = S3ResourceComponent(credentials="{{ env_var('AWS_CREDS') }}")
-    defs = component.build_defs(MagicMock(spec=dg.ComponentLoadContext))
+    """Verify that S3 component uses the default 's3' key when omitted in YAML."""
+    yaml_content = """
+credentials:
+  region_name: "us-east-1"
+"""
+    defs = load_component_defs(yaml_content, S3ResourceComponent)
     assert defs.resources is not None
     assert "s3" in defs.resources
     assert isinstance(defs.resources["s3"], S3Resource)
 
 
-# --- Section 3: Athena Component Tests ---
+# --- Athena Component Tests ---
 
 
-def test_athena_resource_load():
-    """Verify Athena component correctly instantiates its resource."""
-    creds = AthenaCredentialsComponent(workgroup="test_wg", region_name="us-west-2")
-    component = AthenaClientResourceComponent(credentials=creds)
+def test_athena_resource_load_from_yaml(monkeypatch):
+    """Verify Athena component correctly resolves configuration from YAML."""
+    monkeypatch.setenv("ATHENA_WORKGROUP", "test_wg")
+    monkeypatch.setenv("AWS_REGION", "us-west-2")
 
-    defs = component.build_defs(MagicMock(spec=dg.ComponentLoadContext))
+    yaml_content = """
+credentials:
+  workgroup: "{{ env_var('ATHENA_WORKGROUP') }}"
+  region_name: "{{ env_var('AWS_REGION') }}"
+"""
+    defs = load_component_defs(yaml_content, AthenaClientResourceComponent)
     assert defs.resources is not None
     resource = defs.resources["athena"]
 
@@ -86,90 +114,84 @@ def test_athena_resource_load():
     assert resource.workgroup == "test_wg"
 
 
-# --- Section 4: Redshift Component Tests ---
+# --- Redshift Component Tests ---
 
 
-def test_redshift_resource_load():
-    """Verify Redshift component correctly instantiates its resource with connection details."""
-    creds = RedshiftCredentialsComponent(host="my-cluster", database="dev", user="admin")
-    component = RedshiftClientResourceComponent(credentials=creds, resource_key="my_redshift")
+def test_redshift_resource_load_from_yaml(monkeypatch):
+    """Verify Redshift component correctly resolves strict types (int) from env vars."""
+    monkeypatch.setenv("REDSHIFT_HOST", "my-cluster")
+    monkeypatch.setenv("REDSHIFT_PORT", "5439")
 
-    defs = component.build_defs(MagicMock(spec=dg.ComponentLoadContext))
+    yaml_content = """
+credentials:
+  host: "{{ env_var('REDSHIFT_HOST') }}"
+  port: "{{ env_var('REDSHIFT_PORT') }}"
+  user: "admin"
+  database: "dev"
+resource_key: "my_redshift"
+"""
+    defs = load_component_defs(yaml_content, RedshiftClientResourceComponent)
     assert defs.resources is not None
     resource = defs.resources["my_redshift"]
 
     assert isinstance(resource, RedshiftClientResource)
     assert resource.host == "my-cluster"
+    assert resource.port == 5439
 
 
-def test_redshift_template_error_handling():
-    """Verify Redshift raises a ValueError when a raw template is used (missing connection details)."""
-    component = RedshiftClientResourceComponent(credentials="{{ env_var('REDSHIFT_URL') }}")
+# --- SSM & Parameter Store Tests ---
+def test_ssm_resource_load_from_yaml(monkeypatch):
+    """Verify SSM component correctly loads from YAML."""
+    monkeypatch.setenv("AWS_REGION", "us-east-1")
 
-    with pytest.raises(ValueError, match="Redshift credentials cannot be a raw string template"):
-        _ = component.build_defs(MagicMock(spec=dg.ComponentLoadContext))
-
-
-# --- Section 5: SSM & Parameter Store Tests ---
-
-
-def test_ssm_resource_load():
-    """Verify standard SSM component load."""
-    creds = Boto3CredentialsComponent(region_name="us-east-1")
-    component = SSMResourceComponent(credentials=creds)
-
-    defs = component.build_defs(MagicMock(spec=dg.ComponentLoadContext))
+    yaml_content = """
+credentials:
+  region_name: "{{ env_var('AWS_REGION') }}"
+"""
+    defs = load_component_defs(yaml_content, SSMResourceComponent)
     assert defs.resources is not None
-    resources = defs.resources
-    assert isinstance(resources["ssm"], SSMResource)
+    assert isinstance(defs.resources["ssm"], SSMResource)
 
 
-def test_parameter_store_resource_and_tags():
-    """Verify Parameter Store component load and nested tag resolution."""
-    creds = Boto3CredentialsComponent(region_name="us-east-1")
-    tags = [ParameterStoreTag(key="Project", values=["Dagster"])]
-
-    component = ParameterStoreResourceComponent(
-        credentials=creds, parameters=["/prod/db/url"], resource_key="ps"
-    )
-
-    defs = component.build_defs(MagicMock(spec=dg.ComponentLoadContext))
+def test_parameter_store_defaults_from_yaml():
+    """Verify default factory works (parameters defaults to empty list) when loading from YAML."""
+    yaml_content = """
+credentials:
+  region_name: "us-east-1"
+"""
+    defs = load_component_defs(yaml_content, ParameterStoreResourceComponent)
     assert defs.resources is not None
-    resource = defs.resources["ps"]
+    resource = defs.resources["parameter_store"]
 
     assert isinstance(resource, ParameterStoreResource)
-    assert resource.parameters == ["/prod/db/url"]
-    assert tags[0].key == "Project"
+    assert resource.parameters == []
 
 
-# --- Section 6: General Architecture Tests (Templates & Objects) ---
-
-
-def test_direct_credential_object_resolution():
-    """Verify that passing a typed Credential object is correctly handled."""
-    creds = S3CredentialsComponent(region_name="eu-west-1")
-    component = S3ResourceComponent(credentials=creds)
-
-    assert isinstance(component.credentials, Boto3CredentialsComponent)
-    assert component.credentials.region_name == "eu-west-1"
-
-
-def test_string_template_fallback_logic():
-    """Verify that string templates allow the component to return a default resource instance."""
-    component = S3ResourceComponent(credentials="{{ my_template }}")
-
-    defs = component.build_defs(MagicMock(spec=dg.ComponentLoadContext))
-    # Should not crash and should produce an S3Resource
+def test_parameter_store_explicit_list_from_yaml():
+    """Verify Parameter Store accepts an explicit list from YAML."""
+    yaml_content = """
+credentials:
+  region_name: "us-east-1"
+parameters:
+  - "/prod/db/url"
+  - "/prod/api/key"
+"""
+    defs = load_component_defs(yaml_content, ParameterStoreResourceComponent)
     assert defs.resources is not None
-    assert isinstance(defs.resources["s3"], S3Resource)
+    resource = defs.resources["parameter_store"]
+
+    assert resource.parameters == ["/prod/db/url", "/prod/api/key"]
 
 
 def test_custom_resource_key_override():
-    """Verify that a user-provided resource_key overrides any default value."""
-    creds = S3CredentialsComponent(region_name="us-east-1")
-    component = S3ResourceComponent(credentials=creds, resource_key="my_custom_key")
-
-    defs = component.build_defs(MagicMock(spec=dg.ComponentLoadContext))
-    assert defs.resources is not None
-    assert "my_custom_key" in defs.resources
-    assert "s3" not in defs.resources
+    """Verify that a user-provided resource_key in YAML overrides the default."""
+    yaml_content = """
+credentials:
+  region_name: "us-east-1"
+resource_key: "custom_s3_bucket"
+"""
+    defs = load_component_defs(yaml_content, S3ResourceComponent)
+    resources = defs.resources
+    assert resources is not None
+    assert "custom_s3_bucket" in resources
+    assert "s3" not in resources
