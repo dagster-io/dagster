@@ -1,4 +1,5 @@
 import os
+from typing import get_args, get_origin
 from unittest.mock import MagicMock
 
 import dagster as dg
@@ -18,15 +19,22 @@ from dagster_aws.components import (
     S3ResourceComponent,
     SSMResourceComponent,
 )
+from dagster_aws.components.secretsmanager import (
+    SecretsManagerResourceComponent,
+    SecretsManagerSecretsResourceComponent,
+)
 from dagster_aws.redshift.resources import RedshiftClientResource
 from dagster_aws.s3.resources import S3Resource
+from dagster_aws.secretsmanager.resources import (
+    SecretsManagerResource,
+    SecretsManagerSecretsResource,
+)
 from dagster_aws.ssm.resources import ParameterStoreResource, SSMResource
 from dagster_aws.utils import ResourceWithBoto3Configuration
 
 
 def load_component_defs(yaml_content: str, component_class) -> dg.Definitions:
-    """Simulates the Dagster component loading process.
-    """
+    """Simulates the Dagster component loading process."""
     template = jinja2.Template(yaml_content)
     rendered_yaml = template.render(env_var=lambda key: os.environ.get(key, ""))
     config = yaml.safe_load(rendered_yaml)
@@ -38,21 +46,47 @@ def load_component_defs(yaml_content: str, component_class) -> dg.Definitions:
 @pytest.mark.parametrize(
     "component_class, resource_class",
     [
+        # --- Credentials Components (Flat) ---
         (Boto3CredentialsComponent, ResourceWithBoto3Configuration),
         (S3CredentialsComponent, S3Resource),
         (AthenaCredentialsComponent, ResourceWithAthenaConfig),
         (RedshiftCredentialsComponent, RedshiftClientResource),
+        # --- Service Components (Nested inside credentials) ---
+        (S3ResourceComponent, S3Resource),
+        (AthenaClientResourceComponent, AthenaClientResource),
+        (RedshiftClientResourceComponent, RedshiftClientResource),
+        (SSMResourceComponent, SSMResource),
+        (ParameterStoreResourceComponent, ParameterStoreResource),
+        (SecretsManagerResourceComponent, SecretsManagerResource),
+        (SecretsManagerSecretsResourceComponent, SecretsManagerSecretsResource),
     ],
 )
 def test_component_fields_sync_with_resource(component_class, resource_class):
     """Ensure component configuration fields stay in sync with the original resource classes.
-    This validates that the component exposes all necessary fields from the underlying resource.
+    Checks both direct fields and fields nested within 'credentials'.
     """
     component_fields = set(component_class.model_fields.keys())
+
+    if "credentials" in component_class.model_fields:
+        creds_field = component_class.model_fields["credentials"]
+        creds_annotation = creds_field.annotation
+
+        origin = get_origin(creds_annotation)
+        if origin:
+            args = get_args(creds_annotation)
+            actual_creds_class = next((arg for arg in args if hasattr(arg, "model_fields")), None)
+        else:
+            actual_creds_class = creds_annotation
+
+        if actual_creds_class and hasattr(actual_creds_class, "model_fields"):
+            component_fields.update(actual_creds_class.model_fields.keys())
+
     resource_fields = set(resource_class.model_fields.keys())
 
+    missing = resource_fields - component_fields
     assert resource_fields.issubset(component_fields), (
-        f"Missing fields in {component_class.__name__}: {resource_fields - component_fields}"
+        f"Missing fields in {component_class.__name__}: {missing}. "
+        "Make sure these fields are present either in the component or in its credentials."
     )
 
 
@@ -193,3 +227,47 @@ resource_key: "custom_s3_bucket"
     assert resources is not None
     assert "custom_s3_bucket" in resources
     assert "s3" not in resources
+
+
+# --- Secrets Manager Component Tests ---
+
+
+def test_secrets_manager_resource_load_from_yaml(monkeypatch):
+    """Verify Secrets Manager client correctly resolves env vars."""
+    monkeypatch.setenv("AWS_REGION", "us-east-1")
+
+    yaml_content = """
+credentials:
+  region_name: "{{ env_var('AWS_REGION') }}"
+"""
+    defs = load_component_defs(yaml_content, SecretsManagerResourceComponent)
+
+    assert defs.resources is not None
+    resource = defs.resources["secretsmanager"]
+
+    assert isinstance(resource, SecretsManagerResource)
+    assert resource.region_name == "us-east-1"
+
+
+def test_secrets_manager_secrets_resource_load_from_yaml(monkeypatch):
+    """Verify Secrets Manager fetcher correctly resolves lists and configs."""
+    monkeypatch.setenv("MY_SECRET_ARN", "arn:aws:secretsmanager:us-east-1:123:secret:prod-db")
+
+    yaml_content = """
+credentials:
+  region_name: "us-east-1"
+secrets:
+  - "{{ env_var('MY_SECRET_ARN') }}"
+  - "arn:aws:secretsmanager:us-east-1:123:secret:api-key"
+resource_key: "my_secrets"
+"""
+    defs = load_component_defs(yaml_content, SecretsManagerSecretsResourceComponent)
+
+    assert defs.resources is not None
+    resource = defs.resources["my_secrets"]
+
+    assert isinstance(resource, SecretsManagerSecretsResource)
+    assert resource.secrets == [
+        "arn:aws:secretsmanager:us-east-1:123:secret:prod-db",
+        "arn:aws:secretsmanager:us-east-1:123:secret:api-key",
+    ]

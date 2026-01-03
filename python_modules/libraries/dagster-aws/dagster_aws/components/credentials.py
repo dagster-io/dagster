@@ -9,8 +9,7 @@ class CredentialsRenderMixin:
     """A mixin to provide shared dictionary rendering logic for AWS credentials."""
 
     def render_as_dict(self) -> dict:
-        """Returns the credentials as a dictionary, excluding None values.
-        """
+        """Returns the credentials as a dictionary, excluding None values."""
         assert isinstance(self, BaseModel)
         return self.model_dump(exclude_none=True)
 
