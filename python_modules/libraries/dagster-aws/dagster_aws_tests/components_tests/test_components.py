@@ -5,6 +5,7 @@ import dagster as dg
 import jinja2
 import pytest
 import yaml
+
 from dagster_aws.athena.resources import AthenaClientResource, ResourceWithAthenaConfig
 from dagster_aws.components import (
     AthenaClientResourceComponent,
@@ -24,8 +25,7 @@ from dagster_aws.utils import ResourceWithBoto3Configuration
 
 
 def load_component_defs(yaml_content: str, component_class) -> dg.Definitions:
-    """
-    Simulates the Dagster component loading process.
+    """Simulates the Dagster component loading process.
     """
     template = jinja2.Template(yaml_content)
     rendered_yaml = template.render(env_var=lambda key: os.environ.get(key, ""))
@@ -45,8 +45,7 @@ def load_component_defs(yaml_content: str, component_class) -> dg.Definitions:
     ],
 )
 def test_component_fields_sync_with_resource(component_class, resource_class):
-    """
-    Ensure component configuration fields stay in sync with the original resource classes.
+    """Ensure component configuration fields stay in sync with the original resource classes.
     This validates that the component exposes all necessary fields from the underlying resource.
     """
     component_fields = set(component_class.model_fields.keys())
@@ -72,7 +71,6 @@ credentials:
 resource_key: "my_s3"
 """
     defs = load_component_defs(yaml_content, S3ResourceComponent)
-    assert defs.resources is not None
     assert defs.resources is not None
     resource = defs.resources["my_s3"]
 

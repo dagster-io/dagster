@@ -2,24 +2,22 @@ from typing import Optional
 
 import dagster as dg
 from dagster._annotations import preview, public
-from pydantic import Field, BaseModel
+from pydantic import BaseModel, Field
 
 
 class CredentialsRenderMixin:
     """A mixin to provide shared dictionary rendering logic for AWS credentials."""
 
     def render_as_dict(self) -> dict:
-        """
-        Returns the credentials as a dictionary, excluding None values.
-        Uses by_alias=True to support fields like Redshift's 'schema'.
+        """Returns the credentials as a dictionary, excluding None values.
         """
         assert isinstance(self, BaseModel)
-        return self.model_dump(exclude_none=True, by_alias=True)
+        return self.model_dump(exclude_none=True)
 
 
 @public
 @preview
-class Boto3CredentialsComponent(dg.Component, dg.Resolvable, dg.Model):
+class Boto3CredentialsComponent(dg.Component, dg.Resolvable, dg.Model, CredentialsRenderMixin):
     """Configuration for standard AWS SDK (Boto3) credentials and session settings."""
 
     region_name: Optional[str] = Field(
@@ -57,10 +55,6 @@ class Boto3CredentialsComponent(dg.Component, dg.Resolvable, dg.Model):
     retry_mode: Optional[str] = Field(
         default=None, description="Specifies the retry mode to use for the Boto3 session."
     )
-
-    def render_as_dict(self) -> dict:
-        """Returns the credentials as a dictionary, excluding None values."""
-        return self.model_dump(exclude_none=True)
 
     def build_defs(self, context: dg.ComponentLoadContext) -> dg.Definitions:
         return dg.Definitions()
@@ -103,17 +97,11 @@ class AthenaCredentialsComponent(Boto3CredentialsComponent):
             " seconds). Must be greater than 0."
         ),
     )
-    aws_access_key_id: Optional[str] = Field(
-        default=None, description="AWS access key ID for authentication purposes."
-    )
-    aws_secret_access_key: Optional[str] = Field(
-        default=None, description="AWS secret access key for authentication purposes."
-    )
 
 
 @public
 @preview
-class RedshiftCredentialsComponent(dg.Component, dg.Resolvable, dg.Model):
+class RedshiftCredentialsComponent(dg.Component, dg.Resolvable, dg.Model, CredentialsRenderMixin):
     """Credentials and connection configuration for Redshift."""
 
     host: Optional[str] = Field(default=None, description="Redshift host")
@@ -138,10 +126,6 @@ class RedshiftCredentialsComponent(dg.Component, dg.Resolvable, dg.Model):
             " https://docs.aws.amazon.com/redshift/latest/mgmt/connecting-ssl-support.html"
         ),
     )
-
-    def render_as_dict(self) -> dict:
-        """Returns the credentials as a dictionary, excluding None values."""
-        return self.model_dump(exclude_none=True)
 
     def build_defs(self, context: dg.ComponentLoadContext) -> dg.Definitions:
         return dg.Definitions()
