@@ -222,7 +222,7 @@ export const AutomationStateChangeDialog = (props: Props) => {
         const value = count > 0 ? state.completion.completed / count : 1;
         return (
           <Group direction="column" spacing={8}>
-            <ProgressBar value={Math.max(0.1, value) * 100} animate={value < 100} />
+            <ProgressBar value={Math.max(0.1, value) * 100} animate={value < 1} />
             {state.step === 'updating' ? (
               <NavigationBlock message="Automations are being updated, please do not navigate away yet." />
             ) : null}
