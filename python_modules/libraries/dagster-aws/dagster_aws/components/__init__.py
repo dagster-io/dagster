@@ -11,7 +11,10 @@ from dagster_aws.components.rds import RDSResourceComponent as RDSResourceCompon
 from dagster_aws.components.redshift import (
     RedshiftClientResourceComponent as RedshiftClientResourceComponent,
 )
-from dagster_aws.components.s3 import S3ResourceComponent as S3ResourceComponent
+from dagster_aws.components.s3 import (
+    S3FileManagerComponent as S3FileManagerComponent,
+    S3ResourceComponent as S3ResourceComponent,
+)
 from dagster_aws.components.secretsmanager import (
     SecretsManagerResourceComponent as SecretsManagerResourceComponent,
     SecretsManagerSecretsResourceComponent as SecretsManagerSecretsResourceComponent,
