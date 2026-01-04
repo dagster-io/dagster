@@ -7,6 +7,7 @@ from dagster_aws.components.credentials import (
     RedshiftCredentialsComponent as RedshiftCredentialsComponent,
     S3CredentialsComponent as S3CredentialsComponent,
 )
+from dagster_aws.components.rds import RDSResourceComponent as RDSResourceComponent
 from dagster_aws.components.redshift import (
     RedshiftClientResourceComponent as RedshiftClientResourceComponent,
 )

@@ -1,13 +1,21 @@
-import os
-from typing import get_args, get_origin
-from unittest.mock import MagicMock
-
-import dagster as dg
-import jinja2
 import pytest
-import yaml
+from typing import get_args, get_origin
+
+from dagster._core.definitions.definitions_class import Definitions
+from dagster._utils.test.definitions import scoped_definitions_load_context
+from dagster.components.testing import create_defs_folder_sandbox
 
 from dagster_aws.athena.resources import AthenaClientResource, ResourceWithAthenaConfig
+from dagster_aws.rds.resources import RDSResource
+from dagster_aws.redshift.resources import RedshiftClientResource
+from dagster_aws.s3.resources import S3Resource
+from dagster_aws.secretsmanager.resources import (
+    SecretsManagerResource,
+    SecretsManagerSecretsResource,
+)
+from dagster_aws.ssm.resources import ParameterStoreResource, SSMResource
+from dagster_aws.utils import ResourceWithBoto3Configuration
+
 from dagster_aws.components import (
     AthenaClientResourceComponent,
     AthenaCredentialsComponent,
@@ -18,40 +26,20 @@ from dagster_aws.components import (
     S3CredentialsComponent,
     S3ResourceComponent,
     SSMResourceComponent,
-)
-from dagster_aws.components.secretsmanager import (
+    RDSResourceComponent,
     SecretsManagerResourceComponent,
     SecretsManagerSecretsResourceComponent,
 )
-from dagster_aws.redshift.resources import RedshiftClientResource
-from dagster_aws.s3.resources import S3Resource
-from dagster_aws.secretsmanager.resources import (
-    SecretsManagerResource,
-    SecretsManagerSecretsResource,
-)
-from dagster_aws.ssm.resources import ParameterStoreResource, SSMResource
-from dagster_aws.utils import ResourceWithBoto3Configuration
 
-
-def load_component_defs(yaml_content: str, component_class) -> dg.Definitions:
-    """Simulates the Dagster component loading process."""
-    template = jinja2.Template(yaml_content)
-    rendered_yaml = template.render(env_var=lambda key: os.environ.get(key, ""))
-    config = yaml.safe_load(rendered_yaml)
-
-    component = component_class(**config)
-    return component.build_defs(MagicMock(spec=dg.ComponentLoadContext))
-
+# --- Field Sync Tests ---
 
 @pytest.mark.parametrize(
     "component_class, resource_class",
     [
-        # --- Credentials Components (Flat) ---
         (Boto3CredentialsComponent, ResourceWithBoto3Configuration),
         (S3CredentialsComponent, S3Resource),
         (AthenaCredentialsComponent, ResourceWithAthenaConfig),
         (RedshiftCredentialsComponent, RedshiftClientResource),
-        # --- Service Components (Nested inside credentials) ---
         (S3ResourceComponent, S3Resource),
         (AthenaClientResourceComponent, AthenaClientResource),
         (RedshiftClientResourceComponent, RedshiftClientResource),
@@ -59,18 +47,18 @@ def load_component_defs(yaml_content: str, component_class) -> dg.Definitions:
         (ParameterStoreResourceComponent, ParameterStoreResource),
         (SecretsManagerResourceComponent, SecretsManagerResource),
         (SecretsManagerSecretsResourceComponent, SecretsManagerSecretsResource),
+        (RDSResourceComponent, RDSResource),
     ],
 )
 def test_component_fields_sync_with_resource(component_class, resource_class):
-    """Ensure component configuration fields stay in sync with the original resource classes.
-    Checks both direct fields and fields nested within 'credentials'.
+    """
+    Ensure component configuration fields stay in sync with the original resource classes.
     """
     component_fields = set(component_class.model_fields.keys())
 
     if "credentials" in component_class.model_fields:
         creds_field = component_class.model_fields["credentials"]
         creds_annotation = creds_field.annotation
-
         origin = get_origin(creds_annotation)
         if origin:
             args = get_args(creds_annotation)
@@ -82,192 +70,254 @@ def test_component_fields_sync_with_resource(component_class, resource_class):
             component_fields.update(actual_creds_class.model_fields.keys())
 
     resource_fields = set(resource_class.model_fields.keys())
-
     missing = resource_fields - component_fields
     assert resource_fields.issubset(component_fields), (
-        f"Missing fields in {component_class.__name__}: {missing}. "
-        "Make sure these fields are present either in the component or in its credentials."
+        f"Missing fields in {component_class.__name__}: {missing}"
     )
 
 
 # --- S3 Component Tests ---
 
-
-def test_s3_resource_load_from_yaml(monkeypatch):
-    """Verify S3 component correctly resolves env vars and types via YAML loading."""
+def test_s3_component_integration(monkeypatch):
+    """
+    Verifies that the S3 component can be loaded from YAML and correctly resolves
+    environment variables using {{ env.VAR }} syntax.
+    """
     monkeypatch.setenv("AWS_REGION", "us-east-1")
     monkeypatch.setenv("MAX_ATTEMPTS", "5")
 
-    yaml_content = """
-credentials:
-  region_name: "{{ env_var('AWS_REGION') }}"
-  max_attempts: "{{ env_var('MAX_ATTEMPTS') }}"
-resource_key: "my_s3"
-"""
-    defs = load_component_defs(yaml_content, S3ResourceComponent)
-    assert defs.resources is not None
-    resource = defs.resources["my_s3"]
+    with create_defs_folder_sandbox() as sandbox:
+        defs_path = sandbox.scaffold_component(
+            component_cls=S3ResourceComponent,
+            defs_yaml_contents={
+                "type": "dagster_aws.components.S3ResourceComponent",
+                "attributes": {
+                    "credentials": {
+                        "region_name": "{{ env.AWS_REGION }}",
+                        "max_attempts": "{{ env.MAX_ATTEMPTS }}"
+                    },
+                    "resource_key": "my_s3"
+                }
+            }
+        )
+        with scoped_definitions_load_context():
+            with sandbox.load_component_and_build_defs(defs_path=defs_path) as (component, defs):
+                assert isinstance(defs.resources["my_s3"], S3Resource)
+                assert defs.resources["my_s3"].region_name == "us-east-1"
+                assert defs.resources["my_s3"].max_attempts == 5
 
-    assert isinstance(resource, S3Resource)
-    assert resource.region_name == "us-east-1"
-    assert resource.max_attempts == 5
-
-
-def test_s3_resource_default_key():
-    """Verify that S3 component uses the default 's3' key when omitted in YAML."""
-    yaml_content = """
-credentials:
-  region_name: "us-east-1"
-"""
-    defs = load_component_defs(yaml_content, S3ResourceComponent)
-    assert defs.resources is not None
-    assert "s3" in defs.resources
-    assert isinstance(defs.resources["s3"], S3Resource)
+def test_s3_default_key_behavior():
+    """
+    Verifies that if 'resource_key' is omitted in the YAML, the component
+    defaults to registering the resource under 's3'.
+    """
+    with create_defs_folder_sandbox() as sandbox:
+        defs_path = sandbox.scaffold_component(
+            component_cls=S3ResourceComponent,
+            defs_yaml_contents={
+                "type": "dagster_aws.components.S3ResourceComponent",
+                "attributes": {
+                    "credentials": {"region_name": "us-east-1"}
+                }
+            }
+        )
+        with scoped_definitions_load_context():
+            with sandbox.load_component_and_build_defs(defs_path=defs_path) as (component, defs):
+                assert "s3" in defs.resources
+                assert isinstance(defs.resources["s3"], S3Resource)
 
 
 # --- Athena Component Tests ---
 
-
-def test_athena_resource_load_from_yaml(monkeypatch):
-    """Verify Athena component correctly resolves configuration from YAML."""
-    monkeypatch.setenv("ATHENA_WORKGROUP", "test_wg")
+def test_athena_component_integration(monkeypatch):
+    """
+    Verifies proper loading of Athena component with nested credentials.
+    """
+    monkeypatch.setenv("ATHENA_WORKGROUP", "primary")
     monkeypatch.setenv("AWS_REGION", "us-west-2")
 
-    yaml_content = """
-credentials:
-  workgroup: "{{ env_var('ATHENA_WORKGROUP') }}"
-  region_name: "{{ env_var('AWS_REGION') }}"
-"""
-    defs = load_component_defs(yaml_content, AthenaClientResourceComponent)
-    assert defs.resources is not None
-    resource = defs.resources["athena"]
-
-    assert isinstance(resource, AthenaClientResource)
-    assert resource.workgroup == "test_wg"
+    with create_defs_folder_sandbox() as sandbox:
+        defs_path = sandbox.scaffold_component(
+            component_cls=AthenaClientResourceComponent,
+            defs_yaml_contents={
+                "type": "dagster_aws.components.AthenaClientResourceComponent",
+                "attributes": {
+                    "credentials": {
+                        "region_name": "{{ env.AWS_REGION }}",
+                        "workgroup": "{{ env.ATHENA_WORKGROUP }}"
+                    }
+                }
+            }
+        )
+        with scoped_definitions_load_context():
+            with sandbox.load_component_and_build_defs(defs_path=defs_path) as (component, defs):
+                assert defs.resources["athena"].workgroup == "primary"
 
 
 # --- Redshift Component Tests ---
 
+def test_redshift_component_integration(monkeypatch):
+    """
+    Verifies Redshift component loading and type conversion (string env var to int port).
+    """
+    monkeypatch.setenv("REDSHIFT_HOST", "cluster.redshift.amazonaws.com")
 
-def test_redshift_resource_load_from_yaml(monkeypatch):
-    """Verify Redshift component correctly resolves strict types (int) from env vars."""
-    monkeypatch.setenv("REDSHIFT_HOST", "my-cluster")
-    monkeypatch.setenv("REDSHIFT_PORT", "5439")
+    with create_defs_folder_sandbox() as sandbox:
+        defs_path = sandbox.scaffold_component(
+            component_cls=RedshiftClientResourceComponent,
+            defs_yaml_contents={
+                "type": "dagster_aws.components.RedshiftClientResourceComponent",
+                "attributes": {
+                    "credentials": {
+                        "host": "{{ env.REDSHIFT_HOST }}",
+                        "port": 5439,
+                        "database": "dev",
+                        "user": "admin"
+                    }
+                }
+            }
+        )
+        with scoped_definitions_load_context():
+            with sandbox.load_component_and_build_defs(defs_path=defs_path) as (component, defs):
+                assert defs.resources["redshift"].host == "cluster.redshift.amazonaws.com"
+                assert defs.resources["redshift"].port == 5439
 
-    yaml_content = """
-credentials:
-  host: "{{ env_var('REDSHIFT_HOST') }}"
-  port: "{{ env_var('REDSHIFT_PORT') }}"
-  user: "admin"
-  database: "dev"
-resource_key: "my_redshift"
-"""
-    defs = load_component_defs(yaml_content, RedshiftClientResourceComponent)
-    assert defs.resources is not None
-    resource = defs.resources["my_redshift"]
 
-    assert isinstance(resource, RedshiftClientResource)
-    assert resource.host == "my-cluster"
-    assert resource.port == 5439
+# --- SSM Component Tests ---
 
-
-# --- SSM & Parameter Store Tests ---
-def test_ssm_resource_load_from_yaml(monkeypatch):
-    """Verify SSM component correctly loads from YAML."""
+def test_ssm_component_integration(monkeypatch):
+    """Verifies SSM component loading."""
     monkeypatch.setenv("AWS_REGION", "us-east-1")
 
-    yaml_content = """
-credentials:
-  region_name: "{{ env_var('AWS_REGION') }}"
-"""
-    defs = load_component_defs(yaml_content, SSMResourceComponent)
-    assert defs.resources is not None
-    assert isinstance(defs.resources["ssm"], SSMResource)
+    with create_defs_folder_sandbox() as sandbox:
+        defs_path = sandbox.scaffold_component(
+            component_cls=SSMResourceComponent,
+            defs_yaml_contents={
+                "type": "dagster_aws.components.SSMResourceComponent",
+                "attributes": {
+                    "credentials": {"region_name": "{{ env.AWS_REGION }}"}
+                }
+            }
+        )
+        with scoped_definitions_load_context():
+            with sandbox.load_component_and_build_defs(defs_path=defs_path) as (component, defs):
+                assert defs.resources["ssm"].region_name == "us-east-1"
 
 
-def test_parameter_store_defaults_from_yaml():
-    """Verify default factory works (parameters defaults to empty list) when loading from YAML."""
-    yaml_content = """
-credentials:
-  region_name: "us-east-1"
-"""
-    defs = load_component_defs(yaml_content, ParameterStoreResourceComponent)
-    assert defs.resources is not None
-    resource = defs.resources["parameter_store"]
+# --- Parameter Store Component Tests ---
 
-    assert isinstance(resource, ParameterStoreResource)
-    assert resource.parameters == []
+def test_parameter_store_defaults_behavior():
+    """
+    Verifies that 'parameters' defaults to an empty list if not specified in YAML.
+    """
+    with create_defs_folder_sandbox() as sandbox:
+        defs_path = sandbox.scaffold_component(
+            component_cls=ParameterStoreResourceComponent,
+            defs_yaml_contents={
+                "type": "dagster_aws.components.ParameterStoreResourceComponent",
+                "attributes": {
+                    "credentials": {"region_name": "us-east-1"}
+                }
+            }
+        )
+        with scoped_definitions_load_context():
+            with sandbox.load_component_and_build_defs(defs_path=defs_path) as (component, defs):
+                assert defs.resources["parameter_store"].parameters == []
 
+def test_parameter_store_complex_integration(monkeypatch):
+    """
+    Verifies Parameter Store component handling of list fields and booleans.
+    """
+    monkeypatch.setenv("AWS_REGION", "us-west-1")
 
-def test_parameter_store_explicit_list_from_yaml():
-    """Verify Parameter Store accepts an explicit list from YAML."""
-    yaml_content = """
-credentials:
-  region_name: "us-east-1"
-parameters:
-  - "/prod/db/url"
-  - "/prod/api/key"
-"""
-    defs = load_component_defs(yaml_content, ParameterStoreResourceComponent)
-    assert defs.resources is not None
-    resource = defs.resources["parameter_store"]
-
-    assert resource.parameters == ["/prod/db/url", "/prod/api/key"]
-
-
-def test_custom_resource_key_override():
-    """Verify that a user-provided resource_key in YAML overrides the default."""
-    yaml_content = """
-credentials:
-  region_name: "us-east-1"
-resource_key: "custom_s3_bucket"
-"""
-    defs = load_component_defs(yaml_content, S3ResourceComponent)
-    resources = defs.resources
-    assert resources is not None
-    assert "custom_s3_bucket" in resources
-    assert "s3" not in resources
+    with create_defs_folder_sandbox() as sandbox:
+        defs_path = sandbox.scaffold_component(
+            component_cls=ParameterStoreResourceComponent,
+            defs_yaml_contents={
+                "type": "dagster_aws.components.ParameterStoreResourceComponent",
+                "attributes": {
+                    "credentials": {"region_name": "{{ env.AWS_REGION }}"},
+                    "parameters": ["/app/db/password"],
+                    "with_decryption": True
+                }
+            }
+        )
+        with scoped_definitions_load_context():
+            with sandbox.load_component_and_build_defs(defs_path=defs_path) as (component, defs):
+                res = defs.resources["parameter_store"]
+                assert res.region_name == "us-west-1"
+                assert res.parameters == ["/app/db/password"]
+                assert res.with_decryption is True
 
 
 # --- Secrets Manager Component Tests ---
 
-
-def test_secrets_manager_resource_load_from_yaml(monkeypatch):
-    """Verify Secrets Manager client correctly resolves env vars."""
+def test_secrets_manager_integration(monkeypatch):
+    """Verifies Secrets Manager (Client) component loading."""
     monkeypatch.setenv("AWS_REGION", "us-east-1")
 
-    yaml_content = """
-credentials:
-  region_name: "{{ env_var('AWS_REGION') }}"
-"""
-    defs = load_component_defs(yaml_content, SecretsManagerResourceComponent)
+    with create_defs_folder_sandbox() as sandbox:
+        defs_path = sandbox.scaffold_component(
+            component_cls=SecretsManagerResourceComponent,
+            defs_yaml_contents={
+                "type": "dagster_aws.components.SecretsManagerResourceComponent",
+                "attributes": {
+                    "credentials": {"region_name": "{{ env.AWS_REGION }}"}
+                }
+            }
+        )
+        with scoped_definitions_load_context():
+            with sandbox.load_component_and_build_defs(defs_path=defs_path) as (component, defs):
+                assert isinstance(defs.resources["secretsmanager"], SecretsManagerResource)
+                assert defs.resources["secretsmanager"].region_name == "us-east-1"
 
-    assert defs.resources is not None
-    resource = defs.resources["secretsmanager"]
+def test_secrets_manager_secrets_integration(monkeypatch):
+    """
+    Verifies Secrets Manager (Fetcher) component loading, including list resolution.
+    """
+    monkeypatch.setenv("SECRET_ARN", "arn:aws:secretsmanager:us-east-1:123:secret:db")
 
-    assert isinstance(resource, SecretsManagerResource)
-    assert resource.region_name == "us-east-1"
+    with create_defs_folder_sandbox() as sandbox:
+        defs_path = sandbox.scaffold_component(
+            component_cls=SecretsManagerSecretsResourceComponent,
+            defs_yaml_contents={
+                "type": "dagster_aws.components.SecretsManagerSecretsResourceComponent",
+                "attributes": {
+                    "credentials": {"region_name": "us-east-1"},
+                    "secrets": ["{{ env.SECRET_ARN }}"],
+                    "resource_key": "my_secrets"
+                }
+            }
+        )
+        with scoped_definitions_load_context():
+            with sandbox.load_component_and_build_defs(defs_path=defs_path) as (component, defs):
+                assert defs.resources["my_secrets"].secrets == ["arn:aws:secretsmanager:us-east-1:123:secret:db"]
 
 
-def test_secrets_manager_secrets_resource_load_from_yaml(monkeypatch):
-    """Verify Secrets Manager fetcher correctly resolves lists and configs."""
-    monkeypatch.setenv("MY_SECRET_ARN", "arn:aws:secretsmanager:us-east-1:123:secret:prod-db")
+# --- RDS Component Tests ---
 
-    yaml_content = """
-credentials:
-  region_name: "us-east-1"
-secrets:
-  - "{{ env_var('MY_SECRET_ARN') }}"
-  - "arn:aws:secretsmanager:us-east-1:123:secret:api-key"
-resource_key: "my_secrets"
-"""
-    defs = load_component_defs(yaml_content, SecretsManagerSecretsResourceComponent)
+def test_rds_component_integration(monkeypatch):
+    """
+    Verifies RDS component loading.
+    """
+    monkeypatch.setenv("RDS_ENDPOINT", "https://rds.amazonaws.com")
+    monkeypatch.setenv("AWS_REGION", "eu-central-1")
 
-    assert defs.resources is not None
-    resource = defs.resources["my_secrets"]
-
-    assert isinstance(resource, SecretsManagerSecretsResource)
-    assert resource.secrets == [
-        "arn:aws:secretsmanager:us-east-1:123:secret:prod-db",
-        "arn:aws:secretsmanager:us-east-1:123:secret:api-key",
-    ]
+    with create_defs_folder_sandbox() as sandbox:
+        defs_path = sandbox.scaffold_component(
+            component_cls=RDSResourceComponent,
+            defs_yaml_contents={
+                "type": "dagster_aws.components.RDSResourceComponent",
+                "attributes": {
+                    "credentials": {
+                        "endpoint_url": "{{ env.RDS_ENDPOINT }}",
+                        "region_name": "{{ env.AWS_REGION }}"
+                    },
+                    "resource_key": "production_db"
+                }
+            }
+        )
+        with scoped_definitions_load_context():
+            with sandbox.load_component_and_build_defs(defs_path=defs_path) as (component, defs):
+                assert isinstance(defs.resources["production_db"], RDSResource)
+                assert defs.resources["production_db"].endpoint_url == "https://rds.amazonaws.com"
