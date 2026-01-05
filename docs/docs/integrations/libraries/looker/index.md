@@ -125,3 +125,4 @@ You may also specify distinct translation behavior for specific data types. For 
 <WideContent maxSize={1100}>
   <CliInvocationExample path="docs_snippets/docs_snippets/guides/components/integrations/looker-component/12-list-defs.txt" />
 </WideContent>
+```

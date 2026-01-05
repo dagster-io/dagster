@@ -149,4 +149,4 @@ def test_pdt_assets_configuration(looker_api_mocks):
 
             assert AssetKey(["view", "monthly_report"]) in all_keys
 
-            assert len(component.pdt_builds) == 2
+            assert len(component.pdt_builds or []) == 2
