@@ -196,6 +196,48 @@
             "title": "BlockOpConcurrencyLimitedRuns",
             "type": "object"
         },
+        "Pools": {
+            "properties": {
+                "defaultLimit": {
+                    "anyOf": [
+                        {
+                            "type": "integer"
+                        },
+                        {
+                            "type": "null"
+                        }
+                    ],
+                    "default": null,
+                    "title": "Defaultlimit"
+                },
+                "granularity": {
+                    "anyOf": [
+                        {
+                            "type": "string"
+                        },
+                        {
+                            "type": "null"
+                        }
+                    ],
+                    "default": null,
+                    "title": "Granularity"
+                },
+                "opGranularityRunBuffer": {
+                    "anyOf": [
+                        {
+                            "type": "integer"
+                        },
+                        {
+                            "type": "null"
+                        }
+                    ],
+                    "default": null,
+                    "title": "Opgranularityrunbuffer"
+                }
+            },
+            "title": "Pools",
+            "type": "object"
+        },
         "Busybox": {
             "properties": {
                 "image": {
@@ -1683,48 +1725,6 @@
             "$ref": "https://raw.githubusercontent.com/yannh/kubernetes-json-schema/master/v1.19.0/_definitions.json#/definitions/io.k8s.api.core.v1.PodSecurityContext",
             "additionalProperties": true,
             "title": "PodSecurityContext",
-            "type": "object"
-        },
-        "Pools": {
-            "properties": {
-                "defaultLimit": {
-                    "anyOf": [
-                        {
-                            "type": "integer"
-                        },
-                        {
-                            "type": "null"
-                        }
-                    ],
-                    "default": null,
-                    "title": "Defaultlimit"
-                },
-                "granularity": {
-                    "anyOf": [
-                        {
-                            "type": "string"
-                        },
-                        {
-                            "type": "null"
-                        }
-                    ],
-                    "default": null,
-                    "title": "Granularity"
-                },
-                "opGranularityRunBuffer": {
-                    "anyOf": [
-                        {
-                            "type": "integer"
-                        },
-                        {
-                            "type": "null"
-                        }
-                    ],
-                    "default": null,
-                    "title": "Opgranularityrunbuffer"
-                }
-            },
-            "title": "Pools",
             "type": "object"
         },
         "PostgreSQL": {
