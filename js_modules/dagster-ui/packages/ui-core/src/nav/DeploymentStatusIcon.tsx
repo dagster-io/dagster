@@ -1,7 +1,6 @@
 import {Box, Colors, Icon, Spinner, Tooltip} from '@dagster-io/ui-components';
 import {memo, useContext} from 'react';
 
-import {WarningTooltip} from './WarningTooltip';
 import {DeploymentStatusContext} from '../instance/DeploymentStatusProvider';
 
 export const DeploymentStatusIcon = memo(() => {
@@ -23,7 +22,7 @@ const CombinedStatusIcon = memo(() => {
 
   if (anyWarning) {
     return (
-      <WarningTooltip
+      <Tooltip
         content={
           <Box flex={{direction: 'column', gap: 4}}>
             {daemons?.content}
@@ -34,7 +33,7 @@ const CombinedStatusIcon = memo(() => {
         modifiers={{offset: {enabled: true, options: {offset: [0, 28]}}}}
       >
         <Icon name="warning" color={Colors.accentYellow()} />
-      </WarningTooltip>
+      </Tooltip>
     );
   }
 

@@ -170,8 +170,7 @@ export const RunActionsMenu = React.memo(({run, onAddTag, anchorLabel}: Props) =
                 <Tooltip
                   content={jobLink.disabledReason || OPEN_LAUNCHPAD_UNKNOWN}
                   position="left"
-                  disabled={infoReady && !jobLink.disabledReason}
-                  targetTagName="div"
+                  canShow={!infoReady || !!jobLink.disabledReason}
                 >
                   <MenuLink
                     text={jobLink.label}
@@ -183,7 +182,6 @@ export const RunActionsMenu = React.memo(({run, onAddTag, anchorLabel}: Props) =
                 <Tooltip
                   content={reexecutionDisabledState.message || 'Shift-click to adjust tags.'}
                   position="left"
-                  targetTagName="div"
                 >
                   <MenuItem
                     tagName="button"

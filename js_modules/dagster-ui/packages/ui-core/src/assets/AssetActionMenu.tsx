@@ -201,7 +201,6 @@ export const useExecuteAssetMenuItem = (
         content={disabledMessage || 'Shift+click to add configuration'}
         placement="left"
         display="block"
-        useDisabledButtonTooltipFix
       >
         <MenuItem
           text={option.label}

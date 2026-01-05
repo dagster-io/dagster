@@ -591,8 +591,7 @@ const LaunchAssetChoosePartitionsDialogBody = ({
                     <Box flex={{direction: 'row', alignItems: 'center', gap: 8}}>
                       <span>Single run</span>
                       <Tooltip
-                        targetTagName="div"
-                        position="top-left"
+                        placement="top-start"
                         content={
                           <div style={{maxWidth: 300}}>
                             This option requires that your assets are written to operate on a

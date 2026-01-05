@@ -36,6 +36,7 @@
   "dependencies": {
     "@radix-ui/react-progress": "^1.1.8",
     "@radix-ui/react-slider": "^1.2.2",
+    "@radix-ui/react-tooltip": "^1.1.6",
     "@react-hook/resize-observer": "^1.2.6",
     "amator": "^1.1.0",
     "clsx": "^2.1.1",
