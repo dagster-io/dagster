@@ -86,7 +86,7 @@ jobs:
 
       # Enable buildx for caching
       - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v2
+        uses: docker/setup-buildx-action@v3
 
       # Login to the container registry
       # TEMPLATE_CONTAINER_REGISTRY_LOGIN_FRAGMENT
