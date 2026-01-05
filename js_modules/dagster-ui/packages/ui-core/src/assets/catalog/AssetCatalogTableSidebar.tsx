@@ -1,4 +1,3 @@
-import invariant from 'invariant';
 import {useMemo} from 'react';
 
 import {tokenForAssetKey} from '../../asset-graph/Utils';
@@ -6,6 +5,7 @@ import {useAssetSelectionFiltering} from '../../asset-selection/useAssetSelectio
 import {HierarchicalSidebar} from '../../ui/Sidebar/HierarchicalSidebar';
 import {buildHierarchyFromPaths} from '../../ui/Sidebar/buildHierarchyFromPaths';
 import {HierarchyNode} from '../../ui/Sidebar/types';
+import {invariant} from '../../util/invariant';
 import {useAllAssets} from '../useAllAssets';
 
 export const AssetCatalogTableSidebar = ({
