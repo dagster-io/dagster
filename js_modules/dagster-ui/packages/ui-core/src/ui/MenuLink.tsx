@@ -1,66 +1,38 @@
-import {Box, Colors, CommonMenuItemProps, MenuItem, iconWithColor} from '@dagster-io/ui-components';
-import * as React from 'react';
+import {
+  CommonMenuItemProps,
+  MenuExternalLink,
+  MenuItem,
+  MenuItemContents,
+} from '@dagster-io/ui-components';
 import {Link, LinkProps} from 'react-router-dom';
-import styled from 'styled-components';
+
+import styles from './css/MenuLink.module.css';
 
 interface MenuLinkProps
   extends CommonMenuItemProps,
-    Omit<React.ComponentProps<typeof MenuItem>, 'icon' | 'onClick' | 'onFocus' | 'target' | 'ref'>,
-    LinkProps {}
+    Omit<
+      React.ComponentProps<typeof MenuExternalLink>,
+      'onClick' | 'onFocus' | 'target' | 'ref' | 'href' | 'download'
+    >,
+    LinkProps {
+  disabled?: boolean;
+}
 
 /**
  * If you want to use a menu item as a link, use `MenuLink` and provide a `to` prop.
  */
 export const MenuLink = (props: MenuLinkProps) => {
-  const {icon, intent, text, disabled, ...rest} = props;
+  const {icon, intent = 'none', disabled = false, text, to, ...rest} = props;
 
   if (disabled) {
-    return <MenuItem disabled icon={icon} intent={intent} text={text} />;
+    return <MenuItem icon={icon} text={text} disabled />;
   }
+
   return (
-    <StyledMenuLink {...rest}>
-      <Box flex={{direction: 'row', gap: 8, alignItems: 'center'}}>
-        {iconWithColor(icon, intent)}
-        <div>{text}</div>
-      </Box>
-    </StyledMenuLink>
+    <li role="none" className="popover-dismiss" style={{listStyle: 'none'}}>
+      <Link {...rest} to={to} role="menuitem" tabIndex={0} className={styles.menuLink}>
+        <MenuItemContents icon={icon} intent={intent} text={text} />
+      </Link>
+    </li>
   );
 };
-
-const StyledMenuLink = styled(Link)`
-  text-decoration: none;
-
-  border-radius: 4px;
-  display: block;
-  line-height: 20px;
-  padding: 6px 8px 6px 12px;
-  transition:
-    background-color 50ms,
-    box-shadow 150ms;
-  align-items: flex-start;
-  user-select: none;
-
-  /**
-   * Use margin instead of align-items: center because the contents of the menu item may wrap 
-   * in unusual circumstances.
-   */
-  .iconGlobal {
-    margin-top: 2px;
-  }
-
-  .iconGlobal:first-child {
-    margin-left: -4px;
-  }
-
-  &&&:link,
-  &&&:visited,
-  &&&:hover,
-  &&&:active {
-    color: ${Colors.textDefault()};
-    text-decoration: none;
-  }
-
-  &&&:hover {
-    background: ${Colors.backgroundLighter()};
-  }
-`;

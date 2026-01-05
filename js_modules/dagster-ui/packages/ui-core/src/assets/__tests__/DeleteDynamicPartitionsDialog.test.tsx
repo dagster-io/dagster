@@ -1,8 +1,9 @@
 import {MockedProvider} from '@apollo/client/testing';
-import {waitFor} from '@testing-library/dom';
+import {screen, waitFor} from '@testing-library/dom';
 import {render} from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 
+import {buildDeleteDynamicPartitionsSuccess, buildMutation} from '../../graphql/types';
 import {
   buildQueryMock,
   mockViewportClientRect,
@@ -24,6 +25,8 @@ describe('DeleteDynamicPartitionsDialog', () => {
   });
 
   it('should show a partition selector and delete selected partitions', async () => {
+    const user = userEvent.setup();
+
     const deletePartitionsMock = {
       request: {
         query: DELETE_DYNAMIC_PARTITIONS_MUTATION,
@@ -34,14 +37,13 @@ describe('DeleteDynamicPartitionsDialog', () => {
         },
       },
       result: jest.fn(() => ({
-        data: {
-          __typename: 'Mutation',
-          deleteDynamicPartitions: {},
-        },
+        data: buildMutation({
+          deleteDynamicPartitions: buildDeleteDynamicPartitionsSuccess(),
+        }),
       })),
     };
 
-    const {getByText, getByTestId} = render(
+    render(
       <MockedProvider
         mocks={[
           buildQueryMock({
@@ -61,17 +63,18 @@ describe('DeleteDynamicPartitionsDialog', () => {
         />
       </MockedProvider>,
     );
-    await waitFor(() => {
-      expect(getByText('Delete fruits partitions')).toBeVisible();
-    });
-    const user = userEvent.setup();
-    await waitFor(async () => {
-      await user.click(getByText('Select a partition'));
-    });
-    await user.click(getByTestId(`menu-item-apple`));
-    await user.click(getByTestId(`menu-item-fig`));
 
-    await user.click(getByText('Delete 2 partitions'));
+    await waitFor(() => {
+      expect(screen.getByText('Delete fruits partitions')).toBeVisible();
+    });
+
+    const selectPartition = await screen.findByText('Select a partition');
+    await user.click(selectPartition);
+
+    await user.click(await screen.findByTestId('menu-item-apple'));
+    await user.click(await screen.findByTestId(`menu-item-fig`));
+
+    await user.click(await screen.findByText(/delete 2 partitions/i));
 
     expect(deletePartitionsMock.result).toHaveBeenCalled();
   });

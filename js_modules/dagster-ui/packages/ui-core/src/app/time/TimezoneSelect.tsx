@@ -165,7 +165,7 @@ export const TimezoneSelect = ({
           <MenuItem
             active={props.modifiers.active}
             onClick={props.handleClick}
-            label={tz.offsetLabel}
+            right={tz.offsetLabel}
             key={tz.key}
             text={tz.key}
           />

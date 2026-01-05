@@ -127,7 +127,6 @@ export const BackfillActionsMenu = ({
           >
             <MenuItem
               icon="refresh"
-              tagName="button"
               text="Re-execute"
               disabled={reexecutionDisabledState.disabled}
               onClick={() => reexecute(ReexecutionStrategy.ALL_STEPS)}
@@ -142,7 +141,6 @@ export const BackfillActionsMenu = ({
           >
             <MenuItem
               icon="refresh"
-              tagName="button"
               text="Re-execute from failure"
               disabled={reexecutionFromFailureDisabledState.disabled}
               onClick={() => reexecute(ReexecutionStrategy.FROM_FAILURE)}
