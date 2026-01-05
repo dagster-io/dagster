@@ -237,6 +237,11 @@ const EventGroupRow = React.memo((props: EventGroupRowProps) => {
                 <Icon name="materialization" size={16} color={Colors.textLight()} />
                 Materialization
               </Box>
+            ) : latest.__typename === 'FailedToMaterializeEvent' ? (
+              <Box flex={{gap: 8, alignItems: 'center'}} style={{color: Colors.textLight()}}>
+                <Icon name="run_failed" size={16} color={Colors.textLight()} />
+                Failed to Materialize
+              </Box>
             ) : (
               <Box flex={{gap: 8, alignItems: 'center'}} style={{color: Colors.textLight()}}>
                 <Icon name="observation" size={16} color={Colors.textLight()} /> Observation
@@ -331,10 +336,10 @@ export const AllIndividualEventsButton = ({
     if (hasPartitions && events[0]) {
       const partition = events[0].partition;
       if (partition) {
-        return `Materialization and observation events for ${partition}`;
+        return `Historical events for ${partition}`;
       }
     }
-    return `Materialization and observation events`;
+    return `Historical events`;
   };
 
   const open = _open && !disabled;
