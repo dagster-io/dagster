@@ -520,13 +520,15 @@ class RemoteAssetGraph(BaseAssetGraph[TRemoteAssetNode], ABC, Generic[TRemoteAss
 
         by_table_name = defaultdict(set)
         for node in self.asset_nodes:
-            table_name = TableMetadataSet.get_table_name(node.metadata)
-            if table_name:
-                by_table_name[table_name.lower()].add(node.key)
+            normalized_table_name = TableMetadataSet.extract(node.metadata).normalized_table_name
+            if normalized_table_name:
+                by_table_name[normalized_table_name.lower()].add(node.key)
 
         return by_table_name
 
-    def get_assets_for_same_table(self, asset_key: AssetKey) -> AbstractSet[TRemoteAssetNode]:
+    def get_assets_for_same_storage_address(
+        self, asset_key: AssetKey
+    ) -> AbstractSet[TRemoteAssetNode]:
         """Returns all asset keys that have the same dagster/table_name metadata as the given asset key.
 
         Comparison is case-insensitive, so 'DB.SCHEMA.TABLE' matches 'db.schema.table'.
@@ -545,15 +547,14 @@ class RemoteAssetGraph(BaseAssetGraph[TRemoteAssetNode], ABC, Generic[TRemoteAss
         from dagster._core.definitions.metadata.metadata_set import TableMetadataSet
 
         input_node = self.get(asset_key)
-        input_table_name = TableMetadataSet.get_table_name(input_node.metadata)
+        input_table_name = TableMetadataSet.extract(input_node.metadata).normalized_table_name
 
         if not input_table_name:
             return set()
 
         return {
             self.get(key)
-            for key in self._asset_keys_by_normalized_table_name[input_table_name.lower()]
-            - {asset_key}
+            for key in self._asset_keys_by_normalized_table_name[input_table_name] - {asset_key}
         }
 
     def get_check_keys_for_assets(

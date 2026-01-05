@@ -1009,7 +1009,7 @@ def test_serdes() -> None:
     assert check == dg.deserialize_value(dg.serialize_value(check))
 
 
-def test_get_assets_for_same_table() -> None:
+def test_get_assets_for_same_storage_address() -> None:
     @dg.asset(metadata={"dagster/table_name": "db.schema.table_a"})
     def asset1(): ...
 
@@ -1035,21 +1035,21 @@ def test_get_assets_for_same_table() -> None:
     assert isinstance(asset_graph, RemoteWorkspaceAssetGraph)
 
     # Test: asset1 should find asset2 (same table, case-insensitive), not itself or others
-    result = asset_graph.get_assets_for_same_table(asset1.key)
+    result = asset_graph.get_assets_for_same_storage_address(asset1.key)
     assert result == {asset_graph.get(asset2.key)}
 
     # Test: asset2 (uppercase) should find asset1 (lowercase)
-    result = asset_graph.get_assets_for_same_table(asset2.key)
+    result = asset_graph.get_assets_for_same_storage_address(asset2.key)
     assert result == {asset_graph.get(asset1.key)}
 
     # Test: asset3 has unique table, should return empty
-    result = asset_graph.get_assets_for_same_table(asset3.key)
+    result = asset_graph.get_assets_for_same_storage_address(asset3.key)
     assert result == set()
 
     # Test: asset4 has no table_name, should return empty
-    result = asset_graph.get_assets_for_same_table(asset4.key)
+    result = asset_graph.get_assets_for_same_storage_address(asset4.key)
     assert result == set()
 
     # Test: non-existent key should return empty
-    result = asset_graph.get_assets_for_same_table(dg.AssetKey("nonexistent"))
+    result = asset_graph.get_assets_for_same_storage_address(dg.AssetKey("nonexistent"))
     assert result == set()

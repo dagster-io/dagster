@@ -2296,6 +2296,27 @@ def unowned_schedule():
     return {}
 
 
+# Assets for testing assetsForSameStorageAddress GraphQL field
+@asset(metadata={"dagster/table_name": "db.schema.shared_table"})
+def table_asset_1():
+    pass
+
+
+@asset(metadata={"dagster/table_name": "DB.SCHEMA.SHARED_TABLE"})  # case-insensitive match
+def table_asset_2():
+    pass
+
+
+@asset(metadata={"dagster/table_name": "db.schema.different_table"})
+def table_asset_3():
+    pass
+
+
+@asset  # no table_name
+def table_asset_4():
+    pass
+
+
 def define_assets():
     return [
         asset_one,
@@ -2374,6 +2395,10 @@ def define_assets():
         unowned_asset,
         owned_partitioned_asset,
         unowned_partitioned_asset,
+        table_asset_1,
+        table_asset_2,
+        table_asset_3,
+        table_asset_4,
     ]
 
 
