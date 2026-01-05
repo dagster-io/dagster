@@ -6,7 +6,6 @@ import {
   MiddleTruncate,
   SpinnerWithText,
   TextInput,
-  TextInputContainer,
 } from '@dagster-io/ui-components';
 import {useVirtualizer} from '@tanstack/react-virtual';
 import {useMemo, useRef, useState} from 'react';
@@ -184,7 +183,7 @@ const statusToColors: Record<AssetConditionEvaluationStatus, ColorConfig> = {
 
 const SearchContainer = styled(Box)`
   display: flex;
-  ${TextInputContainer} {
+  > * {
     flex: 1;
   }
 `;
