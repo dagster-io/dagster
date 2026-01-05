@@ -1940,17 +1940,6 @@
                         }
                     ],
                     "default": null
-                },
-                "pools": {
-                    "anyOf": [
-                        {
-                            "$ref": "#/$defs/Pools"
-                        },
-                        {
-                            "type": "null"
-                        }
-                    ],
-                    "default": null
                 }
             },
             "title": "QueuedRunCoordinatorConfig",

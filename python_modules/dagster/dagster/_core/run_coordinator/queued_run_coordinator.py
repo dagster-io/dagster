@@ -280,30 +280,6 @@ class QueuedRunCoordinator(RunCoordinator[T_DagsterInstance], ConfigurableClass)
                     ),
                 }
             ),
-            "pools": Field(
-                {
-                    "default_limit": Field(
-                        int,
-                        is_required=False,
-                        description="The default maximum number of concurrent operations for an unconfigured pool",
-                    ),
-                    "granularity": Field(
-                        str,
-                        is_required=False,
-                        description="The granularity of the concurrency enforcement of the pool.  One of `run` or `op`.",
-                    ),
-                    "op_granularity_run_buffer": Field(
-                        int,
-                        is_required=False,
-                        description=(
-                            "When the pool scope is set to `op`, this determines the number of runs "
-                            "that can be launched with all of its steps blocked waiting for pool slots "
-                            "to be freed."
-                        ),
-                    ),
-                },
-                is_required=False,
-            ),
         }
 
     @classmethod
