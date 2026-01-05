@@ -16,6 +16,7 @@ import {LiveDataForNode} from '../asset-graph/Utils';
 import {PartitionDefinitionType, PartitionRangeStatus} from '../graphql/types';
 import {assembleIntoSpans} from '../partitions/SpanRepresentation';
 import {useBlockTraceUntilTrue} from '../performance/TraceContext';
+import {assertExists} from '../util/invariant';
 
 type PartitionHealthMaterializedPartitions = Extract<
   PartitionHealthQuery['assetNodeOrError'],
@@ -97,11 +98,15 @@ export function buildPartitionHealthData(data: PartitionHealthQuery, loadKey: As
   const isRangeDataInverted =
     __dims.length === 2 &&
     assetPartitionStatuses.__typename === 'MultiPartitionStatuses' &&
-    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-    assetPartitionStatuses.primaryDimensionName !== __dims[0]!.name;
+    assetPartitionStatuses.primaryDimensionName !==
+      assertExists(__dims[0], 'Expected first dimension').name;
 
-  // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-  const dimensions = isRangeDataInverted ? [__dims[1]!, __dims[0]!] : __dims;
+  const dimensions = isRangeDataInverted
+    ? [
+        assertExists(__dims[1], 'Expected second dimension'),
+        assertExists(__dims[0], 'Expected first dimension'),
+      ]
+    : __dims;
   const ranges = addKeyIndexesToMaterializedRanges(dimensions, assetPartitionStatuses);
 
   const stateForKey = (dimensionKeys: string[]): AssetPartitionStatus => {
@@ -113,8 +118,11 @@ export function buildPartitionHealthData(data: PartitionHealthQuery, loadKey: As
       warnUnlessTest('[stateForKey] called with zero dimension keys');
       return AssetPartitionStatus.MISSING;
     }
-    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-    return stateForKeyIdx(dimensionKeys.map((key, idx) => __dims[idx]!.partitionKeys.indexOf(key)));
+    return stateForKeyIdx(
+      dimensionKeys.map((key, idx) =>
+        assertExists(__dims[idx], `Expected dimension at index ${idx}`).partitionKeys.indexOf(key),
+      ),
+    );
   };
 
   const stateForKeyIdx = (dIndexes: number[]): AssetPartitionStatus => {
@@ -131,8 +139,8 @@ export function buildPartitionHealthData(data: PartitionHealthQuery, loadKey: As
       return AssetPartitionStatus.MISSING;
     }
 
-    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-    const d0Range = ranges.find((r) => r.start.idx <= dIndexes[0]! && r.end.idx >= dIndexes[0]!);
+    const d0Idx = assertExists(dIndexes[0], 'Expected first dimension index');
+    const d0Range = ranges.find((r) => r.start.idx <= d0Idx && r.end.idx >= d0Idx);
 
     if (!d0Range) {
       return AssetPartitionStatus.MISSING;
@@ -140,12 +148,11 @@ export function buildPartitionHealthData(data: PartitionHealthQuery, loadKey: As
     if (!d0Range.subranges || dIndexes.length === 1) {
       return d0Range.value[0] ?? AssetPartitionStatus.MISSING; // 1D case
     }
-    const d1Range = d0Range.subranges.find(
-      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-      (r) => r.start.idx <= dIndexes[1]! && r.end.idx >= dIndexes[1]!,
-    );
-    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-    return d1Range ? d1Range.value[0]! : AssetPartitionStatus.MISSING;
+    const d1Idx = assertExists(dIndexes[1], 'Expected second dimension index');
+    const d1Range = d0Range.subranges.find((r) => r.start.idx <= d1Idx && r.end.idx >= d1Idx);
+    return d1Range
+      ? assertExists(d1Range.value[0], 'Expected range value')
+      : AssetPartitionStatus.MISSING;
   };
 
   const rangesForSingleDimension = (
@@ -187,13 +194,12 @@ export function buildPartitionHealthData(data: PartitionHealthQuery, loadKey: As
         .filter((range) => !isEqual(range.value, [AssetPartitionStatus.MISSING])) as Range[];
       return removeSubrangesAndJoin(clipped);
     } else {
-      const [d0, d1] = dimensions;
-      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-      const allKeys = d1!.partitionKeys;
+      const d0 = assertExists(dimensions[0], 'Expected first dimension');
+      const d1 = assertExists(dimensions[1], 'Expected second dimension');
+      const allKeys = d1.partitionKeys;
       const d0KeyCount = otherDimensionSelectedRanges
         ? keyCountInRanges(otherDimensionSelectedRanges)
-        : // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-          d0!.partitionKeys.length;
+        : d0.partitionKeys.length;
       if (d0KeyCount === 0) {
         return [];
       }
@@ -369,13 +375,13 @@ export function keyCountByStateInSelection(
 
   const rangesInSelection = rangesClippedToSelection(
     assetHealth?.ranges || [],
-    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-    selections[0]!.selectedRanges,
+    assertExists(selections[0], 'Expected first selection').selectedRanges,
   );
 
   const secondDimensionKeyCount =
-    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-    selections.length > 1 ? keyCountInRanges(selections[1]!.selectedRanges) : 1;
+    selections.length > 1
+      ? keyCountInRanges(assertExists(selections[1], 'Expected second selection').selectedRanges)
+      : 1;
 
   const sumWithStatus = (status: AssetPartitionStatus) => {
     return rangesInSelection.reduce(
@@ -384,10 +390,10 @@ export function keyCountByStateInSelection(
         (b.end.idx - b.start.idx + 1) *
           (b.subranges
             ? keyCountInRanges(
-                // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-                rangesClippedToSelection(b.subranges, selections[1]!.selectedRanges).filter((b) =>
-                  b.value.includes(status),
-                ),
+                rangesClippedToSelection(
+                  b.subranges,
+                  assertExists(selections[1], 'Expected second selection').selectedRanges,
+                ).filter((b) => b.value.includes(status)),
               )
             : b.value.includes(status)
               ? secondDimensionKeyCount
@@ -428,8 +434,7 @@ function addKeyIndexesToMaterializedRanges(
     return result;
   }
   if (partitions.__typename === 'DefaultPartitionStatuses') {
-    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-    const dim = dimensions[0]!;
+    const dim = assertExists(dimensions[0], 'Expected first dimension');
     const materializedPartitionKeys = new Set(partitions.materializedPartitions);
     const materializingPartitionKeys = new Set(partitions.materializingPartitions);
     const failedPartitionKeys = new Set(partitions.failedPartitions);
@@ -452,13 +457,12 @@ function addKeyIndexesToMaterializedRanges(
     );
   }
 
+  const dim0 = assertExists(dimensions[0], 'Expected first dimension');
   for (const range of partitions.ranges) {
     if (range.__typename === 'TimePartitionRangeStatus') {
       result.push({
-        // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-        start: {key: range.startKey, idx: dimensions[0]!.partitionKeys.indexOf(range.startKey)},
-        // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-        end: {key: range.endKey, idx: dimensions[0]!.partitionKeys.indexOf(range.endKey)},
+        start: {key: range.startKey, idx: dim0.partitionKeys.indexOf(range.startKey)},
+        end: {key: range.endKey, idx: dim0.partitionKeys.indexOf(range.endKey)},
         value: [rangeStatusToState(range.status)],
       });
     } else if (range.__typename === 'MaterializedPartitionRangeStatuses2D') {
@@ -466,11 +470,9 @@ function addKeyIndexesToMaterializedRanges(
         warnUnlessTest('[addKeyIndexesToMaterializedRanges] Found 2D health data for 1D asset');
         return result;
       }
-      const [dim0, dim1] = dimensions;
-      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-      const subranges: Range[] = addKeyIndexesToMaterializedRanges([dim1!], range.secondaryDim);
-      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-      const value = partitionStatusGivenRanges(subranges, dim1!.partitionKeys.length);
+      const dim1 = assertExists(dimensions[1], 'Expected second dimension');
+      const subranges: Range[] = addKeyIndexesToMaterializedRanges([dim1], range.secondaryDim);
+      const value = partitionStatusGivenRanges(subranges, dim1.partitionKeys.length);
       if (isEqual(value, [AssetPartitionStatus.MISSING])) {
         continue; // should not happen, just for Typescript correctness
       }
@@ -479,13 +481,11 @@ function addKeyIndexesToMaterializedRanges(
         subranges,
         start: {
           key: range.primaryDimStartKey,
-          // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-          idx: dim0!.partitionKeys.indexOf(range.primaryDimStartKey),
+          idx: dim0.partitionKeys.indexOf(range.primaryDimStartKey),
         },
         end: {
           key: range.primaryDimEndKey,
-          // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-          idx: dim0!.partitionKeys.indexOf(range.primaryDimEndKey),
+          idx: dim0.partitionKeys.indexOf(range.primaryDimEndKey),
         },
       });
     } else {
@@ -505,10 +505,11 @@ export function rangesForKeys(keys: string[], allKeys: string[]): Range[] {
   if (keys.length === allKeys.length) {
     return [
       {
-        // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-        start: {key: allKeys[0]!, idx: 0},
-        // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-        end: {key: allKeys[allKeys.length - 1]!, idx: allKeys.length - 1},
+        start: {key: assertExists(allKeys[0], 'Expected non-empty allKeys'), idx: 0},
+        end: {
+          key: assertExists(allKeys[allKeys.length - 1], 'Expected non-empty allKeys'),
+          idx: allKeys.length - 1,
+        },
         value: [AssetPartitionStatus.MATERIALIZED],
       },
     ];
@@ -522,16 +523,14 @@ export function rangesForKeys(keys: string[], allKeys: string[]): Range[] {
   const ranges: Range[] = [];
 
   for (const idx of keysIdxs) {
-    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-    if (ranges.length && idx === ranges[ranges.length - 1]!.end.idx + 1) {
-      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-      ranges[ranges.length - 1]!.end = {idx, key: allKeys[idx]!};
+    const key = assertExists(allKeys[idx], `Expected key at index ${idx}`);
+    const lastRange = ranges[ranges.length - 1];
+    if (lastRange && idx === lastRange.end.idx + 1) {
+      lastRange.end = {idx, key};
     } else {
       ranges.push({
-        // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-        start: {idx, key: allKeys[idx]!},
-        // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-        end: {idx, key: allKeys[idx]!},
+        start: {idx, key},
+        end: {idx, key},
         value: [AssetPartitionStatus.MATERIALIZED],
       });
     }

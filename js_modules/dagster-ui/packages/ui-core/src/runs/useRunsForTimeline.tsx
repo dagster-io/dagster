@@ -24,6 +24,7 @@ import {isHiddenAssetGroupJob} from '../asset-graph/Utils';
 import {InstigationStatus, RunsFilter} from '../graphql/types';
 import {SCHEDULE_FUTURE_TICKS_FRAGMENT} from '../instance/NextTick';
 import {useBlockTraceUntilTrue} from '../performance/TraceContext';
+import {assertExists} from '../util/invariant';
 import {buildRepoAddress} from '../workspace/buildRepoAddress';
 import {repoAddressAsHumanString} from '../workspace/repoAddressAsString';
 import {RepoAddress} from '../workspace/types';
@@ -203,8 +204,9 @@ export const useRunsForTimeline = ({
         const runs: RunTimelineFragment[] = data.completed.results;
 
         const hasMoreData = runs.length === batchLimit;
-        // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-        const nextCursor = hasMoreData ? runs[runs.length - 1]!.id : undefined;
+        const nextCursor = hasMoreData
+          ? assertExists(runs[runs.length - 1], 'Expected runs to be non-empty').id
+          : undefined;
 
         const accumulatedData = dataToCommitToCacheByBucket.get(bucket) ?? [];
         dataToCommitToCacheByBucket.set(bucket, accumulatedData);
@@ -275,8 +277,9 @@ export const useRunsForTimeline = ({
           }
           const runs = data.ongoing.results;
           const hasMoreData = runs.length === batchLimit;
-          // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-          const nextCursor = hasMoreData ? runs[runs.length - 1]!.id : undefined;
+          const nextCursor = hasMoreData
+            ? assertExists(runs[runs.length - 1], 'Expected runs to be non-empty').id
+            : undefined;
           return {
             data: runs,
             cursor: nextCursor,
@@ -379,8 +382,7 @@ export const useRunsForTimeline = ({
       const runJobKey = makeJobKey(repoAddress, run.pipelineName);
 
       map[runJobKey] = map[runJobKey] || {};
-      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-      map[runJobKey]![run.id] = {
+      assertExists(map[runJobKey], 'Expected job key to exist in map')[run.id] = {
         id: run.id,
         status: run.status,
         startTime: run.startTime * 1000,
@@ -484,8 +486,8 @@ export const useRunsForTimeline = ({
           for (const schedule of schedules) {
             if (schedule.scheduleState.status === InstigationStatus.RUNNING) {
               schedule.futureTicks.results.forEach(({timestamp}) => {
-                // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-                const startTime = timestamp! * 1000;
+                const startTime =
+                  assertExists(timestamp, 'Expected timestamp on future tick') * 1000;
                 if (
                   startTime > now &&
                   overlap({start, end: _end}, {start: startTime, end: startTime})
@@ -548,8 +550,9 @@ export const useRunsForTimeline = ({
     }
     allKeys.forEach((key) => {
       if (!addedJobKeys.has(key)) {
-        // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-        jobs.push(jobsWithCompletedRunsAndOngoingRuns[key]!);
+        jobs.push(
+          assertExists(jobsWithCompletedRunsAndOngoingRuns[key], `Expected job for key ${key}`),
+        );
       }
     });
     return jobs;
@@ -574,8 +577,11 @@ export const useRunsForTimeline = ({
       {} as {[jobKey: string]: number},
     );
 
-    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-    return unsortedJobs.sort((a, b) => earliest[a.key]! - earliest[b.key]!);
+    return unsortedJobs.sort(
+      (a, b) =>
+        assertExists(earliest[a.key], `Expected earliest time for ${a.key}`) -
+        assertExists(earliest[b.key], `Expected earliest time for ${b.key}`),
+    );
   }, [unsortedJobs]);
 
   const lastFetchRef = useRef({ongoing: 0, future: 0});
