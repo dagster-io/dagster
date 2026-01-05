@@ -6,7 +6,6 @@ import {
   AssetHealthStatus,
   ChangeReason,
   RunStatus,
-  StaleCause,
   StaleCauseCategory,
   StaleStatus,
   buildAsset,
@@ -24,44 +23,32 @@ import {
   buildAssetKey,
   buildAssetNode,
   buildMaterializationEvent,
+  buildObservationEvent,
   buildRun,
+  buildStaleCause,
   buildTeamAssetOwner,
   buildUserAssetOwner,
 } from '../../graphql/types';
 import {LiveDataForNodeWithStaleData} from '../Utils';
 import {AssetNodeFragment} from '../types/AssetNode.types';
 
-export const MockStaleReasonData: StaleCause = {
-  __typename: 'StaleCause',
-  key: {
-    path: ['asset0'],
-    __typename: 'AssetKey',
-  },
+export const MockStaleReasonData = buildStaleCause({
+  key: buildAssetKey({path: ['asset0']}),
   partitionKey: null,
   reason: 'has a new data version',
   category: StaleCauseCategory.DATA,
-  dependency: {
-    path: ['asset0'],
-    __typename: 'AssetKey',
-  },
+  dependency: buildAssetKey({path: ['asset0']}),
   dependencyPartitionKey: null,
-};
+});
 
-export const MockStaleReasonCode: StaleCause = {
-  __typename: 'StaleCause',
-  key: {
-    path: ['asset1'],
-    __typename: 'AssetKey',
-  },
+export const MockStaleReasonCode = buildStaleCause({
+  key: buildAssetKey({path: ['asset1']}),
   partitionKey: null,
   reason: 'has a new code version',
   category: StaleCauseCategory.CODE,
-  dependency: {
-    path: ['asset1'],
-    __typename: 'AssetKey',
-  },
+  dependency: buildAssetKey({path: ['asset1']}),
   dependencyPartitionKey: null,
-};
+});
 
 const TIMESTAMP = `${new Date('2023-02-12 00:00:00').getTime()}`;
 
@@ -474,10 +461,9 @@ export const LiveDataForNodeMaterializedAndStaleAndOverdue: LiveDataForNodeWithS
   staleStatus: StaleStatus.STALE,
   staleCauses: [MockStaleReasonCode],
   assetChecks: [],
-  freshnessInfo: {
-    __typename: 'AssetFreshnessInfo',
+  freshnessInfo: buildAssetFreshnessInfo({
     currentMinutesLate: 12,
-  },
+  }),
   partitionStats: null,
   opNames: [],
 };
@@ -510,10 +496,9 @@ export const LiveDataForNodeMaterializedAndStaleAndFresh: LiveDataForNodeWithSta
     MockStaleReasonData,
   ],
   assetChecks: [],
-  freshnessInfo: {
-    __typename: 'AssetFreshnessInfo',
+  freshnessInfo: buildAssetFreshnessInfo({
     currentMinutesLate: 0,
-  },
+  }),
   partitionStats: null,
   opNames: [],
 };
@@ -532,10 +517,9 @@ export const LiveDataForNodeMaterializedAndFresh: LiveDataForNodeWithStaleData =
   staleStatus: StaleStatus.FRESH,
   staleCauses: [],
   assetChecks: [],
-  freshnessInfo: {
-    __typename: 'AssetFreshnessInfo',
+  freshnessInfo: buildAssetFreshnessInfo({
     currentMinutesLate: 0,
-  },
+  }),
   partitionStats: null,
   opNames: [],
 };
@@ -554,10 +538,9 @@ export const LiveDataForNodeMaterializedAndOverdue: LiveDataForNodeWithStaleData
   staleStatus: StaleStatus.FRESH,
   staleCauses: [],
   assetChecks: [],
-  freshnessInfo: {
-    __typename: 'AssetFreshnessInfo',
+  freshnessInfo: buildAssetFreshnessInfo({
     currentMinutesLate: 12,
-  },
+  }),
   partitionStats: null,
   opNames: [],
 };
@@ -622,12 +605,11 @@ export const LiveDataForNodeSourceObservedUpToDate: LiveDataForNodeWithStaleData
   inProgressRunIds: [],
   lastMaterialization: null,
   lastMaterializationRunStatus: null,
-  lastObservation: {
-    __typename: 'ObservationEvent',
+  lastObservation: buildObservationEvent({
     runId: 'ABCDEF',
     stepKey: 'asset1',
     timestamp: TIMESTAMP,
-  },
+  }),
   runWhichFailedToMaterialize: null,
   staleStatus: StaleStatus.FRESH,
   staleCauses: [],
@@ -641,12 +623,11 @@ export const LiveDataForNodePartitionedSomeMissing: LiveDataForNodeWithStaleData
   stepKey: 'partitioned_asset1',
   unstartedRunIds: [],
   inProgressRunIds: [],
-  lastMaterialization: {
-    __typename: 'MaterializationEvent',
+  lastMaterialization: buildMaterializationEvent({
     runId: 'ABCDEF',
     stepKey: 'asset1',
     timestamp: TIMESTAMP,
-  },
+  }),
   lastMaterializationRunStatus: null,
   lastObservation: null,
   runWhichFailedToMaterialize: null,
@@ -667,12 +648,11 @@ export const LiveDataForNodePartitionedSomeFailed: LiveDataForNodeWithStaleData 
   stepKey: 'partitioned_asset2',
   unstartedRunIds: [],
   inProgressRunIds: [],
-  lastMaterialization: {
-    __typename: 'MaterializationEvent',
+  lastMaterialization: buildMaterializationEvent({
     runId: 'ABCDEF',
     stepKey: 'asset1',
     timestamp: TIMESTAMP,
-  },
+  }),
   lastMaterializationRunStatus: null,
   lastObservation: null,
   runWhichFailedToMaterialize: null,
@@ -693,12 +673,11 @@ export const LiveDataForNodePartitionedNoneMissing: LiveDataForNodeWithStaleData
   stepKey: 'partitioned_asset3',
   unstartedRunIds: [],
   inProgressRunIds: [],
-  lastMaterialization: {
-    __typename: 'MaterializationEvent',
+  lastMaterialization: buildMaterializationEvent({
     runId: 'ABCDEF',
     stepKey: 'asset1',
     timestamp: TIMESTAMP,
-  },
+  }),
   lastMaterializationRunStatus: null,
   lastObservation: null,
   runWhichFailedToMaterialize: null,
@@ -761,12 +740,11 @@ export const LiveDataForNodePartitionedStale: LiveDataForNodeWithStaleData = {
   stepKey: 'asset22',
   unstartedRunIds: [],
   inProgressRunIds: [],
-  lastMaterialization: {
-    __typename: 'MaterializationEvent',
+  lastMaterialization: buildMaterializationEvent({
     runId: 'ABCDEF',
     stepKey: 'asset1',
     timestamp: TIMESTAMP,
-  },
+  }),
   lastMaterializationRunStatus: null,
   lastObservation: null,
   runWhichFailedToMaterialize: null,
@@ -787,22 +765,20 @@ export const LiveDataForNodePartitionedOverdue: LiveDataForNodeWithStaleData = {
   stepKey: 'asset23',
   unstartedRunIds: [],
   inProgressRunIds: [],
-  lastMaterialization: {
-    __typename: 'MaterializationEvent',
+  lastMaterialization: buildMaterializationEvent({
     runId: 'ABCDEF',
     stepKey: 'asset1',
     timestamp: TIMESTAMP,
-  },
+  }),
   lastMaterializationRunStatus: null,
   lastObservation: null,
   runWhichFailedToMaterialize: null,
   staleStatus: StaleStatus.FRESH,
   staleCauses: [],
   assetChecks: [],
-  freshnessInfo: {
-    __typename: 'AssetFreshnessInfo',
+  freshnessInfo: buildAssetFreshnessInfo({
     currentMinutesLate: 12,
-  },
+  }),
   partitionStats: {
     numMaterialized: 1500,
     numMaterializing: 0,
@@ -816,22 +792,20 @@ export const LiveDataForNodePartitionedFresh: LiveDataForNodeWithStaleData = {
   stepKey: 'asset24',
   unstartedRunIds: [],
   inProgressRunIds: [],
-  lastMaterialization: {
-    __typename: 'MaterializationEvent',
+  lastMaterialization: buildMaterializationEvent({
     runId: 'ABCDEF',
     stepKey: 'asset1',
     timestamp: TIMESTAMP,
-  },
+  }),
   lastMaterializationRunStatus: null,
   lastObservation: null,
   runWhichFailedToMaterialize: null,
   staleStatus: StaleStatus.FRESH,
   staleCauses: [],
   assetChecks: [],
-  freshnessInfo: {
-    __typename: 'AssetFreshnessInfo',
+  freshnessInfo: buildAssetFreshnessInfo({
     currentMinutesLate: 0,
-  },
+  }),
   partitionStats: {
     numMaterialized: 1500,
     numMaterializing: 0,

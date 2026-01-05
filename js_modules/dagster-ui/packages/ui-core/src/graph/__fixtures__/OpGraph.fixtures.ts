@@ -1,9 +1,22 @@
+/* eslint-disable @typescript-eslint/no-non-null-assertion */
+import {
+  buildCompositeSolidDefinition,
+  buildInput,
+  buildInputDefinition,
+  buildInputMapping,
+  buildMetadataItemDefinition,
+  buildOutput,
+  buildOutputDefinition,
+  buildOutputMapping,
+  buildRegularDagsterType,
+  buildSolid,
+  buildSolidDefinition,
+} from '../../graphql/types';
 import {OpGraphOpFragment} from '../types/OpGraph.types';
 
-const IO_TYPE = {
-  __typename: 'RegularDagsterType',
+const IO_TYPE = buildRegularDagsterType({
   displayName: 'Int',
-} as const;
+});
 
 interface Edge {
   fromOp: string;
@@ -18,58 +31,62 @@ function buildEdge(descriptor: string): Edge {
     throw new Error(`Cannot parse ${descriptor}`);
   }
   const [_, fromOp, fromIO, toOp, toIO] = match;
-  // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+
   return {fromOp: fromOp!, fromIO: fromIO!, toOp: toOp!, toIO: toIO!};
 }
 
 function buildGraphSolidFragment(sname: string, ins: string[], outs: string[], edges: Edge[]) {
-  const result: OpGraphOpFragment = {
-    __typename: 'Solid',
+  const result: OpGraphOpFragment = buildSolid({
     name: sname,
-    definition: {
-      __typename: 'SolidDefinition',
+    definition: buildSolidDefinition({
       name: sname,
       description: '',
       metadata: [],
-      inputDefinitions: ins.map((iname) => ({
-        __typename: 'InputDefinition',
-        name: iname,
-        type: IO_TYPE,
-      })),
-      outputDefinitions: outs.map((oname) => ({
-        __typename: 'OutputDefinition',
-        name: oname,
-        type: IO_TYPE,
-        isDynamic: false,
-      })),
+      inputDefinitions: ins.map((iname) =>
+        buildInputDefinition({
+          name: iname,
+          type: IO_TYPE,
+        }),
+      ),
+      outputDefinitions: outs.map((oname) =>
+        buildOutputDefinition({
+          name: oname,
+          type: IO_TYPE,
+          isDynamic: false,
+        }),
+      ),
       configField: null,
       assetNodes: [],
-    },
-    inputs: ins.map((iname) => ({
-      __typename: 'Input',
-      definition: {__typename: 'InputDefinition', name: iname},
-      isDynamicCollect: false,
-      dependsOn: edges
-        .filter((e) => e.toOp === sname && e.toIO === iname)
-        .map((o) => ({
-          __typename: 'Output',
-          solid: {name: o.fromOp, __typename: 'Solid'},
-          definition: {__typename: 'OutputDefinition', name: o.fromIO, type: IO_TYPE},
-        })),
-    })),
-    outputs: outs.map((oname) => ({
-      __typename: 'Output',
-      dependedBy: edges
-        .filter((e) => e.fromOp === sname && e.fromIO === oname)
-        .map((o) => ({
-          __typename: 'Input',
-          solid: {name: o.toOp, __typename: 'Solid'},
-          definition: {__typename: 'InputDefinition', name: o.toIO, type: IO_TYPE},
-        })),
-      definition: {__typename: 'OutputDefinition', name: oname},
-    })),
+    }),
+    inputs: ins.map((iname) =>
+      buildInput({
+        definition: buildInputDefinition({name: iname}),
+        isDynamicCollect: false,
+        dependsOn: edges
+          .filter((e) => e.toOp === sname && e.toIO === iname)
+          .map((o) =>
+            buildOutput({
+              solid: buildSolid({name: o.fromOp}),
+              definition: buildOutputDefinition({name: o.fromIO, type: IO_TYPE}),
+            }),
+          ),
+      }),
+    ),
+    outputs: outs.map((oname) =>
+      buildOutput({
+        dependedBy: edges
+          .filter((e) => e.fromOp === sname && e.fromIO === oname)
+          .map((o) =>
+            buildInput({
+              solid: buildSolid({name: o.toOp}),
+              definition: buildInputDefinition({name: o.toIO, type: IO_TYPE}),
+            }),
+          ),
+        definition: buildOutputDefinition({name: oname}),
+      }),
+    ),
     isDynamicMapped: false,
-  };
+  });
   return result;
 }
 
@@ -104,12 +121,12 @@ export function buildTaggedDAG() {
   const ops = buildBasicDAG();
 
   ['ipynb', 'sql', 'verylongtypename', 'story'].forEach((kind, idx) =>
-    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-    ops[idx]!.definition.metadata.push({
-      key: 'kind',
-      value: kind,
-      __typename: 'MetadataItemDefinition',
-    }),
+    ops[idx]!.definition.metadata.push(
+      buildMetadataItemDefinition({
+        key: 'kind',
+        value: kind,
+      }),
+    ),
   );
 
   return ops;
@@ -117,7 +134,7 @@ export function buildTaggedDAG() {
 
 export function buildCompositeDAG() {
   const ops = buildBasicDAG();
-  // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+
   const composite = ops.find((s) => s.name === 'C')!;
 
   const edges = [buildEdge(`CA:out=>CB:in`)];
@@ -126,39 +143,45 @@ export function buildCompositeDAG() {
     buildGraphSolidFragment(`CB`, ['in'], ['out'], edges),
   ];
 
-  composite.definition = {
-    ...composite.definition,
-    __typename: 'CompositeSolidDefinition',
+  composite.definition = buildCompositeSolidDefinition({
+    name: composite.definition.name,
+    description: composite.definition.description,
+    metadata: [],
+    assetNodes: [],
+    inputDefinitions: composite.definition.inputDefinitions.map((def) =>
+      buildInputDefinition({name: def.name, type: IO_TYPE}),
+    ),
+    outputDefinitions: composite.definition.outputDefinitions.map((def) =>
+      buildOutputDefinition({name: def.name, type: IO_TYPE, isDynamic: def.isDynamic}),
+    ),
     id: 'composite-solid-id',
     inputMappings: [
-      {
-        __typename: 'InputMapping',
-        // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-        definition: composite.definition.inputDefinitions[0]!,
-        mappedInput: {
-          __typename: 'Input',
-          // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-          solid: childOps[0]!,
-          // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-          definition: childOps[0]!.definition.inputDefinitions[0]!,
-        },
-      },
+      buildInputMapping({
+        definition: buildInputDefinition({
+          name: composite.definition.inputDefinitions[0]!.name,
+        }),
+        mappedInput: buildInput({
+          solid: buildSolid({name: childOps[0]!.name}),
+          definition: buildInputDefinition({
+            name: childOps[0]!.definition.inputDefinitions[0]!.name,
+          }),
+        }),
+      }),
     ],
     outputMappings: [
-      {
-        __typename: 'OutputMapping',
-        // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-        definition: composite.definition.outputDefinitions[0]!,
-        mappedOutput: {
-          __typename: 'Output',
-          // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-          solid: childOps[1]!,
-          // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-          definition: childOps[1]!.definition.outputDefinitions[0]!,
-        },
-      },
+      buildOutputMapping({
+        definition: buildOutputDefinition({
+          name: composite.definition.outputDefinitions[0]!.name,
+        }),
+        mappedOutput: buildOutput({
+          solid: buildSolid({name: childOps[1]!.name}),
+          definition: buildOutputDefinition({
+            name: childOps[1]!.definition.outputDefinitions[0]!.name,
+          }),
+        }),
+      }),
     ],
-  };
+  });
   return {ops, composite, childOps};
 }
 
@@ -177,37 +200,41 @@ export function buildCompositeCollapsedIODAG() {
     buildGraphSolidFragment(`CB`, ['in'], ['out1', 'out2', 'out3', 'out4', 'out5'], childEdges),
   ];
 
-  composite.definition = {
-    ...composite.definition,
-    __typename: 'CompositeSolidDefinition',
+  composite.definition = buildCompositeSolidDefinition({
+    name: composite.definition.name,
+    description: composite.definition.description,
+    metadata: [],
+    assetNodes: [],
+    inputDefinitions: composite.definition.inputDefinitions.map((def) =>
+      buildInputDefinition({name: def.name, type: IO_TYPE}),
+    ),
+    outputDefinitions: composite.definition.outputDefinitions.map((def) =>
+      buildOutputDefinition({name: def.name, type: IO_TYPE, isDynamic: def.isDynamic}),
+    ),
     id: 'composite-solid-id',
-    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-    inputMappings: childOps[0]!.definition.inputDefinitions.map((inputDef, idx) => ({
-      __typename: 'InputMapping',
-      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-      definition: composite.definition.inputDefinitions[idx]!,
-      mappedInput: {
-        __typename: 'Input',
-        // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-        solid: childOps[0]!,
-        // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-        definition: inputDef!,
-      },
-    })),
-    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-    outputMappings: childOps[1]!.definition.outputDefinitions.map((outputDef, idx) => ({
-      __typename: 'OutputMapping',
-      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-      definition: composite.definition.outputDefinitions[idx]!,
-      mappedOutput: {
-        __typename: 'Output',
-        // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-        solid: childOps[1]!,
-        // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-        definition: outputDef!,
-      },
-    })),
-  };
+    inputMappings: childOps[0]!.definition.inputDefinitions.map((inputDef, idx) =>
+      buildInputMapping({
+        definition: buildInputDefinition({
+          name: composite.definition.inputDefinitions[idx]!.name,
+        }),
+        mappedInput: buildInput({
+          solid: buildSolid({name: childOps[0]!.name}),
+          definition: buildInputDefinition({name: inputDef.name}),
+        }),
+      }),
+    ),
+    outputMappings: childOps[1]!.definition.outputDefinitions.map((outputDef, idx) =>
+      buildOutputMapping({
+        definition: buildOutputDefinition({
+          name: composite.definition.outputDefinitions[idx]!.name,
+        }),
+        mappedOutput: buildOutput({
+          solid: buildSolid({name: childOps[1]!.name}),
+          definition: buildOutputDefinition({name: outputDef.name}),
+        }),
+      }),
+    ),
+  });
 
   return {ops, composite, childOps};
 }
