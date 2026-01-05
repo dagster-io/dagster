@@ -1,19 +1,19 @@
-"""use mediumtext on bulk_actions body in mysql
+"""use longtext on bulk_actions body in mysql
 
 Revision ID: cd78a5ed7029
 Revises: b961dffeea1a
 Create Date: 2025-08-05 13:35:53.147485
 
 """
-from alembic import op
-import sqlalchemy as sa
-from sqlalchemy import inspect
-from sqlalchemy.dialects.mysql import MEDIUMTEXT
 
+import sqlalchemy as sa
+from alembic import op
+from sqlalchemy import inspect
+from sqlalchemy.dialects.mysql import LONGTEXT
 
 # revision identifiers, used by Alembic.
-revision = 'cd78a5ed7029'
-down_revision = 'b961dffeea1a'
+revision = "cd78a5ed7029"
+down_revision = "b961dffeea1a"
 branch_labels = None
 depends_on = None
 
@@ -27,7 +27,7 @@ def upgrade():
         table_name="bulk_actions",
         column_name="body",
         nullable=True,
-        type_=sa.types.Text().with_variant(MEDIUMTEXT, "mysql"),
+        type_=sa.types.Text().with_variant(LONGTEXT, "mysql"),
         existing_type=sa.types.Text(),
     )
 
@@ -42,5 +42,5 @@ def downgrade():
         column_name="body",
         nullable=True,
         type_=sa.types.Text(),
-        existing_type=sa.types.Text().with_variant(MEDIUMTEXT, "mysql"),
+        existing_type=sa.types.Text().with_variant(LONGTEXT, "mysql"),
     )
