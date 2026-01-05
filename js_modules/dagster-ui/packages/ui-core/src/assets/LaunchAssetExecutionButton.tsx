@@ -13,7 +13,6 @@ import pick from 'lodash/pick';
 import uniq from 'lodash/uniq';
 import React, {useContext, useMemo, useState} from 'react';
 import {Link} from 'react-router-dom';
-import {observeEnabled} from 'shared/app/observeEnabled.oss';
 import {useLaunchWithTelemetry} from 'shared/launchpad/useLaunchWithTelemetry.oss';
 
 import {ASSET_NODE_CONFIG_FRAGMENT} from './AssetConfig';
@@ -192,7 +191,7 @@ export function optionsForExecuteButton(
     materializeOption: {
       assetKeys: materializable.map((a) => a.assetKey),
       disabledReason: materializationDisabledReason(assets, materializable, isSingle),
-      icon: <Icon name={observeEnabled() ? 'execute' : 'materialization'} />,
+      icon: <Icon name="execute" />,
       label: isSelection
         ? `Materialize selected${countIfPluralOrNotAll(materializable, assets)}${ellipsis}`
         : materializable.length > 1 && !skipAllTerm
@@ -276,7 +275,7 @@ export const LaunchAssetExecutionButton = ({
   ) {
     // If all options are disabled, just show the button with no dropdown.
     return (
-      <Tooltip content={firstOption.disabledReason} position="bottom-right">
+      <Tooltip content={firstOption.disabledReason} placement="bottom-end">
         <Button
           intent={primary ? 'primary' : undefined}
           icon={firstOption.icon}
@@ -307,7 +306,6 @@ export const LaunchAssetExecutionButton = ({
               : 'Shift+click to add configuration'
           }
           placement="left"
-          useDisabledButtonTooltipFix
         >
           {iconOnly ? (
             <UnstyledButton
@@ -328,13 +326,7 @@ export const LaunchAssetExecutionButton = ({
                 borderRight: `1px solid rgba(255,255,255,0.2)`,
               }}
               disabled={!canLaunch}
-              icon={
-                loading ? (
-                  <Spinner purpose="body-text" />
-                ) : (
-                  <Icon name={observeEnabled() ? 'execute' : 'materialization'} />
-                )
-              }
+              icon={loading ? <Spinner purpose="body-text" /> : <Icon name="execute" />}
             >
               {firstOption.label}
             </Button>
@@ -351,7 +343,6 @@ export const LaunchAssetExecutionButton = ({
                 <Tooltip
                   canShow={!!secondOption.disabledReason}
                   content={secondOption.disabledReason || ''}
-                  useDisabledButtonTooltipFix
                   position="left"
                 >
                   <MenuItem

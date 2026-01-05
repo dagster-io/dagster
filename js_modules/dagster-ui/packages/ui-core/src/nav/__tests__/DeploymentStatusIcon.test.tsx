@@ -33,7 +33,7 @@ describe('DeploymentStatusIcon', () => {
     expect(spinner).toBeVisible();
 
     await event.hover(spinner);
-    expect(await screen.findByText(/wait patiently/i)).toBeVisible();
+    expect(await screen.findByRole('tooltip', {name: /wait patiently/i})).toBeVisible();
   });
 
   it('shows the error message when repo location warnings are found', async () => {
@@ -53,7 +53,7 @@ describe('DeploymentStatusIcon', () => {
     expect(warningIcon).toBeVisible();
 
     await event.hover(warningIcon);
-    expect(await screen.findByText(/oh no/i)).toBeVisible();
+    expect(await screen.findByRole('tooltip', {name: /oh no/i})).toBeVisible();
   });
 
   it('shows the error message when daemon warnings are found', async () => {
@@ -73,6 +73,6 @@ describe('DeploymentStatusIcon', () => {
     expect(warningIcon).toBeVisible();
 
     await event.hover(warningIcon);
-    expect(await screen.findByText(/daemon problem/i)).toBeVisible();
+    expect(await screen.findByRole('tooltip', {name: /daemon problem/i})).toBeVisible();
   });
 });

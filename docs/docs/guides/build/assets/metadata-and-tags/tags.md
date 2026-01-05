@@ -76,6 +76,7 @@ The following table lists the tags Dagster will automatically add to [job](/guid
 
 | Tag                     | Description                         |
 | ----------------------- | ----------------------------------- |
+| `dagster/code_location` | The code location of the run        |
 | `dagster/user`          | The user who executed the run.      |
 | `dagster/op_selection`  | The op selection for the run        |
 | `dagster/partition`     | The partition of the run            |

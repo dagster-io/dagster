@@ -67,7 +67,7 @@ export const TickStatusTag = ({
         }
         if ('skipReason' in tick && tick.skipReason) {
           return (
-            <Tooltip position="right" content={tick.skipReason} targetTagName="div">
+            <Tooltip position="right" content={tick.skipReason}>
               {tag}
             </Tooltip>
           );

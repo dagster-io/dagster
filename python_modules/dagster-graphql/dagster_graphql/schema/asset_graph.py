@@ -247,6 +247,7 @@ class GrapheneAssetNode(graphene.ObjectType):
         beforeTimestampMillis=graphene.String(),
         limit=graphene.Int(),
     )
+    assetsForSameStorageAddress = non_null_list(lambda: GrapheneAssetNode)
     lastAutoMaterializationEvaluationRecord = graphene.Field(
         GrapheneAutoMaterializeAssetEvaluationRecord,
         asOfEvaluationId=graphene.ID(),
@@ -705,6 +706,14 @@ class GrapheneAssetNode(graphene.ObjectType):
                 limit=limit,
             )
         ]
+
+    def resolve_assetsForSameStorageAddress(
+        self, graphene_info: ResolveInfo
+    ) -> Sequence["GrapheneAssetNode"]:
+        matching_nodes = graphene_info.context.asset_graph.get_assets_for_same_storage_address(
+            self._asset_node_snap.asset_key
+        )
+        return [GrapheneAssetNode(remote_node=node) for node in matching_nodes]
 
     def resolve_configField(self, graphene_info: ResolveInfo) -> Optional[GrapheneConfigTypeField]:
         selector = self._job_selector()

@@ -1,12 +1,10 @@
 import {Box, Button, ButtonGroup, ErrorBoundary} from '@dagster-io/ui-components';
 import * as React from 'react';
 import {useDeferredValue, useMemo} from 'react';
-import {HomeDarkLaunch} from 'shared/home/HomeDarkLaunch.oss';
 
 import {GroupTimelineRunsBySelect} from './GroupTimelineRunsBySelect';
 import {groupRunsByAutomation} from './groupRunsByAutomation';
 import {useGroupTimelineRunsBy} from './useGroupTimelineRunsBy';
-import {RefreshState} from '../app/QueryRefresh';
 import {useTrackPageView} from '../app/analytics';
 import {usePrefixedCacheKey} from '../app/usePrefixedCacheKey';
 import {useAutomations} from '../automation/useAutomations';
@@ -36,11 +34,6 @@ const hourWindowToOffset = (hourWindow: HourWindow) => {
     case '24':
       return 24 * ONE_HOUR;
   }
-};
-
-type Props = {
-  Header: React.ComponentType<{refreshState: RefreshState}>;
-  TabButton: React.ComponentType<{selected: 'timeline' | 'assets'}>;
 };
 
 export function useTimelineRange({
@@ -91,7 +84,7 @@ export function useTimelineRange({
   return {rangeMs, hourWindow, setHourWindow, onPageEarlier, onPageLater, onPageNow};
 }
 
-export const OverviewTimelineRoot = ({Header}: Props) => {
+export const OverviewTimelineRoot = () => {
   useTrackPageView();
   useDocumentTitle('Overview | Timeline');
   const {rangeMs, hourWindow, setHourWindow, onPageEarlier, onPageLater, onPageNow} =
@@ -118,7 +111,7 @@ export const OverviewTimelineRoot = ({Header}: Props) => {
   const runsForTimelineRet = useRunsForTimeline({rangeMs});
 
   // Use deferred value to allow paginating quickly with the UI feeling more responsive.
-  const {jobs: jobsUnmapped, loading, refreshState} = useDeferredValue(runsForTimelineRet);
+  const {jobs: jobsUnmapped, loading} = useDeferredValue(runsForTimelineRet);
 
   const automationRows = useMemo(() => {
     const sensors = Object.fromEntries(
@@ -162,7 +155,6 @@ export const OverviewTimelineRoot = ({Header}: Props) => {
 
   return (
     <>
-      <Header refreshState={refreshState} />
       <Box padding={{horizontal: 24, vertical: 12}} flex={{alignItems: 'center', gap: 16}}>
         <GroupTimelineRunsBySelect value={groupRunsBy} onSelect={setGroupRunsBy} />
         <div style={{flex: 1, display: 'flex', alignItems: 'center'}}>
@@ -195,8 +187,6 @@ export const OverviewTimelineRoot = ({Header}: Props) => {
       <ErrorBoundary region="timeline">
         <RunTimeline loading={loading} rangeMs={rangeMs} rows={rows} />
       </ErrorBoundary>
-      {/* Dagster+ Home dark launch queries. todo dish: Remove this when features are live on Home. */}
-      <HomeDarkLaunch />
     </>
   );
 };

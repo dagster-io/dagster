@@ -1685,6 +1685,48 @@
             "title": "PodSecurityContext",
             "type": "object"
         },
+        "Pools": {
+            "properties": {
+                "defaultLimit": {
+                    "anyOf": [
+                        {
+                            "type": "integer"
+                        },
+                        {
+                            "type": "null"
+                        }
+                    ],
+                    "default": null,
+                    "title": "Defaultlimit"
+                },
+                "granularity": {
+                    "anyOf": [
+                        {
+                            "type": "string"
+                        },
+                        {
+                            "type": "null"
+                        }
+                    ],
+                    "default": null,
+                    "title": "Granularity"
+                },
+                "opGranularityRunBuffer": {
+                    "anyOf": [
+                        {
+                            "type": "integer"
+                        },
+                        {
+                            "type": "null"
+                        }
+                    ],
+                    "default": null,
+                    "title": "Opgranularityrunbuffer"
+                }
+            },
+            "title": "Pools",
+            "type": "object"
+        },
         "PostgreSQL": {
             "properties": {
                 "image": {
@@ -1892,6 +1934,17 @@
                     "anyOf": [
                         {
                             "$ref": "#/$defs/BlockOpConcurrencyLimitedRuns"
+                        },
+                        {
+                            "type": "null"
+                        }
+                    ],
+                    "default": null
+                },
+                "pools": {
+                    "anyOf": [
+                        {
+                            "$ref": "#/$defs/Pools"
                         },
                         {
                             "type": "null"

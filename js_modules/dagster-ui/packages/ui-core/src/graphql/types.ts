@@ -529,6 +529,7 @@ export type AssetNode = {
   assetMaterializations: Array<MaterializationEvent>;
   assetObservations: Array<ObservationEvent>;
   assetPartitionStatuses: AssetPartitionStatuses;
+  assetsForSameStorageAddress: Array<AssetNode>;
   autoMaterializePolicy: Maybe<AutoMaterializePolicy>;
   automationCondition: Maybe<AutomationCondition>;
   backfillPolicy: Maybe<BackfillPolicy>;
@@ -7251,6 +7252,10 @@ export const buildAssetNode = (
         : relationshipsToOmit.has('DefaultPartitionStatuses')
           ? ({} as DefaultPartitionStatuses)
           : buildDefaultPartitionStatuses({}, relationshipsToOmit),
+    assetsForSameStorageAddress:
+      overrides && overrides.hasOwnProperty('assetsForSameStorageAddress')
+        ? overrides.assetsForSameStorageAddress!
+        : [],
     autoMaterializePolicy:
       overrides && overrides.hasOwnProperty('autoMaterializePolicy')
         ? overrides.autoMaterializePolicy!

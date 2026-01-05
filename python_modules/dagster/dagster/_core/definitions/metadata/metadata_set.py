@@ -197,6 +197,10 @@ class TableMetadataSet(NamespacedMetadataSet):
     def current_key_by_legacy_key(cls) -> Mapping[str, str]:
         return {"relation_identifier": "table_name"}
 
+    @property
+    def normalized_table_name(self) -> Optional[str]:
+        return self.table_name.lower() if self.table_name else None
+
 
 class UriMetadataSet(NamespacedMetadataSet):
     """Metadata entry which supplies a URI address for an asset.

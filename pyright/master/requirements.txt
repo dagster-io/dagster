@@ -115,6 +115,7 @@ wordcloud  # (quickstart-*)
 apache-airflow>2.7
 types-sqlalchemy==1.4.53.34
 fastapi>=0.115.6 # producing a bizarrely early version of fastapi without this
+types-setuptools==80.9.0.20250822  # Pinned due to overly strict _DictLike types in newer versions (20251223) causing false positives in setup.py files
 
 ### EXAMPLES
 
@@ -143,6 +144,7 @@ fastapi>=0.115.6 # producing a bizarrely early version of fastapi without this
 -e python_modules/libraries/dagster-dbt/kitchen-sink
 -e python_modules/libraries/dagster-airlift/perf-harness
 -e examples/airlift-migration-tutorial
+-e examples/data-quality-patterns
 -e examples/ingestion-patterns
 -e examples/use_case_repository[dev]
 # -e examples/docs_projects/project_atproto_dashboard

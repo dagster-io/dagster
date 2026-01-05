@@ -1,14 +1,9 @@
 // eslint-disable-next-line no-restricted-imports
 import {BreadcrumbProps} from '@blueprintjs/core';
-import {Box} from '@dagster-io/ui-components';
 import {useMemo} from 'react';
-import {useHistory, useParams} from 'react-router-dom';
-import {observeEnabled} from 'shared/app/observeEnabled.oss';
-import {AssetGlobalLineageLink, AssetPageHeader} from 'shared/assets/AssetPageHeader.oss';
+import {useParams} from 'react-router-dom';
 
 import {AssetView} from './AssetView';
-import {AssetsCatalogTable} from './AssetsCatalogTable';
-import {assetDetailsPathForKey} from './assetDetailsPathForKey';
 import {AssetsCatalog} from './catalog/AssetsCatalog';
 import {AssetKey} from './types';
 import {gql} from '../apollo-client';
@@ -16,7 +11,6 @@ import {useAssetViewParams} from './useAssetViewParams';
 import {useTrackPageView} from '../app/analytics';
 import {displayNameForAssetKey} from '../asset-graph/Utils';
 import {useDocumentTitle} from '../hooks/useDocumentTitle';
-import {ReloadAllButton} from '../workspace/ReloadAllButton';
 
 export const AssetsOverviewRoot = ({
   writeAssetVisit,
@@ -31,8 +25,6 @@ export const AssetsOverviewRoot = ({
 
   const params = useParams();
   const [searchParams] = useAssetViewParams();
-
-  const history = useHistory();
 
   const currentPathStr = (params as any)['0'];
   const currentPath: string[] = useMemo(
@@ -52,29 +44,7 @@ export const AssetsOverviewRoot = ({
   );
 
   if (currentPath.length === 0 || searchParams.view === 'folder') {
-    if (observeEnabled()) {
-      return <AssetsCatalog />;
-    }
-    return (
-      <Box flex={{direction: 'column'}} style={{height: '100%', overflow: 'hidden'}}>
-        <AssetPageHeader
-          view="catalog"
-          assetKey={assetKey}
-          headerBreadcrumbs={headerBreadcrumbs}
-          right={
-            <Box flex={{gap: 12, alignItems: 'center'}}>
-              <AssetGlobalLineageLink />
-              <ReloadAllButton label="Reload definitions" />
-            </Box>
-          }
-        />
-
-        <AssetsCatalogTable
-          prefixPath={currentPath}
-          setPrefixPath={(prefixPath) => history.push(assetDetailsPathForKey({path: prefixPath}))}
-        />
-      </Box>
-    );
+    return <AssetsCatalog />;
   }
 
   return (

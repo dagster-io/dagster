@@ -1,6 +1,6 @@
 import {MockedResponse} from '@apollo/client/testing';
 
-import {buildAssetNode, buildAutoMaterializePolicy} from '../../graphql/types';
+import {buildAssetNode, buildAutoMaterializePolicy, buildQuery} from '../../graphql/types';
 import {DUNDER_REPO_NAME} from '../../workspace/buildRepoAddress';
 import {ASSET_GROUP_METADATA_QUERY} from '../AssetGroupRoot';
 import {
@@ -27,15 +27,14 @@ export const assetGroupWithoutAMP: MockedResponse<
     },
   },
   result: {
-    data: {
-      __typename: 'Query',
+    data: buildQuery({
       assetNodes: [
         buildAssetNode({
           id: 'node_vanilla',
           autoMaterializePolicy: null,
         }),
       ],
-    },
+    }),
   },
 };
 
@@ -54,14 +53,13 @@ export const assetGroupWithAMP: MockedResponse<
     },
   },
   result: {
-    data: {
-      __typename: 'Query',
+    data: buildQuery({
       assetNodes: [
         buildAssetNode({
           id: 'node_with_amp',
           autoMaterializePolicy: buildAutoMaterializePolicy(),
         }),
       ],
-    },
+    }),
   },
 };

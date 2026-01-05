@@ -142,10 +142,9 @@ export const SingleAssetQueryMaterializedStaleAndLate = buildQueryMock<
         opNames: ['late_asset'],
         repository,
         partitionStats: null,
-        assetKey: {
+        assetKey: buildAssetKey({
           path: ['late_asset'],
-          __typename: 'AssetKey',
-        },
+        }),
         assetChecksOrError: buildAssetChecks(),
         assetMaterializations: [
           buildMaterializationEvent({

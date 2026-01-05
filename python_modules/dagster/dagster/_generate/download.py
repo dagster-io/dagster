@@ -30,6 +30,7 @@ AVAILABLE_EXAMPLES = [
     "assets_pandas_pyspark",
     "assets_pandas_type_metadata",
     "assets_smoke_test",
+    "data-quality-patterns",
     "deploy_docker",
     "deploy_ecs",
     "deploy_k8s",

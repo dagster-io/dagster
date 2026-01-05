@@ -10,7 +10,7 @@ import {Icon} from './Icon';
 import {Menu, MenuItem} from './Menu';
 import {MiddleTruncate} from './MiddleTruncate';
 import {Popover} from './Popover';
-import {TextInput, TextInputStyles} from './TextInput';
+import {TextInput} from './TextInput';
 import {Inner, Row, Container as VirtualContainer} from './VirtualizedTable';
 import {useViewport} from './useViewport';
 
@@ -254,7 +254,41 @@ export const TagSelectorContainer = styled.div<{$disabled?: boolean}>`
   flex-direction: row;
   align-items: center;
 
-  ${TextInputStyles}
+  /* Inline TextInputStyles */
+  background-color: ${Colors.backgroundDefault()};
+  border: none;
+  box-shadow: ${Colors.borderDefault()} inset 0px 0px 0px 1px;
+  outline: none;
+  border-radius: 8px;
+  color: ${Colors.textDefault()};
+  flex-grow: 1;
+  font-size: 14px;
+  line-height: 20px;
+  padding: 6px 6px 6px 12px;
+  margin: 0;
+  transition: box-shadow 150ms;
+
+  ::placeholder {
+    color: ${Colors.textLighter()};
+  }
+
+  :disabled {
+    box-shadow: ${Colors.keylineDefault()} inset 0px 0px 0px 1px;
+    background-color: ${Colors.backgroundLight()};
+    color: ${Colors.textDisabled()};
+  }
+
+  :disabled::placeholder {
+    color: ${Colors.textDisabled()};
+  }
+
+  :focus {
+    box-shadow:
+      ${Colors.borderDefault()} inset 0px 0px 0px 1px,
+      ${Colors.keylineDefault()} inset 2px 2px 1.5px,
+      ${Colors.focusRing()} 0 0 0 2px;
+    outline: none;
+  }
 
   min-height: 32px;
   padding: 4px 8px;
