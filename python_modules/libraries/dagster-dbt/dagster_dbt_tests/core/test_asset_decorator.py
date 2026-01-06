@@ -1,12 +1,14 @@
 import multiprocessing
 import os
 from collections.abc import Mapping, Sequence
+from datetime import timedelta
 from functools import partial
 from pathlib import Path
 from typing import Any, Optional
 
 import pytest
 from dagster import (
+    AssetDep,
     AssetKey,
     AutoMaterializePolicy,
     AutomationCondition,
@@ -14,6 +16,7 @@ from dagster import (
     DagsterInvalidDefinitionError,
     Definitions,
     DependencyDefinition,
+    FreshnessPolicy,
     Jitter,
     NodeInvocation,
     OpDefinition,
@@ -1298,3 +1301,106 @@ def test_dbt_with_duplicate_source_asset_keys(
         AssetKey(["customers"]),
         AssetKey(["orders"]),
     }
+
+
+def test_with_deps_replacements(test_jaffle_shop_manifest: dict[str, Any]) -> None:
+    """Test that get_deps can be overridden to customize dependencies."""
+    extra_dep_key = AssetKey("my_external_asset")
+
+    class CustomDagsterDbtTranslator(DagsterDbtTranslator):
+        def get_deps(
+            self,
+            manifest: Mapping[str, Any],
+            dbt_resource_props: Mapping[str, Any],
+            project,
+        ) -> Sequence[AssetDep]:
+            # Get default deps and add an extra dependency
+            deps = list(super().get_deps(manifest, dbt_resource_props, project))
+            deps.append(AssetDep(extra_dep_key))
+            return deps
+
+    @dbt_assets(
+        manifest=test_jaffle_shop_manifest,
+        dagster_dbt_translator=CustomDagsterDbtTranslator(),
+    )
+    def my_dbt_assets(): ...
+
+    # Every asset should have the extra dependency
+    for spec in my_dbt_assets.specs:
+        dep_keys = {dep.asset_key for dep in spec.deps}
+        assert extra_dep_key in dep_keys, f"Expected {extra_dep_key} in deps for {spec.key}"
+
+
+def test_with_deps_filtering(test_jaffle_shop_manifest: dict[str, Any]) -> None:
+    """Test that get_deps can be overridden to filter out dependencies."""
+
+    class CustomDagsterDbtTranslator(DagsterDbtTranslator):
+        def get_deps(
+            self,
+            manifest: Mapping[str, Any],
+            dbt_resource_props: Mapping[str, Any],
+            project,
+        ) -> Sequence[AssetDep]:
+            # Filter out all dependencies (return empty list)
+            return []
+
+    @dbt_assets(
+        manifest=test_jaffle_shop_manifest,
+        dagster_dbt_translator=CustomDagsterDbtTranslator(),
+    )
+    def my_dbt_assets(): ...
+
+    # All assets should have no dependencies
+    for spec in my_dbt_assets.specs:
+        assert len(list(spec.deps)) == 0, f"Expected no deps for {spec.key}, got {spec.deps}"
+
+
+def test_with_freshness_policy_replacements(test_jaffle_shop_manifest: dict[str, Any]) -> None:
+    """Test that get_freshness_policy can be overridden to set freshness policies."""
+    expected_freshness_policy = FreshnessPolicy.time_window(fail_window=timedelta(hours=1))
+
+    class CustomDagsterDbtTranslator(DagsterDbtTranslator):
+        def get_freshness_policy(
+            self, dbt_resource_props: Mapping[str, Any]
+        ) -> Optional[FreshnessPolicy]:
+            return expected_freshness_policy
+
+    @dbt_assets(
+        manifest=test_jaffle_shop_manifest,
+        dagster_dbt_translator=CustomDagsterDbtTranslator(),
+    )
+    def my_dbt_assets(): ...
+
+    for spec in my_dbt_assets.specs:
+        assert spec.freshness_policy == expected_freshness_policy, (
+            f"Expected freshness policy for {spec.key}"
+        )
+
+
+def test_with_freshness_policy_conditional(test_jaffle_shop_manifest: dict[str, Any]) -> None:
+    """Test that get_freshness_policy can conditionally set freshness policies."""
+    expected_freshness_policy = FreshnessPolicy.time_window(fail_window=timedelta(minutes=30))
+    target_keys = {AssetKey("customers"), AssetKey("orders")}
+
+    class CustomDagsterDbtTranslator(DagsterDbtTranslator):
+        def get_freshness_policy(
+            self, dbt_resource_props: Mapping[str, Any]
+        ) -> Optional[FreshnessPolicy]:
+            asset_key = self.get_asset_key(dbt_resource_props)
+            if asset_key in target_keys:
+                return expected_freshness_policy
+            return None
+
+    @dbt_assets(
+        manifest=test_jaffle_shop_manifest,
+        dagster_dbt_translator=CustomDagsterDbtTranslator(),
+    )
+    def my_dbt_assets(): ...
+
+    for spec in my_dbt_assets.specs:
+        if spec.key in target_keys:
+            assert spec.freshness_policy == expected_freshness_policy, (
+                f"Expected freshness policy for {spec.key}"
+            )
+        else:
+            assert spec.freshness_policy is None, f"Expected no freshness policy for {spec.key}"

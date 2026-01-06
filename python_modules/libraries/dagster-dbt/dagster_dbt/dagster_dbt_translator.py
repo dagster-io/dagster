@@ -12,6 +12,7 @@ from dagster import (
     AutoMaterializePolicy,
     AutomationCondition,
     DagsterInvalidDefinitionError,
+    FreshnessPolicy,
     PartitionMapping,
 )
 from dagster._annotations import beta, public
@@ -146,34 +147,6 @@ class DagsterDbtTranslator:
         group_props = {group["name"]: group for group in manifest.get("groups", {}).values()}
         resource_props = self.get_resource_props(manifest, unique_id)
 
-        # calculate the dependencies for the asset
-        upstream_ids = get_upstream_unique_ids(manifest, resource_props)
-        deps: list[AssetDep] = []
-        for upstream_id in upstream_ids:
-            spec = self.get_asset_spec(manifest, upstream_id, project)
-            partition_mapping = self.get_partition_mapping(
-                resource_props, self.get_resource_props(manifest, upstream_id)
-            )
-
-            deps.append(
-                AssetDep(
-                    asset=spec.key,
-                    partition_mapping=partition_mapping,
-                    metadata=spec.metadata
-                    if self.settings.enable_source_metadata and upstream_id.startswith("source")
-                    else None,
-                )
-            )
-
-        self_partition_mapping = self.get_partition_mapping(resource_props, resource_props)
-        if self_partition_mapping and has_self_dependency(resource_props):
-            deps.append(
-                AssetDep(
-                    asset=self.get_asset_key(resource_props),
-                    partition_mapping=self_partition_mapping,
-                )
-            )
-
         resource_group_props = group_props.get(resource_props.get("group") or "")
         if resource_group_props:
             owners_resource_props = {
@@ -188,12 +161,13 @@ class DagsterDbtTranslator:
 
         spec = AssetSpec(
             key=self.get_asset_key(resource_props),
-            deps=deps,
+            deps=self.get_deps(manifest, resource_props, project),
             description=self.get_description(resource_props),
             metadata=self.get_metadata(resource_props),
             skippable=True,
             group_name=self.get_group_name(resource_props),
             code_version=self.get_code_version(resource_props),
+            freshness_policy=self.get_freshness_policy(resource_props),
             automation_condition=self.get_automation_condition(resource_props),
             owners=self.get_owners(owners_resource_props),
             tags=self.get_tags(resource_props),
@@ -328,6 +302,165 @@ class DagsterDbtTranslator:
                 default partition mapping will be used.
         """
         return None
+
+    @public
+    def get_freshness_policy(
+        self, dbt_resource_props: Mapping[str, Any]
+    ) -> Optional[FreshnessPolicy]:
+        """A function that takes a dictionary representing properties of a dbt resource, and
+        returns the Dagster FreshnessPolicy for that resource.
+
+        Note that a dbt resource is unrelated to Dagster's resource concept, and simply represents
+        a model, seed, snapshot or source in a given dbt project. You can learn more about dbt
+        resources and the properties available in this dictionary here:
+        https://docs.getdbt.com/reference/artifacts/manifest-json#resource-details
+
+        This method can be overridden to provide a custom freshness policy for a dbt resource.
+
+        Args:
+            dbt_resource_props (Mapping[str, Any]): A dictionary representing the dbt resource.
+
+        Returns:
+            Optional[FreshnessPolicy]: A Dagster freshness policy.
+
+        Examples:
+            Set a custom freshness policy for all dbt resources:
+
+            .. code-block:: python
+
+                from datetime import timedelta
+                from typing import Any, Mapping, Optional
+
+                from dagster import FreshnessPolicy
+                from dagster_dbt import DagsterDbtTranslator
+
+
+                class CustomDagsterDbtTranslator(DagsterDbtTranslator):
+                    def get_freshness_policy(
+                        self, dbt_resource_props: Mapping[str, Any]
+                    ) -> Optional[FreshnessPolicy]:
+                        return FreshnessPolicy.time_window(fail_window=timedelta(hours=1))
+
+            Set a custom freshness policy for dbt resources with a specific tag:
+
+            .. code-block:: python
+
+                from datetime import timedelta
+                from typing import Any, Mapping, Optional
+
+                from dagster import FreshnessPolicy
+                from dagster_dbt import DagsterDbtTranslator
+
+
+                class CustomDagsterDbtTranslator(DagsterDbtTranslator):
+                    def get_freshness_policy(
+                        self, dbt_resource_props: Mapping[str, Any]
+                    ) -> Optional[FreshnessPolicy]:
+                        if "critical" in dbt_resource_props.get("tags", []):
+                            return FreshnessPolicy.time_window(fail_window=timedelta(minutes=30))
+                        return None
+        """
+        return None
+
+    @public
+    def get_deps(
+        self,
+        manifest: Mapping[str, Any],
+        dbt_resource_props: Mapping[str, Any],
+        project: Optional["DbtProject"],
+    ) -> Sequence[AssetDep]:
+        """A function that takes a manifest, a dictionary representing properties of a dbt resource,
+        and an optional DbtProject, and returns a sequence of AssetDep objects representing the
+        dependencies for that resource.
+
+        Note that a dbt resource is unrelated to Dagster's resource concept, and simply represents
+        a model, seed, snapshot or source in a given dbt project. You can learn more about dbt
+        resources and the properties available in this dictionary here:
+        https://docs.getdbt.com/reference/artifacts/manifest-json#resource-details
+
+        This method can be overridden to provide custom dependencies for a dbt resource.
+
+        Args:
+            manifest (Mapping[str, Any]): The parsed manifest of the dbt project.
+            dbt_resource_props (Mapping[str, Any]): A dictionary representing the dbt resource.
+            project (Optional[DbtProject]): The DbtProject, if available.
+
+        Returns:
+            Sequence[AssetDep]: A sequence of AssetDep objects representing the dependencies.
+
+        Examples:
+            Adding an additional external dependency to all dbt models:
+
+            .. code-block:: python
+
+                from typing import Any, Mapping, Sequence
+
+                from dagster import AssetDep, AssetKey
+                from dagster_dbt import DagsterDbtTranslator
+
+
+                class CustomDagsterDbtTranslator(DagsterDbtTranslator):
+                    def get_deps(
+                        self,
+                        manifest: Mapping[str, Any],
+                        dbt_resource_props: Mapping[str, Any],
+                        project,
+                    ) -> Sequence[AssetDep]:
+                        deps = list(super().get_deps(manifest, dbt_resource_props, project))
+                        deps.append(AssetDep(AssetKey("my_external_asset")))
+                        return deps
+
+            Filtering out certain upstream dependencies:
+
+            .. code-block:: python
+
+                from typing import Any, Mapping, Sequence
+
+                from dagster import AssetDep, AssetKey
+                from dagster_dbt import DagsterDbtTranslator
+
+
+                class CustomDagsterDbtTranslator(DagsterDbtTranslator):
+                    def get_deps(
+                        self,
+                        manifest: Mapping[str, Any],
+                        dbt_resource_props: Mapping[str, Any],
+                        project,
+                    ) -> Sequence[AssetDep]:
+                        deps = super().get_deps(manifest, dbt_resource_props, project)
+                        # Filter out dependencies on source assets
+                        return [dep for dep in deps if "source" not in dep.asset_key.path]
+        """
+        # Calculate the dependencies for the asset
+        upstream_ids = get_upstream_unique_ids(manifest, dbt_resource_props)
+        deps: list[AssetDep] = []
+        for upstream_id in upstream_ids:
+            upstream_spec = self.get_asset_spec(manifest, upstream_id, project)
+            partition_mapping = self.get_partition_mapping(
+                dbt_resource_props, self.get_resource_props(manifest, upstream_id)
+            )
+
+            deps.append(
+                AssetDep(
+                    asset=upstream_spec.key,
+                    partition_mapping=partition_mapping,
+                    metadata=upstream_spec.metadata
+                    if self.settings.enable_source_metadata and upstream_id.startswith("source")
+                    else None,
+                )
+            )
+
+        # Handle self-dependencies
+        self_partition_mapping = self.get_partition_mapping(dbt_resource_props, dbt_resource_props)
+        if self_partition_mapping and has_self_dependency(dbt_resource_props):
+            deps.append(
+                AssetDep(
+                    asset=self.get_asset_key(dbt_resource_props),
+                    partition_mapping=self_partition_mapping,
+                )
+            )
+
+        return deps
 
     @public
     def get_description(self, dbt_resource_props: Mapping[str, Any]) -> str:
