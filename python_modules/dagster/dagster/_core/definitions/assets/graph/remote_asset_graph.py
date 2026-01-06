@@ -63,6 +63,16 @@ class RemoteAssetCheckNode:
     ]
     execution_set_entity_keys: AbstractSet[EntityKey]
 
+    def resolve_to_repo_scoped_node(
+        self, repository_selector: "RepositorySelector"
+    ) -> Optional["RemoteAssetCheckNode"]:
+        # in the future, we may wish to handle cases where multiple repositories
+        # have references to the same check
+        if self.handle.get_remote_origin().get_selector() == repository_selector:
+            return self
+        else:
+            return None
+
 
 class RemoteAssetNode(BaseAssetNode, ABC):
     @abstractmethod
@@ -744,12 +754,9 @@ class RemoteWorkspaceAssetGraph(RemoteAssetGraph[RemoteWorkspaceAssetNode]):
     def get_repo_scoped_node(
         self, key: EntityKey, repository_selector: "RepositorySelector"
     ) -> Optional[Union[RemoteRepositoryAssetNode, RemoteAssetCheckNode]]:
-        if isinstance(key, AssetKey):
-            if not self.has(key):
-                return None
-            return self.get(key).resolve_to_repo_scoped_node(repository_selector)
-        else:
-            raise Exception("Key must be an asset key for get_repo_scoped_node")
+        if not self.has(key):
+            return None
+        return self.get(key).resolve_to_repo_scoped_node(repository_selector)  # type: ignore
 
     def split_entity_keys_by_repository(
         self, keys: AbstractSet[EntityKey]

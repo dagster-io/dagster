@@ -41,6 +41,9 @@ from dagster._utils.tags import get_boolean_tag_value
 
 if TYPE_CHECKING:
     from dagster._core.definitions.assets.graph.base_asset_graph import EntityKey
+    from dagster._core.definitions.partitions.definition.partitions_definition import (
+        PartitionsDefinition,
+    )
     from dagster._core.definitions.schedule_definition import ScheduleDefinition
     from dagster._core.definitions.sensor_definition import SensorDefinition
     from dagster._core.remote_representation.external import RemoteSchedule, RemoteSensor
@@ -371,6 +374,75 @@ class DagsterRun(
 
     def get_parent_run_id(self) -> Optional[str]:
         return self.tags.get(PARENT_RUN_ID_TAG)
+
+    @property
+    def is_partitioned(self) -> bool:
+        from dagster._core.storage.tags import (
+            ASSET_PARTITION_RANGE_END_TAG,
+            ASSET_PARTITION_RANGE_START_TAG,
+            PARTITION_NAME_TAG,
+        )
+
+        has_partition_tags = any(
+            self.tags.get(tag) is not None
+            for tag in [
+                PARTITION_NAME_TAG,
+                ASSET_PARTITION_RANGE_START_TAG,
+                ASSET_PARTITION_RANGE_END_TAG,
+            ]
+        )
+        return has_partition_tags or self.partitions_subset is not None
+
+    def get_resolved_partitions_subset(
+        self, partitions_def: Optional["PartitionsDefinition"]
+    ) -> Optional[PartitionsSubset]:
+        """Get the partitions subset targeted by a run based on its partition tags."""
+        from dagster._core.definitions.partitions.definition import DynamicPartitionsDefinition
+        from dagster._core.definitions.partitions.partition_key_range import PartitionKeyRange
+        from dagster._core.errors import DagsterInvariantViolationError
+        from dagster._core.storage.tags import (
+            ASSET_PARTITION_RANGE_END_TAG,
+            ASSET_PARTITION_RANGE_START_TAG,
+            PARTITION_NAME_TAG,
+        )
+
+        # some runs store this information directly
+        if self.partitions_subset is not None:
+            return self.partitions_subset
+
+        # otherwise, fetch information from the tags
+        partition_tag = self.tags.get(PARTITION_NAME_TAG)
+        partition_range_start = self.tags.get(ASSET_PARTITION_RANGE_START_TAG)
+        partition_range_end = self.tags.get(ASSET_PARTITION_RANGE_END_TAG)
+
+        if partition_range_start or partition_range_end:
+            if not partition_range_start or not partition_range_end:
+                raise DagsterInvariantViolationError(
+                    f"Cannot have {ASSET_PARTITION_RANGE_START_TAG} or"
+                    f" {ASSET_PARTITION_RANGE_END_TAG} set without the other"
+                )
+
+            if (
+                isinstance(partitions_def, DynamicPartitionsDefinition)
+                and partitions_def.name is None
+            ):
+                raise DagsterInvariantViolationError(
+                    "Creating a run targeting a partition range is not supported for assets "
+                    "partitioned with function-based dynamic partitions"
+                )
+
+            if partitions_def is not None:
+                return partitions_def.subset_with_partition_keys(
+                    partitions_def.get_partition_keys_in_range(
+                        PartitionKeyRange(partition_range_start, partition_range_end),
+                    )
+                ).to_serializable_subset()
+        elif partition_tag and partitions_def is not None:
+            return partitions_def.subset_with_partition_keys(
+                [partition_tag]
+            ).to_serializable_subset()
+
+        return None
 
     @cached_property
     def dagster_execution_info(self) -> Mapping[str, str]:

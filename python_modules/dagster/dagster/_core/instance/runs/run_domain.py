@@ -2,7 +2,7 @@ import logging
 import os
 import warnings
 from collections.abc import Mapping, Sequence, Set
-from typing import TYPE_CHECKING, Any, Optional, cast
+from typing import TYPE_CHECKING, Any, Optional, cast, overload
 
 import dagster._check as check
 from dagster._core.definitions.asset_checks.asset_check_evaluation import (
@@ -50,10 +50,13 @@ from dagster._utils.warnings import disable_dagster_warnings
 if TYPE_CHECKING:
     from dagster._core.definitions.asset_checks.asset_check_spec import AssetCheckKey
     from dagster._core.definitions.assets.graph.base_asset_graph import (
+        AssetCheckNode,
         BaseAssetGraph,
         BaseAssetNode,
+        BaseEntityNode,
     )
     from dagster._core.definitions.job_definition import JobDefinition
+    from dagster._core.definitions.partitions.definition import PartitionsDefinition
     from dagster._core.definitions.repository_definition.repository_definition import (
         RepositoryLoadData,
     )
@@ -66,10 +69,7 @@ if TYPE_CHECKING:
     from dagster._core.remote_representation.code_location import CodeLocation
     from dagster._core.remote_representation.external import RemoteJob
     from dagster._core.snap import ExecutionPlanSnapshot, JobSnap
-    from dagster._core.snap.execution_plan_snapshot import (
-        ExecutionStepOutputSnap,
-        ExecutionStepSnap,
-    )
+    from dagster._core.snap.execution_plan_snapshot import ExecutionStepSnap
     from dagster._core.workspace.context import BaseWorkspaceRequestContext
 
 
@@ -315,8 +315,8 @@ class RunDomain:
                     adjusted_output = output
 
                     if asset_key:
-                        asset_node = self._get_repo_scoped_asset_node(
-                            asset_graph, asset_key, remote_job_origin
+                        asset_node = self._get_repo_scoped_entity_node(
+                            asset_key, asset_graph, remote_job_origin
                         )
                         if asset_node:
                             partitions_definition = asset_node.partitions_def
@@ -767,12 +767,28 @@ class RunDomain:
             {key for key in to_reexecute if isinstance(key, AssetCheckKey)},
         )
 
-    def _get_repo_scoped_asset_node(
+    @overload
+    def _get_repo_scoped_entity_node(
         self,
+        key: AssetKey,
         asset_graph: "BaseAssetGraph",
-        asset_key: AssetKey,
         remote_job_origin: Optional["RemoteJobOrigin"] = None,
-    ) -> Optional["BaseAssetNode"]:
+    ) -> Optional["BaseAssetNode"]: ...
+
+    @overload
+    def _get_repo_scoped_entity_node(
+        self,
+        key: "AssetCheckKey",
+        asset_graph: "BaseAssetGraph",
+        remote_job_origin: Optional["RemoteJobOrigin"] = None,
+    ) -> Optional["AssetCheckNode"]: ...
+
+    def _get_repo_scoped_entity_node(
+        self,
+        key: "EntityKey",
+        asset_graph: "BaseAssetGraph",
+        remote_job_origin: Optional["RemoteJobOrigin"] = None,
+    ) -> Optional["BaseEntityNode"]:
         from dagster._core.definitions.assets.graph.remote_asset_graph import (
             RemoteWorkspaceAssetGraph,
         )
@@ -783,16 +799,29 @@ class RunDomain:
         # in all cases, return the BaseAssetNode for the supplied asset key if it exists.
         if isinstance(asset_graph, RemoteWorkspaceAssetGraph):
             return cast(
-                "Optional[BaseAssetNode]",
+                "Optional[BaseEntityNode]",
                 asset_graph.get_repo_scoped_node(
-                    asset_key, check.not_none(remote_job_origin).repository_origin.get_selector()
+                    key, check.not_none(remote_job_origin).repository_origin.get_selector()
                 ),
             )
 
-        if not asset_graph.has(asset_key):
+        if not asset_graph.has(key):
             return None
 
-        return asset_graph.get(asset_key)
+        return asset_graph.get(key)
+
+    def _get_partitions_def(
+        self,
+        key: "EntityKey",
+        asset_graph: "BaseAssetGraph",
+        remote_job_origin: Optional["RemoteJobOrigin"],
+        run: "DagsterRun",
+    ) -> Optional["PartitionsDefinition"]:
+        # don't fetch the partitions def if the run is not partitioned
+        if not run.is_partitioned:
+            return None
+        asset_node = self._get_repo_scoped_entity_node(key, asset_graph, remote_job_origin)
+        return asset_node.partitions_def if asset_node else None
 
     def _log_asset_planned_events(
         self,
@@ -819,7 +848,7 @@ class RunDomain:
                     if asset_key:
                         events.extend(
                             self.get_materialization_planned_events_for_asset(
-                                dagster_run, asset_key, job_name, step, output, asset_graph
+                                dagster_run, asset_key, job_name, step, asset_graph
                             )
                         )
 
@@ -829,6 +858,13 @@ class RunDomain:
                         )
                         target_asset_key = asset_check_key.asset_key
                         check_name = asset_check_key.name
+
+                        partitions_def = self._get_partitions_def(
+                            asset_check_key, asset_graph, dagster_run.remote_job_origin, dagster_run
+                        )
+                        partitions_subset = dagster_run.get_resolved_partitions_subset(
+                            partitions_def
+                        )
 
                         event = DagsterEvent(
                             event_type_value=DagsterEventType.ASSET_CHECK_EVALUATION_PLANNED.value,
@@ -840,6 +876,7 @@ class RunDomain:
                             event_specific_data=AssetCheckEvaluationPlanned(
                                 asset_key=target_asset_key,
                                 check_name=check_name,
+                                partitions_subset=partitions_subset,
                             ),
                             step_key=step.key,
                         )
@@ -878,102 +915,52 @@ class RunDomain:
         asset_key: AssetKey,
         job_name: str,
         step: "ExecutionStepSnap",
-        output: "ExecutionStepOutputSnap",
         asset_graph: "BaseAssetGraph[BaseAssetNode]",
     ) -> Sequence["DagsterEvent"]:
         """Moved from DagsterInstance._log_materialization_planned_event_for_asset."""
         from dagster._core.definitions.partitions.context import partition_loading_context
-        from dagster._core.definitions.partitions.definition import DynamicPartitionsDefinition
         from dagster._core.events import AssetMaterializationPlannedData, DagsterEvent
 
         events = []
 
-        partition_tag = dagster_run.tags.get(PARTITION_NAME_TAG)
-        partition_range_start, partition_range_end = (
-            dagster_run.tags.get(ASSET_PARTITION_RANGE_START_TAG),
-            dagster_run.tags.get(ASSET_PARTITION_RANGE_END_TAG),
+        partitions_def = self._get_partitions_def(
+            asset_key, asset_graph, dagster_run.remote_job_origin, dagster_run
         )
+        partitions_subset = dagster_run.get_resolved_partitions_subset(partitions_def)
 
-        if partition_tag and (partition_range_start or partition_range_end):
-            raise DagsterInvariantViolationError(
-                f"Cannot have {ASSET_PARTITION_RANGE_START_TAG} or"
-                f" {ASSET_PARTITION_RANGE_END_TAG} set along with"
-                f" {PARTITION_NAME_TAG}"
-            )
-
-        partitions_subset = None
-        individual_partitions = None
-        if partition_range_start or partition_range_end:
-            if not partition_range_start or not partition_range_end:
-                raise DagsterInvariantViolationError(
-                    f"Cannot have {ASSET_PARTITION_RANGE_START_TAG} or"
-                    f" {ASSET_PARTITION_RANGE_END_TAG} set without the other"
-                )
-
-            asset_node = check.not_none(
-                self._get_repo_scoped_asset_node(
-                    asset_graph, asset_key, dagster_run.remote_job_origin
-                )
-            )
-
-            partitions_def = asset_node.partitions_def
-            if (
-                isinstance(partitions_def, DynamicPartitionsDefinition)
-                and partitions_def.name is None
-            ):
-                raise DagsterInvariantViolationError(
-                    "Creating a run targeting a partition range is not supported for assets partitioned with function-based dynamic partitions"
-                )
-
-            if partitions_def is not None:
-                with partition_loading_context(dynamic_partitions_store=self._instance):
-                    if self._instance.event_log_storage.supports_partition_subset_in_asset_materialization_planned_events:
-                        partitions_subset = partitions_def.subset_with_partition_keys(
-                            partitions_def.get_partition_keys_in_range(
-                                PartitionKeyRange(partition_range_start, partition_range_end),
-                            )
-                        ).to_serializable_subset()
-                        individual_partitions = []
-                    else:
-                        individual_partitions = partitions_def.get_partition_keys_in_range(
-                            PartitionKeyRange(partition_range_start, partition_range_end),
-                        )
-        elif check.not_none(output.properties).is_asset_partitioned and partition_tag:
-            individual_partitions = [partition_tag]
-
-        assert not (individual_partitions and partitions_subset), (
-            "Should set either individual_partitions or partitions_subset, but not both"
-        )
-
-        if not individual_partitions and not partitions_subset:
-            materialization_planned = DagsterEvent.build_asset_materialization_planned_event(
-                job_name,
-                step.key,
-                AssetMaterializationPlannedData(asset_key, partition=None, partitions_subset=None),
-            )
-            events.append(materialization_planned)
-        elif individual_partitions:
-            for individual_partition in individual_partitions:
+        with partition_loading_context(dynamic_partitions_store=self._instance):
+            if partitions_subset is None:
                 materialization_planned = DagsterEvent.build_asset_materialization_planned_event(
                     job_name,
                     step.key,
                     AssetMaterializationPlannedData(
-                        asset_key,
-                        partition=individual_partition,
-                        partitions_subset=partitions_subset,
+                        asset_key, partition=None, partitions_subset=None
                     ),
                 )
                 events.append(materialization_planned)
-
-        else:
-            materialization_planned = DagsterEvent.build_asset_materialization_planned_event(
-                job_name,
-                step.key,
-                AssetMaterializationPlannedData(
-                    asset_key, partition=None, partitions_subset=partitions_subset
-                ),
-            )
-            events.append(materialization_planned)
+            elif self._instance.event_log_storage.supports_partition_subset_in_asset_materialization_planned_events:
+                materialization_planned = DagsterEvent.build_asset_materialization_planned_event(
+                    job_name,
+                    step.key,
+                    AssetMaterializationPlannedData(
+                        asset_key, partition=None, partitions_subset=partitions_subset
+                    ),
+                )
+                events.append(materialization_planned)
+            else:
+                for partition_key in partitions_subset.get_partition_keys():
+                    materialization_planned = (
+                        DagsterEvent.build_asset_materialization_planned_event(
+                            job_name,
+                            step.key,
+                            AssetMaterializationPlannedData(
+                                asset_key,
+                                partition=partition_key,
+                                partitions_subset=None,
+                            ),
+                        )
+                    )
+                    events.append(materialization_planned)
 
         return events
 

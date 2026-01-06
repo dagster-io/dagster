@@ -6991,3 +6991,328 @@ class TestEventLogStorage:
         assert storage.get_paginated_dynamic_partitions(
             partitions_def_name="foo", limit=1, ascending=True
         ).results == ["baz"]
+
+    def test_asset_check_partitioned_planned_and_evaluation(
+        self,
+        storage: EventLogStorage,
+    ):
+        """Test that a planned event with multiple partitions creates isolated execution records,
+        and evaluations update the correct partition independently.
+        """
+        run_id = make_new_run_id()
+        asset_key = dg.AssetKey(["my_partitioned_asset"])
+        check_key = dg.AssetCheckKey(asset_key, "my_partitioned_check")
+
+        partitions_def = dg.StaticPartitionsDefinition(["a", "b", "c"])
+        partitions_subset = partitions_def.subset_with_partition_keys(["a", "b", "c"])
+
+        # Store planned event with partitions_subset containing all 3 partitions
+        storage.store_event(
+            _create_check_planned_event(run_id, check_key, partitions_subset=partitions_subset)
+        )
+
+        # Query each partition individually - verify each returns 1 PLANNED record
+        for partition_key in ["a", "b", "c"]:
+            checks = storage.get_asset_check_execution_history(
+                check_key, limit=10, partition=partition_key
+            )
+            assert len(checks) == 1, f"Expected 1 record for partition {partition_key}"
+            assert checks[0].status == AssetCheckExecutionRecordStatus.PLANNED
+            assert checks[0].run_id == run_id
+            assert checks[0].partition == partition_key
+
+        # Verify partition=None returns empty (no unpartitioned checks)
+        checks_unpartitioned = storage.get_asset_check_execution_history(
+            check_key, limit=10, partition=None
+        )
+        assert len(checks_unpartitioned) == 0
+
+        # Store evaluation for partition "a" with passed=True
+        storage.store_event(
+            _create_check_evaluation_event(run_id, check_key, passed=True, partition="a")
+        )
+
+        # Verify partition "a" is SUCCEEDED, partitions "b" and "c" are still PLANNED
+        checks_a = storage.get_asset_check_execution_history(check_key, limit=10, partition="a")
+        assert len(checks_a) == 1
+        assert checks_a[0].status == AssetCheckExecutionRecordStatus.SUCCEEDED
+
+        checks_b = storage.get_asset_check_execution_history(check_key, limit=10, partition="b")
+        assert len(checks_b) == 1
+        assert checks_b[0].status == AssetCheckExecutionRecordStatus.PLANNED
+
+        checks_c = storage.get_asset_check_execution_history(check_key, limit=10, partition="c")
+        assert len(checks_c) == 1
+        assert checks_c[0].status == AssetCheckExecutionRecordStatus.PLANNED
+
+        # Store evaluation for partition "b" with passed=False
+        storage.store_event(
+            _create_check_evaluation_event(run_id, check_key, passed=False, partition="b")
+        )
+
+        # Verify partition "b" is FAILED, partition "c" is still PLANNED, partition "a" unchanged
+        checks_a = storage.get_asset_check_execution_history(check_key, limit=10, partition="a")
+        assert len(checks_a) == 1
+        assert checks_a[0].status == AssetCheckExecutionRecordStatus.SUCCEEDED
+
+        checks_b = storage.get_asset_check_execution_history(check_key, limit=10, partition="b")
+        assert len(checks_b) == 1
+        assert checks_b[0].status == AssetCheckExecutionRecordStatus.FAILED
+
+        checks_c = storage.get_asset_check_execution_history(check_key, limit=10, partition="c")
+        assert len(checks_c) == 1
+        assert checks_c[0].status == AssetCheckExecutionRecordStatus.PLANNED
+
+        # Test get_latest_asset_check_execution_by_key with partition parameter
+        # partition=... (default) returns latest overall (most recent by id)
+        latest_overall = storage.get_latest_asset_check_execution_by_key([check_key])
+        assert check_key in latest_overall
+
+        # partition=None returns empty (no unpartitioned checks exist)
+        latest_unpartitioned = storage.get_latest_asset_check_execution_by_key(
+            [check_key], partition=None
+        )
+        assert check_key not in latest_unpartitioned
+
+        # partition="a" returns latest for partition "a"
+        latest_a = storage.get_latest_asset_check_execution_by_key([check_key], partition="a")
+        assert check_key in latest_a
+        assert latest_a[check_key].partition == "a"
+        assert latest_a[check_key].status == AssetCheckExecutionRecordStatus.SUCCEEDED
+
+        # partition="b" returns latest for partition "b"
+        latest_b = storage.get_latest_asset_check_execution_by_key([check_key], partition="b")
+        assert check_key in latest_b
+        assert latest_b[check_key].partition == "b"
+        assert latest_b[check_key].status == AssetCheckExecutionRecordStatus.FAILED
+
+        # partition="c" returns latest for partition "c" (still PLANNED)
+        latest_c = storage.get_latest_asset_check_execution_by_key([check_key], partition="c")
+        assert check_key in latest_c
+        assert latest_c[check_key].partition == "c"
+        assert latest_c[check_key].status == AssetCheckExecutionRecordStatus.PLANNED
+
+    def test_asset_check_partitioned_multiple_runs_same_partition(
+        self,
+        storage: EventLogStorage,
+    ):
+        """Test that multiple check executions on the same partition are tracked correctly
+        in history, with correct run_id association and ordering.
+        """
+        run_id_1 = make_new_run_id()
+        run_id_2 = make_new_run_id()
+        asset_key = dg.AssetKey(["my_partitioned_asset_multi"])
+        check_key = dg.AssetCheckKey(asset_key, "my_partitioned_check_multi")
+
+        partitions_def = dg.StaticPartitionsDefinition(["a"])
+        partitions_subset = partitions_def.subset_with_partition_keys(["a"])
+
+        # Run 1: Store planned + evaluation for partition "a" with passed=True
+        storage.store_event(
+            _create_check_planned_event(run_id_1, check_key, partitions_subset=partitions_subset)
+        )
+        storage.store_event(
+            _create_check_evaluation_event(run_id_1, check_key, passed=True, partition="a")
+        )
+
+        # Run 2: Store planned + evaluation for partition "a" with passed=False
+        storage.store_event(
+            _create_check_planned_event(run_id_2, check_key, partitions_subset=partitions_subset)
+        )
+        storage.store_event(
+            _create_check_evaluation_event(run_id_2, check_key, passed=False, partition="a")
+        )
+
+        # Verify get_asset_check_execution_history returns 2 records for partition "a"
+        checks = storage.get_asset_check_execution_history(check_key, limit=10, partition="a")
+        assert len(checks) == 2
+
+        # Verify ordering is reverse chronological (Run 2 first)
+        assert checks[0].run_id == run_id_2
+        assert checks[0].status == AssetCheckExecutionRecordStatus.FAILED
+        assert checks[1].run_id == run_id_1
+        assert checks[1].status == AssetCheckExecutionRecordStatus.SUCCEEDED
+
+        # Verify each record has correct partition
+        assert checks[0].partition == "a"
+        assert checks[1].partition == "a"
+
+        # Test get_latest_asset_check_execution_by_key returns the most recent for partition "a"
+        latest_a = storage.get_latest_asset_check_execution_by_key([check_key], partition="a")
+        assert check_key in latest_a
+        assert latest_a[check_key].run_id == run_id_2
+        assert latest_a[check_key].status == AssetCheckExecutionRecordStatus.FAILED
+        assert latest_a[check_key].partition == "a"
+
+        # partition=... (default) should also return run_id_2 as it's the latest overall
+        latest_overall = storage.get_latest_asset_check_execution_by_key([check_key])
+        assert check_key in latest_overall
+        assert latest_overall[check_key].run_id == run_id_2
+
+    def test_asset_check_partitioned_with_target_materialization(
+        self,
+        storage: EventLogStorage,
+        test_run_id: str,
+    ):
+        """Test that target_materialization_data is correctly stored and can be used
+        to detect stale checks when new materializations occur.
+        """
+        run_id_1 = test_run_id
+        run_id_2 = make_new_run_id()
+        asset_key = dg.AssetKey(["my_partitioned_asset_mat"])
+        check_key = dg.AssetCheckKey(asset_key, "my_partitioned_check_mat")
+
+        partitions_def = dg.StaticPartitionsDefinition(["a"])
+        partitions_subset = partitions_def.subset_with_partition_keys(["a"])
+
+        # Store materialization M1 for partition "a"
+        storage.store_event(_create_materialization_event(run_id_1, asset_key, partition="a"))
+
+        # Get M1's storage_id
+        mat_records = storage.get_event_records(
+            dg.EventRecordsFilter(
+                event_type=DagsterEventType.ASSET_MATERIALIZATION,
+                asset_key=asset_key,
+            ),
+            limit=1,
+            ascending=False,
+        )
+        assert len(mat_records) == 1
+        m1_storage_id = mat_records[0].storage_id
+        m1_timestamp = mat_records[0].timestamp
+
+        # Store planned event for partition "a"
+        storage.store_event(
+            _create_check_planned_event(run_id_1, check_key, partitions_subset=partitions_subset)
+        )
+
+        # Store evaluation for partition "a" with target_materialization_data pointing to M1
+        storage.store_event(
+            _create_check_evaluation_event(
+                run_id_1,
+                check_key,
+                passed=True,
+                partition="a",
+                target_materialization_data=AssetCheckEvaluationTargetMaterializationData(
+                    storage_id=m1_storage_id,
+                    run_id=run_id_1,
+                    timestamp=m1_timestamp,
+                ),
+            )
+        )
+
+        # Verify check record has target_materialization_data.storage_id == M1.storage_id
+        checks = storage.get_asset_check_execution_history(check_key, limit=10, partition="a")
+        assert len(checks) == 1
+        assert checks[0].event
+        assert checks[0].event.dagster_event
+        check_data = checks[0].event.dagster_event.asset_check_evaluation_data
+        assert check_data.target_materialization_data
+        assert check_data.target_materialization_data.storage_id == m1_storage_id
+
+        # Store materialization M2 for partition "a"
+        storage.store_event(_create_materialization_event(run_id_2, asset_key, partition="a"))
+
+        # Get M2's storage_id
+        mat_records = storage.get_event_records(
+            dg.EventRecordsFilter(
+                event_type=DagsterEventType.ASSET_MATERIALIZATION,
+                asset_key=asset_key,
+            ),
+            limit=1,
+            ascending=False,
+        )
+        assert len(mat_records) == 1
+        m2_storage_id = mat_records[0].storage_id
+        assert m2_storage_id != m1_storage_id, "M2 should have different storage_id than M1"
+
+        # Verify check's target_materialization_data.storage_id still equals M1 (not M2)
+        # This means the check now targets an older materialization
+        checks = storage.get_asset_check_execution_history(check_key, limit=10, partition="a")
+        assert len(checks) == 1
+        assert checks[0].event
+        assert checks[0].event.dagster_event
+        check_data = checks[0].event.dagster_event.asset_check_evaluation_data
+        assert check_data.target_materialization_data
+        assert check_data.target_materialization_data.storage_id == m1_storage_id
+        assert check_data.target_materialization_data.storage_id != m2_storage_id
+
+
+def _create_check_planned_event(
+    run_id: str,
+    check_key: dg.AssetCheckKey,
+    partitions_subset: Optional["dg.PartitionsSubset"] = None,
+) -> dg.EventLogEntry:
+    """Helper to create an ASSET_CHECK_EVALUATION_PLANNED event."""
+    return dg.EventLogEntry(
+        error_info=None,
+        user_message="",
+        level="debug",
+        run_id=run_id,
+        timestamp=time.time(),
+        dagster_event=dg.DagsterEvent(
+            DagsterEventType.ASSET_CHECK_EVALUATION_PLANNED.value,
+            "nonce",
+            event_specific_data=AssetCheckEvaluationPlanned(
+                asset_key=check_key.asset_key,
+                check_name=check_key.name,
+                partitions_subset=partitions_subset,
+            ),
+        ),
+    )
+
+
+def _create_check_evaluation_event(
+    run_id: str,
+    check_key: dg.AssetCheckKey,
+    passed: bool,
+    partition: Optional[str] = None,
+    target_materialization_data: Optional[AssetCheckEvaluationTargetMaterializationData] = None,
+) -> dg.EventLogEntry:
+    """Helper to create an ASSET_CHECK_EVALUATION event."""
+    return dg.EventLogEntry(
+        error_info=None,
+        user_message="",
+        level="debug",
+        run_id=run_id,
+        timestamp=time.time(),
+        dagster_event=dg.DagsterEvent(
+            DagsterEventType.ASSET_CHECK_EVALUATION.value,
+            "nonce",
+            event_specific_data=dg.AssetCheckEvaluation(
+                asset_key=check_key.asset_key,
+                check_name=check_key.name,
+                passed=passed,
+                metadata={},
+                target_materialization_data=target_materialization_data,
+                severity=AssetCheckSeverity.ERROR,
+                partition=partition,
+            ),
+        ),
+    )
+
+
+def _create_materialization_event(
+    run_id: str,
+    asset_key: dg.AssetKey,
+    partition: Optional[str] = None,
+) -> dg.EventLogEntry:
+    """Helper to create an ASSET_MATERIALIZATION event."""
+    return dg.EventLogEntry(
+        error_info=None,
+        user_message="",
+        level="debug",
+        run_id=run_id,
+        timestamp=time.time(),
+        dagster_event=dg.DagsterEvent(
+            DagsterEventType.ASSET_MATERIALIZATION.value,
+            "nonce",
+            event_specific_data=StepMaterializationData(
+                materialization=dg.AssetMaterialization(
+                    asset_key=asset_key,
+                    partition=partition,
+                ),
+                asset_lineage=[],
+            ),
+        ),
+    )
