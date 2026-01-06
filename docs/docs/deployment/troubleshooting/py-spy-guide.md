@@ -14,13 +14,13 @@ For slow code, `py-spy record` can produce a file that gives you a flame graph o
 
 `py-spy` usually requires elevated permissions in order to run.
 
+:::
+
 For example, to run `py-spy` locally to understand why definitions are taking a long time to import:
 
 ```
 sudo py-spy record -f speedscope --idle -- dagster definitions validate
 ```
-
-:::
 
 ## Generating a `py-spy` dump for a hanging run in Kubernetes
 
@@ -32,14 +32,14 @@ sudo py-spy record -f speedscope --idle -- dagster definitions validate
 
         ```
         runLauncher:
-        type: K8sRunLauncher
-        config:
+          type: K8sRunLauncher
+          config:
             k8sRunLauncher:
-            runK8sConfig:
+              runK8sConfig:
                 containerConfig:
-                securityContext:
+                  securityContext:
                     capabilities:
-                    add:
+                      add:
                         - SYS_PTRACE
         ```
 
@@ -52,23 +52,23 @@ sudo py-spy record -f speedscope --idle -- dagster definitions validate
         # build.yaml
         locations:
         - location_name: cloud-examples
-            image: dagster/dagster-cloud-examples:latest
-            code_source:
+          image: dagster/dagster-cloud-examples:latest
+          code_source:
             package_name: dagster_cloud_examples
-            container_context:
+          container_context:
             k8s:
-                server_k8s_config: # Raw kubernetes config for code servers launched by the agent
+              server_k8s_config: # Raw kubernetes config for code servers launched by the agent
                 container_config:
                     securityContext:
-                    capabilities:
+                      capabilities:
                         add:
-                        - SYS_PTRACE
+                          - SYS_PTRACE
                 run_k8s_config: # Raw kubernetes config for runs launched by the agent
-                container_config:
+                  container_config:
                     securityContext:
-                    capabilities:
+                      capabilities:
                         add:
-                        - SYS_PTRACE
+                          - SYS_PTRACE
         ```
 
         For more information on applying this type of customization to your Kubernetes pod in Dagster+, see the [Kubernetes agent configuration reference](/deployment/dagster-plus/hybrid/kubernetes/configuration).
