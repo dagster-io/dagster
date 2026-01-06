@@ -45,10 +45,7 @@ export const AssetEventList = ({
   }, [focused?.timestamp, focused?.partition]);
 
   return (
-    <Box
-      style={{position: 'relative', flex: 1, minHeight: 0}}
-      padding={{vertical: 12, horizontal: 16}}
-    >
+    <Box style={{position: 'relative', flex: 1, minHeight: 0}}>
       <AssetListContainer
         ref={parentRef}
         onScroll={(e) => {
@@ -83,7 +80,7 @@ export const AssetEventList = ({
                 }}
               >
                 <Box
-                  padding={{left: 12, right: 8, vertical: 5 as any}}
+                  padding={{horizontal: 12, vertical: 8}}
                   flex={{direction: 'column', justifyContent: 'center', gap: 8}}
                   data-index={index}
                   ref={rowVirtualizer.measureElement}
@@ -118,6 +115,7 @@ export const AssetEventList = ({
 
 export const AssetListContainer = styled(Container)`
   outline: none;
+  padding: 8px;
   &:focus {
     box-shadow: 0 -1px ${Colors.accentBlue()};
   }
@@ -165,12 +163,12 @@ const AssetEventListEventRow = ({group}: {group: AssetEventGroup}) => {
 
   return (
     <Box flex={{direction: 'column', gap: 4}}>
-      <Box flex={{gap: 4, direction: 'row', alignItems: 'center'}}>
+      <Box flex={{gap: 8, direction: 'row', alignItems: 'center'}}>
         {icon()}
         <Timestamp timestamp={{ms: Number(timestamp)}} />
       </Box>
       {partition ? (
-        <Box flex={{direction: 'row', gap: 4, alignItems: 'center'}}>
+        <Box flex={{direction: 'row', gap: 8, alignItems: 'center'}}>
           <Icon name="partition" />
           <MonoSmall color={Colors.textLight()}>{partition}</MonoSmall>
         </Box>

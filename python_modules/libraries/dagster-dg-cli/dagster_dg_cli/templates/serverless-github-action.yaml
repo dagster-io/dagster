@@ -89,7 +89,7 @@ jobs:
       # Otherwise, enable buildx for caching Docker builds
       - name: Set up Docker Buildx
         if: steps.prerun.outputs.result == 'docker-deploy'
-        uses: docker/setup-buildx-action@v2
+        uses: docker/setup-buildx-action@v3
 
       # Build and push (PEX or Docker based on project configuration)
       - name: Build and push

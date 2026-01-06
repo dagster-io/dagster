@@ -1,20 +1,22 @@
 import {render, screen} from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
 
 import {Button} from '../Button';
 import {Tooltip} from '../Tooltip';
 
 describe('Tooltip', () => {
   it('renders with a tooltip wrapper if `canShow` is true', async () => {
+    const user = userEvent.setup();
     render(
       <Tooltip canShow content="Hello world">
         <Button>Lorem</Button>
       </Tooltip>,
     );
 
-    const wrapper = document.getElementsByClassName('bp5-popover-target');
-    expect(wrapper.length).toBe(1);
     const button = screen.queryByRole('button', {name: /lorem/i});
-    expect(wrapper[0]?.contains(button)).toBe(true);
+    expect(button).toBeInTheDocument();
+    await user.hover(button as HTMLElement);
+    expect(await screen.findByRole('tooltip', {name: /hello world/i})).toBeVisible();
   });
 
   it('does not render with a tooltip wrapper if `canShow` is false', async () => {
@@ -24,8 +26,8 @@ describe('Tooltip', () => {
       </Tooltip>,
     );
 
-    const wrapper = document.getElementsByClassName('bp5-popover-target');
-    expect(wrapper.length).toBe(0);
+    const trigger = document.querySelector('[data-radix-tooltip-trigger]');
+    expect(trigger).not.toBeInTheDocument();
     const button = screen.queryByRole('button', {name: /lorem/i});
     expect(button).toBeVisible();
   });

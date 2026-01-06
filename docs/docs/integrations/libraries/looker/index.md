@@ -17,7 +17,7 @@ import Beta from '@site/docs/partials/\_Beta.md';
 
 <Beta />
 
-The [dagster-looker](/integrations/libraries/looker) library provides a `LookerComponent` which can be used to easily represent Looker dashboards and explores as assets in Dagster.
+The [dagster-looker](/integrations/libraries/looker) library provides a `LookerComponent` which can be used to easily represent Looker dashboards, explores, and Persistent Derived Tables (PDTs) as assets in Dagster.
 
 :::info
 
@@ -75,7 +75,31 @@ You can filter which Looker dashboards and explores are loaded using the `looker
   language="yaml"
 />
 
-## 5. Customize Looker asset metadata
+## 5. Configure PDT Builds
+
+You can configure the `LookerComponent` to create executable assets for Looker Persistent Derived Tables (PDTs). This allows Dagster to orchestrate the materialization of these tables.
+
+To enable this, add the `pdt_builds` key to your configuration. You must specify the `model_name` and `view_name` for each PDT you wish to build.
+
+You can also specify a `resource_key` if your Looker resource has a custom name (defaults to "looker").
+
+```yaml
+type: dagster_looker.LookerComponent
+attributes:
+  looker_resource:
+    base_url: "{{ env.LOOKER_BASE_URL }}"
+    client_id: "{{ env.LOOKER_CLIENT_ID }}"
+    client_secret: "{{ env.LOOKER_CLIENT_SECRET }}"
+  resource_key: "looker"
+  pdt_builds:
+    - model_name: my_model
+      view_name: my_pdt_view
+      force_rebuild: "true"
+    - model_name: sales_model
+      view_name: monthly_report_pdt
+      workspace: dev
+
+## 6. Customize Looker asset metadata
 
 You can customize the metadata and grouping of Looker assets using the `translation` key:
 
@@ -102,3 +126,4 @@ You may also specify distinct translation behavior for specific data types. For 
 <WideContent maxSize={1100}>
   <CliInvocationExample path="docs_snippets/docs_snippets/guides/components/integrations/looker-component/12-list-defs.txt" />
 </WideContent>
+```

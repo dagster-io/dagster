@@ -11,6 +11,7 @@ from dagster._annotations import deprecated, public
 from dagster._core.definitions.metadata.metadata_value import MetadataValue
 from dagster._record import record
 from dagster._utils.log import get_dagster_logger
+from dagster.components import Model, Resolvable
 from looker_sdk.sdk.api40.methods import Looker40SDK
 from looker_sdk.sdk.api40.models import Dashboard, DashboardFilter, LookmlModelExplore, User
 
@@ -67,8 +68,7 @@ class LookerInstanceData:
         )
 
 
-@record
-class RequestStartPdtBuild:
+class RequestStartPdtBuild(Model, Resolvable):
     """A request to start a PDT build. See https://developers.looker.com/api/explorer/4.0/types/DerivedTable/RequestStartPdtBuild?sdk=py
     for documentation on all available fields.
 

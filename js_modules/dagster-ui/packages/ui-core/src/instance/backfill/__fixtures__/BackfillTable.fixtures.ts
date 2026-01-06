@@ -7,7 +7,9 @@ import {
   buildErrorChainLink,
   buildPartitionBackfill,
   buildPartitionSet,
+  buildPipelineTag,
   buildPythonError,
+  buildQuery,
   buildRepositoryOrigin,
   buildRun,
 } from '../../../graphql/types';
@@ -77,11 +79,10 @@ export const BackfillTableFragmentCancelledAssetsPartitionSet: BackfillTableFrag
       }),
     ],
     tags: [
-      {
-        __typename: 'PipelineTag',
+      buildPipelineTag({
         key: DagsterTag.SensorName,
         value: 'MySensor',
-      },
+      }),
     ],
   });
 
@@ -117,13 +118,12 @@ export const BackfillTableFragmentFailedErrorStatus: MockedResponse<SingleBackfi
     },
   },
   result: {
-    data: {
-      __typename: 'Query',
+    data: buildQuery({
       partitionBackfillOrError: buildPartitionBackfill({
         id: 'sjqzcfhe',
         cancelableRuns: [],
       }),
-    },
+    }),
   },
 };
 
@@ -168,11 +168,10 @@ export const BackfillTableFragmentCompletedAssetJob = buildPartitionBackfill({
     }),
   ],
   tags: [
-    {
-      __typename: 'PipelineTag',
+    buildPipelineTag({
       key: DagsterTag.User,
       value: 'user@dagsterlabs.com',
-    },
+    }),
   ],
 });
 
@@ -184,14 +183,12 @@ export const BackfillTableFragmentCompletedAssetJobStatus: MockedResponse<Single
     },
   },
   result: {
-    data: {
-      __typename: 'Query',
-      partitionBackfillOrError: {
+    data: buildQuery({
+      partitionBackfillOrError: buildPartitionBackfill({
         id: 'pwgcpiwc',
         cancelableRuns: [],
-        __typename: 'PartitionBackfill',
-      },
-    },
+      }),
+    }),
   },
 };
 
@@ -228,8 +225,7 @@ export const BackfillTableFragmentCompletedOpJobStatus: MockedResponse<SingleBac
     },
   },
   result: {
-    data: {
-      __typename: 'Query',
+    data: buildQuery({
       partitionBackfillOrError: buildPartitionBackfill({
         id: 'pqdiepuf',
         isAssetBackfill: true,
@@ -237,7 +233,7 @@ export const BackfillTableFragmentCompletedOpJobStatus: MockedResponse<SingleBac
           buildRun({runId: '1baeadb4-7e7d-47e5-aeac-8a5f921cf27c', status: RunStatus.QUEUED}),
         ],
       }),
-    },
+    }),
   },
 };
 
@@ -258,11 +254,9 @@ export const BackfillTableFragmentInvalidPartitionSet: BackfillTableFragment =
     assetSelection: [
       buildAssetKey({
         path: ['asset1'],
-        __typename: 'AssetKey',
       }),
       buildAssetKey({
         path: ['asset2'],
-        __typename: 'AssetKey',
       }),
     ],
   });

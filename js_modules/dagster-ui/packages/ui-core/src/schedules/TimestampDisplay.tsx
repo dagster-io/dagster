@@ -1,6 +1,5 @@
-import {Colors, Icon, Tooltip} from '@dagster-io/ui-components';
+import {Box, Colors, Icon, Tooltip} from '@dagster-io/ui-components';
 import {useContext} from 'react';
-import styled from 'styled-components';
 
 import {HourCycle} from '../app/time/HourCycle';
 import {TimeContext} from '../app/time/TimeContext';
@@ -42,38 +41,30 @@ export const TimestampDisplay = (props: Props) => {
   });
 
   return (
-    <span>
-      <TabularNums style={{minWidth: 0}} title={mainString}>
+    <Box
+      style={{fontVariantNumeric: 'tabular-nums'}}
+      flex={{display: 'inline-flex', alignItems: 'center', gap: 4}}
+    >
+      <div style={{minWidth: 0}} title={mainString}>
         {mainString}
-      </TabularNums>
+      </div>
       {timezone && timezone !== userTimezone ? (
-        <TimestampTooltip
+        <Tooltip
           placement="top"
           content={
-            <TabularNums>
+            <div>
               {timestampToString({
                 timestamp: {unix: timestamp},
                 locale,
                 timezone: userTimezone,
                 timeFormat: tooltipTimeFormat,
               })}
-            </TabularNums>
+            </div>
           }
         >
           <Icon name="schedule" color={Colors.textLight()} size={12} />
-        </TimestampTooltip>
+        </Tooltip>
       ) : null}
-    </span>
+    </Box>
   );
 };
-
-const TabularNums = styled.span`
-  font-variant-numeric: tabular-nums;
-`;
-
-const TimestampTooltip = styled(Tooltip)`
-  cursor: pointer;
-  position: relative;
-  top: 2px;
-  margin-left: 4px;
-`;

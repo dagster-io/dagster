@@ -234,7 +234,6 @@ export const MergedAutomationRoot = () => {
           content="You do not have permission to start or stop these schedules"
           canShow={anyAutomationsVisible && !viewerHasAnyInstigationPermission}
           placement="top-end"
-          useDisabledButtonTooltipFix
         >
           <AutomationBulkActionMenu automations={checkedAutomations} />
         </Tooltip>

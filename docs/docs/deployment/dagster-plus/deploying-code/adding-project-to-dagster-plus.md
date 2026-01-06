@@ -65,8 +65,8 @@ Next, authenticate the `dagster-cloud` Python client:
 5. Set the following environment variables:
 
    ```bash
-   export  DAGSTER_CLOUD_ORGANIZATION="organization-name" # if your URL is https://acme.dagster.plus your organization name is "acme"
-   export  DAGSTER_CLOUD_API_TOKEN="your-token"
+   export DAGSTER_CLOUD_ORGANIZATION="organization-name" # if your URL is https://acme.dagster.plus your organization name is "acme"
+   export DAGSTER_CLOUD_API_TOKEN="your-token"
    ```
 
 ### Step 3: Add your Dagster project

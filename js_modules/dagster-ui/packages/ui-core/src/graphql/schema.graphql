@@ -694,6 +694,7 @@ type AssetNode {
     beforeTimestampMillis: String
     limit: Int
   ): [ObservationEvent!]!
+  assetsForSameStorageAddress: [AssetNode!]!
   lastAutoMaterializationEvaluationRecord(
     asOfEvaluationId: ID
   ): AutoMaterializeAssetEvaluationRecord

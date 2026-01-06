@@ -386,7 +386,7 @@ export const RunPreview = (props: RunPreviewProps) => {
 
         const hint = stateToHint[state];
         return (
-          <Tooltip position="bottom" content={hint.title} intent={hint.intent} key={item.name}>
+          <Tooltip position="bottom" content={hint.title} key={item.name}>
             <Tag key={item.name} intent={hint.intent}>
               <ButtonLink
                 onClick={() => {

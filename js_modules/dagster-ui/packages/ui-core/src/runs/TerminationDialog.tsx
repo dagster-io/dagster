@@ -1,5 +1,3 @@
-// eslint-disable-next-line no-restricted-imports
-import {ProgressBar} from '@blueprintjs/core';
 import {
   Box,
   Button,
@@ -11,6 +9,7 @@ import {
   Group,
   Icon,
   Mono,
+  ProgressBar,
   showToast,
 } from '@dagster-io/ui-components';
 import chunk from 'lodash/chunk';
@@ -244,7 +243,7 @@ export const TerminationDialog = (props: Props) => {
         return (
           <Group direction="column" spacing={8}>
             <div>{force ? 'Forcing termination…' : 'Terminating…'}</div>
-            <ProgressBar intent="primary" value={Math.max(0.1, value)} animate={value < 1} />
+            <ProgressBar value={Math.max(0.1, value) * 100} animate={value < 100} />
             {state.step === 'terminating' ? (
               <NavigationBlock message="Termination in progress, please do not navigate away yet." />
             ) : null}

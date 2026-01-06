@@ -4520,3 +4520,82 @@ class TestAssetEventHistory(ExecutingGraphQLContextTestMatrix):
             if min_timestamp_seen:
                 assert int(event["timestamp"]) <= min_timestamp_seen
             min_timestamp_seen = int(event["timestamp"])
+
+
+ASSETS_FOR_SAME_STORAGE_ADDRESS_QUERY = """
+    query AssetsForSameStorageAddressQuery($assetKey: AssetKeyInput!) {
+        assetNodeOrError(assetKey: $assetKey) {
+            __typename
+            ... on AssetNode {
+                assetKey {
+                    path
+                }
+                assetsForSameStorageAddress {
+                    assetKey {
+                        path
+                    }
+                }
+            }
+        }
+    }
+"""
+
+
+class TestAssetsForSameStorageAddress(ExecutingGraphQLContextTestMatrix):
+    def test_assets_for_same_storage_address(self, graphql_context: WorkspaceRequestContext):
+        # Test asset1 finds asset2 (case-insensitive)
+        result = execute_dagster_graphql(
+            graphql_context,
+            ASSETS_FOR_SAME_STORAGE_ADDRESS_QUERY,
+            variables={"assetKey": {"path": ["table_asset_1"]}},
+        )
+        assert result.data
+        asset_node = result.data["assetNodeOrError"]
+        assert asset_node["__typename"] == "AssetNode"
+        same_storage_address_keys = {
+            tuple(a["assetKey"]["path"]) for a in asset_node["assetsForSameStorageAddress"]
+        }
+        assert same_storage_address_keys == {("table_asset_2",)}
+
+    def test_assets_for_same_storage_address_reverse(
+        self, graphql_context: WorkspaceRequestContext
+    ):
+        # Test asset2 (uppercase) finds asset1 (lowercase)
+        result = execute_dagster_graphql(
+            graphql_context,
+            ASSETS_FOR_SAME_STORAGE_ADDRESS_QUERY,
+            variables={"assetKey": {"path": ["table_asset_2"]}},
+        )
+        assert result.data
+        asset_node = result.data["assetNodeOrError"]
+        assert asset_node["__typename"] == "AssetNode"
+        same_storage_address_keys = {
+            tuple(a["assetKey"]["path"]) for a in asset_node["assetsForSameStorageAddress"]
+        }
+        assert same_storage_address_keys == {("table_asset_1",)}
+
+    def test_assets_for_same_storage_address_no_match(
+        self, graphql_context: WorkspaceRequestContext
+    ):
+        # Test asset3 has unique table, returns empty
+        result = execute_dagster_graphql(
+            graphql_context,
+            ASSETS_FOR_SAME_STORAGE_ADDRESS_QUERY,
+            variables={"assetKey": {"path": ["table_asset_3"]}},
+        )
+        assert result.data
+        asset_node = result.data["assetNodeOrError"]
+        assert asset_node["assetsForSameStorageAddress"] == []
+
+    def test_assets_for_same_storage_address_no_metadata(
+        self, graphql_context: WorkspaceRequestContext
+    ):
+        # Test asset4 has no table_name, returns empty
+        result = execute_dagster_graphql(
+            graphql_context,
+            ASSETS_FOR_SAME_STORAGE_ADDRESS_QUERY,
+            variables={"assetKey": {"path": ["table_asset_4"]}},
+        )
+        assert result.data
+        asset_node = result.data["assetNodeOrError"]
+        assert asset_node["assetsForSameStorageAddress"] == []
