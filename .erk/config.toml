@@ -1,0 +1,12 @@
+# work config for this repository
+# Available template variables: {worktree_path}, {repo_root}, {name}
+
+[env]
+# EXAMPLE_KEY = "{worktree_path}"
+
+[post_create]
+# shell = "bash"
+# commands = [
+#   "uv venv",
+#   "uv run make dev_install",
+# ]
