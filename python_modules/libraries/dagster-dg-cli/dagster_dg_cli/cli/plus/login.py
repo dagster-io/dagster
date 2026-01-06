@@ -1,4 +1,5 @@
 import webbrowser
+from typing import Optional
 
 import click
 from dagster_dg_core.utils import DgClickCommand
@@ -8,15 +9,30 @@ from dagster_shared.plus.config import DagsterPlusCliConfig
 from dagster_dg_cli.utils.plus.gql import FULL_DEPLOYMENTS_QUERY
 from dagster_dg_cli.utils.plus.gql_client import DagsterPlusGraphQLClient
 
+EU_DAGSTER_CLOUD_URL = "https://eu.dagster.cloud"
+
 
 @click.command(name="login", cls=DgClickCommand)
+@click.option(
+    "--region",
+    type=click.Choice(["us", "eu"]),
+    default=None,
+    help="Dagster Cloud region to login to. Use 'eu' for European region.",
+)
 @cli_telemetry_wrapper
-def login_command() -> None:
+def login_command(region: Optional[str]) -> None:
     """Login to Dagster Plus."""
     # Import login server only when the command is actually used
     from dagster_shared.plus.login_server import start_login_server
 
-    org_url = DagsterPlusCliConfig.get().url if DagsterPlusCliConfig.exists() else None
+    # Determine the base URL based on region
+    if region == "eu":
+        org_url = EU_DAGSTER_CLOUD_URL
+    elif DagsterPlusCliConfig.exists():
+        org_url = DagsterPlusCliConfig.get().url
+    else:
+        org_url = None
+
     server, url = start_login_server(org_url)
 
     try:
