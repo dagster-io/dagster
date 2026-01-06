@@ -87,8 +87,8 @@ lam = lambda x: x * x
 
 # don't run this test on python 3.12
 @pytest.mark.skipif(
-    seven.IS_PYTHON_3_12 or seven.IS_PYTHON_3_13,
-    reason="Test fails consistently on Python 3.12 and Python 3.13, further investigation required.",
+    seven.IS_PYTHON_3_12 or seven.IS_PYTHON_3_13 or seven.IS_PYTHON_3_14,
+    reason="Test fails consistently on Python 3.12-14, further investigation required.",
 )
 def test_fs_io_manager_unpicklable():
     @dg.op

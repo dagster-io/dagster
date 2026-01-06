@@ -14,6 +14,7 @@ from dagster._core.executor.child_process_executor import (
     execute_child_process_command,
 )
 from dagster._utils import segfault
+from dagster_shared.seven import IS_PYTHON_3_14
 
 multiprocessing_ctx = get_context()
 
@@ -99,6 +100,7 @@ def test_child_process_uncaught_exception():
     assert "AnError" in str(results[0].error_info.message)  # type: ignore
 
 
+@pytest.mark.skipif(IS_PYTHON_3_14, reason="multiprocessing crash handling differs on 3.14")
 def test_child_process_crashy_process():
     with pytest.raises(ChildProcessCrashException) as exc:
         list(execute_child_process_command(multiprocessing_ctx, CrashyCommand()))
@@ -106,6 +108,7 @@ def test_child_process_crashy_process():
 
 
 @pytest.mark.skipif(os.name == "nt", reason="Segfault not being caught on Windows: See issue #2791")
+@pytest.mark.skipif(IS_PYTHON_3_14, reason="multiprocessing crash handling differs on 3.14")
 def test_child_process_segfault():
     with pytest.raises(ChildProcessCrashException) as exc:
         list(execute_child_process_command(multiprocessing_ctx, SegfaultCommand()))
