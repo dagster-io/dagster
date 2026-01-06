@@ -1,90 +1,90 @@
 [artifacts]
-version = "0.4.4"
+version = "0.4.5"
 
 [artifacts.files."skills/dignified-python"]
-version = "0.4.4"
+version = "0.4.5"
 hash = "8c9d1c4d9df015e6"
 
 [artifacts.files."skills/erk-diff-analysis"]
-version = "0.4.4"
+version = "0.4.5"
 hash = "a4a6a99a4a33881e"
 
 [artifacts.files."skills/learned-docs"]
-version = "0.4.4"
+version = "0.4.5"
 hash = "a0f0a1e27f928a90"
 
 [artifacts.files."agents/devrun.md"]
-version = "0.4.4"
+version = "0.4.5"
 hash = "7f75d7b8cadf3b56"
 
 [artifacts.files."commands/erk/plan-implement.md"]
-version = "0.4.4"
+version = "0.4.5"
 hash = "f227e585f7c6964e"
 
 [artifacts.files."commands/erk/plan-save.md"]
-version = "0.4.4"
+version = "0.4.5"
 hash = "d606c22bf47f5fb2"
 
 [artifacts.files."commands/erk/land.md"]
-version = "0.4.4"
+version = "0.4.5"
 hash = "5b859dfafeca6488"
 
 [artifacts.files."commands/erk/git-pr-push.md"]
-version = "0.4.4"
+version = "0.4.5"
 hash = "ce70ba799c3c28dd"
 
 [artifacts.files."commands/erk/pr-address.md"]
-version = "0.4.4"
+version = "0.4.5"
 hash = "b3c77b7a2d654f18"
 
 [artifacts.files."commands/erk/objective-next-plan.md"]
-version = "0.4.4"
+version = "0.4.5"
 hash = "e911375ddaf4ff2c"
 
 [artifacts.files."commands/erk/implement-stacked-plan.md"]
-version = "0.4.4"
+version = "0.4.5"
 hash = "af99c16e1e6c9aa5"
 
 [artifacts.files."commands/erk/pr-submit.md"]
-version = "0.4.4"
+version = "0.4.5"
 hash = "4bcb22da46b0ed65"
 
 [artifacts.files."commands/erk/objective-list.md"]
-version = "0.4.4"
+version = "0.4.5"
 hash = "7ef0e14d529d4b6e"
 
 [artifacts.files."commands/erk/objective-update-with-landed-pr.md"]
-version = "0.4.4"
+version = "0.4.5"
 hash = "c3f9aebfdf419f70"
 
 [artifacts.files."commands/erk/objective-create.md"]
-version = "0.4.4"
+version = "0.4.5"
 hash = "04cc494b0c9666ca"
 
 [artifacts.files."commands/erk/plan-submit.md"]
-version = "0.4.4"
+version = "0.4.5"
 hash = "50ddbf34293ca251"
 
 [artifacts.files."commands/erk/fix-conflicts.md"]
-version = "0.4.4"
+version = "0.4.5"
 hash = "f12800e228480c27"
 
 [artifacts.files."commands/erk/create-extraction-plan.md"]
-version = "0.4.4"
+version = "0.4.5"
 hash = "7e56fc18c4ec50d3"
 
 [artifacts.files."workflows/erk-impl.yml"]
-version = "0.4.4"
+version = "0.4.5"
 hash = "57f302ef5446f119"
 
 [artifacts.files."actions/setup-claude-erk"]
-version = "0.4.4"
+version = "0.4.5"
 hash = "530970c12493b4f7"
 
 [artifacts.files."hooks/user-prompt-hook"]
-version = "0.4.4"
+version = "0.4.5"
 hash = "fffa0612d9511160"
 
 [artifacts.files."hooks/exit-plan-mode-hook"]
-version = "0.4.4"
+version = "0.4.5"
 hash = "416f5ec584633d32"
