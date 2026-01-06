@@ -1,8 +1,8 @@
-"""use longtext on bulk_actions body in mysql
+"""use longtext on bulk_actions.body in mysql
 
-Revision ID: cd78a5ed7029
-Revises: b961dffeea1a
-Create Date: 2025-08-05 13:35:53.147485
+Revision ID: 29b539ebc72a
+Revises: f495c27d5019
+Create Date: 2026-01-06 07:02:58.437749
 
 """
 
@@ -12,8 +12,8 @@ from sqlalchemy import inspect
 from sqlalchemy.dialects.mysql import LONGTEXT
 
 # revision identifiers, used by Alembic.
-revision = "cd78a5ed7029"
-down_revision = "b961dffeea1a"
+revision = "29b539ebc72a"
+down_revision = "f495c27d5019"
 branch_labels = None
 depends_on = None
 
