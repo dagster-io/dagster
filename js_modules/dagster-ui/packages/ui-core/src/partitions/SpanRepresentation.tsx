@@ -1,17 +1,71 @@
 import {ParsedPartitionTerm} from './AntlrPartitionSelectionVisitor';
 import {parsePartitionSelection} from './parsePartitionSelection';
 import {
-  escapePartitionKey,
-  serializePartitionSelection,
-  serializeRange,
-} from './serializePartitionSelection';
-import {
   PartitionDimensionSelection,
   PartitionDimensionSelectionRange,
 } from '../assets/usePartitionHealthData';
 
 // Re-export ParsedPartitionTerm as ParsedSpanTerm for backward compatibility
 export type {ParsedPartitionTerm as ParsedSpanTerm} from './AntlrPartitionSelectionVisitor';
+
+/**
+ * Regular expression matching characters that require quoting in partition keys.
+ * These characters have special meaning in the partition selection syntax:
+ * - , (comma): separates partition items
+ * - [ ] (brackets): range delimiters
+ * - . (dot): part of range delimiter ...
+ * - * (asterisk): wildcard character
+ * - " (quote): string delimiter
+ * - \ (backslash): escape character
+ */
+const SPECIAL_CHARS = /[,[\].*"\\]/;
+
+/**
+ * Escape a partition key for serialization.
+ * Keys containing special characters are wrapped in quotes with proper escaping.
+ *
+ * @param key The partition key to escape
+ * @returns The escaped key, quoted if necessary
+ *
+ * @example
+ * escapePartitionKey('simple-key')
+ * // => 'simple-key'
+ *
+ * @example
+ * escapePartitionKey('key,with,commas')
+ * // => '"key,with,commas"'
+ *
+ * @example
+ * escapePartitionKey('key"with"quotes')
+ * // => '"key\\"with\\"quotes"'
+ */
+export function escapePartitionKey(key: string): string {
+  if (!SPECIAL_CHARS.test(key)) {
+    return key;
+  }
+  // Escape backslashes first (so we don't double-escape), then quotes
+  const escaped = key.replace(/\\/g, '\\\\').replace(/"/g, '\\"');
+  return `"${escaped}"`;
+}
+
+/**
+ * Serialize a range to string format: [start...end]
+ *
+ * @param start The start partition key
+ * @param end The end partition key
+ * @returns The serialized range string
+ *
+ * @example
+ * serializeRange('2024-01-01', '2024-12-31')
+ * // => '[2024-01-01...2024-12-31]'
+ *
+ * @example
+ * serializeRange('key,start', 'key,end')
+ * // => '["key,start"..."key,end"]'
+ */
+export function serializeRange(start: string, end: string): string {
+  return `[${escapePartitionKey(start)}...${escapePartitionKey(end)}]`;
+}
 
 /**
  * Assembles partition keys into contiguous spans based on a test function.
@@ -227,12 +281,47 @@ export function spanTextToSelectionsOrError(
 
 /**
  * Convert selected partition keys to text representation.
- * Uses the new serialization functions with proper escaping.
+ * When allKeys is provided, optimizes for readability by using ranges
+ * for consecutive keys.
  *
  * @param selected Selected partition keys
  * @param all All available partition keys (for range optimization)
  * @returns Text representation
+ *
+ * @example
+ * // Without all keys - just escapes and joins
+ * partitionsToText(['key1', 'key2'])
+ * // => 'key1, key2'
+ *
+ * @example
+ * // With all keys - consecutive keys become ranges
+ * const allKeys = ['2024-01', '2024-02', '2024-03', '2024-04'];
+ * partitionsToText(['2024-01', '2024-02', '2024-03'], allKeys)
+ * // => '[2024-01...2024-03]'
+ *
+ * @example
+ * // Mixed selection
+ * const allKeys = ['a', 'b', 'c', 'd', 'e'];
+ * partitionsToText(['a', 'b', 'e'], allKeys)
+ * // => '[a...b], e'
  */
 export function partitionsToText(selected: string[], all?: string[]): string {
-  return serializePartitionSelection(selected, all);
+  if (selected.length === 0) {
+    return '';
+  }
+
+  // If we have all keys, optimize into ranges using assembleIntoSpans
+  if (all && all.length > 0) {
+    const selectedSet = new Set(selected);
+    const spans = assembleIntoSpans(all, (key) => selectedSet.has(key));
+
+    return spans
+      .filter((span) => span.status === true)
+      .map((span) => stringForSpan(span, all))
+      .filter(Boolean)
+      .join(', ');
+  }
+
+  // Without all keys, just escape and join
+  return selected.map(escapePartitionKey).join(', ');
 }
