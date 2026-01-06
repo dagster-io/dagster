@@ -838,7 +838,7 @@ class RunDomain:
                                 f" asset {target_asset_key.to_string()}"
                             ),
                             event_specific_data=AssetCheckEvaluationPlanned(
-                                target_asset_key,
+                                asset_key=target_asset_key,
                                 check_name=check_name,
                             ),
                             step_key=step.key,
