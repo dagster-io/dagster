@@ -26,7 +26,14 @@ export function buildSerializer(assetHealth: Pick<PartitionHealthData, 'dimensio
   const serializer: QueryPersistedStateConfig<DimensionQueryState[]> = {
     defaults: {},
     encode: (state) => {
-      return Object.fromEntries(state.map((s) => [`${s.name}_range`, s.rangeText]));
+      return Object.fromEntries(
+        state.map((s) => [
+          `${s.name}_range`,
+          // Encode special characters in partition selection text for URL safety.
+          // This handles quoted partition keys with special characters like commas.
+          s.rangeText ? encodeURIComponent(s.rangeText) : undefined,
+        ]),
+      );
     },
     decode: (qs) => {
       const results: Record<string, {text: string; isFromPartitionQueryStringParam: boolean}> = {};
@@ -39,7 +46,16 @@ export function buildSerializer(assetHealth: Pick<PartitionHealthData, 'dimensio
         partitions.forEach((partitionText, i) => {
           const name = assetHealth?.dimensions[i]?.name;
           if (name) {
-            results[name] = {text: partitionText, isFromPartitionQueryStringParam: true};
+            // Decode URI component for partition values, with fallback for invalid encoding
+            try {
+              results[name] = {
+                text: decodeURIComponent(partitionText),
+                isFromPartitionQueryStringParam: true,
+              };
+            } catch {
+              // If decodeURIComponent fails (invalid encoding), use the raw value
+              results[name] = {text: partitionText, isFromPartitionQueryStringParam: true};
+            }
           }
         });
       }
@@ -50,7 +66,16 @@ export function buildSerializer(assetHealth: Pick<PartitionHealthData, 'dimensio
           const name = key.replace(/_range$/, '');
           const value = qs[key];
           if (typeof value === 'string') {
-            results[name] = {text: value, isFromPartitionQueryStringParam: false};
+            // Decode URI component for range values, with fallback for invalid encoding
+            try {
+              results[name] = {
+                text: decodeURIComponent(value),
+                isFromPartitionQueryStringParam: false,
+              };
+            } catch {
+              // If decodeURIComponent fails (invalid encoding), use the raw value
+              results[name] = {text: value, isFromPartitionQueryStringParam: false};
+            }
           }
         }
       }

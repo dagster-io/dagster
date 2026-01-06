@@ -368,4 +368,195 @@ describe('SpanRepresentation', () => {
       expect(partitionsToText(['XXX', '2022-01-02'], MOCK_PARTITIONS)).toEqual('2022-01-02');
     });
   });
+
+  describe('special character handling', () => {
+    describe('round-trip with quoted keys', () => {
+      it('handles commas in partition keys', () => {
+        const allKeys = ['normal', 'has,comma', 'another'];
+        const selected = ['has,comma'];
+
+        const text = partitionsToText(selected, allKeys);
+        expect(text).toBe('"has,comma"');
+
+        const parsed = spanTextToSelectionsOrError(allKeys, text);
+        expect(parsed).not.toBeInstanceOf(Error);
+        if (!(parsed instanceof Error)) {
+          expect(parsed.selectedKeys).toEqual(['has,comma']);
+        }
+      });
+
+      it('handles brackets in partition keys', () => {
+        const allKeys = ['normal', '[bracketed]', 'another'];
+        const selected = ['[bracketed]'];
+
+        const text = partitionsToText(selected, allKeys);
+        const parsed = spanTextToSelectionsOrError(allKeys, text);
+
+        expect(parsed).not.toBeInstanceOf(Error);
+        if (!(parsed instanceof Error)) {
+          expect(parsed.selectedKeys).toEqual(['[bracketed]']);
+        }
+      });
+
+      it('handles quotes in partition keys', () => {
+        const allKeys = ['normal', 'has"quote', 'another'];
+        const selected = ['has"quote'];
+
+        const text = partitionsToText(selected, allKeys);
+        const parsed = spanTextToSelectionsOrError(allKeys, text);
+
+        expect(parsed).not.toBeInstanceOf(Error);
+        if (!(parsed instanceof Error)) {
+          expect(parsed.selectedKeys).toEqual(['has"quote']);
+        }
+      });
+
+      it('handles asterisks in partition keys', () => {
+        const allKeys = ['normal', 'file*.txt', 'another'];
+        const selected = ['file*.txt'];
+
+        const text = partitionsToText(selected, allKeys);
+        expect(text).toBe('"file*.txt"');
+
+        const parsed = spanTextToSelectionsOrError(allKeys, text);
+        expect(parsed).not.toBeInstanceOf(Error);
+        if (!(parsed instanceof Error)) {
+          expect(parsed.selectedKeys).toEqual(['file*.txt']);
+        }
+      });
+
+      it('handles ellipsis in partition keys', () => {
+        const allKeys = ['normal', 'data...backup', 'another'];
+        const selected = ['data...backup'];
+
+        const text = partitionsToText(selected, allKeys);
+        expect(text).toBe('"data...backup"');
+
+        const parsed = spanTextToSelectionsOrError(allKeys, text);
+        expect(parsed).not.toBeInstanceOf(Error);
+        if (!(parsed instanceof Error)) {
+          expect(parsed.selectedKeys).toEqual(['data...backup']);
+        }
+      });
+
+      it('handles dots in partition keys (must be quoted)', () => {
+        const allKeys = ['normal', 'key.with.dots', 'another'];
+        const selected = ['key.with.dots'];
+
+        const text = partitionsToText(selected, allKeys);
+        expect(text).toBe('"key.with.dots"');
+
+        const parsed = spanTextToSelectionsOrError(allKeys, text);
+        expect(parsed).not.toBeInstanceOf(Error);
+        if (!(parsed instanceof Error)) {
+          expect(parsed.selectedKeys).toEqual(['key.with.dots']);
+        }
+      });
+
+      it('handles backslashes in partition keys', () => {
+        const allKeys = ['normal', 'path\\to\\file', 'another'];
+        const selected = ['path\\to\\file'];
+
+        const text = partitionsToText(selected, allKeys);
+        // Should escape backslashes and wrap in quotes
+        expect(text).toBe('"path\\\\to\\\\file"');
+
+        const parsed = spanTextToSelectionsOrError(allKeys, text);
+        expect(parsed).not.toBeInstanceOf(Error);
+        if (!(parsed instanceof Error)) {
+          expect(parsed.selectedKeys).toEqual(['path\\to\\file']);
+        }
+      });
+    });
+
+    describe('ranges with special character keys', () => {
+      it('handles range with comma in keys', () => {
+        const allKeys = ['start,key', 'middle,key', 'end,key'];
+        const selected = ['start,key', 'middle,key', 'end,key'];
+
+        const text = partitionsToText(selected, allKeys);
+        expect(text).toBe('["start,key"..."end,key"]');
+
+        const parsed = spanTextToSelectionsOrError(allKeys, text);
+        expect(parsed).not.toBeInstanceOf(Error);
+        if (!(parsed instanceof Error)) {
+          expect(parsed.selectedKeys).toEqual(['start,key', 'middle,key', 'end,key']);
+        }
+      });
+
+      it('handles range with mixed special and normal keys', () => {
+        const allKeys = ['normal-start', 'has,comma', 'normal-end'];
+        const selected = ['normal-start', 'has,comma', 'normal-end'];
+
+        const text = partitionsToText(selected, allKeys);
+        expect(text).toBe('[normal-start...normal-end]');
+
+        const parsed = spanTextToSelectionsOrError(allKeys, text);
+        expect(parsed).not.toBeInstanceOf(Error);
+        if (!(parsed instanceof Error)) {
+          expect(parsed.selectedKeys).toEqual(['normal-start', 'has,comma', 'normal-end']);
+        }
+      });
+    });
+
+    describe('mixed selections with special characters', () => {
+      it('handles non-consecutive keys with special characters', () => {
+        const allKeys = ['first,key', 'second-key', 'third,key', 'fourth-key'];
+        const selected = ['first,key', 'third,key'];
+
+        const text = partitionsToText(selected, allKeys);
+        expect(text).toBe('"first,key", "third,key"');
+
+        const parsed = spanTextToSelectionsOrError(allKeys, text);
+        expect(parsed).not.toBeInstanceOf(Error);
+        if (!(parsed instanceof Error)) {
+          expect(parsed.selectedKeys).toEqual(['first,key', 'third,key']);
+        }
+      });
+
+      it('handles complex mixed selection', () => {
+        const allKeys = ['2024-01-01', 'data,file', '2024-01-02', '[special]', '2024-01-03'];
+        const selected = ['2024-01-01', 'data,file', '2024-01-02'];
+
+        const text = partitionsToText(selected, allKeys);
+        expect(text).toBe('[2024-01-01...2024-01-02]');
+
+        const parsed = spanTextToSelectionsOrError(allKeys, text);
+        expect(parsed).not.toBeInstanceOf(Error);
+        if (!(parsed instanceof Error)) {
+          expect(parsed.selectedKeys).toEqual(['2024-01-01', 'data,file', '2024-01-02']);
+        }
+      });
+    });
+
+    describe('edge cases', () => {
+      it('handles single key that needs escaping', () => {
+        const allKeys = ['only,one'];
+        const selected = ['only,one'];
+
+        const text = partitionsToText(selected, allKeys);
+        expect(text).toBe('"only,one"');
+
+        const parsed = spanTextToSelectionsOrError(allKeys, text);
+        expect(parsed).not.toBeInstanceOf(Error);
+        if (!(parsed instanceof Error)) {
+          expect(parsed.selectedKeys).toEqual(['only,one']);
+        }
+      });
+
+      it('handles all keys having special characters', () => {
+        const allKeys = ['[a]', '[b]', '[c]'];
+        const selected = ['[a]', '[b]', '[c]'];
+
+        const text = partitionsToText(selected, allKeys);
+        expect(text).toBe('["[a]"..."[c]"]');
+
+        const parsed = spanTextToSelectionsOrError(allKeys, text);
+        expect(parsed).not.toBeInstanceOf(Error);
+        if (!(parsed instanceof Error)) {
+          expect(parsed.selectedKeys).toEqual(['[a]', '[b]', '[c]']);
+        }
+      });
+    });
+  });
 });
