@@ -3,8 +3,6 @@
 module: dagster.core.run_coordinator
 class: QueuedRunCoordinator
 {{- if not (empty (compact (values $queuedRunCoordinatorConfig))) }}
-{{- if not $queuedRunCoordinatorConfig.pools }}
-{{/* Only output config when not using pools - pools uses concurrency config instead */}}
 config:
   {{/* Workaround to prevent 0 from being interpreted as falsey: https://github.com/helm/helm/issues/3164#issuecomment-709537506 */}}
   max_concurrent_runs: {{ if (kindIs "invalid" $queuedRunCoordinatorConfig.maxConcurrentRuns) }}-1{{ else }}{{ $queuedRunCoordinatorConfig.maxConcurrentRuns }}
@@ -31,7 +29,6 @@ config:
     enabled: {{ $queuedRunCoordinatorConfig.blockOpConcurrencyLimitedRuns.enabled }}
     op_concurrency_slot_buffer: {{ $queuedRunCoordinatorConfig.blockOpConcurrencyLimitedRuns.opConcurrencySlotBuffer }}
   {{- end }}
-{{- end }}
 {{- end }}
 {{- end }}
 

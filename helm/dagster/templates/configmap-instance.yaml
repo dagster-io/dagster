@@ -157,31 +157,6 @@ data:
       {{- end }}
     {{- end }}
 
-    {{- if .Values.dagsterDaemon.runCoordinator.config.queuedRunCoordinator.pools }}
-    {{- $queuedRunCoordinatorConfig := .Values.dagsterDaemon.runCoordinator.config.queuedRunCoordinator }}
-    {{- $pools := $queuedRunCoordinatorConfig.pools }}
-    concurrency:
-      pools:
-        {{- if not (kindIs "invalid" $pools.defaultLimit) }}
-        default_limit: {{ $pools.defaultLimit }}
-        {{- end }}
-        {{- if $pools.granularity }}
-        granularity: {{ $pools.granularity }}
-        {{- end }}
-        {{- if not (kindIs "invalid" $pools.opGranularityRunBuffer) }}
-        op_granularity_run_buffer: {{ $pools.opGranularityRunBuffer }}
-        {{- end }}
-      {{- if or (not (kindIs "invalid" $queuedRunCoordinatorConfig.maxConcurrentRuns)) $queuedRunCoordinatorConfig.tagConcurrencyLimits }}
-      runs:
-        {{- if not (kindIs "invalid" $queuedRunCoordinatorConfig.maxConcurrentRuns) }}
-        max_concurrent_runs: {{ $queuedRunCoordinatorConfig.maxConcurrentRuns }}
-        {{- end }}
-        {{- if $queuedRunCoordinatorConfig.tagConcurrencyLimits }}
-        tag_concurrency_limits: {{ $queuedRunCoordinatorConfig.tagConcurrencyLimits | toYaml | nindent 10 }}
-        {{- end }}
-      {{- end }}
-    {{- end }}
-
     telemetry:
       enabled: {{ .Values.telemetry.enabled }}
 

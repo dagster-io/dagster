@@ -28,12 +28,6 @@ class BlockOpConcurrencyLimitedRuns(BaseModel):
     opConcurrencySlotBuffer: int
 
 
-class Pools(BaseModel):
-    defaultLimit: Optional[int] = None
-    granularity: Optional[str] = None
-    opGranularityRunBuffer: Optional[int] = None
-
-
 class QueuedRunCoordinatorConfig(BaseModel, extra="forbid"):
     maxConcurrentRuns: Optional[IntSource] = None
     tagConcurrencyLimits: Optional[list[TagConcurrencyLimit]] = None
@@ -41,7 +35,6 @@ class QueuedRunCoordinatorConfig(BaseModel, extra="forbid"):
     dequeueNumWorkers: Optional[IntSource] = None
     dequeueUseThreads: Optional[bool] = None
     blockOpConcurrencyLimitedRuns: Optional[BlockOpConcurrencyLimitedRuns] = None
-    pools: Optional[Pools] = None
 
 
 class RunCoordinatorConfig(BaseModel):
