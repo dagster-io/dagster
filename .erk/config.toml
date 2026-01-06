@@ -1,6 +1,9 @@
 # work config for this repository
 # Available template variables: {worktree_path}, {repo_root}, {name}
 
+[plans]
+repo = "dagster-io/dagster-erk-backing-store"
+
 [env]
 # EXAMPLE_KEY = "{worktree_path}"
 
