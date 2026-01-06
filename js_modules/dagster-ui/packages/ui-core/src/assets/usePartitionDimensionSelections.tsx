@@ -26,13 +26,10 @@ export function buildSerializer(assetHealth: Pick<PartitionHealthData, 'dimensio
   const serializer: QueryPersistedStateConfig<DimensionQueryState[]> = {
     defaults: {},
     encode: (state) => {
+      // Note: The `qs` library used by useQueryPersistedState already URL-encodes values
+      // during stringify, so we should NOT call encodeURIComponent here to avoid double-encoding.
       return Object.fromEntries(
-        state.map((s) => [
-          `${s.name}_range`,
-          // Encode special characters in partition selection text for URL safety.
-          // This handles quoted partition keys with special characters like commas.
-          s.rangeText ? encodeURIComponent(s.rangeText) : undefined,
-        ]),
+        state.map((s) => [`${s.name}_range`, s.rangeText ? s.rangeText : undefined]),
       );
     },
     decode: (qs) => {

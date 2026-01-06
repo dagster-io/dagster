@@ -47,6 +47,35 @@ describe('usePartitionDimensionSelections', () => {
       });
     });
 
+    it('should encode special characters without URL-encoding (qs library handles URL encoding)', () => {
+      // The qs library used by useQueryPersistedState automatically URL-encodes values
+      // during stringify, so the encode function should return raw text values.
+      // This prevents double-encoding issues like `:` becoming `%253A` instead of `%3A`.
+      const state: DimensionQueryState[] = [
+        {
+          name: 'default',
+          rangeText: '2024-06-25-00:00',
+          isFromPartitionQueryStringParam: false,
+        },
+        {
+          name: 'quoted',
+          rangeText: '"key,with,commas"',
+          isFromPartitionQueryStringParam: false,
+        },
+      ];
+
+      const {encode} = buildSerializer({dimensions: []});
+      if (!encode) {
+        throw new Error('encode is undefined');
+      }
+
+      // Values should NOT be URL-encoded - qs.stringify handles that
+      expect(encode(state)).toEqual({
+        default_range: '2024-06-25-00:00',
+        quoted_range: '"key,with,commas"',
+      });
+    });
+
     it('should decode one dimension, just range', () => {
       const dimensions = [
         {
