@@ -196,48 +196,6 @@
             "title": "BlockOpConcurrencyLimitedRuns",
             "type": "object"
         },
-        "Pools": {
-            "properties": {
-                "defaultLimit": {
-                    "anyOf": [
-                        {
-                            "type": "integer"
-                        },
-                        {
-                            "type": "null"
-                        }
-                    ],
-                    "default": null,
-                    "title": "Defaultlimit"
-                },
-                "granularity": {
-                    "anyOf": [
-                        {
-                            "type": "string"
-                        },
-                        {
-                            "type": "null"
-                        }
-                    ],
-                    "default": null,
-                    "title": "Granularity"
-                },
-                "opGranularityRunBuffer": {
-                    "anyOf": [
-                        {
-                            "type": "integer"
-                        },
-                        {
-                            "type": "null"
-                        }
-                    ],
-                    "default": null,
-                    "title": "Opgranularityrunbuffer"
-                }
-            },
-            "title": "Pools",
-            "type": "object"
-        },
         "Busybox": {
             "properties": {
                 "image": {
