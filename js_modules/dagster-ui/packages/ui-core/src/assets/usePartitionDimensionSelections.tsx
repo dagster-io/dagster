@@ -36,6 +36,8 @@ export function buildSerializer(assetHealth: Pick<PartitionHealthData, 'dimensio
       );
     },
     decode: (qs) => {
+      // Note: The `qs` library used by useQueryPersistedState already URL-decodes values,
+      // so we should NOT call decodeURIComponent here to avoid double-decoding.
       const results: Record<string, {text: string; isFromPartitionQueryStringParam: boolean}> = {};
       const {partition, ...remaining} = qs;
 
@@ -46,16 +48,10 @@ export function buildSerializer(assetHealth: Pick<PartitionHealthData, 'dimensio
         partitions.forEach((partitionText, i) => {
           const name = assetHealth?.dimensions[i]?.name;
           if (name) {
-            // Decode URI component for partition values, with fallback for invalid encoding
-            try {
-              results[name] = {
-                text: decodeURIComponent(partitionText),
-                isFromPartitionQueryStringParam: true,
-              };
-            } catch {
-              // If decodeURIComponent fails (invalid encoding), use the raw value
-              results[name] = {text: partitionText, isFromPartitionQueryStringParam: true};
-            }
+            results[name] = {
+              text: partitionText,
+              isFromPartitionQueryStringParam: true,
+            };
           }
         });
       }
@@ -66,16 +62,10 @@ export function buildSerializer(assetHealth: Pick<PartitionHealthData, 'dimensio
           const name = key.replace(/_range$/, '');
           const value = qs[key];
           if (typeof value === 'string') {
-            // Decode URI component for range values, with fallback for invalid encoding
-            try {
-              results[name] = {
-                text: decodeURIComponent(value),
-                isFromPartitionQueryStringParam: false,
-              };
-            } catch {
-              // If decodeURIComponent fails (invalid encoding), use the raw value
-              results[name] = {text: value, isFromPartitionQueryStringParam: false};
-            }
+            results[name] = {
+              text: value,
+              isFromPartitionQueryStringParam: false,
+            };
           }
         }
       }
