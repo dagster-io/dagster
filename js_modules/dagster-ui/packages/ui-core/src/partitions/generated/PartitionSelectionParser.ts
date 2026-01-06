@@ -104,28 +104,19 @@ export class PartitionSelectionParser extends Parser {
   public start(): StartContext {
     const _localctx: StartContext = new StartContext(this._ctx, this.state);
     this.enterRule(_localctx, 0, PartitionSelectionParser.RULE_start);
-    let _la: number;
     try {
       this.enterOuterAlt(_localctx, 1);
       {
         this.state = 13;
         this._errHandler.sync(this);
-        _la = this._input.LA(1);
-        if (
-          (_la & ~0x1f) === 0 &&
-          ((1 << _la) &
-            ((1 << PartitionSelectionParser.LBRACKET) |
-              (1 << PartitionSelectionParser.QUOTED_STRING) |
-              (1 << PartitionSelectionParser.WILDCARD_PATTERN) |
-              (1 << PartitionSelectionParser.UNQUOTED_STRING))) !==
-            0
-        ) {
-          {
-            this.state = 12;
-            this.partitionList();
-          }
+        switch (this.interpreter.adaptivePredict(this._input, 0, this._ctx)) {
+          case 1:
+            {
+              this.state = 12;
+              this.partitionList();
+            }
+            break;
         }
-
         this.state = 15;
         this.match(PartitionSelectionParser.EOF);
       }
@@ -150,21 +141,52 @@ export class PartitionSelectionParser extends Parser {
     try {
       this.enterOuterAlt(_localctx, 1);
       {
-        this.state = 17;
-        this.partitionItem();
-        this.state = 22;
+        this.state = 18;
+        this._errHandler.sync(this);
+        _la = this._input.LA(1);
+        if (
+          (_la & ~0x1f) === 0 &&
+          ((1 << _la) &
+            ((1 << PartitionSelectionParser.LBRACKET) |
+              (1 << PartitionSelectionParser.QUOTED_STRING) |
+              (1 << PartitionSelectionParser.WILDCARD_PATTERN) |
+              (1 << PartitionSelectionParser.UNQUOTED_STRING))) !==
+            0
+        ) {
+          {
+            this.state = 17;
+            this.partitionItem();
+          }
+        }
+
+        this.state = 26;
         this._errHandler.sync(this);
         _la = this._input.LA(1);
         while (_la === PartitionSelectionParser.COMMA) {
           {
             {
-              this.state = 18;
+              this.state = 20;
               this.match(PartitionSelectionParser.COMMA);
-              this.state = 19;
-              this.partitionItem();
+              this.state = 22;
+              this._errHandler.sync(this);
+              _la = this._input.LA(1);
+              if (
+                (_la & ~0x1f) === 0 &&
+                ((1 << _la) &
+                  ((1 << PartitionSelectionParser.LBRACKET) |
+                    (1 << PartitionSelectionParser.QUOTED_STRING) |
+                    (1 << PartitionSelectionParser.WILDCARD_PATTERN) |
+                    (1 << PartitionSelectionParser.UNQUOTED_STRING))) !==
+                  0
+              ) {
+                {
+                  this.state = 21;
+                  this.partitionItem();
+                }
+              }
             }
           }
-          this.state = 24;
+          this.state = 28;
           this._errHandler.sync(this);
           _la = this._input.LA(1);
         }
@@ -187,14 +209,14 @@ export class PartitionSelectionParser extends Parser {
     let _localctx: PartitionItemContext = new PartitionItemContext(this._ctx, this.state);
     this.enterRule(_localctx, 4, PartitionSelectionParser.RULE_partitionItem);
     try {
-      this.state = 28;
+      this.state = 32;
       this._errHandler.sync(this);
       switch (this._input.LA(1)) {
         case PartitionSelectionParser.LBRACKET:
           _localctx = new RangePartitionItemContext(_localctx);
           this.enterOuterAlt(_localctx, 1);
           {
-            this.state = 25;
+            this.state = 29;
             this.range();
           }
           break;
@@ -202,7 +224,7 @@ export class PartitionSelectionParser extends Parser {
           _localctx = new WildcardPartitionItemContext(_localctx);
           this.enterOuterAlt(_localctx, 2);
           {
-            this.state = 26;
+            this.state = 30;
             this.wildcard();
           }
           break;
@@ -211,7 +233,7 @@ export class PartitionSelectionParser extends Parser {
           _localctx = new SinglePartitionItemContext(_localctx);
           this.enterOuterAlt(_localctx, 3);
           {
-            this.state = 27;
+            this.state = 31;
             this.partitionKey();
           }
           break;
@@ -238,15 +260,15 @@ export class PartitionSelectionParser extends Parser {
     try {
       this.enterOuterAlt(_localctx, 1);
       {
-        this.state = 30;
-        this.match(PartitionSelectionParser.LBRACKET);
-        this.state = 31;
-        this.partitionKey();
-        this.state = 32;
-        this.match(PartitionSelectionParser.RANGE_DELIM);
-        this.state = 33;
-        this.partitionKey();
         this.state = 34;
+        this.match(PartitionSelectionParser.LBRACKET);
+        this.state = 35;
+        this.partitionKey();
+        this.state = 36;
+        this.match(PartitionSelectionParser.RANGE_DELIM);
+        this.state = 37;
+        this.partitionKey();
+        this.state = 38;
         this.match(PartitionSelectionParser.RBRACKET);
       }
     } catch (re) {
@@ -269,7 +291,7 @@ export class PartitionSelectionParser extends Parser {
     try {
       this.enterOuterAlt(_localctx, 1);
       {
-        this.state = 36;
+        this.state = 40;
         this.match(PartitionSelectionParser.WILDCARD_PATTERN);
       }
     } catch (re) {
@@ -290,14 +312,14 @@ export class PartitionSelectionParser extends Parser {
     let _localctx: PartitionKeyContext = new PartitionKeyContext(this._ctx, this.state);
     this.enterRule(_localctx, 10, PartitionSelectionParser.RULE_partitionKey);
     try {
-      this.state = 40;
+      this.state = 44;
       this._errHandler.sync(this);
       switch (this._input.LA(1)) {
         case PartitionSelectionParser.QUOTED_STRING:
           _localctx = new QuotedPartitionKeyContext(_localctx);
           this.enterOuterAlt(_localctx, 1);
           {
-            this.state = 38;
+            this.state = 42;
             this.match(PartitionSelectionParser.QUOTED_STRING);
           }
           break;
@@ -305,7 +327,7 @@ export class PartitionSelectionParser extends Parser {
           _localctx = new UnquotedPartitionKeyContext(_localctx);
           this.enterOuterAlt(_localctx, 2);
           {
-            this.state = 39;
+            this.state = 43;
             this.match(PartitionSelectionParser.UNQUOTED_STRING);
           }
           break;
@@ -327,26 +349,28 @@ export class PartitionSelectionParser extends Parser {
   }
 
   public static readonly _serializedATN: string =
-    '\x03\uC91D\uCABA\u058D\uAFBA\u4F53\u0607\uEA8B\uC241\x03\n-\x04\x02\t' +
+    '\x03\uC91D\uCABA\u058D\uAFBA\u4F53\u0607\uEA8B\uC241\x03\n1\x04\x02\t' +
     '\x02\x04\x03\t\x03\x04\x04\t\x04\x04\x05\t\x05\x04\x06\t\x06\x04\x07\t' +
-    '\x07\x03\x02\x05\x02\x10\n\x02\x03\x02\x03\x02\x03\x03\x03\x03\x03\x03' +
-    '\x07\x03\x17\n\x03\f\x03\x0E\x03\x1A\v\x03\x03\x04\x03\x04\x03\x04\x05' +
-    '\x04\x1F\n\x04\x03\x05\x03\x05\x03\x05\x03\x05\x03\x05\x03\x05\x03\x06' +
-    '\x03\x06\x03\x07\x03\x07\x05\x07+\n\x07\x03\x07\x02\x02\x02\b\x02\x02' +
-    '\x04\x02\x06\x02\b\x02\n\x02\f\x02\x02\x02\x02+\x02\x0F\x03\x02\x02\x02' +
-    '\x04\x13\x03\x02\x02\x02\x06\x1E\x03\x02\x02\x02\b \x03\x02\x02\x02\n' +
-    '&\x03\x02\x02\x02\f*\x03\x02\x02\x02\x0E\x10\x05\x04\x03\x02\x0F\x0E\x03' +
-    '\x02\x02\x02\x0F\x10\x03\x02\x02\x02\x10\x11\x03\x02\x02\x02\x11\x12\x07' +
-    '\x02\x02\x03\x12\x03\x03\x02\x02\x02\x13\x18\x05\x06\x04\x02\x14\x15\x07' +
-    '\x06\x02\x02\x15\x17\x05\x06\x04\x02\x16\x14\x03\x02\x02\x02\x17\x1A\x03' +
-    '\x02\x02\x02\x18\x16\x03\x02\x02\x02\x18\x19\x03\x02\x02\x02\x19\x05\x03' +
-    '\x02\x02\x02\x1A\x18\x03\x02\x02\x02\x1B\x1F\x05\b\x05\x02\x1C\x1F\x05' +
-    '\n\x06\x02\x1D\x1F\x05\f\x07\x02\x1E\x1B\x03\x02\x02\x02\x1E\x1C\x03\x02' +
-    '\x02\x02\x1E\x1D\x03\x02\x02\x02\x1F\x07\x03\x02\x02\x02 !\x07\x03\x02' +
-    '\x02!"\x05\f\x07\x02"#\x07\x05\x02\x02#$\x05\f\x07\x02$%\x07\x04\x02' +
-    "\x02%\t\x03\x02\x02\x02&\'\x07\b\x02\x02\'\v\x03\x02\x02\x02(+\x07\x07" +
-    '\x02\x02)+\x07\t\x02\x02*(\x03\x02\x02\x02*)\x03\x02\x02\x02+\r\x03\x02' +
-    '\x02\x02\x06\x0F\x18\x1E*';
+    '\x07\x03\x02\x05\x02\x10\n\x02\x03\x02\x03\x02\x03\x03\x05\x03\x15\n\x03' +
+    '\x03\x03\x03\x03\x05\x03\x19\n\x03\x07\x03\x1B\n\x03\f\x03\x0E\x03\x1E' +
+    '\v\x03\x03\x04\x03\x04\x03\x04\x05\x04#\n\x04\x03\x05\x03\x05\x03\x05' +
+    '\x03\x05\x03\x05\x03\x05\x03\x06\x03\x06\x03\x07\x03\x07\x05\x07/\n\x07' +
+    '\x03\x07\x02\x02\x02\b\x02\x02\x04\x02\x06\x02\b\x02\n\x02\f\x02\x02\x02' +
+    '\x021\x02\x0F\x03\x02\x02\x02\x04\x14\x03\x02\x02\x02\x06"\x03\x02\x02' +
+    '\x02\b$\x03\x02\x02\x02\n*\x03\x02\x02\x02\f.\x03\x02\x02\x02\x0E\x10' +
+    '\x05\x04\x03\x02\x0F\x0E\x03\x02\x02\x02\x0F\x10\x03\x02\x02\x02\x10\x11' +
+    '\x03\x02\x02\x02\x11\x12\x07\x02\x02\x03\x12\x03\x03\x02\x02\x02\x13\x15' +
+    '\x05\x06\x04\x02\x14\x13\x03\x02\x02\x02\x14\x15\x03\x02\x02\x02\x15\x1C' +
+    '\x03\x02\x02\x02\x16\x18\x07\x06\x02\x02\x17\x19\x05\x06\x04\x02\x18\x17' +
+    '\x03\x02\x02\x02\x18\x19\x03\x02\x02\x02\x19\x1B\x03\x02\x02\x02\x1A\x16' +
+    '\x03\x02\x02\x02\x1B\x1E\x03\x02\x02\x02\x1C\x1A\x03\x02\x02\x02\x1C\x1D' +
+    '\x03\x02\x02\x02\x1D\x05\x03\x02\x02\x02\x1E\x1C\x03\x02\x02\x02\x1F#' +
+    '\x05\b\x05\x02 #\x05\n\x06\x02!#\x05\f\x07\x02"\x1F\x03\x02\x02\x02"' +
+    ' \x03\x02\x02\x02"!\x03\x02\x02\x02#\x07\x03\x02\x02\x02$%\x07\x03\x02' +
+    "\x02%&\x05\f\x07\x02&\'\x07\x05\x02\x02\'(\x05\f\x07\x02()\x07\x04\x02" +
+    '\x02)\t\x03\x02\x02\x02*+\x07\b\x02\x02+\v\x03\x02\x02\x02,/\x07\x07\x02' +
+    '\x02-/\x07\t\x02\x02.,\x03\x02\x02\x02.-\x03\x02\x02\x02/\r\x03\x02\x02' +
+    '\x02\b\x0F\x14\x18\x1C".';
   public static __ATN: ATN;
   public static get _ATN(): ATN {
     if (!PartitionSelectionParser.__ATN) {

@@ -4,8 +4,9 @@ grammar PartitionSelection;
 start: partitionList? EOF;
 
 // A list of partition items separated by commas
+// Allows empty items for backward compatibility (e.g., "key1, , key2")
 partitionList
-    : partitionItem (COMMA partitionItem)*
+    : partitionItem? (COMMA partitionItem?)*
     ;
 
 // Each item can be a range, wildcard, or single partition key
@@ -66,9 +67,11 @@ UNQUOTED_STRING
 
 // Characters allowed in unquoted partition keys
 // Includes common characters found in partition keys: alphanumeric, underscore,
-// hyphen, colon, dot, forward slash, at sign
+// hyphen, colon, forward slash, at sign
+// NOTE: Dot (.) is NOT included to avoid conflicts with RANGE_DELIM (...)
+// Partition keys with dots should be quoted: "key.with.dots"
 fragment UNQUOTED_CHAR
-    : [a-zA-Z0-9_:./@-]
+    : [-a-zA-Z0-9_:/@]
     ;
 
 // Whitespace is skipped
