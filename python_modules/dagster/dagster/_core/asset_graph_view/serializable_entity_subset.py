@@ -51,6 +51,12 @@ class SerializableEntitySubset(Generic[T_EntityKey]):
     value: EntitySubsetValue
 
     @classmethod
+    def empty(
+        cls, key: T_EntityKey, partitions_def: Optional[PartitionsDefinition]
+    ) -> "SerializableEntitySubset[T_EntityKey]":
+        return cls(key=key, value=partitions_def.empty_subset() if partitions_def else False)
+
+    @classmethod
     def from_coercible_value(
         cls,
         key: T_EntityKey,

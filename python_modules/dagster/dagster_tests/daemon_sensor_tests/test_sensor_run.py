@@ -2201,7 +2201,7 @@ def test_targets_asset_selection_sensor(executor, instance, workspace_context, r
 
 
 def test_partitioned_asset_selection_sensor(executor, instance, workspace_context, remote_repo):
-    freeze_datetime = create_datetime(year=2019, month=2, day=27)
+    freeze_datetime = create_datetime(year=2023, month=2, day=27)
     with freeze_time(freeze_datetime):
         sensor = remote_repo.get_sensor("partitioned_asset_selection_sensor")
         remote_origin_id = sensor.get_remote_origin_id()

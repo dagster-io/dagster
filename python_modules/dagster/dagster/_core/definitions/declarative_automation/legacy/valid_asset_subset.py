@@ -98,14 +98,14 @@ class ValidAssetSubset(SerializableEntitySubset[AssetKey]):
                     key=asset_key, value=AllPartitionsSubset(partitions_def, ctx)
                 )
 
-    @staticmethod
+    @classmethod
     def empty(
-        asset_key: AssetKey, partitions_def: Optional[PartitionsDefinition]
+        cls, key: AssetKey, partitions_def: Optional[PartitionsDefinition]
     ) -> "ValidAssetSubset":
         if partitions_def is None:
-            return ValidAssetSubset(key=asset_key, value=False)
+            return cls(key=key, value=False)
         else:
-            return ValidAssetSubset(key=asset_key, value=partitions_def.empty_subset())
+            return cls(key=key, value=partitions_def.empty_subset())
 
     @staticmethod
     def from_asset_partitions_set(

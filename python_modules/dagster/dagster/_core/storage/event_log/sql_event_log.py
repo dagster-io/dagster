@@ -6,6 +6,7 @@ from collections.abc import Iterable, Iterator, Mapping, Sequence
 from contextlib import contextmanager
 from datetime import datetime, timezone
 from functools import cached_property
+from types import EllipsisType
 from typing import (  # noqa: UP035
     TYPE_CHECKING,
     AbstractSet,
@@ -2992,15 +2993,24 @@ class SqlEventLogStorage(EventLogStorage):
         planned = cast(
             "AssetCheckEvaluationPlanned", check.not_none(event.dagster_event).event_specific_data
         )
+        partition_keys = (
+            planned.partitions_subset.get_partition_keys() if planned.partitions_subset else [None]
+        )
         with self.index_connection() as conn:
             conn.execute(
                 AssetCheckExecutionsTable.insert().values(
-                    asset_key=planned.asset_key.to_string(),
-                    check_name=planned.check_name,
-                    run_id=event.run_id,
-                    execution_status=AssetCheckExecutionRecordStatus.PLANNED.value,
-                    evaluation_event=serialize_value(event),
-                    evaluation_event_timestamp=self._event_insert_timestamp(event),
+                    [
+                        dict(
+                            asset_key=planned.asset_key.to_string(),
+                            check_name=planned.check_name,
+                            partition=partition_key,
+                            run_id=event.run_id,
+                            execution_status=AssetCheckExecutionRecordStatus.PLANNED.value,
+                            evaluation_event=serialize_value(event),
+                            evaluation_event_timestamp=self._event_insert_timestamp(event),
+                        )
+                        for partition_key in partition_keys
+                    ]
                 )
             )
 
@@ -3033,6 +3043,7 @@ class SqlEventLogStorage(EventLogStorage):
                         if evaluation.target_materialization_data
                         else None
                     ),
+                    partition=evaluation.partition,
                 )
             )
 
@@ -3049,6 +3060,7 @@ class SqlEventLogStorage(EventLogStorage):
                         AssetCheckExecutionsTable.c.asset_key == evaluation.asset_key.to_string(),
                         AssetCheckExecutionsTable.c.check_name == evaluation.check_name,
                         AssetCheckExecutionsTable.c.run_id == event.run_id,
+                        self._get_asset_check_partition_filter(evaluation.partition),
                     )
                 )
                 .values(
@@ -3065,6 +3077,7 @@ class SqlEventLogStorage(EventLogStorage):
                         if evaluation.target_materialization_data
                         else None
                     ),
+                    partition=evaluation.partition,
                 )
             ).rowcount
 
@@ -3089,6 +3102,7 @@ class SqlEventLogStorage(EventLogStorage):
                             if evaluation.target_materialization_data
                             else None
                         ),
+                        partition=evaluation.partition,
                     )
                 ).rowcount
 
@@ -3100,12 +3114,21 @@ class SqlEventLogStorage(EventLogStorage):
                 "as a result of duplicate AssetCheckPlanned events."
             )
 
+    def _get_asset_check_partition_filter(self, partition: Union[str, None, EllipsisType]):
+        if partition is ...:
+            return True
+        elif partition is None:
+            return AssetCheckExecutionsTable.c.partition.is_(None)
+        else:
+            return AssetCheckExecutionsTable.c.partition == partition
+
     def get_asset_check_execution_history(
         self,
         check_key: AssetCheckKey,
         limit: int,
         cursor: Optional[int] = None,
         status: Optional[AbstractSet[AssetCheckExecutionRecordStatus]] = None,
+        partition: Union[str, None, EllipsisType] = ...,
     ) -> Sequence[AssetCheckExecutionRecord]:
         check.inst_param(check_key, "key", AssetCheckKey)
         check.int_param(limit, "limit")
@@ -3119,12 +3142,14 @@ class SqlEventLogStorage(EventLogStorage):
                     AssetCheckExecutionsTable.c.execution_status,
                     AssetCheckExecutionsTable.c.evaluation_event,
                     AssetCheckExecutionsTable.c.create_timestamp,
+                    AssetCheckExecutionsTable.c.partition,
                 ]
             )
             .where(
                 db.and_(
                     AssetCheckExecutionsTable.c.asset_key == check_key.asset_key.to_string(),
                     AssetCheckExecutionsTable.c.check_name == check_key.name,
+                    self._get_asset_check_partition_filter(partition),
                 )
             )
             .order_by(AssetCheckExecutionsTable.c.id.desc())
@@ -3144,8 +3169,13 @@ class SqlEventLogStorage(EventLogStorage):
         return [AssetCheckExecutionRecord.from_db_row(row, key=check_key) for row in rows]
 
     def get_latest_asset_check_execution_by_key(
-        self, check_keys: Sequence[AssetCheckKey]
+        self,
+        check_keys: Sequence[AssetCheckKey],
+        partition: Union[str, None, EllipsisType] = ...,
     ) -> Mapping[AssetCheckKey, AssetCheckExecutionRecord]:
+        """Returns the latest AssetCheckExecutionRecord for each check key. By default, returns the latest
+        record regardless of partitioning.
+        """
         if not check_keys:
             return {}
 
@@ -3161,6 +3191,7 @@ class SqlEventLogStorage(EventLogStorage):
                         [key.asset_key.to_string() for key in check_keys]
                     ),
                     AssetCheckExecutionsTable.c.check_name.in_([key.name for key in check_keys]),
+                    self._get_asset_check_partition_filter(partition),
                 )
             )
             .group_by(
@@ -3178,6 +3209,7 @@ class SqlEventLogStorage(EventLogStorage):
                 AssetCheckExecutionsTable.c.execution_status,
                 AssetCheckExecutionsTable.c.evaluation_event,
                 AssetCheckExecutionsTable.c.create_timestamp,
+                AssetCheckExecutionsTable.c.partition,
             ]
         ).select_from(
             AssetCheckExecutionsTable.join(

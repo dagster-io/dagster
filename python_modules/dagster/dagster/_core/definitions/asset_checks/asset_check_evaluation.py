@@ -10,6 +10,7 @@ from dagster._core.definitions.asset_checks.asset_check_spec import (
 )
 from dagster._core.definitions.events import AssetKey, MetadataValue, RawMetadataValue
 from dagster._core.definitions.metadata import normalize_metadata
+from dagster._core.definitions.partitions.subset import PartitionsSubset
 from dagster._serdes import whitelist_for_serdes
 
 
@@ -20,6 +21,7 @@ class AssetCheckEvaluationPlanned:
 
     asset_key: AssetKey
     check_name: str
+    partitions_subset: Optional[PartitionsSubset] = None
 
     @property
     def asset_check_key(self) -> AssetCheckKey:
@@ -60,6 +62,8 @@ class AssetCheckEvaluation(IHaveNew):
             A text description of the result of the check evaluation.
         blocking (Optional[bool]):
             Whether the check is blocking.
+        partition (Optional[str]):
+            The partition that the check was evaluated on, if applicable.
     """
 
     asset_key: AssetKey
@@ -70,6 +74,7 @@ class AssetCheckEvaluation(IHaveNew):
     severity: AssetCheckSeverity
     description: Optional[str]
     blocking: Optional[bool]
+    partition: Optional[str]
 
     def __new__(
         cls,
@@ -81,6 +86,7 @@ class AssetCheckEvaluation(IHaveNew):
         severity: AssetCheckSeverity = AssetCheckSeverity.ERROR,
         description: Optional[str] = None,
         blocking: Optional[bool] = None,
+        partition: Optional[str] = None,
     ):
         return super().__new__(
             cls,
@@ -94,6 +100,7 @@ class AssetCheckEvaluation(IHaveNew):
             severity=severity,
             description=description,
             blocking=blocking,
+            partition=partition,
         )
 
     @property
