@@ -22,6 +22,7 @@
     "generate-op-selection": "ts-node -O '{\"module\": \"commonjs\"}' ./src/scripts/generateOpSelection.ts && eslint src/op-selection/generated/ --fix",
     "generate-job-selection": "ts-node -O '{\"module\": \"commonjs\"}' ./src/scripts/generateJobSelection.ts && eslint src/job-selection/generated/ --fix",
     "generate-automation-selection": "ts-node -O '{\"module\": \"commonjs\"}' ./src/scripts/generateAutomationSelection.ts && eslint src/automation-selection/generated/ --fix",
+    "generate-partition-selection": "ts-node -O '{\"module\": \"commonjs\"}' ./src/scripts/generatePartitionSelection.ts && eslint src/partitions/generated/ --fix",
     "storybook": "storybook dev -p 6006",
     "build-storybook": "storybook build",
     "find-circular-dependencies": "ts-node -O '{\"module\": \"commonjs\"}' ./src/scripts/findCircularDependencies.ts"
