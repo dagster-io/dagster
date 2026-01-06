@@ -1,11 +1,11 @@
 import {useCallback, useContext, useMemo} from 'react';
 
-import {TruncatedTextWithFullTextOnHover} from '../../nav/getLeftNavItemsForOption';
 import {WorkspaceContext} from '../../workspace/WorkspaceContext/WorkspaceContext';
 import {buildRepoAddress} from '../../workspace/buildRepoAddress';
 import {repoAddressAsHumanString} from '../../workspace/repoAddressAsString';
 import {RepoAddress} from '../../workspace/types';
 import {StaticBaseConfig, useStaticSetFilter} from '../BaseFilters/useStaticSetFilter';
+import {TruncatedTextWithFullTextOnHover} from '../TruncatedTextWithFullTextOnHover';
 
 type Props =
   | {
