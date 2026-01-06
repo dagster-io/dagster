@@ -1698,6 +1698,7 @@ type Run implements PipelineRun & RunsFeedEntry {
   hasUnconstrainedRootNodes: Boolean!
   hasRunMetricsEnabled: Boolean!
   externalJobSource: String
+  assetCheckEvaluations: [AssetCheckEvaluation!]!
 }
 
 interface RunsFeedEntry {

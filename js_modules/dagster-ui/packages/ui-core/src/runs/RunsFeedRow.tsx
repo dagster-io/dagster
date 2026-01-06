@@ -15,7 +15,7 @@ import styled from 'styled-components';
 import {CreatedByTagCell} from './CreatedByTag';
 import {RunActionsMenu} from './RunActionsMenu';
 import {RunRowTags} from './RunRowTags';
-import {RunStatusTag, RunStatusTagWithStats} from './RunStatusTag';
+import {RunChecksTagWithPopover, RunStatusTag, RunStatusTagWithStats} from './RunStatusTag';
 import {RunTableTargetHeader} from './RunTableTargetHeader';
 import {DagsterTag} from './RunTag';
 import {RunTags} from './RunTags';
@@ -165,14 +165,18 @@ export const RunsFeedRow = ({
       <RowCell>
         <CreatedByTagCell tags={entry.tags || []} onAddTag={onAddTag} repoAddress={repoAddress} />
       </RowCell>
-      <RowCell>
-        <div>
-          {entry.__typename === 'PartitionBackfill' ? (
-            <RunStatusTag status={entry.runStatus} />
-          ) : (
+      <RowCell style={{minWidth: 0}}>
+        {entry.__typename === 'PartitionBackfill' ? (
+          <RunStatusTag status={entry.runStatus} />
+        ) : (
+          <Box
+            flex={{direction: 'row', gap: 8, alignItems: 'center', wrap: 'wrap'}}
+            style={{minWidth: 0}}
+          >
             <RunStatusTagWithStats status={entry.runStatus} runId={entry.id} />
-          )}
-        </div>
+            <RunChecksTagWithPopover evaluations={entry.assetCheckEvaluations} />
+          </Box>
+        )}
       </RowCell>
       <RowCell style={{flexDirection: 'column', gap: 4}}>
         <RunTime run={runTime} />
@@ -201,7 +205,7 @@ export const RunsFeedRow = ({
 };
 
 const TEMPLATE_COLUMNS =
-  '60px minmax(0, 1.5fr) minmax(0, 1.2fr) minmax(0, 1fr) 140px 170px 120px 132px';
+  '60px minmax(0, 1.5fr) minmax(0, 1.2fr) minmax(0, 1fr) minmax(160px, 1fr) 170px 120px 132px';
 
 export const RunsFeedTableHeader = ({checkbox}: {checkbox: React.ReactNode}) => {
   return (

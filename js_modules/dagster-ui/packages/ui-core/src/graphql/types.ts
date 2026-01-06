@@ -4870,6 +4870,7 @@ export type Run = PipelineRun &
   RunsFeedEntry & {
     __typename: 'Run';
     allPools: Maybe<Array<Scalars['String']['output']>>;
+    assetCheckEvaluations: Array<AssetCheckEvaluation>;
     assetCheckSelection: Maybe<Array<AssetCheckhandle>>;
     assetChecks: Maybe<Array<AssetCheckhandle>>;
     assetMaterializations: Array<MaterializationEvent>;
@@ -14233,6 +14234,10 @@ export const buildRun = (
   return {
     __typename: 'Run',
     allPools: overrides && overrides.hasOwnProperty('allPools') ? overrides.allPools! : [],
+    assetCheckEvaluations:
+      overrides && overrides.hasOwnProperty('assetCheckEvaluations')
+        ? overrides.assetCheckEvaluations!
+        : [],
     assetCheckSelection:
       overrides && overrides.hasOwnProperty('assetCheckSelection')
         ? overrides.assetCheckSelection!

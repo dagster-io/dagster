@@ -62,6 +62,14 @@ export type RunsFeedTableEntryFragment_Run = {
     repositoryName: string;
     repositoryLocationName: string;
   } | null;
+  assetCheckEvaluations: Array<{
+    __typename: 'AssetCheckEvaluation';
+    checkName: string;
+    severity: Types.AssetCheckSeverity;
+    success: boolean;
+    timestamp: number;
+    assetKey: {__typename: 'AssetKey'; path: Array<string>};
+  }>;
   tags: Array<{__typename: 'PipelineTag'; key: string; value: string}>;
   assetSelection: Array<{__typename: 'AssetKey'; path: Array<string>}> | null;
   assetCheckSelection: Array<{
