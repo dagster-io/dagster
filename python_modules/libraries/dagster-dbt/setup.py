@@ -38,7 +38,7 @@ setup(
     ],
     packages=find_packages(exclude=["dagster_dbt_tests*"]),
     include_package_data=True,
-    python_requires=">=3.10,<3.15",
+    python_requires=">=3.10,<3.14",  # dbt-core incompatible with Python 3.14
     install_requires=[
         f"dagster{pin}",
         # Follow the version support constraints for dbt Core: https://docs.getdbt.com/docs/dbt-versions/core

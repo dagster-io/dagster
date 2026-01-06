@@ -4,10 +4,10 @@ import {useRecoilValue} from 'recoil';
 import {CodeLocationFilters, flattenCodeLocationRows} from './flattenCodeLocationRows';
 import {DefinitionsSource} from '../graphql/types';
 import {useQueryPersistedState} from '../hooks/useQueryPersistedState';
-import {TruncatedTextWithFullTextOnHover} from '../nav/getLeftNavItemsForOption';
 import {codeLocationStatusAtom} from '../nav/useCodeLocationsStatus';
 import {useFilters} from '../ui/BaseFilters';
 import {useStaticSetFilter} from '../ui/BaseFilters/useStaticSetFilter';
+import {TruncatedTextWithFullTextOnHover} from '../ui/TruncatedTextWithFullTextOnHover';
 import {CodeLocationRowStatusType} from '../workspace/CodeLocationRowStatusType';
 import {WorkspaceContext} from '../workspace/WorkspaceContext/WorkspaceContext';
 

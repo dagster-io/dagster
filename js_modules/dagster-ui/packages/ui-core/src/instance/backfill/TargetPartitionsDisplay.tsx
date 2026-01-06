@@ -2,8 +2,8 @@ import {Box, Button, ButtonLink, Dialog, DialogFooter, Tag} from '@dagster-io/ui
 import {useState} from 'react';
 
 import {AssetBackfillTargetPartitions} from '../../graphql/types';
-import {TruncatedTextWithFullTextOnHover} from '../../nav/getLeftNavItemsForOption';
 import {escapePartitionKey} from '../../partitions/SpanRepresentation';
+import {TruncatedTextWithFullTextOnHover} from '../../ui/TruncatedTextWithFullTextOnHover';
 import {VirtualizedItemListForDialog} from '../../ui/VirtualizedItemListForDialog';
 import {numberFormatter} from '../../ui/formatters';
 
