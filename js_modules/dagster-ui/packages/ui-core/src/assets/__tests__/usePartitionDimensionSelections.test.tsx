@@ -176,5 +176,28 @@ describe('usePartitionDimensionSelections', () => {
         {name: 'secondary', rangeText: '2025-11-14', isFromPartitionQueryStringParam: true},
       ]);
     });
+
+    it('should decode JSON-formatted partition key from partition param', () => {
+      // JSON partition keys contain special characters (commas, quotes, braces)
+      // that have meaning in our partition selection syntax. The decode function
+      // should preserve the raw key; escaping happens later in the hook.
+      const jsonKey = '{"region": "us-east", "tier": "premium", "version": 1}';
+      const dimensions = [
+        {
+          name: 'default',
+          type: PartitionDefinitionType.STATIC,
+          partitionKeys: [jsonKey, '{"region": "us-west"}'],
+        },
+      ];
+
+      const {decode} = buildSerializer({dimensions});
+      if (!decode) {
+        throw new Error('decode is undefined');
+      }
+
+      expect(decode({partition: jsonKey})).toEqual([
+        {name: 'default', rangeText: jsonKey, isFromPartitionQueryStringParam: true},
+      ]);
+    });
   });
 });

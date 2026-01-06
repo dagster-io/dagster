@@ -12,6 +12,7 @@ import {useSetStateUpdateCallback} from '../hooks/useSetStateUpdateCallback';
 import {
   allPartitionsRange,
   allPartitionsSpan,
+  escapePartitionKey,
   partitionsToText,
   spanTextToSelectionsOrError,
 } from '../partitions/SpanRepresentation';
@@ -126,9 +127,15 @@ export const usePartitionDimensionSelections = (opts: {
         saved?.rangeText !== undefined &&
         (shouldReadPartitionQueryStringParam || !saved?.isFromPartitionQueryStringParam)
       ) {
+        // When the text comes from the `partition` query string param, it's a raw partition key
+        // (e.g., '{"region": "us-east"}'), not our serialized syntax. We need to escape it so
+        // special characters like commas, brackets, and quotes are treated as literal characters.
+        const textToParse = saved.isFromPartitionQueryStringParam
+          ? escapePartitionKey(saved.rangeText)
+          : saved.rangeText;
         const selections = spanTextToSelectionsOrError(
           dimension.partitionKeys,
-          saved.rangeText,
+          textToParse,
           skipPartitionKeyValidation,
         );
         if (selections instanceof Error) {
