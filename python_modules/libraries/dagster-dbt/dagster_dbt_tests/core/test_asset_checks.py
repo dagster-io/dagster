@@ -25,6 +25,7 @@ from dagster_dbt.asset_decorator import dbt_assets
 from dagster_dbt.asset_utils import DAGSTER_DBT_UNIQUE_ID_METADATA_KEY
 from dagster_dbt.core.resource import DbtCliResource
 from dagster_dbt.dagster_dbt_translator import DagsterDbtTranslator, DagsterDbtTranslatorSettings
+from dagster_shared.record import replace
 
 from dagster_dbt_tests.dbt_projects import test_asset_checks_path, test_dbt_alias_path
 
@@ -748,12 +749,13 @@ def test_asset_checks_evaluations(
             if isinstance(event, AssetCheckEvaluation):
                 check_events_without_non_deterministic_metadata[
                     event.asset_key, event.check_name
-                ] = event._replace(
+                ] = replace(
+                    event,
                     metadata={
                         k: v
                         for k, v in event.metadata.items()
                         if k not in non_deterministic_metadata_keys
-                    }
+                    },
                 )
 
         for expected_asset_check_evaluation in expected_results:
