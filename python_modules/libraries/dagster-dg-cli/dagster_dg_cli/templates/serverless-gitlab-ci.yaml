@@ -1,6 +1,8 @@
 variables:
   # The organization name in Dagster Cloud
   DAGSTER_CLOUD_ORGANIZATION: TEMPLATE_ORGANIZATION_NAME
+  # The Dagster Cloud URL
+  DAGSTER_CLOUD_URL: TEMPLATE_DAGSTER_CLOUD_URL
   # The API token from https://dagster.cloud/ should be stored in a CI/CD Variable called DAGSTER_CLOUD_API_TOKEN
   DAGSTER_CLOUD_API_TOKEN: $DAGSTER_CLOUD_API_TOKEN
   # Path to the root folder containing the dagster project
