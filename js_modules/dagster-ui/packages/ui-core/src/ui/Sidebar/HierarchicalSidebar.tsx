@@ -1,11 +1,11 @@
 import {Box, Container, Inner, Row, Skeleton} from '@dagster-io/ui-components';
 import {useVirtualizer} from '@tanstack/react-virtual';
-import invariant from 'invariant';
 import * as React from 'react';
 
 import {HierarchicalNode} from './HierarchicalNode';
 import {HierarchyNode, RenderedNode} from './types';
 import {useQueryAndLocalStoragePersistedState} from '../../hooks/useQueryAndLocalStoragePersistedState';
+import {invariant} from '../../util/invariant';
 
 const COLLATOR = new Intl.Collator(navigator.language, {sensitivity: 'base', numeric: true});
 
