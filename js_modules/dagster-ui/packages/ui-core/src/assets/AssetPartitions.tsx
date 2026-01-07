@@ -34,6 +34,7 @@ import {useQueryPersistedState} from '../hooks/useQueryPersistedState';
 import {SortButton} from '../launchpad/ConfigEditorConfigPicker';
 import {DimensionRangeWizard} from '../partitions/DimensionRangeWizard';
 import {testId} from '../testing/testId';
+import {assertExists} from '../util/invariant';
 
 interface Props {
   assetKey: AssetKey;
@@ -74,8 +75,7 @@ export const AssetPartitions = ({
   dataRefreshHint,
   isLoadingDefinition,
 }: Props) => {
-  // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-  const assetHealth = usePartitionHealthData([assetKey], dataRefreshHint)[0]!;
+  const assetHealth = usePartitionHealthData([assetKey], dataRefreshHint)[0];
   const [selections, setSelections] = usePartitionDimensionSelections({
     knownDimensionNames: assetPartitionDimensions,
     modifyQueryString: true,
@@ -124,26 +124,32 @@ export const AssetPartitions = ({
     params,
     setParams,
     dimensionCount: selections.length,
-    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-    defaultKeyInDimension: (dimensionIdx) => dimensionKeysInSelection(dimensionIdx)[0]!,
+    defaultKeyInDimension: (dimensionIdx) =>
+      assertExists(
+        dimensionKeysInSelection(dimensionIdx)[0],
+        'Expected at least one key in dimension selection',
+      ),
   });
 
   // Get asset health on all dimensions, with the non-time dimensions scoped
   // to the time dimension selection (so the status of partition "VA" reflects
   // the selection you've made on the time axis.)
   const rangesForEachDimension = useMemo(() => {
-    if (!assetHealth) {
+    const [firstSelection] = selections;
+    if (!assetHealth || !firstSelection) {
       return selections.map(() => []);
     }
+
+    const timeDimensionSelection =
+      timeDimensionIdx !== -1 ? selections[timeDimensionIdx] : undefined;
+
     return selections.map((_s, idx) =>
       assetHealth.rangesForSingleDimension(
         idx,
         idx === 1 && focusedDimensionKeys[0]
-          ? // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-            [selectionRangeWithSingleKey(focusedDimensionKeys[0], selections[0]!.dimension)]
-          : timeDimensionIdx !== -1 && idx !== timeDimensionIdx
-            ? // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-              selections[timeDimensionIdx]!.selectedRanges
+          ? [selectionRangeWithSingleKey(focusedDimensionKeys[0], firstSelection.dimension)]
+          : timeDimensionSelection && idx !== timeDimensionIdx
+            ? timeDimensionSelection.selectedRanges
             : undefined,
       ),
     );
@@ -155,21 +161,23 @@ export const AssetPartitions = ({
   // loading the full key space and shift responsibility for this to GraphQL in the future.
   //
   const dimensionKeysInSelection = (idx: number) => {
-    if (!selections[idx]) {
+    const selection = selections[idx];
+    if (!selection) {
       return []; // loading
     }
     // Special case: If you have cleared the time selection in the top bar, we
     // clear all dimension columns, (even though you still have a dimension 2 selection)
-    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-    if (timeDimensionIdx !== -1 && selections[timeDimensionIdx]!.selectedRanges.length === 0) {
+    if (
+      timeDimensionIdx !== -1 &&
+      assertExists(selections[timeDimensionIdx], 'Expected time dimension selection').selectedRanges
+        .length === 0
+    ) {
       return [];
     }
 
-    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-    const {dimension, selectedRanges} = selections[idx]!;
+    const {dimension, selectedRanges} = selection;
     const allKeys = dimension.partitionKeys;
-    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-    const sortType = getSort(sortTypes, idx, selections[idx]!.dimension.type);
+    const sortType = getSort(sortTypes, idx, selection.dimension.type);
 
     const filterResultsBySearch = (keys: string[]) => {
       const searchLower = searchValues?.[idx]?.toLocaleLowerCase().trim() || '';
@@ -188,8 +196,7 @@ export const AssetPartitions = ({
     // Get the health ranges, and then explode them into a `matching` set of keys
     // that have the requested statuses.
     const healthRangesInSelection = rangesClippedToSelection(
-      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-      rangesForEachDimension[idx]!,
+      assertExists(rangesForEachDimension[idx], `Expected ranges for dimension ${idx}`),
       selectedRanges,
     );
     const getKeysWithStates = (states: AssetPartitionStatus[]) =>
@@ -225,6 +232,17 @@ export const AssetPartitions = ({
     return sortResults(filterResultsBySearch(result), sortType);
   };
 
+  if (!assetHealth) {
+    return (
+      <Box
+        style={{height: 390}}
+        flex={{direction: 'row', justifyContent: 'center', alignItems: 'center'}}
+      >
+        <Spinner purpose="page" />
+      </Box>
+    );
+  }
+
   const countsByStateInSelection = keyCountByStateInSelection(assetHealth, selections);
   const countsFiltered = statusFilters.reduce((a, b) => a + countsByStateInSelection[b], 0);
 
@@ -239,19 +257,25 @@ export const AssetPartitions = ({
     );
   }
 
+  const timeDimensionSelection =
+    timeDimensionIdx !== -1
+      ? assertExists(selections[timeDimensionIdx], 'Expected time dimension selection')
+      : null;
+
   return (
     <>
-      {timeDimensionIdx !== -1 && (
+      {timeDimensionSelection && (
         <Box padding={{vertical: 16, horizontal: 24}} border="bottom">
           <DimensionRangeWizard
-            // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-            dimensionType={selections[timeDimensionIdx]!.dimension.type}
-            // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-            partitionKeys={selections[timeDimensionIdx]!.dimension.partitionKeys}
-            // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-            health={{ranges: rangesForEachDimension[timeDimensionIdx]!}}
-            // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-            selected={selections[timeDimensionIdx]!.selectedKeys}
+            dimensionType={timeDimensionSelection.dimension.type}
+            partitionKeys={timeDimensionSelection.dimension.partitionKeys}
+            health={{
+              ranges: assertExists(
+                rangesForEachDimension[timeDimensionIdx],
+                'Expected ranges for time dimension',
+              ),
+            }}
+            selected={timeDimensionSelection.selectedKeys}
             setSelected={(selectedKeys) =>
               setSelections(
                 selections.map((r, idx) => (idx === timeDimensionIdx ? {...r, selectedKeys} : r)),
@@ -399,8 +423,10 @@ export const AssetPartitions = ({
                     }
                     const dimensionKeyIdx = selection.dimension.partitionKeys.indexOf(dimensionKey);
                     return partitionStatusAtIndex(
-                      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-                      rangesForEachDimension[idx]!,
+                      assertExists(
+                        rangesForEachDimension[idx],
+                        `Expected ranges for dimension ${idx}`,
+                      ),
                       dimensionKeyIdx,
                     ).filter((s) => statusFilters.includes(s));
                   }}
@@ -442,10 +468,11 @@ function sortResults(results: string[], sortType: SortType) {
 }
 
 function getSort(sortTypes: Array<SortType>, idx: number, definitionType: PartitionDefinitionType) {
-  return sortTypes[idx] === undefined
-    ? definitionType === PartitionDefinitionType.TIME_WINDOW
+  const sortType = sortTypes[idx];
+  if (sortType === undefined) {
+    return definitionType === PartitionDefinitionType.TIME_WINDOW
       ? SortType.REVERSE_CREATION
-      : SortType.CREATION
-    : // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-      sortTypes[idx]!;
+      : SortType.CREATION;
+  }
+  return sortType;
 }

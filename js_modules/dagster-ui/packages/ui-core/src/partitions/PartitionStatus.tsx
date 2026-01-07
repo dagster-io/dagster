@@ -11,6 +11,7 @@ import {
 import {Range} from '../assets/usePartitionHealthData';
 import {RunStatus} from '../graphql/types';
 import {RUN_STATUS_COLORS, runStatusToBackfillStateString} from '../runs/RunStatusTag';
+import {assertExists} from '../util/invariant';
 
 type SelectionRange = {
   start: string;
@@ -273,10 +274,12 @@ export const PartitionStatus = React.memo(
                   left: 0,
                   width: indexToPct(
                     Math.min(
-                      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-                      partitionNames.indexOf(selected[selected.length - 1]!),
-                      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-                      partitionNames.indexOf(selected[0]!),
+                      partitionNames.indexOf(
+                        assertExists(selected[selected.length - 1], 'Expected non-empty selection'),
+                      ),
+                      partitionNames.indexOf(
+                        assertExists(selected[0], 'Expected non-empty selection'),
+                      ),
                     ),
                   ),
                   height: small ? 14 : 24,
@@ -286,18 +289,22 @@ export const PartitionStatus = React.memo(
                 style={{
                   left: `min(calc(100% - 3px), ${indexToPct(
                     Math.min(
-                      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-                      partitionNames.indexOf(selected[0]!),
-                      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-                      partitionNames.indexOf(selected[selected.length - 1]!),
+                      partitionNames.indexOf(
+                        assertExists(selected[0], 'Expected non-empty selection'),
+                      ),
+                      partitionNames.indexOf(
+                        assertExists(selected[selected.length - 1], 'Expected non-empty selection'),
+                      ),
                     ),
                   )})`,
                   width: indexToPct(
                     Math.abs(
-                      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-                      partitionNames.indexOf(selected[selected.length - 1]!) -
-                        // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-                        partitionNames.indexOf(selected[0]!),
+                      partitionNames.indexOf(
+                        assertExists(selected[selected.length - 1], 'Expected non-empty selection'),
+                      ) -
+                        partitionNames.indexOf(
+                          assertExists(selected[0], 'Expected non-empty selection'),
+                        ),
                     ) + 1,
                   ),
                   height: small ? 14 : 24,
@@ -311,10 +318,15 @@ export const PartitionStatus = React.memo(
                     partitionNames.length -
                       1 -
                       Math.max(
-                        // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-                        partitionNames.indexOf(selected[selected.length - 1]!),
-                        // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-                        partitionNames.indexOf(selected[0]!),
+                        partitionNames.indexOf(
+                          assertExists(
+                            selected[selected.length - 1],
+                            'Expected non-empty selection',
+                          ),
+                        ),
+                        partitionNames.indexOf(
+                          assertExists(selected[0], 'Expected non-empty selection'),
+                        ),
                       ),
                   ),
                   height: small ? 14 : 24,
@@ -362,8 +374,7 @@ function useColorSegments(
       ? opRunStatusToColorRanges(partitionNames, splitPartitions, _statusForKey)
       : _ranges && splitPartitions
         ? splitColorSegments(partitionNames, assetHealthToColorSegments(_ranges))
-        : // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-          assetHealthToColorSegments(_ranges!);
+        : assetHealthToColorSegments(assertExists(_ranges, 'Expected ranges to be defined'));
   }, [splitPartitions, partitionNames, _ranges, _statusForKey]);
 }
 
@@ -374,11 +385,10 @@ function splitColorSegments(partitionNames: string[], segments: ColorSegment[]):
   const result: ColorSegment[] = [];
   for (const segment of segments) {
     for (let idx = segment.start.idx; idx <= segment.end.idx; idx++) {
+      const key = assertExists(partitionNames[idx], `Expected partition name at index ${idx}`);
       result.push({
-        // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-        start: {idx, key: partitionNames[idx]!},
-        // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-        end: {idx, key: partitionNames[idx]!},
+        start: {idx, key},
+        end: {idx, key},
         label: segment.label,
         style: segment.style,
       });

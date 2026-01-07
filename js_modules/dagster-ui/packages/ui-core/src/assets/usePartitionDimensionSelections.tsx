@@ -22,7 +22,7 @@ export type DimensionQueryState = {
   isFromPartitionQueryStringParam: boolean;
 };
 
-export function buildSerializer(assetHealth: Pick<PartitionHealthData, 'dimensions'>) {
+export function buildSerializer(assetHealth: Pick<PartitionHealthData, 'dimensions'> | undefined) {
   const serializer: QueryPersistedStateConfig<DimensionQueryState[]> = {
     defaults: {},
     encode: (state) => {
@@ -73,7 +73,7 @@ export function buildSerializer(assetHealth: Pick<PartitionHealthData, 'dimensio
  * writes changes back to the query string using the compacted "spans" format.
  */
 export const usePartitionDimensionSelections = (opts: {
-  assetHealth: Pick<PartitionHealthData, 'dimensions'>;
+  assetHealth: Pick<PartitionHealthData, 'dimensions'> | undefined;
   modifyQueryString: boolean;
   defaultSelection?: 'empty' | 'all';
   knownDimensionNames?: string[]; // improves loading state if available

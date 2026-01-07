@@ -1,4 +1,5 @@
 import {cache} from '../../util/idb-lru-cache';
+import {assertExists} from '../../util/invariant';
 
 type TimeWindow<T> = {start: number; end: number; data: T[]};
 
@@ -148,10 +149,9 @@ export class HourlyDataCache<T> {
     if (!this.cache.has(hour)) {
       this.cache.set(hour, []);
     }
-    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-    this.cache.get(hour)!.push({start, end, data});
-    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-    this.cache.set(hour, this.mergeIntervals(this.cache.get(hour)!));
+    const hourCache = assertExists(this.cache.get(hour), 'Expected hour to exist in cache');
+    hourCache.push({start, end, data});
+    this.cache.set(hour, this.mergeIntervals(hourCache));
   }
 
   /**
@@ -162,8 +162,9 @@ export class HourlyDataCache<T> {
   getHourData(s: number): T[] {
     const hour = Math.floor(s / ONE_HOUR_S);
     if (this.cache.has(hour)) {
-      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-      return this.cache.get(hour)!.flatMap((interval) => interval.data);
+      return assertExists(this.cache.get(hour), 'Expected hour to exist in cache').flatMap(
+        (interval) => interval.data,
+      );
     }
     return [];
   }
@@ -175,14 +176,16 @@ export class HourlyDataCache<T> {
    */
   getMissingIntervals(s: number): Array<[number, number]> {
     const hour = Math.floor(s / ONE_HOUR_S);
-    if (
-      this.cache.has(hour) &&
-      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-      this.cache.get(hour)!.length === 1 &&
-      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-      this.cache.get(hour)![0]!.end - this.cache.get(hour)![0]!.start === ONE_HOUR_S
-    ) {
-      return [];
+    const hourCache = this.cache.get(hour);
+    if (hourCache) {
+      const firstInterval = hourCache[0];
+      if (
+        hourCache.length === 1 &&
+        firstInterval &&
+        firstInterval.end - firstInterval.start === ONE_HOUR_S
+      ) {
+        return [];
+      }
     }
 
     const missingIntervals: Array<[number, number]> = [];
@@ -190,9 +193,8 @@ export class HourlyDataCache<T> {
     const hourEnd = (hour + 1) * ONE_HOUR_S;
     let currentStart = hourStart;
 
-    if (this.cache.has(hour)) {
-      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-      for (const {start: cachedStart, end: cachedEnd} of this.cache.get(hour)!) {
+    if (hourCache) {
+      for (const {start: cachedStart, end: cachedEnd} of hourCache) {
         if (cachedStart > currentStart) {
           missingIntervals.push([currentStart, cachedStart]);
         }
@@ -222,8 +224,10 @@ export class HourlyDataCache<T> {
     }
 
     if (this.cache.has(startHour)) {
-      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-      const intervals = this.cache.get(startHour)!;
+      const intervals = assertExists(
+        this.cache.get(startHour),
+        'Expected startHour to exist in cache',
+      );
       let currentStart = start;
 
       for (const {start: cachedStart, end: cachedEnd} of intervals) {
@@ -253,12 +257,15 @@ export class HourlyDataCache<T> {
     }
 
     intervals.sort((a, b) => a.start - b.start);
-    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-    const mergedIntervals: Array<TimeWindow<T>> = [intervals[0]!];
+    const mergedIntervals: Array<TimeWindow<T>> = [
+      assertExists(intervals[0], 'Expected intervals to be non-empty'),
+    ];
 
     for (const current of intervals.slice(1)) {
-      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-      const lastMerged = mergedIntervals[mergedIntervals.length - 1]!;
+      const lastMerged = assertExists(
+        mergedIntervals[mergedIntervals.length - 1],
+        'Expected merged intervals to be non-empty',
+      );
 
       if (current.start <= lastMerged.end) {
         lastMerged.end = Math.max(lastMerged.end, current.end);
