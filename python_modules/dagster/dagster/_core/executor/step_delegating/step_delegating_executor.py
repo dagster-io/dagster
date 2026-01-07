@@ -13,7 +13,6 @@ from dagster._core.events import DagsterEvent, DagsterEventType, EngineEventData
 from dagster._core.execution.context.system import PlanOrchestrationContext
 from dagster._core.execution.plan.active import ActiveExecution
 from dagster._core.execution.plan.instance_concurrency_context import InstanceConcurrencyContext
-from dagster._core.execution.plan.objects import StepFailureData
 from dagster._core.execution.plan.plan import ExecutionPlan
 from dagster._core.execution.retries import RetryMode
 from dagster._core.execution.step_dependency_config import StepDependencyConfig
@@ -319,7 +318,7 @@ class StepDelegatingExecutor(Executor):
                                     assert isinstance(
                                         dagster_event.engine_event_data.error, SerializableErrorInfo
                                     )
-                                    self.get_failure_or_retry_event_after_error(
+                                    self.log_failure_or_retry_event_after_error(
                                         step_context,
                                         dagster_event.engine_event_data.error,
                                         active_execution.get_known_state(),
@@ -363,7 +362,7 @@ class StepDelegatingExecutor(Executor):
                                             cls_name=None,
                                         )
 
-                                        self.get_failure_or_retry_event_after_error(
+                                        self.log_failure_or_retry_event_after_error(
                                             step_context,
                                             health_check_error,
                                             active_execution.get_known_state(),
@@ -373,14 +372,37 @@ class StepDelegatingExecutor(Executor):
                                     serializable_error = serializable_error_info_from_exc_info(
                                         sys.exc_info()
                                     )
-                                    # Log a step failure event if there was an error during the health
-                                    # check
-                                    DagsterEvent.step_failure_event(
-                                        step_context=plan_context.for_step(step),
-                                        step_failure_data=StepFailureData(
-                                            error=serializable_error,
-                                            user_failure_data=None,
-                                        ),
+
+                                    DagsterEvent.engine_event(
+                                        step_context,
+                                        f"Exception while running health check for step {step.key} - terminating and failing the step",
+                                        EngineEventData(error=serializable_error),
+                                    )
+
+                                    # Terminate the step after health check exception
+                                    try:
+                                        list(
+                                            self._step_handler.terminate_step(
+                                                self._get_step_handler_context(
+                                                    plan_context, [step], active_execution
+                                                )
+                                            )
+                                        )
+                                    except Exception:
+                                        DagsterEvent.engine_event(
+                                            step_context,
+                                            f"Exception while terminating step {step.key} after health check exception",
+                                            EngineEventData(
+                                                error=serializable_error_info_from_exc_info(
+                                                    sys.exc_info()
+                                                )
+                                            ),
+                                        )
+
+                                    self.log_failure_or_retry_event_after_error(
+                                        step_context,
+                                        serializable_error,
+                                        active_execution.get_known_state(),
                                     )
 
                         if self._max_concurrent is not None:
