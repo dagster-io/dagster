@@ -1,7 +1,8 @@
 ---
-title: dagster-hightouch API reference
+title: dagster-hightouch integration reference
+description: API reference for the Dagster Hightouch integration.
+sidebar_position: 500
 ---
-
 # dagster-hightouch API reference
 
 ## Components
