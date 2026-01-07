@@ -15,7 +15,7 @@ from dagster_dg_core.context import DgContext
 from dagster_dg_core.shared_options import dg_editable_dagster_options, dg_global_options
 from dagster_dg_core.utils import DgClickCommand, DgClickGroup, exit_with_error
 from dagster_dg_core.utils.telemetry import cli_telemetry_wrapper
-from dagster_shared.plus.config import DagsterPlusCliConfig
+from dagster_shared.plus.config import DAGSTER_CLOUD_BASE_URL, DagsterPlusCliConfig
 
 from dagster_dg_cli.cli.plus.constants import DgPlusAgentPlatform, DgPlusAgentType
 from dagster_dg_cli.cli.plus.deploy.configure.configure_build_artifacts import (
@@ -72,7 +72,7 @@ def resolve_organization(
     plus_config: Optional[DagsterPlusCliConfig],
     *,
     show_detected_message: bool = True,
-) -> Optional[str]:
+) -> str:
     """Resolve organization name from config or prompt."""
     if organization is not None:
         return organization
@@ -85,6 +85,25 @@ def resolve_organization(
         return plus_config.organization
 
     return click.prompt("Dagster Plus organization name") or ""
+
+
+def resolve_url(
+    url: Optional[str],
+    plus_config: Optional[DagsterPlusCliConfig],
+    resolved_organization: str,
+    *,
+    show_detected_message: bool = True,
+) -> str:
+    """Resolve Dagster Cloud URL from config or use default."""
+    if url is not None:
+        return url
+
+    if plus_config and plus_config.url:
+        if show_detected_message:
+            click.echo(f"Using Dagster Cloud URL {plus_config.url} from Dagster Plus config.")
+        return plus_config.url
+
+    return f"{DAGSTER_CLOUD_BASE_URL}/{resolved_organization}"
 
 
 def resolve_deployment(
@@ -161,6 +180,7 @@ def _resolve_config_with_prompts(
     agent_type: Optional[DgPlusAgentType],
     agent_platform: Optional[DgPlusAgentPlatform],
     organization: Optional[str],
+    url: Optional[str],
     deployment: Optional[str],
     git_root: Optional[Path],
     python_version: Optional[str],
@@ -192,11 +212,13 @@ def _resolve_config_with_prompts(
         git_root,
     )
 
-    # Resolve organization and deployment (only needed if scaffolding CI/CD)
+    # Resolve organization, URL, and deployment (only needed if scaffolding CI/CD)
     resolved_organization = None
+    resolved_url = None
     resolved_deployment = deployment or "prod"
     if resolved_git_provider is not None:
         resolved_organization = resolve_organization(organization, plus_config)
+        resolved_url = resolve_url(url, plus_config, resolved_organization)
         resolved_deployment = resolve_deployment(deployment, plus_config)
 
     # Resolve git root
@@ -223,6 +245,7 @@ def _resolve_config_with_prompts(
         agent_type=resolved_agent_type,
         agent_platform=resolved_agent_platform,
         organization_name=resolved_organization,
+        cloud_url=resolved_url,
         deployment_name=resolved_deployment,
         git_root=resolved_git_root,
         python_version=resolved_python_version,
@@ -274,6 +297,7 @@ def deploy_configure_group(
         agent_type=None,
         agent_platform=None,
         organization=None,
+        url=None,
         deployment=None,
         git_root=None,
         python_version=None,
@@ -305,6 +329,10 @@ def deploy_configure_group(
     help="Dagster Plus organization name",
 )
 @click.option(
+    "--url",
+    help="Dagster Plus URL for the organization (defaults to https://<organization>.dagster.cloud)",
+)
+@click.option(
     "--deployment",
     default="prod",
     help="Deployment name",
@@ -333,6 +361,7 @@ def deploy_configure_serverless(
     git_provider: Optional[str],
     python_version: Optional[str],
     organization: Optional[str],
+    url: Optional[str],
     deployment: Optional[str],
     git_root: Optional[Path],
     pex_deploy: bool,
@@ -353,6 +382,7 @@ def deploy_configure_serverless(
         agent_type=DgPlusAgentType.SERVERLESS,
         agent_platform=None,
         organization=organization,
+        url=url,
         deployment=deployment,
         git_root=git_root,
         python_version=python_version,
@@ -393,6 +423,10 @@ def deploy_configure_serverless(
     help="Dagster Plus organization name",
 )
 @click.option(
+    "--url",
+    help="Dagster Cloud URL (defaults to https://dagster.cloud)",
+)
+@click.option(
     "--deployment",
     default="prod",
     help="Deployment name",
@@ -418,6 +452,7 @@ def deploy_configure_hybrid(
     registry_url: Optional[str],
     python_version: Optional[str],
     organization: Optional[str],
+    url: Optional[str],
     deployment: Optional[str],
     git_root: Optional[Path],
     skip_confirmation_prompt: bool,
@@ -441,6 +476,7 @@ def deploy_configure_hybrid(
         agent_type=DgPlusAgentType.HYBRID,
         agent_platform=resolved_platform,
         organization=organization,
+        url=url,
         deployment=deployment,
         git_root=git_root,
         python_version=python_version,
