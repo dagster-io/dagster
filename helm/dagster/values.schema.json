@@ -640,6 +640,103 @@
             "title": "ComputeLogManagerType",
             "type": "string"
         },
+        "Concurrency": {
+            "additionalProperties": false,
+            "properties": {
+                "enabled": {
+                    "default": false,
+                    "title": "Enabled",
+                    "type": "boolean"
+                },
+                "pools": {
+                    "$ref": "#/$defs/ConcurrencyPools",
+                    "default": {
+                        "defaultLimit": null,
+                        "granularity": null,
+                        "opGranularityRunBuffer": null
+                    }
+                },
+                "runs": {
+                    "$ref": "#/$defs/ConcurrencyRuns",
+                    "default": {
+                        "maxConcurrentRuns": null,
+                        "tagConcurrencyLimits": []
+                    }
+                }
+            },
+            "title": "Concurrency",
+            "type": "object"
+        },
+        "ConcurrencyPools": {
+            "additionalProperties": false,
+            "properties": {
+                "defaultLimit": {
+                    "anyOf": [
+                        {
+                            "type": "integer"
+                        },
+                        {
+                            "type": "null"
+                        }
+                    ],
+                    "default": null,
+                    "title": "Defaultlimit"
+                },
+                "granularity": {
+                    "anyOf": [
+                        {
+                            "type": "string"
+                        },
+                        {
+                            "type": "null"
+                        }
+                    ],
+                    "default": null,
+                    "title": "Granularity"
+                },
+                "opGranularityRunBuffer": {
+                    "anyOf": [
+                        {
+                            "type": "integer"
+                        },
+                        {
+                            "type": "null"
+                        }
+                    ],
+                    "default": null,
+                    "title": "Opgranularityrunbuffer"
+                }
+            },
+            "title": "ConcurrencyPools",
+            "type": "object"
+        },
+        "ConcurrencyRuns": {
+            "additionalProperties": false,
+            "properties": {
+                "maxConcurrentRuns": {
+                    "anyOf": [
+                        {
+                            "type": "integer"
+                        },
+                        {
+                            "type": "null"
+                        }
+                    ],
+                    "default": null,
+                    "title": "Maxconcurrentruns"
+                },
+                "tagConcurrencyLimits": {
+                    "default": [],
+                    "items": {
+                        "$ref": "#/$defs/schema__charts__dagster__subschema__concurrency__TagConcurrencyLimit"
+                    },
+                    "title": "Tagconcurrencylimits",
+                    "type": "array"
+                }
+            },
+            "title": "ConcurrencyRuns",
+            "type": "object"
+        },
         "ConfigMapEnvSource": {
             "$ref": "https://raw.githubusercontent.com/yannh/kubernetes-json-schema/master/v1.19.0/_definitions.json#/definitions/io.k8s.api.core.v1.ConfigMapEnvSource",
             "additionalProperties": true,
@@ -1835,7 +1932,7 @@
                     "anyOf": [
                         {
                             "items": {
-                                "$ref": "#/$defs/TagConcurrencyLimit"
+                                "$ref": "#/$defs/schema__charts__dagster__subschema__daemon__TagConcurrencyLimit"
                             },
                             "type": "array"
                         },
@@ -2830,40 +2927,6 @@
             "title": "StartupProbe",
             "type": "object"
         },
-        "TagConcurrencyLimit": {
-            "additionalProperties": false,
-            "properties": {
-                "key": {
-                    "title": "Key",
-                    "type": "string"
-                },
-                "value": {
-                    "anyOf": [
-                        {
-                            "type": "string"
-                        },
-                        {
-                            "$ref": "#/$defs/TagConcurrencyLimitConfig"
-                        },
-                        {
-                            "type": "null"
-                        }
-                    ],
-                    "default": null,
-                    "title": "Value"
-                },
-                "limit": {
-                    "title": "Limit",
-                    "type": "integer"
-                }
-            },
-            "required": [
-                "key",
-                "limit"
-            ],
-            "title": "TagConcurrencyLimit",
-            "type": "object"
-        },
         "TagConcurrencyLimitConfig": {
             "additionalProperties": false,
             "properties": {
@@ -3731,6 +3794,75 @@
             "title": "Workspace",
             "type": "object"
         },
+        "schema__charts__dagster__subschema__concurrency__TagConcurrencyLimit": {
+            "additionalProperties": false,
+            "properties": {
+                "key": {
+                    "title": "Key",
+                    "type": "string"
+                },
+                "value": {
+                    "anyOf": [
+                        {
+                            "type": "string"
+                        },
+                        {
+                            "additionalProperties": true,
+                            "type": "object"
+                        },
+                        {
+                            "type": "null"
+                        }
+                    ],
+                    "default": null,
+                    "title": "Value"
+                },
+                "limit": {
+                    "title": "Limit",
+                    "type": "integer"
+                }
+            },
+            "required": [
+                "key",
+                "limit"
+            ],
+            "title": "TagConcurrencyLimit",
+            "type": "object"
+        },
+        "schema__charts__dagster__subschema__daemon__TagConcurrencyLimit": {
+            "additionalProperties": false,
+            "properties": {
+                "key": {
+                    "title": "Key",
+                    "type": "string"
+                },
+                "value": {
+                    "anyOf": [
+                        {
+                            "type": "string"
+                        },
+                        {
+                            "$ref": "#/$defs/TagConcurrencyLimitConfig"
+                        },
+                        {
+                            "type": "null"
+                        }
+                    ],
+                    "default": null,
+                    "title": "Value"
+                },
+                "limit": {
+                    "title": "Limit",
+                    "type": "integer"
+                }
+            },
+            "required": [
+                "key",
+                "limit"
+            ],
+            "title": "TagConcurrencyLimit",
+            "type": "object"
+        },
         "schema__charts__dagster__subschema__postgresql__Service": {
             "properties": {
                 "port": {
@@ -3859,6 +3991,21 @@
         },
         "retention": {
             "$ref": "#/$defs/Retention"
+        },
+        "concurrency": {
+            "$ref": "#/$defs/Concurrency",
+            "default": {
+                "enabled": false,
+                "pools": {
+                    "defaultLimit": null,
+                    "granularity": null,
+                    "opGranularityRunBuffer": null
+                },
+                "runs": {
+                    "maxConcurrentRuns": null,
+                    "tagConcurrencyLimits": []
+                }
+            }
         },
         "additionalInstanceConfig": {
             "anyOf": [

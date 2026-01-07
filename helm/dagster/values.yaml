@@ -1457,6 +1457,41 @@ retention:
       skipped: 7
       started: -1
       success: -1
+
+####################################################################################################
+# Concurrency
+# Configure concurrency limits for runs and ops/assets. This is the recommended way to configure
+# concurrency settings. Do NOT set these values if you are also configuring maxConcurrentRuns,
+# tagConcurrencyLimits, or blockOpConcurrencyLimitedRuns in dagsterDaemon.runCoordinator.config.
+####################################################################################################
+concurrency:
+  # Set to true to enable the concurrency configuration block
+  enabled: false
+
+  # Pool-level concurrency settings (for op/asset-level concurrency)
+  pools:
+    # Default max concurrent operations for an unconfigured pool (0 to max limit)
+    defaultLimit: ~
+    # Granularity of concurrency enforcement: "run" or "op"
+    granularity: ~
+    # When granularity is "op", number of runs allowed to block waiting for pool slots
+    opGranularityRunBuffer: ~
+
+  # Run-level concurrency settings
+  runs:
+    # Max runs in progress at once (-1 to disable, 0 to stop launches, default 10)
+    maxConcurrentRuns: ~
+    # Tag-based concurrency limits
+    # Example:
+    # tagConcurrencyLimits:
+    #   - key: "database"
+    #     limit: 1
+    #   - key: "team"
+    #     value:
+    #       applyLimitPerUniqueValue: true
+    #     limit: 2
+    tagConcurrencyLimits: []
+
 ####################################################################################################
 # Additional fields on the instance to configure that aren't already determined by a key above.
 # See https://docs.dagster.io/deployment/dagster-instance for the full set of available fields.
