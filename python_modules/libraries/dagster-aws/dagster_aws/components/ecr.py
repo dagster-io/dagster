@@ -19,18 +19,16 @@ class ECRPublicResourceComponent(dg.Component, dg.Resolvable, dg.Model):
         description="Optional AWS credentials. If not provided, environment defaults will be used.",
     )
 
-    resource_key: str = Field(
-        default="ecr_public",
+    resource_key: Optional[str] = Field(
+        default=None,
         description="The key under which the ECR Public resource will be bound to the definitions.",
     )
 
     @cached_property
-    def _resource(self) -> ECRPublicResource:
+    def resource(self) -> ECRPublicResource:
         if self.credentials:
             return ECRPublicResource(**self.credentials.render_as_dict())
         return ECRPublicResource()
 
     def build_defs(self, context: dg.ComponentLoadContext) -> dg.Definitions:
-        if self.resource_key:
-            return dg.Definitions(resources={self.resource_key: self._resource})
-        return dg.Definitions()
+        return dg.Definitions(resources={self.resource_key or "ecr_public": self.resource})

@@ -13,7 +13,7 @@ from dagster_aws.components.redshift import (
     RedshiftClientResourceComponent as RedshiftClientResourceComponent,
 )
 from dagster_aws.components.s3 import (
-    S3FileManagerComponent as S3FileManagerComponent,
+    S3FileManagerResourceComponent as S3FileManagerResourceComponent,
     S3ResourceComponent as S3ResourceComponent,
 )
 from dagster_aws.components.secretsmanager import (

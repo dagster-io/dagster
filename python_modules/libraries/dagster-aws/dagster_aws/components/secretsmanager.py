@@ -21,19 +21,17 @@ class SecretsManagerResourceComponent(dg.Component, dg.Resolvable, dg.Model):
         description="AWS credentials - inline configuration."
     )
     resource_key: Optional[str] = Field(
-        default="secretsmanager",
+        default=None,
         description="The key under which the SecretsManager resource will be bound to the definitions.",
     )
 
     @cached_property
-    def _resource(self) -> SecretsManagerResource:
+    def resource(self) -> SecretsManagerResource:
         """Resolves credentials and returns a configured SecretsManager resource."""
         return SecretsManagerResource(**self.credentials.render_as_dict())
 
     def build_defs(self, context: dg.ComponentLoadContext) -> dg.Definitions:
-        if self.resource_key:
-            return dg.Definitions(resources={self.resource_key: self._resource})
-        return dg.Definitions()
+        return dg.Definitions(resources={self.resource_key or "secretsmanager": self.resource})
 
 
 @public
@@ -52,12 +50,12 @@ class SecretsManagerSecretsResourceComponent(dg.Component, dg.Resolvable, dg.Mod
         description="AWS Secrets Manager secrets with this tag will be fetched and made available.",
     )
     resource_key: Optional[str] = Field(
-        default="secretsmanager_secrets",
+        default=None,
         description="The key under which the SecretsManagerSecrets resource will be bound to the definitions.",
     )
 
     @cached_property
-    def _resource(self) -> SecretsManagerSecretsResource:
+    def resource(self) -> SecretsManagerSecretsResource:
         creds_data = self.credentials.render_as_dict()
         return SecretsManagerSecretsResource(
             **creds_data,
@@ -66,6 +64,4 @@ class SecretsManagerSecretsResourceComponent(dg.Component, dg.Resolvable, dg.Mod
         )
 
     def build_defs(self, context: dg.ComponentLoadContext) -> dg.Definitions:
-        if self.resource_key:
-            return dg.Definitions(resources={self.resource_key: self._resource})
-        return dg.Definitions()
+        return dg.Definitions(resources={self.resource_key or "secretsmanager": self.resource})

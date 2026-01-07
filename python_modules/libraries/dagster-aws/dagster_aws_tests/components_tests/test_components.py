@@ -15,7 +15,7 @@ from dagster_aws.components import (
     RedshiftClientResourceComponent,
     RedshiftCredentialsComponent,
     S3CredentialsComponent,
-    S3FileManagerComponent,
+    S3FileManagerResourceComponent,
     S3ResourceComponent,
     SecretsManagerResourceComponent,
     SecretsManagerSecretsResourceComponent,
@@ -24,8 +24,7 @@ from dagster_aws.components import (
 from dagster_aws.ecr import ECRPublicResource
 from dagster_aws.rds.resources import RDSResource
 from dagster_aws.redshift.resources import RedshiftClientResource
-from dagster_aws.s3.file_manager import S3FileManager
-from dagster_aws.s3.resources import S3Resource
+from dagster_aws.s3.resources import S3FileManagerResource, S3Resource
 from dagster_aws.secretsmanager.resources import (
     SecretsManagerResource,
     SecretsManagerSecretsResource,
@@ -44,6 +43,7 @@ from dagster_aws.utils import ResourceWithBoto3Configuration
         (AthenaCredentialsComponent, ResourceWithAthenaConfig),
         (RedshiftCredentialsComponent, RedshiftClientResource),
         (S3ResourceComponent, S3Resource),
+        (S3FileManagerResourceComponent, S3FileManagerResource),
         (AthenaClientResourceComponent, AthenaClientResource),
         (RedshiftClientResourceComponent, RedshiftClientResource),
         (SSMResourceComponent, SSMResource),
@@ -55,8 +55,7 @@ from dagster_aws.utils import ResourceWithBoto3Configuration
     ],
 )
 def test_component_fields_sync_with_resource(component_class, resource_class):
-    """Validates that component configuration schemas are fully synchronized with their underlying resource definitions.
-    """
+    """Validates that component configuration schemas are fully synchronized with their underlying resource definitions."""
     component_fields = set(component_class.model_fields.keys())
 
     if "credentials" in component_class.model_fields:
@@ -83,8 +82,7 @@ def test_component_fields_sync_with_resource(component_class, resource_class):
 
 
 def test_s3_component_integration(monkeypatch):
-    """Verifies successful instantiation of S3Resource from YAML with environment variable resolution.
-    """
+    """Verifies successful instantiation of S3Resource from YAML with environment variable resolution."""
     monkeypatch.setenv("AWS_REGION", "us-east-1")
     monkeypatch.setenv("MAX_ATTEMPTS", "5")
 
@@ -111,8 +109,7 @@ def test_s3_component_integration(monkeypatch):
 
 
 def test_s3_default_key_logic():
-    """Verifies that the component registers under the default key 's3' when 'resource_key' is omitted.
-    """
+    """Verifies that the component registers under the default key 's3' when 'resource_key' is omitted."""
     with create_defs_folder_sandbox() as sandbox:
         defs_path = sandbox.scaffold_component(
             component_cls=S3ResourceComponent,
@@ -129,17 +126,16 @@ def test_s3_default_key_logic():
 
 
 def test_s3_file_manager_integration(monkeypatch):
-    """Validates S3FileManager instantiation and parameter mapping (e.g., prefix to base_key) via the Sandbox.
-    """
+    """Validates S3FileManagerResourceComponent instantiation and parameter mapping."""
     monkeypatch.setenv("AWS_REGION", "us-east-1")
     monkeypatch.setenv("MY_BUCKET", "test-bucket-artifacts")
     monkeypatch.setenv("MY_PREFIX", "dagster/logs")
 
     with create_defs_folder_sandbox() as sandbox:
         defs_path = sandbox.scaffold_component(
-            component_cls=S3FileManagerComponent,
+            component_cls=S3FileManagerResourceComponent,
             defs_yaml_contents={
-                "type": "dagster_aws.components.S3FileManagerComponent",
+                "type": "dagster_aws.components.S3FileManagerResourceComponent",
                 "attributes": {
                     "credentials": {"region_name": "{{ env.AWS_REGION }}"},
                     "s3_bucket": "{{ env.MY_BUCKET }}",
@@ -154,15 +150,17 @@ def test_s3_file_manager_integration(monkeypatch):
                 assert defs.resources
                 assert "my_file_manager" in defs.resources
                 resource = defs.resources["my_file_manager"]
-                assert isinstance(resource, S3FileManager)
+                assert isinstance(resource, S3FileManagerResource)
+                assert resource.s3_bucket == "test-bucket-artifacts"
+                assert resource.s3_prefix == "dagster/logs"
+                assert resource.region_name == "us-east-1"
 
 
 # --- Athena Component Tests ---
 
 
 def test_athena_component_integration(monkeypatch):
-    """Verifies AthenaClientResource loading with nested credentials configuration.
-    """
+    """Verifies AthenaClientResource loading with nested credentials configuration."""
     monkeypatch.setenv("ATHENA_WORKGROUP", "primary")
     monkeypatch.setenv("AWS_REGION", "us-west-2")
 
@@ -189,8 +187,7 @@ def test_athena_component_integration(monkeypatch):
 
 
 def test_redshift_component_integration(monkeypatch):
-    """Verifies RedshiftClientResource loading and type conversion (string env vars to integer ports).
-    """
+    """Verifies RedshiftClientResource loading and type conversion (string env vars to integer ports)."""
     monkeypatch.setenv("REDSHIFT_HOST", "cluster.redshift.amazonaws.com")
 
     with create_defs_folder_sandbox() as sandbox:
@@ -219,8 +216,7 @@ def test_redshift_component_integration(monkeypatch):
 
 
 def test_ssm_component_integration(monkeypatch):
-    """Verifies SSMResource loading with basic regional configuration.
-    """
+    """Verifies SSMResource loading with basic regional configuration."""
     monkeypatch.setenv("AWS_REGION", "us-east-1")
 
     with create_defs_folder_sandbox() as sandbox:
@@ -241,8 +237,7 @@ def test_ssm_component_integration(monkeypatch):
 
 
 def test_parameter_store_defaults_behavior():
-    """Verifies that ParameterStoreResource defaults to an empty parameter list when not specified.
-    """
+    """Verifies that ParameterStoreResource defaults to an empty parameter list when not specified."""
     with create_defs_folder_sandbox() as sandbox:
         defs_path = sandbox.scaffold_component(
             component_cls=ParameterStoreResourceComponent,
@@ -258,8 +253,7 @@ def test_parameter_store_defaults_behavior():
 
 
 def test_parameter_store_complex_integration(monkeypatch):
-    """Verifies ParameterStoreResource handling of complex types (lists) and boolean flags.
-    """
+    """Verifies ParameterStoreResource handling of complex types (lists) and boolean flags."""
     monkeypatch.setenv("AWS_REGION", "us-west-1")
 
     with create_defs_folder_sandbox() as sandbox:
@@ -287,8 +281,7 @@ def test_parameter_store_complex_integration(monkeypatch):
 
 
 def test_secrets_manager_integration(monkeypatch):
-    """Verifies SecretsManagerResource (Client) instantiation from configuration.
-    """
+    """Verifies SecretsManagerResource (Client) instantiation from configuration."""
     monkeypatch.setenv("AWS_REGION", "us-east-1")
 
     with create_defs_folder_sandbox() as sandbox:
@@ -307,8 +300,7 @@ def test_secrets_manager_integration(monkeypatch):
 
 
 def test_secrets_manager_secrets_integration(monkeypatch):
-    """Verifies SecretsManagerSecretsResource loads specific secret ARNs correctly from YAML.
-    """
+    """Verifies SecretsManagerSecretsResource loads specific secret ARNs correctly from YAML."""
     monkeypatch.setenv("SECRET_ARN", "arn:aws:secretsmanager:us-east-1:123:secret:db")
 
     with create_defs_folder_sandbox() as sandbox:
@@ -335,8 +327,7 @@ def test_secrets_manager_secrets_integration(monkeypatch):
 
 
 def test_rds_component_integration(monkeypatch):
-    """Verifies RDSResource loading with endpoint URL and region configuration.
-    """
+    """Verifies RDSResource loading with endpoint URL and region configuration."""
     monkeypatch.setenv("RDS_ENDPOINT", "https://rds.amazonaws.com")
     monkeypatch.setenv("AWS_REGION", "eu-central-1")
 
@@ -365,8 +356,7 @@ def test_rds_component_integration(monkeypatch):
 
 
 def test_ecr_public_component_integration(monkeypatch):
-    """Verifies ECRPublicResource instantiation via the Dagster Sandbox.
-    """
+    """Verifies ECRPublicResource instantiation via the Dagster Sandbox."""
     monkeypatch.setenv("AWS_REGION", "us-east-1")
 
     with create_defs_folder_sandbox() as sandbox:

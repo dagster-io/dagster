@@ -18,18 +18,16 @@ class SSMResourceComponent(dg.Component, dg.Resolvable, dg.Model):
         description="AWS credentials - inline configuration."
     )
     resource_key: Optional[str] = Field(
-        default="ssm", description="The key under which the resource will be bound in definitions."
+        default=None, description="The key under which the resource will be bound in definitions."
     )
 
     @cached_property
-    def _resource(self) -> SSMResource:
+    def resource(self) -> SSMResource:
         """Resolves credentials and returns a configured SSM resource."""
         return SSMResource(**self.credentials.render_as_dict())
 
     def build_defs(self, context: dg.ComponentLoadContext) -> dg.Definitions:
-        if self.resource_key:
-            return dg.Definitions(resources={self.resource_key: self._resource})
-        return dg.Definitions()
+        return dg.Definitions(resources={self.resource_key or "ssm": self.resource})
 
 
 @public
@@ -59,12 +57,12 @@ class ParameterStoreResourceComponent(dg.Component, dg.Resolvable, dg.Model):
     )
 
     resource_key: Optional[str] = Field(
-        default="parameter_store",
+        default=None,
         description="The key under which the ParameterStore resource will be bound to the definitions.",
     )
 
     @cached_property
-    def _resource(self) -> ParameterStoreResource:
+    def resource(self) -> ParameterStoreResource:
         return ParameterStoreResource(
             **self.credentials.render_as_dict(),
             parameters=self.parameters,
@@ -74,6 +72,4 @@ class ParameterStoreResourceComponent(dg.Component, dg.Resolvable, dg.Model):
         )
 
     def build_defs(self, context: dg.ComponentLoadContext) -> dg.Definitions:
-        if self.resource_key:
-            return dg.Definitions(resources={self.resource_key: self._resource})
-        return dg.Definitions()
+        return dg.Definitions(resources={self.resource_key or "parameter_store": self.resource})

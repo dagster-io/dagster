@@ -18,16 +18,14 @@ class RDSResourceComponent(dg.Component, dg.Resolvable, dg.Model):
         description="AWS credentials - inline configuration."
     )
     resource_key: Optional[str] = Field(
-        default="rds",
+        default=None,
         description="The key under which the RDS resource will be bound to the definitions.",
     )
 
     @cached_property
-    def _resource(self) -> RDSResource:
+    def resource(self) -> RDSResource:
         """Resolves credentials and returns a configured RDS resource."""
         return RDSResource(**self.credentials.render_as_dict())
 
     def build_defs(self, context: dg.ComponentLoadContext) -> dg.Definitions:
-        if self.resource_key:
-            return dg.Definitions(resources={self.resource_key: self._resource})
-        return dg.Definitions()
+        return dg.Definitions(resources={self.resource_key or "rds": self.resource})
