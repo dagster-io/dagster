@@ -590,3 +590,167 @@ def test_blocked_concurrency_limits_legacy_keys():
                 # second that the steps are blocked, in addition to the processing of any step
                 # events
                 assert instance.event_log_storage.get_records_for_run_calls(result.run_id) <= 3  # pyright: ignore[reportAttributeAccessIssue]
+
+
+class HealthCheckExceptionStepHandler(TestStepHandler):
+    """Step handler that raises an exception during health check."""
+
+    health_check_exception_count = 0
+    terminate_after_exception_count = 0
+
+    def check_step_health(self, step_handler_context) -> CheckStepHealthResult:
+        HealthCheckExceptionStepHandler.health_check_exception_count += 1
+        raise Exception("Simulated health check failure")
+
+    def terminate_step(self, step_handler_context):
+        HealthCheckExceptionStepHandler.terminate_after_exception_count += 1
+        return iter(())
+
+    @classmethod
+    def reset(cls):
+        super().reset()
+        cls.health_check_exception_count = 0
+        cls.terminate_after_exception_count = 0
+
+
+@dg.executor(
+    name="health_check_exception_executor",
+    requirements=dg.multiple_process_executor_requirements(),
+    config_schema=dg.Permissive(),
+)
+def health_check_exception_executor(exc_init):
+    return StepDelegatingExecutor(
+        HealthCheckExceptionStepHandler(),
+        **(merge_dicts({"retries": RetryMode.DISABLED}, exc_init.executor_config)),
+    )
+
+
+@dg.op
+def simple_health_check_op(_):
+    # Sleep to ensure health check has time to run before the step completes - the health
+    # check failure will prevent the test from actually having to wait this long
+    time.sleep(30)
+    return 1
+
+
+@dg.job(executor_def=health_check_exception_executor)
+def health_check_exception_job():
+    simple_health_check_op()
+
+
+def test_terminate_step_on_health_check_exception():
+    """Test that step is terminated when health check raises an exception."""
+    HealthCheckExceptionStepHandler.reset()
+    with dg.instance_for_test() as instance:
+        result = dg.execute_job(
+            dg.reconstructable(health_check_exception_job),
+            instance=instance,
+            run_config={"execution": {"config": {"check_step_health_interval_seconds": 0}}},
+        )
+        HealthCheckExceptionStepHandler.wait_for_processes()
+
+    # The job should fail because the health check raises an exception
+    assert not result.success
+
+    # Verify that health check was called
+    assert HealthCheckExceptionStepHandler.health_check_exception_count >= 1
+
+    # Verify that terminate_step was called after the health check exception
+    assert HealthCheckExceptionStepHandler.terminate_after_exception_count >= 1
+
+    # Verify that a STEP_FAILURE event was emitted
+    step_failure_events = [
+        e for e in result.all_events if e.event_type_value == DagsterEventType.STEP_FAILURE.value
+    ]
+    assert len(step_failure_events) >= 1
+    assert "Simulated health check failure" in str(step_failure_events[0].event_specific_data)
+
+
+class HealthCheckExceptionWithRetryStepHandler(TestStepHandler):
+    """Step handler that raises an exception on first health check, then succeeds on retry."""
+
+    health_check_count = 0
+    terminate_count = 0
+    launch_count = 0
+
+    def launch_step(self, step_handler_context):
+        HealthCheckExceptionWithRetryStepHandler.launch_count += 1
+        return super().launch_step(step_handler_context)
+
+    def check_step_health(self, step_handler_context) -> CheckStepHealthResult:
+        HealthCheckExceptionWithRetryStepHandler.health_check_count += 1
+        # Only fail on the first attempt (first health check)
+        if HealthCheckExceptionWithRetryStepHandler.launch_count == 1:
+            raise Exception("Simulated health check failure on first attempt")
+        return CheckStepHealthResult.healthy()
+
+    def terminate_step(self, step_handler_context):
+        HealthCheckExceptionWithRetryStepHandler.terminate_count += 1
+        return iter(())
+
+    @classmethod
+    def reset(cls):
+        super().reset()
+        cls.health_check_count = 0
+        cls.terminate_count = 0
+        cls.launch_count = 0
+
+
+@dg.executor(
+    name="health_check_exception_with_retry_executor",
+    requirements=dg.multiple_process_executor_requirements(),
+    config_schema=dg.Permissive(),
+)
+def health_check_exception_with_retry_executor(exc_init):
+    return StepDelegatingExecutor(
+        HealthCheckExceptionWithRetryStepHandler(),
+        **(merge_dicts({"retries": RetryMode.ENABLED}, exc_init.executor_config)),
+    )
+
+
+@dg.op(retry_policy=dg.RetryPolicy(max_retries=2))
+def retry_health_check_op(_):
+    # Sleep to ensure health check has time to run before the step completes - the health
+    # check failure will prevent the test from actually having to wait this long
+    time.sleep(30)
+    return 1
+
+
+@dg.job(executor_def=health_check_exception_with_retry_executor)
+def health_check_exception_with_retry_job():
+    retry_health_check_op()
+
+
+def test_health_check_exception_with_retry_policy():
+    """Test that step is terminated and retried when health check raises an exception."""
+    HealthCheckExceptionWithRetryStepHandler.reset()
+    with dg.instance_for_test() as instance:
+        result = dg.execute_job(
+            dg.reconstructable(health_check_exception_with_retry_job),
+            instance=instance,
+            run_config={"execution": {"config": {"check_step_health_interval_seconds": 0}}},
+        )
+        HealthCheckExceptionWithRetryStepHandler.wait_for_processes()
+
+    # The job should succeed because the step is retried after the health check failure
+    assert result.success
+
+    # Verify that terminate_step was called after the health check exception
+    assert HealthCheckExceptionWithRetryStepHandler.terminate_count >= 1
+
+    # Verify that the step was launched twice (initial + retry)
+    assert HealthCheckExceptionWithRetryStepHandler.launch_count == 2
+
+    # Verify that a STEP_UP_FOR_RETRY event was emitted
+    step_retry_events = [
+        e
+        for e in result.all_events
+        if e.event_type_value == DagsterEventType.STEP_UP_FOR_RETRY.value
+    ]
+    assert len(step_retry_events) >= 1
+
+    # Verify that the step eventually succeeded
+    step_success_events = [
+        e for e in result.all_events if e.event_type_value == DagsterEventType.STEP_SUCCESS.value
+    ]
+    assert len(step_success_events) == 1
