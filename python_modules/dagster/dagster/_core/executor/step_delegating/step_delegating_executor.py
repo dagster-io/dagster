@@ -369,40 +369,14 @@ class StepDelegatingExecutor(Executor):
                                         )
 
                                 except Exception:
-                                    serializable_error = serializable_error_info_from_exc_info(
-                                        sys.exc_info()
-                                    )
-
                                     DagsterEvent.engine_event(
                                         step_context,
-                                        f"Exception while running health check for step {step.key} - terminating and failing the step",
-                                        EngineEventData(error=serializable_error),
-                                    )
-
-                                    # Terminate the step after health check exception
-                                    try:
-                                        list(
-                                            self._step_handler.terminate_step(
-                                                self._get_step_handler_context(
-                                                    plan_context, [step], active_execution
-                                                )
+                                        f"Error while checking health for step {step.key}",
+                                        EngineEventData(
+                                            error=serializable_error_info_from_exc_info(
+                                                sys.exc_info()
                                             )
-                                        )
-                                    except Exception:
-                                        DagsterEvent.engine_event(
-                                            step_context,
-                                            f"Exception while terminating step {step.key} after health check exception",
-                                            EngineEventData(
-                                                error=serializable_error_info_from_exc_info(
-                                                    sys.exc_info()
-                                                )
-                                            ),
-                                        )
-
-                                    self.log_failure_or_retry_event_after_error(
-                                        step_context,
-                                        serializable_error,
-                                        active_execution.get_known_state(),
+                                        ),
                                     )
 
                         if self._max_concurrent is not None:
