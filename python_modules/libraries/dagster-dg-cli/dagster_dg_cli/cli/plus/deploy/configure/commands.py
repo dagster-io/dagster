@@ -330,7 +330,7 @@ def deploy_configure_group(
 )
 @click.option(
     "--url",
-    help="Dagster Plus URL for the organization (defaults to https://<organization>.dagster.cloud)",
+    help="Dagster Plus URL for the organization",
 )
 @click.option(
     "--deployment",
