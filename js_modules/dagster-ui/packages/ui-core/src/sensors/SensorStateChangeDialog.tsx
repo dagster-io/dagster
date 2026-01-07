@@ -1,10 +1,10 @@
 import {
+  Box,
   Button,
   Colors,
   Dialog,
   DialogBody,
   DialogFooter,
-  Group,
   Icon,
   ProgressBar,
 } from '@dagster-io/ui-components';
@@ -154,12 +154,12 @@ export const SensorStateChangeDialog = (props: Props) => {
       case 'completed':
         const value = count > 0 ? state.completion.completed / count : 1;
         return (
-          <Group direction="column" spacing={8}>
+          <Box flex={{direction: 'column', gap: 8}}>
             <ProgressBar value={Math.max(0.1, value) * 100} animate={value < 100} />
             {state.step === 'updating' ? (
               <NavigationBlock message="Sensors are being updated, please do not navigate away yet." />
             ) : null}
-          </Group>
+          </Box>
         );
       default:
         return null;
@@ -224,9 +224,9 @@ export const SensorStateChangeDialog = (props: Props) => {
     const successCount = state.completion.completed - errorCount;
 
     return (
-      <Group direction="column" spacing={8}>
+      <Box flex={{direction: 'column', gap: 8}}>
         {successCount ? (
-          <Group direction="row" spacing={8} alignItems="flex-start">
+          <Box flex={{direction: 'row', gap: 8, alignItems: 'flex-start'}}>
             <Icon name="check_circle" color={Colors.accentGreen()} />
             <div>
               {openWithIntent === 'start'
@@ -237,31 +237,31 @@ export const SensorStateChangeDialog = (props: Props) => {
                     successCount === 1 ? '1 sensor' : `${successCount} sensors`
                   }.`}
             </div>
-          </Group>
+          </Box>
         ) : null}
         {errorCount ? (
-          <Group direction="column" spacing={8}>
-            <Group direction="row" spacing={8} alignItems="flex-start">
+          <Box flex={{direction: 'column', gap: 8}}>
+            <Box flex={{direction: 'row', gap: 8, alignItems: 'flex-start'}}>
               <Icon name="warning" color={Colors.accentYellow()} />
               <div>
                 {openWithIntent === 'start'
                   ? `Could not start ${errorCount === 1 ? '1 sensor' : `${errorCount} sensors`}:`
                   : `Could not stop ${errorCount === 1 ? '1 sensor' : `${errorCount} sensors`}:`}
               </div>
-            </Group>
+            </Box>
             <ul style={{margin: '8px 0'}}>
               {Object.keys(errors).map((sensorName) => (
                 <li key={sensorName}>
-                  <Group direction="row" spacing={8}>
+                  <Box flex={{direction: 'row', gap: 8}}>
                     <strong>{sensorName}:</strong>
                     {errors[sensorName] ? <div>{errors[sensorName]}</div> : null}
-                  </Group>
+                  </Box>
                 </li>
               ))}
             </ul>
-          </Group>
+          </Box>
         ) : null}
-      </Group>
+      </Box>
     );
   };
 
@@ -276,10 +276,10 @@ export const SensorStateChangeDialog = (props: Props) => {
       onClose={onClose}
     >
       <DialogBody>
-        <Group direction="column" spacing={24}>
+        <Box flex={{direction: 'column', gap: 24}}>
           {progressContent()}
           {completionContent()}
-        </Group>
+        </Box>
       </DialogBody>
       <DialogFooter>{buttons()}</DialogFooter>
     </Dialog>

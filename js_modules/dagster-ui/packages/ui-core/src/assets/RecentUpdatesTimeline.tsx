@@ -23,11 +23,10 @@ import {Timestamp} from '../app/time/Timestamp';
 import {AssetRunLink} from '../asset-graph/AssetRunLinking';
 import {AssetEventHistoryEventTypeSelector} from '../graphql/types';
 import {titleForRun} from '../runs/RunUtils';
+import {batchRunsForTimeline} from '../runs/batchRunsForTimeline';
 import {useFormatDateTime} from '../ui/useFormatDateTime';
 
 const INNER_TICK_WIDTH = 4;
-const MIN_TICK_WIDTH = 5;
-const BUCKETS = 50;
 
 type AssetEventType = ReturnType<typeof useRecentAssetEvents>['events'][0];
 type Props = {
@@ -49,16 +48,11 @@ export const RecentUpdatesTimelineForAssetKey = memo((props: {assetKey: AssetKey
 
 export const RecentUpdatesTimeline = ({assetKey, events, loading}: Props) => {
   const {containerProps, viewport} = useViewport();
-  const widthAvailablePerTick = viewport.width / BUCKETS;
-
-  const tickWidth = Math.max(widthAvailablePerTick, MIN_TICK_WIDTH);
-
-  const buckets = Math.floor(viewport.width / tickWidth);
 
   const enrichedEvents = useMemo(() => {
     const seenTimestamps = new Set();
-    return events
-      ?.map((event) => {
+    return (events ?? [])
+      .map((event) => {
         if (
           event.__typename === 'MaterializationEvent' ||
           event.__typename === 'FailedToMaterializeEvent'
@@ -88,58 +82,34 @@ export const RecentUpdatesTimeline = ({assetKey, events, loading}: Props) => {
 
         return null;
       })
-      .filter((e) => e) as AssetEventType[];
+      .filter((e): e is AssetEventType => e !== null)
+      .sort((a, b) => parseInt(a.timestamp) - parseInt(b.timestamp));
   }, [events]);
 
-  const sortedEvents = enrichedEvents?.sort(
-    (a, b) => parseInt(a.timestamp) - parseInt(b.timestamp),
-  );
+  const [startTimestamp, endTimestamp] = getTimelineBounds(enrichedEvents);
 
-  const [startTimestamp, endTimestamp] = getTimelineBounds(sortedEvents);
-  const timeRange = endTimestamp - startTimestamp;
-  const bucketTimeRange = timeRange / buckets;
-
-  const bucketedMaterializations = useMemo(() => {
-    if (!viewport.width) {
+  const batchedEvents = useMemo(() => {
+    if (!viewport.width || !enrichedEvents.length) {
       return [];
     }
-    const bucketsArr: Array<{
-      start: number;
-      end: number;
-      events: AssetEventType[];
-      hasFailedMaterializations: boolean;
-      hasMaterializations: boolean;
-      hasSkippedMaterializations: boolean;
-    }> = new Array(buckets);
 
-    sortedEvents?.forEach((e) => {
-      const bucketIndex = Math.min(
-        Math.floor((parseInt(e.timestamp) - startTimestamp) / bucketTimeRange),
-        buckets - 1,
-      );
-      const bucket = bucketsArr[bucketIndex] ?? {
-        start: bucketIndex,
-        end: bucketIndex + 1,
-        events: [],
-        hasFailedMaterializations: false,
-        hasMaterializations: false,
-        hasSkippedMaterializations: false,
-      };
-      bucket.events.push(e);
-      if (e.__typename === 'FailedToMaterializeEvent') {
-        if (e.materializationFailureType === 'FAILED') {
-          bucket.hasFailedMaterializations = true;
-        } else {
-          bucket.hasSkippedMaterializations = true;
-        }
-      } else {
-        bucket.hasMaterializations = true;
-      }
-      bucketsArr[bucketIndex] = bucket;
+    // Convert events to runs with synthetic 1ms duration
+    const eventsAsRuns = enrichedEvents.map((event) => ({
+      ...event,
+      startTime: parseInt(event.timestamp),
+      endTime: parseInt(event.timestamp) + 1,
+    }));
+
+    // Use shared batching logic
+    return batchRunsForTimeline({
+      runs: eventsAsRuns,
+      start: startTimestamp,
+      end: endTimestamp,
+      width: viewport.width,
+      minChunkWidth: 1, // INNER_TICK_WIDTH
+      minMultipleWidth: 10,
     });
-
-    return bucketsArr;
-  }, [viewport.width, buckets, sortedEvents, startTimestamp, bucketTimeRange]);
+  }, [viewport.width, enrichedEvents, startTimestamp, endTimestamp]);
 
   const formatDateTime = useFormatDateTime();
 
@@ -158,7 +128,7 @@ export const RecentUpdatesTimeline = ({assetKey, events, loading}: Props) => {
     );
   }
 
-  const count = sortedEvents?.length ?? 0;
+  const count = enrichedEvents.length;
 
   return (
     <Box flex={{direction: 'column', gap: 4}}>
@@ -176,35 +146,50 @@ export const RecentUpdatesTimeline = ({assetKey, events, loading}: Props) => {
       </Box>
       <Box border="all" padding={6 as any} style={{height: 36, overflow: 'hidden'}}>
         <div {...containerProps} style={{width: '100%', height: 24, position: 'relative'}}>
-          {bucketedMaterializations.map((bucket) => {
-            const width = bucket.end - bucket.start;
-            const bucketStartTime = startTimestamp + bucket.start * bucketTimeRange;
-            const bucketEndTimestamp = startTimestamp + bucket.end * bucketTimeRange;
-            const bucketRange = bucketEndTimestamp - bucketStartTime;
+          {batchedEvents.map((batch) => {
+            const [firstRun] = batch.runs;
+            if (!firstRun) {
+              return null;
+            }
+
+            // Compute batch status flags
+            const hasFailedMaterializations = batch.runs.some(
+              (e) =>
+                e.__typename === 'FailedToMaterializeEvent' &&
+                e.materializationFailureType === 'FAILED',
+            );
+            const hasMaterializations = batch.runs.some(
+              (e) => e.__typename === 'MaterializationEvent',
+            );
+            const hasSkippedMaterializations = batch.runs.some(
+              (e) =>
+                e.__typename === 'FailedToMaterializeEvent' &&
+                e.materializationFailureType !== 'FAILED',
+            );
+
+            const timestamp = parseInt(firstRun.timestamp);
+            const batchRange = batch.endTime - batch.startTime;
+            const percent =
+              batchRange > 0 ? (100 * (timestamp - batch.startTime)) / batchRange : 50;
+
             return (
               <TickWrapper
-                key={bucket.start}
+                key={firstRun.timestamp}
                 style={{
-                  left: (100 * bucket.start) / buckets + '%',
-                  width: (100 * width) / buckets + '%',
+                  left: `${batch.left}px`,
+                  width: `${Math.max(batch.width, 12)}px`,
                 }}
               >
-                {bucket.events.map(({timestamp}) => {
-                  const percent = (100 * (parseInt(timestamp) - bucketStartTime)) / bucketRange;
-
-                  return (
-                    <InnerTick
-                      key={timestamp}
-                      style={{
-                        // Make sure there's enough room to see the last tick.
-                        left: `min(calc(100% - ${INNER_TICK_WIDTH}px), ${percent}%`,
-                      }}
-                      $hasError={bucket.hasFailedMaterializations}
-                      $hasSuccess={bucket.hasMaterializations}
-                      $hasSkipped={bucket.hasSkippedMaterializations}
-                    />
-                  );
-                })}
+                <InnerTick
+                  key={batch.startTime}
+                  style={{
+                    // Make sure there's enough room to see the last tick.
+                    left: `min(calc(100% - ${INNER_TICK_WIDTH}px), ${percent}%)`,
+                  }}
+                  $hasError={hasFailedMaterializations}
+                  $hasSuccess={hasMaterializations}
+                  $hasSkipped={hasSkippedMaterializations}
+                />
                 <Popover
                   position="top"
                   interactionKind="hover"
@@ -214,14 +199,14 @@ export const RecentUpdatesTimeline = ({assetKey, events, loading}: Props) => {
                         <Subtitle2>Updates</Subtitle2>
                       </Box>
                       <Box style={{maxHeight: '300px', overflowY: 'auto'}}>
-                        {[...bucket.events]
+                        {[...batch.runs]
                           .sort((a, b) => parseInt(b.timestamp) - parseInt(a.timestamp))
                           .map((event, index) => (
                             <AssetUpdate
                               assetKey={assetKey}
                               event={event}
                               key={event.timestamp}
-                              last={index === bucket.events.length - 1}
+                              last={index === batch.runs.length - 1}
                             />
                           ))}
                       </Box>
@@ -229,11 +214,11 @@ export const RecentUpdatesTimeline = ({assetKey, events, loading}: Props) => {
                   }
                 >
                   <Tick
-                    $hasError={bucket.hasFailedMaterializations}
-                    $hasSuccess={bucket.hasMaterializations}
-                    $hasSkipped={bucket.hasSkippedMaterializations}
+                    $hasError={hasFailedMaterializations}
+                    $hasSuccess={hasMaterializations}
+                    $hasSkipped={hasSkippedMaterializations}
                   >
-                    <TickText>{bucket.events.length}</TickText>
+                    <TickText>{batch.runs.length}</TickText>
                   </Tick>
                 </Popover>
               </TickWrapper>
@@ -393,7 +378,7 @@ const InnerTick = styled.div<{
   $hasSuccess: boolean;
   $hasSkipped: boolean;
 }>`
-  width: ${INNER_TICK_WIDTH}px;
+  width: 8px;
   top: 0;
   bottom: 0;
   position: absolute;

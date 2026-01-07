@@ -1,8 +1,8 @@
 import {useState} from 'react';
 
+import {Box} from '../Box';
 import {Checkbox} from '../Checkbox';
 import {Colors} from '../Color';
-import {Group} from '../Group';
 
 // eslint-disable-next-line import/no-default-export
 export default {
@@ -16,9 +16,15 @@ export const Default = () => {
     setState(({true: 'indeterminate', indeterminate: 'false', false: 'true'} as const)[state]);
 
   return (
-    <Group spacing={8} direction="column">
+    <Box flex={{direction: 'column', gap: 8, alignItems: 'flex-start'}}>
       {[Colors.accentBlue(), Colors.accentCyan(), Colors.accentGray()].map((fillColor) => (
-        <Group spacing={24} direction="row" key={fillColor}>
+        <Box
+          flex={{
+            direction: 'row',
+            gap: 24,
+          }}
+          key={fillColor}
+        >
           <Checkbox
             label="Hello world"
             checked={state === 'false' ? false : true}
@@ -43,9 +49,9 @@ export const Default = () => {
             onChange={onChange}
             format="switch"
           />
-        </Group>
+        </Box>
       ))}
-      <Group spacing={24} direction="row">
+      <Box flex={{direction: 'row', gap: 24}}>
         <Checkbox
           disabled
           label="Hello world"
@@ -70,8 +76,8 @@ export const Default = () => {
           onChange={onChange}
           format="switch"
         />
-      </Group>
-      <Group spacing={24} direction="row">
+      </Box>
+      <Box flex={{direction: 'row', gap: 24}}>
         <Checkbox
           disabled
           label="Hello world"
@@ -96,8 +102,8 @@ export const Default = () => {
           onChange={onChange}
           format="switch"
         />
-      </Group>
-    </Group>
+      </Box>
+    </Box>
   );
 };
 
@@ -107,9 +113,9 @@ export const Small = () => {
     setState(({true: 'indeterminate', indeterminate: 'false', false: 'true'} as const)[state]);
 
   return (
-    <Group spacing={8} direction="column">
+    <Box flex={{direction: 'column', gap: 8, alignItems: 'flex-start'}}>
       {[Colors.accentBlue(), Colors.accentGreen(), Colors.accentGray()].map((fillColor) => (
-        <Group spacing={24} direction="row" key={fillColor}>
+        <Box flex={{direction: 'row', gap: 24}} key={fillColor}>
           <Checkbox
             size="small"
             label="Hello world"
@@ -137,9 +143,9 @@ export const Small = () => {
             onChange={onChange}
             format="switch"
           />
-        </Group>
+        </Box>
       ))}
-      <Group spacing={24} direction="row">
+      <Box flex={{direction: 'row', gap: 24}}>
         <Checkbox
           disabled
           size="small"
@@ -167,7 +173,7 @@ export const Small = () => {
           onChange={onChange}
           format="switch"
         />
-      </Group>
-    </Group>
+      </Box>
+    </Box>
   );
 };

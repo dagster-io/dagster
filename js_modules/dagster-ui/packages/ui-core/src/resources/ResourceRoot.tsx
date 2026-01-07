@@ -4,7 +4,6 @@ import {
   ButtonLink,
   CaptionMono,
   Colors,
-  Group,
   Heading,
   Icon,
   MiddleTruncate,
@@ -146,7 +145,7 @@ export const ResourceRoot = (props: Props) => {
               <Alert
                 intent="warning"
                 title={
-                  <Group direction="row" spacing={4}>
+                  <Box flex={{direction: 'row', gap: 4}}>
                     <div>Could not load resource.</div>
                     {message && (
                       <ButtonLink
@@ -162,7 +161,7 @@ export const ResourceRoot = (props: Props) => {
                         View error
                       </ButtonLink>
                     )}
-                  </Group>
+                  </Box>
                 }
               />
             );

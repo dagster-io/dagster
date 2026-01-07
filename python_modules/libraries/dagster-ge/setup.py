@@ -28,7 +28,7 @@ setup(
     ],
     packages=find_packages(exclude=["dagster_ge_tests*"]),
     include_package_data=True,
-    python_requires=">=3.10,<3.15",
+    python_requires=">=3.10,<3.14",  # great_expectations incompatible with Python 3.14
     install_requires=[
         f"dagster{pin}",
         f"dagster-pandas{pin}",

@@ -4,8 +4,8 @@ import {useCallback, useMemo} from 'react';
 import {isKindTag} from '../../graph/KindTags';
 import {DefinitionTag} from '../../graphql/types';
 import {useQueryPersistedState} from '../../hooks/useQueryPersistedState';
-import {TruncatedTextWithFullTextOnHover} from '../../nav/getLeftNavItemsForOption';
 import {StaticBaseConfig, useStaticSetFilter} from '../BaseFilters/useStaticSetFilter';
+import {TruncatedTextWithFullTextOnHover} from '../TruncatedTextWithFullTextOnHover';
 import {buildTagString} from '../tagAsString';
 
 const emptyArray: any[] = [];

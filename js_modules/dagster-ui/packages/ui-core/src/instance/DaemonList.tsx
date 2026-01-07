@@ -1,4 +1,4 @@
-import {Box, Checkbox, Group, Spinner, Table, Tag} from '@dagster-io/ui-components';
+import {Box, Checkbox, Spinner, Table, Tag} from '@dagster-io/ui-components';
 
 import {DaemonHealth} from './DaemonHealth';
 import {gql} from '../apollo-client';
@@ -106,7 +106,7 @@ export const DaemonList = ({daemonStatuses, showTimestampColumn = true}: Props) 
             {showTimestampColumn && (
               <td>
                 {assetDaemon.lastHeartbeatTime ? (
-                  <Group direction="row" spacing={4}>
+                  <Box flex={{direction: 'row', gap: 4}}>
                     <Timestamp
                       timestamp={{unix: assetDaemon.lastHeartbeatTime}}
                       timeFormat={TIME_FORMAT}
@@ -114,7 +114,7 @@ export const DaemonList = ({daemonStatuses, showTimestampColumn = true}: Props) 
                     <span>
                       (<TimeFromNow unixTimestamp={assetDaemon.lastHeartbeatTime} />)
                     </span>
-                  </Group>
+                  </Box>
                 ) : (
                   'Never'
                 )}
@@ -136,7 +136,7 @@ export const DaemonList = ({daemonStatuses, showTimestampColumn = true}: Props) 
                 {showTimestampColumn && (
                   <td>
                     {daemon.lastHeartbeatTime ? (
-                      <Group direction="row" spacing={4}>
+                      <Box flex={{direction: 'row', gap: 4}}>
                         <Timestamp
                           timestamp={{unix: daemon.lastHeartbeatTime}}
                           timeFormat={TIME_FORMAT}
@@ -144,7 +144,7 @@ export const DaemonList = ({daemonStatuses, showTimestampColumn = true}: Props) 
                         <span>
                           (<TimeFromNow unixTimestamp={daemon.lastHeartbeatTime} />)
                         </span>
-                      </Group>
+                      </Box>
                     ) : (
                       'Never'
                     )}

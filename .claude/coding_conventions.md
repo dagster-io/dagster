@@ -126,6 +126,7 @@ def my_command():
   - ONLY use `@dataclass` when:
     - Mutability is required
     - Working with external libraries that expect dataclasses
+  - **Migration**: To convert existing `NamedTuple` classes to `@record`, use the `/migrate-nt-to-record` slash command
 
 ### Naming Conventions for @record Methods
 

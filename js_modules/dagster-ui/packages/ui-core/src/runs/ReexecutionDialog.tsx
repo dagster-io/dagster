@@ -1,10 +1,10 @@
 import {
+  Box,
   Button,
   Colors,
   Dialog,
   DialogBody,
   DialogFooter,
-  Group,
   Icon,
   Mono,
   ProgressBar,
@@ -208,10 +208,10 @@ export const ReexecutionDialog = (props: ReexecutionDialogProps) => {
       case 'initial':
         if (!count) {
           return (
-            <Group direction="column" spacing={16}>
+            <Box flex={{direction: 'column', gap: 16}}>
               <div>No runs selected for re-execution.</div>
               <div>The runs you selected may already have finished executing.</div>
-            </Group>
+            </Box>
           );
         }
 
@@ -233,9 +233,8 @@ export const ReexecutionDialog = (props: ReexecutionDialogProps) => {
         };
 
         return (
-          <Group direction="column" spacing={16}>
+          <Box flex={{direction: 'column', gap: 16}}>
             <div>{message()}</div>
-
             <div>
               Re-executed runs inherit tags from the parent runs automatically. To change tag values
               or add additional tags, add them below.
@@ -249,7 +248,6 @@ export const ReexecutionDialog = (props: ReexecutionDialogProps) => {
                 })
               }
             />
-
             {selectedRunBackfillIds.length > 0 ? (
               <div>
                 {selectedRunBackfillIds.length > 1 ? (
@@ -267,18 +265,18 @@ export const ReexecutionDialog = (props: ReexecutionDialogProps) => {
                 backfill status or launch runs of downstream dependencies.
               </div>
             ) : undefined}
-          </Group>
+          </Box>
         );
       case 'reexecuting':
       case 'completed':
         const value = count > 0 ? state.reexecution.completed / count : 1;
         return (
-          <Group direction="column" spacing={8}>
+          <Box flex={{direction: 'column', gap: 8}}>
             <ProgressBar value={Math.max(0.1, value) * 100} animate={value < 100} />
             {state.step === 'reexecuting' ? (
               <NavigationBlock message="Re-execution in progress, please do not navigate away yet." />
             ) : null}
-          </Group>
+          </Box>
         );
       default:
         return null;
@@ -339,40 +337,40 @@ export const ReexecutionDialog = (props: ReexecutionDialogProps) => {
     const successCount = state.reexecution.completed - errorCount;
 
     return (
-      <Group direction="column" spacing={8}>
+      <Box flex={{direction: 'column', gap: 8}}>
         {successCount ? (
-          <Group direction="row" spacing={8} alignItems="flex-start">
+          <Box flex={{direction: 'row', gap: 8, alignItems: 'flex-start'}}>
             <Icon name="check_circle" color={Colors.accentGreen()} />
             <div>
               {`Successfully requested re-execution for ${successCount} ${
                 successCount === 1 ? 'run' : `runs`
               }.`}
             </div>
-          </Group>
+          </Box>
         ) : null}
         {errorCount ? (
-          <Group direction="column" spacing={8}>
-            <Group direction="row" spacing={8} alignItems="flex-start">
+          <Box flex={{direction: 'column', gap: 8}}>
+            <Box flex={{direction: 'row', gap: 8, alignItems: 'flex-start'}}>
               <Icon name="warning" color={Colors.accentYellow()} />
               <div>
                 {`Could not request re-execution for ${errorCount} ${
                   errorCount === 1 ? 'run' : 'runs'
                 }:`}
               </div>
-            </Group>
+            </Box>
             <ul>
               {Object.keys(errors).map((runId) => (
                 <li key={runId}>
-                  <Group direction="row" spacing={8} alignItems="baseline">
+                  <Box flex={{direction: 'row', gap: 8, alignItems: 'baseline'}}>
                     <Mono>{runId.slice(0, 8)}</Mono>
                     {errors[runId] ? <div>{errorText(errors[runId])}</div> : null}
-                  </Group>
+                  </Box>
                 </li>
               ))}
             </ul>
-          </Group>
+          </Box>
         ) : null}
-      </Group>
+      </Box>
     );
   };
 
@@ -392,10 +390,10 @@ export const ReexecutionDialog = (props: ReexecutionDialogProps) => {
       onClose={onClose}
     >
       <DialogBody>
-        <Group direction="column" spacing={24}>
+        <Box flex={{direction: 'column', gap: 24}}>
           {progressContent()}
           {completionContent()}
-        </Group>
+        </Box>
       </DialogBody>
       <DialogFooter>{buttons()}</DialogFooter>
     </Dialog>

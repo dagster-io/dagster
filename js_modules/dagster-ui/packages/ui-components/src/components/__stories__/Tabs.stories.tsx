@@ -1,7 +1,7 @@
 import {useState} from 'react';
 
+import {Box} from '../Box';
 import {Colors} from '../Color';
-import {Group} from '../Group';
 import {Icon} from '../Icon';
 import {Tab, Tabs} from '../Tabs';
 
@@ -14,7 +14,7 @@ export default {
 export const Default = () => {
   const [tab, setTab] = useState('health');
   return (
-    <Group spacing={0} direction="column">
+    <Box flex={{direction: 'column', alignItems: 'flex-start'}}>
       <Tabs selectedTabId={tab} onChange={setTab}>
         <Tab id="health" title="Health" />
         <Tab id="schedules" title="Schedules" count={2} />
@@ -38,6 +38,6 @@ export const Default = () => {
         <Tab id="backfills" title="Backfills" disabled />
         <Tab id="config" disabled title={<a href="/?path=/story/box">Box Component</a>} />
       </Tabs>
-    </Group>
+    </Box>
   );
 };

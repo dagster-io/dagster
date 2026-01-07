@@ -1,4 +1,4 @@
-import {Colors, Group, Mono} from '@dagster-io/ui-components';
+import {Box, Colors, Mono} from '@dagster-io/ui-components';
 import {Link} from 'react-router-dom';
 import styled from 'styled-components';
 
@@ -23,12 +23,12 @@ export const InstigatedRunStatus = ({
 };
 
 export const RunStatusLink = ({run}: {run: RunStatusFragment}) => (
-  <Group direction="row" spacing={4} alignItems="center">
+  <Box flex={{direction: 'row', gap: 4, alignItems: 'center'}}>
     <RunStatusIndicator status={run.status} />
     <Link to={`/runs/${run.id}`} target="_blank" rel="noreferrer">
       <Mono>{titleForRun({id: run.id})}</Mono>
     </Link>
-  </Group>
+  </Box>
 );
 
 export const RUN_STATUS_FRAGMENT = gql`

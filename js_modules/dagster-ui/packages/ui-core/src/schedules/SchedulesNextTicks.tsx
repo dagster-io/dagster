@@ -7,7 +7,6 @@ import {
   DialogBody,
   DialogFooter,
   ExternalAnchorButton,
-  Group,
   Icon,
   Menu,
   MenuItem,
@@ -422,10 +421,10 @@ const NextTickDialog = ({
                         onClick={() => setSelectedRunRequest(runRequest)}
                         underline="never"
                       >
-                        <Group direction="row" spacing={8} alignItems="center">
+                        <Box flex={{direction: 'row', gap: 8, alignItems: 'center'}}>
                           <Icon name="open_in_new" color={Colors.textLight()} />
                           <span>View config</span>
-                        </Group>
+                        </Box>
                       </ButtonLink>
                     </td>
                     <td>

@@ -1,10 +1,10 @@
 import {
+  Box,
   Button,
   Colors,
   Dialog,
   DialogBody,
   DialogFooter,
-  Group,
   Icon,
   ProgressBar,
 } from '@dagster-io/ui-components';
@@ -154,12 +154,12 @@ export const ScheduleStateChangeDialog = (props: Props) => {
       case 'completed':
         const value = count > 0 ? state.completion.completed / count : 1;
         return (
-          <Group direction="column" spacing={8}>
+          <Box flex={{direction: 'column', gap: 8}}>
             <ProgressBar value={Math.max(0.1, value) * 100} animate={value < 100} />
             {state.step === 'updating' ? (
               <NavigationBlock message="Schedules are being updated, please do not navigate away yet." />
             ) : null}
-          </Group>
+          </Box>
         );
       default:
         return null;
@@ -226,9 +226,9 @@ export const ScheduleStateChangeDialog = (props: Props) => {
     const successCount = state.completion.completed - errorCount;
 
     return (
-      <Group direction="column" spacing={8}>
+      <Box flex={{direction: 'column', gap: 8}}>
         {successCount ? (
-          <Group direction="row" spacing={8} alignItems="flex-start">
+          <Box flex={{direction: 'row', gap: 8, alignItems: 'flex-start'}}>
             <Icon name="check_circle" color={Colors.accentGreen()} />
             <div>
               {openWithIntent === 'start'
@@ -239,11 +239,11 @@ export const ScheduleStateChangeDialog = (props: Props) => {
                     successCount === 1 ? '1 schedule' : `${successCount} schedules`
                   }.`}
             </div>
-          </Group>
+          </Box>
         ) : null}
         {errorCount ? (
-          <Group direction="column" spacing={8}>
-            <Group direction="row" spacing={8} alignItems="flex-start">
+          <Box flex={{direction: 'column', gap: 8}}>
+            <Box flex={{direction: 'row', gap: 8, alignItems: 'flex-start'}}>
               <Icon name="warning" color={Colors.accentYellow()} />
               <div>
                 {openWithIntent === 'start'
@@ -254,20 +254,20 @@ export const ScheduleStateChangeDialog = (props: Props) => {
                       errorCount === 1 ? '1 schedule' : `${errorCount} schedules`
                     }.`}
               </div>
-            </Group>
+            </Box>
             <ul>
               {Object.keys(errors).map((scheduleName) => (
                 <li key={scheduleName}>
-                  <Group direction="row" spacing={8}>
+                  <Box flex={{direction: 'row', gap: 8}}>
                     <strong>{scheduleName}:</strong>
                     {errors[scheduleName] ? <div>{errors[scheduleName]}</div> : null}
-                  </Group>
+                  </Box>
                 </li>
               ))}
             </ul>
-          </Group>
+          </Box>
         ) : null}
-      </Group>
+      </Box>
     );
   };
 
@@ -282,10 +282,10 @@ export const ScheduleStateChangeDialog = (props: Props) => {
       onClose={onClose}
     >
       <DialogBody>
-        <Group direction="column" spacing={24}>
+        <Box flex={{direction: 'column', gap: 24}}>
           {progressContent()}
           {completionContent()}
-        </Group>
+        </Box>
       </DialogBody>
       <DialogFooter>{buttons()}</DialogFooter>
     </Dialog>

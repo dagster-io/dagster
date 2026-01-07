@@ -4,7 +4,6 @@ import {
   Colors,
   Dialog,
   DialogFooter,
-  Group,
   Icon,
   Mono,
   Table,
@@ -215,16 +214,16 @@ const EventGroupRow = React.memo((props: EventGroupRowProps) => {
     <>
       {hasPartitions && (
         <td style={{whiteSpace: 'nowrap', ...focusCss}}>
-          <Group direction="row" spacing={2}>
+          <Box flex={{direction: 'row', gap: 2}}>
             <DisclosureTriangle open={isFocused} />
             {partition || <NoneSpan />}
-          </Group>
+          </Box>
         </td>
       )}
       <td style={hasPartitions ? {} : focusCss}>
-        <Group direction="row" spacing={4}>
+        <Box flex={{direction: 'row', gap: 4}}>
           {!hasPartitions && <DisclosureTriangle open={isFocused} />}
-          <Group direction="column" spacing={4}>
+          <Box flex={{direction: 'column', gap: 4}}>
             <Timestamp timestamp={{ms: Number(timestamp)}} />
             {all?.length > 1 ? (
               <AllIndividualEventsButton
@@ -247,8 +246,8 @@ const EventGroupRow = React.memo((props: EventGroupRowProps) => {
                 <Icon name="observation" size={16} color={Colors.textLight()} /> Observation
               </Box>
             )}
-          </Group>
-        </Group>
+          </Box>
+        </Box>
       </td>
       <td>
         {!isHiddenAssetGroupJob(run.pipelineName) && (
@@ -262,10 +261,10 @@ const EventGroupRow = React.memo((props: EventGroupRowProps) => {
                 isJob={isThisThingAJob(repo, run.pipelineName)}
               />
             </Box>
-            <Group direction="row" padding={{left: 8}} spacing={8} alignItems="center">
+            <Box flex={{direction: 'row', gap: 8, alignItems: 'center'}} padding={{left: 8}}>
               <Icon name="linear_scale" color={Colors.textLight()} />
               <Link to={linkToRunEvent(run, latest)}>{latest.stepKey}</Link>
-            </Group>
+            </Box>
           </Box>
         )}
       </td>
