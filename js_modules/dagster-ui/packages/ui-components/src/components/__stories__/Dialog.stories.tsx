@@ -1,8 +1,8 @@
 import {useState} from 'react';
 
+import {Box} from '../Box';
 import {Button} from '../Button';
 import {Dialog, DialogBody, DialogFooter, DialogHeader, GlobalDialogStyle} from '../Dialog';
-import {Group} from '../Group';
 
 // eslint-disable-next-line import/no-default-export
 export default {
@@ -19,7 +19,7 @@ export const Simple = () => {
       <Dialog isOpen={open} canEscapeKeyClose canOutsideClickClose onClose={() => setOpen(false)}>
         <DialogHeader icon="layers" label="Start the process" />
         <DialogBody>
-          <Group direction="column" spacing={12}>
+          <Box flex={{direction: 'column', gap: 12}}>
             <div>
               Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor
               incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud
@@ -30,7 +30,7 @@ export const Simple = () => {
               nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui
               officia deserunt mollit anim id est laborum.
             </div>
-          </Group>
+          </Box>
         </DialogBody>
         <DialogFooter>
           <Button intent="none" onClick={() => setOpen(false)}>

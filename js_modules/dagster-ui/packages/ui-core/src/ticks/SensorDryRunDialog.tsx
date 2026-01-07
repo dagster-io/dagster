@@ -6,7 +6,6 @@ import {
   Dialog,
   DialogBody,
   DialogFooter,
-  Group,
   Icon,
   NonIdealState,
   NonIdealStateWrapper,
@@ -173,7 +172,7 @@ const SensorDryRun = ({repoAddress, name, currentCursor, onClose, jobName}: Prop
       await showSharedToaster({
         intent: 'danger',
         message: (
-          <Group direction="row" spacing={8}>
+          <Box flex={{direction: 'row', gap: 8}}>
             <div>Could not set cursor value.</div>
             <ButtonLink
               color={Colors.accentReversed()}
@@ -192,7 +191,7 @@ const SensorDryRun = ({repoAddress, name, currentCursor, onClose, jobName}: Prop
             >
               View error
             </ButtonLink>
-          </Group>
+          </Box>
         ),
       });
     }
