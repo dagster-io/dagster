@@ -1,5 +1,33 @@
 # Changelog
 
+## 1.12.9 (core) / 0.28.9 (libraries)
+
+### New
+
+- The core `dagster` package (and most libraries) are now compatible with Python 3.14.
+- Added support for using python version 3.13 when running `dg plus deploy`.
+- `dg plus login` now supports a `region` flag for eu-based users: `dg plus login --region eu`.
+- Updated the `bulk_actions` table `body` column from `Text` to `LongText` for Mysql storage. To take advantage of this migration run `dagster instance migrate`. (Thanks, [@jenkoian](https://github.com/jenkoian)!)
+- Updated the `asset_keys` table `cached_status_data` column from `Text` to `LongText` for Mysql storage. To take advantage of this migration run `dagster instance migrate`. (Thanks, [@jenkoian](https://github.com/jenkoian)!)
+- Runs now automatically include a `dagster/code_location` tag when created with a `remote_job_origin`, enabling filtering and concurrency control by code location. (Thanks, [@ssup2](https://github.com/ssup2)!)
+- [ui] the Asset > Partitions page now shows historical "Failed to materialize" events for consistency with the Asset > Events page.
+- [helm] Added a `concurrency` setting to the helm chart to configure concurrency pools.
+- [dagster-azure] The `ADLS2PickleIOManager` now overwrites blob keys when the same asset is materialized twice, instead of deleting then writing the blob.
+- [dagster-aws] An `ecs/container_overrides` tag can now be set on jobs (or on runs in the launchpad) to customize container-level overrides (like GPU resource requirements) for runs using the `EcsRunLauncher`.
+- [dagster-dbt] `dagster-dbt` now supports dbt-core 1.11. (Thanks, [@nicoa](https://github.com/nicoa)!)
+- [dagster-dlt] update url in README (Thanks, [@Miesjell](https://github.com/Miesjell)!)
+- [dagster-databricks] Introduced `DatabricksWorkspaceComponent` to automatically discover Databricks jobs as Dagster assets.
+- [dagster-looker] Added option PDT asset support to `LookerComponent`.
+
+### Bugfixes
+
+- Fixed an issue where a transient issue caused a step health check to fail when using the `k8s_job_executor`.
+- Fixed an issue where a health check failure while using the `k8s_job_executor` could result in a step continuing to run after the run failed.
+- Invalid `TimeWindowPartitionsDefinitions` that contain multiple time windows that map to the same partition key (for example, an hourly partitions definition with a daily format key) will now raise an `Exception` during `dagster definitions validate`, instead of being allowed but causing undefined behavior.
+- [ui] Entering the asset launchpad by right-clicking on the asset graph no longer causes keyboard navigation issues.
+- [ui] Fixed an issue where removing an asset prevented rendering status information for backfills involving that asset in the Dagster UI.
+- [dagster-dbt] Fixed issue that could cause the `DbtCliEventMessage` iterator to error while parsing certain error messages produced by `dbt-core`.
+
 ## 1.12.8 (core) / 0.28.8 (libraries)
 
 ### New
