@@ -143,7 +143,7 @@ def build_bigquery_io_manager(
     """
 
     @dagster_maintained_io_manager
-    @io_manager(config_schema=BigQueryIOManager.to_config_schema())
+    @io_manager(config_schema=BigQueryIOManager.to_config_schema())  # type: ignore
     def bigquery_io_manager(init_context):
         """I/O Manager for storing outputs in a BigQuery database.
 
@@ -159,14 +159,19 @@ def build_bigquery_io_manager(
         * table -> table
         """
         resource_config = init_context.resource_config or {}
-        write_mode = resource_config.get("write_mode")
+        write_mode = resource_config.get("write_mode") or "truncate"
+        project = resource_config.get("project")
+        dataset = resource_config.get("dataset")
+
+        if project is None:
+            raise ValueError("Missing 'project' in configuration")
 
         mgr = DbIOManager(
             type_handlers=type_handlers,
             db_client=BigQueryClient(write_mode=write_mode),
             io_manager_name="BigQueryIOManager",
-            database=resource_config.get("project"),
-            schema=resource_config.get("dataset"),
+            database=str(project),
+            schema=str(dataset) if dataset else None,
             default_load_type=default_load_type,
         )
 
@@ -341,7 +346,9 @@ class BigQueryIOManager(ConfigurableIOManagerFactory):
 
     def create_io_manager(self, context) -> Generator:
         mgr = DbIOManager(
-            db_client=BigQueryClient(write_mode=self.write_mode),
+            db_client=BigQueryClient(
+                write_mode=self.write_mode, gcp_credentials=self.gcp_credentials
+            ),
             io_manager_name="BigQueryIOManager",
             database=self.project,
             schema=self.dataset,
@@ -356,11 +363,16 @@ class BigQueryIOManager(ConfigurableIOManagerFactory):
 
 
 class BigQueryClient(DbClient):
-    def __init__(self, write_mode: Union[BigQueryWriteMode, str] = BigQueryWriteMode.TRUNCATE):
+    def __init__(
+        self,
+        write_mode: Union[BigQueryWriteMode, str] = BigQueryWriteMode.TRUNCATE,
+        gcp_credentials: Optional[str] = None,
+    ):
         if isinstance(write_mode, str):
             write_mode = BigQueryWriteMode(write_mode)
 
         self.write_mode = write_mode
+        self.gcp_credentials = gcp_credentials
 
     @staticmethod
     def delete_table_slice(context: OutputContext, table_slice: TableSlice, connection) -> None:
@@ -407,12 +419,15 @@ class BigQueryClient(DbClient):
 
     @staticmethod
     @contextmanager
-    def connect(context, _):
+    def connect(context, table_slice):
         config = context.resource_config or {}
 
+        project_val = config.get("project")
+        location_val = config.get("location")
+
         conn = bigquery.Client(
-            project=config.get("project"),
-            location=config.get("location"),
+            project=str(project_val) if project_val else None,
+            location=str(location_val) if location_val else None,
         )
 
         yield conn
