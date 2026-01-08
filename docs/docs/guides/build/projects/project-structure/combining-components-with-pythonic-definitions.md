@@ -30,7 +30,7 @@ This structure includes:
 
 ## Combining Component and Pythonic asset definitions
 
-The key to combining Component with Pythonic asset definitions is using `Definitions.merge`. This merges multiple `Definitions` objects together:
+The key to combining Component with Pythonic asset definitions is using  <PyObject section="definitions" module="dagster" object="Definitions.merge" />. This merges multiple `Definitions` objects together:
 
 <CodeExample
   path="docs_snippets/docs_snippets/guides/dg/combining-components-with-pythonic-defs/component_defs.py"
@@ -42,7 +42,7 @@ The key to combining Component with Pythonic asset definitions is using `Definit
 This pattern:
 1. Uses <PyObject section="components" module="dagster" object="load_from_defs_folder" /> to automatically discover and load Component definitions from the `defs/` folder
 2. Creates a separate `Definitions` object for your Pythonic assets
-3. Merges the Component and Pythonic asset definitions together using `Definitions.merge`
+3. Merges the Component and Pythonic asset definitions together using  <PyObject section="definitions" module="dagster" object="Definitions.merge" />
 
 ## Sharing resources across both types of definitions
 
@@ -135,5 +135,5 @@ When combining Components with Pythonic definitions:
 ## Next steps
 
 - Learn how to [add Components to an existing project](/guides/build/projects/moving-to-components/adding-components-to-existing-project)
-- Explore [available Components](/guides/build/components)
+- Explore [available Components](/tags/integrations/component)
 - Read about [creating custom Components](/guides/build/components/creating-new-components)
