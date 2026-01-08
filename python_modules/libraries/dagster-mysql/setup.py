@@ -35,6 +35,6 @@ setup(
     },
     include_package_data=True,
     python_requires=">=3.10,<3.14",  # mysql-connector-python incompatible with Python 3.14
-    install_requires=[f"dagster{pin}", "mysql-connector-python"],
+    install_requires=["dagster==1.12.9", "mysql-connector-python"],
     zip_safe=False,
 )

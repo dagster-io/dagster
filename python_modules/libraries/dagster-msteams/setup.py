@@ -37,7 +37,7 @@ setup(
     include_package_data=True,
     python_requires=">=3.10,<3.15",
     install_requires=[
-        f"dagster{pin}",
+        "dagster==1.12.9",
         "requests>=2,<3",
     ],
     zip_safe=False,
