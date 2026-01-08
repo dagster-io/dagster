@@ -4,14 +4,14 @@ sidebar_position: 400
 title: Combining Components with Pythonic definitions
 ---
 
-As your Dagster project grows, you may want to leverage [Components](/guides/build/components) for standardized data pipelines while still maintaining traditional <PyObject section="assets" module="dagster" object="asset" decorator /> definitions for custom logic. This guide shows how to combine both approaches in a single project using `Definitions.merge`.
+As your Dagster project grows, you may want to leverage [Components](/guides/build/components) for standardized data pipelines while still maintaining traditional <PyObject section="assets" module="dagster" object="asset" decorator /> definitions for custom logic. This guide shows how to combine both approaches in a single project using <PyObject section="definitions" module="dagster" object="Definitions.merge" />.
 
 ## When to use this pattern
 
 This pattern is useful when you:
 
-- Want to use Components for standardized integrations (Sling, dbt, etc.) but need custom Python logic for specific transformations
-- Are migrating an existing project to Components incrementally
+- Want to use Components for standardized integrations (Sling, dbt, etc.), but need custom Python logic for specific transformations
+- Are [migrating an existing project to Components](/guides/build/projects/moving-to-components) incrementally
 - Have team members who prefer working with Python code while others benefit from Components' declarative approach
 
 ## Example project structure
@@ -24,13 +24,13 @@ This structure includes:
 
 | Directory | Purpose |
 |-----------|---------|
-| `defs/` | Contains Dagster Components (Sling, dbt, etc.) that are auto-loaded |
+| `defs/` | Contains Dagster Component definitions |
 | `assets/` | Traditional `@asset` definitions written in Python |
-| `resources/` | Shared resources used by both Components and Pythonic assets |
+| `resources/` | Shared resources used by both Component definitions and Pythonic asset definitions |
 
-## Combining definitions
+## Combining Component and Pythonic asset definitions
 
-The key to combining Components with Pythonic assets is using `Definitions.merge`. This merges multiple `Definitions` objects together:
+The key to combining Component with Pythonic asset definitions is using `Definitions.merge`. This merges multiple `Definitions` objects together:
 
 <CodeExample
   path="docs_snippets/docs_snippets/guides/dg/combining-components-with-pythonic-defs/component_defs.py"
@@ -40,13 +40,13 @@ The key to combining Components with Pythonic assets is using `Definitions.merge
 />
 
 This pattern:
-1. Uses `load_from_defs_folder` to automatically discover and load Components from the `defs/` folder
+1. Uses <PyObject section="components" module="dagster" object="load_from_defs_folder" /> to automatically discover and load Component definitions from the `defs/` folder
 2. Creates a separate `Definitions` object for your Pythonic assets
-3. Merges them together using `Definitions.merge`
+3. Merges the Component and Pythonic asset definitions together using `Definitions.merge`
 
-## Sharing resources across both types
+## Sharing resources across both types of definitions
 
-When Components and Pythonic assets need to share resources (like a database connection), you can bind resources when creating your definitions.
+When Component and Pythonic asset definitions need to share resources (like a database connection), you can bind resources when creating your definitions.
 
 There are two recommended patterns for organizing resources:
 
