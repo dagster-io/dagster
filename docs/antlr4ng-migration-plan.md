@@ -416,23 +416,44 @@ antlr4ng v3.0.0+ is ESM-only. Check for compatibility:
 
 ## Potential Pitfalls
 
-### 1. ESM-Only Distribution (High Risk)
+### 1. ESM-Only Distribution (LOW Risk - Assessed)
 
 **Issue**: antlr4ng v3.0.0+ doesn't support CommonJS.
 
-**Impact**: May break Jest tests or other tools expecting CJS.
+**Assessment Completed**: The codebase is already ESM-compatible.
 
-**Mitigation**:
-- Ensure Jest is configured for ESM
-- Update jest.config.js:
-  ```javascript
-  module.exports = {
-    transform: {
-      '^.+\\.(ts|tsx)$': ['ts-jest', { useESM: true }]
-    },
-    extensionsToTreatAsEsm: ['.ts', '.tsx']
-  };
-  ```
+**Existing ESM-Only Packages Already in Use**:
+| Package | Version | Status |
+|---------|---------|--------|
+| `remark` | ^14.0.2 | ESM-only ✅ |
+| `remark-gfm` | 3.0.1 | ESM-only ✅ |
+| `remark-directive` | ^4.0.0 | ESM-only ✅ |
+| `rehype-highlight` | ^6.0.0 | ESM-only ✅ |
+| `rehype-raw` | ^6.0.0 | ESM-only ✅ |
+| `rehype-sanitize` | ^5.0.1 | ESM-only ✅ |
+| `rehype-slug` | ^6.0.0 | ESM-only ✅ |
+| `strip-markdown` | ^6.0.0 | ESM-only ✅ |
+
+**Build System Compatibility**:
+- ✅ **Next.js 15**: Native ESM support, `transpilePackages` configured
+- ✅ **TypeScript**: `"module": "es2022"`, `"moduleResolution": "bundler"`
+- ✅ **Storybook**: Uses Vite with native ESM support
+- ⚠️ **Jest**: Requires minor config update (see below)
+
+**Required Jest Fix** (only change needed):
+```javascript
+// jest.config.js - update transformIgnorePatterns
+transformIgnorePatterns: [
+  '/node_modules/(?!(antlr4ng)/)',  // Allow transforming antlr4ng
+  '\\.pnp\\.[^\\/]+$'
+],
+```
+
+**Test Files Affected** (4 files use ANTLR):
+- `src/selection/__tests__/BaseSelectionVisitor.test.ts`
+- `src/selection/__tests__/createSelectionLinter.test.ts`
+- `src/selection/__tests__/SelectionAutoComplete.test.ts`
+- `src/automation-selection/__tests__/AntlrAutomationSelection.test.ts`
 
 ### 2. Stricter Null Checking (Medium Risk)
 

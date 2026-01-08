@@ -5,7 +5,7 @@ const AUTOMATION_SELECTION_GRAMMAR_FILE_PATH = path.resolve(
   './src/automation-selection/AutomationSelection.g4',
 );
 execSync(
-  `antlr4ts -visitor -o ./src/automation-selection/generated ${AUTOMATION_SELECTION_GRAMMAR_FILE_PATH}`,
+  `antlr4ng -Dlanguage=TypeScript -visitor -o ./src/automation-selection/generated ${AUTOMATION_SELECTION_GRAMMAR_FILE_PATH}`,
 );
 
 const files = [

@@ -1,59 +1,38 @@
-// Generated from /Users/salazarm/code/dagster/js_modules/dagster-ui/packages/ui-core/src/automation-selection/AutomationSelection.g4 by ANTLR 4.9.0-SNAPSHOT
+// Generated from /home/user/dagster/js_modules/dagster-ui/packages/ui-core/src/automation-selection/AutomationSelection.g4 by ANTLR 4.13.1
 
-import {ParseTreeListener} from 'antlr4ts/tree/ParseTreeListener';
+import {ErrorNode, ParseTreeListener, ParserRuleContext, TerminalNode} from 'antlr4ng';
 
-import {
-  AllExpressionContext,
-  AndExpressionContext,
-  AttributeExprContext,
-  AttributeExpressionContext,
-  CodeLocationExprContext,
-  ExprContext,
-  KeyValueContext,
-  NameExprContext,
-  NotExpressionContext,
-  OrExpressionContext,
-  ParenthesizedExpressionContext,
-  StartContext,
-  StatusExprContext,
-  TagExprContext,
-  TraversalAllowedExprContext,
-  TraversalAllowedExpressionContext,
-  TypeExprContext,
-  ValueContext,
-} from './AutomationSelectionParser';
+import {StartContext} from './AutomationSelectionParser.js';
+import {AndExpressionContext} from './AutomationSelectionParser.js';
+import {AllExpressionContext} from './AutomationSelectionParser.js';
+import {TraversalAllowedExpressionContext} from './AutomationSelectionParser.js';
+import {NotExpressionContext} from './AutomationSelectionParser.js';
+import {OrExpressionContext} from './AutomationSelectionParser.js';
+import {AttributeExpressionContext} from './AutomationSelectionParser.js';
+import {ParenthesizedExpressionContext} from './AutomationSelectionParser.js';
+import {NameExprContext} from './AutomationSelectionParser.js';
+import {TagExprContext} from './AutomationSelectionParser.js';
+import {TypeExprContext} from './AutomationSelectionParser.js';
+import {StatusExprContext} from './AutomationSelectionParser.js';
+import {CodeLocationExprContext} from './AutomationSelectionParser.js';
+import {ValueContext} from './AutomationSelectionParser.js';
+import {KeyValueContext} from './AutomationSelectionParser.js';
 
 /**
  * This interface defines a complete listener for a parse tree produced by
  * `AutomationSelectionParser`.
  */
-export interface AutomationSelectionListener extends ParseTreeListener {
+export class AutomationSelectionListener implements ParseTreeListener {
   /**
-   * Enter a parse tree produced by the `TraversalAllowedExpression`
-   * labeled alternative in `AutomationSelectionParser.expr`.
+   * Enter a parse tree produced by `AutomationSelectionParser.start`.
    * @param ctx the parse tree
    */
-  enterTraversalAllowedExpression?: (ctx: TraversalAllowedExpressionContext) => void;
+  enterStart?: (ctx: StartContext) => void;
   /**
-   * Exit a parse tree produced by the `TraversalAllowedExpression`
-   * labeled alternative in `AutomationSelectionParser.expr`.
+   * Exit a parse tree produced by `AutomationSelectionParser.start`.
    * @param ctx the parse tree
    */
-  exitTraversalAllowedExpression?: (ctx: TraversalAllowedExpressionContext) => void;
-
-  /**
-   * Enter a parse tree produced by the `NotExpression`
-   * labeled alternative in `AutomationSelectionParser.expr`.
-   * @param ctx the parse tree
-   */
-  enterNotExpression?: (ctx: NotExpressionContext) => void;
-  /**
-   * Exit a parse tree produced by the `NotExpression`
-   * labeled alternative in `AutomationSelectionParser.expr`.
-   * @param ctx the parse tree
-   */
-  exitNotExpression?: (ctx: NotExpressionContext) => void;
-
+  exitStart?: (ctx: StartContext) => void;
   /**
    * Enter a parse tree produced by the `AndExpression`
    * labeled alternative in `AutomationSelectionParser.expr`.
@@ -66,20 +45,6 @@ export interface AutomationSelectionListener extends ParseTreeListener {
    * @param ctx the parse tree
    */
   exitAndExpression?: (ctx: AndExpressionContext) => void;
-
-  /**
-   * Enter a parse tree produced by the `OrExpression`
-   * labeled alternative in `AutomationSelectionParser.expr`.
-   * @param ctx the parse tree
-   */
-  enterOrExpression?: (ctx: OrExpressionContext) => void;
-  /**
-   * Exit a parse tree produced by the `OrExpression`
-   * labeled alternative in `AutomationSelectionParser.expr`.
-   * @param ctx the parse tree
-   */
-  exitOrExpression?: (ctx: OrExpressionContext) => void;
-
   /**
    * Enter a parse tree produced by the `AllExpression`
    * labeled alternative in `AutomationSelectionParser.expr`.
@@ -92,72 +57,42 @@ export interface AutomationSelectionListener extends ParseTreeListener {
    * @param ctx the parse tree
    */
   exitAllExpression?: (ctx: AllExpressionContext) => void;
-
   /**
-   * Enter a parse tree produced by the `NameExpr`
-   * labeled alternative in `AutomationSelectionParser.attributeExpr`.
+   * Enter a parse tree produced by the `TraversalAllowedExpression`
+   * labeled alternative in `AutomationSelectionParser.expr`.
    * @param ctx the parse tree
    */
-  enterNameExpr?: (ctx: NameExprContext) => void;
+  enterTraversalAllowedExpression?: (ctx: TraversalAllowedExpressionContext) => void;
   /**
-   * Exit a parse tree produced by the `NameExpr`
-   * labeled alternative in `AutomationSelectionParser.attributeExpr`.
+   * Exit a parse tree produced by the `TraversalAllowedExpression`
+   * labeled alternative in `AutomationSelectionParser.expr`.
    * @param ctx the parse tree
    */
-  exitNameExpr?: (ctx: NameExprContext) => void;
-
+  exitTraversalAllowedExpression?: (ctx: TraversalAllowedExpressionContext) => void;
   /**
-   * Enter a parse tree produced by the `TagExpr`
-   * labeled alternative in `AutomationSelectionParser.attributeExpr`.
+   * Enter a parse tree produced by the `NotExpression`
+   * labeled alternative in `AutomationSelectionParser.expr`.
    * @param ctx the parse tree
    */
-  enterTagExpr?: (ctx: TagExprContext) => void;
+  enterNotExpression?: (ctx: NotExpressionContext) => void;
   /**
-   * Exit a parse tree produced by the `TagExpr`
-   * labeled alternative in `AutomationSelectionParser.attributeExpr`.
+   * Exit a parse tree produced by the `NotExpression`
+   * labeled alternative in `AutomationSelectionParser.expr`.
    * @param ctx the parse tree
    */
-  exitTagExpr?: (ctx: TagExprContext) => void;
-
+  exitNotExpression?: (ctx: NotExpressionContext) => void;
   /**
-   * Enter a parse tree produced by the `TypeExpr`
-   * labeled alternative in `AutomationSelectionParser.attributeExpr`.
+   * Enter a parse tree produced by the `OrExpression`
+   * labeled alternative in `AutomationSelectionParser.expr`.
    * @param ctx the parse tree
    */
-  enterTypeExpr?: (ctx: TypeExprContext) => void;
+  enterOrExpression?: (ctx: OrExpressionContext) => void;
   /**
-   * Exit a parse tree produced by the `TypeExpr`
-   * labeled alternative in `AutomationSelectionParser.attributeExpr`.
+   * Exit a parse tree produced by the `OrExpression`
+   * labeled alternative in `AutomationSelectionParser.expr`.
    * @param ctx the parse tree
    */
-  exitTypeExpr?: (ctx: TypeExprContext) => void;
-
-  /**
-   * Enter a parse tree produced by the `StatusExpr`
-   * labeled alternative in `AutomationSelectionParser.attributeExpr`.
-   * @param ctx the parse tree
-   */
-  enterStatusExpr?: (ctx: StatusExprContext) => void;
-  /**
-   * Exit a parse tree produced by the `StatusExpr`
-   * labeled alternative in `AutomationSelectionParser.attributeExpr`.
-   * @param ctx the parse tree
-   */
-  exitStatusExpr?: (ctx: StatusExprContext) => void;
-
-  /**
-   * Enter a parse tree produced by the `CodeLocationExpr`
-   * labeled alternative in `AutomationSelectionParser.attributeExpr`.
-   * @param ctx the parse tree
-   */
-  enterCodeLocationExpr?: (ctx: CodeLocationExprContext) => void;
-  /**
-   * Exit a parse tree produced by the `CodeLocationExpr`
-   * labeled alternative in `AutomationSelectionParser.attributeExpr`.
-   * @param ctx the parse tree
-   */
-  exitCodeLocationExpr?: (ctx: CodeLocationExprContext) => void;
-
+  exitOrExpression?: (ctx: OrExpressionContext) => void;
   /**
    * Enter a parse tree produced by the `AttributeExpression`
    * labeled alternative in `AutomationSelectionParser.traversalAllowedExpr`.
@@ -170,7 +105,6 @@ export interface AutomationSelectionListener extends ParseTreeListener {
    * @param ctx the parse tree
    */
   exitAttributeExpression?: (ctx: AttributeExpressionContext) => void;
-
   /**
    * Enter a parse tree produced by the `ParenthesizedExpression`
    * labeled alternative in `AutomationSelectionParser.traversalAllowedExpr`.
@@ -183,51 +117,66 @@ export interface AutomationSelectionListener extends ParseTreeListener {
    * @param ctx the parse tree
    */
   exitParenthesizedExpression?: (ctx: ParenthesizedExpressionContext) => void;
-
   /**
-   * Enter a parse tree produced by `AutomationSelectionParser.start`.
+   * Enter a parse tree produced by the `NameExpr`
+   * labeled alternative in `AutomationSelectionParser.attributeExpr`.
    * @param ctx the parse tree
    */
-  enterStart?: (ctx: StartContext) => void;
+  enterNameExpr?: (ctx: NameExprContext) => void;
   /**
-   * Exit a parse tree produced by `AutomationSelectionParser.start`.
+   * Exit a parse tree produced by the `NameExpr`
+   * labeled alternative in `AutomationSelectionParser.attributeExpr`.
    * @param ctx the parse tree
    */
-  exitStart?: (ctx: StartContext) => void;
-
+  exitNameExpr?: (ctx: NameExprContext) => void;
   /**
-   * Enter a parse tree produced by `AutomationSelectionParser.expr`.
+   * Enter a parse tree produced by the `TagExpr`
+   * labeled alternative in `AutomationSelectionParser.attributeExpr`.
    * @param ctx the parse tree
    */
-  enterExpr?: (ctx: ExprContext) => void;
+  enterTagExpr?: (ctx: TagExprContext) => void;
   /**
-   * Exit a parse tree produced by `AutomationSelectionParser.expr`.
+   * Exit a parse tree produced by the `TagExpr`
+   * labeled alternative in `AutomationSelectionParser.attributeExpr`.
    * @param ctx the parse tree
    */
-  exitExpr?: (ctx: ExprContext) => void;
-
+  exitTagExpr?: (ctx: TagExprContext) => void;
   /**
-   * Enter a parse tree produced by `AutomationSelectionParser.traversalAllowedExpr`.
+   * Enter a parse tree produced by the `TypeExpr`
+   * labeled alternative in `AutomationSelectionParser.attributeExpr`.
    * @param ctx the parse tree
    */
-  enterTraversalAllowedExpr?: (ctx: TraversalAllowedExprContext) => void;
+  enterTypeExpr?: (ctx: TypeExprContext) => void;
   /**
-   * Exit a parse tree produced by `AutomationSelectionParser.traversalAllowedExpr`.
+   * Exit a parse tree produced by the `TypeExpr`
+   * labeled alternative in `AutomationSelectionParser.attributeExpr`.
    * @param ctx the parse tree
    */
-  exitTraversalAllowedExpr?: (ctx: TraversalAllowedExprContext) => void;
-
+  exitTypeExpr?: (ctx: TypeExprContext) => void;
   /**
-   * Enter a parse tree produced by `AutomationSelectionParser.attributeExpr`.
+   * Enter a parse tree produced by the `StatusExpr`
+   * labeled alternative in `AutomationSelectionParser.attributeExpr`.
    * @param ctx the parse tree
    */
-  enterAttributeExpr?: (ctx: AttributeExprContext) => void;
+  enterStatusExpr?: (ctx: StatusExprContext) => void;
   /**
-   * Exit a parse tree produced by `AutomationSelectionParser.attributeExpr`.
+   * Exit a parse tree produced by the `StatusExpr`
+   * labeled alternative in `AutomationSelectionParser.attributeExpr`.
    * @param ctx the parse tree
    */
-  exitAttributeExpr?: (ctx: AttributeExprContext) => void;
-
+  exitStatusExpr?: (ctx: StatusExprContext) => void;
+  /**
+   * Enter a parse tree produced by the `CodeLocationExpr`
+   * labeled alternative in `AutomationSelectionParser.attributeExpr`.
+   * @param ctx the parse tree
+   */
+  enterCodeLocationExpr?: (ctx: CodeLocationExprContext) => void;
+  /**
+   * Exit a parse tree produced by the `CodeLocationExpr`
+   * labeled alternative in `AutomationSelectionParser.attributeExpr`.
+   * @param ctx the parse tree
+   */
+  exitCodeLocationExpr?: (ctx: CodeLocationExprContext) => void;
   /**
    * Enter a parse tree produced by `AutomationSelectionParser.value`.
    * @param ctx the parse tree
@@ -238,7 +187,6 @@ export interface AutomationSelectionListener extends ParseTreeListener {
    * @param ctx the parse tree
    */
   exitValue?: (ctx: ValueContext) => void;
-
   /**
    * Enter a parse tree produced by `AutomationSelectionParser.keyValue`.
    * @param ctx the parse tree
@@ -249,4 +197,9 @@ export interface AutomationSelectionListener extends ParseTreeListener {
    * @param ctx the parse tree
    */
   exitKeyValue?: (ctx: KeyValueContext) => void;
+
+  visitTerminal(node: TerminalNode): void {}
+  visitErrorNode(node: ErrorNode): void {}
+  enterEveryRule(node: ParserRuleContext): void {}
+  exitEveryRule(node: ParserRuleContext): void {}
 }

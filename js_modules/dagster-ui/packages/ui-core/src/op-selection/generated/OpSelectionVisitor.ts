@@ -1,30 +1,25 @@
-// Generated from /Users/marcosalazar/code/dagster/js_modules/dagster-ui/packages/ui-core/src/op-selection/OpSelection.g4 by ANTLR 4.9.0-SNAPSHOT
+// Generated from /home/user/dagster/js_modules/dagster-ui/packages/ui-core/src/op-selection/OpSelection.g4 by ANTLR 4.13.1
 
-import {ParseTreeVisitor} from 'antlr4ts/tree/ParseTreeVisitor';
+import {AbstractParseTreeVisitor} from 'antlr4ng';
 
-import {
-  AllExpressionContext,
-  AndExpressionContext,
-  AttributeExprContext,
-  AttributeExpressionContext,
-  DownTraversalContext,
-  DownTraversalExpressionContext,
-  ExprContext,
-  FunctionCallExpressionContext,
-  FunctionNameContext,
-  KeyValueContext,
-  NameExprContext,
-  NotExpressionContext,
-  OrExpressionContext,
-  ParenthesizedExpressionContext,
-  StartContext,
-  TraversalAllowedExprContext,
-  TraversalAllowedExpressionContext,
-  UpAndDownTraversalExpressionContext,
-  UpTraversalContext,
-  UpTraversalExpressionContext,
-  ValueContext,
-} from './OpSelectionParser';
+import {StartContext} from './OpSelectionParser.js';
+import {UpTraversalExpressionContext} from './OpSelectionParser.js';
+import {AndExpressionContext} from './OpSelectionParser.js';
+import {AllExpressionContext} from './OpSelectionParser.js';
+import {TraversalAllowedExpressionContext} from './OpSelectionParser.js';
+import {DownTraversalExpressionContext} from './OpSelectionParser.js';
+import {NotExpressionContext} from './OpSelectionParser.js';
+import {OrExpressionContext} from './OpSelectionParser.js';
+import {UpAndDownTraversalExpressionContext} from './OpSelectionParser.js';
+import {AttributeExpressionContext} from './OpSelectionParser.js';
+import {FunctionCallExpressionContext} from './OpSelectionParser.js';
+import {ParenthesizedExpressionContext} from './OpSelectionParser.js';
+import {UpTraversalContext} from './OpSelectionParser.js';
+import {DownTraversalContext} from './OpSelectionParser.js';
+import {FunctionNameContext} from './OpSelectionParser.js';
+import {NameExprContext} from './OpSelectionParser.js';
+import {ValueContext} from './OpSelectionParser.js';
+import {KeyValueContext} from './OpSelectionParser.js';
 
 /**
  * This interface defines a complete generic visitor for a parse tree produced
@@ -33,23 +28,13 @@ import {
  * @param <Result> The return type of the visit operation. Use `void` for
  * operations with no return type.
  */
-export interface OpSelectionVisitor<Result> extends ParseTreeVisitor<Result> {
+export class OpSelectionVisitor<Result> extends AbstractParseTreeVisitor<Result> {
   /**
-   * Visit a parse tree produced by the `TraversalAllowedExpression`
-   * labeled alternative in `OpSelectionParser.expr`.
+   * Visit a parse tree produced by `OpSelectionParser.start`.
    * @param ctx the parse tree
    * @return the visitor result
    */
-  visitTraversalAllowedExpression?: (ctx: TraversalAllowedExpressionContext) => Result;
-
-  /**
-   * Visit a parse tree produced by the `UpAndDownTraversalExpression`
-   * labeled alternative in `OpSelectionParser.expr`.
-   * @param ctx the parse tree
-   * @return the visitor result
-   */
-  visitUpAndDownTraversalExpression?: (ctx: UpAndDownTraversalExpressionContext) => Result;
-
+  visitStart?: (ctx: StartContext) => Result;
   /**
    * Visit a parse tree produced by the `UpTraversalExpression`
    * labeled alternative in `OpSelectionParser.expr`.
@@ -57,23 +42,6 @@ export interface OpSelectionVisitor<Result> extends ParseTreeVisitor<Result> {
    * @return the visitor result
    */
   visitUpTraversalExpression?: (ctx: UpTraversalExpressionContext) => Result;
-
-  /**
-   * Visit a parse tree produced by the `DownTraversalExpression`
-   * labeled alternative in `OpSelectionParser.expr`.
-   * @param ctx the parse tree
-   * @return the visitor result
-   */
-  visitDownTraversalExpression?: (ctx: DownTraversalExpressionContext) => Result;
-
-  /**
-   * Visit a parse tree produced by the `NotExpression`
-   * labeled alternative in `OpSelectionParser.expr`.
-   * @param ctx the parse tree
-   * @return the visitor result
-   */
-  visitNotExpression?: (ctx: NotExpressionContext) => Result;
-
   /**
    * Visit a parse tree produced by the `AndExpression`
    * labeled alternative in `OpSelectionParser.expr`.
@@ -81,15 +49,6 @@ export interface OpSelectionVisitor<Result> extends ParseTreeVisitor<Result> {
    * @return the visitor result
    */
   visitAndExpression?: (ctx: AndExpressionContext) => Result;
-
-  /**
-   * Visit a parse tree produced by the `OrExpression`
-   * labeled alternative in `OpSelectionParser.expr`.
-   * @param ctx the parse tree
-   * @return the visitor result
-   */
-  visitOrExpression?: (ctx: OrExpressionContext) => Result;
-
   /**
    * Visit a parse tree produced by the `AllExpression`
    * labeled alternative in `OpSelectionParser.expr`.
@@ -97,15 +56,41 @@ export interface OpSelectionVisitor<Result> extends ParseTreeVisitor<Result> {
    * @return the visitor result
    */
   visitAllExpression?: (ctx: AllExpressionContext) => Result;
-
   /**
-   * Visit a parse tree produced by the `NameExpr`
-   * labeled alternative in `OpSelectionParser.attributeExpr`.
+   * Visit a parse tree produced by the `TraversalAllowedExpression`
+   * labeled alternative in `OpSelectionParser.expr`.
    * @param ctx the parse tree
    * @return the visitor result
    */
-  visitNameExpr?: (ctx: NameExprContext) => Result;
-
+  visitTraversalAllowedExpression?: (ctx: TraversalAllowedExpressionContext) => Result;
+  /**
+   * Visit a parse tree produced by the `DownTraversalExpression`
+   * labeled alternative in `OpSelectionParser.expr`.
+   * @param ctx the parse tree
+   * @return the visitor result
+   */
+  visitDownTraversalExpression?: (ctx: DownTraversalExpressionContext) => Result;
+  /**
+   * Visit a parse tree produced by the `NotExpression`
+   * labeled alternative in `OpSelectionParser.expr`.
+   * @param ctx the parse tree
+   * @return the visitor result
+   */
+  visitNotExpression?: (ctx: NotExpressionContext) => Result;
+  /**
+   * Visit a parse tree produced by the `OrExpression`
+   * labeled alternative in `OpSelectionParser.expr`.
+   * @param ctx the parse tree
+   * @return the visitor result
+   */
+  visitOrExpression?: (ctx: OrExpressionContext) => Result;
+  /**
+   * Visit a parse tree produced by the `UpAndDownTraversalExpression`
+   * labeled alternative in `OpSelectionParser.expr`.
+   * @param ctx the parse tree
+   * @return the visitor result
+   */
+  visitUpAndDownTraversalExpression?: (ctx: UpAndDownTraversalExpressionContext) => Result;
   /**
    * Visit a parse tree produced by the `AttributeExpression`
    * labeled alternative in `OpSelectionParser.traversalAllowedExpr`.
@@ -113,7 +98,6 @@ export interface OpSelectionVisitor<Result> extends ParseTreeVisitor<Result> {
    * @return the visitor result
    */
   visitAttributeExpression?: (ctx: AttributeExpressionContext) => Result;
-
   /**
    * Visit a parse tree produced by the `FunctionCallExpression`
    * labeled alternative in `OpSelectionParser.traversalAllowedExpr`.
@@ -121,7 +105,6 @@ export interface OpSelectionVisitor<Result> extends ParseTreeVisitor<Result> {
    * @return the visitor result
    */
   visitFunctionCallExpression?: (ctx: FunctionCallExpressionContext) => Result;
-
   /**
    * Visit a parse tree produced by the `ParenthesizedExpression`
    * labeled alternative in `OpSelectionParser.traversalAllowedExpr`.
@@ -129,63 +112,37 @@ export interface OpSelectionVisitor<Result> extends ParseTreeVisitor<Result> {
    * @return the visitor result
    */
   visitParenthesizedExpression?: (ctx: ParenthesizedExpressionContext) => Result;
-
-  /**
-   * Visit a parse tree produced by `OpSelectionParser.start`.
-   * @param ctx the parse tree
-   * @return the visitor result
-   */
-  visitStart?: (ctx: StartContext) => Result;
-
-  /**
-   * Visit a parse tree produced by `OpSelectionParser.expr`.
-   * @param ctx the parse tree
-   * @return the visitor result
-   */
-  visitExpr?: (ctx: ExprContext) => Result;
-
-  /**
-   * Visit a parse tree produced by `OpSelectionParser.traversalAllowedExpr`.
-   * @param ctx the parse tree
-   * @return the visitor result
-   */
-  visitTraversalAllowedExpr?: (ctx: TraversalAllowedExprContext) => Result;
-
   /**
    * Visit a parse tree produced by `OpSelectionParser.upTraversal`.
    * @param ctx the parse tree
    * @return the visitor result
    */
   visitUpTraversal?: (ctx: UpTraversalContext) => Result;
-
   /**
    * Visit a parse tree produced by `OpSelectionParser.downTraversal`.
    * @param ctx the parse tree
    * @return the visitor result
    */
   visitDownTraversal?: (ctx: DownTraversalContext) => Result;
-
   /**
    * Visit a parse tree produced by `OpSelectionParser.functionName`.
    * @param ctx the parse tree
    * @return the visitor result
    */
   visitFunctionName?: (ctx: FunctionNameContext) => Result;
-
   /**
-   * Visit a parse tree produced by `OpSelectionParser.attributeExpr`.
+   * Visit a parse tree produced by the `NameExpr`
+   * labeled alternative in `OpSelectionParser.attributeExpr`.
    * @param ctx the parse tree
    * @return the visitor result
    */
-  visitAttributeExpr?: (ctx: AttributeExprContext) => Result;
-
+  visitNameExpr?: (ctx: NameExprContext) => Result;
   /**
    * Visit a parse tree produced by `OpSelectionParser.value`.
    * @param ctx the parse tree
    * @return the visitor result
    */
   visitValue?: (ctx: ValueContext) => Result;
-
   /**
    * Visit a parse tree produced by `OpSelectionParser.keyValue`.
    * @param ctx the parse tree
