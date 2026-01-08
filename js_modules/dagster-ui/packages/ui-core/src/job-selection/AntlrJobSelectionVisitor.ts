@@ -1,4 +1,4 @@
-import {AbstractParseTreeVisitor} from 'antlr4ts/tree/AbstractParseTreeVisitor';
+import {AbstractParseTreeVisitor} from 'antlr4ng';
 import escapeRegExp from 'lodash/escapeRegExp';
 
 import {buildRepoPathForHuman} from '../workspace/buildRepoAddress';
@@ -39,27 +39,34 @@ export class AntlrJobSelectionVisitor<T extends Job>
   }
 
   visitStart(ctx: StartContext) {
-    return this.visit(ctx.expr());
+    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+    return this.visit(ctx.expr()!) ?? this.defaultResult();
   }
 
   visitTraversalAllowedExpression(ctx: TraversalAllowedExpressionContext) {
-    return this.visit(ctx.traversalAllowedExpr());
+    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+    return this.visit(ctx.traversalAllowedExpr()!) ?? this.defaultResult();
   }
 
   visitNotExpression(ctx: NotExpressionContext) {
-    const selection = this.visit(ctx.expr());
+    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+    const selection = this.visit(ctx.expr()!) ?? this.defaultResult();
     return new Set([...this.all_jobs].filter((i) => !selection.has(i)));
   }
 
   visitAndExpression(ctx: AndExpressionContext) {
-    const left = this.visit(ctx.expr(0));
-    const right = this.visit(ctx.expr(1));
+    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+    const left = this.visit(ctx.expr(0)!) ?? this.defaultResult();
+    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+    const right = this.visit(ctx.expr(1)!) ?? this.defaultResult();
     return new Set([...left].filter((i) => right.has(i)));
   }
 
   visitOrExpression(ctx: OrExpressionContext) {
-    const left = this.visit(ctx.expr(0));
-    const right = this.visit(ctx.expr(1));
+    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+    const left = this.visit(ctx.expr(0)!) ?? this.defaultResult();
+    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+    const right = this.visit(ctx.expr(1)!) ?? this.defaultResult();
     return new Set([...left, ...right]);
   }
 
@@ -68,22 +75,26 @@ export class AntlrJobSelectionVisitor<T extends Job>
   }
 
   visitAttributeExpression(ctx: AttributeExpressionContext) {
-    return this.visit(ctx.attributeExpr());
+    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+    return this.visit(ctx.attributeExpr()!) ?? this.defaultResult();
   }
 
   visitParenthesizedExpression(ctx: ParenthesizedExpressionContext) {
-    return this.visit(ctx.expr());
+    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+    return this.visit(ctx.expr()!) ?? this.defaultResult();
   }
 
   visitNameExpr(ctx: NameExprContext) {
-    const value: string = getValue(ctx.keyValue());
+    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+    const value: string = getValue(ctx.keyValue()!);
     const regex: RegExp = new RegExp(`^${escapeRegExp(value).replaceAll('\\*', '.*')}$`);
     const selection = [...this.all_jobs].filter((i) => regex.test(i.name));
     return new Set(selection);
   }
 
   visitCodeLocationExpr(ctx: CodeLocationExprContext) {
-    const value: string = getValue(ctx.value());
+    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+    const value: string = getValue(ctx.value()!);
     const regex: RegExp = new RegExp(`^${escapeRegExp(value).replaceAll('\\*', '.*')}$`);
     const selection = new Set<T>();
     for (const job of this.all_jobs) {

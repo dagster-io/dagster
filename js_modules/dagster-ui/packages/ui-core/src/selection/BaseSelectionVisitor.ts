@@ -1,8 +1,12 @@
-import {ParserRuleContext} from 'antlr4ts';
-import {AbstractParseTreeVisitor} from 'antlr4ts/tree/AbstractParseTreeVisitor';
-import {ParseTree} from 'antlr4ts/tree/ParseTree';
-import {RuleNode} from 'antlr4ts/tree/RuleNode';
-import {TerminalNode} from 'antlr4ts/tree/TerminalNode';
+import {
+  AbstractParseTreeVisitor,
+  ParseTree,
+  ParserRuleContext,
+  TerminalNode,
+} from 'antlr4ng';
+
+// In antlr4ng, RuleNode is part of ParserRuleContext
+type RuleNode = ParserRuleContext;
 
 import {
   ParenthesizedExpressionContext,
@@ -69,7 +73,7 @@ export class BaseSelectionVisitor
   public visitChildren(node: RuleNode) {
     let result = this.defaultResult();
 
-    const childCount = node.childCount;
+    const childCount = node.getChildCount();
     for (let i = 0; i < childCount; i++) {
       if (!this.shouldVisitNextChild(node, result)) {
         break;
@@ -81,7 +85,7 @@ export class BaseSelectionVisitor
       if (child.start && child.stop) {
         if (
           !this.nodeIncludesCursor(child) &&
-          (!isWhitespaceContext(child) || child.start.startIndex !== this.cursorIndex) &&
+          (!isWhitespaceContext(child) || child.start.start !== this.cursorIndex) &&
           !this.forceVisitCtx.has(child)
         ) {
           continue;
@@ -98,8 +102,9 @@ export class BaseSelectionVisitor
         }
       }
 
-      const childResult = child.accept(this);
-      result = this.aggregateResult(result, childResult);
+      // For void-returning visitors, we don't need to aggregate results
+      // Just call accept for side effects
+      child.accept(this);
     }
 
     return result;
@@ -119,16 +124,18 @@ export class BaseSelectionVisitor
     let start: number = -1;
     let stop: number = -1;
     if (ctx instanceof ParserRuleContext) {
-      start = ctx.start.startIndex;
-      stop = ctx.stop ? ctx.stop.stopIndex : ctx.start.startIndex;
+      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+      start = ctx.start!.start;
+      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+      stop = ctx.stop ? ctx.stop.stop : ctx.start!.start;
     } else if (ctx instanceof TerminalNode) {
-      start = ctx.payload.startIndex;
-      stop = ctx.payload.stopIndex;
+      start = ctx.symbol.start;
+      stop = ctx.symbol.stop;
     } else {
       start = 0;
       stop = this.line.length;
     }
-    // If the parser did not produce a .stopIndex, fallback to just start
+    // If the parser did not produce a .stop, fallback to just start
     const effCursor = Math.max(0, this.cursorIndex + modifier);
 
     return effCursor >= start && effCursor <= stop;
@@ -137,7 +144,7 @@ export class BaseSelectionVisitor
   public visitPostAttributeValueWhitespace(ctx: PostAttributeValueWhitespaceContext) {
     // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
     const attributeValue = ctx.parent!.getChild(2) as ParserRuleContext;
-    if (this.cursorIndex === (attributeValue?.stop?.stopIndex ?? 0) + 1) {
+    if (this.cursorIndex === (attributeValue?.stop?.stop ?? 0) + 1) {
       this.forceVisit(attributeValue);
     } else {
       this.visitPostExpressionWhitespace(ctx);

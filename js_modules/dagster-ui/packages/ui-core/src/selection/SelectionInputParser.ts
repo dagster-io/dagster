@@ -1,5 +1,4 @@
-import {BailErrorStrategy, CharStreams, CommonTokenStream} from 'antlr4ts';
-import {ParseTree} from 'antlr4ts/tree/ParseTree';
+import {BailErrorStrategy, CharStream, CommonTokenStream, ParseTree, ParserRuleContext} from 'antlr4ng';
 import memoize from 'lodash/memoize';
 
 import {CustomErrorListener, SyntaxError} from './CustomErrorListener';
@@ -36,7 +35,7 @@ export const parseInput = memoize((input: string): ParseResult => {
     const substring = input.substring(currentPosition);
 
     // Initialize ANTLR input stream, lexer, and parser
-    const inputStream = CharStreams.fromString(substring);
+    const inputStream = CharStream.fromString(substring);
     const lexer = new SelectionAutoCompleteLexer(inputStream);
     const tokenStream = new CommonTokenStream(lexer);
     const parser = new SelectionAutoCompleteParser(tokenStream);
@@ -52,11 +51,12 @@ export const parseInput = memoize((input: string): ParseResult => {
     try {
       // Parse using the 'expr' rule instead of 'start' to allow partial parsing
       tree = parser.expr();
-      parseTrees.push({tree, line: tree.text});
+      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+      parseTrees.push({tree, line: (tree as ParserRuleContext).getText()});
 
       // Advance currentPosition to the end of the parsed input
       const lastToken = tokenStream.get(tokenStream.index - 1);
-      currentPosition += lastToken.stopIndex + 1;
+      currentPosition += lastToken.stop + 1;
     } catch {
       // Parsing error occurred
       const currentErrors = errorListener.getErrors();
@@ -70,7 +70,7 @@ export const parseInput = memoize((input: string): ParseResult => {
         // Parse up to the error
         const validInput = input.substring(currentPosition, errorIndex);
         if (validInput.trim().length > 0) {
-          const validInputStream = CharStreams.fromString(validInput);
+          const validInputStream = CharStream.fromString(validInput);
           const validLexer = new SelectionAutoCompleteLexer(validInputStream);
           const validTokenStream = new CommonTokenStream(validLexer);
           const validParser = new SelectionAutoCompleteParser(validTokenStream);

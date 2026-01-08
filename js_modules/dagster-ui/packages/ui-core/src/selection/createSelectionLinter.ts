@@ -1,5 +1,11 @@
-import {CharStreams, CommonTokenStream, Lexer, Parser, ParserRuleContext} from 'antlr4ts';
-import {AbstractParseTreeVisitor} from 'antlr4ts/tree/AbstractParseTreeVisitor';
+import {
+  AbstractParseTreeVisitor,
+  CharStream,
+  CommonTokenStream,
+  Lexer,
+  Parser,
+  ParserRuleContext,
+} from 'antlr4ng';
 
 import {CustomErrorListener, SyntaxError} from './CustomErrorListener';
 import {parseInput} from './SelectionInputParser';
@@ -28,7 +34,7 @@ export function createSelectionLinter({
       return [];
     }
 
-    const inputStream = CharStreams.fromString(text);
+    const inputStream = CharStream.fromString(text);
     const lexer = new LexerKlass(inputStream);
 
     const tokens = new CommonTokenStream(lexer);
@@ -111,11 +117,13 @@ class InvalidAttributeVisitor
   }
 
   visitAttributeName(ctx: AttributeNameContext) {
-    const attributeName = ctx.IDENTIFIER().text;
+    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+    const attributeName = ctx.IDENTIFIER()!.getText();
     if (!this.supportedAttributes.includes(attributeName)) {
-      const from = ctx.start.startIndex;
       // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-      const to = ctx.stop!.stopIndex + 1;
+      const from = ctx.start!.start;
+      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+      const to = ctx.stop!.stop + 1;
 
       if (!this.hasOverlap(from, to)) {
         this.errors.push({

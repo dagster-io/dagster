@@ -1,4 +1,4 @@
-import {AbstractParseTreeVisitor} from 'antlr4ts/tree/AbstractParseTreeVisitor';
+import {AbstractParseTreeVisitor} from 'antlr4ng';
 
 import {parseInput} from '../selection/SelectionInputParser';
 import {getValueNodeValue} from '../selection/SelectionInputUtil';
@@ -26,15 +26,19 @@ class SyntaxUpgradingVisitor
   defaultResult() {}
 
   visitUnmatchedValue(ctx: UnmatchedValueContext) {
+    const valueCtx = ctx.value();
+    if (!valueCtx) {
+      return;
+    }
     // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-    const originalStart = ctx.value().start!.startIndex;
+    const originalStart = valueCtx.start!.start;
     // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-    const originalEnd = ctx.value().stop!.stopIndex;
+    const originalEnd = valueCtx.stop!.stop;
 
     const currentStart = originalStart + this.offset;
     const currentEnd = originalEnd + this.offset;
 
-    const value = getValueNodeValue(ctx.value());
+    const value = getValueNodeValue(valueCtx);
     const converted = `${this.attributeName}:"*${value}*"`;
 
     // Update the converted query
@@ -50,9 +54,10 @@ class SyntaxUpgradingVisitor
   }
 
   visitCommaToken(ctx: CommaTokenContext) {
-    const start = ctx.start.startIndex + this.offset;
     // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-    const end = ctx.stop!.stopIndex + this.offset;
+    const start = ctx.start!.start + this.offset;
+    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+    const end = ctx.stop!.stop + this.offset;
 
     // Remove any spaces around the comma and replace with ' or '
     const before = this.convertedQuery.slice(0, start).trimEnd();

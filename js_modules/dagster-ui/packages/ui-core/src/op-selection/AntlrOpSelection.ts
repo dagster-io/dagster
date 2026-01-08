@@ -1,4 +1,4 @@
-import {CharStreams, CommonTokenStream} from 'antlr4ts';
+import {CharStream, CommonTokenStream} from 'antlr4ng';
 
 import {AntlrOpSelectionVisitor} from './AntlrOpSelectionVisitor';
 import {GraphQueryItem} from '../app/GraphQueryImpl';
@@ -16,7 +16,7 @@ export const parseOpSelectionQuery = <T extends GraphQueryItem>(
   query: string,
 ): OpSelectionQueryResult<T> | Error => {
   try {
-    const lexer = new OpSelectionLexer(CharStreams.fromString(query));
+    const lexer = new OpSelectionLexer(CharStream.fromString(query));
     lexer.removeErrorListeners();
     lexer.addErrorListener(new AntlrInputErrorListener());
 
@@ -29,7 +29,7 @@ export const parseOpSelectionQuery = <T extends GraphQueryItem>(
     const tree = parser.start();
 
     const visitor = new AntlrOpSelectionVisitor(all_ops);
-    const all_selection = visitor.visit(tree);
+    const all_selection = visitor.visit(tree) ?? new Set<T>();
     const focus_selection = visitor.focus_ops;
 
     return {
