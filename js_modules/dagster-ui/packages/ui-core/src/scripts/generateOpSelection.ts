@@ -1,10 +1,14 @@
-import {execSync} from 'child_process';
+import {execFileSync} from 'child_process';
 import path from 'path';
 
 const OP_SELECTION_GRAMMAR_FILE_PATH = path.resolve('./src/op-selection/OpSelection.g4');
-execSync(
-  `antlr4ng -Dlanguage=TypeScript -visitor -o ./src/op-selection/generated ${OP_SELECTION_GRAMMAR_FILE_PATH}`,
-);
+execFileSync('antlr4ng', [
+  '-Dlanguage=TypeScript',
+  '-visitor',
+  '-o',
+  './src/op-selection/generated',
+  OP_SELECTION_GRAMMAR_FILE_PATH,
+]);
 
 const files = [
   'OpSelectionLexer.ts',
@@ -14,5 +18,5 @@ const files = [
 ];
 
 files.forEach((file) => {
-  execSync(`yarn prettier ./src/op-selection/generated/${file} --write`);
+  execFileSync('yarn', ['prettier', `./src/op-selection/generated/${file}`, '--write']);
 });
