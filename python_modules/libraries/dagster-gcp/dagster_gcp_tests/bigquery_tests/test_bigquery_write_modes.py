@@ -1,4 +1,6 @@
 from unittest.mock import MagicMock, patch
+import base64
+import json
 
 from dagster import OutputContext, build_init_resource_context
 from dagster._core.storage.db_io_manager import TableSlice
@@ -38,6 +40,7 @@ def test_delete_table_slice_append():
     mock_conn = MagicMock()
     table_slice = TableSlice(database="my_project", schema="my_dataset", table="my_table")
     context = MagicMock(spec=OutputContext)
+    context.resource_config = {"write_mode": "append"}
 
     client.delete_table_slice(context, table_slice, mock_conn)
 
@@ -60,6 +63,7 @@ def test_partitioned_table_ignores_write_mode():
         partition_dimensions=[mock_partition],
     )
     context = MagicMock(spec=OutputContext)
+    context.resource_config = {"write_mode": "replace"}
 
     client.delete_table_slice(context, table_slice, mock_conn)
 
@@ -111,3 +115,24 @@ def test_explicit_write_mode_in_factory(MockDbIOManager):
 
     assert client is not None
     assert client.write_mode == BigQueryWriteMode.APPEND
+
+
+@patch("dagster_gcp.bigquery.io_manager.DbIOManager")
+def test_gcp_credentials_propagation(MockDbIOManager):
+    """Test that gcp_credentials are correctly passed to the client.
+    This ensures PySpark/Pandas won't fail with 'keyfile must not be null'.
+    """
+    dummy_json = json.dumps({"type": "service_account", "project_id": "test"})
+    creds_value = base64.b64encode(dummy_json.encode("utf-8")).decode("utf-8")
+
+    context = build_init_resource_context(config={"project": "test-project"})
+
+    manager_factory = TestBigQueryIOManager(project="test-project", gcp_credentials=creds_value)
+    iterator = manager_factory.create_io_manager(context)
+    next(iterator)
+
+    _, kwargs = MockDbIOManager.call_args
+    client = kwargs.get("db_client")
+
+    assert client is not None
+    assert client.gcp_credentials == creds_value
