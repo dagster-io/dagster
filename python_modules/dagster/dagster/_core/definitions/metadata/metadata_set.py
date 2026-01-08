@@ -197,9 +197,20 @@ class TableMetadataSet(NamespacedMetadataSet):
     def current_key_by_legacy_key(cls) -> Mapping[str, str]:
         return {"relation_identifier": "table_name"}
 
-    @property
-    def normalized_table_name(self) -> Optional[str]:
-        return self.table_name.lower() if self.table_name else None
+    @classmethod
+    def extract_normalized_table_name(cls, metadata: Mapping[str, Any]) -> Optional[str]:
+        from pydantic import ValidationError
+
+        metadata_subset = {
+            key: metadata[key]
+            for key in {"dagster/table_name", "dagster/relation_identifier"}
+            if key in metadata
+        }
+        try:
+            table_name = TableMetadataSet.extract(metadata_subset).table_name
+            return table_name.lower() if table_name else None
+        except ValidationError:
+            return None
 
 
 class UriMetadataSet(NamespacedMetadataSet):
