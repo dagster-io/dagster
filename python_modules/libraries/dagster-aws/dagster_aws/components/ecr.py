@@ -31,4 +31,6 @@ class ECRPublicResourceComponent(dg.Component, dg.Resolvable, dg.Model):
         return ECRPublicResource()
 
     def build_defs(self, context: dg.ComponentLoadContext) -> dg.Definitions:
-        return dg.Definitions(resources={self.resource_key or "ecr_public": self.resource})
+        if self.resource_key is None:
+            return dg.Definitions()
+        return dg.Definitions(resources={self.resource_key: self.resource})

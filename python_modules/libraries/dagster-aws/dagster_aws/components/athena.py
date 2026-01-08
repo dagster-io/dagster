@@ -30,4 +30,6 @@ class AthenaClientResourceComponent(dg.Component, dg.Resolvable, dg.Model):
 
     def build_defs(self, context: dg.ComponentLoadContext) -> dg.Definitions:
         """Binds the Athena resource to the specified resource key in the definitions."""
-        return dg.Definitions(resources={self.resource_key or "athena": self.resource})
+        if self.resource_key is None:
+            return dg.Definitions()
+        return dg.Definitions(resources={self.resource_key: self.resource})

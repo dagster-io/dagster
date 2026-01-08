@@ -28,4 +28,6 @@ class RDSResourceComponent(dg.Component, dg.Resolvable, dg.Model):
         return RDSResource(**self.credentials.render_as_dict())
 
     def build_defs(self, context: dg.ComponentLoadContext) -> dg.Definitions:
-        return dg.Definitions(resources={self.resource_key or "rds": self.resource})
+        if self.resource_key is None:
+            return dg.Definitions()
+        return dg.Definitions(resources={self.resource_key: self.resource})

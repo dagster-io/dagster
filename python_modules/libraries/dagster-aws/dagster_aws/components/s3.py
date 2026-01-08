@@ -27,7 +27,9 @@ class S3ResourceComponent(dg.Component, dg.Resolvable, dg.Model):
         return S3Resource(**self.credentials.render_as_dict())
 
     def build_defs(self, context: dg.ComponentLoadContext) -> dg.Definitions:
-        return dg.Definitions(resources={self.resource_key or "s3": self.resource})
+        if self.resource_key is None:
+            return dg.Definitions()
+        return dg.Definitions(resources={self.resource_key: self.resource})
 
 
 @public
@@ -55,7 +57,9 @@ class S3FileManagerResourceComponent(dg.Component, dg.Resolvable, dg.Model):
         )
 
     def build_defs(self, context: dg.ComponentLoadContext) -> dg.Definitions:
-        return dg.Definitions(resources={self.resource_key or "s3_file_manager": self.resource})
+        if self.resource_key is None:
+            return dg.Definitions()
+        return dg.Definitions(resources={self.resource_key: self.resource})
 
 
 S3ResourceComponent.model_rebuild()

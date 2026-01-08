@@ -31,7 +31,9 @@ class SecretsManagerResourceComponent(dg.Component, dg.Resolvable, dg.Model):
         return SecretsManagerResource(**self.credentials.render_as_dict())
 
     def build_defs(self, context: dg.ComponentLoadContext) -> dg.Definitions:
-        return dg.Definitions(resources={self.resource_key or "secretsmanager": self.resource})
+        if self.resource_key is None:
+            return dg.Definitions()
+        return dg.Definitions(resources={self.resource_key: self.resource})
 
 
 @public
@@ -64,4 +66,6 @@ class SecretsManagerSecretsResourceComponent(dg.Component, dg.Resolvable, dg.Mod
         )
 
     def build_defs(self, context: dg.ComponentLoadContext) -> dg.Definitions:
-        return dg.Definitions(resources={self.resource_key or "secretsmanager": self.resource})
+        if self.resource_key is None:
+            return dg.Definitions()
+        return dg.Definitions(resources={self.resource_key: self.resource})
