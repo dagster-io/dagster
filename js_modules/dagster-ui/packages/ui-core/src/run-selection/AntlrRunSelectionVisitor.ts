@@ -41,22 +41,24 @@ export class AntlrRunSelectionVisitor
   }
 
   visitStart(ctx: StartContext) {
-    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-    return this.visit(ctx.expr()!) ?? this.defaultResult();
+    const expr = ctx.expr();
+    return expr ? (this.visit(expr) ?? this.defaultResult()) : this.defaultResult();
   }
 
   visitTraversalAllowedExpression(ctx: TraversalAllowedExpressionContext) {
-    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-    return this.visit(ctx.traversalAllowedExpr()!) ?? this.defaultResult();
+    const expr = ctx.traversalAllowedExpr();
+    return expr ? (this.visit(expr) ?? this.defaultResult()) : this.defaultResult();
   }
 
   visitUpAndDownTraversalExpression(ctx: UpAndDownTraversalExpressionContext) {
-    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-    const selection = this.visit(ctx.traversalAllowedExpr()!) ?? this.defaultResult();
-    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-    const up_depth: number = getTraversalDepth(ctx.upTraversal()!);
-    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-    const down_depth: number = getTraversalDepth(ctx.downTraversal()!);
+    const traversalExpr = ctx.traversalAllowedExpr();
+    const selection = traversalExpr
+      ? (this.visit(traversalExpr) ?? this.defaultResult())
+      : this.defaultResult();
+    const upTraversal = ctx.upTraversal();
+    const downTraversal = ctx.downTraversal();
+    const up_depth = upTraversal ? getTraversalDepth(upTraversal) : 0;
+    const down_depth = downTraversal ? getTraversalDepth(downTraversal) : 0;
     const selection_copy = new Set(selection);
     for (const item of selection_copy) {
       this.traverser.fetchUpstream(item, up_depth).forEach((i) => selection.add(i));
@@ -66,10 +68,12 @@ export class AntlrRunSelectionVisitor
   }
 
   visitUpTraversalExpression(ctx: UpTraversalExpressionContext) {
-    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-    const selection = this.visit(ctx.traversalAllowedExpr()!) ?? this.defaultResult();
-    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-    const traversal_depth: number = getTraversalDepth(ctx.upTraversal()!);
+    const traversalExpr = ctx.traversalAllowedExpr();
+    const selection = traversalExpr
+      ? (this.visit(traversalExpr) ?? this.defaultResult())
+      : this.defaultResult();
+    const upTraversal = ctx.upTraversal();
+    const traversal_depth = upTraversal ? getTraversalDepth(upTraversal) : 0;
     const selection_copy = new Set(selection);
     for (const item of selection_copy) {
       this.traverser.fetchUpstream(item, traversal_depth).forEach((i) => selection.add(i));
@@ -78,10 +82,12 @@ export class AntlrRunSelectionVisitor
   }
 
   visitDownTraversalExpression(ctx: DownTraversalExpressionContext) {
-    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-    const selection = this.visit(ctx.traversalAllowedExpr()!) ?? this.defaultResult();
-    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-    const traversal_depth: number = getTraversalDepth(ctx.downTraversal()!);
+    const traversalExpr = ctx.traversalAllowedExpr();
+    const selection = traversalExpr
+      ? (this.visit(traversalExpr) ?? this.defaultResult())
+      : this.defaultResult();
+    const downTraversal = ctx.downTraversal();
+    const traversal_depth = downTraversal ? getTraversalDepth(downTraversal) : 0;
     const selection_copy = new Set(selection);
     for (const item of selection_copy) {
       this.traverser.fetchDownstream(item, traversal_depth).forEach((i) => selection.add(i));
@@ -90,24 +96,28 @@ export class AntlrRunSelectionVisitor
   }
 
   visitNotExpression(ctx: NotExpressionContext) {
-    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-    const selection = this.visit(ctx.expr()!) ?? this.defaultResult();
+    const expr = ctx.expr();
+    const selection = expr ? (this.visit(expr) ?? this.defaultResult()) : this.defaultResult();
     return new Set([...this.all_runs].filter((i) => !selection.has(i)));
   }
 
   visitAndExpression(ctx: AndExpressionContext) {
-    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-    const left = this.visit(ctx.expr(0)!) ?? this.defaultResult();
-    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-    const right = this.visit(ctx.expr(1)!) ?? this.defaultResult();
+    const leftExpr = ctx.expr(0);
+    const rightExpr = ctx.expr(1);
+    const left = leftExpr ? (this.visit(leftExpr) ?? this.defaultResult()) : this.defaultResult();
+    const right = rightExpr
+      ? (this.visit(rightExpr) ?? this.defaultResult())
+      : this.defaultResult();
     return new Set([...left].filter((i) => right.has(i)));
   }
 
   visitOrExpression(ctx: OrExpressionContext) {
-    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-    const left = this.visit(ctx.expr(0)!) ?? this.defaultResult();
-    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-    const right = this.visit(ctx.expr(1)!) ?? this.defaultResult();
+    const leftExpr = ctx.expr(0);
+    const rightExpr = ctx.expr(1);
+    const left = leftExpr ? (this.visit(leftExpr) ?? this.defaultResult()) : this.defaultResult();
+    const right = rightExpr
+      ? (this.visit(rightExpr) ?? this.defaultResult())
+      : this.defaultResult();
     return new Set([...left, ...right]);
   }
 
@@ -116,15 +126,15 @@ export class AntlrRunSelectionVisitor
   }
 
   visitAttributeExpression(ctx: AttributeExpressionContext) {
-    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-    return this.visit(ctx.attributeExpr()!) ?? this.defaultResult();
+    const attrExpr = ctx.attributeExpr();
+    return attrExpr ? (this.visit(attrExpr) ?? this.defaultResult()) : this.defaultResult();
   }
 
   visitFunctionCallExpression(ctx: FunctionCallExpressionContext) {
-    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-    const function_name: string = getFunctionName(ctx.functionName()!);
-    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-    const selection = this.visit(ctx.expr()!) ?? this.defaultResult();
+    const funcName = ctx.functionName();
+    const function_name = funcName ? getFunctionName(funcName) : '';
+    const expr = ctx.expr();
+    const selection = expr ? (this.visit(expr) ?? this.defaultResult()) : this.defaultResult();
     if (function_name === 'sinks') {
       const sinks = new Set<RunGraphQueryItem>();
       for (const item of selection) {
@@ -153,13 +163,13 @@ export class AntlrRunSelectionVisitor
   }
 
   visitParenthesizedExpression(ctx: ParenthesizedExpressionContext) {
-    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-    return this.visit(ctx.expr()!) ?? this.defaultResult();
+    const expr = ctx.expr();
+    return expr ? (this.visit(expr) ?? this.defaultResult()) : this.defaultResult();
   }
 
   visitNameExpr(ctx: NameExprContext) {
-    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-    const value: string = getValue(ctx.keyValue()!);
+    const keyValue = ctx.keyValue();
+    const value = keyValue ? getValue(keyValue) : '';
     const regex: RegExp = new RegExp(`^${escapeRegExp(value).replaceAll('\\*', '.*')}$`);
     const selection = [...this.all_runs].filter((i) => regex.test(i.name));
     selection.forEach((i) => this.focus_runs.add(i));
@@ -167,8 +177,8 @@ export class AntlrRunSelectionVisitor
   }
 
   visitStatusAttributeExpr(ctx: StatusAttributeExprContext) {
-    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-    const state: string = getValue(ctx.value()!).toLowerCase();
+    const valueCtx = ctx.value();
+    const state = valueCtx ? getValue(valueCtx).toLowerCase() : '';
     return new Set(
       [...this.all_runs].filter(
         (i) => i.metadata?.state === state || (state === NO_STATE && !i.metadata?.state),

@@ -62,22 +62,22 @@ export class AntlrAssetSelectionVisitor
   }
 
   visitStart(ctx: StartContext) {
-    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-    return this.visit(ctx.expr()!) ?? this.defaultResult();
+    const expr = ctx.expr();
+    return expr ? (this.visit(expr) ?? this.defaultResult()) : this.defaultResult();
   }
 
   visitTraversalAllowedExpression(ctx: TraversalAllowedExpressionContext) {
-    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-    return this.visit(ctx.traversalAllowedExpr()!) ?? this.defaultResult();
+    const expr = ctx.traversalAllowedExpr();
+    return expr ? (this.visit(expr) ?? this.defaultResult()) : this.defaultResult();
   }
 
   visitUpAndDownTraversalExpression(ctx: UpAndDownTraversalExpressionContext) {
-    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-    const selection = this.visit(ctx.traversalAllowedExpr()!) ?? this.defaultResult();
-    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-    const up_depth: number = getTraversalDepth(ctx.upTraversal()!);
-    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-    const down_depth: number = getTraversalDepth(ctx.downTraversal()!);
+    const traversalExpr = ctx.traversalAllowedExpr();
+    const selection = traversalExpr ? (this.visit(traversalExpr) ?? this.defaultResult()) : this.defaultResult();
+    const upTraversal = ctx.upTraversal();
+    const downTraversal = ctx.downTraversal();
+    const up_depth = upTraversal ? getTraversalDepth(upTraversal) : 0;
+    const down_depth = downTraversal ? getTraversalDepth(downTraversal) : 0;
     const selection_copy = new Set(selection);
     for (const item of selection_copy) {
       this.traverser.fetchUpstream(item, up_depth).forEach((i) => selection.add(i));
@@ -87,10 +87,10 @@ export class AntlrAssetSelectionVisitor
   }
 
   visitUpTraversalExpression(ctx: UpTraversalExpressionContext) {
-    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-    const selection = this.visit(ctx.traversalAllowedExpr()!) ?? this.defaultResult();
-    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-    const traversal_depth: number = getTraversalDepth(ctx.upTraversal()!);
+    const traversalExpr = ctx.traversalAllowedExpr();
+    const selection = traversalExpr ? (this.visit(traversalExpr) ?? this.defaultResult()) : this.defaultResult();
+    const upTraversal = ctx.upTraversal();
+    const traversal_depth = upTraversal ? getTraversalDepth(upTraversal) : 0;
     const selection_copy = new Set(selection);
     for (const item of selection_copy) {
       this.traverser.fetchUpstream(item, traversal_depth).forEach((i) => selection.add(i));
@@ -99,10 +99,10 @@ export class AntlrAssetSelectionVisitor
   }
 
   visitDownTraversalExpression(ctx: DownTraversalExpressionContext) {
-    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-    const selection = this.visit(ctx.traversalAllowedExpr()!) ?? this.defaultResult();
-    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-    const traversal_depth: number = getTraversalDepth(ctx.downTraversal()!);
+    const traversalExpr = ctx.traversalAllowedExpr();
+    const selection = traversalExpr ? (this.visit(traversalExpr) ?? this.defaultResult()) : this.defaultResult();
+    const downTraversal = ctx.downTraversal();
+    const traversal_depth = downTraversal ? getTraversalDepth(downTraversal) : 0;
     const selection_copy = new Set(selection);
     for (const item of selection_copy) {
       this.traverser.fetchDownstream(item, traversal_depth).forEach((i) => selection.add(i));
@@ -111,24 +111,24 @@ export class AntlrAssetSelectionVisitor
   }
 
   visitNotExpression(ctx: NotExpressionContext) {
-    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-    const selection = this.visit(ctx.expr()!) ?? this.defaultResult();
+    const expr = ctx.expr();
+    const selection = expr ? (this.visit(expr) ?? this.defaultResult()) : this.defaultResult();
     return new Set([...this.all_assets].filter((i) => !selection.has(i)));
   }
 
   visitAndExpression(ctx: AndExpressionContext) {
-    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-    const left = this.visit(ctx.expr(0)!) ?? this.defaultResult();
-    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-    const right = this.visit(ctx.expr(1)!) ?? this.defaultResult();
+    const leftExpr = ctx.expr(0);
+    const rightExpr = ctx.expr(1);
+    const left = leftExpr ? (this.visit(leftExpr) ?? this.defaultResult()) : this.defaultResult();
+    const right = rightExpr ? (this.visit(rightExpr) ?? this.defaultResult()) : this.defaultResult();
     return new Set([...left].filter((i) => right.has(i)));
   }
 
   visitOrExpression(ctx: OrExpressionContext) {
-    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-    const left = this.visit(ctx.expr(0)!) ?? this.defaultResult();
-    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-    const right = this.visit(ctx.expr(1)!) ?? this.defaultResult();
+    const leftExpr = ctx.expr(0);
+    const rightExpr = ctx.expr(1);
+    const left = leftExpr ? (this.visit(leftExpr) ?? this.defaultResult()) : this.defaultResult();
+    const right = rightExpr ? (this.visit(rightExpr) ?? this.defaultResult()) : this.defaultResult();
     return new Set([...left, ...right]);
   }
 
@@ -137,15 +137,15 @@ export class AntlrAssetSelectionVisitor
   }
 
   visitAttributeExpression(ctx: AttributeExpressionContext) {
-    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-    return this.visit(ctx.attributeExpr()!) ?? this.defaultResult();
+    const attrExpr = ctx.attributeExpr();
+    return attrExpr ? (this.visit(attrExpr) ?? this.defaultResult()) : this.defaultResult();
   }
 
   visitFunctionCallExpression(ctx: FunctionCallExpressionContext) {
-    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-    const function_name: string = getFunctionName(ctx.functionName()!);
-    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-    const selection = this.visit(ctx.expr()!) ?? this.defaultResult();
+    const funcName = ctx.functionName();
+    const function_name = funcName ? getFunctionName(funcName) : '';
+    const expr = ctx.expr();
+    const selection = expr ? (this.visit(expr) ?? this.defaultResult()) : this.defaultResult();
     if (function_name === 'sinks') {
       const sinks = new Set<AssetGraphQueryItem>();
       for (const item of selection) {
@@ -174,13 +174,13 @@ export class AntlrAssetSelectionVisitor
   }
 
   visitParenthesizedExpression(ctx: ParenthesizedExpressionContext) {
-    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-    return this.visit(ctx.expr()!) ?? this.defaultResult();
+    const expr = ctx.expr();
+    return expr ? (this.visit(expr) ?? this.defaultResult()) : this.defaultResult();
   }
 
   visitKeyExpr(ctx: KeyExprContext) {
-    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-    const value: string = getValue(ctx.keyValue()!);
+    const keyValue = ctx.keyValue();
+    const value = keyValue ? getValue(keyValue) : '';
     const regex: RegExp = new RegExp(`^${escapeRegExp(value).replaceAll('\\*', '.*')}$`);
     const selection = [...this.all_assets].filter((i) => regex.test(i.name));
 
@@ -189,15 +189,14 @@ export class AntlrAssetSelectionVisitor
   }
 
   visitTagAttributeExpr(ctx: TagAttributeExprContext) {
-    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-    const key: string = getValue(ctx.value(0)!);
+    const keyCtx = ctx.value(0);
+    const key = keyCtx ? getValue(keyCtx) : '';
     let value: string | undefined = undefined;
     if (ctx.EQUAL()) {
-      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-      value = getValue(ctx.value(1)!);
+      const valueCtx = ctx.value(1);
+      value = valueCtx ? getValue(valueCtx) : undefined;
     }
-    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-    const isNullKey = isNullValue(ctx.value(0)!);
+    const isNullKey = keyCtx ? isNullValue(keyCtx) : false;
     return new Set(
       [...this.all_assets].filter((i) => {
         if (i.node.tags.length > 0) {
@@ -211,10 +210,9 @@ export class AntlrAssetSelectionVisitor
   }
 
   visitOwnerAttributeExpr(ctx: OwnerAttributeExprContext) {
-    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-    const value: string = getValue(ctx.value()!);
-    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-    const isNull = isNullValue(ctx.value()!);
+    const valueCtx = ctx.value();
+    const value = valueCtx ? getValue(valueCtx) : '';
+    const isNull = valueCtx ? isNullValue(valueCtx) : false;
     return new Set(
       [...this.all_assets].filter((i) => {
         if (i.node.owners.length > 0) {
@@ -232,10 +230,9 @@ export class AntlrAssetSelectionVisitor
   }
 
   visitGroupAttributeExpr(ctx: GroupAttributeExprContext) {
-    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-    const value: string = getValue(ctx.value()!);
-    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-    const isNull = isNullValue(ctx.value()!);
+    const valueCtx = ctx.value();
+    const value = valueCtx ? getValue(valueCtx) : '';
+    const isNull = valueCtx ? isNullValue(valueCtx) : false;
     return new Set(
       [...this.all_assets].filter((i) => {
         if (i.node.groupName) {
@@ -247,10 +244,9 @@ export class AntlrAssetSelectionVisitor
   }
 
   visitKindAttributeExpr(ctx: KindAttributeExprContext) {
-    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-    const value: string = getValue(ctx.value()!);
-    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-    const isNull = isNullValue(ctx.value()!);
+    const valueCtx = ctx.value();
+    const value = valueCtx ? getValue(valueCtx) : '';
+    const isNull = valueCtx ? isNullValue(valueCtx) : false;
     return new Set(
       [...this.all_assets].filter((i) => {
         if (i.node.kinds.length > 0) {
@@ -262,8 +258,8 @@ export class AntlrAssetSelectionVisitor
   }
 
   visitCodeLocationAttributeExpr(ctx: CodeLocationAttributeExprContext) {
-    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-    const value: string = getValue(ctx.value()!);
+    const valueCtx = ctx.value();
+    const value = valueCtx ? getValue(valueCtx) : '';
     const selection = new Set<AssetGraphQueryItem>();
     for (const asset of this.all_assets) {
       const repository = asset.node.repository;
@@ -278,8 +274,8 @@ export class AntlrAssetSelectionVisitor
   }
 
   visitStatusAttributeExpr(ctx: StatusAttributeExprContext) {
-    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-    const statusName: string = getValue(ctx.value()!);
+    const valueCtx = ctx.value();
+    const statusName = valueCtx ? getValue(valueCtx) : '';
     const supplementaryDataKey = getSupplementaryDataKey({
       field: 'status',
       value: statusName.toUpperCase(),
@@ -290,9 +286,8 @@ export class AntlrAssetSelectionVisitor
     }
     return new Set(
       matchingAssetKeys
-        // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-        .map((key) => this.allAssetsByKey.get(tokenForAssetKey(key))!)
-        .filter(Boolean),
+        .map((key) => this.allAssetsByKey.get(tokenForAssetKey(key)))
+        .filter((item): item is AssetGraphQueryItem => item !== undefined),
     );
   }
 }

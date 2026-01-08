@@ -42,34 +42,38 @@ export class AntlrAutomationSelectionVisitor<T extends Automation>
   }
 
   visitStart(ctx: StartContext) {
-    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-    return this.visit(ctx.expr()!) ?? this.defaultResult();
+    const expr = ctx.expr();
+    return expr ? (this.visit(expr) ?? this.defaultResult()) : this.defaultResult();
   }
 
   visitTraversalAllowedExpression(ctx: TraversalAllowedExpressionContext) {
-    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-    return this.visit(ctx.traversalAllowedExpr()!) ?? this.defaultResult();
+    const expr = ctx.traversalAllowedExpr();
+    return expr ? (this.visit(expr) ?? this.defaultResult()) : this.defaultResult();
   }
 
   visitNotExpression(ctx: NotExpressionContext) {
-    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-    const selection = this.visit(ctx.expr()!) ?? this.defaultResult();
+    const expr = ctx.expr();
+    const selection = expr ? (this.visit(expr) ?? this.defaultResult()) : this.defaultResult();
     return new Set([...this.all_automations].filter((i) => !selection.has(i)));
   }
 
   visitAndExpression(ctx: AndExpressionContext) {
-    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-    const left = this.visit(ctx.expr(0)!) ?? this.defaultResult();
-    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-    const right = this.visit(ctx.expr(1)!) ?? this.defaultResult();
+    const leftExpr = ctx.expr(0);
+    const rightExpr = ctx.expr(1);
+    const left = leftExpr ? (this.visit(leftExpr) ?? this.defaultResult()) : this.defaultResult();
+    const right = rightExpr
+      ? (this.visit(rightExpr) ?? this.defaultResult())
+      : this.defaultResult();
     return new Set([...left].filter((i) => right.has(i)));
   }
 
   visitOrExpression(ctx: OrExpressionContext) {
-    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-    const left = this.visit(ctx.expr(0)!) ?? this.defaultResult();
-    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-    const right = this.visit(ctx.expr(1)!) ?? this.defaultResult();
+    const leftExpr = ctx.expr(0);
+    const rightExpr = ctx.expr(1);
+    const left = leftExpr ? (this.visit(leftExpr) ?? this.defaultResult()) : this.defaultResult();
+    const right = rightExpr
+      ? (this.visit(rightExpr) ?? this.defaultResult())
+      : this.defaultResult();
     return new Set([...left, ...right]);
   }
 
@@ -78,26 +82,26 @@ export class AntlrAutomationSelectionVisitor<T extends Automation>
   }
 
   visitAttributeExpression(ctx: AttributeExpressionContext) {
-    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-    return this.visit(ctx.attributeExpr()!) ?? this.defaultResult();
+    const attrExpr = ctx.attributeExpr();
+    return attrExpr ? (this.visit(attrExpr) ?? this.defaultResult()) : this.defaultResult();
   }
 
   visitParenthesizedExpression(ctx: ParenthesizedExpressionContext) {
-    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-    return this.visit(ctx.expr()!) ?? this.defaultResult();
+    const expr = ctx.expr();
+    return expr ? (this.visit(expr) ?? this.defaultResult()) : this.defaultResult();
   }
 
   visitNameExpr(ctx: NameExprContext) {
-    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-    const value: string = getValue(ctx.keyValue()!);
+    const keyValue = ctx.keyValue();
+    const value = keyValue ? getValue(keyValue) : '';
     const regex: RegExp = new RegExp(`^${escapeRegExp(value).replaceAll('\\*', '.*')}$`);
     const selection = [...this.all_automations].filter((i) => regex.test(i.name));
     return new Set(selection);
   }
 
   visitTypeExpr(ctx: TypeExprContext) {
-    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-    const value: string = getValue(ctx.value()!);
+    const valueCtx = ctx.value();
+    const value = valueCtx ? getValue(valueCtx) : '';
     const selection = [...this.all_automations].filter(
       (i) => i.type.toLowerCase() === value.toLowerCase(),
     );
@@ -105,15 +109,14 @@ export class AntlrAutomationSelectionVisitor<T extends Automation>
   }
 
   visitTagExpr(ctx: TagExprContext) {
-    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-    const key: string = getValue(ctx.value(0)!);
+    const keyCtx = ctx.value(0);
+    const key = keyCtx ? getValue(keyCtx) : '';
     let value: string | undefined = undefined;
     if (ctx.EQUAL()) {
-      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-      value = getValue(ctx.value(1)!);
+      const valueCtx = ctx.value(1);
+      value = valueCtx ? getValue(valueCtx) : undefined;
     }
-    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-    const isNullKey = isNullValue(ctx.value(0)!);
+    const isNullKey = keyCtx ? isNullValue(keyCtx) : false;
     return new Set(
       [...this.all_automations].filter((i) => {
         if (i.tags.length > 0) {
@@ -127,8 +130,8 @@ export class AntlrAutomationSelectionVisitor<T extends Automation>
   }
 
   visitCodeLocationExpr(ctx: CodeLocationExprContext) {
-    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-    const value: string = getValue(ctx.value()!);
+    const valueCtx = ctx.value();
+    const value = valueCtx ? getValue(valueCtx) : '';
     const regex: RegExp = new RegExp(`^${escapeRegExp(value).replaceAll('\\*', '.*')}$`);
     const selection = new Set<T>();
     for (const automation of this.all_automations) {
@@ -144,8 +147,8 @@ export class AntlrAutomationSelectionVisitor<T extends Automation>
   }
 
   visitStatusExpr(ctx: StatusExprContext) {
-    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-    const statusName: string = getValue(ctx.value()!);
+    const valueCtx = ctx.value();
+    const statusName = valueCtx ? getValue(valueCtx) : '';
     const selection = [...this.all_automations].filter((i) => i.status === statusName);
     return new Set(selection);
   }

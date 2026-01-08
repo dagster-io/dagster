@@ -124,10 +124,8 @@ export class BaseSelectionVisitor
     let start: number = -1;
     let stop: number = -1;
     if (ctx instanceof ParserRuleContext) {
-      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-      start = ctx.start!.start;
-      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-      stop = ctx.stop ? ctx.stop.stop : ctx.start!.start;
+      start = ctx.start?.start ?? 0;
+      stop = ctx.stop?.stop ?? ctx.start?.start ?? 0;
     } else if (ctx instanceof TerminalNode) {
       start = ctx.symbol.start;
       stop = ctx.symbol.stop;
@@ -142,8 +140,9 @@ export class BaseSelectionVisitor
   }
 
   public visitPostAttributeValueWhitespace(ctx: PostAttributeValueWhitespaceContext) {
-    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-    const attributeValue = ctx.parent!.getChild(2) as ParserRuleContext;
+    const parent = ctx.parent;
+    if (!parent) return;
+    const attributeValue = parent.getChild(2) as ParserRuleContext;
     if (this.cursorIndex === (attributeValue?.stop?.stop ?? 0) + 1) {
       this.forceVisit(attributeValue);
     } else {
