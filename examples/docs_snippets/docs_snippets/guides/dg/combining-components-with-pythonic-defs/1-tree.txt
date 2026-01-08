@@ -1,0 +1,19 @@
+tree my_project/src/my_project
+
+my_project/src/my_project
+├── __init__.py
+├── definitions.py
+├── assets
+│   ├── __init__.py
+│   └── analytics.py
+├── resources
+│   ├── __init__.py
+│   └── warehouse.py
+└── defs
+    ├── raw_data_sync
+    │   └── defs.yaml
+    └── analytics_dbt
+        └── defs.yaml
+
+5 directories, 8 files
+
