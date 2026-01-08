@@ -1,9 +1,14 @@
 apis
+autoload
+autoloaded
+autoloading
 config
 cron
 pyenv
 pythonic
+reinstallation
 scim
+scaffoldable
 SDA[s]
 subprocess
 todo

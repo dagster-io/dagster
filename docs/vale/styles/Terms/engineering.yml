@@ -3,18 +3,22 @@
 extends: substitution
 message: "Use '%s' instead of '%s'."
 level: warning
-ignorecase: true
+ignorecase: false
 action:
   name: replace
 swap:
   # General
-  HTTPs: HTTPS
   '[Ss]cim': 'SCIM'
   ui: 'UI'
   web server: 'webserver'
 
+  # Brands
+  Github: 'GitHub'
+  Gitlab: 'GitLab'
+
   # Languages
   '[Gg]raphql': 'GraphQL'
+  Javascript: 'JavaScript'
   javascript: 'JavaScript'
   '[Nn]ode[.]?[Jj][Ss]': 'Node.js'
   python: 'Python'

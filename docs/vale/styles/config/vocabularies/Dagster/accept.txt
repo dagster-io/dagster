@@ -47,6 +47,7 @@ GCS
 GDPR
 GKE
 GitHub
+GitLab
 Google Cloud Platform
 HIPAA
 HPC
