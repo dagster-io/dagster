@@ -1,4 +1,4 @@
-import {AbstractParseTreeVisitor} from 'antlr4ng';
+import {AbstractParseTreeVisitor, ParseTree} from 'antlr4ng';
 import escapeRegExp from 'lodash/escapeRegExp';
 
 import {GraphQueryItem, GraphTraverser} from '../app/GraphQueryImpl';
@@ -19,6 +19,7 @@ import {
 } from './generated/OpSelectionParser';
 import {OpSelectionVisitor} from './generated/OpSelectionVisitor';
 import {getFunctionName, getTraversalDepth, getValue} from '../asset-selection/util';
+
 export class AntlrOpSelectionVisitor<T extends GraphQueryItem>
   extends AbstractParseTreeVisitor<Set<T>>
   implements OpSelectionVisitor<Set<T>>
@@ -31,6 +32,11 @@ export class AntlrOpSelectionVisitor<T extends GraphQueryItem>
     return new Set<T>();
   }
 
+  /** Helper to visit a nullable context and return defaultResult() if null */
+  private visitOrDefault(ctx: ParseTree | null): Set<T> {
+    return ctx ? (this.visit(ctx) ?? this.defaultResult()) : this.defaultResult();
+  }
+
   constructor(all_ops: T[]) {
     super();
     this.all_ops = new Set(all_ops);
@@ -39,20 +45,15 @@ export class AntlrOpSelectionVisitor<T extends GraphQueryItem>
   }
 
   visitStart(ctx: StartContext) {
-    const expr = ctx.expr();
-    return expr ? (this.visit(expr) ?? this.defaultResult()) : this.defaultResult();
+    return this.visitOrDefault(ctx.expr());
   }
 
   visitTraversalAllowedExpression(ctx: TraversalAllowedExpressionContext) {
-    const expr = ctx.traversalAllowedExpr();
-    return expr ? (this.visit(expr) ?? this.defaultResult()) : this.defaultResult();
+    return this.visitOrDefault(ctx.traversalAllowedExpr());
   }
 
   visitUpAndDownTraversalExpression(ctx: UpAndDownTraversalExpressionContext) {
-    const traversalExpr = ctx.traversalAllowedExpr();
-    const selection = traversalExpr
-      ? (this.visit(traversalExpr) ?? this.defaultResult())
-      : this.defaultResult();
+    const selection = this.visitOrDefault(ctx.traversalAllowedExpr());
     const upTraversal = ctx.upTraversal();
     const downTraversal = ctx.downTraversal();
     const up_depth = upTraversal ? getTraversalDepth(upTraversal) : 0;
@@ -68,8 +69,7 @@ export class AntlrOpSelectionVisitor<T extends GraphQueryItem>
   visitFunctionCallExpression(ctx: FunctionCallExpressionContext) {
     const funcName = ctx.functionName();
     const function_name = funcName ? getFunctionName(funcName) : '';
-    const expr = ctx.expr();
-    const selection = expr ? (this.visit(expr) ?? this.defaultResult()) : this.defaultResult();
+    const selection = this.visitOrDefault(ctx.expr());
     if (function_name === 'sinks') {
       const sinks = new Set<T>();
       for (const item of selection) {
@@ -98,10 +98,7 @@ export class AntlrOpSelectionVisitor<T extends GraphQueryItem>
   }
 
   visitUpTraversalExpression(ctx: UpTraversalExpressionContext) {
-    const traversalExpr = ctx.traversalAllowedExpr();
-    const selection = traversalExpr
-      ? (this.visit(traversalExpr) ?? this.defaultResult())
-      : this.defaultResult();
+    const selection = this.visitOrDefault(ctx.traversalAllowedExpr());
     const upTraversal = ctx.upTraversal();
     const traversal_depth = upTraversal ? getTraversalDepth(upTraversal) : 0;
     const selection_copy = new Set(selection);
@@ -112,10 +109,7 @@ export class AntlrOpSelectionVisitor<T extends GraphQueryItem>
   }
 
   visitDownTraversalExpression(ctx: DownTraversalExpressionContext) {
-    const traversalExpr = ctx.traversalAllowedExpr();
-    const selection = traversalExpr
-      ? (this.visit(traversalExpr) ?? this.defaultResult())
-      : this.defaultResult();
+    const selection = this.visitOrDefault(ctx.traversalAllowedExpr());
     const downTraversal = ctx.downTraversal();
     const traversal_depth = downTraversal ? getTraversalDepth(downTraversal) : 0;
     const selection_copy = new Set(selection);
@@ -126,28 +120,19 @@ export class AntlrOpSelectionVisitor<T extends GraphQueryItem>
   }
 
   visitNotExpression(ctx: NotExpressionContext) {
-    const expr = ctx.expr();
-    const selection = expr ? (this.visit(expr) ?? this.defaultResult()) : this.defaultResult();
+    const selection = this.visitOrDefault(ctx.expr());
     return new Set([...this.all_ops].filter((i) => !selection.has(i)));
   }
 
   visitAndExpression(ctx: AndExpressionContext) {
-    const leftExpr = ctx.expr(0);
-    const rightExpr = ctx.expr(1);
-    const left = leftExpr ? (this.visit(leftExpr) ?? this.defaultResult()) : this.defaultResult();
-    const right = rightExpr
-      ? (this.visit(rightExpr) ?? this.defaultResult())
-      : this.defaultResult();
+    const left = this.visitOrDefault(ctx.expr(0));
+    const right = this.visitOrDefault(ctx.expr(1));
     return new Set([...left].filter((i) => right.has(i)));
   }
 
   visitOrExpression(ctx: OrExpressionContext) {
-    const leftExpr = ctx.expr(0);
-    const rightExpr = ctx.expr(1);
-    const left = leftExpr ? (this.visit(leftExpr) ?? this.defaultResult()) : this.defaultResult();
-    const right = rightExpr
-      ? (this.visit(rightExpr) ?? this.defaultResult())
-      : this.defaultResult();
+    const left = this.visitOrDefault(ctx.expr(0));
+    const right = this.visitOrDefault(ctx.expr(1));
     return new Set([...left, ...right]);
   }
 
@@ -156,13 +141,11 @@ export class AntlrOpSelectionVisitor<T extends GraphQueryItem>
   }
 
   visitAttributeExpression(ctx: AttributeExpressionContext) {
-    const attrExpr = ctx.attributeExpr();
-    return attrExpr ? (this.visit(attrExpr) ?? this.defaultResult()) : this.defaultResult();
+    return this.visitOrDefault(ctx.attributeExpr());
   }
 
   visitParenthesizedExpression(ctx: ParenthesizedExpressionContext) {
-    const expr = ctx.expr();
-    return expr ? (this.visit(expr) ?? this.defaultResult()) : this.defaultResult();
+    return this.visitOrDefault(ctx.expr());
   }
 
   visitNameExpr(ctx: NameExprContext) {

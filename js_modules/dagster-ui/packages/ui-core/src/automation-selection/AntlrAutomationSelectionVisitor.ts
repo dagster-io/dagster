@@ -1,4 +1,4 @@
-import {AbstractParseTreeVisitor} from 'antlr4ng';
+import {AbstractParseTreeVisitor, ParseTree} from 'antlr4ng';
 import escapeRegExp from 'lodash/escapeRegExp';
 
 import {Automation} from './input/useAutomationSelectionAutoCompleteProvider';
@@ -32,6 +32,11 @@ export class AntlrAutomationSelectionVisitor<T extends Automation>
     return new Set<T>();
   }
 
+  /** Helper to visit a nullable context and return defaultResult() if null */
+  private visitOrDefault(ctx: ParseTree | null): Set<T> {
+    return ctx ? (this.visit(ctx) ?? this.defaultResult()) : this.defaultResult();
+  }
+
   // Supplementary data is not used in oss
   constructor(all_automations: T[]) {
     super();
@@ -42,38 +47,27 @@ export class AntlrAutomationSelectionVisitor<T extends Automation>
   }
 
   visitStart(ctx: StartContext) {
-    const expr = ctx.expr();
-    return expr ? (this.visit(expr) ?? this.defaultResult()) : this.defaultResult();
+    return this.visitOrDefault(ctx.expr());
   }
 
   visitTraversalAllowedExpression(ctx: TraversalAllowedExpressionContext) {
-    const expr = ctx.traversalAllowedExpr();
-    return expr ? (this.visit(expr) ?? this.defaultResult()) : this.defaultResult();
+    return this.visitOrDefault(ctx.traversalAllowedExpr());
   }
 
   visitNotExpression(ctx: NotExpressionContext) {
-    const expr = ctx.expr();
-    const selection = expr ? (this.visit(expr) ?? this.defaultResult()) : this.defaultResult();
+    const selection = this.visitOrDefault(ctx.expr());
     return new Set([...this.all_automations].filter((i) => !selection.has(i)));
   }
 
   visitAndExpression(ctx: AndExpressionContext) {
-    const leftExpr = ctx.expr(0);
-    const rightExpr = ctx.expr(1);
-    const left = leftExpr ? (this.visit(leftExpr) ?? this.defaultResult()) : this.defaultResult();
-    const right = rightExpr
-      ? (this.visit(rightExpr) ?? this.defaultResult())
-      : this.defaultResult();
+    const left = this.visitOrDefault(ctx.expr(0));
+    const right = this.visitOrDefault(ctx.expr(1));
     return new Set([...left].filter((i) => right.has(i)));
   }
 
   visitOrExpression(ctx: OrExpressionContext) {
-    const leftExpr = ctx.expr(0);
-    const rightExpr = ctx.expr(1);
-    const left = leftExpr ? (this.visit(leftExpr) ?? this.defaultResult()) : this.defaultResult();
-    const right = rightExpr
-      ? (this.visit(rightExpr) ?? this.defaultResult())
-      : this.defaultResult();
+    const left = this.visitOrDefault(ctx.expr(0));
+    const right = this.visitOrDefault(ctx.expr(1));
     return new Set([...left, ...right]);
   }
 
@@ -82,13 +76,11 @@ export class AntlrAutomationSelectionVisitor<T extends Automation>
   }
 
   visitAttributeExpression(ctx: AttributeExpressionContext) {
-    const attrExpr = ctx.attributeExpr();
-    return attrExpr ? (this.visit(attrExpr) ?? this.defaultResult()) : this.defaultResult();
+    return this.visitOrDefault(ctx.attributeExpr());
   }
 
   visitParenthesizedExpression(ctx: ParenthesizedExpressionContext) {
-    const expr = ctx.expr();
-    return expr ? (this.visit(expr) ?? this.defaultResult()) : this.defaultResult();
+    return this.visitOrDefault(ctx.expr());
   }
 
   visitNameExpr(ctx: NameExprContext) {

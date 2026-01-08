@@ -1,4 +1,4 @@
-import {AbstractParseTreeVisitor} from 'antlr4ng';
+import {AbstractParseTreeVisitor, ParseTree} from 'antlr4ng';
 import escapeRegExp from 'lodash/escapeRegExp';
 
 import {SupplementaryInformation} from './types';
@@ -51,6 +51,11 @@ export class AntlrAssetSelectionVisitor
     return new Set<AssetGraphQueryItem>();
   }
 
+  /** Helper to visit a nullable context and return defaultResult() if null */
+  private visitOrDefault(ctx: ParseTree | null): Set<AssetGraphQueryItem> {
+    return ctx ? (this.visit(ctx) ?? this.defaultResult()) : this.defaultResult();
+  }
+
   // Supplementary data is not used in oss
   constructor(all_assets: AssetGraphQueryItem[], supplementaryData: SupplementaryInformation) {
     super();
@@ -62,18 +67,15 @@ export class AntlrAssetSelectionVisitor
   }
 
   visitStart(ctx: StartContext) {
-    const expr = ctx.expr();
-    return expr ? (this.visit(expr) ?? this.defaultResult()) : this.defaultResult();
+    return this.visitOrDefault(ctx.expr());
   }
 
   visitTraversalAllowedExpression(ctx: TraversalAllowedExpressionContext) {
-    const expr = ctx.traversalAllowedExpr();
-    return expr ? (this.visit(expr) ?? this.defaultResult()) : this.defaultResult();
+    return this.visitOrDefault(ctx.traversalAllowedExpr());
   }
 
   visitUpAndDownTraversalExpression(ctx: UpAndDownTraversalExpressionContext) {
-    const traversalExpr = ctx.traversalAllowedExpr();
-    const selection = traversalExpr ? (this.visit(traversalExpr) ?? this.defaultResult()) : this.defaultResult();
+    const selection = this.visitOrDefault(ctx.traversalAllowedExpr());
     const upTraversal = ctx.upTraversal();
     const downTraversal = ctx.downTraversal();
     const up_depth = upTraversal ? getTraversalDepth(upTraversal) : 0;
@@ -87,8 +89,7 @@ export class AntlrAssetSelectionVisitor
   }
 
   visitUpTraversalExpression(ctx: UpTraversalExpressionContext) {
-    const traversalExpr = ctx.traversalAllowedExpr();
-    const selection = traversalExpr ? (this.visit(traversalExpr) ?? this.defaultResult()) : this.defaultResult();
+    const selection = this.visitOrDefault(ctx.traversalAllowedExpr());
     const upTraversal = ctx.upTraversal();
     const traversal_depth = upTraversal ? getTraversalDepth(upTraversal) : 0;
     const selection_copy = new Set(selection);
@@ -99,8 +100,7 @@ export class AntlrAssetSelectionVisitor
   }
 
   visitDownTraversalExpression(ctx: DownTraversalExpressionContext) {
-    const traversalExpr = ctx.traversalAllowedExpr();
-    const selection = traversalExpr ? (this.visit(traversalExpr) ?? this.defaultResult()) : this.defaultResult();
+    const selection = this.visitOrDefault(ctx.traversalAllowedExpr());
     const downTraversal = ctx.downTraversal();
     const traversal_depth = downTraversal ? getTraversalDepth(downTraversal) : 0;
     const selection_copy = new Set(selection);
@@ -111,24 +111,19 @@ export class AntlrAssetSelectionVisitor
   }
 
   visitNotExpression(ctx: NotExpressionContext) {
-    const expr = ctx.expr();
-    const selection = expr ? (this.visit(expr) ?? this.defaultResult()) : this.defaultResult();
+    const selection = this.visitOrDefault(ctx.expr());
     return new Set([...this.all_assets].filter((i) => !selection.has(i)));
   }
 
   visitAndExpression(ctx: AndExpressionContext) {
-    const leftExpr = ctx.expr(0);
-    const rightExpr = ctx.expr(1);
-    const left = leftExpr ? (this.visit(leftExpr) ?? this.defaultResult()) : this.defaultResult();
-    const right = rightExpr ? (this.visit(rightExpr) ?? this.defaultResult()) : this.defaultResult();
+    const left = this.visitOrDefault(ctx.expr(0));
+    const right = this.visitOrDefault(ctx.expr(1));
     return new Set([...left].filter((i) => right.has(i)));
   }
 
   visitOrExpression(ctx: OrExpressionContext) {
-    const leftExpr = ctx.expr(0);
-    const rightExpr = ctx.expr(1);
-    const left = leftExpr ? (this.visit(leftExpr) ?? this.defaultResult()) : this.defaultResult();
-    const right = rightExpr ? (this.visit(rightExpr) ?? this.defaultResult()) : this.defaultResult();
+    const left = this.visitOrDefault(ctx.expr(0));
+    const right = this.visitOrDefault(ctx.expr(1));
     return new Set([...left, ...right]);
   }
 
@@ -137,15 +132,13 @@ export class AntlrAssetSelectionVisitor
   }
 
   visitAttributeExpression(ctx: AttributeExpressionContext) {
-    const attrExpr = ctx.attributeExpr();
-    return attrExpr ? (this.visit(attrExpr) ?? this.defaultResult()) : this.defaultResult();
+    return this.visitOrDefault(ctx.attributeExpr());
   }
 
   visitFunctionCallExpression(ctx: FunctionCallExpressionContext) {
     const funcName = ctx.functionName();
     const function_name = funcName ? getFunctionName(funcName) : '';
-    const expr = ctx.expr();
-    const selection = expr ? (this.visit(expr) ?? this.defaultResult()) : this.defaultResult();
+    const selection = this.visitOrDefault(ctx.expr());
     if (function_name === 'sinks') {
       const sinks = new Set<AssetGraphQueryItem>();
       for (const item of selection) {
@@ -174,8 +167,7 @@ export class AntlrAssetSelectionVisitor
   }
 
   visitParenthesizedExpression(ctx: ParenthesizedExpressionContext) {
-    const expr = ctx.expr();
-    return expr ? (this.visit(expr) ?? this.defaultResult()) : this.defaultResult();
+    return this.visitOrDefault(ctx.expr());
   }
 
   visitKeyExpr(ctx: KeyExprContext) {
