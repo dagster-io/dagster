@@ -20,6 +20,7 @@ from dagster_dg_cli.cli.plus.deploy.configure.commands import (
     resolve_git_root,
     resolve_organization,
     resolve_python_version,
+    resolve_url,
 )
 from dagster_dg_cli.cli.plus.deploy.configure.configure_ci import configure_ci_impl
 from dagster_dg_cli.cli.plus.deploy.configure.utils import DgPlusDeployConfigureOptions, GitProvider
@@ -40,8 +41,9 @@ def _resolve_config_for_github_actions(
 
     plus_config = DagsterPlusCliConfig.get() if DagsterPlusCliConfig.exists() else None
 
-    # Prompt for org and deployment FIRST (legacy order)
+    # Prompt for org, URL, and deployment FIRST (legacy order)
     resolved_organization = resolve_organization(None, plus_config)
+    resolved_url = resolve_url(None, plus_config, resolved_organization)
     resolved_deployment = resolve_deployment(None, plus_config)
 
     # Try to detect agent type and platform from Plus config
@@ -76,6 +78,7 @@ def _resolve_config_for_github_actions(
         agent_type=agent_type,
         agent_platform=agent_platform,  # May be None - legacy didn't require platform
         organization_name=resolved_organization,
+        cloud_url=resolved_url,
         deployment_name=resolved_deployment,
         git_root=resolved_git_root,
         python_version=resolved_python_version,

@@ -14,7 +14,18 @@ import {
   LEFT_INSET,
 } from './Constants';
 import {dynamicKeyWithoutIndex, isDynamicStep, isPlannedDynamicStep} from './DynamicStepSupport';
-import {IRunMetadataDict, IStepAttempt, IStepState} from '../runs/RunMetadataProvider';
+import {
+  IRunMetadataDict,
+  IStepAttempt,
+  IStepMetadata,
+  IStepState,
+} from '../runs/RunMetadataProvider';
+
+type StepWithTiming = IStepMetadata & {start: number; end: number};
+
+function hasTimingInfo(entry: [string, IStepMetadata]): entry is [string, StepWithTiming] {
+  return entry[1].start !== undefined && entry[1].end !== undefined;
+}
 
 export interface BuildLayoutParams {
   nodes: IGanttNode[];
@@ -105,8 +116,10 @@ export const buildLayout = (params: BuildLayoutParams) => {
       if (isDynamicStep(box.node.name) && !isDynamicStep(highestYParent.node.name)) {
         continue;
       }
-      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-      const onTargetY = boxesByY[`${highestYParent.y}`]!;
+      const onTargetY = boxesByY[`${highestYParent.y}`];
+      if (!onTargetY) {
+        continue;
+      }
       const taken = onTargetY.find((r) => r.x === box.x);
       if (taken) {
         continue;
@@ -121,11 +134,12 @@ export const buildLayout = (params: BuildLayoutParams) => {
         continue;
       }
 
-      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-      boxesByY[`${box.y}`] = boxesByY[`${box.y}`]!.filter((b) => b !== box);
+      const currentRow = boxesByY[`${box.y}`];
+      if (currentRow) {
+        boxesByY[`${box.y}`] = currentRow.filter((b) => b !== box);
+      }
       box.y = highestYParent.y;
-      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-      boxesByY[`${box.y}`]!.push(box);
+      onTargetY.push(box);
 
       changed = true;
       break;
@@ -138,16 +152,16 @@ export const buildLayout = (params: BuildLayoutParams) => {
     // resulting tree rather than placed randomly before their mutual dependents.
     let bottomY = 0;
     for (const y of Object.keys(boxesByY)) {
-      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-      const row = boxesByY[y]!;
-      if (!row.length) {
+      const row = boxesByY[y];
+      if (!row?.length) {
         continue;
       }
-      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-      let x = row[0]!.root
-        ? LEFT_INSET
-        : // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-          parents[row[0]!.node.name]![0]!.x + FLAT_INSET_FROM_PARENT;
+      const [firstBox] = row;
+      if (!firstBox) {
+        continue;
+      }
+      const [firstParent] = parents[firstBox.node.name] ?? [];
+      let x = firstBox.root ? LEFT_INSET : (firstParent?.x ?? LEFT_INSET) + FLAT_INSET_FROM_PARENT;
       for (const box of row) {
         box.x = x;
         box.y = bottomY;
@@ -227,10 +241,9 @@ const addChildren = (boxes: GanttChartBox[], box: GanttChartBox, params: BuildLa
       seen.push(depNode.name);
       seenSet.add(depNode.name);
 
-      const depBoxIdx = boxes.findIndex((r) => r.node === depNode);
-      let depBox: GanttChartBox;
+      let depBox = boxes.find((r) => r.node === depNode);
 
-      if (depBoxIdx === -1) {
+      if (!depBox) {
         depBox = {
           children: [],
           key: depNode.name,
@@ -244,8 +257,6 @@ const addChildren = (boxes: GanttChartBox[], box: GanttChartBox, params: BuildLa
         boxes.push(depBox);
         added.push(depBox);
       } else {
-        // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-        depBox = boxes[depBoxIdx]!;
         ensureSubtreeAfterParentInArray(boxes, box, depBox);
       }
 
@@ -325,8 +336,10 @@ const cloneLayout = ({boxes, markers}: GanttChartLayout): GanttChartLayout => {
   }
 
   boxes.forEach((box, ii) => {
-    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-    nextBoxes[ii]!.children = box.children.map((c) => map.get(c));
+    const nextBox = nextBoxes[ii];
+    if (nextBox) {
+      nextBox.children = box.children.map((c) => map.get(c));
+    }
   });
 
   return {boxes: nextBoxes, markers: nextMarkers};
@@ -344,8 +357,10 @@ const positionAndSplitBoxes = (
   // Apply X values + widths to boxes, and break apart retries into their own boxes by looking
   // at the transitions recorded for each step.
   for (let ii = boxes.length - 1; ii >= 0; ii--) {
-    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-    const box = boxes[ii]!;
+    const box = boxes[ii];
+    if (!box) {
+      continue;
+    }
     const meta = metadata.steps[box.node.name];
     if (!meta) {
       Object.assign(box, positionFor(box));
@@ -369,11 +384,16 @@ const positionAndSplitBoxes = (
 
     // Move the children (used to draw outbound lines) to the last box
     for (let jj = 0; jj < runBoxes.length - 1; jj++) {
-      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-      runBoxes[jj]!.children = [runBoxes[jj + 1]!];
+      const current = runBoxes[jj];
+      const next = runBoxes[jj + 1];
+      if (current && next) {
+        current.children = [next];
+      }
     }
-    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-    runBoxes[runBoxes.length - 1]!.children = box.children;
+    const lastRunBox = runBoxes[runBoxes.length - 1];
+    if (lastRunBox) {
+      lastRunBox.children = box.children;
+    }
 
     Object.assign(box, runBoxes[0]);
     // Add additional boxes we created for retries
@@ -514,27 +534,18 @@ export const interestingQueriesFor = (metadata: IRunMetadataDict, layout: GanttC
   const results: {name: string; value: string}[] = [];
 
   const errorsQuery = Object.keys(metadata.steps)
-    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-    .filter((k) => metadata.steps[k]!.state === IStepState.FAILED)
+    .filter((k) => metadata.steps[k]?.state === IStepState.FAILED)
     .map((k) => `+${k}`)
     .join(', ');
   if (errorsQuery) {
     results.push({name: 'Errors', value: errorsQuery});
   }
 
-  const slowStepsQuery = Object.keys(metadata.steps)
-    .filter((k) => metadata.steps[k]?.end && metadata.steps[k]?.start)
-    .sort(
-      (a, b) =>
-        // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-        metadata.steps[b]!.end! -
-        // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-        metadata.steps[b]!.start! -
-        // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-        (metadata.steps[a]!.end! - metadata.steps[a]!.start!),
-    )
+  const slowStepsQuery = Object.entries(metadata.steps)
+    .filter(hasTimingInfo)
+    .sort(([, a], [, b]) => b.end - b.start - (a.end - a.start))
     .slice(0, 5)
-    .map((k) => `"${k}"`)
+    .map(([k]) => `"${k}"`)
     .join(', ');
   if (slowStepsQuery) {
     results.push({name: 'Slowest Individual Steps', value: slowStepsQuery});

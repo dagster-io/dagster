@@ -33,6 +33,7 @@ class DgPlusDeployConfigureOptions:
     agent_type: DgPlusAgentType
     agent_platform: Optional[DgPlusAgentPlatform]
     organization_name: Optional[str]
+    cloud_url: Optional[str]
     deployment_name: str
     git_root: Optional[Path]
     skip_confirmation_prompt: bool

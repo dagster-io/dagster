@@ -285,7 +285,7 @@ class MultiprocessExecutor(Executor):
                                 )
 
                                 failure_or_retry_event = (
-                                    self.get_failure_or_retry_event_after_error(
+                                    self.log_failure_or_retry_event_after_error(
                                         step_context,
                                         event_or_none.engine_event_data.error,
                                         active_execution.get_known_state(),
@@ -309,7 +309,7 @@ class MultiprocessExecutor(Executor):
                                 ),
                                 EngineEventData.engine_error(serializable_error),
                             )
-                            failure_or_retry_event = self.get_failure_or_retry_event_after_error(
+                            failure_or_retry_event = self.log_failure_or_retry_event_after_error(
                                 step_context, serializable_error, active_execution.get_known_state()
                             )
 

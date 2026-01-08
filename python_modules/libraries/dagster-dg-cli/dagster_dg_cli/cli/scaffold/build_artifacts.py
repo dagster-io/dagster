@@ -14,7 +14,7 @@ from dagster_dg_core.context import DgContext
 from dagster_dg_core.shared_options import dg_editable_dagster_options, dg_global_options
 from dagster_dg_core.utils import DgClickCommand
 from dagster_dg_core.utils.telemetry import cli_telemetry_wrapper
-from dagster_shared.plus.config import DagsterPlusCliConfig
+from dagster_shared.plus.config import DAGSTER_CLOUD_BASE_URL, DagsterPlusCliConfig
 
 from dagster_dg_cli.cli.plus.constants import DgPlusAgentType
 from dagster_dg_cli.cli.plus.deploy.configure.commands import resolve_python_version
@@ -64,6 +64,7 @@ def _resolve_config_for_build_artifacts(
         agent_type=agent_type,
         agent_platform=agent_platform,
         organization_name=None,
+        cloud_url=plus_config.url if plus_config and plus_config.url else DAGSTER_CLOUD_BASE_URL,
         deployment_name="prod",
         git_root=None,
         python_version=resolved_python_version,

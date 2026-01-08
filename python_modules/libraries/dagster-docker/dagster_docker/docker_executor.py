@@ -287,7 +287,7 @@ class DockerStepHandler(StepHandler):
             return CheckStepHealthResult.healthy()
 
         try:
-            container_info = container.wait(timeout=0.1)
+            container_info = container.wait(timeout=5)
         except Exception as e:
             raise Exception(
                 f"Container status is {container.status}. Raised exception attempting to get its"

@@ -130,6 +130,10 @@ def configure_github_actions_impl(config: DgPlusDeployConfigureOptions) -> None:
             config.organization_name or "",
         )
         .replace(
+            "TEMPLATE_DAGSTER_CLOUD_URL",
+            config.cloud_url or "",
+        )
+        .replace(
             "TEMPLATE_DEFAULT_DEPLOYMENT_NAME",
             config.deployment_name,
         )
@@ -242,6 +246,10 @@ def configure_gitlab_ci_impl(config: DgPlusDeployConfigureOptions) -> None:
         template.replace(
             "TEMPLATE_ORGANIZATION_NAME",
             config.organization_name or "",
+        )
+        .replace(
+            "TEMPLATE_DAGSTER_CLOUD_URL",
+            config.cloud_url or "",
         )
         .replace(
             "TEMPLATE_DEFAULT_DEPLOYMENT_NAME",

@@ -4,6 +4,8 @@
 variables:
   # The organization name in Dagster Cloud
   DAGSTER_CLOUD_ORGANIZATION: TEMPLATE_ORGANIZATION_NAME
+  # The Dagster Cloud URL
+  DAGSTER_CLOUD_URL: TEMPLATE_DAGSTER_CLOUD_URL
   # The API token from https://dagster.cloud/ should be stored in a CI/CD Variable called DAGSTER_CLOUD_API_TOKEN
   DAGSTER_CLOUD_API_TOKEN: $DAGSTER_CLOUD_API_TOKEN
 
@@ -26,15 +28,14 @@ workflow:
 
 dagster-cloud-deploy:
   stage: deploy
-  image: docker:latest
+  image: python:3.12
   services:
     - docker:dind
   interruptible: true
   before_script:
-    # Install Python and uv for running dg CLI
-    - apk add --no-cache python3 py3-pip
-    - pip install --break-system-packages uv
-    - uv pip install dagster dagster-dg-cli dagster-cloud
+    # Install Docker CLI and uv
+    - apt-get update && apt-get install -y docker.io
+    - pip install uv
   script:
     # Checkout is automatic in GitLab CI
 
@@ -61,7 +62,6 @@ dagster-cloud-deploy:
     - python -m uv run dg plus deploy finish --path=$DAGSTER_PROJECT_DIR
   after_script:
     # Generate a summary - this runs always() so the summary is generated on success and failure
-    - apk add --no-cache python3 py3-pip 2>/dev/null || true
-    - pip install --break-system-packages uv 2>/dev/null || true
+    - pip install uv 2>/dev/null || true
     - cd $DAGSTER_PROJECT_DIR
     - python -m uv run dagster-cloud ci status --output-format=markdown || true
