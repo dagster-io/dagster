@@ -27,7 +27,6 @@
 - [ui] Entering the asset launchpad by right-clicking on the asset graph no longer causes keyboard navigation issues.
 - [ui] Fixed an issue where removing an asset prevented rendering status information for backfills involving that asset in the Dagster UI.
 
-
 ## 1.12.8 (core) / 0.28.8 (libraries)
 
 ### New
