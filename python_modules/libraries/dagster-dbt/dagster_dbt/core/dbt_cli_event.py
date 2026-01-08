@@ -560,6 +560,8 @@ class DbtCliEventMessage(ABC):
                 - AssetCheckEvaluation for dbt test results that are enabled as asset checks.
                 - AssetObservation for dbt test results that are not enabled as asset checks.
         """
+        if "node_info" not in self.raw_event["data"]:
+            return
         if not self.is_result_event:
             return
 
@@ -579,11 +581,13 @@ class DbtCoreCliEventMessage(DbtCliEventMessage):
 
     @property
     def is_result_event(self) -> bool:
+        unique_id = self.raw_event["data"].get("node_info", {}).get("unique_id")
+        if unique_id is None:
+            return False
+
         return self.raw_event["info"]["name"] in set(
             ["LogSeedResult", "LogModelResult", "LogSnapshotResult", "LogTestResult"]
-        ) and not self.raw_event["data"].get("node_info", {}).get("unique_id", "").startswith(
-            "unit_test"
-        )
+        ) and not unique_id.startswith("unit_test")
 
     def _get_check_passed(self) -> bool:
         return self._get_node_status() == TestStatus.Pass
