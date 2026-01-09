@@ -48,6 +48,9 @@ Then, add the `dagster-dbt` library to the project, along with a duckdb adapter:
 
 ## 2. Set up a dbt project
 
+<Tabs groupId="dbt-project-location">
+<TabItem value="colocate" label="Colocate with Dagster">
+
 For this tutorial, we'll use the jaffle shop dbt project as an example. Clone it into your project:
 
 <CliInvocationExample path="docs_snippets/docs_snippets/guides/components/integrations/dbt-component/3-jaffle-clone.txt" />
@@ -60,7 +63,22 @@ We will create a `profiles.yml` file in the `dbt` directory to configure the pro
   language="yaml"
 />
 
+</TabItem>
+<TabItem value="external" label="External Git Repository">
+
+If your dbt project lives in a separate Git repository, you don't need to clone it locally. For this tutorial, we'll use the [Jaffle Platform](https://github.com/dagster-io/jaffle-platform) example repository which already has a `profiles.yml` configured.
+
+:::info
+When using an external Git repository, Dagster manages the project as part of [component state](/guides/build/components/state-backed-components). See [Configuring state-backed components](/guides/build/components/state-backed-components/configuring-state-backed-components) for details on how state is managed.
+:::
+
+</TabItem>
+</Tabs>
+
 ## 3. Scaffold a dbt component definition
+
+<Tabs groupId="dbt-project-location">
+<TabItem value="colocate" label="Colocate with Dagster">
 
 Now that you have a Dagster project with a dbt project, you can scaffold a dbt component definition. You'll need to provide the path to your dbt project:
 
@@ -77,6 +95,43 @@ In its scaffolded form, the `defs.yaml` file contains the configuration for your
   title="my_project/defs/dbt_ingest/defs.yaml"
   language="yaml"
 />
+
+</TabItem>
+<TabItem value="external" label="External Git Repository">
+
+Now that you have a Dagster project, you can scaffold a dbt component definition that points to an external Git repository. You'll need to provide the Git URL and the path to the dbt project within the repository:
+
+<CliInvocationExample path="docs_snippets/docs_snippets/guides/components/integrations/dbt-component/remote-1-scaffold-dbt-component.txt" />
+
+The `dg scaffold defs` call will generate a `defs.yaml` file in your project structure:
+
+<CliInvocationExample path="docs_snippets/docs_snippets/guides/components/integrations/dbt-component/remote-2-tree.txt" />
+
+In its scaffolded form, the `defs.yaml` file contains the configuration for your remote dbt project:
+
+<CodeExample
+  path="docs_snippets/docs_snippets/guides/components/integrations/dbt-component/remote-3-component.yaml"
+  title="my_project/defs/dbt_ingest/defs.yaml"
+  language="yaml"
+/>
+
+:::tip[Private repositories]
+For private Git repositories, you can provide an authentication token:
+
+```yaml
+type: dagster_dbt.DbtProjectComponent
+
+attributes:
+  project:
+    repo_url: https://github.com/your-org/your-dbt-project.git
+    repo_relative_path: path/to/dbt
+    token: '{{ env.GITHUB_TOKEN }}'
+```
+
+:::
+
+</TabItem>
+</Tabs>
 
 This is sufficient to load your dbt models as assets. You can use `dg list defs` to see the asset representation:
 
