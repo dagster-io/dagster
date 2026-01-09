@@ -108,6 +108,23 @@ def test_s3_component_integration(monkeypatch):
                 assert defs.resources["my_s3"].max_attempts == 5
 
 
+def test_s3_no_resource_key():
+    """Verifies that when resource_key is not provided, the resources dict is empty."""
+    with create_defs_folder_sandbox() as sandbox:
+        defs_path = sandbox.scaffold_component(
+            component_cls=S3ResourceComponent,
+            defs_yaml_contents={
+                "type": "dagster_aws.components.S3ResourceComponent",
+                "attributes": {
+                    "credentials": {"region_name": "us-east-1"},
+                },
+            },
+        )
+        with scoped_definitions_load_context():
+            with sandbox.load_component_and_build_defs(defs_path=defs_path) as (component, defs):
+                assert defs.resources == {}
+
+
 def test_s3_explicit_key():
     """Verifies that the component registers correctly when resource_key is provided."""
     with create_defs_folder_sandbox() as sandbox:

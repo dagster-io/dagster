@@ -78,6 +78,9 @@ EXCLUDE_MISSING_RST = {
     "dagster.SqlComponent",
     # Library components
     "dagster_snowflake.components.sql_component.component.SnowflakeConnectionComponentBase",
+    # Tableau component - validator uses internal path but it's exported at dagster_tableau.TableauComponent
+    # and documented in RST. The mismatch is due to validator finding it at source path.
+    "dagster_tableau.components.tableau_component.TableauComponent",
     # Component testing utils
     "dagster.components.testing.utils.DefsFolderSandbox",
     "dagster.components.testing.utils.create_defs_folder_sandbox",
@@ -103,6 +106,8 @@ EXCLUDE_MISSING_EXPORT = {
     "dagster.components.scaffold.scaffold.scaffold_with",
     "dagster.components.scaffold.scaffold.ScaffoldRequest",
     "dagster.components.scaffold.scaffold.Scaffolder",
+    # Tableau component - validator uses internal path but it's exported at dagster_tableau.TableauComponent
+    "dagster_tableau.components.tableau_component.TableauComponent",
 }
 
 # Hardcoded list of all RST symbols missing @public decorators
@@ -420,8 +425,9 @@ EXCLUDE_MISSING_PUBLIC = {
     # Component testing utils - RST references them without full path
     "dagster.DefsFolderSandbox",
     "dagster.create_defs_folder_sandbox",
+    # Tableau component - RST uses top-level path but validator finds @public at internal path
+    "dagster_tableau.TableauComponent",
 }
-# Total: 305 symbols
 
 # Modules to exclude from @public scanning
 EXCLUDE_MODULES_FROM_PUBLIC_SCAN = set()
