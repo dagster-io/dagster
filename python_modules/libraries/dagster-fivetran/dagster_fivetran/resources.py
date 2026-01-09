@@ -497,12 +497,14 @@ class FivetranClient:
         api_secret: str,
         request_max_retries: int,
         request_retry_delay: float,
+        request_backoff_factor: float,
         disable_schedule_on_trigger: bool,
     ):
         self.api_key = api_key
         self.api_secret = api_secret
         self.request_max_retries = request_max_retries
         self.request_retry_delay = request_retry_delay
+        self.request_backoff_factor = request_backoff_factor
         self.disable_schedule_on_trigger = disable_schedule_on_trigger
 
     @property
@@ -600,7 +602,12 @@ class FivetranClient:
                 if num_retries == self.request_max_retries:
                     return response  # type: ignore
                 num_retries += 1
-                time.sleep(self.request_retry_delay)
+                delay = self.request_retry_delay * (self.request_backoff_factor**num_retries)
+                self._log.info(
+                    f"Retrying Fivetran API request in {delay:.2f}s "
+                    f"(attempt {num_retries}/{self.request_max_retries})."
+                )
+                time.sleep(delay)
 
     def get_connector_details(self, connector_id: str) -> Mapping[str, Any]:
         """Gets details about a given connector from the Fivetran API.
@@ -978,6 +985,10 @@ class FivetranWorkspace(ConfigurableResource):
         default=0.25,
         description="Time (in seconds) to wait between each request retry.",
     )
+    request_backoff_factor: float = Field(
+        default=1.0,
+        description="Multiplier applied to the delay between retries. Set to >1 for exponential backoff.",
+    )
     disable_schedule_on_trigger: bool = Field(
         default=True,
         description=(
@@ -1004,6 +1015,7 @@ class FivetranWorkspace(ConfigurableResource):
             api_secret=self.api_secret,
             request_max_retries=self.request_max_retries,
             request_retry_delay=self.request_retry_delay,
+            request_backoff_factor=self.request_backoff_factor,
             disable_schedule_on_trigger=self.disable_schedule_on_trigger,
         )
 
