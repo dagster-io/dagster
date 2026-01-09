@@ -95,6 +95,51 @@ def assert_datadog_client_class(
     timed.assert_called_with("run_fn")
 
 
+@mock.patch("dagster_datadog.resources.initialize")
+def test_datadog_resource_initialize_args(initialize) -> None:
+    resource = DatadogResource(
+        api_key="API_KEY",
+        app_key="APP_KEY",
+        host_name="host",
+        api_host="https://api.datadoghq.com",
+        statsd_host="127.0.0.1",
+        statsd_port=8125,
+        statsd_disable_aggregation=False,
+        statsd_disable_buffering=False,
+        statsd_aggregation_flush_interval=0.5,
+        statsd_use_default_route=True,
+        statsd_socket_path="/tmp/dsd.socket",
+        statsd_namespace="namespace",
+        statsd_max_samples_per_context=5,
+        statsd_constant_tags=["env:dev", "team:platform"],
+        return_raw_response=True,
+        hostname_from_config=False,
+        cardinality="low",
+    )
+    client = resource.get_client()
+    assert client.api_key == "API_KEY"
+    assert client.app_key == "APP_KEY"
+    initialize.assert_called_once_with(
+        api_key="API_KEY",
+        app_key="APP_KEY",
+        host_name="host",
+        api_host="https://api.datadoghq.com",
+        statsd_host="127.0.0.1",
+        statsd_port=8125,
+        statsd_disable_aggregation=False,
+        statsd_disable_buffering=False,
+        statsd_aggregation_flush_interval=0.5,
+        statsd_use_default_route=True,
+        statsd_socket_path="/tmp/dsd.socket",
+        statsd_namespace="namespace",
+        statsd_max_samples_per_context=5,
+        statsd_constant_tags=["env:dev", "team:platform"],
+        return_raw_response=True,
+        hostname_from_config=False,
+        cardinality="low",
+    )
+
+
 @mock.patch("datadog.api.Metadata")
 @mock.patch("datadog.api.ServiceCheck")
 @mock.patch("datadog.api.Metric")
