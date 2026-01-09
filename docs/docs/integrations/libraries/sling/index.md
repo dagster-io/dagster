@@ -112,7 +112,7 @@ To pre-install the binary, you can download it during your build step and set th
       chmod +x sling
 
       # Point to the binary
-      export SLING_BINARY=/path/to/sling
+      export SLING_BINARY=$(pwd)/sling
       ```
    </TabItem>
    <TabItem value="linux" label="Linux">
@@ -133,7 +133,7 @@ To pre-install the binary, you can download it during your build step and set th
       Expand-Archive -Path sling.zip -DestinationPath .
 
       # Point to the binary
-      $env:SLING_BINARY = "C:\path\to\sling.exe"
+      $env:SLING_BINARY = "$PWD\sling.exe"
       ```
    </TabItem>
 </Tabs>
