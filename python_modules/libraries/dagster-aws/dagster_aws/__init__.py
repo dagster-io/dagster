@@ -7,8 +7,6 @@ from dagster_aws.components import (
     ECRPublicResourceComponent as ECRPublicResourceComponent,
     ParameterStoreResourceComponent as ParameterStoreResourceComponent,
     RDSResourceComponent as RDSResourceComponent,
-    RedshiftClientResourceComponent as RedshiftClientResourceComponent,
-    RedshiftCredentialsComponent as RedshiftCredentialsComponent,
     S3CredentialsComponent as S3CredentialsComponent,
     S3FileManagerResourceComponent as S3FileManagerResourceComponent,
     S3ResourceComponent as S3ResourceComponent,

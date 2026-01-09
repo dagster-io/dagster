@@ -4,14 +4,10 @@ from dagster_aws.components.athena import (
 from dagster_aws.components.credentials import (
     AthenaCredentialsComponent as AthenaCredentialsComponent,
     Boto3CredentialsComponent as Boto3CredentialsComponent,
-    RedshiftCredentialsComponent as RedshiftCredentialsComponent,
     S3CredentialsComponent as S3CredentialsComponent,
 )
 from dagster_aws.components.ecr import ECRPublicResourceComponent as ECRPublicResourceComponent
 from dagster_aws.components.rds import RDSResourceComponent as RDSResourceComponent
-from dagster_aws.components.redshift import (
-    RedshiftClientResourceComponent as RedshiftClientResourceComponent,
-)
 from dagster_aws.components.s3 import (
     S3FileManagerResourceComponent as S3FileManagerResourceComponent,
     S3ResourceComponent as S3ResourceComponent,

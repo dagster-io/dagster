@@ -162,7 +162,7 @@ Credentials Components
 
 .. autoclass:: dagster_aws.AthenaCredentialsComponent
 
-.. autoclass:: dagster_aws.RedshiftCredentialsComponent
+.. autoclass:: dagster_aws.redshift.RedshiftCredentialsComponent
 
 Resource Components
 ^^^^^^^^^^^^^^^^^^^
@@ -173,7 +173,7 @@ Resource Components
 
 .. autoclass:: dagster_aws.AthenaClientResourceComponent
 
-.. autoclass:: dagster_aws.RedshiftClientResourceComponent
+.. autoclass:: dagster_aws.redshift.RedshiftClientResourceComponent
 
 .. autoclass:: dagster_aws.SSMResourceComponent
 

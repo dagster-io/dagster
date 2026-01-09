@@ -96,35 +96,3 @@ class AthenaCredentialsComponent(Boto3CredentialsComponent):
             " seconds). Must be greater than 0."
         ),
     )
-
-
-@public
-@preview
-class RedshiftCredentialsComponent(dg.Component, dg.Resolvable, dg.Model, CredentialsRenderMixin):
-    """Credentials and connection configuration for Redshift."""
-
-    host: Optional[str] = Field(default=None, description="Redshift host")
-    port: int = Field(default=5439, description="Redshift port")
-    user: Optional[str] = Field(default=None, description="Username for Redshift connection")
-    password: Optional[str] = Field(default=None, description="Password for Redshift connection")
-    database: Optional[str] = Field(
-        default=None,
-        description=(
-            "Name of the default database to use. After login, you can use USE DATABASE to change"
-            " the database."
-        ),
-    )
-    autocommit: Optional[bool] = Field(default=None, description="Whether to autocommit queries")
-    connect_timeout: int = Field(
-        default=5, description="Timeout for connection to Redshift cluster. Defaults to 5 seconds."
-    )
-    sslmode: Optional[str] = Field(
-        default="require",
-        description=(
-            "SSL mode to use. See the Redshift documentation for reference:"
-            " https://docs.aws.amazon.com/redshift/latest/mgmt/connecting-ssl-support.html"
-        ),
-    )
-
-    def build_defs(self, context: dg.ComponentLoadContext) -> dg.Definitions:
-        return dg.Definitions()

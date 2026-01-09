@@ -12,8 +12,6 @@ from dagster_aws.components import (
     ECRPublicResourceComponent,
     ParameterStoreResourceComponent,
     RDSResourceComponent,
-    RedshiftClientResourceComponent,
-    RedshiftCredentialsComponent,
     S3CredentialsComponent,
     S3FileManagerResourceComponent,
     S3ResourceComponent,
@@ -23,6 +21,7 @@ from dagster_aws.components import (
 )
 from dagster_aws.ecr import ECRPublicResource
 from dagster_aws.rds.resources import RDSResource
+from dagster_aws.redshift import RedshiftClientResourceComponent, RedshiftCredentialsComponent
 from dagster_aws.redshift.resources import RedshiftClientResource
 from dagster_aws.s3.resources import S3FileManagerResource, S3Resource
 from dagster_aws.secretsmanager.resources import (
@@ -215,7 +214,7 @@ def test_redshift_component_integration(monkeypatch):
         defs_path = sandbox.scaffold_component(
             component_cls=RedshiftClientResourceComponent,
             defs_yaml_contents={
-                "type": "dagster_aws.components.RedshiftClientResourceComponent",
+                "type": "dagster_aws.redshift.RedshiftClientResourceComponent",
                 "attributes": {
                     "credentials": {
                         "host": "{{ env.REDSHIFT_HOST }}",
