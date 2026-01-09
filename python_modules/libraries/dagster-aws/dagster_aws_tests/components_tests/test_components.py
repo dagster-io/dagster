@@ -108,14 +108,17 @@ def test_s3_component_integration(monkeypatch):
                 assert defs.resources["my_s3"].max_attempts == 5
 
 
-def test_s3_default_key_logic():
-    """Verifies that the component registers under the default key 's3' when 'resource_key' is omitted."""
+def test_s3_explicit_key():
+    """Verifies that the component registers correctly when resource_key is provided."""
     with create_defs_folder_sandbox() as sandbox:
         defs_path = sandbox.scaffold_component(
             component_cls=S3ResourceComponent,
             defs_yaml_contents={
                 "type": "dagster_aws.components.S3ResourceComponent",
-                "attributes": {"credentials": {"region_name": "us-east-1"}},
+                "attributes": {
+                    "credentials": {"region_name": "us-east-1"},
+                    "resource_key": "s3",
+                },
             },
         )
         with scoped_definitions_load_context():
@@ -173,7 +176,8 @@ def test_athena_component_integration(monkeypatch):
                     "credentials": {
                         "region_name": "{{ env.AWS_REGION }}",
                         "workgroup": "{{ env.ATHENA_WORKGROUP }}",
-                    }
+                    },
+                    "resource_key": "athena",
                 },
             },
         )
@@ -201,7 +205,8 @@ def test_redshift_component_integration(monkeypatch):
                         "port": 5439,
                         "database": "dev",
                         "user": "admin",
-                    }
+                    },
+                    "resource_key": "redshift",
                 },
             },
         )
@@ -224,7 +229,10 @@ def test_ssm_component_integration(monkeypatch):
             component_cls=SSMResourceComponent,
             defs_yaml_contents={
                 "type": "dagster_aws.components.SSMResourceComponent",
-                "attributes": {"credentials": {"region_name": "{{ env.AWS_REGION }}"}},
+                "attributes": {
+                    "credentials": {"region_name": "{{ env.AWS_REGION }}"},
+                    "resource_key": "ssm",
+                },
             },
         )
         with scoped_definitions_load_context():
@@ -243,7 +251,10 @@ def test_parameter_store_defaults_behavior():
             component_cls=ParameterStoreResourceComponent,
             defs_yaml_contents={
                 "type": "dagster_aws.components.ParameterStoreResourceComponent",
-                "attributes": {"credentials": {"region_name": "us-east-1"}},
+                "attributes": {
+                    "credentials": {"region_name": "us-east-1"},
+                    "resource_key": "parameter_store",
+                },
             },
         )
         with scoped_definitions_load_context():
@@ -265,6 +276,7 @@ def test_parameter_store_complex_integration(monkeypatch):
                     "credentials": {"region_name": "{{ env.AWS_REGION }}"},
                     "parameters": ["/app/db/password"],
                     "with_decryption": True,
+                    "resource_key": "parameter_store",
                 },
             },
         )
@@ -289,7 +301,10 @@ def test_secrets_manager_integration(monkeypatch):
             component_cls=SecretsManagerResourceComponent,
             defs_yaml_contents={
                 "type": "dagster_aws.components.SecretsManagerResourceComponent",
-                "attributes": {"credentials": {"region_name": "{{ env.AWS_REGION }}"}},
+                "attributes": {
+                    "credentials": {"region_name": "{{ env.AWS_REGION }}"},
+                    "resource_key": "secretsmanager",
+                },
             },
         )
         with scoped_definitions_load_context():
