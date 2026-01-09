@@ -10,9 +10,11 @@ from dagster_shared.record import (
     replace,
 )
 from dagster_shared.serdes import whitelist_for_serdes
+from dagster_shared.utils.warnings import preview_warning
 
 from dagster._annotations import PublicAttr, public
 from dagster._core.definitions.asset_key import AssetCheckKey, AssetKey, CoercibleToAssetKey
+from dagster._core.definitions.partitions.definition import PartitionsDefinition
 
 if TYPE_CHECKING:
     from dagster._core.definitions.assets.definition.asset_dep import AssetDep, CoercibleToAssetDep
@@ -58,6 +60,7 @@ class AssetCheckSpec(IHaveNew, LegacyNamedTupleMixin):
     blocking: PublicAttr[bool]
     metadata: PublicAttr[Mapping[str, Any]]
     automation_condition: PublicAttr[Optional[LazyAutomationCondition]]
+    partitions_def: PublicAttr[Optional[PartitionsDefinition]]
 
     """Defines information about an asset check, except how to execute it.
 
@@ -80,6 +83,9 @@ class AssetCheckSpec(IHaveNew, LegacyNamedTupleMixin):
             that multi-asset is responsible for enforcing that downstream assets within the
             same step do not execute after a blocking asset check fails.
         metadata (Optional[Mapping[str, Any]]):  A dict of static metadata for this asset check.
+        automation_condition (Optional[AutomationCondition[AssetCheckKey]]): The AutomationCondition for this asset check.
+        partitions_def (Optional[PartitionsDefinition]): The PartitionsDefinition for this asset check. Must be either None
+            or the same as the PartitionsDefinition of the asset specified by `asset`.
     """
 
     def __new__(
@@ -92,10 +98,14 @@ class AssetCheckSpec(IHaveNew, LegacyNamedTupleMixin):
         blocking: bool = False,
         metadata: Optional[Mapping[str, Any]] = None,
         automation_condition: Optional["AutomationCondition[AssetCheckKey]"] = None,
+        partitions_def: Optional[PartitionsDefinition] = None,
     ):
         from dagster._core.definitions.assets.definition.asset_dep import (
             coerce_to_deps_and_check_duplicates,
         )
+
+        if partitions_def is not None:
+            preview_warning("Specifying a partitions_def on an AssetCheckSpec")
 
         asset_key = AssetKey.from_coercible_or_definition(asset)
 
@@ -119,6 +129,7 @@ class AssetCheckSpec(IHaveNew, LegacyNamedTupleMixin):
             blocking=blocking,
             metadata=metadata or {},
             automation_condition=automation_condition,
+            partitions_def=partitions_def,
         )
 
     def get_python_identifier(self) -> str:
