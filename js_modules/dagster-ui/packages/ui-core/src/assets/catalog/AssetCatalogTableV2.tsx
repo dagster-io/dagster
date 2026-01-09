@@ -20,6 +20,7 @@ import {
 import React, {useCallback, useEffect, useMemo, useRef, useState} from 'react';
 import {useRouteMatch} from 'react-router-dom';
 import {useSetRecoilState} from 'recoil';
+import {assetHealthEnabled} from 'shared/app/assetHealthEnabled.oss';
 import {CreateCatalogViewButton} from 'shared/assets/CreateCatalogViewButton.oss';
 import {AssetCatalogAlerts} from 'shared/assets/catalog/AssetCatalogAlerts.oss';
 import {AssetCatalogTabs} from 'shared/assets/catalog/AssetCatalogTabs.oss';
@@ -62,6 +63,7 @@ export const AssetCatalogTableV2 = React.memo(() => {
   useBlockTraceUntilTrue('useAllAssets', !assetsLoading);
   const trackEvent = useTrackEvent();
 
+  const hasAssetHealth = assetHealthEnabled();
   const {favorites, loading: favoritesLoading} = useFavoriteAssets();
 
   const penultimateAssets = useMemo(() => {
@@ -99,8 +101,8 @@ export const AssetCatalogTableV2 = React.memo(() => {
   });
 
   const healthDataLoading = useMemo(() => {
-    return Object.values(liveDataByNode).length !== filtered.length;
-  }, [liveDataByNode, filtered]);
+    return hasAssetHealth && Object.values(liveDataByNode).length !== filtered.length;
+  }, [liveDataByNode, filtered, hasAssetHealth]);
 
   const {assetsByAssetKey: unfilteredAssetsByAssetKey} = useAllAssets();
   const filteredKeys = useMemo(

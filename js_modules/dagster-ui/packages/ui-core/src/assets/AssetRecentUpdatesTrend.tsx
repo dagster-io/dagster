@@ -19,21 +19,12 @@ export const AssetRecentUpdatesTrend = React.memo(({latestInfo, events}: Props) 
   const states = allItems.map((event, index) => {
     const opacity = calculatePezOpacity(index, 5);
 
-    const key = () => {
-      switch (event?.__typename) {
-        case 'AssetLatestInfo':
-          return event.latestRun?.id ?? index;
-        case 'FailedToMaterializeEvent':
-        case 'ObservationEvent':
-        case 'MaterializationEvent':
-          return event.runId;
-        default:
-          return index;
-      }
-    };
+    // Not sufficient to use run ID here, since there could be multiple events for the
+    // same run.
+    const key = event?.timestamp ?? index;
 
     if (!event) {
-      return <PezItem key={key()} opacity={opacity} color={Colors.backgroundDisabled()} />;
+      return <PezItem key={key} opacity={opacity} color={Colors.backgroundDisabled()} />;
     }
 
     const color = () => {
@@ -48,7 +39,7 @@ export const AssetRecentUpdatesTrend = React.memo(({latestInfo, events}: Props) 
     };
 
     return (
-      <EventPopover key={key()} event={event}>
+      <EventPopover key={key} event={event}>
         <PezItem opacity={opacity} color={color()} />
       </EventPopover>
     );

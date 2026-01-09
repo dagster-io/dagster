@@ -1,5 +1,6 @@
 import {ParsedQs} from 'qs';
 import {useCallback, useMemo} from 'react';
+import {assetHealthEnabled} from 'shared/app/assetHealthEnabled.oss';
 
 import {Grouped} from './AssetCatalogV2VirtualizedTable';
 import {
@@ -81,7 +82,7 @@ export const useAssetCatalogGroupAndSortBy = ({
       if (qs.groupBy && GROUP_BY.includes(qs.groupBy as AssetHealthGroupBy)) {
         return qs.groupBy as AssetHealthGroupBy;
       }
-      return AssetHealthGroupBy.health_status;
+      return assetHealthEnabled() ? AssetHealthGroupBy.health_status : AssetHealthGroupBy.group;
     }, []),
     encode: useCallback((b: AssetHealthGroupBy) => ({groupBy: b}), []),
   });

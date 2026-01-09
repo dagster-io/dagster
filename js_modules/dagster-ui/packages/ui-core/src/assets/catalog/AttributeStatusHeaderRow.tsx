@@ -1,5 +1,6 @@
 import {Icon, IconName} from '@dagster-io/ui-components';
 import React from 'react';
+import {assetHealthEnabled} from 'shared/app/assetHealthEnabled.oss';
 
 import {AssetCatalogTableGroupHeaderRow} from './AssetCatalogTableGroupHeaderRow';
 
@@ -57,8 +58,7 @@ export const ASSET_HEALTH_GROUP_BY_META: Record<
   },
 };
 
-export const GROUP_BY = [
-  AssetHealthGroupBy.health_status,
+const SHARED_GROUP_BY: AssetHealthGroupBy[] = [
   AssetHealthGroupBy.freshness_status,
   AssetHealthGroupBy.check_status,
   AssetHealthGroupBy.materialization_status,
@@ -68,6 +68,10 @@ export const GROUP_BY = [
   AssetHealthGroupBy.kind,
   AssetHealthGroupBy.tags,
 ] as const;
+
+export const GROUP_BY = assetHealthEnabled()
+  ? [AssetHealthGroupBy.health_status, ...SHARED_GROUP_BY]
+  : SHARED_GROUP_BY;
 
 export const GROUP_BY_ITEMS = GROUP_BY.map((key) => ({
   key,
