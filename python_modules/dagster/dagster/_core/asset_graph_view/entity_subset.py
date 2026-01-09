@@ -69,10 +69,13 @@ class EntitySubset(Generic[T_EntityKey]):
         return SerializableEntitySubset(key=self._key, value=self._value)
 
     def expensively_compute_partition_keys(self) -> AbstractSet[str]:
-        return {
-            check.not_none(akpk.partition_key, "No None partition keys")
-            for akpk in self.expensively_compute_asset_partitions()
-        }
+        internal_value = self.get_internal_value()
+        if isinstance(internal_value, PartitionsSubset):
+            return set(internal_value.get_partition_keys())
+        elif internal_value:
+            check.failed("Subset is not partitioned")
+        else:
+            return set()
 
     def expensively_compute_asset_partitions(self) -> AbstractSet[AssetKeyPartitionKey]:
         if not isinstance(self.key, AssetKey):
@@ -106,11 +109,13 @@ class EntitySubset(Generic[T_EntityKey]):
         return self._oper(other, operator.and_)
 
     def compute_intersection_with_partition_keys(
-        self: "EntitySubset[AssetKey]", partition_keys: AbstractSet[str]
-    ) -> "EntitySubset[AssetKey]":
-        key = check.inst(self.key, AssetKey)
-        partition_subset = self._asset_graph_view.get_asset_subset_from_asset_partitions(
-            self.key, {AssetKeyPartitionKey(key, pk) for pk in partition_keys}
+        self: "EntitySubset[T_EntityKey]", partition_keys: AbstractSet[str]
+    ) -> "EntitySubset[T_EntityKey]":
+        if self.partitions_def is None:
+            return self._asset_graph_view.get_empty_subset(key=self.key)
+
+        partition_subset = self._asset_graph_view.get_subset_from_partition_keys(
+            self.key, self.partitions_def, partition_keys
         )
         return self.compute_intersection(partition_subset)
 

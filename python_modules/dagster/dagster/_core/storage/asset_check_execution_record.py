@@ -173,17 +173,28 @@ class AssetCheckExecutionRecord(
             check.failed(f"Unexpected status {self.status}")
 
     async def targets_latest_materialization(self, loading_context: LoadingContext) -> bool:
-        from dagster._core.storage.event_log.base import AssetRecord
+        from dagster._core.storage.event_log.base import AssetRecord, AssetRecordsFilter
 
         resolved_status = await self.resolve_status(loading_context)
         if resolved_status == AssetCheckExecutionResolvedStatus.IN_PROGRESS:
             # all in-progress checks execute against the latest version
             return True
 
-        asset_record = await AssetRecord.gen(loading_context, self.key.asset_key)
-        latest_materialization = (
-            asset_record.asset_entry.last_materialization_record if asset_record else None
-        )
+        if self.partition is None:
+            asset_record = await AssetRecord.gen(loading_context, self.key.asset_key)
+            latest_materialization = (
+                asset_record.asset_entry.last_materialization_record if asset_record else None
+            )
+        else:
+            records = loading_context.instance.fetch_materializations(
+                AssetRecordsFilter(
+                    asset_key=self.key.asset_key,
+                    asset_partitions=[self.partition],
+                ),
+                limit=1,
+            )
+            latest_materialization = records.records[0] if records.records else None
+
         if not latest_materialization:
             # no previous materialization, so it's executing against the lastest version
             return True
