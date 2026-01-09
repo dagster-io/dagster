@@ -34,7 +34,7 @@ setup(
     packages=find_packages(exclude=["dagster_embedded_elt_tests*"]),
     include_package_data=True,
     python_requires=">=3.10,<3.15",
-    install_requires=["dagster==1.12.9", "dagster-sling==0.28.9", "dagster-dlt==0.28.9"],
+    install_requires=["dagster==1.12.10", "dagster-sling==0.28.10", "dagster-dlt==0.28.10"],
     zip_safe=False,
     extras_require={
         "test": [
