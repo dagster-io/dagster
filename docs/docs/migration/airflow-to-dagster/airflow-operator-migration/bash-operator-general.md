@@ -22,14 +22,14 @@ The `BashOperator`'s functionality is very general since it can be used to run a
 
 ## Dagster equivalent
 
-The direct Dagster equivalent to the `BashOperator` is to use the <PyObject section="pipes" object="PipesSubprocessClient" module="dagster"/> to execute a bash command in a subprocess.
+The direct Dagster equivalent to the `BashOperator` is to use the <PyObject section="dagster-pipes-toolkit" object="PipesSubprocessClient" module="dagster"/> to execute a bash command in a subprocess.
 
 ## Migrating the operator
 
 Migrating the operator breaks down into a few steps:
 
 1. Ensure that the resources necessary for your bash command are available to both your Airflow and Dagster deployments.
-2. Write an <PyObject section="assets" object="asset" module="dagster"/> that executes the bash command using the <PyObject section="pipes" object="PipesSubprocessClient" module="dagster"/>.
+2. Write an <PyObject section="assets" object="asset" module="dagster"/> that executes the bash command using the <PyObject section="dagster-pipes-toolkit" object="PipesSubprocessClient" module="dagster"/>.
 3. Use `dagster-airlift` to proxy execution of the original task to Dagster.
 4. (Optional) Implement a richer integration for common BashOperator use cases.
 
@@ -39,7 +39,7 @@ First, you'll need to ensure that the bash command you're running is available f
 
 ### Step 2: Writing an `@asset`-decorated function
 
-You can write a Dagster <PyObject section="assets" object="asset" module="dagster"/>-decorated function that runs your bash command. This is quite straightforward using the <PyObject section="pipes" object="PipesSubprocessClient" module="dagster"/>.
+You can write a Dagster <PyObject section="assets" object="asset" module="dagster"/>-decorated function that runs your bash command. This is quite straightforward using the <PyObject section="dagster-pipes-toolkit" object="PipesSubprocessClient" module="dagster"/>.
 
 <CodeExample path="docs_snippets/docs_snippets/integrations/airlift/operator_migration/using_pipes_subprocess.py" />
 
@@ -53,7 +53,7 @@ For many of the use cases that you might be using the BashOperator for, Dagster 
 
 #### Running a Python script
 
-As mentioned above, you can use the <PyObject section="pipes" object="PipesSubprocessClient" module="dagster"/> to run a Python script in a subprocess. But you can also modify this script to send additional information and logging back to Dagster. See the [Dagster Pipes tutorial](/guides/build/external-pipelines) for more information.
+As mentioned above, you can use the <PyObject section="dagster-pipes-toolkit" object="PipesSubprocessClient" module="dagster"/> to run a Python script in a subprocess. But you can also modify this script to send additional information and logging back to Dagster. See the [Dagster Pipes tutorial](/guides/build/external-pipelines) for more information.
 
 #### Running a dbt command
 

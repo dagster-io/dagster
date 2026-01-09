@@ -1,5 +1,5 @@
-Dagster Pipes
-=============
+Dagster Pipes toolkit
+=====================
 
 .. currentmodule:: dagster
 
@@ -7,7 +7,7 @@ Dagster Pipes
 
 For a detailed look at the Pipes process, including how to customize it, refer to the `Dagster Pipes details and customization guide <https://docs.dagster.io/guides/build/external-pipelines/dagster-pipes-details-and-customization>`__.
 
-**Looking to write code in an external process?** Refer to the API reference for the separately-installed `dagster-pipes <https://docs.dagster.io/api/libraries/dagster-pipes>`_ library. 
+**Looking to write code in an external process?** Refer to the API reference for the separately-installed `dagster-pipes <https://docs.dagster.io/api/dagster-pipes-library>`_ library. 
 
 ----
 
