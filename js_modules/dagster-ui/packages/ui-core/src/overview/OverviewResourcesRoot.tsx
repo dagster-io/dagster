@@ -1,6 +1,7 @@
 import {Box, Colors, NonIdealState, Spinner, TextInput} from '@dagster-io/ui-components';
 import {useContext, useMemo} from 'react';
 
+import {OverviewPageHeader} from './OverviewPageHeader';
 import {OverviewResourcesTable} from './OverviewResourcesTable';
 import {sortRepoBuckets} from './sortRepoBuckets';
 import {
@@ -10,6 +11,7 @@ import {
 import {visibleRepoKeys} from './visibleRepoKeys';
 import {gql, useQuery} from '../apollo-client';
 import {PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorFragment';
+import {FIFTEEN_SECONDS, useQueryRefreshAtInterval} from '../app/QueryRefresh';
 import {useTrackPageView} from '../app/analytics';
 import {useDocumentTitle} from '../hooks/useDocumentTitle';
 import {useQueryPersistedState} from '../hooks/useQueryPersistedState';
@@ -48,6 +50,7 @@ export const OverviewResourcesRoot = () => {
     },
   );
   const {data, loading: queryLoading} = queryResultOverview;
+  const refreshState = useQueryRefreshAtInterval(queryResultOverview, FIFTEEN_SECONDS);
 
   // Batch up the data and bucket by repo.
   const repoBuckets = useMemo(() => {
@@ -142,6 +145,7 @@ export const OverviewResourcesRoot = () => {
 
   return (
     <Box flex={{direction: 'column'}} style={{height: '100%', overflow: 'hidden'}}>
+      <OverviewPageHeader tab="resources" refreshState={refreshState} />
       <Box
         padding={{horizontal: 24, vertical: 16}}
         flex={{direction: 'row', alignItems: 'center', gap: 12, grow: 0}}
