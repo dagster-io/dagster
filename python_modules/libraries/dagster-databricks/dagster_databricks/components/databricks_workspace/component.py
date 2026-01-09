@@ -99,6 +99,7 @@ class DatabricksWorkspaceComponent(StateBackedComponent, Resolvable):
         jobs_state = workspace_data.jobs
 
         databricks_assets = []
+        seen_asset_keys: set[AssetKey] = set()
 
         for job in jobs_state:
             job_specs = []
@@ -109,6 +110,10 @@ class DatabricksWorkspaceComponent(StateBackedComponent, Resolvable):
                 specs = self.get_asset_specs(task=task, job_name=job.name)
 
                 for spec in specs:
+                    # Skip duplicate asset keys across jobs
+                    if spec.key in seen_asset_keys:
+                        continue
+                    seen_asset_keys.add(spec.key)
                     job_specs.append(spec)
                     task_key_map[spec.key] = task.task_key
 
