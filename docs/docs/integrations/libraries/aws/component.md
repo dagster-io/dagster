@@ -6,7 +6,6 @@ description: Configuration-driven AWS resources using Dagster Components.
 tags: [dagster-supported, aws, components]
 ---
 
-
 <p>{frontMatter.description}</p>
 
 The `dagster-aws` library provides a set of components that allow you to configure AWS resources directly in YAML. These components wrap existing `dagster-aws` resources, enabling faster setup and better reusability.
@@ -26,24 +25,26 @@ All AWS components use a unified credential resolution pattern. You can provide 
 - **`AthenaCredentialsComponent`**: Athena-specific settings (workgroups, polling).
 - **`RedshiftCredentialsComponent`**: Redshift connection settings (host, port, sslmode).
 
-
 ## Service Components
 
 ### Amazon S3
 
 Components for interacting with S3 buckets and managing files.
+
 - **`S3ResourceComponent`**: Provides a standard `S3Resource`.
 - **`S3FileManagerComponent`**: Provides an `S3FileManager` for artifact storage.
 
 ### AWS Systems Manager (SSM)
 
 Manage configurations and parameters.
+
 - **`SSMResourceComponent`**: Standard client for SSM operations.
 - **`ParameterStoreResourceComponent`**: Fetches parameters and supports nested `ParameterStoreTag` objects.
 
 ### AWS Secrets Manager
 
 Manage and fetch secrets securely.
+
 - **`SecretsManagerResourceComponent`**: General client for Secrets Manager.
 - **`SecretsManagerSecretsResourceComponent`**: Efficiently fetches specific secret ARNs.
 
@@ -56,7 +57,6 @@ Manage and fetch secrets securely.
 ### Container Registry
 
 - **`ECRPublicResourceComponent`**: Retrieves login passwords for AWS Public ECR.
-
 
 ## Examples
 
