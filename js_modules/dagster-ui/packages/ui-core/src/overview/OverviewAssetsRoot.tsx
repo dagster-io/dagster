@@ -17,6 +17,7 @@ import {Link} from 'react-router-dom';
 import styled from 'styled-components';
 
 import {PythonErrorInfo} from '../app/PythonErrorInfo';
+import {FIFTEEN_SECONDS, RefreshState, useRefreshAtInterval} from '../app/QueryRefresh';
 import {useTrackPageView} from '../app/analytics';
 import {useAssetsBaseData} from '../asset-data/AssetBaseDataProvider';
 import {StatusCase, buildAssetNodeStatusContent} from '../asset-graph/AssetNodeStatusContent';
@@ -34,14 +35,19 @@ import {Container, HeaderCell, HeaderRow, Inner, Row, RowCell} from '../ui/Virtu
 import {buildRepoAddress} from '../workspace/buildRepoAddress';
 
 type Props = {
+  Header: React.ComponentType<{refreshState: RefreshState}>;
   TabButton: React.ComponentType<{selected: 'timeline' | 'assets'}>;
 };
-
-export const OverviewAssetsRoot = ({TabButton}: Props) => {
+export const OverviewAssetsRoot = ({Header, TabButton}: Props) => {
   useTrackPageView();
   useDocumentTitle('Overview | Assets');
 
-  const {assets, error, loading} = useAllAssets();
+  const {assets, query, error, loading} = useAllAssets();
+  const refreshState = useRefreshAtInterval<any>({
+    refresh: query,
+    intervalMs: FIFTEEN_SECONDS,
+    leading: true,
+  });
 
   const groupedAssetsUnfiltered = React.useMemo(() => {
     if (assets) {
@@ -134,6 +140,7 @@ export const OverviewAssetsRoot = ({TabButton}: Props) => {
   return (
     <>
       <div style={{position: 'sticky', top: 0, zIndex: 1}}>
+        <Header refreshState={refreshState} />
         <Box
           padding={{horizontal: 24, vertical: 16}}
           flex={{alignItems: 'center', gap: 12, grow: 0}}

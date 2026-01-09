@@ -4,6 +4,7 @@ import {Box, Colors, Icon, MiddleTruncate, PageHeader, Subtitle1} from '@dagster
 import * as React from 'react';
 import {useContext} from 'react';
 import {Link, useHistory, useLocation} from 'react-router-dom';
+import {observeEnabled} from 'shared/app/observeEnabled.oss';
 import {
   getAssetSelectionQueryString,
   useAssetSelectionState,
@@ -43,7 +44,10 @@ export const AssetPageHeader = ({
     const keyPathItems: BreadcrumbProps[] = [];
     assetKey.path.reduce((accum: string, elem: string) => {
       const nextAccum = `${accum ? `${accum}/` : ''}${encodeURIComponent(elem)}`;
-      const href = `/assets?asset-selection=key:"${nextAccum}/*"`;
+      let href = `/assets/${nextAccum}?view=folder`;
+      if (observeEnabled()) {
+        href = `/assets?asset-selection=key:"${nextAccum}/*"`;
+      }
       keyPathItems.push({text: elem, href});
       return nextAccum;
     }, '');
