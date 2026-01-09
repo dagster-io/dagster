@@ -102,7 +102,9 @@ class RunInProgressAutomationCondition(SubsetAutomationCondition):
         return "run_in_progress"
 
     async def compute_subset(self, context: AutomationContext) -> EntitySubset:  # pyright: ignore[reportIncompatibleMethodOverride]
-        return await context.asset_graph_view.compute_run_in_progress_subset(key=context.key)
+        return await context.asset_graph_view.compute_run_in_progress_subset(
+            key=context.key, from_subset=context.candidate_subset
+        )
 
 
 @whitelist_for_serdes
@@ -113,7 +115,9 @@ class BackfillInProgressAutomationCondition(SubsetAutomationCondition):
         return "backfill_in_progress"
 
     async def compute_subset(self, context: AutomationContext) -> EntitySubset:  # pyright: ignore[reportIncompatibleMethodOverride]
-        return await context.asset_graph_view.compute_backfill_in_progress_subset(key=context.key)
+        return await context.asset_graph_view.compute_backfill_in_progress_subset(
+            key=context.key, from_subset=context.candidate_subset
+        )
 
 
 @whitelist_for_serdes(storage_name="FailedAutomationCondition")
@@ -124,7 +128,9 @@ class ExecutionFailedAutomationCondition(SubsetAutomationCondition):
         return "execution_failed"
 
     async def compute_subset(self, context: AutomationContext) -> EntitySubset:  # pyright: ignore[reportIncompatibleMethodOverride]
-        return await context.asset_graph_view.compute_execution_failed_subset(key=context.key)
+        return await context.asset_graph_view.compute_execution_failed_subset(
+            key=context.key, from_subset=context.candidate_subset
+        )
 
 
 @whitelist_for_serdes
@@ -322,5 +328,5 @@ class CheckResultCondition(SubsetAutomationCondition[AssetCheckKey]):
             else AssetCheckExecutionResolvedStatus.FAILED
         )
         return await context.asset_graph_view.compute_subset_with_status(
-            key=context.key, status=target_status
+            key=context.key, status=target_status, from_subset=context.candidate_subset
         )
