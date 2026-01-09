@@ -77,7 +77,7 @@ jobs:
         if: steps.prerun.outputs.result != 'skip'
         uses: dagster-io/dagster-cloud-action/actions/utils/dg-cli@TEMPLATE_DAGSTER_CLOUD_ACTION_VERSION
         with:
-          command: "plus deploy refresh-defs-state"
+          command: "plus deploy refresh-defs-state --target-path=${{ env.DAGSTER_PROJECT_DIR }}"
 
       # Any value can be used as the docker image tag. It is recommended to use a unique value
       # for each build so that multiple builds do not overwrite each other.
