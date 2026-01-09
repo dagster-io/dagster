@@ -1,4 +1,4 @@
-from typing import List, Optional
+from typing import Optional
 
 from dagster import ConfigurableResource, resource
 from dagster._annotations import beta
@@ -31,7 +31,7 @@ class DatadogClient:
         statsd_socket_path: Optional[str] = None,
         statsd_namespace: Optional[str] = None,
         statsd_max_samples_per_context: Optional[int] = 0,
-        statsd_constant_tags: Optional[List[str]] = None,
+        statsd_constant_tags: Optional[list[str]] = None,
         return_raw_response: bool = False,
         hostname_from_config: bool = True,
         cardinality: Optional[str] = None,
@@ -142,7 +142,7 @@ class DatadogResource(ConfigurableResource):
     statsd_socket_path: Optional[str] = None
     statsd_namespace: Optional[str] = None
     statsd_max_samples_per_context: Optional[int] = 0
-    statsd_constant_tags: Optional[List[str]] = None
+    statsd_constant_tags: Optional[list[str]] = None
     return_raw_response: bool = False
     hostname_from_config: bool = True
     cardinality: Optional[str] = None
