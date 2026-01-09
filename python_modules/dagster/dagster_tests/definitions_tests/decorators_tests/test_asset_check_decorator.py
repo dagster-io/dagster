@@ -1311,3 +1311,35 @@ def test_multi_asset_check_pool() -> None:
     def my_check1(asset1: int) -> dg.AssetCheckResult: ...
 
     assert my_check1.op.pool == "my_pool"
+
+
+def test_asset_check_with_mismatched_partitions_def() -> None:
+    """Test that a partitioned asset check with a different partitions_def than its target asset raises an error."""
+    daily_partitions = dg.DailyPartitionsDefinition(start_date="2024-01-01")
+    weekly_partitions = dg.WeeklyPartitionsDefinition(start_date="2024-01-01")
+
+    @dg.asset(partitions_def=daily_partitions)
+    def my_asset() -> None: ...
+    @dg.asset_check(asset=my_asset, partitions_def=weekly_partitions)
+    def my_check() -> dg.AssetCheckResult:
+        return dg.AssetCheckResult(passed=True)
+
+    with pytest.raises(
+        dg.DagsterInvalidDefinitionError,
+        match="Asset check 'my_asset:my_check' targets asset 'my_asset' but has a different partitions definition",
+    ):
+        dg.Definitions.validate_loadable(dg.Definitions(assets=[my_asset], asset_checks=[my_check]))
+
+
+def test_unpartitioned_check_on_partitioned_asset() -> None:
+    """Test that an unpartitioned asset check can target a partitioned asset."""
+    daily_partitions = dg.DailyPartitionsDefinition(start_date="2024-01-01")
+
+    @dg.asset(partitions_def=daily_partitions)
+    def my_asset() -> None: ...
+    @dg.asset_check(asset=my_asset)
+    def my_check() -> dg.AssetCheckResult:
+        return dg.AssetCheckResult(passed=True)
+
+    # This should not raise an error - unpartitioned checks can target partitioned assets
+    dg.Definitions.validate_loadable(dg.Definitions(assets=[my_asset], asset_checks=[my_check]))

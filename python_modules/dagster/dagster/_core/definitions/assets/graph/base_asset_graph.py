@@ -217,6 +217,7 @@ class AssetCheckNode(BaseEntityNode[AssetCheckKey]):
         description: Optional[str],
         automation_condition: Optional["AutomationCondition[AssetCheckKey]"],
         metadata: ArbitraryMetadataMapping,
+        partitions_def: Optional[PartitionsDefinition],
     ):
         self.key = key
         self.blocking = blocking
@@ -224,6 +225,7 @@ class AssetCheckNode(BaseEntityNode[AssetCheckKey]):
         self._additional_deps = additional_deps
         self._description = description
         self._metadata = metadata
+        self._partitions_def = partitions_def
 
     @property
     def parent_entity_keys(self) -> AbstractSet[AssetKey]:
@@ -235,8 +237,7 @@ class AssetCheckNode(BaseEntityNode[AssetCheckKey]):
 
     @property
     def partitions_def(self) -> Optional[PartitionsDefinition]:
-        # all checks are unpartitioned
-        return None
+        return self._partitions_def
 
     @property
     def partition_mappings(self) -> Mapping[EntityKey, PartitionMapping]:
@@ -265,6 +266,10 @@ class BaseAssetGraph(ABC, Generic[T_AssetNode]):
     @property
     def asset_nodes(self) -> Iterable[T_AssetNode]:
         return self._asset_nodes_by_key.values()
+
+    @property
+    def asset_check_nodes(self) -> Iterable[AssetCheckNode]:
+        return self._asset_check_nodes_by_key.values()
 
     @property
     def nodes(self) -> Iterable[BaseEntityNode]:
@@ -667,6 +672,28 @@ class BaseAssetGraph(ABC, Generic[T_AssetNode]):
                     raise DagsterInvalidDefinitionError(
                         f"Invalid partition mapping from {node.key.to_user_string()} to {parent.key.to_user_string()}"
                     ) from e
+
+        # Validate that asset checks have compatible partitions_def with their target asset
+        for node in self.asset_check_nodes:
+            if node.partitions_def is None:
+                continue
+
+            target_asset_key = node.key.asset_key
+            if not self.has(target_asset_key):
+                raise DagsterInvalidDefinitionError(
+                    f"Partitioned asset check '{node.key.to_user_string()}' targets "
+                    f"asset '{target_asset_key.to_user_string()}' "
+                    "but the asset does not exist in the graph."
+                )
+            # If the check is partitioned, it must have the same partitions_def as the asset
+            if node.partitions_def != self.get(target_asset_key).partitions_def:
+                raise DagsterInvalidDefinitionError(
+                    f"Asset check '{node.key.to_user_string()}' targets asset '{target_asset_key.to_user_string()}' "
+                    "but has a different partitions definition. "
+                    f"Asset check partitions_def: {node.partitions_def}, "
+                    f"Asset partitions_def: {self.get(target_asset_key).partitions_def}. "
+                    "Partitioned asset checks must have the same partitions definition as their target asset."
+                )
 
     def upstream_key_iterator(self, asset_key: AssetKey) -> Iterator[AssetKey]:
         """Iterates through all asset keys which are upstream of the given key."""
