@@ -520,7 +520,7 @@ class RemoteAssetGraph(BaseAssetGraph[TRemoteAssetNode], ABC, Generic[TRemoteAss
 
         by_table_name = defaultdict(set)
         for node in self.asset_nodes:
-            normalized_table_name = TableMetadataSet.extract(node.metadata).normalized_table_name
+            normalized_table_name = TableMetadataSet.extract_normalized_table_name(node.metadata)
             if normalized_table_name:
                 by_table_name[normalized_table_name.lower()].add(node.key)
 
@@ -547,7 +547,7 @@ class RemoteAssetGraph(BaseAssetGraph[TRemoteAssetNode], ABC, Generic[TRemoteAss
         from dagster._core.definitions.metadata.metadata_set import TableMetadataSet
 
         input_node = self.get(asset_key)
-        input_table_name = TableMetadataSet.extract(input_node.metadata).normalized_table_name
+        input_table_name = TableMetadataSet.extract_normalized_table_name(input_node.metadata)
 
         if not input_table_name:
             return set()
