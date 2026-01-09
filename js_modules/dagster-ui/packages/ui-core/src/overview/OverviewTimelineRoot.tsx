@@ -5,6 +5,7 @@ import {useDeferredValue, useMemo} from 'react';
 import {GroupTimelineRunsBySelect} from './GroupTimelineRunsBySelect';
 import {groupRunsByAutomation} from './groupRunsByAutomation';
 import {useGroupTimelineRunsBy} from './useGroupTimelineRunsBy';
+import {RefreshState} from '../app/QueryRefresh';
 import {useTrackPageView} from '../app/analytics';
 import {usePrefixedCacheKey} from '../app/usePrefixedCacheKey';
 import {useAutomations} from '../automation/useAutomations';
@@ -34,6 +35,11 @@ const hourWindowToOffset = (hourWindow: HourWindow) => {
     case '24':
       return 24 * ONE_HOUR;
   }
+};
+
+type Props = {
+  Header: React.ComponentType<{refreshState: RefreshState}>;
+  TabButton: React.ComponentType<{selected: 'timeline' | 'assets'}>;
 };
 
 export function useTimelineRange({
@@ -84,7 +90,7 @@ export function useTimelineRange({
   return {rangeMs, hourWindow, setHourWindow, onPageEarlier, onPageLater, onPageNow};
 }
 
-export const OverviewTimelineRoot = () => {
+export const OverviewTimelineRoot = ({Header}: Props) => {
   useTrackPageView();
   useDocumentTitle('Overview | Timeline');
   const {rangeMs, hourWindow, setHourWindow, onPageEarlier, onPageLater, onPageNow} =
@@ -111,7 +117,7 @@ export const OverviewTimelineRoot = () => {
   const runsForTimelineRet = useRunsForTimeline({rangeMs});
 
   // Use deferred value to allow paginating quickly with the UI feeling more responsive.
-  const {jobs: jobsUnmapped, loading} = useDeferredValue(runsForTimelineRet);
+  const {jobs: jobsUnmapped, loading, refreshState} = useDeferredValue(runsForTimelineRet);
 
   const automationRows = useMemo(() => {
     const sensors = Object.fromEntries(
@@ -155,6 +161,7 @@ export const OverviewTimelineRoot = () => {
 
   return (
     <>
+      <Header refreshState={refreshState} />
       <Box padding={{horizontal: 24, vertical: 12}} flex={{alignItems: 'center', gap: 16}}>
         <GroupTimelineRunsBySelect value={groupRunsBy} onSelect={setGroupRunsBy} />
         <div style={{flex: 1, display: 'flex', alignItems: 'center'}}>
