@@ -7119,6 +7119,63 @@ class TestEventLogStorage:
         assert latest_c[check_key].partition == key_c
         assert latest_c[check_key].status == AssetCheckExecutionRecordStatus.PLANNED
 
+        # Test get_asset_check_partition_records - returns all partitions with latest status
+        partition_records = storage.get_asset_check_partition_info([check_key])
+        assert len(partition_records) == 3
+
+        records_by_partition = {r.partition_key: r for r in partition_records}
+        assert set(records_by_partition.keys()) == set(partition_keys)
+
+        filtered_partition_records = storage.get_asset_check_partition_info(
+            [check_key], partition_keys=[key_a, key_b]
+        )
+        assert len(filtered_partition_records) == 2
+        assert set(r.partition_key for r in filtered_partition_records) == {key_a, key_b}
+
+        # Verify each partition has correct status
+        assert (
+            records_by_partition[key_a].latest_execution_status
+            == AssetCheckExecutionRecordStatus.SUCCEEDED
+        )
+        assert (
+            records_by_partition[key_b].latest_execution_status
+            == AssetCheckExecutionRecordStatus.FAILED
+        )
+        assert (
+            records_by_partition[key_c].latest_execution_status
+            == AssetCheckExecutionRecordStatus.PLANNED
+        )
+
+        # Verify all records have the same run_id (all planned in same run)
+        assert records_by_partition[key_a].latest_planned_run_id == run_id
+        assert records_by_partition[key_b].latest_planned_run_id == run_id
+        assert records_by_partition[key_c].latest_planned_run_id == run_id
+
+        # Verify last_storage_id is set for all records (this is the row id in the table)
+        assert records_by_partition[key_a].latest_check_event_storage_id is not None
+        assert records_by_partition[key_b].latest_check_event_storage_id is not None
+        assert records_by_partition[key_c].latest_check_event_storage_id is not None
+
+        # Verify last_materialization_storage_id is None for all records (no materializations)
+        assert records_by_partition[key_a].latest_materialization_storage_id is None
+        assert records_by_partition[key_b].latest_materialization_storage_id is None
+        assert records_by_partition[key_c].latest_materialization_storage_id is None
+
+        filtered_records = storage.get_asset_check_partition_info(
+            [check_key], after_storage_id=99999999999999
+        )
+        assert len(filtered_records) == 0
+
+        # now store an unpartitioned materialization, should make all checks get marked as non-current
+        storage.store_event(
+            _create_materialization_event(make_new_run_id(), asset_key, partition=None)
+        )
+        partition_records = storage.get_asset_check_partition_info([check_key])
+        assert len(partition_records) == 3
+        for record in partition_records:
+            assert record.latest_materialization_storage_id is not None
+            assert not record.is_current
+
     def test_asset_check_partitioned_multiple_runs_same_partition(
         self,
         storage: EventLogStorage,
@@ -7134,21 +7191,53 @@ class TestEventLogStorage:
         partitions_def = dg.StaticPartitionsDefinition(["a"])
         partitions_subset = partitions_def.subset_with_partition_keys(["a"])
 
-        # Run 1: Store planned + evaluation for partition "a" with passed=True
+        # Run 1: Store planned event for partition "a"
         storage.store_event(
             _create_check_planned_event(run_id_1, check_key, partitions_subset=partitions_subset)
         )
+
+        # status for partition "a" should be PLANNED
+        partition_records = storage.get_asset_check_partition_info([check_key])
+        assert len(partition_records) == 1
+        record = partition_records[0]
+        assert record.partition_key == "a"
+        assert record.latest_execution_status == AssetCheckExecutionRecordStatus.PLANNED
+        assert record.latest_planned_run_id == run_id_1
+
+        # Run 1: Now store evaluation event for partition "a" with passed=True
         storage.store_event(
             _create_check_evaluation_event(run_id_1, check_key, passed=True, partition="a")
         )
+
+        # status for partition "a" should be SUCCEEDED
+        partition_records = storage.get_asset_check_partition_info([check_key])
+        assert len(partition_records) == 1
+        record = partition_records[0]
+        assert record.partition_key == "a"
+        assert record.latest_execution_status == AssetCheckExecutionRecordStatus.SUCCEEDED
+        assert record.latest_planned_run_id == run_id_1
 
         # Run 2: Store planned + evaluation for partition "a" with passed=False
         storage.store_event(
             _create_check_planned_event(run_id_2, check_key, partitions_subset=partitions_subset)
         )
+
+        # back to PLANNED
+        partition_records = storage.get_asset_check_partition_info([check_key])
+        record = partition_records[0]
+        assert record.latest_execution_status == AssetCheckExecutionRecordStatus.PLANNED
+        assert record.latest_planned_run_id == run_id_2
+
+        # Run 2: Now store evaluation event for partition "a" with passed=False
         storage.store_event(
             _create_check_evaluation_event(run_id_2, check_key, passed=False, partition="a")
         )
+
+        # onto FAILED
+        partition_records = storage.get_asset_check_partition_info([check_key])
+        record = partition_records[0]
+        assert record.latest_execution_status == AssetCheckExecutionRecordStatus.FAILED
+        assert record.latest_planned_run_id == run_id_2
 
         # Verify get_asset_check_execution_history returns 2 records for partition "a"
         checks = storage.get_asset_check_execution_history(check_key, limit=10, partition="a")
@@ -7175,6 +7264,16 @@ class TestEventLogStorage:
         latest_overall = storage.get_latest_asset_check_execution_by_key([check_key])
         assert check_key in latest_overall
         assert latest_overall[check_key].run_id == run_id_2
+
+        # Test get_asset_check_partition_records returns only the latest record per partition
+        partition_records = storage.get_asset_check_partition_info([check_key])
+        assert len(partition_records) == 1  # Only partition "a" exists
+
+        record = partition_records[0]
+        assert record.partition_key == "a"
+        # Should be the latest execution (run_id_2, FAILED)
+        assert record.latest_execution_status == AssetCheckExecutionRecordStatus.FAILED
+        assert record.latest_planned_run_id == run_id_2
 
     def test_asset_check_partitioned_with_target_materialization(
         self,
@@ -7237,6 +7336,12 @@ class TestEventLogStorage:
         assert check_data.target_materialization_data
         assert check_data.target_materialization_data.storage_id == m1_storage_id
 
+        # Verify get_asset_check_partition_records returns M1 as the latest materialization
+        partition_records = storage.get_asset_check_partition_info([check_key])
+        assert len(partition_records) == 1
+        record = partition_records[0]
+        assert record.latest_materialization_storage_id == m1_storage_id
+
         # Store materialization M2 for partition "a"
         storage.store_event(_create_materialization_event(run_id_2, asset_key, partition="a"))
 
@@ -7263,6 +7368,27 @@ class TestEventLogStorage:
         assert check_data.target_materialization_data
         assert check_data.target_materialization_data.storage_id == m1_storage_id
         assert check_data.target_materialization_data.storage_id != m2_storage_id
+
+        # Test get_asset_check_partition_records includes target_materialization_storage_id
+        partition_records = storage.get_asset_check_partition_info([check_key])
+        assert len(partition_records) == 1
+
+        record = partition_records[0]
+        assert record.partition_key == "a"
+        assert record.latest_execution_status == AssetCheckExecutionRecordStatus.SUCCEEDED
+        assert record.latest_planned_run_id == run_id_1
+        # Verify last_execution_target_materialization_storage_id matches M1 (what check targeted)
+        assert record.latest_target_materialization_storage_id == m1_storage_id
+        # Verify last_materialization_storage_id matches M2 (the current latest materialization)
+        assert record.latest_materialization_storage_id == m2_storage_id
+
+        # now store an unpartitioned materialization, should make all checks get marked as non-current
+        storage.store_event(
+            _create_materialization_event(make_new_run_id(), asset_key, partition=None)
+        )
+        partition_records = storage.get_asset_check_partition_info([check_key])
+        assert len(partition_records) == 1
+        assert not partition_records[0].is_current
 
 
 def _create_check_planned_event(

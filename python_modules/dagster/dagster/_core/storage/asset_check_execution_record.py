@@ -2,6 +2,7 @@ import enum
 from collections.abc import Iterable
 from typing import NamedTuple, Optional, cast
 
+from dagster_shared.record import record
 from dagster_shared.serdes import deserialize_value
 
 import dagster._check as check
@@ -238,3 +239,30 @@ class AssetCheckExecutionRecord(
             )
         else:
             check.failed(f"Unexpected check status {resolved_status}")
+
+
+@record
+class AssetCheckPartitionInfo:
+    check_key: AssetCheckKey
+    partition_key: Optional[str]
+    # the status of the last execution of the check
+    latest_execution_status: AssetCheckExecutionRecordStatus
+    # the run id of the last planned event for the check
+    latest_planned_run_id: str
+    # the storage id of the last event (planned or evaluation) for the check
+    latest_check_event_storage_id: int
+    # the storage id of the last materialization for the asset / partition that this check targets
+    # this is the latest overall materialization, independent of if there has been a check event
+    # that targets it
+    latest_materialization_storage_id: Optional[int]
+    # the storage id of the materialization that the last execution of the check targeted
+    latest_target_materialization_storage_id: Optional[int]
+
+    @property
+    def is_current(self) -> bool:
+        """Returns True if the latest check execution targets the latest materialization event."""
+        return (
+            self.latest_materialization_storage_id is None
+            or self.latest_materialization_storage_id
+            == self.latest_target_materialization_storage_id
+        )
