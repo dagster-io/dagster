@@ -36,6 +36,7 @@ from dagster._core.loader import LoadableBy, LoadingContext
 from dagster._core.storage.asset_check_execution_record import (
     AssetCheckExecutionRecord,
     AssetCheckExecutionRecordStatus,
+    AssetCheckPartitionRecord,
 )
 from dagster._core.storage.dagster_run import DagsterRunStatsSnapshot
 from dagster._core.storage.partition_status_cache import get_and_update_asset_status_cache_value
@@ -646,6 +647,15 @@ class EventLogStorage(ABC, MayHaveInstanceWeakref[T_DagsterInstance]):
         partition: Union[str, None, EllipsisType] = ...,
     ) -> Mapping[AssetCheckKey, AssetCheckExecutionRecord]:
         """Get the latest executions for a list of asset checks."""
+        pass
+
+    @abstractmethod
+    def get_asset_check_partition_records(
+        self,
+        check_key: AssetCheckKey,
+        after_storage_id: Optional[int] = None,
+    ) -> Sequence[AssetCheckPartitionRecord]:
+        """Get asset check partition records with execution status and planned run info."""
         pass
 
     @abstractmethod

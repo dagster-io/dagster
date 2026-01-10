@@ -59,6 +59,7 @@ from dagster._core.storage.asset_check_execution_record import (
     COMPLETED_ASSET_CHECK_EXECUTION_RECORD_STATUSES,
     AssetCheckExecutionRecord,
     AssetCheckExecutionRecordStatus,
+    AssetCheckPartitionRecord,
 )
 from dagster._core.storage.dagster_run import DagsterRunStatsSnapshot
 from dagster._core.storage.event_log.base import (
@@ -3008,6 +3009,7 @@ class SqlEventLogStorage(EventLogStorage):
                             execution_status=AssetCheckExecutionRecordStatus.PLANNED.value,
                             evaluation_event=serialize_value(event),
                             evaluation_event_timestamp=self._event_insert_timestamp(event),
+                            evaluation_event_storage_id=event_id,
                         )
                         for partition_key in partition_keys
                     ]
@@ -3231,6 +3233,95 @@ class SqlEventLogStorage(EventLogStorage):
             )
             results[check_key] = AssetCheckExecutionRecord.from_db_row(row, key=check_key)
         return results
+
+    def get_asset_check_partition_records(
+        self,
+        check_key: AssetCheckKey,
+        after_storage_id: Optional[int] = None,
+    ) -> Sequence[AssetCheckPartitionRecord]:
+        check.inst_param(check_key, "check_key", AssetCheckKey)
+        check.opt_int_param(after_storage_id, "after_storage_id")
+
+        # Build the base filter conditions
+        filter_conditions = [
+            AssetCheckExecutionsTable.c.asset_key == check_key.asset_key.to_string(),
+            AssetCheckExecutionsTable.c.check_name == check_key.name,
+            # Historical records may have NULL in the evaluation_event_storage_id column for
+            # PLANNED events
+            AssetCheckExecutionsTable.c.evaluation_event_storage_id.isnot(None),
+        ]
+
+        # Subquery to find the max id for each partition
+        latest_check_ids_subquery = db_subquery(
+            db_select(
+                [
+                    db.func.max(AssetCheckExecutionsTable.c.id).label("id"),
+                    AssetCheckExecutionsTable.c.partition.label("partition"),
+                ]
+            )
+            .where(db.and_(*filter_conditions))
+            .group_by(AssetCheckExecutionsTable.c.partition),
+            "latest_check_ids_subquery",
+        )
+
+        # Subquery to find the latest materialization storage id for each partition of the
+        # target asset. Note: we don't filter by after_storage_id here because we always want
+        # to return the latest materialization storage id, even if it's older than after_storage_id.
+        latest_materialization_ids_subquery = self._latest_event_ids_by_partition_subquery(
+            check_key.asset_key,
+            [DagsterEventType.ASSET_MATERIALIZATION],
+        )
+
+        # Main query to get all columns for the latest records, joined with latest
+        # materialization storage ids
+        query = db_select(
+            [
+                AssetCheckExecutionsTable.c.id,
+                AssetCheckExecutionsTable.c.partition,
+                AssetCheckExecutionsTable.c.execution_status,
+                AssetCheckExecutionsTable.c.evaluation_event_storage_id,
+                AssetCheckExecutionsTable.c.materialization_event_storage_id,
+                AssetCheckExecutionsTable.c.run_id,
+                latest_materialization_ids_subquery.c.id.label("latest_materialization_storage_id"),
+            ]
+        ).select_from(
+            AssetCheckExecutionsTable.join(
+                latest_check_ids_subquery,
+                AssetCheckExecutionsTable.c.id == latest_check_ids_subquery.c.id,
+            ).join(
+                latest_materialization_ids_subquery,
+                AssetCheckExecutionsTable.c.partition
+                == latest_materialization_ids_subquery.c.partition,
+                isouter=True,
+            )
+        )
+
+        # these filters are applied to the main query rather than the individual subqueries to ensure
+        # we don't miss records that only have a new materialization or a new check execution but not both
+        if after_storage_id is not None:
+            query = query.where(
+                db.or_(
+                    AssetCheckExecutionsTable.c.evaluation_event_storage_id > after_storage_id,
+                    latest_materialization_ids_subquery.c.id > after_storage_id,
+                )
+            )
+
+        with self.index_connection() as conn:
+            rows = db_fetch_mappings(conn, query)
+
+        return [
+            AssetCheckPartitionRecord(
+                partition_key=row["partition"],
+                last_execution_status=AssetCheckExecutionRecordStatus(row["execution_status"]),
+                last_execution_target_materialization_storage_id=row[
+                    "materialization_event_storage_id"
+                ],
+                last_planned_run_id=row["run_id"],
+                last_storage_id=row["evaluation_event_storage_id"],
+                last_materialization_storage_id=row["latest_materialization_storage_id"],
+            )
+            for row in rows
+        ]
 
     @property
     def supports_asset_checks(self):  # pyright: ignore[reportIncompatibleMethodOverride]

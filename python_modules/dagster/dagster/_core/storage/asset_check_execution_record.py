@@ -2,6 +2,7 @@ import enum
 from collections.abc import Iterable
 from typing import NamedTuple, Optional, cast
 
+from dagster_shared.record import record
 from dagster_shared.serdes import deserialize_value
 
 import dagster._check as check
@@ -238,3 +239,18 @@ class AssetCheckExecutionRecord(
             )
         else:
             check.failed(f"Unexpected check status {resolved_status}")
+
+
+@record
+class AssetCheckPartitionRecord:
+    partition_key: Optional[str]
+    # the status of the last execution of the check
+    last_execution_status: AssetCheckExecutionRecordStatus
+    # the storage id of the materialization that the last execution of the check targeted
+    last_execution_target_materialization_storage_id: Optional[int]
+    # the run id of the last planned event for the check
+    last_planned_run_id: str
+    # the storage id of the last event for the check
+    last_storage_id: int
+    # the storage id of the last materialization for the asset this check targets
+    last_materialization_storage_id: Optional[int]

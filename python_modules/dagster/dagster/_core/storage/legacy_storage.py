@@ -16,6 +16,7 @@ from dagster._core.event_api import EventHandlerFn
 from dagster._core.storage.asset_check_execution_record import (
     AssetCheckExecutionRecord,
     AssetCheckExecutionRecordStatus,
+    AssetCheckPartitionRecord,
 )
 from dagster._core.storage.base_storage import DagsterStorage
 from dagster._core.storage.event_log.base import (
@@ -763,6 +764,16 @@ class LegacyEventLogStorage(EventLogStorage, ConfigurableClass):
     ) -> Mapping["AssetCheckKey", AssetCheckExecutionRecord]:
         return self._storage.event_log_storage.get_latest_asset_check_execution_by_key(
             check_keys, partition=partition
+        )
+
+    def get_asset_check_partition_records(
+        self,
+        check_key: "AssetCheckKey",
+        after_storage_id: Optional[int] = None,
+    ) -> Sequence[AssetCheckPartitionRecord]:
+        return self._storage.event_log_storage.get_asset_check_partition_records(
+            check_key=check_key,
+            after_storage_id=after_storage_id,
         )
 
 
