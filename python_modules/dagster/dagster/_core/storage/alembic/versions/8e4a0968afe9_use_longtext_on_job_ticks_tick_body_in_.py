@@ -20,7 +20,7 @@ depends_on = None
 
 def upgrade():
     inspector = inspect(op.get_bind())
-    if "mysql" not in inspector.dialect.dialect_description:
+    if inspector.engine.dialect.name != "mysql":
         return
 
     op.alter_column(
