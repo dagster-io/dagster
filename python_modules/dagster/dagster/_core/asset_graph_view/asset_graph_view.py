@@ -1,4 +1,3 @@
-import asyncio
 import functools
 from collections.abc import Awaitable, Iterable
 from datetime import datetime, timedelta
@@ -22,6 +21,7 @@ from dagster._core.definitions.events import AssetKeyPartitionKey
 from dagster._core.definitions.freshness import FreshnessState
 from dagster._core.definitions.partitions.context import (
     PartitionLoadingContext,
+    partition_loading_context,
     use_partition_loading_context,
 )
 from dagster._core.definitions.partitions.definition import (
@@ -564,9 +564,12 @@ class AssetGraphView(LoadingContext):
         """Returns the subset of an asset check that matches a given status."""
         from dagster._core.storage.event_log.base import AssetCheckSummaryRecord
 
-        # Handle partitioned asset checks with partition-level granularity
+        # Handle partitioned asset checks
         if self._get_partitions_def(key):
-            return await self._get_partitioned_check_subset_with_status(key, status, from_subset)
+            with partition_loading_context(new_ctx=self._partition_loading_context):
+                return await self._get_partitioned_check_subset_with_status(
+                    key, status, from_subset
+                )
 
         # Handle non-partitioned asset checks with existing logic
         summary = await AssetCheckSummaryRecord.gen(self, key)
@@ -628,35 +631,39 @@ class AssetGraphView(LoadingContext):
     ) -> EntitySubset[AssetCheckKey]:
         return await self.compute_subset_with_status(key, None, from_subset)
 
-    async def _get_asset_check_partition_status(
-        self, key: AssetCheckKey, partition: str
-    ) -> Optional["AssetCheckExecutionResolvedStatus"]:
-        # NOTE: we should add a LoadingContext-native version of this
-        record = self.instance.event_log_storage.get_latest_asset_check_execution_by_key(
-            [key], partition
-        ).get(key)
-        if record:
-            targets_latest = await record.targets_latest_materialization(self)
-            return await record.resolve_status(self) if targets_latest else None
-        else:
-            return None
-
+    @use_partition_loading_context
     async def _get_partitioned_check_subset_with_status(
         self,
         key: AssetCheckKey,
         status: Optional["AssetCheckExecutionResolvedStatus"],
         from_subset: EntitySubset,
     ) -> EntitySubset[AssetCheckKey]:
+        from dagster._core.storage.asset_check_status_cache import (
+            get_updated_asset_check_status_cache_value,
+        )
+
         check_node = self.asset_graph.get(key)
         if not check_node or not check_node.partitions_def:
             check.failed(f"Asset check {key} not found or not partitioned.")
 
-        partitions = list(from_subset.expensively_compute_partition_keys())
-        statuses = await asyncio.gather(
-            *(self._get_asset_check_partition_status(key, p) for p in partitions)
+        cache_value = get_updated_asset_check_status_cache_value(
+            key, check_node.partitions_def, self
         )
-        matching_partitions = {p for p, s in zip(partitions, statuses) if s == status}
-        return from_subset.compute_intersection_with_partition_keys(matching_partitions)
+
+        if status is None:
+            known_statuses = self.get_empty_subset(key=key)
+            for serializable_subset in cache_value.subsets.values():
+                subset = self.get_subset_from_serializable_subset(serializable_subset)
+                if subset:
+                    known_statuses = known_statuses.compute_union(subset)
+            return from_subset.compute_difference(known_statuses) or self.get_empty_subset(key=key)
+        else:
+            serializable_subset = cache_value.subsets.get(status)
+            if serializable_subset is None:
+                return self.get_empty_subset(key=key)
+            return self.get_subset_from_serializable_subset(
+                serializable_subset
+            ) or self.get_empty_subset(key=key)
 
     async def _compute_run_in_progress_asset_subset(self, key: AssetKey) -> EntitySubset[AssetKey]:
         from dagster._core.storage.partition_status_cache import AssetStatusCacheValue
