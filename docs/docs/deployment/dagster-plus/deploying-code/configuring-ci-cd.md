@@ -162,7 +162,7 @@ If you don't want to use our automated GitHub/GitLab process, you can use the [`
    dagster-cloud configure
    ```
 
-You can also configure the `dagster-cloud` tool non-interactively; for more information, see [the `dagster-cloud` installation and configuration docs](/api/clis/dagster-cloud-cli/installing-and-configuring). For new projects, consider using the `dg` CLI instead via `dg plus login`.
+You can also configure the `dagster-cloud` tool non-interactively; for more information, see [the `dagster-cloud` installation and configuration docs](/api/clis/dagster-cloud-cli/installing-and-configuring). For new projects, consider using the `dg` CLI command `dg plus login` instead.
 
 3. Finally, deploy your project to Dagster+ using the `serverless` command, replacing `YOUR_PACKAGE_NAME` with the name of your Dagster package:
 
