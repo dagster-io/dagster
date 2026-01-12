@@ -201,8 +201,8 @@ Before following the steps in this section, you must:
 
 :::
 
-{/* Note: Previously this section referenced `dagster-cloud ci check` which is now deprecated.
-The `dg plus deploy start` command (step 2 below) validates configuration during initialization. */}
+{/* Note: The `dg plus deploy start` command now validates configuration including YAML schema,
+build directories, and API connectivity before starting the deploy session. */}
 
 1.  Set the build environment variables. Note that all variables are required:
     - `DAGSTER_CLOUD_ORGANIZATION`: The name of your organization in Dagster+.
