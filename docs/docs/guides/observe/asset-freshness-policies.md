@@ -37,7 +37,7 @@ There is an existing `FreshnessPolicy` API that has been deprecated since versio
 
 ### Relationship to freshness checks
 
-Freshness policies are not yet feature complete, but are intended to supersede freshness checks in a future release. Freshness checks are still and will continue to be supported for the foreseeable future. A migration guide will be provided.
+Freshness policies have superseded [freshness checks](/guides/test/data-freshness-testing) since the 1.12 release. Freshness checks will continue to be supported for the foreseeable future.
 
 ## Freshness policy types
 

@@ -1,12 +1,13 @@
 ---
 description: Dagster freshness checks provide a way to identify data assets that are overdue for an update.
-sidebar_position: 300
+sidebar_position: 600
 title: Data freshness checks
+unlisted: true
 ---
 
-import Beta from '@site/docs/partials/\_Beta.md';
+import SupersededFreshnessChecks from '@site/docs/partials/\_SupersededFreshnessChecks.md';
 
-<Beta />
+<SupersededFreshnessChecks />
 
 Freshness checks provide a way to identify data assets that are overdue for an update. For example, you can use freshness checks to identify stale assets caused by:
 

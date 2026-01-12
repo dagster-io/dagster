@@ -1,7 +1,7 @@
 ---
 title: 'Testing partitioned config and jobs'
 description: Test your partition configuration and Dagster jobs.
-sidebar_position: 500
+sidebar_position: 400
 ---
 
 In this article, we'll cover a few ways to test your partitioned config and jobs.
