@@ -162,7 +162,7 @@ If you don't want to use our automated GitHub/GitLab process, you can use the [`
    dagster-cloud configure
    ```
 
-You can also configure the `dagster-cloud` tool non-interactively; for more information, see [the `dagster-cloud` installation and configuration docs](/api/clis/dagster-cloud-cli/installing-and-configuring). For new projects, consider using the `dg` CLI command `dg plus login` instead.
+You can also configure the `dagster-cloud` tool non-interactively; for more information, see [the `dagster-cloud` installation and configuration docs](/api/clis/dagster-cloud-cli/installing-and-configuring). For new projects, consider using the `dg` CLI instead via `dg plus login`.
 
 3. Finally, deploy your project to Dagster+ using the `serverless` command, replacing `YOUR_PACKAGE_NAME` with the name of your Dagster package:
 
@@ -200,6 +200,9 @@ Before following the steps in this section, you must:
 - Log in to your Dagster organization with `dg plus login`
 
 :::
+
+{/* Note: Previously this section referenced `dagster-cloud ci check` which is now deprecated.
+    The `dg plus deploy start` command (step 2 below) validates configuration during initialization. */}
 
 1.  Set the build environment variables. Note that all variables are required:
     - `DAGSTER_CLOUD_ORGANIZATION`: The name of your organization in Dagster+.
