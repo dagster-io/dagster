@@ -201,9 +201,6 @@ Before following the steps in this section, you must:
 
 :::
 
-{/* Note: The `dg plus deploy start` command now validates configuration including YAML schema,
-build directories, and API connectivity before starting the deploy session. */}
-
 1.  Set the build environment variables. Note that all variables are required:
     - `DAGSTER_CLOUD_ORGANIZATION`: The name of your organization in Dagster+.
     - `DAGSTER_CLOUD_API_TOKEN`: A Dagster+ API token. **Note:** This is a sensitive value and should be stored as a CI/CD secret if possible.
