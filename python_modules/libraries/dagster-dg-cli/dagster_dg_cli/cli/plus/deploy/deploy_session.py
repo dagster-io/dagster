@@ -127,6 +127,7 @@ def init_deploy_session(
     location_names: tuple[str],
     status_url: Optional[str],
     snapshot_base_condition: Optional["SnapshotBaseDeploymentCondition"],
+    skip_validation: bool = False,
 ):
     deployment_type = (
         input_deployment_type
@@ -144,7 +145,19 @@ def init_deploy_session(
 
     dagster_cloud_yaml_file = create_temp_dagster_cloud_yaml_file(dg_context, statedir)
 
-    # Lazy import for test mocking and performance
+    from dagster_dg_cli.cli.plus.deploy.validation import validate_deploy_configuration
+
+    try:
+        validate_deploy_configuration(
+            dagster_cloud_yaml_path=dagster_cloud_yaml_file,
+            organization=organization,
+            skip_validation=skip_validation,
+        )
+    except click.ClickException:
+        if os.path.exists(statedir):
+            shutil.rmtree(statedir, ignore_errors=True)
+        raise
+
     from dagster_cloud_cli.commands.ci import init_impl
 
     init_impl(
