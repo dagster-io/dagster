@@ -114,6 +114,7 @@ To pre-install the binary, you can download it during your build step and set th
       # Point to the binary
       export SLING_BINARY=$(pwd)/sling
       ```
+
    </TabItem>
    <TabItem value="linux" label="Linux">
       ```shell
@@ -125,6 +126,7 @@ To pre-install the binary, you can download it during your build step and set th
       # Point to the binary
       export SLING_BINARY=/path/to/sling
       ```
+
    </TabItem>
    <TabItem value="windows" label="Windows">
       ```shell
@@ -135,6 +137,7 @@ To pre-install the binary, you can download it during your build step and set th
       # Point to the binary
       $env:SLING_BINARY = "$PWD\sling.exe"
       ```
+
    </TabItem>
 </Tabs>
 
