@@ -25,3 +25,7 @@ def create_template_file(tmpdir: str, filename: str, text: str) -> Generator[str
 def empty_config(monkeypatch):
     # ensure no defaults are read from the local config
     monkeypatch.setenv("DAGSTER_CLOUD_CLI_CONFIG", "/tmp/nosuchpath")
+    # also clear any environment variables that might be set
+    monkeypatch.delenv("DAGSTER_CLOUD_ORGANIZATION", raising=False)
+    monkeypatch.delenv("DAGSTER_CLOUD_API_TOKEN", raising=False)
+    monkeypatch.delenv("DAGSTER_CLOUD_DEPLOYMENT", raising=False)
