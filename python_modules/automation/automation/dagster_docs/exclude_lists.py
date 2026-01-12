@@ -81,6 +81,10 @@ EXCLUDE_MISSING_RST = {
     # Tableau component - validator uses internal path but it's exported at dagster_tableau.TableauComponent
     # and documented in RST. The mismatch is due to validator finding it at source path.
     "dagster_tableau.components.tableau_component.TableauComponent",
+    # Redshift components - validator uses internal path but they're exported at dagster_aws.redshift.*
+    # and documented in RST. The mismatch is due to validator finding them at source path.
+    "dagster_aws.redshift.components.RedshiftCredentialsComponent",
+    "dagster_aws.redshift.components.RedshiftClientResourceComponent",
     # Component testing utils
     "dagster.components.testing.utils.DefsFolderSandbox",
     "dagster.components.testing.utils.create_defs_folder_sandbox",
@@ -427,6 +431,9 @@ EXCLUDE_MISSING_PUBLIC = {
     "dagster.create_defs_folder_sandbox",
     # Tableau component - RST uses top-level path but validator finds @public at internal path
     "dagster_tableau.TableauComponent",
+    # Redshift components - RST uses top-level path but validator finds @public at internal path
+    "dagster_aws.redshift.RedshiftCredentialsComponent",
+    "dagster_aws.redshift.RedshiftClientResourceComponent",
 }
 
 # Modules to exclude from @public scanning
