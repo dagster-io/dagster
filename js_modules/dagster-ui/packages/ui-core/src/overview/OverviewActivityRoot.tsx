@@ -3,6 +3,8 @@ import * as React from 'react';
 import {Redirect, Switch} from 'react-router-dom';
 
 import {OverviewAssetsRoot} from './OverviewAssetsRoot';
+import {OverviewPageHeader} from './OverviewPageHeader';
+import {OverviewTabs} from './OverviewTabs';
 import {OverviewTimelineRoot} from './OverviewTimelineRoot';
 import {Route} from '../app/Route';
 import {AssetFeatureContext} from '../assets/AssetFeatureContext';
@@ -12,6 +14,13 @@ import {ActivatableButton} from '../runs/ActivatableButton';
 
 export const OverviewActivityRoot = () => {
   useDocumentTitle('Overview | Activity');
+
+  const header = React.useCallback(
+    ({refreshState}: {refreshState: React.ComponentProps<typeof OverviewTabs>['refreshState']}) => (
+      <OverviewPageHeader tab="activity" refreshState={refreshState} />
+    ),
+    [],
+  );
 
   const [_defaultTab, setDefaultTab] = useStateWithStorage<'timeline' | 'assets'>(
     'overview-activity-tab',
@@ -48,11 +57,11 @@ export const OverviewActivityRoot = () => {
       <Switch>
         {!enableAssetHealthOverviewPreview && (
           <Route path="/overview/activity/assets">
-            <OverviewAssetsRoot TabButton={tabButton} />
+            <OverviewAssetsRoot Header={header} TabButton={tabButton} />
           </Route>
         )}
         <Route path="/overview/activity/timeline">
-          <OverviewTimelineRoot />
+          <OverviewTimelineRoot Header={header} TabButton={tabButton} />
         </Route>
         <Route
           path="*"

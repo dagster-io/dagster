@@ -1,5 +1,11 @@
 # Changelog
 
+## 1.12.10 (core) / 0.28.10 (libraries)
+
+### Bugfixes
+
+- [ui] Fixed an issue introduced in 1.12.9 where the "Catalog" tab in the Dagster UI sometimes failed to display any assets.
+
 ## 1.12.9 (core) / 0.28.9 (libraries)
 
 ### New
