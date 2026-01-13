@@ -45,3 +45,44 @@ export const Single = () => {
 
   return <ButtonGroup activeItems={activeItems} buttons={buttons} onClick={onClick} />;
 };
+
+// Buttons with gaps (not joined)
+export const WithGaps = () => {
+  const [activeItems, setActiveItems] = useState<Set<string>>(() => new Set(['split']));
+  const onClick = useCallback((id: string) => {
+    setActiveItems(new Set([id]));
+  }, []);
+
+  const buttons: ButtonGroupItem<string>[] = [
+    {id: 'split', icon: 'splitscreen', label: 'Split'},
+    {id: 'top', icon: 'vertical_align_top', label: 'Top'},
+    {id: 'bottom', icon: 'vertical_align_bottom', label: 'Bottom'},
+  ];
+
+  return (
+    <ButtonGroup activeItems={activeItems} buttons={buttons} onClick={onClick} joined={false} />
+  );
+};
+
+export const WithGapsAndDisabled = () => {
+  const [activeItems, setActiveItems] = useState<Set<string>>(() => new Set(['split']));
+  const onClick = useCallback((id: string) => {
+    setActiveItems(new Set([id]));
+  }, []);
+
+  const buttons: ButtonGroupItem<string>[] = [
+    {id: 'split', icon: 'splitscreen', label: 'Split'},
+    {
+      id: 'top',
+      icon: 'vertical_align_top',
+      label: 'Top',
+      disabled: true,
+      tooltip: 'Disabled option',
+    },
+    {id: 'bottom', icon: 'vertical_align_bottom', label: 'Bottom'},
+  ];
+
+  return (
+    <ButtonGroup activeItems={activeItems} buttons={buttons} onClick={onClick} joined={false} />
+  );
+};
