@@ -1,4 +1,4 @@
-import {AbstractParseTreeVisitor} from 'antlr4ts/tree/AbstractParseTreeVisitor';
+import {AbstractParseTreeVisitor} from 'antlr4ng';
 
 import {
   PartitionKeyContext,
@@ -44,21 +44,21 @@ export class AntlrPartitionSelectionVisitor
   visitStart(ctx: StartContext): ParsedPartitionTerm[] {
     const partitionList = ctx.partitionList();
     if (partitionList) {
-      return this.visit(partitionList);
+      return this.visit(partitionList) ?? this.defaultResult();
     }
     return [];
   }
 
   visitPartitionList(ctx: PartitionListContext): ParsedPartitionTerm[] {
-    return ctx.partitionItem().flatMap((item) => this.visit(item));
+    return ctx.partitionItem().flatMap((item) => this.visit(item) ?? this.defaultResult());
   }
 
   visitRangePartitionItem(ctx: RangePartitionItemContext): ParsedPartitionTerm[] {
-    return this.visit(ctx.range());
+    return this.visit(ctx.range()) ?? this.defaultResult();
   }
 
   visitWildcardPartitionItem(ctx: WildcardPartitionItemContext): ParsedPartitionTerm[] {
-    return this.visit(ctx.wildcard());
+    return this.visit(ctx.wildcard()) ?? this.defaultResult();
   }
 
   visitSinglePartitionItem(ctx: SinglePartitionItemContext): ParsedPartitionTerm[] {
@@ -80,7 +80,7 @@ export class AntlrPartitionSelectionVisitor
   }
 
   visitWildcard(ctx: WildcardContext): ParsedPartitionTerm[] {
-    const pattern = ctx.WILDCARD_PATTERN().text;
+    const pattern = ctx.WILDCARD_PATTERN().getText();
     const asteriskIndex = pattern.indexOf('*');
     return [
       {
@@ -97,14 +97,14 @@ export class AntlrPartitionSelectionVisitor
    */
   private extractPartitionKey(ctx: PartitionKeyContext): string {
     if (ctx instanceof QuotedPartitionKeyContext) {
-      const quoted = ctx.QUOTED_STRING().text;
+      const quoted = ctx.QUOTED_STRING().getText();
       return this.unescapeQuotedString(quoted);
     }
     if (ctx instanceof UnquotedPartitionKeyContext) {
-      return ctx.UNQUOTED_STRING().text;
+      return ctx.UNQUOTED_STRING().getText();
     }
     // Fallback - should not happen with valid grammar
-    return ctx.text;
+    return ctx.getText();
   }
 
   /**
