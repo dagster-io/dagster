@@ -46,7 +46,7 @@ afterAll(() => {
 });
 
 describe('FilterDropdown', () => {
-  test('displays filter categories initially', () => {
+  it('displays filter categories initially', () => {
     render(
       <FilterDropdown
         filters={mockFilters}
@@ -58,7 +58,7 @@ describe('FilterDropdown', () => {
     expect(screen.getByText('Status')).toBeInTheDocument();
   });
 
-  test('searches and displays matching filters', async () => {
+  it('searches and displays matching filters', async () => {
     render(
       <FilterDropdown
         filters={mockFilters}
@@ -76,7 +76,7 @@ describe('FilterDropdown', () => {
     await waitFor(() => expect(mockFilters[1]!.getResults).toHaveBeenCalledWith('type'));
   });
 
-  test('displays no results when no filters match', async () => {
+  it('displays no results when no filters match', async () => {
     render(
       <FilterDropdown
         filters={mockFilters}
@@ -91,7 +91,7 @@ describe('FilterDropdown', () => {
 });
 
 describe('FilterDropdownButton', () => {
-  test('opens and closes the dropdown on click', async () => {
+  it('opens and closes the dropdown on click', async () => {
     render(<FilterDropdownButton filters={mockFilters} />);
     const button = screen.getByRole('button');
     await userEvent.click(button);
@@ -104,7 +104,7 @@ describe('FilterDropdownButton', () => {
     });
   });
 
-  test('closes the dropdown when clicking outside', async () => {
+  it('closes the dropdown when clicking outside', async () => {
     render(<FilterDropdownButton filters={mockFilters} />);
     const button = screen.getByRole('button');
     await userEvent.click(button);
@@ -120,76 +120,90 @@ describe('FilterDropdownButton', () => {
 
 describe('FilterDropdown Accessibility', () => {
   const testKeyboardNavigation = async (nextKey: any, prevKey: any, enterKey: any) => {
+    const user = userEvent.setup();
     render(<FilterDropdownButton filters={mockFilters} />);
 
-    await userEvent.click(screen.getByRole('button'));
+    await user.click(screen.getByRole('button'));
     expect(screen.getByRole('menu')).toBeInTheDocument();
 
     const input = screen.getByLabelText('Search filters');
     expect(input).toHaveFocus();
 
-    await userEvent.keyboard(nextKey);
+    await user.keyboard(nextKey);
     await waitFor(() => {
-      expect(screen.getByText('Type').closest('a')).toHaveClass('bp5-active');
+      expect(screen.getByRole('menuitem', {name: /type/i}).getAttribute('data-active')).toBe(
+        'true',
+      );
     });
 
-    await userEvent.keyboard(nextKey);
+    await user.keyboard(nextKey);
     await waitFor(() => {
-      expect(screen.getByText('Status').closest('a')).toHaveClass('bp5-active');
+      expect(screen.getByRole('menuitem', {name: /status/i}).getAttribute('data-active')).toBe(
+        'true',
+      );
     });
 
-    await userEvent.keyboard(prevKey);
+    await user.keyboard(prevKey);
     await waitFor(() => {
-      expect(screen.getByText('Type').closest('a')).toHaveClass('bp5-active');
+      expect(screen.getByRole('menuitem', {name: /type/i}).getAttribute('data-active')).toBe(
+        'true',
+      );
     });
 
-    await userEvent.keyboard(nextKey);
+    await user.keyboard(nextKey);
     await waitFor(() => {
-      expect(screen.getByText('Status').closest('a')).toHaveClass('bp5-active');
+      expect(screen.getByRole('menuitem', {name: /status/i}).getAttribute('data-active')).toBe(
+        'true',
+      );
     });
 
-    await userEvent.keyboard(nextKey);
+    await user.keyboard(nextKey);
     expect(input).toHaveFocus();
 
-    await userEvent.keyboard(nextKey);
+    await user.keyboard(nextKey);
     await waitFor(() => {
-      expect(screen.getByText('Type').closest('a')).toHaveClass('bp5-active');
+      expect(screen.getByRole('menuitem', {name: /type/i}).getAttribute('data-active')).toBe(
+        'true',
+      );
     });
 
-    await userEvent.keyboard(nextKey);
+    await user.keyboard(nextKey);
     await waitFor(() => {
-      expect(screen.getByText('Status').closest('a')).toHaveClass('bp5-active');
+      expect(screen.getByRole('menuitem', {name: /status/i}).getAttribute('data-active')).toBe(
+        'true',
+      );
     });
 
-    await userEvent.keyboard(enterKey);
+    await user.keyboard(enterKey);
 
     await waitFor(() => {
       expect(input).toHaveFocus();
     });
 
-    await userEvent.keyboard(nextKey);
-    await userEvent.keyboard(nextKey);
+    await user.keyboard(nextKey);
+    await user.keyboard(nextKey);
 
-    expect(screen.getByText('Inactive').closest('a')).toHaveClass('bp5-active');
-    await userEvent.keyboard(enterKey);
+    expect(screen.getByRole('menuitem', {name: /inactive/i}).getAttribute('data-active')).toBe(
+      'true',
+    );
+    await user.keyboard(enterKey);
 
     await waitFor(() => {
-      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-      expect(mockFilters[1]!.onSelect).toHaveBeenCalled();
+      expect(mockFilters[1]?.onSelect).toHaveBeenCalled();
     });
   };
 
   // eslint-disable-next-line jest/expect-expect
-  test('keyboard navigation and selection with arrow keys', async () => {
+  it('keyboard navigation and selection with arrow keys', async () => {
     await testKeyboardNavigation('{ArrowDown}', '{ArrowUp}', '{Enter}');
   });
 
   // eslint-disable-next-line jest/expect-expect
-  test('keyboard navigation and selection with Tab and Shift+Tab keys', async () => {
+  it('keyboard navigation and selection with Tab and Shift+Tab keys', async () => {
     await testKeyboardNavigation('{Tab}', '{Shift}{Tab}', ' ');
   });
 
-  test('escape key behavior', async () => {
+  it('escape key behavior', async () => {
     render(<FilterDropdownButton filters={mockFilters} />);
 
     await userEvent.click(screen.getByRole('button'));

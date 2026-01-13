@@ -313,7 +313,6 @@ const NextTickMenuItems = ({
     <MenuItem
       text={`View ${evaluationResult.runRequests.length} run requests...`}
       icon="edit"
-      target="_blank"
       onClick={() => onItemOpen(true)}
     />
   );

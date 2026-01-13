@@ -137,15 +137,15 @@ describe('LaunchAssetExecutionButton', () => {
 
   describe('observable assets', () => {
     it('should disable the sub-menu item if the selection includes no observable assets', async () => {
+      const user = userEvent.setup();
       renderButton({
         scope: {selected: [ASSET_DAILY]},
       });
 
-      await userEvent.click(await screen.findByTestId('materialize-button-dropdown'));
-
-      const observeOption = await screen.findByTestId('materialize-secondary-option');
-      expect(observeOption.textContent).toEqual('Observe selected');
-      expect(observeOption).toHaveClass('bp5-disabled');
+      await user.click(await screen.findByTestId('materialize-button-dropdown'));
+      const secondaryOption = await screen.findByRole('menuitem', {name: /observe selected/i});
+      expect(secondaryOption).toBeVisible();
+      expect(secondaryOption).toBeDisabled();
     });
 
     it('should enable the sub-menu item if the selection includes observable assets', async () => {

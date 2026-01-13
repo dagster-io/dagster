@@ -68,7 +68,7 @@ export const CodeLinkProtocolSelect = ({}) => {
           <MenuItem
             active={props.modifiers.active}
             onClick={props.handleClick}
-            label={protocol}
+            right={protocol}
             key={protocol}
             text={POPULAR_PROTOCOLS[protocol]}
           />
