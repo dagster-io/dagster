@@ -1,4 +1,4 @@
-import {Colors, Icon, Spinner} from '@dagster-io/ui-components';
+import {Colors, Icon, IconName, Spinner} from '@dagster-io/ui-components';
 
 import {ExecuteChecksButtonCheckFragment} from './types/ExecuteChecksButton.types';
 import {AssetCheckTableFragment} from './types/VirtualizedAssetCheckTable.types';
@@ -54,6 +54,40 @@ export function getCheckIcon(
       return <Icon name="dot" />;
     case AssetCheckExecutionResolvedStatus.SUCCEEDED:
       return <Icon name="check_circle" color={Colors.accentGreen()} />;
+    default:
+      assertUnreachable(status);
+  }
+}
+
+export function assetCheckExecutionStatusText(status: AssetCheckExecutionResolvedStatus): string {
+  switch (status) {
+    case AssetCheckExecutionResolvedStatus.EXECUTION_FAILED:
+      return 'Execution failed';
+    case AssetCheckExecutionResolvedStatus.FAILED:
+      return 'Failed';
+    case AssetCheckExecutionResolvedStatus.IN_PROGRESS:
+      return 'In progress';
+    case AssetCheckExecutionResolvedStatus.SKIPPED:
+      return 'Skipped';
+    case AssetCheckExecutionResolvedStatus.SUCCEEDED:
+      return 'Succeeded';
+    default:
+      assertUnreachable(status);
+  }
+}
+
+export function assetCheckExecutionStatusIcon(status: AssetCheckExecutionResolvedStatus): IconName {
+  switch (status) {
+    case AssetCheckExecutionResolvedStatus.EXECUTION_FAILED:
+      return 'sync_problem';
+    case AssetCheckExecutionResolvedStatus.FAILED:
+      return 'cancel';
+    case AssetCheckExecutionResolvedStatus.IN_PROGRESS:
+      return 'hourglass_bottom';
+    case AssetCheckExecutionResolvedStatus.SKIPPED:
+      return 'dot';
+    case AssetCheckExecutionResolvedStatus.SUCCEEDED:
+      return 'check_circle';
     default:
       assertUnreachable(status);
   }
