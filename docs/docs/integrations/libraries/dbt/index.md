@@ -118,17 +118,19 @@ In its scaffolded form, the `defs.yaml` file contains the configuration for your
 
 :::tip Private repositories
 
-For private Git repositories, you can provide an authentication token:
+In some cases, you may need to provide an authentication token for private Git repositories. You can do this by adding the `token` field to your `defs.yaml` file:
 
 ```yaml
 type: dagster_dbt.DbtProjectComponent
 
 attributes:
   project:
-    repo_url: https://github.com/your-org/your-dbt-project.git
+    repo_url: https://some-host.com/your-org/your-dbt-project.git
     repo_relative_path: path/to/dbt
-    token: '{{ env.GITHUB_TOKEN }}'
+    token: '{{ env.GIT_TOKEN }}'
 ```
+
+For Github-based repositories, this is typically unnecessary, as your credentials will be available locally as well as in the Github Actions that require access to the repository.
 
 :::
 
