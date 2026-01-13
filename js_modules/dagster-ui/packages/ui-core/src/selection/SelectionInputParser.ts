@@ -38,6 +38,8 @@ export const parseInput = memoize((input: string): ParseResult => {
     const inputStream = CharStream.fromString(substring);
     const lexer = new SelectionAutoCompleteLexer(inputStream);
     const tokenStream = new CommonTokenStream(lexer);
+    tokenStream.fill(); // Ensure all tokens are loaded before parsing
+
     const parser = new SelectionAutoCompleteParser(tokenStream);
 
     // Attach custom error listener
@@ -73,6 +75,8 @@ export const parseInput = memoize((input: string): ParseResult => {
           const validInputStream = CharStream.fromString(validInput);
           const validLexer = new SelectionAutoCompleteLexer(validInputStream);
           const validTokenStream = new CommonTokenStream(validLexer);
+          validTokenStream.fill(); // Ensure all tokens are loaded before parsing
+
           const validParser = new SelectionAutoCompleteParser(validTokenStream);
 
           // Remove error listeners for the valid parser

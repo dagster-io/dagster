@@ -100,6 +100,8 @@ export function parsePartitionSelection(text: string): ParsedPartitionTerm[] | E
     lexer.addErrorListener(errorListener);
 
     const tokenStream = new CommonTokenStream(lexer);
+    tokenStream.fill(); // Ensure all tokens are loaded before parsing
+
     const parser = new PartitionSelectionParser(tokenStream);
 
     parser.removeErrorListeners();

@@ -21,6 +21,7 @@ export const parseOpSelectionQuery = <T extends GraphQueryItem>(
     lexer.addErrorListener(new AntlrInputErrorListener());
 
     const tokenStream = new CommonTokenStream(lexer);
+    tokenStream.fill(); // Ensure all tokens are loaded before parsing
 
     const parser = new OpSelectionParser(tokenStream);
     parser.removeErrorListeners();

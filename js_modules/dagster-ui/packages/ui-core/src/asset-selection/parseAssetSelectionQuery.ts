@@ -38,6 +38,7 @@ export const parseAssetSelectionQuery = (
     lexer.addErrorListener(new AntlrInputErrorListener());
 
     const tokenStream = new CommonTokenStream(lexer);
+    tokenStream.fill(); // Ensure all tokens are loaded before parsing
 
     const parser = new AssetSelectionParser(tokenStream);
     parser.removeErrorListeners();

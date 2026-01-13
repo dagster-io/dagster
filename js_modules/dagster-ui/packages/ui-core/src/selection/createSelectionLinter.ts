@@ -38,6 +38,8 @@ export function createSelectionLinter({
     const lexer = new LexerKlass(inputStream);
 
     const tokens = new CommonTokenStream(lexer);
+    tokens.fill(); // Ensure all tokens are loaded before parsing
+
     const parser = new ParserKlass(tokens);
 
     const errorListener = new CustomErrorListener();

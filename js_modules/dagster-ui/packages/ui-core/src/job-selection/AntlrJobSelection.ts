@@ -25,6 +25,7 @@ export const parseJobSelectionQuery = <T extends Job>(
     lexer.addErrorListener(new AntlrInputErrorListener());
 
     const tokenStream = new CommonTokenStream(lexer);
+    tokenStream.fill(); // Ensure all tokens are loaded before parsing
 
     const parser = new JobSelectionParser(tokenStream);
     parser.removeErrorListeners();

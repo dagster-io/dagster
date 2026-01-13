@@ -16,6 +16,7 @@ export const parseAutomationSelectionQuery = <T extends Automation>(
     lexer.addErrorListener(new AntlrInputErrorListener());
 
     const tokenStream = new CommonTokenStream(lexer);
+    tokenStream.fill(); // Ensure all tokens are loaded before parsing
 
     const parser = new AutomationSelectionParser(tokenStream);
     parser.removeErrorListeners();
