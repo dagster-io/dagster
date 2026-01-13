@@ -100,9 +100,21 @@ export const AssetNodeOverview = ({
     definitionLoadTimestamp: assetNodeLoadTimestamp,
   });
 
-  const rowCountMeta: IntMetadataEntry | undefined = materialization?.metadataEntries.find(
-    (entry) => isCanonicalRowCountMetadataEntry(entry),
+  let rowCountMeta: IntMetadataEntry | undefined = materialization?.metadataEntries.find((entry) =>
+    isCanonicalRowCountMetadataEntry(entry),
   ) as IntMetadataEntry | undefined;
+
+  if (!rowCountMeta && observation) {
+    rowCountMeta = observation.metadataEntries.find((entry) =>
+      isCanonicalRowCountMetadataEntry(entry),
+    ) as IntMetadataEntry | undefined;
+  }
+
+  if (!rowCountMeta) {
+    rowCountMeta = assetNode?.metadataEntries.find((entry) =>
+      isCanonicalRowCountMetadataEntry(entry),
+    ) as IntMetadataEntry | undefined;
+  }
 
   // The live data does not include a partition, but the timestamp on the live data triggers
   // an update of `observation` and `materialization`, so they should be in sync. To make sure
