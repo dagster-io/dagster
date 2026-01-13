@@ -145,7 +145,11 @@ spec:
               {{- toYaml $deployment.readinessProbe.failureThreshold | nindent 14 }}
             {{- end }}
           {{- else}}
-          readinessProbe: {{ $deployment.readinessProbe | toYaml | nindent 12 }}
+          readinessProbe:
+            {{- $readinessProbe := omit $deployment.readinessProbe "enabled" }}
+            {{- if $readinessProbe }}
+              {{- $readinessProbe | toYaml | nindent 12 }}
+            {{- end }}
           {{- end }}
         {{- end }}
         {{- if $deployment.livenessProbe }}
