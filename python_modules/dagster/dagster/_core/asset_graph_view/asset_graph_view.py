@@ -659,11 +659,12 @@ class AssetGraphView(LoadingContext):
             return from_subset.compute_difference(known_statuses) or self.get_empty_subset(key=key)
         else:
             serializable_subset = cache_value.subsets.get(status)
-            if serializable_subset is None:
-                return self.get_empty_subset(key=key)
-            return self.get_subset_from_serializable_subset(
-                serializable_subset
-            ) or self.get_empty_subset(key=key)
+
+        if serializable_subset is None:
+            return self.get_empty_subset(key=key)
+        return self.get_subset_from_serializable_subset(
+            serializable_subset
+        ) or self.get_empty_subset(key=key)
 
     async def _compute_run_in_progress_asset_subset(self, key: AssetKey) -> EntitySubset[AssetKey]:
         from dagster._core.storage.partition_status_cache import AssetStatusCacheValue

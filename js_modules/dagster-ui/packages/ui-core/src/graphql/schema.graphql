@@ -694,7 +694,6 @@ type AssetNode {
     beforeTimestampMillis: String
     limit: Int
   ): [ObservationEvent!]!
-  assetsForSameStorageAddress: [AssetNode!]!
   lastAutoMaterializationEvaluationRecord(
     asOfEvaluationId: ID
   ): AutoMaterializeAssetEvaluationRecord
@@ -753,6 +752,7 @@ type AssetNode {
   hasWipePermission: Boolean!
   hasReportRunlessAssetEventPermission: Boolean!
   hasAssetChecks: Boolean!
+  assetCheckOrError(checkName: String!): AssetCheckOrError!
   assetChecksOrError(limit: Int, pipeline: PipelineSelector): AssetChecksOrError!
   currentAutoMaterializeEvaluationId: ID
   targetingInstigators: [Instigator!]!
@@ -1040,15 +1040,12 @@ enum StaleCauseCategory {
   DEPENDENCIES
 }
 
-union AssetChecksOrError =
-  | AssetChecks
+union AssetCheckOrError =
+  | AssetCheck
+  | AssetCheckNotFoundError
   | AssetCheckNeedsMigrationError
   | AssetCheckNeedsUserCodeUpgrade
   | AssetCheckNeedsAgentUpgradeError
-
-type AssetChecks {
-  checks: [AssetCheck!]!
-}
 
 type AssetCheck {
   name: String!
@@ -1060,6 +1057,9 @@ type AssetCheck {
   blocking: Boolean!
   additionalAssetKeys: [AssetKey!]!
   automationCondition: AutomationCondition
+  partitionDefinition: PartitionDefinition
+  partitionKeysByDimension(startIdx: Int, endIdx: Int): [DimensionPartitionKeys!]!
+  partitionStatuses: AssetCheckPartitionStatuses
 }
 
 type AssetCheckExecution {
@@ -1068,6 +1068,7 @@ type AssetCheckExecution {
   status: AssetCheckExecutionResolvedStatus!
   evaluation: AssetCheckEvaluation
   timestamp: Float!
+  partition: String
   stepKey: String
 }
 
@@ -1088,6 +1089,7 @@ type AssetCheckEvaluation {
   severity: AssetCheckSeverity!
   description: String
   success: Boolean!
+  partition: String
 }
 
 type AssetCheckEvaluationTargetMaterializationData {
@@ -1107,6 +1109,60 @@ enum AssetCheckCanExecuteIndividually {
   NEEDS_USER_CODE_UPGRADE
 }
 
+union AssetCheckPartitionStatuses =
+  | AssetCheckDefaultPartitionStatuses
+  | AssetCheckMultiPartitionStatuses
+  | AssetCheckTimePartitionStatuses
+
+type AssetCheckDefaultPartitionStatuses {
+  succeededPartitions: [String!]!
+  failedPartitions: [String!]!
+  inProgressPartitions: [String!]!
+  skippedPartitions: [String!]!
+  executionFailedPartitions: [String!]!
+}
+
+type AssetCheckMultiPartitionStatuses {
+  ranges: [AssetCheckMultiPartitionRangeStatuses!]!
+  primaryDimensionName: String!
+}
+
+type AssetCheckMultiPartitionRangeStatuses {
+  primaryDimStartKey: String!
+  primaryDimEndKey: String!
+  primaryDimStartTime: Float
+  primaryDimEndTime: Float
+  secondaryDim: AssetCheckPartitionStatus1D!
+}
+
+union AssetCheckPartitionStatus1D =
+  | AssetCheckTimePartitionStatuses
+  | AssetCheckDefaultPartitionStatuses
+
+type AssetCheckTimePartitionStatuses {
+  ranges: [AssetCheckTimePartitionRangeStatus!]!
+}
+
+type AssetCheckTimePartitionRangeStatus {
+  startTime: Float!
+  endTime: Float!
+  startKey: String!
+  endKey: String!
+  status: AssetCheckPartitionRangeStatus!
+}
+
+enum AssetCheckPartitionRangeStatus {
+  SUCCEEDED
+  FAILED
+  IN_PROGRESS
+  SKIPPED
+  EXECUTION_FAILED
+}
+
+type AssetCheckNotFoundError implements Error {
+  message: String!
+}
+
 type AssetCheckNeedsMigrationError implements Error {
   message: String!
 }
@@ -1117,6 +1173,16 @@ type AssetCheckNeedsUserCodeUpgrade implements Error {
 
 type AssetCheckNeedsAgentUpgradeError implements Error {
   message: String!
+}
+
+union AssetChecksOrError =
+  | AssetChecks
+  | AssetCheckNeedsMigrationError
+  | AssetCheckNeedsUserCodeUpgrade
+  | AssetCheckNeedsAgentUpgradeError
+
+type AssetChecks {
+  checks: [AssetCheck!]!
 }
 
 union Instigator = Schedule | Sensor
@@ -3736,6 +3802,7 @@ type Query {
   assetCheckExecutions(
     assetKey: AssetKeyInput!
     checkName: String!
+    partition: String
     limit: Int!
     cursor: String
   ): [AssetCheckExecution!]!
@@ -4032,9 +4099,9 @@ type AutomationConditionEvaluationNode {
 }
 
 type SinceConditionMetadata {
-  triggerEvaluationId: ID
+  triggerEvaluationId: Int
   triggerTimestamp: Float
-  resetEvaluationId: ID
+  resetEvaluationId: Int
   resetTimestamp: Float
 }
 

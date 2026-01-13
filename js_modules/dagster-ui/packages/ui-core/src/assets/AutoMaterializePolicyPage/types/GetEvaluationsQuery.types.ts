@@ -360,9 +360,9 @@ export type PartitionedAssetConditionEvaluationNodeFragment = {
 
 export type SinceMetadataFragment = {
   __typename: 'SinceConditionMetadata';
-  triggerEvaluationId: string | null;
+  triggerEvaluationId: number | null;
   triggerTimestamp: number | null;
-  resetEvaluationId: string | null;
+  resetEvaluationId: number | null;
   resetTimestamp: number | null;
 };
 
@@ -387,9 +387,9 @@ export type NewEvaluationNodeFragment = {
     | {__typename: 'AssetKey'; path: Array<string>};
   sinceMetadata: {
     __typename: 'SinceConditionMetadata';
-    triggerEvaluationId: string | null;
+    triggerEvaluationId: number | null;
     triggerTimestamp: number | null;
-    resetEvaluationId: string | null;
+    resetEvaluationId: number | null;
     resetTimestamp: number | null;
   } | null;
 };
@@ -825,9 +825,9 @@ export type AssetConditionEvaluationRecordFragment = {
       | {__typename: 'AssetKey'; path: Array<string>};
     sinceMetadata: {
       __typename: 'SinceConditionMetadata';
-      triggerEvaluationId: string | null;
+      triggerEvaluationId: number | null;
       triggerTimestamp: number | null;
-      resetEvaluationId: string | null;
+      resetEvaluationId: number | null;
       resetTimestamp: number | null;
     } | null;
   }>;
@@ -1311,9 +1311,9 @@ export type GetEvaluationsQuery = {
               | {__typename: 'AssetKey'; path: Array<string>};
             sinceMetadata: {
               __typename: 'SinceConditionMetadata';
-              triggerEvaluationId: string | null;
+              triggerEvaluationId: number | null;
               triggerTimestamp: number | null;
-              resetEvaluationId: string | null;
+              resetEvaluationId: number | null;
               resetTimestamp: number | null;
             } | null;
           }>;
@@ -1786,9 +1786,9 @@ export type GetSlimEvaluationsQuery = {
               | {__typename: 'AssetKey'; path: Array<string>};
             sinceMetadata: {
               __typename: 'SinceConditionMetadata';
-              triggerEvaluationId: string | null;
+              triggerEvaluationId: number | null;
               triggerTimestamp: number | null;
-              resetEvaluationId: string | null;
+              resetEvaluationId: number | null;
               resetTimestamp: number | null;
             } | null;
           }>;

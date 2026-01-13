@@ -881,7 +881,7 @@ class TestAssetConditionEvaluations(ExecutingGraphQLContextTestMatrix):
         assert since_node["sinceMetadata"] is not None
         since_metadata_result = since_node["sinceMetadata"]
 
-        assert since_metadata_result["triggerEvaluationId"] == "5"
+        assert since_metadata_result["triggerEvaluationId"] == 5
         assert since_metadata_result["triggerTimestamp"] == 1234567890.0
-        assert since_metadata_result["resetEvaluationId"] == "3"
+        assert since_metadata_result["resetEvaluationId"] == 3
         assert since_metadata_result["resetTimestamp"] == 1234567880.0

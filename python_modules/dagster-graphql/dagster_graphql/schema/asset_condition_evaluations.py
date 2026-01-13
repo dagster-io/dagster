@@ -220,9 +220,9 @@ class GrapheneAssetConditionEvaluation(graphene.ObjectType):
 
 
 class GrapheneSinceConditionMetadata(graphene.ObjectType):
-    triggerEvaluationId = graphene.Field(graphene.ID)
+    triggerEvaluationId = graphene.Field(graphene.Int)
     triggerTimestamp = graphene.Field(graphene.Float)
-    resetEvaluationId = graphene.Field(graphene.ID)
+    resetEvaluationId = graphene.Field(graphene.Int)
     resetTimestamp = graphene.Field(graphene.Float)
 
     class Meta:

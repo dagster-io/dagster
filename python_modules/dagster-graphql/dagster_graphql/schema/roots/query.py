@@ -645,6 +645,7 @@ class GrapheneQuery(graphene.ObjectType):
         non_null_list(GrapheneAssetCheckExecution),
         assetKey=graphene.Argument(graphene.NonNull(GrapheneAssetKeyInput)),
         checkName=graphene.Argument(graphene.NonNull(graphene.String)),
+        partition=graphene.String(),
         limit=graphene.NonNull(graphene.Int),
         cursor=graphene.String(),
         description="Retrieve the executions for a given asset check.",
@@ -1366,6 +1367,7 @@ class GrapheneQuery(graphene.ObjectType):
         checkName: str,
         limit: int,
         cursor: Optional[str] = None,
+        partition: Optional[str] = None,
     ):
         return fetch_asset_check_executions(
             graphene_info.context,
@@ -1374,6 +1376,7 @@ class GrapheneQuery(graphene.ObjectType):
             ),
             limit=limit,
             cursor=cursor,
+            partition=partition,
         )
 
     def resolve_latestDefsStateInfo(self, graphene_info: ResolveInfo):
