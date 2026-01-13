@@ -249,6 +249,11 @@ def check_command(
     dagster_cloud_yaml_check: checks.Check = typer.Option("error"),
     dagster_cloud_connect_check: checks.Check = typer.Option("error"),
 ):
+    ui.warn(
+        "The 'dagster-cloud ci check' command is deprecated and will be removed in a future release. "
+        "Use 'dg plus deploy start' instead, which validates configuration during deployment initialization."
+    )
+
     project_path = pathlib.Path(project_dir)
 
     verdicts = []
