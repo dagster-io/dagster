@@ -1,4 +1,10 @@
-import {BaseErrorListener, CharStream, CommonTokenStream, RecognitionException, Token} from 'antlr4ng';
+import {
+  BaseErrorListener,
+  CharStream,
+  CommonTokenStream,
+  RecognitionException,
+  Token,
+} from 'antlr4ng';
 import {AntlrAssetSelectionVisitor} from 'shared/asset-selection/AntlrAssetSelectionVisitor.oss';
 
 import {SupplementaryInformation} from './types';

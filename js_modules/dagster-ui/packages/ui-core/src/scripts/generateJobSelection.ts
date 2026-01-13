@@ -18,7 +18,11 @@ const files = [
 ];
 
 files.forEach((file) => {
-  execFileSync('yarn', ['prettier', '--log-level', 'silent', '--write', `./src/job-selection/generated/${file}`], {
-    stdio: 'inherit',
-  });
+  execFileSync(
+    'yarn',
+    ['prettier', '--log-level', 'silent', '--write', `./src/job-selection/generated/${file}`],
+    {
+      stdio: 'inherit',
+    },
+  );
 });

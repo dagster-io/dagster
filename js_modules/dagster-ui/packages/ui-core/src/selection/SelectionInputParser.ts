@@ -1,4 +1,10 @@
-import {BailErrorStrategy, CharStream, CommonTokenStream, ParseTree, ParserRuleContext} from 'antlr4ng';
+import {
+  BailErrorStrategy,
+  CharStream,
+  CommonTokenStream,
+  ParseTree,
+  ParserRuleContext,
+} from 'antlr4ng';
 import memoize from 'lodash/memoize';
 
 import {CustomErrorListener, SyntaxError} from './CustomErrorListener';
@@ -53,7 +59,7 @@ export const parseInput = memoize((input: string): ParseResult => {
     try {
       // Parse using the 'expr' rule instead of 'start' to allow partial parsing
       tree = parser.expr();
-      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+
       parseTrees.push({tree, line: (tree as ParserRuleContext).getText()});
 
       // Advance currentPosition to the end of the parsed input

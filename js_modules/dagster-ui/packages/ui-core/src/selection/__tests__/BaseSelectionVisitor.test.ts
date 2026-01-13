@@ -16,19 +16,18 @@ class TestBaseVisitor extends BaseSelectionVisitor {
   }
 
   public visitUnmatchedValue(ctx: UnmatchedValueContext) {
-    this.visitedNodes.push(
-      `visitUnmatchedValue: [${ctx.start!.start}, ${ctx.stop?.stop}]`,
-    );
+    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+    this.visitedNodes.push(`visitUnmatchedValue: [${ctx.start!.start}, ${ctx.stop?.stop}]`);
   }
 
   public visitAttributeName(ctx: ParserRuleContext) {
+    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
     this.visitedNodes.push(`visitAttributeName: [${ctx.start!.start}, ${ctx.stop?.stop}]`);
   }
 
   public visitAttributeValue(ctx: AttributeValueContext) {
-    this.visitedNodes.push(
-      `visitAttributeValue: [${ctx.start!.start}, ${ctx.stop?.stop}]`,
-    );
+    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+    this.visitedNodes.push(`visitAttributeValue: [${ctx.start!.start}, ${ctx.stop?.stop}]`);
   }
 }
 

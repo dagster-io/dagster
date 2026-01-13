@@ -22,7 +22,13 @@ const files = [
 files.forEach((file) => {
   execFileSync(
     'yarn',
-    ['prettier', '--log-level', 'silent', '--write', `./src/automation-selection/generated/${file}`],
+    [
+      'prettier',
+      '--log-level',
+      'silent',
+      '--write',
+      `./src/automation-selection/generated/${file}`,
+    ],
     {
       stdio: 'inherit',
     },

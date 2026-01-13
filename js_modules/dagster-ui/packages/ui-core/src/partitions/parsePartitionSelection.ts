@@ -1,4 +1,10 @@
-import {BaseErrorListener, CharStream, CommonTokenStream, RecognitionException, Token} from 'antlr4ng';
+import {
+  BaseErrorListener,
+  CharStream,
+  CommonTokenStream,
+  RecognitionException,
+  Token,
+} from 'antlr4ng';
 
 import {
   AntlrPartitionSelectionVisitor,

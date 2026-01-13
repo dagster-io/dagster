@@ -1,9 +1,4 @@
-import {
-  AbstractParseTreeVisitor,
-  ParseTree,
-  ParserRuleContext,
-  TerminalNode,
-} from 'antlr4ng';
+import {AbstractParseTreeVisitor, ParseTree, ParserRuleContext, TerminalNode} from 'antlr4ng';
 
 // In antlr4ng, RuleNode is part of ParserRuleContext
 type RuleNode = ParserRuleContext;
@@ -71,7 +66,7 @@ export class BaseSelectionVisitor
    * Visit children, but only those that include the cursor or are forced.
    */
   public visitChildren(node: RuleNode) {
-    let result = this.defaultResult();
+    const result = this.defaultResult();
 
     const childCount = node.getChildCount();
     for (let i = 0; i < childCount; i++) {
