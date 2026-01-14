@@ -10,7 +10,7 @@ import {
   Tooltip,
 } from '@dagster-io/ui-components';
 import * as React from 'react';
-import {memo, useLayoutEffect, useMemo, useRef, useState} from 'react';
+import {memo, useEffect, useLayoutEffect, useMemo, useRef, useState} from 'react';
 import {Link} from 'react-router-dom';
 import styled from 'styled-components';
 
@@ -20,6 +20,7 @@ import {LogsScrollingTable} from './LogsScrollingTable';
 import {LogType, LogsToolbar} from './LogsToolbar';
 import {RunActionButtons} from './RunActionButtons';
 import {RunContext} from './RunContext';
+import {useRunFailureInfo} from './RunFailureInfoContext';
 import {IRunMetadataDict, RunMetadataProvider} from './RunMetadataProvider';
 import {runsPathWithFilters} from './RunsFilterInput';
 import {showCustomAlert} from '../app/CustomAlertProvider';
@@ -197,6 +198,14 @@ const RunWithData = ({
   const logType = logTypeFromQuery(queryLogType);
   const setLogType = (lt: LogType) => setQueryLogType(LogType[lt]);
   const [computeLogUrl, setComputeLogUrl] = useState<string | null>(null);
+
+  // Update the failure info context when a run failure event is available
+  const {setFailureInfo} = useRunFailureInfo();
+  useEffect(() => {
+    if (metadata.runFailureEvent) {
+      setFailureInfo(metadata.runFailureEvent);
+    }
+  }, [metadata.runFailureEvent, setFailureInfo]);
 
   const stepKeysJSON = JSON.stringify(Object.keys(metadata.steps).sort());
   const stepKeys = useMemo(() => JSON.parse(stepKeysJSON), [stepKeysJSON]);

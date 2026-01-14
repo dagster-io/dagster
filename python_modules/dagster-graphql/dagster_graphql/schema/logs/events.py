@@ -127,6 +127,9 @@ class GrapheneRunSuccessEvent(graphene.ObjectType):
 
 
 class GrapheneRunFailureEvent(graphene.ObjectType):
+    # The first step failure event that caused the run to fail, if any
+    first_step_failure = graphene.Field(lambda: GrapheneExecutionStepFailureEvent)
+
     class Meta:
         interfaces = (GrapheneMessageEvent, GrapheneRunEvent, GrapheneErrorEvent)
         name = "RunFailureEvent"

@@ -372,6 +372,7 @@ type RunFailureEvent implements MessageEvent & RunEvent & ErrorEvent {
   eventType: DagsterEventType
   pipelineName: String!
   error: PythonError
+  firstStepFailure: ExecutionStepFailureEvent
 }
 
 interface RunEvent {

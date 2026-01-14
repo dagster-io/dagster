@@ -123,6 +123,22 @@ export const LOGS_ROW_STRUCTURED_FRAGMENT = gql`
         ...PythonErrorFragment
       }
     }
+    ... on RunFailureEvent {
+      firstStepFailure {
+        message
+        timestamp
+        stepKey
+        error {
+          ...PythonErrorFragment
+        }
+        errorSource
+        failureMetadata {
+          metadataEntries {
+            ...MetadataEntryFragment
+          }
+        }
+      }
+    }
     ... on FailedToMaterializeEvent {
       partition
       assetKey {

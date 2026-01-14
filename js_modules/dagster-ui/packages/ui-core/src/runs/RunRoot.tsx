@@ -8,14 +8,16 @@ import {
   Subtitle1,
   Tag,
 } from '@dagster-io/ui-components';
-import {useMemo} from 'react';
+import {useMemo, useState} from 'react';
 import {Link, useParams} from 'react-router-dom';
 
 import {Run} from './Run';
 import {RunAssetCheckTags} from './RunAssetCheckTags';
 import {RunAssetTags} from './RunAssetTags';
+import {RunFailureInfoContext} from './RunFailureInfoContext';
 import {RUN_PAGE_FRAGMENT} from './RunFragments';
 import {RunHeaderActions} from './RunHeaderActions';
+import {IRunFailureEvent} from './RunMetadataProvider';
 import {RunStatusTag} from './RunStatusTag';
 import {DagsterTag, RunTag} from './RunTag';
 import {RunTimingTags} from './RunTimingTags';
@@ -95,67 +97,72 @@ export const RunRoot = () => {
 
   const partitionTag = run?.tags.find((tag) => tag.key === DagsterTag.Partition);
 
+  const [failureInfo, setFailureInfo] = useState<IRunFailureEvent | null>(null);
+  const failureInfoContextValue = useMemo(() => ({failureInfo, setFailureInfo}), [failureInfo]);
+
   return (
-    <div
-      style={{
-        display: 'flex',
-        flexDirection: 'column',
-        minWidth: 0,
-        width: '100%',
-        height: '100%',
-        overflow: 'hidden',
-      }}
-    >
-      <Box
-        flex={{direction: 'row', alignItems: 'flex-start'}}
+    <RunFailureInfoContext.Provider value={failureInfoContextValue}>
+      <div
         style={{
-          position: 'relative',
-          zIndex: 1,
+          display: 'flex',
+          flexDirection: 'column',
+          minWidth: 0,
+          width: '100%',
+          height: '100%',
+          overflow: 'hidden',
         }}
       >
-        <PageHeader
-          title={<RunHeaderTitle run={run} runId={runId} />}
-          tags={
-            run ? (
-              <Box flex={{direction: 'row', alignItems: 'flex-start', gap: 12, wrap: 'wrap'}}>
-                <RunStatusTag status={run.status} />
-                {!isHiddenAssetGroupJob(run.pipelineName) ? (
-                  <Tag icon="run">
-                    Run of{' '}
-                    <PipelineReference
-                      pipelineName={run?.pipelineName}
-                      pipelineHrefContext={repoAddress || 'repo-unknown'}
-                      snapshotId={snapshotID}
-                      size="small"
-                      isJob={isJob}
+        <Box
+          flex={{direction: 'row', alignItems: 'flex-start'}}
+          style={{
+            position: 'relative',
+            zIndex: 1,
+          }}
+        >
+          <PageHeader
+            title={<RunHeaderTitle run={run} runId={runId} />}
+            tags={
+              run ? (
+                <Box flex={{direction: 'row', alignItems: 'flex-start', gap: 12, wrap: 'wrap'}}>
+                  <RunStatusTag status={run.status} failureInfo={failureInfo} />
+                  {!isHiddenAssetGroupJob(run.pipelineName) ? (
+                    <Tag icon="run">
+                      Run of{' '}
+                      <PipelineReference
+                        pipelineName={run?.pipelineName}
+                        pipelineHrefContext={repoAddress || 'repo-unknown'}
+                        snapshotId={snapshotID}
+                        size="small"
+                        isJob={isJob}
+                      />
+                    </Tag>
+                  ) : null}
+                  {tickDetails ? (
+                    <TickTagForRun
+                      instigationSelector={tickDetails.instigationSelector}
+                      instigationType={tickDetails.instigationType}
+                      tickId={tickDetails.tickId}
                     />
-                  </Tag>
-                ) : null}
-                {tickDetails ? (
-                  <TickTagForRun
-                    instigationSelector={tickDetails.instigationSelector}
-                    instigationType={tickDetails.instigationType}
-                    tickId={tickDetails.tickId}
-                  />
-                ) : null}
-                {partitionTag && <RunTag tag={partitionTag} />}
-                <RunAssetTags run={run} />
-                <RunAssetCheckTags run={run} />
-                <RunTimingTags run={run} loading={loading} />
-                {automaterializeTag && run.assetSelection?.length ? (
-                  <AutomaterializeTagWithEvaluation
-                    assetKeys={run.assetSelection}
-                    evaluationId={automaterializeTag.value}
-                  />
-                ) : null}
-              </Box>
-            ) : null
-          }
-          right={run ? <RunHeaderActions run={run} isJob={isJob} /> : null}
-        />
-      </Box>
-      <RunById data={data} runId={runId} />
-    </div>
+                  ) : null}
+                  {partitionTag && <RunTag tag={partitionTag} />}
+                  <RunAssetTags run={run} />
+                  <RunAssetCheckTags run={run} />
+                  <RunTimingTags run={run} loading={loading} />
+                  {automaterializeTag && run.assetSelection?.length ? (
+                    <AutomaterializeTagWithEvaluation
+                      assetKeys={run.assetSelection}
+                      evaluationId={automaterializeTag.value}
+                    />
+                  ) : null}
+                </Box>
+              ) : null
+            }
+            right={run ? <RunHeaderActions run={run} isJob={isJob} /> : null}
+          />
+        </Box>
+        <RunById data={data} runId={runId} />
+      </div>
+    </RunFailureInfoContext.Provider>
   );
 };
 
