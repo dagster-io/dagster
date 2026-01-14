@@ -146,6 +146,7 @@ types-setuptools==80.9.0.20250822  # Pinned due to overly strict _DictLike types
 -e examples/airlift-migration-tutorial
 -e examples/data-quality-patterns
 -e examples/ingestion-patterns
+-e examples/snowflake_cortex/dagster_snowflake
 -e examples/use_case_repository[dev]
 # -e examples/docs_projects/project_atproto_dashboard
 # -e examples/docs_projects/project_dagster_modal_pipes
