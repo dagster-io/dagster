@@ -724,15 +724,30 @@ class AssetGraphView(LoadingContext):
                 )
             return from_subset.compute_difference(materialized_subset)
         else:
-            # more expensive call
-            missing_asset_partitions = {
-                ap
-                for ap in from_subset.expensively_compute_asset_partitions()
-                if not self._queryer.asset_partition_has_materialization_or_observation(ap)
-            }
-            return self.get_asset_subset_from_asset_partitions(
-                key=key, asset_partitions=missing_asset_partitions
-            )
+            partitions_def = self._get_partitions_def(key)
+            if partitions_def:
+                observed_partition_keys = self._queryer.get_materialized_or_observed_partition_keys(
+                    asset_key=key
+                )
+                with partition_loading_context(new_ctx=self.partition_loading_context):
+                    observed_partition_keys = self._validate_partition_keys(
+                        key, observed_partition_keys
+                    )
+                    observed_subset = EntitySubset(
+                        self,
+                        key=key,
+                        value=_ValidatedEntitySubsetValue(
+                            partitions_def.subset_with_partition_keys(observed_partition_keys)
+                        ),
+                    )
+                    return from_subset.compute_difference(observed_subset)
+            else:
+                has_materialization_or_observation = (
+                    self._queryer.asset_partition_has_materialization_or_observation(
+                        AssetKeyPartitionKey(key)
+                    )
+                )
+                return self.get_empty_subset(key=key) if has_materialization_or_observation else from_subset
 
     @cached_method
     async def compute_run_in_progress_subset(self, *, key: EntityKey) -> EntitySubset:

@@ -305,6 +305,14 @@ class BaseAssetGraph(ABC, Generic[T_AssetNode]):
     def get_all_asset_keys(self) -> AbstractSet[AssetKey]:
         return set(self._asset_nodes_by_key)
 
+    @cached_property
+    def sorted_asset_keys(self) -> Sequence[AssetKey]:
+        return sorted(self._asset_nodes_by_key, key=lambda key: key.to_string())
+
+    @cached_property
+    def sorted_asset_key_strings(self) -> Sequence[str]:
+        return [key.to_string() for key in self.sorted_asset_keys]
+
     # since this is an ABC and @cached_property has class level locking on py < 3.12
     # use property & cached_method instead
 

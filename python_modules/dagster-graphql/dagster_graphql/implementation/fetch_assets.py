@@ -1,6 +1,8 @@
+import bisect
 import datetime
+import heapq
 from collections import defaultdict
-from collections.abc import Sequence
+from collections.abc import Iterator, Sequence
 from typing import TYPE_CHECKING, AbstractSet, Optional, Union, cast  # noqa: UP035
 
 import dagster_shared.seven as seven
@@ -49,6 +51,9 @@ if TYPE_CHECKING:
     from dagster_graphql.schema.util import ResolveInfo
 
 
+ASSET_KEY_PAGE_SIZE = 1000
+
+
 def _normalize_asset_cursor_str(cursor_string: Optional[str]) -> Optional[str]:
     # the cursor for assets is derived from a json serialized string of the path.  Because there are
     # json serialization differences between JS and Python in its treatment of whitespace, we should
@@ -78,7 +83,7 @@ def get_asset_records(
     materialized_assets = sorted(
         # TODO(salazarm): Replace this with `get_asset_records` once that supports pagination arguments.
         instance.get_asset_keys(prefix=prefix, limit=limit, cursor=normalized_cursor_str),
-        key=str,
+        key=lambda asset_key: asset_key.to_string(),
     )
 
     return GrapheneAssetRecordConnection(
@@ -91,6 +96,42 @@ def get_asset_records(
         ],
         cursor=materialized_assets[-1].to_string() if materialized_assets else None,
     )
+
+
+def _iter_asset_graph_keys(
+    asset_graph, prefix: Optional[Sequence[str]], cursor: Optional[str]
+) -> Iterator[tuple[str, int, AssetKey]]:
+    prefix_list = list(prefix) if prefix else None
+    key_strings = asset_graph.sorted_asset_key_strings
+    sorted_keys = asset_graph.sorted_asset_keys
+    start_idx = bisect.bisect_right(key_strings, cursor) if cursor else 0
+
+    for key_str, key in zip(key_strings[start_idx:], sorted_keys[start_idx:]):
+        if not prefix_list or key.path[: len(prefix_list)] == prefix_list:
+            yield (key_str, 1, key)
+
+
+def _iter_materialized_keys(
+    instance,
+    prefix: Optional[Sequence[str]],
+    cursor: Optional[str],
+    limit: Optional[int],
+) -> Iterator[tuple[str, int, AssetKey]]:
+    if limit and limit > 0:
+        page_size = min(limit, ASSET_KEY_PAGE_SIZE)
+    else:
+        page_size = ASSET_KEY_PAGE_SIZE
+    page_cursor = cursor
+
+    while True:
+        page = instance.get_asset_keys(prefix=prefix, limit=page_size, cursor=page_cursor)
+        if not page:
+            break
+        for key in page:
+            yield (key.to_string(), 0, key)
+        if len(page) < page_size:
+            break
+        page_cursor = page[-1].to_string()
 
 
 def get_assets(
@@ -115,26 +156,25 @@ def get_assets(
 
     normalized_cursor_str = _normalize_asset_cursor_str(cursor)
     if asset_keys is None:
-        materialized_keys = instance.get_asset_keys(
-            prefix=prefix, limit=limit, cursor=normalized_cursor_str
+        asset_graph_iter = _iter_asset_graph_keys(
+            graphene_info.context.asset_graph, prefix, normalized_cursor_str
         )
-
-        asset_graph_keys = {
-            asset_key
-            for asset_key in graphene_info.context.asset_graph.get_all_asset_keys()
-            if (
-                (not prefix or asset_key.path[: len(prefix)] == prefix)
-                and (not normalized_cursor_str or asset_key.to_string() > normalized_cursor_str)
-                and (not asset_keys or asset_key in asset_keys)
-            )
-        }
-
-        merged_asset_keys = sorted(set(materialized_keys).union(asset_graph_keys), key=str)
+        materialized_iter = _iter_materialized_keys(
+            instance, prefix, normalized_cursor_str, limit
+        )
+        merged_asset_keys = []
+        last_key = None
+        for key_str, _, asset_key in heapq.merge(materialized_iter, asset_graph_iter):
+            if key_str == last_key:
+                continue
+            merged_asset_keys.append(asset_key)
+            last_key = key_str
+            if limit and len(merged_asset_keys) >= limit:
+                break
     else:
         merged_asset_keys = asset_keys
-
-    if limit:
-        merged_asset_keys = merged_asset_keys[:limit]
+        if limit:
+            merged_asset_keys = merged_asset_keys[:limit]
 
     return GrapheneAssetConnection(
         nodes=[GrapheneAsset(key=asset_key) for asset_key in merged_asset_keys],
