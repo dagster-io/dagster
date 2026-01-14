@@ -10,15 +10,11 @@ export type {ParsedPartitionTerm as ParsedSpanTerm} from './AntlrPartitionSelect
 
 /**
  * Regular expression matching characters that require quoting in partition keys.
- * These characters have special meaning in the partition selection syntax:
- * - , (comma): separates partition items
- * - [ ] (brackets): range delimiters
- * - . (dot): part of range delimiter ...
- * - * (asterisk): wildcard character
- * - " (quote): string delimiter
- * - \ (backslash): escape character
+ * This matches any character NOT allowed in unquoted partition keys per the grammar.
+ * The grammar's UNQUOTED_CHAR fragment allows: [-a-zA-Z0-9_:/@]
+ * Any other character (whitespace, punctuation, special chars) requires quoting.
  */
-const SPECIAL_CHARS = /[,[\].*"\\]/;
+const REQUIRES_QUOTING = /[^-a-zA-Z0-9_:/@]/;
 
 /**
  * Escape a partition key for serialization.
@@ -40,7 +36,7 @@ const SPECIAL_CHARS = /[,[\].*"\\]/;
  * // => '"key\\"with\\"quotes"'
  */
 export function escapePartitionKey(key: string): string {
-  if (!SPECIAL_CHARS.test(key)) {
+  if (!REQUIRES_QUOTING.test(key)) {
     return key;
   }
   // Escape backslashes first (so we don't double-escape), then quotes
