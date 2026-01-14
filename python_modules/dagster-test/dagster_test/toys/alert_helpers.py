@@ -1,5 +1,6 @@
 import random
 import time
+from typing import Any
 
 import dagster as dg
 
@@ -40,5 +41,14 @@ def schema_change_asset(context):
     )
 
 
+class CustomMetadataConfig(dg.Config):
+    custom_metadata: dict[str, Any]
+
+
+@dg.asset
+def custom_metadata_asset(config: CustomMetadataConfig):
+    return dg.MaterializeResult(metadata={**config.custom_metadata})
+
+
 def get_assets_and_checks():
-    return [schema_change_asset]
+    return [schema_change_asset, custom_metadata_asset]

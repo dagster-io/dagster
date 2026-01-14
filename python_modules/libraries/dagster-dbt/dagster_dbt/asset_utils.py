@@ -63,6 +63,42 @@ DBT_EMPTY_INDIRECT_SELECTION: Final[str] = "empty"
 # https://github.com/dagster-io/dagster/issues/16997
 _SELECTION_ARGS_THRESHOLD: Final[int] = 200
 
+
+def _parse_selection_args(
+    selection_args: list[str],
+) -> tuple[Optional[list[str]], Optional[list[str]]]:
+    """Parse selection args into separate select and exclude resource lists.
+
+    This function is designed for dagster-dbt's internal argument format, where select/exclude
+    values are passed as a single space-separated string (e.g., ["--select", "model1 model2"]).
+    This matches how dagster-dbt constructs these arguments in get_subset_selection_for_context.
+    It does not handle the dbt CLI's alternative format of multiple --select flags.
+
+    Args:
+        selection_args: CLI arguments in dagster-dbt's internal format,
+            e.g., ["--select", "model1 model2", "--exclude", "model3"]
+
+    Returns:
+        Tuple of (select_resources, exclude_resources) where each is a list of resource names
+        or None if not present.
+    """
+    select_resources: Optional[list[str]] = None
+    exclude_resources: Optional[list[str]] = None
+
+    i = 0
+    while i < len(selection_args):
+        if selection_args[i] == "--select" and i + 1 < len(selection_args):
+            select_resources = selection_args[i + 1].split(" ")
+            i += 2
+        elif selection_args[i] == "--exclude" and i + 1 < len(selection_args):
+            exclude_resources = selection_args[i + 1].split(" ")
+            i += 2
+        else:
+            i += 1
+
+    return select_resources, exclude_resources
+
+
 DUPLICATE_ASSET_KEY_ERROR_MESSAGE = (
     "The following dbt resources are configured with identical Dagster asset keys."
     " Please ensure that each dbt resource generates a unique Dagster asset key."
@@ -464,11 +500,11 @@ def get_updated_cli_invocation_params_for_context(
             dagster_dbt_translator=dagster_dbt_translator,
             current_dbt_indirect_selection_env=indirect_selection,
         )
-        if (
-            selection_args[0] == "--select"
-            and project_dir
-            and len(resources := selection_args[1].split(" ")) > _SELECTION_ARGS_THRESHOLD
-        ):
+        # Parse selection args to get select and exclude resources
+        select_resources, exclude_resources = _parse_selection_args(selection_args)
+        total_resources = len(select_resources or []) + len(exclude_resources or [])
+
+        if select_resources and project_dir and total_resources > _SELECTION_ARGS_THRESHOLD:
             temp_project_dir = tempfile.mkdtemp()
             shutil.copytree(project_dir, temp_project_dir, dirs_exist_ok=True)
             selectors_path = Path(temp_project_dir) / "selectors.yml"
@@ -478,17 +514,25 @@ def get_updated_cli_invocation_params_for_context(
                 selectors_path.unlink()
 
             selector_name = f"dagster_run_{context.run_id}"
+            # Build selector definition with union of selected resources
+            # and optional exclude section nested inside the union
+            # See: https://docs.getdbt.com/reference/node-selection/yaml-selectors
+            # Note: exclude must be nested inside the union array, not a sibling key
+            union_items: list[Any] = list(select_resources)
+            if exclude_resources:
+                union_items.append({"exclude": list(exclude_resources)})
+
             temp_selectors = {
                 "selectors": [
                     {
                         "name": selector_name,
-                        "definition": {"union": list(resources)},
+                        "definition": {"union": union_items},
                     }
                 ]
             }
             selectors_path.write_text(yaml.safe_dump(temp_selectors))
             logger.info(
-                f"DBT selection of {len(resources)} resources exceeds threshold of {_SELECTION_ARGS_THRESHOLD}. "
+                f"DBT selection of {total_resources} resources exceeds threshold of {_SELECTION_ARGS_THRESHOLD}. "
                 "This may exceed system argument length limits. "
                 f"Executing materialization against temporary copy of DBT project at {temp_project_dir} with ephemeral selector."
             )

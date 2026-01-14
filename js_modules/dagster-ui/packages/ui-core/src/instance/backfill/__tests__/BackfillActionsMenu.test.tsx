@@ -2,10 +2,14 @@ import {MockedProvider, MockedResponse} from '@apollo/client/testing';
 import {CustomTooltipProvider} from '@dagster-io/ui-components';
 import {render, screen, waitFor} from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import {act} from 'react';
 import {MemoryRouter} from 'react-router-dom';
 
-import {ReexecutionParams, ReexecutionStrategy} from '../../../graphql/types';
+import {
+  ReexecutionParams,
+  ReexecutionStrategy,
+  buildLaunchBackfillSuccess,
+  buildMutation,
+} from '../../../graphql/types';
 import {BackfillActionsMenu} from '../BackfillActionsMenu';
 import {
   BackfillTableFragmentCompletedAssetJob,
@@ -32,91 +36,93 @@ describe('BackfillActionsMenu', () => {
       strategy: ReexecutionStrategy.FROM_FAILURE,
     });
 
-    await act(async () => {
-      render(
-        <MemoryRouter>
-          <CustomTooltipProvider />
-          <MockedProvider mocks={[reexecuteMock, reexecuteFromFailureMock]}>
-            <BackfillActionsMenu backfill={BackfillTableFragmentFailedError} refetch={() => {}} />
-          </MockedProvider>
-        </MemoryRouter>,
-      );
-    });
+    render(
+      <MemoryRouter>
+        <CustomTooltipProvider />
+        <MockedProvider mocks={[reexecuteMock, reexecuteFromFailureMock]}>
+          <BackfillActionsMenu backfill={BackfillTableFragmentFailedError} refetch={() => {}} />
+        </MockedProvider>
+      </MemoryRouter>,
+    );
 
     const dropdown = await screen.findByTestId('backfill_actions_dropdown_toggle');
     await user.click(dropdown);
 
-    const reexecute = screen.getByText('Re-execute');
-    expectAriaEnabled(reexecute.parentElement, true);
+    const reexecute = await screen.findByRole('menuitem', {name: /re-execute$/i});
+    expect(reexecute).toBeEnabled();
+
     await user.click(reexecute);
     await waitFor(() => expect(reexecuteMock.result).toHaveBeenCalled());
 
-    const reexecuteFromFailure = screen.getByText('Re-execute from failure');
-    expectAriaEnabled(reexecuteFromFailure.parentElement, true);
+    const reexecuteFromFailure = await screen.findByRole('menuitem', {
+      name: /re-execute from failure$/i,
+    });
+    expect(reexecuteFromFailure).toBeEnabled();
+
     await user.click(reexecuteFromFailure);
     await waitFor(() => expect(reexecuteFromFailureMock.result).toHaveBeenCalled());
 
     // Disabled on failed backfills
-    const cancel = screen.getByText('Cancel backfill');
-    expectAriaEnabled(cancel.parentElement, false);
+    const cancel = await screen.findByRole('menuitem', {name: /cancel backfill$/i});
+    expect(cancel).toBeDisabled();
   });
 
   it('does not enable re-execute and "re-execute from failure" for in-progress backfills', async () => {
     const user = userEvent.setup();
 
-    await act(async () => {
-      render(
-        <MemoryRouter>
-          <CustomTooltipProvider />
-          <MockedProvider mocks={[]}>
-            <BackfillActionsMenu
-              backfill={BackfillTableFragmentRequested2000AssetsPure}
-              refetch={() => {}}
-            />
-          </MockedProvider>
-        </MemoryRouter>,
-      );
-    });
+    render(
+      <MemoryRouter>
+        <CustomTooltipProvider />
+        <MockedProvider mocks={[]}>
+          <BackfillActionsMenu
+            backfill={BackfillTableFragmentRequested2000AssetsPure}
+            refetch={() => {}}
+          />
+        </MockedProvider>
+      </MemoryRouter>,
+    );
 
     const dropdown = await screen.findByTestId('backfill_actions_dropdown_toggle');
     expect(dropdown).toBeVisible();
     await user.click(dropdown);
 
-    const reexecute = screen.getByText('Re-execute');
-    expectAriaEnabled(reexecute.parentElement, false);
-    const reexecuteFromFailure = screen.getByText('Re-execute from failure');
-    expectAriaEnabled(reexecuteFromFailure.parentElement, false);
-    const cancel = screen.getByText('Cancel backfill');
-    expectAriaEnabled(cancel.parentElement, true);
+    const reexecute = await screen.findByRole('menuitem', {name: /re-execute$/i});
+    expect(reexecute).toBeDisabled();
+    const reexecuteFromFailure = await screen.findByRole('menuitem', {
+      name: /re-execute from failure$/i,
+    });
+    expect(reexecuteFromFailure).toBeDisabled();
+    const cancel = await screen.findByRole('menuitem', {name: /cancel backfill$/i});
+    expect(cancel).toBeEnabled();
   });
 
   it('enables re-execute for successful backfills and disables "re-execute from failure"', async () => {
     const user = userEvent.setup();
 
-    await act(async () => {
-      render(
-        <MemoryRouter>
-          <CustomTooltipProvider />
-          <MockedProvider mocks={[]}>
-            <BackfillActionsMenu
-              backfill={BackfillTableFragmentCompletedAssetJob}
-              refetch={() => {}}
-            />
-          </MockedProvider>
-        </MemoryRouter>,
-      );
-    });
+    render(
+      <MemoryRouter>
+        <CustomTooltipProvider />
+        <MockedProvider mocks={[]}>
+          <BackfillActionsMenu
+            backfill={BackfillTableFragmentCompletedAssetJob}
+            refetch={() => {}}
+          />
+        </MockedProvider>
+      </MemoryRouter>,
+    );
 
     const dropdown = await screen.findByTestId('backfill_actions_dropdown_toggle');
     expect(dropdown).toBeVisible();
     await user.click(dropdown);
 
-    const reexecute = screen.getByText('Re-execute');
-    expectAriaEnabled(reexecute.parentElement, true);
-    const reexecuteFromFailure = screen.getByText('Re-execute from failure');
-    expectAriaEnabled(reexecuteFromFailure.parentElement, false);
-    const cancel = screen.getByText('Cancel backfill');
-    expectAriaEnabled(cancel.parentElement, false);
+    const reexecute = await screen.findByRole('menuitem', {name: /re\-execute$/i});
+    expect(reexecute).toBeEnabled();
+    const reexecuteFromFailure = await screen.findByRole('menuitem', {
+      name: /re\-execute from failure$/i,
+    });
+    expect(reexecuteFromFailure).toBeDisabled();
+    const cancel = await screen.findByRole('menuitem', {name: /cancel backfill$/i});
+    expect(cancel).toBeDisabled();
   });
 });
 
@@ -129,15 +135,9 @@ function buildReexecuteMock(
       variables: {reexecutionParams},
     },
     result: jest.fn(() => ({
-      data: {
-        __typename: 'Mutation',
-        reexecutePartitionBackfill: {__typename: 'LaunchBackfillSuccess', backfillId: 'backfillid'},
-      },
+      data: buildMutation({
+        reexecutePartitionBackfill: buildLaunchBackfillSuccess({backfillId: 'backfillid'}),
+      }),
     })),
   };
 }
-
-const expectAriaEnabled = (e: HTMLElement | null, enabled: boolean) =>
-  enabled
-    ? expect(e).not.toHaveAttribute('aria-disabled', 'true')
-    : expect(e).toHaveAttribute('aria-disabled', 'true');

@@ -110,7 +110,6 @@ export const RunHeaderActions = ({run, isJob}: {run: RunFragment; isJob: boolean
                     </Tooltip>
                     {run.status === RunStatus.QUEUED ? (
                       <MenuItem
-                        tagName="button"
                         icon="history_toggle_off"
                         text="View queue criteria"
                         intent="none"
@@ -119,7 +118,6 @@ export const RunHeaderActions = ({run, isJob}: {run: RunFragment; isJob: boolean
                     ) : null}
                     {runMetricsEnabled && RunMetricsDialog ? (
                       <MenuItem
-                        tagName="button"
                         icon="asset_plot"
                         text="View container metrics"
                         intent="none"

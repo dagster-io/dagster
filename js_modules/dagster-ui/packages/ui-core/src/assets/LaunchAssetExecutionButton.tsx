@@ -13,6 +13,7 @@ import pick from 'lodash/pick';
 import uniq from 'lodash/uniq';
 import React, {useContext, useMemo, useState} from 'react';
 import {Link} from 'react-router-dom';
+import {observeEnabled} from 'shared/app/observeEnabled.oss';
 import {useLaunchWithTelemetry} from 'shared/launchpad/useLaunchWithTelemetry.oss';
 
 import {ASSET_NODE_CONFIG_FRAGMENT} from './AssetConfig';
@@ -191,7 +192,7 @@ export function optionsForExecuteButton(
     materializeOption: {
       assetKeys: materializable.map((a) => a.assetKey),
       disabledReason: materializationDisabledReason(assets, materializable, isSingle),
-      icon: <Icon name="execute" />,
+      icon: <Icon name={observeEnabled() ? 'execute' : 'materialization'} />,
       label: isSelection
         ? `Materialize selected${countIfPluralOrNotAll(materializable, assets)}${ellipsis}`
         : materializable.length > 1 && !skipAllTerm
@@ -275,7 +276,7 @@ export const LaunchAssetExecutionButton = ({
   ) {
     // If all options are disabled, just show the button with no dropdown.
     return (
-      <Tooltip content={firstOption.disabledReason} placement="bottom-end">
+      <Tooltip content={firstOption.disabledReason} position="bottom-end">
         <Button
           intent={primary ? 'primary' : undefined}
           icon={firstOption.icon}
@@ -326,7 +327,13 @@ export const LaunchAssetExecutionButton = ({
                 borderRight: `1px solid rgba(255,255,255,0.2)`,
               }}
               disabled={!canLaunch}
-              icon={loading ? <Spinner purpose="body-text" /> : <Icon name="execute" />}
+              icon={
+                loading ? (
+                  <Spinner purpose="body-text" />
+                ) : (
+                  <Icon name={observeEnabled() ? 'execute' : 'materialization'} />
+                )
+              }
             >
               {firstOption.label}
             </Button>

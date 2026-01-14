@@ -172,6 +172,7 @@ describe('AssetPartitions', () => {
   });
 
   it('should support reverse sorting individual dimensions', async () => {
+    const user = userEvent.setup();
     const Component = () => {
       const [params, setParams] = useState<AssetViewParams>({});
       return (
@@ -193,62 +194,29 @@ describe('AssetPartitions', () => {
 
     render(<Component />);
 
-    await waitFor(() => {
-      expect(screen.getByTestId('partitions-date')).toBeVisible();
-      expect(screen.getByTestId('partitions-zstate')).toBeVisible();
-    });
+    expect(await screen.findByTestId('partitions-date')).toBeVisible();
+    expect(await screen.findByTestId('partitions-zstate')).toBeVisible();
 
-    await waitFor(() => {
-      expect(
-        getByTestId(
-          screen.getByTestId('partitions-date'),
-          'asset-partition-row-2023-02-05-index-0',
-        ),
-      ).toBeVisible();
-      expect(
-        getByTestId(screen.getByTestId('partitions-zstate'), 'asset-partition-row-TN-index-0'),
-      ).toBeVisible();
-    });
+    expect(await screen.findByTestId('asset-partition-row-2023-02-05-index-0')).toBeVisible();
+    expect(await screen.findByTestId('asset-partition-row-TN-index-0')).toBeVisible();
 
-    await userEvent.click(screen.getByTestId('sort-0'));
-    await userEvent.click(screen.getByTestId('sort-creation'));
+    await user.click(await screen.findByTestId('sort-0'));
+    await user.click(await screen.findByRole('menuitem', {name: /^creation sort/i}));
 
-    await waitFor(() => {
-      expect(
-        getByTestId(
-          screen.getByTestId('partitions-date'),
-          'asset-partition-row-2021-05-06-index-0',
-        ),
-      ).toBeVisible();
-      expect(
-        getByTestId(screen.getByTestId('partitions-zstate'), 'asset-partition-row-TN-index-0'),
-      ).toBeVisible();
-    });
+    expect(await screen.findByTestId('asset-partition-row-2021-05-06-index-0')).toBeVisible();
+    expect(await screen.findByTestId('asset-partition-row-TN-index-0')).toBeVisible();
 
-    await userEvent.click(screen.getByTestId('sort-1'));
-    await waitFor(async () => {
-      await userEvent.click(screen.getByTestId('sort-reverse-creation'));
-    });
-    await waitFor(() => {
-      expect(
-        getByTestId(screen.getByTestId('partitions-zstate'), 'asset-partition-row-WV-index-0'),
-      ).toBeVisible();
-    });
+    await user.click(await screen.findByTestId('sort-1'));
+    await user.click(await screen.findByRole('menuitem', {name: /^reverse creation sort/i}));
+    expect(await screen.findByTestId('asset-partition-row-WV-index-0')).toBeVisible();
 
-    await userEvent.click(screen.getByTestId('sort-1'));
-    await waitFor(async () => {
-      await userEvent.click(screen.getByTestId('sort-alphabetical'));
-    });
-    expect(
-      getByTestId(screen.getByTestId('partitions-zstate'), 'asset-partition-row-FL-index-0'),
-    ).toBeVisible();
+    await user.click(await screen.findByTestId('sort-1'));
+    await user.click(await screen.findByRole('menuitem', {name: /^alphabetical sort/i}));
+    expect(await screen.findByTestId('asset-partition-row-FL-index-0')).toBeVisible();
 
-    await waitFor(async () => {
-      await userEvent.click(screen.getByTestId('sort-reverse-alphabetical'));
-    });
-    expect(
-      getByTestId(screen.getByTestId('partitions-zstate'), 'asset-partition-row-WV-index-0'),
-    ).toBeVisible();
+    await user.click(await screen.findByTestId('sort-1'));
+    await user.click(await screen.findByRole('menuitem', {name: /^reverse alphabetical sort/i}));
+    expect(await screen.findByTestId('asset-partition-row-WV-index-0')).toBeVisible();
   });
 
   it('should set the focused partition when you click a list element', async () => {

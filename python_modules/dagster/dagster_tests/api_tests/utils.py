@@ -11,6 +11,7 @@ from dagster._core.remote_representation.handle import JobHandle, RepositoryHand
 from dagster._core.types.loadable_target_origin import LoadableTargetOrigin
 from dagster._core.workspace.context import WorkspaceProcessContext, WorkspaceRequestContext
 from dagster._core.workspace.load_target import PythonFileTarget
+from dagster_shared.record import as_dict
 
 
 @contextmanager
@@ -109,3 +110,11 @@ def get_foo_job_handle(instance: Optional[dg.DagsterInstance] = None) -> Iterato
 
         with get_bar_repo_handle(instance) as repo_handle:
             yield JobHandle("foo", repo_handle)
+
+
+def with_invalid_origin(args):
+    """Bypass record type checking to create an invalid object for testing deserialization errors."""
+    return args.__class__.__nt_new__(
+        args.__class__,
+        **{**as_dict(args), "repository_origin": "INVALID"},
+    )

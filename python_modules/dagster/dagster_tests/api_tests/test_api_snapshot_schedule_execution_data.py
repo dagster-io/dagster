@@ -17,7 +17,7 @@ from dagster._grpc.client import ephemeral_grpc_api_client
 from dagster._grpc.types import ExternalScheduleExecutionArgs
 from dagster._time import get_current_datetime
 
-from dagster_tests.api_tests.utils import get_bar_repo_handle
+from dagster_tests.api_tests.utils import get_bar_repo_handle, with_invalid_origin
 
 
 def test_external_schedule_execution_data_api_grpc():
@@ -104,12 +104,14 @@ def test_external_schedule_execution_deserialize_error():
             ) as api_client:
                 result = dg.deserialize_value(
                     api_client.external_schedule_execution(
-                        external_schedule_execution_args=ExternalScheduleExecutionArgs(
-                            repository_origin=origin,
-                            instance_ref=instance.get_ref(),
-                            schedule_name="foobar",
-                            scheduled_execution_timestamp=None,
-                        )._replace(repository_origin="INVALID")
+                        external_schedule_execution_args=with_invalid_origin(
+                            ExternalScheduleExecutionArgs(
+                                repository_origin=origin,
+                                instance_ref=instance.get_ref(),
+                                schedule_name="foobar",
+                                scheduled_execution_timestamp=None,
+                            )
+                        )
                     )
                 )
                 assert isinstance(result, ScheduleExecutionErrorSnap)

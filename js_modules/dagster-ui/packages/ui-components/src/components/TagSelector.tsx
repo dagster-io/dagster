@@ -7,7 +7,7 @@ import {Box} from './Box';
 import {Checkbox} from './Checkbox';
 import {Colors} from './Color';
 import {Icon} from './Icon';
-import {Menu, MenuItem} from './Menu';
+import {Menu, MenuItemForInteractiveContent} from './Menu';
 import {MiddleTruncate} from './MiddleTruncate';
 import {Popover} from './Popover';
 import {TextInput} from './TextInput';
@@ -83,17 +83,15 @@ const defaultRenderDropdownItem = (
   dropdownItemProps: TagSelectorDropdownItemProps,
 ) => {
   return (
-    <label>
-      <MenuItem
-        text={
-          <Box flex={{alignItems: 'center', gap: 8}}>
-            <Checkbox checked={dropdownItemProps.selected} onChange={dropdownItemProps.toggle} />
-            <span>{tag}</span>
-          </Box>
-        }
-        tagName="div"
-      />
-    </label>
+    <MenuItemForInteractiveContent>
+      <Box flex={{alignItems: 'center', gap: 8}}>
+        <Checkbox
+          checked={dropdownItemProps.selected}
+          onChange={dropdownItemProps.toggle}
+          label={<span>{tag}</span>}
+        />
+      </Box>
+    </MenuItemForInteractiveContent>
   );
 };
 
