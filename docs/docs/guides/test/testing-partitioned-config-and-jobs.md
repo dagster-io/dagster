@@ -50,9 +50,7 @@ If you want to test that a <PyObject section="partitions" module="dagster" objec
 
 ## Testing partitioned jobs
 
-{/* TODO fix the API docs so this can be a PyObject */}
-
-To run a partitioned job in-process on a particular partition, supply a value for the `partition_key` argument of [`dagster.JobDefinition.execute_in_process`](/api/dagster/execution):
+To run a partitioned job in-process on a particular partition, supply a value for the `partition_key` argument of <PyObject section="jobs" module="dagster" object="JobDefinition.execute_in_process" />:
 
 <CodeExample
   path="docs_snippets/docs_snippets/concepts/partitions_schedules_sensors/partitioned_job_test.py"

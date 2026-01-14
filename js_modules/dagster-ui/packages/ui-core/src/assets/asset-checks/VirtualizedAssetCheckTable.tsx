@@ -71,9 +71,10 @@ interface AssetCheckRowProps {
 export const VirtualizedAssetCheckRow = ({assetNode, height, start, row}: AssetCheckRowProps) => {
   const execution = row.executionForLatestMaterialization;
   const timestamp = execution?.evaluation?.timestamp;
+  const rowTestId = `row-${assetNode.assetKey.path.join('-')}-${row.name}`;
 
   return (
-    <Row $height={height} $start={start} data-testid={testId(`row-#TODO_USE_CHECK_ID`)}>
+    <Row $height={height} $start={start} data-testid={testId(rowTestId)}>
       <RowGrid border="bottom">
         <RowCell style={{flexDirection: 'row', alignItems: 'center'}}>
           <Box flex={{direction: 'column', gap: 4}}>

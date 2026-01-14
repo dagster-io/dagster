@@ -184,9 +184,8 @@ def test_components_docs_index(
         context.run_command_and_snippet_output(
             cmd="dg scaffold defs 'dagster_sling.SlingReplicationCollectionComponent' ingest_files",
             snippet_path=f"{next_snip_no()}-dg-scaffold-sling-replication.txt",
-            # TODO turn output back on when we figure out how to handle multiple
-            # "Using ..." messages from multiple dagster-components calls under the hood (when
-            # cache disabled for pip)
+            # NOTE: Output stays off while multiple "Using ..." messages are emitted from nested
+            # dagster-components calls (when cache is disabled for pip).
             ignore_output=True,
         )
 
@@ -310,9 +309,8 @@ def test_components_docs_index(
             context.run_command_and_snippet_output(
                 cmd="dg scaffold defs dagster_dbt.DbtProjectComponent jdbt --project-path dbt/jdbt",
                 snippet_path=f"{next_snip_no()}-dg-scaffold-jdbt.txt",
-                # TODO turn output back on when we figure out how to handle multiple
-                # "Using ..." messages from multiple dagster-components calls under the hood
-                # (when cache disabled for pip)
+                # NOTE: Output stays off while multiple "Using ..." messages are emitted from nested
+                # dagster-components calls (when cache is disabled for pip).
                 ignore_output=True,
             )
             context.check_file(
@@ -386,9 +384,8 @@ def test_components_docs_index(
             context.run_command_and_snippet_output(
                 cmd="dg scaffold defs dagster_evidence.EvidenceProject jaffle_dashboard",
                 snippet_path=f"{next_snip_no()}-scaffold-jaffle-dashboard.txt",
-                # TODO turn output back on when we figure out how to handle multiple
-                # "Using ..." messages from multiple dagster-components calls under the hood
-                # (when cache disabled for pip)
+                # NOTE: Output stays off while multiple "Using ..." messages are emitted from nested
+                # dagster-components calls (when cache is disabled for pip).
                 ignore_output=True,
             )
 
@@ -440,9 +437,8 @@ def test_components_docs_index(
             context.run_command_and_snippet_output(
                 cmd="dg scaffold defs dagster.schedule daily_jaffle.py",
                 snippet_path=f"{next_snip_no()}-scaffold-daily-jaffle.txt",
-                # TODO turn output back on when we figure out how to handle multiple
-                # "Using ..." messages from multiple dagster-components calls under the hood (when
-                # cache disabled for pip)
+                # NOTE: Output stays off while multiple "Using ..." messages are emitted from nested
+                # dagster-components calls (when cache is disabled for pip).
                 ignore_output=True,
             )
 

@@ -7,6 +7,7 @@ from docs_snippets.concepts.partitions_schedules_sensors.sensors.sensor_alert im
     my_slack_on_run_success,
     slack_on_run_failure,
 )
+from docs_snippets.concepts.partitions_schedules_sensors.sensors import sensors as sensors_module
 from docs_snippets.concepts.partitions_schedules_sensors.sensors.sensors import (
     log_file_job,
     my_directory_sensor,
@@ -36,15 +37,21 @@ def test_log_file_job():
     assert result.success
 
 
-def test_my_directory_sensor():
-    # TODO: Actually test
-    assert my_directory_sensor
+def test_my_directory_sensor(tmp_path, monkeypatch):
+    test_file = tmp_path / "example.txt"
+    test_file.write_text("data", encoding="utf8")
+
+    monkeypatch.setattr(sensors_module, "MY_DIRECTORY", str(tmp_path))
+    run_requests = list(my_directory_sensor())
+
+    assert len(run_requests) == 1
+    assert run_requests[0].run_key == "example.txt"
+    assert run_requests[0].run_config is not None
 
 
 def test_interval_sensors():
-    # TODO: Actually test
-    assert sensor_A
-    assert sensor_B
+    assert sensor_A.minimum_interval_seconds == 30
+    assert sensor_B.minimum_interval_seconds == 45
 
 
 def test_run_failure_sensor_def():

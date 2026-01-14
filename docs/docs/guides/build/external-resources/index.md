@@ -24,12 +24,10 @@ Resources allow you to:
 
 ## Relevant APIs
 
-{/* TODO replace `ResourceParam` with <PyObject section="resources" module="dagster" object="ResourceParam"/> in table below  */}
-
 | Name                                             | Description                                                                                                                                                                                                                             |
 | ------------------------------------------------ | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | <PyObject section="resources" module="dagster" object="ConfigurableResource"/>        | The base class extended to define resources. Under the hood, implements <PyObject section="resources" object="ResourceDefinition" />.                                                                                                                       |
-| `ResourceParam`               | An annotation used to specify that a plain Python object parameter for an asset or op is a resource.                                                                                                                                    |
+| <PyObject section="resources" module="dagster" object="ResourceParam"/>               | An annotation used to specify that a plain Python object parameter for an asset or op is a resource.                                                                                                                                    |
 | <PyObject section="resources" module="dagster" object="ResourceDefinition" />         | Class for resource definitions. You almost never want to use initialize this class directly. Instead, you should extend the <PyObject section="resources" object="ConfigurableResource" /> class which implements <PyObject section="resources" object="ResourceDefinition" />. |
 | <PyObject section="resources" module="dagster" object="InitResourceContext"/>         | The context object provided to a resource during initialization. This object contains required resources, config, and other run information.                                                                                            |
 | <PyObject section="resources" module="dagster" object="build_init_resource_context"/> | Function for building an <PyObject section="resources" object="InitResourceContext"/> outside of execution, intended to be used when testing a resource.                                                                                                    |

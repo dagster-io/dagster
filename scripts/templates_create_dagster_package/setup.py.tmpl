@@ -10,7 +10,7 @@ def get_version() -> str:
 
     return version["__version__"]
 
-# TODO - add your package to scripts/install_dev_python_modules.py
+# NOTE: Add your package to scripts/install_dev_python_modules.py when ready.
 
 ver = get_version()
 # dont pin dev installs to avoid pip dep resolver issues
@@ -21,7 +21,7 @@ setup(
     author="Dagster Labs",
     author_email="hello@dagsterlabs.com",
     license="Apache-2.0",
-    description="",  # TODO - fill out description
+    description="",  # NOTE: Fill out description.
     url=(
         "https://github.com/dagster-io/dagster/tree/master/python_modules/libraries/"
         "{{ hyphen_name }}"
@@ -39,7 +39,7 @@ setup(
     include_package_data=True,
     install_requires=[
         f"dagster{pin}",
-        # TODO - fill in remaining dependencies
+        # NOTE: Fill in remaining dependencies.
     ],
     zip_safe=False,
 )

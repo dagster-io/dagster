@@ -35,7 +35,7 @@ Sometimes you have a set of predefined categories for your data. For instance, y
 
 <CodeExample path="docs_snippets/docs_snippets/guides/data-modeling/partitioning/static_partitioning.py" language="python" title="src/<project_name>/defs/assets.py"/>
 
-{/* TODO: Link to Backfill page to explain how to backfill regional sales data */}
+To backfill historical partitions for regional sales data, see [Backfilling data](/guides/build/partitions-and-backfills/backfilling-data).
 
 ## Two-dimensional partitions \{#two-dimensional-partitions}
 

@@ -99,5 +99,4 @@ Finally, let's load our two projects with `dg dev`. When you run `dg dev` from t
 
 <CliInvocationExample contents="dg dev" />
 
-{/* TODO - replace screenshot */}
 ![](/images/guides/build/projects-and-components/setting-up-a-workspace/two-projects.png)

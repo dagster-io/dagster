@@ -90,6 +90,13 @@ Refer to the `Asset observation <https://docs.dagster.io/guides/build/assets/met
 
 .. autoclass:: AssetObservation
 
+Versioning
+----------
+
+.. autoclass:: DataVersion
+
+.. autoclass:: DataVersionsByPartition
+
 Freshness policies
 ------------------
 

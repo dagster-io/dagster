@@ -132,7 +132,7 @@ When materializing the above assets, a partition must be selected, as described 
 SELECT *
  WHERE SPECIES in ('Iris-setosa')
    AND TIMESTAMP_SECONDS(TIME) >= '2023-01-02 00:00:00'
-   AND TIMESTAMP_SECONDS(TIME) < '2023-01-03 00:00:00'`
+   AND TIMESTAMP_SECONDS(TIME) < '2023-01-03 00:00:00'
 ```
 
 </TabItem>
@@ -154,12 +154,11 @@ If you want to store assets in different datasets, you can specify the dataset a
 
 You can also specify the dataset as part of the asset's asset key:
 
-{/* TODO add dedent=4 to CodeExample below */}
-
 <CodeExample
   path="docs_snippets/docs_snippets/integrations/bigquery/reference/dataset.py"
   startAfter="start_asset_key"
   endBefore="end_asset_key"
+  dedent="4"
 />
 
 The dataset will be the last prefix before the asset's name. In this example, the `iris_data` asset will be stored in the `IRIS` dataset, and the `daffodil_data` asset will be found in the `DAFFODIL` dataset.

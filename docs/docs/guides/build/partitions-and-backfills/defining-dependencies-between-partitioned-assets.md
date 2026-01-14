@@ -83,25 +83,3 @@ We recommend using [automation conditions](/guides/automate/declarative-automati
 
 :::
 
-
-{/* ## Dependencies between time-based partitions and un-partitioned assets */}
-
-{/* TODO */}
-
-{/* ## Dependencies between time-based and static partitions */}
-
-{/* Combining time-based and static partitions allows you to analyze data across both temporal and categorical dimensions. This is particularly useful for scenarios like regional time series analysis. */}
-
-{/* TODO */}
-
-{/* ## Dependencies between time-based and dynamic partitions */}
-
-{/* TODO */}
-
-{/* ## Dependencies between time-based partitions and un-partitioned assets */}
-
-{/* TODO */}
-
-{/* ## Integrating Dagster partitions with external systems: incremental models and dbt */}
-
-{/* TODO */}
