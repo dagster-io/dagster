@@ -2,6 +2,7 @@ from collections.abc import Generator
 from contextlib import contextmanager
 from typing import TYPE_CHECKING, Any, Optional, cast
 
+import dagster as dg
 from dagster import (
     Config,
     Field as LegacyDagsterField,
@@ -136,7 +137,7 @@ def ssm_resource(context) -> "botocore.client.ssm":  # pyright: ignore (reportAt
 
 
 @beta
-class ParameterStoreTag(Config):
+class ParameterStoreTag(dg.Resolvable, Config):
     key: str = Field(description="Tag key to search for.")
     values: Optional[list[str]] = Field(default=None, description="List")
 
