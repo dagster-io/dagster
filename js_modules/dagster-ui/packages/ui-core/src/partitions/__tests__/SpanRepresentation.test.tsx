@@ -58,6 +58,16 @@ describe('SpanRepresentation', () => {
       });
     });
 
+    describe('quotes keys with spaces (datetime partitions)', () => {
+      it('quotes keys with spaces', () => {
+        expect(escapePartitionKey('2025-09-01 00:00')).toBe('"2025-09-01 00:00"');
+      });
+
+      it('quotes keys with multiple spaces', () => {
+        expect(escapePartitionKey('hello world foo')).toBe('"hello world foo"');
+      });
+    });
+
     describe('quotes keys with special characters', () => {
       it('quotes keys with commas', () => {
         expect(escapePartitionKey('my,key')).toBe('"my,key"');
@@ -788,6 +798,40 @@ describe('SpanRepresentation', () => {
         expect(parsed).not.toBeInstanceOf(Error);
         if (!(parsed instanceof Error)) {
           expect(parsed.selectedKeys).toEqual(['2024-01-01', 'data,file', '2024-01-02']);
+        }
+      });
+    });
+
+    describe('datetime partitions with spaces', () => {
+      it('handles single datetime key with space', () => {
+        const allKeys = ['2025-09-01 00:00', '2025-09-01 01:00', '2025-09-01 02:00'];
+        const selected = ['2025-09-01 00:00'];
+
+        const text = partitionsToText(selected, allKeys);
+        expect(text).toBe('"2025-09-01 00:00"');
+
+        const parsed = spanTextToSelectionsOrError(allKeys, text);
+        expect(parsed).not.toBeInstanceOf(Error);
+        if (!(parsed instanceof Error)) {
+          expect(parsed.selectedKeys).toEqual(['2025-09-01 00:00']);
+        }
+      });
+
+      it('handles range of datetime keys with spaces', () => {
+        const allKeys = ['2025-09-01 00:00', '2025-09-01 01:00', '2025-09-01 02:00'];
+        const selected = ['2025-09-01 00:00', '2025-09-01 01:00', '2025-09-01 02:00'];
+
+        const text = partitionsToText(selected, allKeys);
+        expect(text).toBe('["2025-09-01 00:00"..."2025-09-01 02:00"]');
+
+        const parsed = spanTextToSelectionsOrError(allKeys, text);
+        expect(parsed).not.toBeInstanceOf(Error);
+        if (!(parsed instanceof Error)) {
+          expect(parsed.selectedKeys).toEqual([
+            '2025-09-01 00:00',
+            '2025-09-01 01:00',
+            '2025-09-01 02:00',
+          ]);
         }
       });
     });
