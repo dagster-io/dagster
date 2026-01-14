@@ -6,11 +6,14 @@ import {atom, useRecoilValue} from 'recoil';
 import styled from 'styled-components';
 
 import {showSharedToaster} from '../app/DomUtils';
-import {RepositoryLocationLoadStatus} from '../graphql/types';
+import {DefinitionsSource, RepositoryLocationLoadStatus} from '../graphql/types';
 import {StatusAndMessage} from '../instance/DeploymentStatusType';
 import {CodeLocationRowStatusType} from '../workspace/CodeLocationRowStatusType';
 import {WorkspaceContext} from '../workspace/WorkspaceContext/WorkspaceContext';
-import {CodeLocationStatusQuery} from '../workspace/WorkspaceContext/types/WorkspaceQueries.types';
+import {
+  CodeLocationStatusQuery,
+  WorkspaceLocationNodeFragment,
+} from '../workspace/WorkspaceContext/types/WorkspaceQueries.types';
 
 type LocationStatusEntry = {
   loadStatus: RepositoryLocationLoadStatus;
@@ -28,6 +31,18 @@ export const codeLocationStatusAtom = atom<CodeLocationStatusQuery | undefined>(
 export const useCodeLocationsStatus = (): StatusAndMessage | null => {
   const {locationEntries, loadingNonAssets: loading, data} = useContext(WorkspaceContext);
   const [previousEntriesById, setPreviousEntriesById] = useState<EntriesById | null>(null);
+
+  // Build a set of location names that are Connection type to filter them out of toasts
+  const connectionLocationNames = useMemo(() => {
+    const names = Object.values(data)
+      .filter(
+        (entry): entry is WorkspaceLocationNodeFragment =>
+          entry.__typename === 'WorkspaceLocationEntry' &&
+          entry.definitionsSource === DefinitionsSource.CONNECTION,
+      )
+      .map(({name}) => name);
+    return new Set(names);
+  }, [data]);
 
   const history = useHistory();
   const historyRef = useRef<typeof history>(history);
@@ -55,7 +70,8 @@ export const useCodeLocationsStatus = (): StatusAndMessage | null => {
           }
           if (
             entry.locationOrLoadError?.__typename === 'PythonError' &&
-            entry.loadStatus !== RepositoryLocationLoadStatus.LOADING
+            entry.loadStatus !== RepositoryLocationLoadStatus.LOADING &&
+            entry.definitionsSource !== DefinitionsSource.CONNECTION
           ) {
             return entry.updatedTimestamp;
           }
@@ -64,6 +80,7 @@ export const useCodeLocationsStatus = (): StatusAndMessage | null => {
         .filter(Boolean),
     [data],
   );
+
   if (
     !previousErroredLocationEntries.current ||
     previousErroredLocationEntries.current.length !== erroredLocationEntries.length ||
@@ -131,11 +148,13 @@ export const useCodeLocationsStatus = (): StatusAndMessage | null => {
 
     // Given the previous and current code locations, determine whether to show a) a loading spinner
     // and/or b) a toast indicating that a code location is being reloaded.
-    const entries =
+    // Filter out Connection locations - they should not show toasts.
+    const entries = (
       codeLocationStatusQueryData?.locationStatusesOrError?.__typename ===
       'WorkspaceLocationStatusEntries'
         ? codeLocationStatusQueryData?.locationStatusesOrError.entries
-        : [];
+        : []
+    ).filter((entry) => !connectionLocationNames.has(entry.name));
 
     let hasUpdatedEntries = entries.length !== Object.keys(previousEntriesById || {}).length;
 
@@ -155,6 +174,7 @@ export const useCodeLocationsStatus = (): StatusAndMessage | null => {
         icon: 'check_circle',
       });
     }
+
     const currEntriesById: {[key: string]: LocationStatusEntry} = {};
     entries.forEach((entry) => {
       const previousEntry = previousEntriesById && previousEntriesById[entry.id];
@@ -262,10 +282,9 @@ export const useCodeLocationsStatus = (): StatusAndMessage | null => {
         intent: 'primary',
         message: (
           <Box flex={{direction: 'row', justifyContent: 'space-between', gap: 24, grow: 1}}>
-            {currentlyLoading.length === 1 ? (
+            {currentlyLoading.length === 1 && currentlyLoading[0] ? (
               <span>
-                {/* eslint-disable-next-line @typescript-eslint/no-non-null-assertion */}
-                <strong>{currentlyLoading[0]!.name}</strong>
+                <strong>{currentlyLoading[0].name}</strong>
               </span>
             ) : (
               <span>Updating {currentlyLoading.length} code locations</span>
@@ -279,11 +298,9 @@ export const useCodeLocationsStatus = (): StatusAndMessage | null => {
         ),
         icon: 'refresh',
       });
-
-      return;
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [codeLocationStatusQueryData]);
+  }, [codeLocationStatusQueryData, connectionLocationNames]);
 
   if (showSpinner) {
     return {
@@ -293,7 +310,9 @@ export const useCodeLocationsStatus = (): StatusAndMessage | null => {
   }
 
   const repoErrors = locationEntries.filter(
-    (locationEntry) => locationEntry.locationOrLoadError?.__typename === 'PythonError',
+    (locationEntry) =>
+      locationEntry.locationOrLoadError?.__typename === 'PythonError' &&
+      locationEntry.definitionsSource !== DefinitionsSource.CONNECTION,
   );
 
   if (repoErrors.length) {
