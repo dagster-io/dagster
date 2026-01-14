@@ -9,8 +9,9 @@ variables:
   DAGSTER_PROJECT_DIR: TEMPLATE_PROJECT_DIR
   # State directory for deploy session
   DAGSTER_BUILD_STATEDIR: /tmp/dagster-build-state-$CI_PIPELINE_ID
-  # Enable PEX-based fast deploys (set to "false" to use Docker builds instead)
-  ENABLE_FAST_DEPLOYS: "TEMPLATE_ENABLE_FAST_DEPLOYS"
+  # Required for Docker-in-Docker
+  DOCKER_HOST: tcp://docker:2375
+  DOCKER_TLS_CERTDIR: ""
 
 stages:
   - deploy
@@ -32,19 +33,27 @@ dagster-cloud-serverless-deploy:
     - pip install uv
   script:
     - cd $DAGSTER_PROJECT_DIR
+
+    # Sync all projects (workspace or single project)
+    - |
+      for project in $(python -m uv run dg list projects); do
+        (cd "$project" && python -m uv sync)
+      done
+
+    # Initialize build session
     - >
       python -m uv run dg plus deploy start
       --deployment=TEMPLATE_DEFAULT_DEPLOYMENT_NAME
       --yes
 
-    # Sync all projects (workspace or single project)
-    - find . -maxdepth 3 -name "pyproject.toml" -type f -execdir python -m uv sync \;
-
     # Refresh state for any StateBackedComponents in the project
     - python -m uv run dg plus deploy refresh-defs-state
 
+    # Ensure .venv is excluded from Docker builds
+    - echo ".venv" >> .dockerignore
+
     # Build and push (PEX or Docker based on project configuration)
-    - python -m uv run dg plus deploy build-and-push --agent-type=serverless --python-version $PYTHON_VERSION
+    - python -m uv run dg plus deploy build-and-push --agent-type=serverless
 
     # Deploy all code locations in this build session to Dagster Cloud
     - python -m uv run dg plus deploy finish
