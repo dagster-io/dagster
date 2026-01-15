@@ -269,7 +269,64 @@ def test_concurrency_no_conflict_when_only_one_set(template: HelmTemplate):
     # Should not raise
     configmaps = template.render(helm_values)
     instance = yaml.full_load(configmaps[0].data["dagster.yaml"])
+
+    # Verify concurrency config is present
     assert instance["concurrency"]["runs"]["max_concurrent_runs"] == 25
+
+    # CRITICAL: Verify run_coordinator does NOT have max_concurrent_runs
+    # This is the fix - when concurrency is enabled and the value is unset,
+    # it should not output the -1 default
+    run_coordinator_config = instance["run_coordinator"]["config"]
+    assert "max_concurrent_runs" not in run_coordinator_config
+
+    # Verify non-conflicting fields are still present
+    assert run_coordinator_config.get("dequeue_interval_seconds") == 30
+
+
+def test_concurrency_with_defaults_user_scenario(template: HelmTemplate):
+    """Test the exact scenario from issue #33225."""
+    helm_values = DagsterHelmValues.construct(
+        concurrency=Concurrency(
+            enabled=True,
+            pools=ConcurrencyPools(
+                defaultLimit=1,
+                granularity="run",
+            ),
+            runs=ConcurrencyRuns(
+                maxConcurrentRuns=10,
+                tagConcurrencyLimits=[
+                    TagConcurrencyLimit(key="database", limit=1),
+                ],
+            ),
+        ),
+        dagsterDaemon=Daemon.construct(
+            runCoordinator=RunCoordinator.construct(
+                enabled=True,
+                type=RunCoordinatorType.QUEUED,
+                config=RunCoordinatorConfig.construct(
+                    queuedRunCoordinator=QueuedRunCoordinatorConfig.construct(
+                        # All fields unset (defaults) - this was causing the issue
+                    ),
+                ),
+            ),
+        ),
+    )
+    configmaps = template.render(helm_values)
+    instance = yaml.full_load(configmaps[0].data["dagster.yaml"])
+
+    # Verify concurrency config
+    assert instance["concurrency"]["runs"]["max_concurrent_runs"] == 10
+    assert len(instance["concurrency"]["runs"]["tag_concurrency_limits"]) == 1
+    assert instance["concurrency"]["runs"]["tag_concurrency_limits"][0]["key"] == "database"
+    assert instance["concurrency"]["runs"]["tag_concurrency_limits"][0]["limit"] == 1
+    assert instance["concurrency"]["pools"]["default_limit"] == 1
+    assert instance["concurrency"]["pools"]["granularity"] == "run"
+
+    # Verify run_coordinator does NOT have conflicting fields
+    run_coordinator_config = instance["run_coordinator"]["config"]
+    assert "max_concurrent_runs" not in run_coordinator_config
+    assert "tag_concurrency_limits" not in run_coordinator_config
+    assert "block_op_concurrency_limited_runs" not in run_coordinator_config
 
 
 def test_concurrency_zero_values(template: HelmTemplate):
