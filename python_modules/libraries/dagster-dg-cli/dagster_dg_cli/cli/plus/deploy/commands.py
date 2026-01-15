@@ -141,6 +141,11 @@ org_and_deploy_option_group = make_option_group(
         ]
     ),
 )
+@click.option(
+    "--skip-validation",
+    is_flag=True,
+    help="Skip configuration validation checks (not recommended).",
+)
 @dg_editable_dagster_options
 @dg_path_options
 @dg_global_options
@@ -159,6 +164,7 @@ def deploy_group(
     target_path: Path,
     status_url: Optional[str],
     snapshot_base_condition_str: Optional[str],
+    skip_validation: bool,
     **global_options: object,
 ) -> None:
     """Deploy a project or workspace to Dagster Plus. Handles all state management for the deploy
@@ -211,6 +217,7 @@ def deploy_group(
         location_names,
         status_url,
         snapshot_base_condition,
+        skip_validation,
     )
 
     build_artifact(
@@ -281,6 +288,11 @@ def _validate_location_names(
         ]
     ),
 )
+@click.option(
+    "--skip-validation",
+    is_flag=True,
+    help="Skip configuration validation checks (not recommended).",
+)
 @dg_global_options
 @cli_telemetry_wrapper
 def start_deploy_session_command(
@@ -294,6 +306,7 @@ def start_deploy_session_command(
     target_path: Path,
     status_url: Optional[str],
     snapshot_base_condition_str: Optional[str],
+    skip_validation: bool,
     **global_options: object,
 ) -> None:
     """Start a new deploy session. Determines which code locations will be deployed and what
@@ -329,6 +342,7 @@ def start_deploy_session_command(
         location_names,
         status_url,
         snapshot_base_condition,
+        skip_validation,
     )
 
 

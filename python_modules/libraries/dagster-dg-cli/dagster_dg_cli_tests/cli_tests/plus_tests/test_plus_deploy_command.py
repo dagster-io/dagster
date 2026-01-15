@@ -226,9 +226,14 @@ def mock_external_dagster_cloud_cli_command() -> Generator[MockedCloudCliCommand
         patch(
             "dagster_cloud_cli.commands.ci.set_build_output",
         ) as mock_set_build_output_command,
+        patch(
+            "dagster_dg_cli.cli.plus.deploy.validation.validate_deploy_configuration",
+        ) as mock_validation,
     ):
         # Ensure deploy_impl mock returns successfully without checking build state
         mock_deploy_command.return_value = None
+        # Skip validation in tests
+        mock_validation.return_value = None
         yield MockedCloudCliCommands(
             init=mock_init_command,
             build=mock_build_command,
