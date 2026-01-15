@@ -1,0 +1,58 @@
+version: 2
+
+sources:
+  - name: raw
+    description: Raw data tables from Dagster ingestion and Cortex AI processing
+    schema: "{{ target.schema }}"
+    tables:
+      - name: stories
+        description: Raw Hacker News stories ingested by Dagster
+        config:
+          meta:
+            dagster:
+              asset_key: ["raw_stories"]
+        columns:
+          - name: job_id
+            description: Unique identifier for the story
+          - name: title
+            description: Story title
+          - name: description
+            description: Story description or content
+          - name: url
+            description: Story URL
+          - name: posted_by
+            description: Author or domain
+          - name: posted_at
+            description: Timestamp when story was posted
+          - name: source
+            description: Source of the story (hackernews)
+      - name: story_sentiment
+        description: Sentiment analysis results from Cortex AI
+        config:
+          meta:
+            dagster:
+              asset_key: ["story_sentiment_analysis"]
+        columns:
+          - name: job_id
+            description: Foreign key to stories table
+          - name: sentiment_classification
+            description: Sentiment classification (positive, neutral, negative)
+          - name: story_category
+            description: Story category classification
+          - name: is_data_engineering
+            description: Whether story is data engineering related
+      - name: extracted_entities
+        description: Extracted entities from Cortex AI
+        config:
+          meta:
+            dagster:
+              asset_key: ["entity_extraction"]
+        columns:
+          - name: job_id
+            description: Foreign key to stories table
+          - name: company_names
+            description: Extracted company names
+          - name: required_skills
+            description: Extracted required skills
+          - name: compensation_info
+            description: Extracted compensation information

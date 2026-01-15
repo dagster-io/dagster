@@ -115,7 +115,7 @@ coverage==7.13.1
 -e python_modules/libraries/create-dagster
 cron-descriptor==2.0.6
 croniter==6.0.0
-cryptography==46.0.3
+cryptography==46.0.0
 cssutils==2.11.1
 cycler==0.12.1
 daff==1.4.2
@@ -183,6 +183,7 @@ dagster-qdrant==0.0.3
 -e python_modules/libraries/dagster-slack
 -e python_modules/libraries/dagster-sling
 -e python_modules/libraries/dagster-snowflake
+-e examples/snowflake_cortex/dagster_snowflake
 -e python_modules/libraries/dagster-snowflake-pandas
 -e python_modules/libraries/dagster-snowflake-polars
 -e python_modules/libraries/dagster-snowflake-pyspark
@@ -213,6 +214,7 @@ dbt-duckdb==1.10.0
 dbt-extractor==0.6.0
 dbt-protos==1.0.419
 dbt-semantic-interfaces==0.9.0
+dbt-snowflake==1.10.1
 debugpy==1.8.19
 decopatch==1.4.10
 decorator==5.2.1
@@ -525,7 +527,7 @@ pyflakes==3.4.0
 pygments==2.19.2
 pyjwt==2.10.1
 pymdown-extensions==10.20
-pynacl==1.6.2
+pynacl==1.6.0
 pyopenssl==25.3.0
 pyparsing==3.3.1
 pypd==1.1.0
