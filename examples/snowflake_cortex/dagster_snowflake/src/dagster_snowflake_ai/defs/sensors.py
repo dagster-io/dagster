@@ -1,13 +1,7 @@
 """Sensor definitions for Dagster."""
 
-from typing import TYPE_CHECKING
-
 import dagster as dg
-
-from dagster_snowflake_ai.defs.resources import resources
-
-if TYPE_CHECKING:
-    pass
+from dagster_snowflake import SnowflakeResource
 
 
 @dg.sensor(
@@ -16,6 +10,7 @@ if TYPE_CHECKING:
 )
 def dynamic_table_freshness_sensor(
     context: dg.SensorEvaluationContext,
+    snowflake: SnowflakeResource,
 ) -> dg.SkipReason:
     """
     Monitor Dynamic Table freshness - alert if Snowflake's auto-refresh fails.
@@ -24,8 +19,6 @@ def dynamic_table_freshness_sensor(
     - Snowflake: Handles the actual refresh (15-second latency!)
     - Dagster: Monitors, alerts, provides operational visibility
     """
-    snowflake = resources["snowflake"]
-
     try:
         with snowflake.get_connection() as connection:
             cursor = connection.cursor()

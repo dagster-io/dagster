@@ -1,24 +1,24 @@
 """Pytest configuration and fixtures."""
 
-from typing import TYPE_CHECKING
 from unittest.mock import MagicMock, Mock
 
 import pytest
 
-if TYPE_CHECKING:
+try:
     from dagster_snowflake import SnowflakeResource
-else:
-    try:
-        from dagster_snowflake import SnowflakeResource
-    except ImportError:
-        SnowflakeResource = None
+except ImportError:
+    SnowflakeResource = None
+
+requires_snowflake = pytest.mark.skipif(
+    SnowflakeResource is None,
+    reason="dagster-snowflake package not available",
+)
 
 
 @pytest.fixture
+@requires_snowflake
 def mock_snowflake_resource():
     """Create a mock Snowflake resource for testing."""
-    if SnowflakeResource is None:
-        pytest.skip("dagster-snowflake package not available")
     mock_resource = Mock(spec=SnowflakeResource)
     mock_conn = MagicMock()
     mock_cursor = MagicMock()

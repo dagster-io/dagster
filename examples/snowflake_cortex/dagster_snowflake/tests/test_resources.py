@@ -2,10 +2,7 @@
 
 import os
 
-from dagster_snowflake_ai.defs.snowflake.resources import (
-    SnowflakeConfig,
-    make_snowflake_resource,
-)
+from dagster_snowflake_ai.defs.snowflake.resources import SnowflakeConfig
 
 
 class TestSnowflakeConfig:
@@ -41,7 +38,7 @@ class TestSnowflakeConfig:
 
         assert config.role == "TEST_ROLE"
 
-    def test_make_snowflake_resource(self):
+    def test_make_resource(self):
         """Test creating SnowflakeResource from config."""
         config = SnowflakeConfig(
             account="test_account",
@@ -51,5 +48,5 @@ class TestSnowflakeConfig:
             warehouse="test_wh",
         )
 
-        resource = make_snowflake_resource(config)
+        resource = config.make_resource()
         assert resource is not None

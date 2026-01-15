@@ -130,11 +130,6 @@ class SnowflakeConfig(dg.ConfigurableResource):
         return SnowflakeResource(**resource_kwargs)  # type: ignore[call-arg]
 
 
-def make_snowflake_resource(config: SnowflakeConfig) -> SnowflakeResource:
-    """Backward compatibility wrapper for config.make_resource()."""
-    return config.make_resource()
-
-
 class SnowflakeResourceHelper:
     """Helper class for SnowflakeResource operations."""
 
