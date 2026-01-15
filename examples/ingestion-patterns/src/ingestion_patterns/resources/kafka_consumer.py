@@ -76,8 +76,8 @@ class KafkaConsumerResource(dg.ConfigurableResource):
                         "offset": msg.offset(),
                         "partition": msg.partition(),
                         "timestamp": msg.timestamp()[1] if msg.timestamp() else 0,
-                        "key": msg.key().decode("utf-8") if msg.key() else None,
-                        "value": msg.value().decode("utf-8") if msg.value() else "{}",
+                        "key": key.decode("utf-8") if (key := msg.key()) else None,
+                        "value": value.decode("utf-8") if (value := msg.value()) else "{}",
                     }
                 )
 
