@@ -26,7 +26,6 @@ def _extract_dagster_env_from_url(url: Optional[str]) -> Optional[str]:
 def validate_deploy_configuration(
     dagster_cloud_yaml_path: str,
     organization: str,
-    skip_validation: bool = False,
 ) -> None:
     """Validate deployment configuration before starting deploy session.
 
@@ -37,14 +36,10 @@ def validate_deploy_configuration(
     Args:
         dagster_cloud_yaml_path: Path to the dagster_cloud.yaml file to validate
         organization: Dagster Cloud organization name
-        skip_validation: If True, skip all validation checks
 
     Raises:
         click.ClickException: If validation fails
     """
-    if skip_validation:
-        return
-
     yaml_path = pathlib.Path(dagster_cloud_yaml_path)
 
     yaml_result = checks.check_dagster_cloud_yaml(yaml_path)
