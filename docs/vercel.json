@@ -4037,6 +4037,10 @@
     {
       "source": "/deployment/dagster-plus/deploying-code/branch-deployments/setting-up-branch-deployments",
       "destination": "/deployment/dagster-plus/deploying-code/branch-deployments/configuring-branch-deployments"
+    },
+    {
+      "source": "/guides/build/assets/creating-asset-factories",
+      "destination": "/guides/build/components/asset-factories-to-components"
     }
   ],
   "trailingSlash": false

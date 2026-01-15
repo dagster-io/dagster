@@ -115,4 +115,4 @@ Assets are often objects in systems with hierarchical namespaces, like filesyste
 
 - Enrich Dagster's built-in data catalog with [asset metadata](/guides/build/assets/metadata-and-tags)
 - Learn to [pass data between assets](/guides/build/assets/passing-data-between-assets)
-- Learn to use a [factory pattern](/guides/build/assets/creating-asset-factories) to create multiple, similar assets
+- Learn to use a [factory pattern](/guides/build/components/asset-factories-to-components) to create multiple, similar assets

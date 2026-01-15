@@ -4,9 +4,9 @@ description: Componentizing asset factories
 sidebar_position: 200
 ---
 
-Data engineers often need to implement multiple similar workflows in data pipelines. To keep this code maintainable, many engineers use [asset factories](/guides/build/assets/creating-asset-factories) to generate Dagster objects based on configuration instead of defining each one manually.
+Data engineers often need to implement multiple similar workflows in data pipelines. To keep this code maintainable, many engineers use asset factories to generate Dagster objects based on configuration instead of defining each one manually.
 
-While factories are powerful and flexible, many patterns that use them can also be expressed using [components](/guides/build/components). In this guide, we will implement the asset factory from the [asset factory creation guide](/guides/build/assets/creating-asset-factories) into a custom component.
+While factories are powerful and flexible, many patterns that use them can also be expressed using [components](/guides/build/components). In this guide, we will implement an asset factory as a custom component.
 
 :::note Prerequisites
 

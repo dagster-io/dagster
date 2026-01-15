@@ -12,7 +12,7 @@ Using an asset factory reduces complexity and creates a pluggable entry point to
 
 :::note
 
-This guide assumes familiarity with [asset factories](/guides/build/assets/creating-asset-factories).
+This guide assumes familiarity with [asset factories](/guides/build/components/asset-factories-to-components).
 
 :::
 
