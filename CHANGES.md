@@ -1,5 +1,23 @@
 # Changelog
 
+## 1.12.11 (core) / 0.28.11 (libraries)
+
+### New
+
+- The `dagster-cloud ci check` command is now marked as deprecated. Use `dg plus deploy start` instead, which now validates configuration during deployment initialization.
+- [dagster-fivetran] `FivetranWorkspace` now supports a `request_backoff_factor` parameter for enabling exponential backoff on request failures.
+
+### Bugfixes
+
+- [dagster-dbt] Fixed an issue where the `exclude` parameter of `@dbt_assets` could be ignored if the selection was too large.
+- [ui] The Asset Partitions page and the launch Materializations modal now correctly handle asset partitions that contain JSON or irregular characters.
+- [ui] Fixed an issue where `dagster/row_count` metadata was sometimes not displayed on the Asset Overview page if it was being set by an asset observation rather than a materialization.
+
+### Dagster Plus
+
+- The ECS agent now waits for 10 minutes by default before timing out during a code location deploy instead of 5 minutes, to ensure that large images have enough time to be pulled by the agent. See https://docs.dagster.io/deployment/dagster-plus/hybrid/amazon-ecs/configuration-reference#user_code_launcher-properties for more information on changing this default.
+- [ui] The Job Insights tab now shows a metric breakdown by job
+
 ## 1.12.10 (core) / 0.28.10 (libraries)
 
 ### Bugfixes
