@@ -32,8 +32,8 @@ setup(
     include_package_data=True,
     python_requires=">=3.10,<3.15",
     install_requires=[
-        f"dagster{pin}",
-        f"dagster-duckdb{pin}",
+        "dagster==1.12.11",
+        "dagster-duckdb==0.28.11",
         "polars[pyarrow]",
     ],
     zip_safe=False,
