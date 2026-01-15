@@ -171,7 +171,7 @@ export const getTopGroups = (config: NavigationGroupConfig): NavigationGroup[] =
           },
           element: (
             <NavItemWithLink
-              icon={<Icon name="settings" />}
+              icon={<Icon name="deployment" />}
               label="Deployment"
               href="/deployment"
               isActive={deploymentPathMatcher}
