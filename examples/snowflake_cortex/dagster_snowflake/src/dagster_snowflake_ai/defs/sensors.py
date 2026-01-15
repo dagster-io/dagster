@@ -7,8 +7,7 @@ import dagster as dg
 from dagster_snowflake_ai.defs.resources import resources
 
 if TYPE_CHECKING:
-    import snowflake.connector
-    from sqlalchemy.engine import Connection as SqlDbConnection
+    pass
 
 
 @dg.sensor(

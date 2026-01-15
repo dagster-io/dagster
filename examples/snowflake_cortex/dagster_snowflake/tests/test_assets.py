@@ -26,7 +26,7 @@ class TestStoriesAsset:
         expected_story_count = 10
         mock_cursor.fetchone.return_value = (expected_story_count,)
 
-        result = stories.raw_stories(mock_context, mock_snowflake_resource)
+        result = stories.raw_stories(mock_context, mock_snowflake_resource, Mock())
 
         assert result is not None
         assert result.metadata["stories_in_staging"].value == expected_story_count

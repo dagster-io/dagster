@@ -105,10 +105,17 @@ class SnowflakeConfig(dg.ConfigurableResource):
                 passphrase = self.private_key_passphrase or os.getenv(
                     "SNOWFLAKE_PRIVATE_KEY_PASSPHRASE"
                 )
-                key_obj = serialization.load_pem_private_key(
-                    key_bytes,
-                    password=passphrase.encode("utf-8") if passphrase else None,
-                )
+                passphrase_bytes = passphrase.encode("utf-8") if passphrase else None
+                if self.private_key_format == "DER":
+                    key_obj = serialization.load_der_private_key(
+                        key_bytes,
+                        password=passphrase_bytes,
+                    )
+                else:
+                    key_obj = serialization.load_pem_private_key(
+                        key_bytes,
+                        password=passphrase_bytes,
+                    )
                 pem_key = key_obj.private_bytes(
                     encoding=Encoding.PEM,
                     format=PrivateFormat.PKCS8,

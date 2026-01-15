@@ -3,7 +3,7 @@
 import os
 from collections.abc import Mapping
 from pathlib import Path
-from typing import Any, Union
+from typing import Any
 
 import dagster as dg
 from dagster_dbt import (

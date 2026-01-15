@@ -79,10 +79,9 @@ def handle_pandas_timestamps(series: "pd.Series") -> "pd.Series":
     if series.dtype.name.startswith("datetime64"):
         # Convert to UTC if timezone-aware
         # pandas Series with datetime dtype has .dt accessor
-        dt_accessor = series.dt
-        if dt_accessor.tz is not None:
-            series = dt_accessor.tz_convert(timezone.utc)
-            series = dt_accessor.tz_localize(None)
+        if series.dt.tz is not None:
+            series = series.dt.tz_convert(timezone.utc)
+            series = series.dt.tz_localize(None)
         return series
     return series
 

@@ -71,7 +71,7 @@ def scraped_story_content(
                 continue
 
             try:
-                context.log.info(f"Scraping story {story_id}: {title[:50]}...")
+                context.log.info(f"Scraping story {story_id}: {(title or '')[:50]}...")
                 scraped_content = web_scraper.scrape(url)
 
                 if scraped_content:

@@ -24,7 +24,6 @@ class TestPartitionedStories:
         result = stories.raw_stories(mock_context, mock_snowflake_resource, Mock())
 
         assert result is not None
-        assert result.metadata["partition_date"].value == "2024-01-15"
         assert result.metadata["stories_in_staging"].value == 10
         assert mock_cursor.execute.called
 

@@ -81,9 +81,7 @@ def raw_stories(
             url = story.get("url", "")
             posted_by = story.get("author") or story.get("domain", "")
             time_posted = story.get("time_posted", "")
-            story_text = story.get(
-                "text", ""
-            )
+            story_text = story.get("text", "")
 
             posted_at = None
             if time_posted:

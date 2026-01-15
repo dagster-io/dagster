@@ -76,10 +76,14 @@ def optimized_query_example(
         """)
         stats = cursor.fetchone()
 
-        total_weeks = stats[0] if stats else 0
-        total_stories = stats[1] if stats and len(stats) > 1 else 0
+        total_weeks = stats[0] if stats and stats[0] is not None else 0
+        total_stories = (
+            stats[1] if stats and len(stats) > 1 and stats[1] is not None else 0
+        )
         overall_ratio = (
-            float(stats[2]) if stats and len(stats) > 2 and stats[2] else 0.0
+            float(stats[2])
+            if stats and len(stats) > 2 and stats[2] is not None
+            else 0.0
         )
 
         context.log.info(
