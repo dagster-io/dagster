@@ -1,2 +1,2 @@
 **/*.mdx
-!dg-cli-configuration.mdx
+!dg-cli-configuration.md
