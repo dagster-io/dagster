@@ -46,7 +46,7 @@ dg dev
 
 Navigate to the **Asset catalog** and click **Materialize** to materialize the asset.
 
-Next, look at the entry for the materialization under the "Events" tab in the Asset Catalog. Take note of the two hashes in the **Tags** section of the materialization details - `code_version` and `data_version`:
+Next, look at the entry for the materialization under the "Events" tab in the asset catalog. Take note of the two hashes in the **Tags** section of the materialization details - `code_version` and `data_version`:
 
 ![Simple asset data version](/images/guides/build/assets/asset-versioning-and-caching/simple-asset-in-catalog.png)
 

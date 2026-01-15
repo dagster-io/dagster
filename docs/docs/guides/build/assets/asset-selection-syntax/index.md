@@ -18,16 +18,16 @@ With asset selection, you can:
 
 In the **Dagster OSS UI**, the asset selection syntax is available on:
 
-- The Asset Catalog
-- The Global asset lineage page
+- The asset catalog
+- The global asset lineage page
 
 In the **Dagster+ UI**, the asset selection syntax is available on:
 
-- The Asset Catalog > All Assets page
-- The Global asset lineage page
-- The Asset Health page
+- The Catalog > All assets page
+- The Lineage page
+- The asset health page
 - The Insights page
-- The Alert Policy creation page (when creating an asset alert)
+- The alert policy creation page (when creating an asset alert)
 
 ## Next steps
 

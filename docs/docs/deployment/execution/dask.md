@@ -61,7 +61,7 @@ Executing this job will start local Dask execution, run the job, and exit.
 
 If you want to use a Dask cluster for distributed execution, you will first need to [set up a Dask cluster](https://distributed.readthedocs.io/en/latest/quickstart.html#setup-dask-distributed-the-hard-way). Note that the machine running the Dagster parent process must be able to connect to the host/port on which the Dask scheduler is running.
 
-You'll also need an IO manager that uses persistent shared storage, which should be attached to the job along with any resources on which it depends. Here, we use the <PyObject section="libraries" integration="aws" module="dagster_aws" object="s3.s3_pickle_io_manager"/>:
+You'll also need an I/O manager that uses persistent shared storage, which should be attached to the job along with any resources on which it depends. Here, we use the <PyObject section="libraries" integration="aws" module="dagster_aws" object="s3.s3_pickle_io_manager"/>:
 
 <CodeExample
   path="docs_snippets/docs_snippets/deploying/dask_hello_world_distributed.py"

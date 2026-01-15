@@ -91,14 +91,14 @@ Partition fields are named using the column name that they correspond to, with a
 
 For example, an asset that is partitioned using hourly partitions on a column `ingestion_time` will be assigned a corresponding partition field name of `part-ingestion_time`.
 
-The user may configure the prefix in the IO manager configuration via the `IcebergCatalogConfig`:
+The user may configure the prefix in the I/O manager configuration via the `IcebergCatalogConfig`:
 
 <CodeExample
   path="docs_snippets/docs_snippets/integrations/iceberg/partition_field_naming_config.py"
   language="python"
 />
 
-Users may also configure the prefix at launch time via run config if the IO manager is set up using `configure_at_launch()` (see the [resource configuration docs](/guides/build/external-resources/configuring-resources#configuring-resources-at-launch-time) for more details on this pattern).
+Users may also configure the prefix at launch time via run config if the I/O manager is set up using `configure_at_launch()` (see the [resource configuration docs](/guides/build/external-resources/configuring-resources#configuring-resources-at-launch-time) for more details on this pattern).
 
 ## Storing tables in multiple schemas
 
@@ -203,7 +203,7 @@ Setting write mode in output metadata overrides any write mode settings in the a
 
 ### Using upsert mode
 
-**Note:** only supported in non-spark IO managers
+**Note:** only supported in non-spark I/O managers
 
 The Iceberg I/O manager supports upsert operations, which allow you to update existing rows and insert new rows in a single operation. This is useful for maintaining slowly changing dimensions or incrementally updating tables.
 

@@ -27,7 +27,7 @@ During these events, logs like the following are generated:
 12:40:09 - DEBUG - taxi_zones_file - STEP_OUTPUT - Yielded output "result" of type "Any". (Type check passed).
 12:40:09 - DEBUG - __ASSET_JOB_0 - taxi_zones_file - Writing file at: /Users/erincochran/Desktop/dagster-examples/project-dagster-university/tmpfxsoltsc/storage/taxi_zones_file using PickledObjectFilesystemIOManager...
 12:40:09 - DEBUG - taxi_zones_file - ASSET_MATERIALIZATION - Materialized value taxi_zones_file.
-12:40:09 - DEBUG - taxi_zones_file - HANDLED_OUTPUT - Handled output "result" using IO manager "io_manager"
+12:40:09 - DEBUG - taxi_zones_file - HANDLED_OUTPUT - Handled output "result" using I/O manager "io_manager"
 12:40:09 - DEBUG - taxi_zones_file - STEP_SUCCESS - Finished execution of step "taxi_zones_file" in 1.17s.
 12:40:09 - DEBUG - ENGINE_EVENT - Multiprocess executor: parent process exiting after 4.38s (pid: 86387)
 12:40:09 - DEBUG - RUN_SUCCESS - Finished execution of run for "__ASSET_JOB_0".

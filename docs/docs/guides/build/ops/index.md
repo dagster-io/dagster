@@ -66,7 +66,7 @@ Both definitions have a few important properties:
 
 - They are named.
 - They are optionally typed. These types are validated at runtime.
-- (Advanced) They can be linked to an <PyObject section="io-managers" module="dagster" object="IOManager"/>, which defines how the output or input is stored and loaded. See the [IO manager concept page](/guides/build/io-managers) for more info.
+- (Advanced) They can be linked to an <PyObject section="io-managers" module="dagster" object="IOManager"/>, which defines how the output or input is stored and loaded. See the [I/O manager concept page](/guides/build/io-managers) for more info.
 
 #### Inputs
 

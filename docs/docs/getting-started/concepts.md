@@ -385,7 +385,7 @@ A <PyObject section="graphs" module="dagster" object="GraphDefinition" method="t
 | [op](#op)         | `graph` must include one or more `ops`   |
 | [job](#job)       | `graph` must be part of `job` to execute |
 
-## IO manager
+## I/O manager
 
 ```mermaid
 %%{
