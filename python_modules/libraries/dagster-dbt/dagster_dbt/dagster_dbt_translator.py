@@ -12,6 +12,7 @@ from dagster import (
     AutoMaterializePolicy,
     AutomationCondition,
     DagsterInvalidDefinitionError,
+    MetadataValue,
     PartitionMapping,
 )
 from dagster._annotations import beta, public
@@ -210,6 +211,14 @@ class DagsterDbtTranslator:
                 **({DAGSTER_DBT_PROJECT_METADATA_KEY: project} if project else {}),
             }
         )
+
+        # Add dbt Core project_id for tracking/debugging
+        project_id = manifest.get("metadata", {}).get("project_id")
+        if project_id:
+            spec = spec.merge_attributes(
+                metadata={"dagster_dbt/project_id": MetadataValue.text(project_id)}
+            )
+
         if self.settings.enable_code_references:
             if not project:
                 raise DagsterInvalidDefinitionError(

@@ -35,6 +35,7 @@ from dagster_dbt_tests.cloud.utils import (
 DBT_CLOUD_PROJECT_ID = 12
 DBT_CLOUD_JOB_ID = 123
 DBT_CLOUD_RUN_ID = 1234
+DBT_CLOUD_ENVIRONMENT_ID = 376530
 
 with open(file_relative_path(__file__, "sample_manifest.json"), encoding="utf8") as f:
     MANIFEST_JSON = json.load(f)
@@ -56,6 +57,7 @@ def _add_dbt_cloud_job_responses(
         json={
             "data": {
                 "project_id": DBT_CLOUD_PROJECT_ID,
+                "environment_id": DBT_CLOUD_ENVIRONMENT_ID,
                 "generate_docs": True,
                 "execute_steps": dbt_commands,
                 "name": "A dbt Cloud job",
@@ -173,11 +175,24 @@ def test_load_assets_from_dbt_cloud_job(
 
     # Assert that the outputs have the correct metadata
     for output in dbt_cloud_assets[0].op.output_dict.values():
-        assert output.metadata.keys() == {"dbt Cloud Job", "dbt Cloud Documentation"}
+        # Check user-facing metadata
+        assert "dbt Cloud Job" in output.metadata
+        assert "dbt Cloud Documentation" in output.metadata
         assert output.metadata["dbt Cloud Job"] == MetadataValue.url(
             dbt_cloud_service.build_url_for_job(
                 project_id=DBT_CLOUD_PROJECT_ID, job_id=DBT_CLOUD_JOB_ID
             )
+        )
+
+        # Check internal tracking metadata
+        assert output.metadata["dagster_dbt/cloud_account_id"] == MetadataValue.int(
+            DBT_CLOUD_ACCOUNT_ID
+        )
+        assert output.metadata["dagster_dbt/cloud_project_id"] == MetadataValue.int(
+            DBT_CLOUD_PROJECT_ID
+        )
+        assert output.metadata["dagster_dbt/cloud_environment_id"] == MetadataValue.int(
+            DBT_CLOUD_ENVIRONMENT_ID
         )
 
     materialize_cereal_assets = define_asset_job(
@@ -287,11 +302,24 @@ def test_load_assets_from_cached_compile_run(
 
     # Assert that the outputs have the correct metadata
     for output in dbt_cloud_assets[0].op.output_dict.values():
-        assert output.metadata.keys() == {"dbt Cloud Job", "dbt Cloud Documentation"}
+        # Check user-facing metadata
+        assert "dbt Cloud Job" in output.metadata
+        assert "dbt Cloud Documentation" in output.metadata
         assert output.metadata["dbt Cloud Job"] == MetadataValue.url(
             dbt_cloud_service.build_url_for_job(
                 project_id=DBT_CLOUD_PROJECT_ID, job_id=DBT_CLOUD_JOB_ID
             )
+        )
+
+        # Check internal tracking metadata
+        assert output.metadata["dagster_dbt/cloud_account_id"] == MetadataValue.int(
+            DBT_CLOUD_ACCOUNT_ID
+        )
+        assert output.metadata["dagster_dbt/cloud_project_id"] == MetadataValue.int(
+            DBT_CLOUD_PROJECT_ID
+        )
+        assert output.metadata["dagster_dbt/cloud_environment_id"] == MetadataValue.int(
+            DBT_CLOUD_ENVIRONMENT_ID
         )
 
     materialize_cereal_assets = define_asset_job(
@@ -683,3 +711,32 @@ def test_load_from_dbt_cloud_with_env_var(dbt_cloud_service) -> None:
 
         # Implicitly, we check that requests are made with the right account ID, since that is a part of the URLs
         # we set up in _add_dbt_cloud_job_responses
+
+
+@responses.activate
+def test_dbt_cloud_metadata_ids(dbt_cloud, dbt_cloud_service):
+    """Test that dbt Cloud asset specs contain the correct ID metadata."""
+    dbt_commands = ["dbt run"]
+    _add_dbt_cloud_job_responses(
+        dbt_cloud_service=dbt_cloud_service,
+        dbt_commands=dbt_commands,
+    )
+
+    dbt_cloud_cacheable_assets = load_assets_from_dbt_cloud_job(
+        dbt_cloud=dbt_cloud, job_id=DBT_CLOUD_JOB_ID
+    )
+
+    dbt_assets_definition_cacheable_data = dbt_cloud_cacheable_assets.compute_cacheable_data()
+    dbt_cloud_assets = dbt_cloud_cacheable_assets.build_definitions(
+        dbt_assets_definition_cacheable_data
+    )
+
+    # Verify that all outputs have the required ID metadata
+    for output in dbt_cloud_assets[0].op.output_dict.values():
+        metadata = output.metadata
+
+        assert metadata["dagster_dbt/cloud_account_id"] == MetadataValue.int(DBT_CLOUD_ACCOUNT_ID)
+        assert metadata["dagster_dbt/cloud_project_id"] == MetadataValue.int(DBT_CLOUD_PROJECT_ID)
+        assert metadata["dagster_dbt/cloud_environment_id"] == MetadataValue.int(
+            DBT_CLOUD_ENVIRONMENT_ID
+        )
