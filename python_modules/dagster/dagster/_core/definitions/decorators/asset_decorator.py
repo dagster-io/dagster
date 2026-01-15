@@ -82,11 +82,11 @@ def asset(
     io_manager_def: Optional[object] = ...,
     io_manager_key: Optional[str] = ...,
     dagster_type: Optional[DagsterType] = ...,
-    partitions_def: Optional[PartitionsDefinition] = ...,
+    partitions_def: Optional[PartitionsDefinition[str]] = ...,
     op_tags: Optional[Mapping[str, Any]] = ...,
     group_name: Optional[str] = ...,
     output_required: bool = ...,
-    automation_condition: Optional[AutomationCondition] = ...,
+    automation_condition: Optional[AutomationCondition[AssetKey]] = ...,
     backfill_policy: Optional[BackfillPolicy] = ...,
     retry_policy: Optional[RetryPolicy] = ...,
     code_version: Optional[str] = ...,
@@ -95,14 +95,14 @@ def asset(
     owners: Optional[Sequence[str]] = ...,
     kinds: Optional[AbstractSet[str]] = ...,
     pool: Optional[str] = ...,
-    **kwargs,
+    **kwargs: Any,
 ) -> Callable[[Callable[..., Any]], AssetsDefinition]: ...
 
 
 @overload
 def asset(
     compute_fn: Callable[..., Any],
-    **kwargs,
+    **kwargs: Any,
 ) -> AssetsDefinition: ...
 
 
@@ -168,11 +168,11 @@ def asset(
     io_manager_def: Optional[object] = None,
     io_manager_key: Optional[str] = None,
     dagster_type: Optional[DagsterType] = None,
-    partitions_def: Optional[PartitionsDefinition] = None,
+    partitions_def: Optional[PartitionsDefinition[str]] = None,
     op_tags: Optional[Mapping[str, Any]] = None,
     group_name: Optional[str] = None,
     output_required: bool = True,
-    automation_condition: Optional[AutomationCondition] = None,
+    automation_condition: Optional[AutomationCondition[AssetKey]] = None,
     freshness_policy: Optional[FreshnessPolicy] = None,
     backfill_policy: Optional[BackfillPolicy] = None,
     retry_policy: Optional[RetryPolicy] = None,
@@ -182,7 +182,7 @@ def asset(
     owners: Optional[Sequence[str]] = None,
     kinds: Optional[AbstractSet[str]] = None,
     pool: Optional[str] = None,
-    **kwargs,
+    **kwargs: Any,
 ) -> Union[AssetsDefinition, Callable[[Callable[..., Any]], AssetsDefinition]]:
     """Create a definition for how to compute an asset.
 
@@ -590,7 +590,7 @@ def multi_asset(
     config_schema: Optional[UserConfigSchema] = None,
     required_resource_keys: Optional[AbstractSet[str]] = None,
     internal_asset_deps: Optional[Mapping[str, set[AssetKey]]] = None,
-    partitions_def: Optional[PartitionsDefinition] = None,
+    partitions_def: Optional[PartitionsDefinition[str]] = None,
     hooks: Optional[AbstractSet[HookDefinition]] = None,
     backfill_policy: Optional[BackfillPolicy] = None,
     op_tags: Optional[Mapping[str, Any]] = None,
@@ -769,7 +769,7 @@ def graph_asset(
     config: Optional[Union[ConfigMapping, Mapping[str, Any]]] = None,
     key_prefix: Optional[CoercibleToAssetKeyPrefix] = None,
     group_name: Optional[str] = None,
-    partitions_def: Optional[PartitionsDefinition] = None,
+    partitions_def: Optional[PartitionsDefinition[str]] = None,
     hooks: Optional[AbstractSet[HookDefinition]] = None,
     metadata: Optional[RawMetadataMapping] = ...,
     tags: Optional[Mapping[str, str]] = ...,
@@ -777,7 +777,7 @@ def graph_asset(
     kinds: Optional[AbstractSet[str]] = None,
     legacy_freshness_policy: Optional[LegacyFreshnessPolicy] = ...,
     auto_materialize_policy: Optional[AutoMaterializePolicy] = ...,
-    automation_condition: Optional[AutomationCondition] = ...,
+    automation_condition: Optional[AutomationCondition[AssetKey]] = ...,
     backfill_policy: Optional[BackfillPolicy] = ...,
     resource_defs: Optional[Mapping[str, ResourceDefinition]] = ...,
     check_specs: Optional[Sequence[AssetCheckSpec]] = None,
@@ -806,19 +806,19 @@ def graph_asset(
     config: Optional[Union[ConfigMapping, Mapping[str, Any]]] = None,
     key_prefix: Optional[CoercibleToAssetKeyPrefix] = None,
     group_name: Optional[str] = None,
-    partitions_def: Optional[PartitionsDefinition] = None,
+    partitions_def: Optional[PartitionsDefinition[str]] = None,
     hooks: Optional[AbstractSet[HookDefinition]] = None,
     metadata: Optional[RawMetadataMapping] = None,
     tags: Optional[Mapping[str, str]] = None,
     owners: Optional[Sequence[str]] = None,
-    automation_condition: Optional[AutomationCondition] = None,
+    automation_condition: Optional[AutomationCondition[AssetKey]] = None,
     backfill_policy: Optional[BackfillPolicy] = None,
     resource_defs: Optional[Mapping[str, ResourceDefinition]] = None,
     check_specs: Optional[Sequence[AssetCheckSpec]] = None,
     code_version: Optional[str] = None,
     key: Optional[CoercibleToAssetKey] = None,
     kinds: Optional[AbstractSet[str]] = None,
-    **kwargs,
+    **kwargs: Any,
 ) -> Union[AssetsDefinition, Callable[[Callable[..., Any]], AssetsDefinition]]:
     """Creates a software-defined asset that's computed using a graph of ops.
 
