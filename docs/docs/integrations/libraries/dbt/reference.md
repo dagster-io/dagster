@@ -47,7 +47,7 @@ These similarities make it natural to interact with dbt models as asset definiti
 Here's what's happening in this example:
 
 - The first code block is a **dbt model**
-  - As dbt models are named using file names, this model is named `orders`
+  - As dbt models are named using filenames, this model is named `orders`
   - The data for this model comes from a dependency named `raw_orders`
 - The second code block is a **Dagster asset**
   - The asset key corresponds to the name of the dbt model, `orders`
@@ -182,7 +182,7 @@ Once your dbt steps are located, add the following step to manage the state of y
 dagster-cloud ci dagster-dbt project manage-state --file path/to/project.py
 ```
 
-The `dagster-cloud ci dagster-dbt project manage-state` CLI command fetches the `manifest.json` file from your production branch and saves it to a state directory, in order to power the `dbt defer` command.
+The `dagster-cloud ci dagster-dbt project manage-state` CLI command fetches the `manifest.json` file from your production branch and saves it to a state directory to power the `dbt defer` command.
 
 In practice, this command fetches the `manifest.json` file from your production branch and add it to the state directory set to the `state_path` of the DbtProject found in `path/to/project.py`. The production `manifest.json` file can then be used as the deferred dbt artifacts.
 
@@ -475,7 +475,7 @@ Dagster automatically loads your dbt tests on _models_ as [asset checks](/guides
 
 ### Indirect selection
 
-Dagster uses [dbt indirect selection](https://docs.getdbt.com/reference/global-configs/indirect-selection) to select dbt tests. By default, Dagster won't set `DBT_INDIRECT_SELECTION` so that the set of tests selected by Dagster is the same as the selected by dbt. When required, Dagster will override `DBT_INDIRECT_SELECTION` to `empty` in order to explicitly select dbt tests. For example:
+Dagster uses [dbt indirect selection](https://docs.getdbt.com/reference/global-configs/indirect-selection) to select dbt tests. By default, Dagster won't set `DBT_INDIRECT_SELECTION` so that the set of tests selected by Dagster is the same as the selected by dbt. When required, Dagster will override `DBT_INDIRECT_SELECTION` to `empty` to explicitly select dbt tests. For example:
 
 - Materializing dbt assets and excluding their asset checks
 - Executing dbt asset checks without materializing their assets
@@ -714,11 +714,11 @@ Dagster alternatively allows you to delegate loading data to an I/O manager. For
 
 ## Building incremental models using partitions
 
-You can define a Dagster <PyObject section="partitions" module="dagster" object="PartitionsDefinition"/> alongside dbt in order to build incremental models.
+You can define a Dagster <PyObject section="partitions" module="dagster" object="PartitionsDefinition"/> alongside dbt to build incremental models.
 
 Partitioned assets will be able to access the <PyObject section="partitions" module="dagster" object="TimeWindow"/>'s start and end dates, and these can be passed to dbt's CLI as variables which can be used to filter incremental models.
 
-When a partition definition to passed to the <PyObject section="libraries" integration="dbt" module="dagster_dbt" object="dbt_assets" decorator/> decorator, all assets are defined to operate on the same partitions. With this in mind, we can retrieve any time window from <PyObject section="execution" module="dagster"  object="AssetExecutionContext.partition_time_window" /> property in order to get the current start and end partitions.
+When a partition definition to passed to the <PyObject section="libraries" integration="dbt" module="dagster_dbt" object="dbt_assets" decorator/> decorator, all assets are defined to operate on the same partitions. With this in mind, we can retrieve any time window from <PyObject section="execution" module="dagster"  object="AssetExecutionContext.partition_time_window" /> property to get the current start and end partitions.
 
 <CodeExample
   startAfter="start_build_incremental_model"

@@ -87,7 +87,7 @@ For partitioning to function correctly, the partition dimension must correspond 
 
 ### Partition field naming
 
-Partition fields are named using the column name that they correspond to, with a configurable prefix applied (defaults to `"part-"`). This prefixing is done in order to comply with changes introduced in pyiceberg 0.10.0 which require that partition field names do not exactly match any existing column names.
+Partition fields are named using the column name that they correspond to, with a configurable prefix applied (defaults to `"part-"`). This prefixing is done to comply with changes introduced in pyiceberg 0.10.0 which require that partition field names do not exactly match any existing column names.
 
 For example, an asset that is partitioned using hourly partitions on a column `ingestion_time` will be assigned a corresponding partition field name of `part-ingestion_time`.
 

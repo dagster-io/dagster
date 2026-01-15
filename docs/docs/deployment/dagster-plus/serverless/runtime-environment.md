@@ -41,7 +41,7 @@ You can add dependencies by including the corresponding Python libraries in your
 
     :::info
 
-    If you are using a `setup.py` file, you will need to add a TOML configuration file to the root of your project in order to make it `dg`-compatible and use Components. For more information, see [Converting an existing project](/guides/build/projects/moving-to-components/migrating-project).
+    If you are using a `setup.py` file, you will need to add a TOML configuration file to the root of your project to make it `dg`-compatible and use Components. For more information, see [Converting an existing project](/guides/build/projects/moving-to-components/migrating-project).
 
     :::
 

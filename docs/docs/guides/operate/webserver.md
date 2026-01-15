@@ -22,7 +22,7 @@ The command will print out the URL you can access the UI from in the browser, us
 
 When invoked, the webserver will fetch definitions - such as assets, jobs, schedules, sensors, and resources - from a <PyObject section="definitions" module="dagster" object="Definitions" /> object in a Python module or package or the code locations configured in an open source deployment's [workspace files](/guides/build/projects/workspaces/workspace-yaml). For more information, see the [code locations documentation](/guides/build/projects).
 
-Note that several Dagster features, like schedules and sensors, require the Dagster daemon to be running in order to function.
+Note that several Dagster features, like schedules and sensors, require the Dagster daemon to be running to function.
 
 ## Dagster UI reference
 
@@ -118,7 +118,7 @@ The **Asset details** page contains details about a single asset. Use the tabs o
 
 To access the asset details page, click an asset in the **Asset catalog**.
 
-![The Asset Details page in the Dagster UI](/images/guides/operate/webserver/asset-details.png)
+![The asset details page in the Dagster UI](/images/guides/operate/webserver/asset-details.png)
 
 </TabItem>
 </Tabs>

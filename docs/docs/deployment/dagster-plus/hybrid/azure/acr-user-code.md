@@ -11,7 +11,7 @@ This guide assumes you are using Dagster+ and that you already have an AKS agent
 
 ## Prerequisites
 
-This guide will use a Github repository to store the Dagster code, and GitHub Actions to deploy the code to Azure Container Registry. If you need to use another CI/CD provider, such as Azure DevOps, the steps here will need to be adapted. For more information on configuring CI/CD using the `dg plus` CLI, see [Configuring CI/CD in Dagster+](/deployment/dagster-plus/deploying-code/configuring-ci-cd)
+This guide will use a GitHub repository to store the Dagster code, and GitHub Actions to deploy the code to Azure Container Registry. If you need to use another CI/CD provider, such as Azure DevOps, the steps here will need to be adapted. For more information on configuring CI/CD using the `dg plus` CLI, see [Configuring CI/CD in Dagster+](/deployment/dagster-plus/deploying-code/configuring-ci-cd)
 
 - The azure CLI installed on your machine. You can download it [here](https://docs.microsoft.com/en-us/cli/azure/install-azure-cli).
 - A GitHub account, and the ability to run GitHub Actions workflows in a repository.
@@ -83,7 +83,7 @@ az aks update -n <your-cluster-name> -g <your_resource_group> --attach-acr <your
 
 ## Step 3: Setting up GitHub Actions
 
-Now, we'll set up a Github Actions workflow to build and push our Docker image to Azure Container Registry.
+Now, we'll set up a GitHub Actions workflow to build and push our Docker image to Azure Container Registry.
 
 We already have a GitHub Actions workflow in our repository, located at `.github/workflows/dagster-cloud-deploy.yml`. This workflow will build the Docker image, push it to ACR, and update the code location in Dagster+. To get it working with your repository, you'll need to do a few things.
 

@@ -2,8 +2,7 @@ dagster-dbt library
 ###################
 
 Dagster orchestrates `dbt <https://www.getdbt.com/>`_ alongside other technologies, so you can combine dbt with Spark, Python,
-and other tools in a single workflow. Dagster's software-defined asset abstractions make it simple to define
-data assets that depend on specific dbt models, or define the computation required to compute
+and other tools in a single workflow. With Dagster, you can define data assets that depend on specific dbt models, or define the computation required to compute
 the sources that your dbt models depend on.
 
 For more information on using the dbt and dbt Cloud integrations, see the `Dagster & dbt <https://docs.dagster.io/integrations/libraries/dbt>`_ and

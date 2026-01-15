@@ -19,7 +19,7 @@ import UseAirliftComponent from '@site/docs/partials/\_UseAirliftComponent.md';
 
 ## Supporting custom authorization
 
-If your Dagster deployment lives behind a custom auth backend, you can customize the Airflow-to-Dagster proxying behavior to authenticate to your backend. `proxying_to_dagster` can take a parameter `dagster_operator_klass`, which allows you to define a custom `BaseProxyTasktoDagsterOperator` class. This allows you to override how a session is created. Let's say for example, your Dagster installation requires an access key to be set whenever a request is made, and that access key is set in an Airflow `Variable` called `my_api_key`. We can create a custom `BaseProxyTasktoDagsterOperator` subclass which will retrieve that variable value and set it on the session, so that any requests to Dagster's graphql API will be made using that api key.
+If your Dagster deployment lives behind a custom auth backend, you can customize the Airflow-to-Dagster proxying behavior to authenticate to your backend. `proxying_to_dagster` can take a parameter `dagster_operator_klass`, which allows you to define a custom `BaseProxyTasktoDagsterOperator` class. This allows you to override how a session is created. Let's say for example, your Dagster installation requires an access key to be set whenever a request is made, and that access key is set in an Airflow `Variable` called `my_api_key`. We can create a custom `BaseProxyTasktoDagsterOperator` subclass which will retrieve that variable value and set it on the session, so that any requests to Dagster's GraphQL API will be made using that api key.
 
 <CodeExample path="airlift-migration-tutorial/tutorial_example/snippets/custom_operator_examples/custom_proxy.py" />
 
@@ -31,7 +31,7 @@ You can use a custom proxy operator to establish a connection to a Dagster plus 
 
 ## Dealing with changing Airflow
 
-In order to make spin-up more efficient, `dagster-airlift` caches the state of the Airflow instance in the dagster database, so that repeat fetches of the code location don't require additional calls to Airflow's rest API. However, this means that the Dagster definitions can potentially fall out of sync with Airflow. Here are a few different ways this can manifest:
+In order to make spin-up more efficient, `dagster-airlift` caches the state of the Airflow instance in the dagster database, so that repeat fetches of the code location don't require additional calls to Airflow's REST API. However, this means that the Dagster definitions can potentially fall out of sync with Airflow. Here are a few different ways this can manifest:
 
 - A new Airflow DAG is added. The lineage information does not show up for this dag, and materializations are not recorded.
 - A DAG is removed. The polling sensor begins failing, because there exist assets which expect that DAG to exist.
@@ -84,6 +84,6 @@ For example, in the following example we can see that the operator is customized
 
 `BaseProxyDAGToDagsterOperator` has three abstract methods which must be implemented:
 
-- `get_dagster_session`, which controls the creation of a valid session to access the Dagster graphql API.
+- `get_dagster_session`, which controls the creation of a valid session to access the Dagster GraphQL API.
 - `get_dagster_url`, which retrieves the domain at which the dagster webserver lives.
 - `build_from_dag`, which controls how the proxying task is constructed from the provided DAG.

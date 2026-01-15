@@ -15,7 +15,7 @@ When deciding to migrate from step launchers to Dagster Pipes, consider the foll
 - **Step launchers** are superceded by Dagster Pipes. While they are still available (and there are no plans for their removal), they are no longer the recommended method for launching external code from Dagster ops and assets. They won't be receiving new features or be under active development.
 - **Dagster Pipes** is a more lightweight and flexible framework, but it does come with a few drawbacks:
 * Spark runtime and the code executed will no longer be managed by Dagster for you.
-* Dagster Pipes are not compatible with Resources and IO Managers. If you are heavily relying on these features, you might want to keep using step launchers.
+* Dagster Pipes are not compatible with Resources and I/O managers. If you are heavily relying on these features, you might want to keep using step launchers.
 
 ## Steps
 
@@ -60,7 +60,7 @@ Since the asset now returns the Parquet file path, it will be saved by the `IOMa
 
 Let's continue to migrating the second `downstream` asset.
 
-Since we can't use IO Managers in scripts launched by Pipes, we would have to either make a CLI argument parser or use the handy `extras` feature provided by Pipes in order to pass this `"path"` value to the job. We will demonstrate the latter approach. The `downstream` asset turns into:
+Since we can't use I/O managers in scripts launched by Pipes, we would have to either make a CLI argument parser or use the handy `extras` feature provided by Pipes to pass this `"path"` value to the job. We will demonstrate the latter approach. The `downstream` asset turns into:
 
 <CodeExample path="docs_snippets/docs_snippets/guides/migrations/from_step_launchers_to_pipes/new_code.py" startAfter="after_upstream_marker" endBefore="after_downstream_marker" />
 

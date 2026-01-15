@@ -36,7 +36,7 @@ This article assumes familiarity with: [assets](/guides/build/assets) and [resou
 - Your pipeline manages I/O on its own by using other libraries/tools that write to storage
 - Your assets won't fit in memory, such as a database table with billions of rows
 
-As a general rule, if your pipeline becomes more complicated in order to use I/O managers, it's likely that I/O managers aren't a good fit. In these cases you should use `deps` to [define dependencies](/guides/build/assets/passing-data-between-assets).
+As a general rule, if your pipeline becomes more complicated to use I/O managers, it's likely that I/O managers aren't a good fit. In these cases you should use `deps` to [define dependencies](/guides/build/assets/passing-data-between-assets).
 
 ## Using I/O managers in assets \{#io-in-assets}
 

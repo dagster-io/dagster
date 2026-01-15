@@ -18,7 +18,7 @@ For more information, see the [community integrations GitHub repository](https:/
 ## Prerequisites
 
 - [Install node and npm](https://nodejs.org/en/download)
-- Install the typescript compiler (`npm install -g typescript`)
+- Install the TypeScript compiler (`npm install -g typescript`)
 
 ## Installation
 
@@ -32,6 +32,6 @@ npm install @dagster-io/dagster-pipes
 
 For a usage example, see the [README](https://github.com/dagster-io/community-integrations/blob/main/libraries/pipes/implementations/typescript/README.md) in the community integrations repository.
 
-## About Typescript
+## About TypeScript
 
 [TypeScript](https://www.typescriptlang.org) is a strongly typed programming language that builds on JavaScript, giving you better tooling at any scale. To get started with TypeScript, see the [TypeScript docs](https://www.typescriptlang.org/docs).

@@ -28,7 +28,7 @@ Build a retrieval-augmented generation (RAG) system that extracts data from GitH
   }
 }%%
 graph LR
-    GH[<img src='/images/examples/icons/github.svg' width='50' height='50' /> Github]
+    GH[<img src='/images/examples/icons/github.svg' width='50' height='50' /> GitHub]
     OA[<img src='/images/examples/icons/openai.svg' width='50' height='50' /> OpenAI]
     WV[<img src='/images/examples/icons/weaviate.png' width='50' height='50' /> Weaviate]
 
@@ -40,7 +40,7 @@ graph LR
 
 ![2048 resolution](/images/examples/reference-architectures/rag.png)
 
-### 1. Github ingestion
+### 1. GitHub ingestion
 
 Data is extracted from GitHub using the GitHub GraphQL API and can be implemented as a custom resource in Dagster. To avoid unnecessary re-importing, the data can be partitioned and scheduled, ensuring only new or updated content is fetched during each run.
 

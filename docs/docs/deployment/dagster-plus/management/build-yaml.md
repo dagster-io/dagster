@@ -159,7 +159,7 @@ locations:
 | Property                   | Description                                                                       | Format                   |
 | -------------------------- | --------------------------------------------------------------------------------- | ------------------------ |
 | `code_source.package_name` | The name of a package containing Dagster code                                     | `string` (folder name)   |
-| `code_source.python_file`  | The name of a Python file containing Dagster code (e.g. `analytics_pipeline.py` ) | `string` (.py file name) |
+| `code_source.python_file`  | The name of a Python file containing Dagster code (e.g. `analytics_pipeline.py` ) | `string` (.py filename) |
 | `code_source.module_name`  | The name of a Python module containing Dagster code (e.g. `analytics_etl`)        | `string` (module name)   |
 
 ### Working directory

@@ -45,7 +45,7 @@ Additionally, the [`imagePullSecrets`](https://artifacthub.io/packages/helm/dags
 
 ## Per-location configuration
 
-When [adding a code location](/guides/build/projects) to Dagster+ with a Kubernetes agent, you can use the `container_context` key on the location configuration to add additional Kubernetes-specific configuration. If you're using the Dagster+ Github action, the `container_context` key can also be set for each location in your `build.yaml` file, using the same format.
+When [adding a code location](/guides/build/projects) to Dagster+ with a Kubernetes agent, you can use the `container_context` key on the location configuration to add additional Kubernetes-specific configuration. If you're using the Dagster+ GitHub action, the `container_context` key can also be set for each location in your `build.yaml` file, using the same format.
 
 The following example [`build.yaml`](/deployment/dagster-plus/management/build-yaml) file illustrates the available fields:
 
@@ -188,7 +188,7 @@ We plan to make this user the default in a future release.
 
 ## Grant AWS permissions
 
-You can provide your Dagster pods with [permissions to assume an AWS IAM role](https://docs.aws.amazon.com/eks/latest/userguide/iam-roles-for-service-accounts.html) using a [Service Account](https://kubernetes.io/docs/tasks/configure-pod-container/configure-service-account). For example, you might do this to [configure an S3 IO Manager](/deployment/oss/deployment-options/aws#using-s3-for-io-management).
+You can provide your Dagster pods with [permissions to assume an AWS IAM role](https://docs.aws.amazon.com/eks/latest/userguide/iam-roles-for-service-accounts.html) using a [Service Account](https://kubernetes.io/docs/tasks/configure-pod-container/configure-service-account). For example, you might do this to [configure an S3 I/O manager](/deployment/oss/deployment-options/aws#using-s3-for-io-management).
 
 1. [Create an IAM OIDC provider for your EKS cluster](https://docs.aws.amazon.com/eks/latest/userguide/enable-iam-roles-for-service-accounts.html)
 2. [Create an IAM role and and attach IAM policies](https://docs.aws.amazon.com/eks/latest/userguide/associate-service-account-role.html)

@@ -21,7 +21,7 @@ Useful links
 
 For a complete set of documentation, see `Dagster integration <https://docs.wandb.ai/guides/integrations/dagster>`_ on the W&B website.
 
-For full-code examples, see `examples/with_wandb <https://github.com/dagster-io/dagster/tree/master/examples/with_wandb>`_ in the Dagster's Github repo.
+For full-code examples, see `examples/with_wandb <https://github.com/dagster-io/dagster/tree/master/examples/with_wandb>`_ in the Dagster's GitHub repo.
 
 .. currentmodule:: dagster_wandb
 

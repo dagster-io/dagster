@@ -61,7 +61,7 @@ Run `dg dev` (if it is not already running) and go to the Dagster UI [http://127
 Asset checks will run when an asset is materialized, but asset checks can also be executed manually in the UI:
 
 1. Reload your Definitions.
-2. Navigate to the Asset Details page for the `raw_customers` asset.
+2. Navigate to the asset details page for the `raw_customers` asset.
 3. Select the "Checks" tab.
 4. Click the **Execute** button (assuming the asset has already executed) for `missing_dimension_check`.
 

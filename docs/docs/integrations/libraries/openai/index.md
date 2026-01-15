@@ -53,7 +53,7 @@ Then, we can instruct Dagster to authorize the OpenAI resource using the environ
 
 ## Using the OpenAI resource with assets
 
-The OpenAI resource can be used in assets in order to interact with the OpenAI API. Note that in this example, we supply our credentials as environment variables directly when instantiating the <PyObject section="definitions" module="dagster" object="Definitions" /> object.
+The OpenAI resource can be used in assets to interact with the OpenAI API. Note that in this example, we supply our credentials as environment variables directly when instantiating the <PyObject section="definitions" module="dagster" object="Definitions" /> object.
 
 <CodeExample
   path="docs_snippets/docs_snippets/integrations/openai/assets.py"

@@ -36,11 +36,11 @@ We should now see an observation event in the event log when we execute this ass
 
 ### Attaching Metadata to an AssetObservation
 
-There are a variety of types of metadata that can be associated with an observation event, all through the <PyObject section="metadata" module="dagster" object="MetadataValue" /> class. Each observation event optionally takes a dictionary of metadata that is then displayed in the event log and the **Asset Details** page. Check our API docs for <PyObject section="metadata" module="dagster" object="MetadataValue" /> for more details on the types of event metadata available.
+There are a variety of types of metadata that can be associated with an observation event, all through the <PyObject section="metadata" module="dagster" object="MetadataValue" /> class. Each observation event optionally takes a dictionary of metadata that is then displayed in the event log and the asset details page. Check our API docs for <PyObject section="metadata" module="dagster" object="MetadataValue" /> for more details on the types of event metadata available.
 
 <CodeExample path="docs_snippets/docs_snippets/concepts/assets/observations.py" startAfter="start_observation_asset_marker_2" endBefore="end_observation_asset_marker_2" title="src/<project_name>/defs/assets.py" />
 
-In the **Asset Details** page, we can see observations in the Asset Activity table:
+On the asset details page, we can see observations in the Asset Activity table:
 
 ![asset activity observation](/images/guides/build/assets/asset-observations/asset-activity-observation.png)
 

@@ -25,7 +25,7 @@ Dagster provides a variety of abstractions for building and orchestrating data p
       Asset
       AssetCheck[Asset Check]
       Graph
-      IOManager[IO Manager]
+      IOManager[I/O manager]
       Job
       Op
       Resource
@@ -320,7 +320,7 @@ A <PyObject section="config" module="dagster" object="Config" displayText="confi
 
     Asset -.-> Definitions
     AssetCheck[Asset Check] -.-> Definitions
-    IOManager[IO Manager] -.-> Definitions
+    IOManager[I/O manager] -.-> Definitions
     Job -.-> Definitions
     Resource -.-> Definitions
     Schedule -.-> Definitions
@@ -404,7 +404,7 @@ A <PyObject section="graphs" module="dagster" object="GraphDefinition" method="t
   graph LR
     style Asset fill:#BDBAB7,stroke:#BDBAB7,stroke-width:2px
 
-    IOManager(IO Manager)
+    IOManager(I/O manager)
 
     style Definitions fill:#BDBAB7,stroke:#BDBAB7,stroke-width:2px
 

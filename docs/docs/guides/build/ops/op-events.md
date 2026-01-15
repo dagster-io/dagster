@@ -41,7 +41,7 @@ Yielding events from within the body of an op is a useful way of communicating w
 
 Because returning a value from an op is such a fundamental part of creating a data pipeline, we have a few different interfaces for this functionality.
 
-For many use cases, Dagster ops can be used directly with python's native type annotations without additional modification.
+For many use cases, Dagster ops can be used directly with Python's native type annotations without additional modification.
 
 <CodeExample path="docs_snippets/docs_snippets/concepts/ops_jobs_graphs/ops.py" startAfter="start_output_op_marker" endBefore="end_output_op_marker" title="src/<project_name>/defs/ops.py"/>
 
@@ -102,7 +102,7 @@ Within ops and assets, you can log or yield <PyObject section="assets" module="d
 
 <CodeExample path="docs_snippets/docs_snippets/concepts/assets/observations.py" startAfter="start_observation_asset_marker_0" endBefore="end_observation_asset_marker_0" title="src/<project_name>/defs/ops.py"/>
 
-In the example above, an observation tracks the number of rows in an asset persisted to storage. This information can then be viewed on the [Asset Details](/guides/operate/webserver#assets) page.
+In the example above, an observation tracks the number of rows in an asset persisted to storage. This information can then be viewed on the [asset details](/guides/operate/webserver#assets) page.
 
 To learn more about asset observations, check out the [Asset Observation](/guides/build/assets/metadata-and-tags/asset-observations) documentation.
 

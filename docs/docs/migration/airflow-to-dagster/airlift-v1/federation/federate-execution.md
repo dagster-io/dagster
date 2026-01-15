@@ -8,7 +8,7 @@ import UseAirliftComponent from '@site/docs/partials/\_UseAirliftComponent.md';
 
 <UseAirliftComponent />
 
-In the [previous step](/migration/airflow-to-dagster/airlift-v1/federation/observe), we created Dagster asset representations of Airflow DAGs in order to observe the Airflow instances from Dagster, and set up cross-instance lineage for the DAGs. In this step, we'll federate the execution of the DAGs across both Airflow instances by using Dagster's [Declarative Automation](/guides/automate/declarative-automation) framework.
+In the [previous step](/migration/airflow-to-dagster/airlift-v1/federation/observe), we created Dagster asset representations of Airflow DAGs to observe the Airflow instances from Dagster, and set up cross-instance lineage for the DAGs. In this step, we'll federate the execution of the DAGs across both Airflow instances by using Dagster's [Declarative Automation](/guides/automate/declarative-automation) framework.
 
 ## Make the `customer_metrics` DAG executable
 

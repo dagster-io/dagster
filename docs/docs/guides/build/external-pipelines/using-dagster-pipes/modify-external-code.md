@@ -16,7 +16,7 @@ At this point, you should have three files:
 - `dagster_code.py` which includes a Dagster asset.
 - `resources.py` which includes the Dagster definitions.
 
-In this section, you'll learn how to modify the standalone Python script to work with [Dagster Pipes](/guides/build/external-pipelines) in order to stream information back to Dagster. To do this, you'll:
+In this section, you'll learn how to modify the standalone Python script to work with [Dagster Pipes](/guides/build/external-pipelines) to stream information back to Dagster. To do this, you'll:
 
 - [Make Dagster context available in external code](#step-1-make-dagster-context-available-in-external-code)
 - [Stream log messages back to Dagster](#step-2-send-log-messages-to-dagster)
@@ -69,7 +69,7 @@ Then, `total_orders` will show up in the UI as structured metadata:
 
 ![Report asset materialization to Dagster](/images/guides/build/external-pipelines/subprocess/part-2-step-3-report-asset-materialization.png)
 
-This metadata will also be displayed on the **Events** tab of the **Asset Details** page in the UI:
+This metadata will also be displayed on the **Events** tab of the asset details page in the UI:
 
 ![View materialization events in asset details page](/images/guides/build/external-pipelines/subprocess/part-2-step-3-asset-details.png)
 
@@ -96,7 +96,7 @@ If your asset has data quality checks defined, you can report to Dagster that an
 When Dagster executes the code, you’ll see an asset check event with the check result in the UI:
 
 ![Report asset checks to Dagster](/images/guides/build/external-pipelines/subprocess/part-2-step-3-report-asset-check.png)
-This check result will also be displayed on the **Checks** tab of the **Asset Details** page in the UI:
+This check result will also be displayed on the **Checks** tab of the asset details page in the UI:
 
 ![View checks in asset details page](/images/guides/build/external-pipelines/subprocess/part-2-step-3-check-tab.png)
 
