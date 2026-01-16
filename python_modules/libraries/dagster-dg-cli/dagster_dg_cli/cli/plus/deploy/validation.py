@@ -4,8 +4,6 @@ import pathlib
 from typing import Optional
 
 import click
-from dagster_cloud_cli.commands.ci import checks
-from dagster_cloud_cli.config_utils import get_org_url
 from dagster_shared.plus.config import DagsterPlusCliConfig
 
 
@@ -40,6 +38,10 @@ def validate_deploy_configuration(
     Raises:
         click.ClickException: If validation fails
     """
+    # defer for import performance
+    from dagster_cloud_cli.commands.ci import checks
+    from dagster_cloud_cli.config_utils import get_org_url
+
     yaml_path = pathlib.Path(dagster_cloud_yaml_path)
 
     yaml_result = checks.check_dagster_cloud_yaml(yaml_path)
