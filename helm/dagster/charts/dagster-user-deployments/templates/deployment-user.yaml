@@ -178,7 +178,11 @@ spec:
               {{- toYaml $deployment.livenessProbe.failureThreshold | nindent 14 }}
             {{- end }}
           {{- else}}
-          livenessProbe: {{ $deployment.livenessProbe | toYaml | nindent 12 }}
+          livenessProbe:
+            {{- $livenessProbe := omit $deployment.livenessProbe "enabled" }}
+            {{- if $livenessProbe }}
+              {{- $livenessProbe | toYaml | nindent 12 }}
+            {{- end }}
           {{- end }}
         {{- end }}
         {{- if $deployment.startupProbe }}
