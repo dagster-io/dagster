@@ -5,7 +5,6 @@ from typing import TYPE_CHECKING, AbstractSet, Optional, Union  # noqa: UP035
 
 from dagster import _check as check
 from dagster._config.config_schema import UserConfigSchema
-from dagster._core.definitions.asset_checks.asset_check_spec import AssetCheckKey
 from dagster._core.definitions.asset_key import EntityKey
 from dagster._core.definitions.declarative_automation.serialized_objects import (
     AutomationConditionEvaluationWithRunIds,
@@ -62,6 +61,7 @@ if TYPE_CHECKING:
     )
     from dagster._core.snap.execution_plan_snapshot import ExecutionPlanSnapshot
     from dagster._core.snap.job_snapshot import JobSnap
+    from dagster._core.storage.asset_check_state import AssetCheckState
     from dagster._core.storage.dagster_run import (
         DagsterRun,
         DagsterRunStatsSnapshot,
@@ -775,6 +775,11 @@ class LegacyEventLogStorage(EventLogStorage, ConfigurableClass):
         return self._storage.event_log_storage.get_asset_check_partition_info(
             keys=keys, after_storage_id=after_storage_id, partition_keys=partition_keys
         )
+
+    def get_checkpointed_asset_check_state(
+        self, keys: Sequence["AssetCheckKey"]
+    ) -> Mapping["AssetCheckKey", "AssetCheckState"]:
+        return self._storage.event_log_storage.get_checkpointed_asset_check_state(keys)
 
 
 class LegacyScheduleStorage(ScheduleStorage, ConfigurableClass):
