@@ -119,11 +119,17 @@ class DatabricksWorkspace(ConfigurableResource):
                 if "notebook_task" in task_dict:
                     parsed_tasks.append(DatabricksNotebookTask.from_job_task_config(augmented_task))
                 elif "condition_task" in task_dict:
-                    parsed_tasks.append(DatabricksConditionTask.from_job_task_config(augmented_task))
+                    parsed_tasks.append(
+                        DatabricksConditionTask.from_job_task_config(augmented_task)
+                    )
                 elif "spark_python_task" in task_dict:
-                    parsed_tasks.append(DatabricksSparkPythonTask.from_job_task_config(augmented_task))
+                    parsed_tasks.append(
+                        DatabricksSparkPythonTask.from_job_task_config(augmented_task)
+                    )
                 elif "python_wheel_task" in task_dict:
-                    parsed_tasks.append(DatabricksPythonWheelTask.from_job_task_config(augmented_task))
+                    parsed_tasks.append(
+                        DatabricksPythonWheelTask.from_job_task_config(augmented_task)
+                    )
                 elif "spark_jar_task" in task_dict:
                     parsed_tasks.append(DatabricksSparkJarTask.from_job_task_config(augmented_task))
                 elif "run_job_task" in task_dict:
