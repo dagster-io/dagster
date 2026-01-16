@@ -6,16 +6,16 @@ title: Transitioning from development to production
 
 In this article, we'll walk through how to transition your data pipelines from local development to staging and production deployments.
 
-Let's say we’ve been tasked with fetching the N most recent entries from Hacker News and splitting the data into two datasets: one containing all of the data about stories and one containing all of the data about comments. In order to make the pipeline maintainable and testable, we have two additional requirements:
+Let's say we've been tasked with fetching the N most recent entries from Hacker News and splitting the data into two datasets: one containing all of the data about stories and one containing all of the data about comments. In order to make the pipeline maintainable and testable, we have two additional requirements:
 
 - We must be able to run our data pipeline in local, staging, and production environments.
 - We need to be confident that data won't be accidentally overwritten (for example, because a user forgot to change a configuration value).
 
-Using a few Dagster concepts, we can easily tackle this task! Here’s an overview of the main concepts we’ll be using in this guide:
+Using a few Dagster concepts, we can easily tackle this task! Here's an overview of the main concepts we'll be using in this guide:
 
 - [Assets](/guides/build/assets) - An asset is a software object that models a data asset. The prototypical example is a table in a database or a file in cloud storage.
 - [Resources](/guides/build/external-resources) - A resource is an object that models a connection to a (typically) external service. Resources can be shared between assets, and different implementations of resources can be used depending on the environment. For example, a resource may provide methods to send messages in Slack.
-- [I/O managers](/guides/build/io-managers) - An I/O manager is a special kind of resource that handles storing and loading assets. For example, if we wanted to store assets in S3, we could use Dagster’s built-in S3 I/O manager.
+- [I/O managers](/guides/build/io-managers) - An I/O manager is a special kind of resource that handles storing and loading assets. For example, if we wanted to store assets in S3, we could use Dagster's built-in S3 I/O manager.
 - [Run config](/guides/operate/configuration/run-configuration) - Assets and resources sometimes require configuration to set certain values, like the password to a database. Run config allows you to set these values at run time. In this guide, we will also use an API to set some default run configuration.
 
 Using these Dagster concepts we will:
@@ -44,7 +44,7 @@ In this section we will:
 - Add run configuration for the Snowflake I/O manager
 - Materialize assets in the Dagster UI
 
-Let’s start by writing our three assets. We'll use Pandas DataFrames to interact with the data.
+Let's start by writing our three assets. We'll use Pandas DataFrames to interact with the data.
 
 <CodeExample
   path="docs_snippets/docs_snippets/guides/dagster/development_to_production/assets.py"
@@ -112,11 +112,11 @@ We can easily solve these problems using <PyObject section="resources" module="d
 
 ### Staging
 
-Depending on your organization’s Dagster setup, there are a couple of options for a staging environment.
+Depending on your organization's Dagster setup, there are a couple of options for a staging environment.
 
 - **For Dagster+ users**, we recommend using [branch deployments](/deployment/dagster-plus/deploying-code/branch-deployments) as your staging step. A branch deployment is a new Dagster deployment that is automatically generated for each git branch, and can be used to verify data pipelines before deploying them to production.
 
-- **For a self-hosted staging deployment**, we’ve already done most of the necessary work to run our assets in staging! All we need to do is add another entry to the `resources` dictionary and set `DAGSTER_DEPLOYMENT=staging` in our staging deployment.
+- **For a self-hosted staging deployment**, we've already done most of the necessary work to run our assets in staging! All we need to do is add another entry to the `resources` dictionary and set `DAGSTER_DEPLOYMENT=staging` in our staging deployment.
 
 <CodeExample
   path="docs_snippets/docs_snippets/guides/dagster/development_to_production/repository/repository_v3.py"
@@ -183,7 +183,7 @@ Now we can write a stubbed version of the Hacker News resource. We want to make 
 
 :::note
 
-Since the stub Hacker News resource and the real Hacker News resource need to implement the same methods, this would be a great time to write an interface. We’ll skip the implementation in this guide, but you can find it in the [full code example](https://github.com/dagster-io/dagster/tree/master/examples/development_to_production).
+Since the stub Hacker News resource and the real Hacker News resource need to implement the same methods, this would be a great time to write an interface. We'll skip the implementation in this guide, but you can find it in the [full code example](https://github.com/dagster-io/dagster/tree/master/examples/development_to_production).
 
 :::
 

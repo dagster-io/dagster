@@ -351,7 +351,7 @@ If you use PEX deploys in your workflow (`ENABLE_FAST_DEPLOYS: 'true'`), the fol
     # needed once
     - name: Configure dependency resolution to use the wheel built above
       run: >
-        echo "[global]" > $GITHUB_WORKSPACE/deps/pip.conf &&
+        echo [global]" > $GITHUB_WORKSPACE/deps/pip.conf &&
         echo "find-links = " >> $GITHUB_WORKSPACE/deps/pip.conf &&
         echo "    file://$GITHUB_WORKSPACE/deps/" >> $GITHUB_WORKSPACE/deps/pip.conf &&
         echo "PIP_CONFIG_FILE=$GITHUB_WORKSPACE/deps/pip.conf" > $GITHUB_ENV

@@ -21,6 +21,6 @@ These logs can be viewed when inspecting a tick in the tick history view on the 
 
 :::note
 
-Sensor logs are stored in your Dagster instance's compute log storage. You should ensure that your compute log storage is configured to view your sensor logs. For more information, see "[Dagster instance configuration](/deployment/oss/oss-instance-configuration#compute-log-storage)".
+Sensor logs are stored in your Dagster instance's compute log storage. You should ensure that your compute log storage is configured to view your sensor logs. For more information, see [Dagster instance configuration](/deployment/oss/oss-instance-configuration#compute-log-storage).
 
 :::

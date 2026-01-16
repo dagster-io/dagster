@@ -105,4 +105,4 @@ make clean
 
 ## Next steps
 
-In the next step, "[Observe Airflow tasks](/migration/airflow-to-dagster/airlift-v1/task-level-migration/observe)", we'll observe asset dependencies within the Airflow DAG.
+In the next step, [Observe Airflow tasks](/migration/airflow-to-dagster/airlift-v1/task-level-migration/observe)", we'll observe asset dependencies within the Airflow DAG.

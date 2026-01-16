@@ -67,7 +67,7 @@ The <PyObject section="assets" module="dagster" object="observable_source_asset"
 
 <CodeExample path="docs_snippets/docs_snippets/concepts/assets/observable_source_assets.py" startAfter="start_plain" endBefore="end_plain" title="src/<project_name>/defs/assets.py" />
 
-When the file content changes, the hash and therefore the data version will change - this will notify Dagster that downstream assets derived from an older value (i.e. a different data version) of this source asset might need to be updated.
+When the file content changes, the hash and therefore the data version will change - this will notify Dagster that downstream assets derived from an older value (that is, a different data version) of this source asset might need to be updated.
 
 Source asset observations can be triggered with the "Observe sources" button in the UI graph explorer view. Note that this button will only be visible if at least one source asset in the current graph defines an observation function.
 

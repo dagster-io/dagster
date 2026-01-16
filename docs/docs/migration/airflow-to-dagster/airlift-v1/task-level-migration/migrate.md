@@ -82,4 +82,4 @@ We can then toggle the proxied state of the remaining tasks in the `proxied_stat
 
 ## Next steps
 
-In the next step, "[Decommission the Airflow DAG](/migration/airflow-to-dagster/airlift-v1/task-level-migration/decommission)", we will remove the DAG from the Airflow directory and update the Dagster code to remove task associations and attach the assets to a schedule.
+In the next step, [Decommission the Airflow DAG](/migration/airflow-to-dagster/airlift-v1/task-level-migration/decommission)", we will remove the DAG from the Airflow directory and update the Dagster code to remove task associations and attach the assets to a schedule.

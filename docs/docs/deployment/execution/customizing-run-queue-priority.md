@@ -6,7 +6,7 @@ title: Customizing run queue priority
 
 You can define custom prioritization rules for your Dagster instance using concurrency settings.
 
-By the end of this guide, you’ll:
+By the end of this guide, you'll:
 
 - Understand how run concurrency works
 - Learn how to define custom prioritization rules
@@ -22,7 +22,7 @@ For example, if three runs are submitted in the following order:
 2. Run `B`
 3. Run `C`
 
-Then the runs will be launched in the same order: Run `A`, then `B`, then `C`. This will be true unless there are [pool or run tag concurrency limits](/guides/operate/managing-concurrency) in place. The launch order can also be customized using prioritization rules, which we’ll cover later in this guide.
+Then the runs will be launched in the same order: Run `A`, then `B`, then `C`. This will be true unless there are [pool or run tag concurrency limits](/guides/operate/managing-concurrency) in place. The launch order can also be customized using prioritization rules, which we'll cover later in this guide.
 
 By default, all runs have a priority of `0`. Dagster launches runs with higher priority first. If multiple runs have the same priority, Dagster will launch the runs in the order they're submitted to the queue.
 
@@ -65,17 +65,17 @@ Using the launchpad in the Dagster UI, you can also override priority tag values
 
 **Understanding prioritization rules and concurrency limits**
 
-Unless tag concurrency limits and/or prioritization rules are in place, queued runs are executed in the order they’re submitted to the queue. However, a run blocked by tag concurrency limits won’t block runs submitted after it.
+Unless tag concurrency limits and/or prioritization rules are in place, queued runs are executed in the order they're submitted to the queue. However, a run blocked by tag concurrency limits won't block runs submitted after it.
 
-Let’s walk through an example to demonstrate. In this example, three runs are submitted in the following order:
+Let's walk through an example to demonstrate. In this example, three runs are submitted in the following order:
 
 1. Run `A`, tagged as `team: docs`
 2. Run `B`, tagged as `team: docs`
-3. Run `C`, which isn’t tagged
+3. Run `C`, which isn't tagged
 
 Without configured limits, these runs will be launched in the order they were submitted, or run `A`, then `B`, then `C`.
 
-Before any more runs are launched, let’s add the following configuration to our instance’s settings:
+Before any more runs are launched, let's add the following configuration to our instance's settings:
 
 ```yaml
 concurrency:
@@ -85,7 +85,7 @@ concurrency:
         limit: 1
 ```
 
-Now, runs `A` and `B` can’t execute concurrently, while there isn’t a limit on run `C`. Assuming each run executes for a minimum of five minutes, the order in which the runs are launched will change.
+Now, runs `A` and `B` can't execute concurrently, while there isn't a limit on run `C`. Assuming each run executes for a minimum of five minutes, the order in which the runs are launched will change.
 
 If the runs are submitted in the same order as before - that is, `A`, `B`, `C` - then the following will occur:
 

@@ -20,7 +20,7 @@ If you run into issues as you scale your deployment (especially as asset counts 
 
 - Look for `exit code 137` / `OOMKilled` in the agent or code server container logs -- this is the strongest signal that the issue is insufficient memory.
 - Correlate heartbeat timeouts (agent or code server) with CPU spikes or container restarts.
-- Distinguish issues where the run never starts (agent can’t schedule workers) from those where the run starts, then dies (worker or code server out of memory).
+- Distinguish issues where the run never starts (agent can't schedule workers) from those where the run starts, then dies (worker or code server out of memory).
 - If errors disappear when you lower concurrency, this is a signal that you were hitting CPU/RAM saturation with the previous concurrency settings.
 
 ### Agent server troubleshooting
@@ -40,7 +40,7 @@ If you run into issues as you scale your deployment (especially as asset counts 
 | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------- |
 | "Failed to load code location" error with `MemoryError`, `OutOfMemory`, or plain `Killed / exit 137`.                                                                                                                                               | Increase memory in code server container. |
 | Kubernetes pod or ECS task shows `OOMKilled`, `CrashLoopBackOff`, or ECS `OutOfMemoryError`.                                                                                                                                                        | Increase memory in code server container. |
-| gRPC server crashed, `UserCodeUnreachable` errors, or `Can’t connect to user code server` errors (often after long import times).                                                                                                                   |                                           |
+| gRPC server crashed, `UserCodeUnreachable` errors, or `Can't connect to user code server` errors (often after long import times).                                                                                                                   |                                           |
 | Load or health check timeouts when you click into the location or expand assets in the UI.                                                                                                                                                          |                                           |
 | During runs:<br /><ul><li>`Worker exited with SIGKILL (OOM)` error</li><li>Python `MemoryError` from libraries (pandas, numpy, PyTorch, etc.)</li><li>gRPC DeadlineExceeded mid-run when the user code process stalls under GC or thrash.</li></ul> | Increase memory in code server container. |
 | Sensors/schedules that query a large graph timing out when the code server has limited CPU.                                                                                                                                                         | Increase CPU in code server container.    |

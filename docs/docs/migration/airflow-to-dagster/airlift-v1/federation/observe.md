@@ -118,4 +118,4 @@ Now, after adding the updated `customer_metrics_dag_asset` to our <PyObject sect
 
 ## Next steps
 
-In the next step, "[Federate execution across Airflow instances](/migration/airflow-to-dagster/airlift-v1/federation/federate-execution)", we'll federate the execution of our DAGs across both Airflow instances.
+In the next step, [Federate execution across Airflow instances](/migration/airflow-to-dagster/airlift-v1/federation/federate-execution)", we'll federate the execution of our DAGs across both Airflow instances.

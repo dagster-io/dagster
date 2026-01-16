@@ -149,7 +149,7 @@ If the asset is partitioned, then:
 
 You may run into a situation where you need to programmatically construct the dependencies for a graph. In that case, you can directly define the <PyObject section="graphs" module="dagster" object="GraphDefinition"/> object.
 
-To construct a GraphDefinition, you need to pass the constructor a graph name, a list of op or graph definitions, and a dictionary defining the dependency structure. The dependency structure declares the dependencies of each op’s inputs on the outputs of other ops in the graph. The top-level keys of the dependency dictionary are the string names of ops or graphs. If you are using op aliases, be sure to use the aliased name. Values of the top-level keys are also dictionary, which maps input names to a <PyObject section="graphs" module="dagster" object="DependencyDefinition"/>.
+To construct a GraphDefinition, you need to pass the constructor a graph name, a list of op or graph definitions, and a dictionary defining the dependency structure. The dependency structure declares the dependencies of each op's inputs on the outputs of other ops in the graph. The top-level keys of the dependency dictionary are the string names of ops or graphs. If you are using op aliases, be sure to use the aliased name. Values of the top-level keys are also dictionary, which maps input names to a <PyObject section="graphs" module="dagster" object="DependencyDefinition"/>.
 
 <CodeExample path="docs_snippets/docs_snippets/concepts/ops_jobs_graphs/jobs.py" startAfter="start_pipeline_definition_marker" endBefore="end_pipeline_definition_marker" title="src/<project_name>/defs/ops.py"/>
 

@@ -200,7 +200,7 @@ config = S3Config(allow_unsafe_rename=True)
 
 <TabItem value="Set-up a locking client">
 
-To use DynamoDB, set the `AWS_S3_LOCKING_PROVIDER` variable to `dynamodb` and create a table named delta_rs_lock_table in Dynamo. An example DynamoDB table creation snippet using the AWS CLI follows, and should be customized for your environment’s needs (for example, read/write capacity modes):
+To use DynamoDB, set the `AWS_S3_LOCKING_PROVIDER` variable to `dynamodb` and create a table named delta_rs_lock_table in Dynamo. An example DynamoDB table creation snippet using the AWS CLI follows, and should be customized for your environment's needs (for example, read/write capacity modes):
 
 ```bash
 aws dynamodb create-table --table-name delta_rs_lock_table \

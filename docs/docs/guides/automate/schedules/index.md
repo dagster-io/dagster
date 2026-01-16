@@ -41,7 +41,7 @@ daily_schedule = dg.ScheduleDefinition(
 )
 ```
 
-For more information, see "[Customizing a schedule's execution timezone](/guides/automate/schedules/customizing-execution-timezone)".
+For more information, see [Customizing a schedule's execution timezone](/guides/automate/schedules/customizing-execution-timezone).
 
 ## Create schedules from partitions
 

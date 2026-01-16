@@ -12,7 +12,7 @@ Machine learning models are highly dependent on data at a point in time and must
 
 :::note
 
-Before proceeding, we recommend reviewing "[Building machine learning pipelines with Dagster](/guides/build/ml-pipelines/ml-pipeline)", which provides background on using Dagster's assets for machine learning.
+Before proceeding, we recommend reviewing [Building machine learning pipelines with Dagster](/guides/build/ml-pipelines/ml-pipeline)", which provides background on using Dagster's assets for machine learning.
 
 :::
 
@@ -36,7 +36,7 @@ Some machine learning models might be more cumbersome to retrain; it also might 
 
 Integrating your machine learning models into Dagster allows you to see when the model and its data dependencies were refreshed, or when a refresh process has failed. By using Dagster to monitor performance changes and process failures on your ML model, it becomes possible to set up remediation paths, such as automated model retraining, that can help resolve issues like model drift.
 
-In this example, the model is being evaluated against the previous model’s accuracy. If the model’s accuracy has improved, the model is returned for use in downstream steps, such as inference or deploying to production.
+In this example, the model is being evaluated against the previous model's accuracy. If the model's accuracy has improved, the model is returned for use in downstream steps, such as inference or deploying to production.
 
 <CodeExample path="docs_snippets/docs_snippets/guides/dagster/managing_ml/managing_ml_code.py" startAfter="conditional_monitoring_start"  endBefore="conditional_monitoring_end" />
 
@@ -46,13 +46,13 @@ A [sensor](/guides/automate/sensors) can be set up that triggers if an asset fai
 
 ## Enhancing the Dagster UI with metadata
 
-Understanding the performance of your ML model is critical to both the model development process and production. [Metadata](/guides/build/assets/metadata-and-tags) can significantly enhance the usability of the Dagster UI to show what’s going on in a specific asset. Using metadata in Dagster is flexible, can be used for tracking evaluation metrics, and viewing the training accuracy progress over training iterations as a graph.
+Understanding the performance of your ML model is critical to both the model development process and production. [Metadata](/guides/build/assets/metadata-and-tags) can significantly enhance the usability of the Dagster UI to show what's going on in a specific asset. Using metadata in Dagster is flexible, can be used for tracking evaluation metrics, and viewing the training accuracy progress over training iterations as a graph.
 
-One of the easiest ways to utilize Dagster’s metadata is by using a dictionary to track different metrics that are relevant for an ML model.
+One of the easiest ways to utilize Dagster's metadata is by using a dictionary to track different metrics that are relevant for an ML model.
 
 Another way is to store relevant data for a single training iteration as a graph that you can view directly from the Dagster UI. In this example, a function is defined that uses data produced by a machine learning model to plot an evaluation metric as the model goes through the training process and render that in the Dagster UI.
 
-Dagster’s <PyObject section="metadata" module="dagster" object="MetadataValue" /> types enable types such as tables, URLs, notebooks, Markdown, etc. In the following example, the Markdown metadata type is used to generate plots. Each plot will show a specific evaluation metric’s performance throughout each training iteration also known as an epoch during the training cycle.
+Dagster's <PyObject section="metadata" module="dagster" object="MetadataValue" /> types enable types such as tables, URLs, notebooks, Markdown, etc. In the following example, the Markdown metadata type is used to generate plots. Each plot will show a specific evaluation metric's performance throughout each training iteration also known as an epoch during the training cycle.
 
 <CodeExample path="docs_snippets/docs_snippets/guides/dagster/managing_ml/managing_ml_code.py" startAfter="ui_plot_start"   endBefore="ui_plot_end" />
 

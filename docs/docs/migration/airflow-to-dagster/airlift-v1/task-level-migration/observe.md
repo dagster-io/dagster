@@ -8,7 +8,7 @@ import UseAirliftComponent from '@site/docs/partials/\_UseAirliftComponent.md';
 
 <UseAirliftComponent />
 
-In the previous step, "[Peer the Airflow instance with a Dagster code location](/migration/airflow-to-dagster/airlift-v1/task-level-migration/peer)", we connected the example Airflow instance to a Dagster code location.
+In the previous step, [Peer the Airflow instance with a Dagster code location](/migration/airflow-to-dagster/airlift-v1/task-level-migration/peer)", we connected the example Airflow instance to a Dagster code location.
 
 The next step is to represent the Airflow workflows more richly by observing the data assets that are produced by the Airflow tasks. Similar to the peering step, this step does not require any changes to Airflow code.
 
@@ -103,4 +103,4 @@ In order for partitioned assets to work with `dagster-airlift`, the following th
 
 ## Next steps
 
-In the next step, "[Migrate Airflow tasks](/migration/airflow-to-dagster/airlift-v1/task-level-migration/migrate)", we will migrate Airflow DAG code to Dagster.
+In the next step, [Migrate Airflow tasks](/migration/airflow-to-dagster/airlift-v1/task-level-migration/migrate)", we will migrate Airflow DAG code to Dagster.

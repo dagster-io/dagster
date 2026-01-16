@@ -9,7 +9,7 @@ This guide provides instructions for deploying Dagster on Amazon Web Services (A
 
 ## Hosting Dagster on EC2
 
-To host Dagster on a bare VM or in Docker on EC2, see "[Running Dagster as a service](/deployment/oss/deployment-options/deploying-dagster-as-a-service).
+To host Dagster on a bare VM or in Docker on EC2, see [Running Dagster as a service](/deployment/oss/deployment-options/deploying-dagster-as-a-service).
 
 ## Using RDS for run and event log storage
 

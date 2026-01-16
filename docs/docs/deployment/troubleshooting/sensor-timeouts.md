@@ -4,7 +4,7 @@ description: Debug and address Dagster sensor timeout issues.
 sidebar_position: 300
 ---
 
-In this guide, we’ll discuss how to handle sensors that time out.
+In this guide, we'll discuss how to handle sensors that time out.
 
 :::note
 
@@ -24,11 +24,11 @@ Often, hot paths can manifest as calls to external APIs hanging or poorly optimi
 
 ## Step 2: Break up sensor evaluations
 
-If, after understanding the hot paths to your code, you don’t have external hanging API calls and there’s no clear place for optimization, the next step is to consider breaking up the expensive sensor evaluations into multiple steps using sensor cursors. For more information, see the [sensor cursors documentation](/guides/automate/sensors#cursors-and-high-volume-events).
+If, after understanding the hot paths to your code, you don't have external hanging API calls and there's no clear place for optimization, the next step is to consider breaking up the expensive sensor evaluations into multiple steps using sensor cursors. For more information, see the [sensor cursors documentation](/guides/automate/sensors#cursors-and-high-volume-events).
 
 ## Step 3: Use schedules for longer evaluations
 
-The above advice is well and good if evaluations take slightly over 60 seconds, but it’s possible sensor evaluations need to take longer. Generally, if evaluations require more than 3 minutes to complete, a sensor may not be the correct tool for your needs.
+The above advice is well and good if evaluations take slightly over 60 seconds, but it's possible sensor evaluations need to take longer. Generally, if evaluations require more than 3 minutes to complete, a sensor may not be the correct tool for your needs.
 
 Sensors are best used for frequently evaluating small amounts of data to kick off real work down the line. But if your sensors are running beyond the expected limit, then a scheduled job which sends run requests to engage in other work is more suited to your task. For more information, see the [Schedules documentation](/guides/automate/schedules).
 
@@ -36,7 +36,7 @@ Sensors are best used for frequently evaluating small amounts of data to kick of
 
 At this point in the guide, you should have identified that:
 
-- Your sensor is timing out, but doesn’t need to run for over 3 minutes
+- Your sensor is timing out, but doesn't need to run for over 3 minutes
 - There are no obvious opportunities for code optimization
 - Breaking up the sensor evaluation is not enough for you, or does not work for your use case
 
@@ -117,9 +117,9 @@ After verifying your agent and code server versions meet the requirements, you c
     enabled: true
   ```
 - **ECS**: Set the `AgentMetricsEnabled` and `CodeServerMetricsEnabled` settings to `true`.
-- **Docker**: This functionality isn’t currently supported.
+- **Docker**: This functionality isn't currently supported.
 
-Once enabled, you should see metrics tracking the throughput of the agent in your agent logs. This includes not only the agent’s maximum throughput, but also each code server. In both cases, the request utilization metrics are provided in a JSON blob.
+Once enabled, you should see metrics tracking the throughput of the agent in your agent logs. This includes not only the agent's maximum throughput, but also each code server. In both cases, the request utilization metrics are provided in a JSON blob.
 
 For the agent, the log looks like this:
 
@@ -139,7 +139,7 @@ In the above code example, there are many fields that can be ignored. The import
 - `num_queued_requests`: tracks number of enqueued requests on the code server (not currently running).
 - `max_concurrent_requests`: the maximum number of requests which can run at any given time on the code server.
 
-##### Increasing the agent’s maximum concurrent requests
+##### Increasing the agent's maximum concurrent requests
 
 It may turn out that you are reaching utilization for the number of requests your agent can serve. The default number of workers is dependent upon the number of cores available to your container. This number can be increased using the `DAGSTER_CLOUD_AGENT_MAX_THREADPOOL_WORKERS` environment variable. This should be set on the container running the agent itself.
 

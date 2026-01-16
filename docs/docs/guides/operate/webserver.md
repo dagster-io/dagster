@@ -160,7 +160,7 @@ To access the run logs, scroll to the bottom of the **Run details** page.
 
 **Structured event logs**
 
-- **Description**: Structured logs are enriched and categorized with metadata. For example, a label of which asset a log is about, links to an asset’s metadata, and what type of event it is available. This structuring also enables easier filtering and searching in the logs.
+- **Description**: Structured logs are enriched and categorized with metadata. For example, a label of which asset a log is about, links to an asset's metadata, and what type of event it is available. This structuring also enables easier filtering and searching in the logs.
 
 To access the structured event logs, click the **left side** of the toggle next to the log filter field.
 

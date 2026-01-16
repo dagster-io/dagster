@@ -34,13 +34,13 @@ For a step-by-step implementation walkthrough, refer to the [Using dbt with Dags
 
 ## dbt models and Dagster asset definitions
 
-Dagster’s [asset definitions](/guides/build/assets) bear several similarities to dbt models. An asset definition contains an asset key, a set of upstream asset keys, and an operation that is responsible for computing the asset from its upstream dependencies. Models defined in a dbt project can be interpreted as Dagster asset definitions:
+Dagster's [asset definitions](/guides/build/assets) bear several similarities to dbt models. An asset definition contains an asset key, a set of upstream asset keys, and an operation that is responsible for computing the asset from its upstream dependencies. Models defined in a dbt project can be interpreted as Dagster asset definitions:
 
 - The asset key for a dbt model is (by default) the name of the model.
 - The upstream dependencies of a dbt model are defined with `ref` or `source` calls within the model's definition.
 - The computation required to compute the asset from its upstream dependencies is the SQL within the model's definition.
 
-These similarities make it natural to interact with dbt models as asset definitions. Let’s take a look at a dbt model and an asset definition, in code:
+These similarities make it natural to interact with dbt models as asset definitions. Let's take a look at a dbt model and an asset definition, in code:
 
 ![Comparison of a dbt model and Dagster asset in code](/images/integrations/dbt/creating-a-dbt-project-in-dagster/asset-dbt-model-comparison.png)
 

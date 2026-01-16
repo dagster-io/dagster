@@ -2,7 +2,7 @@
 title: Dagster & Polars
 sidebar_label: Polars
 sidebar_position: 1
-description: The Polars integration allows using Polars eager or lazy DataFrames as inputs and outputs with Dagster’s assets and ops. Type annotations are used to control whether to load an eager or lazy DataFrame. Lazy DataFrames can be sinked as output. Multiple serialization formats (Parquet, Delta Lake, BigQuery) and filesystems (local, S3, GCS, …) are supported.
+description: The Polars integration allows using Polars eager or lazy DataFrames as inputs and outputs with Dagster's assets and ops. Type annotations are used to control whether to load an eager or lazy DataFrame. Lazy DataFrames can be sinked as output. Multiple serialization formats (Parquet, Delta Lake, BigQuery) and filesystems (local, S3, GCS, …) are supported.
 tags: [community-supported, metadata]
 source: https://github.com/dagster-io/community-integrations/tree/main/libraries/dagster-polars
 pypi:

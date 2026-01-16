@@ -18,4 +18,4 @@ Now, instead of getting a materialization when a particular task completes, each
 
 ## Next steps
 
-In the next step, "[Migrate DAG-mapped assets](/migration/airflow-to-dagster/airlift-v1/dag-level-migration/migrate)", we will proxy execution for the entire Airflow DAG in Dagster.
+In the next step, [Migrate DAG-mapped assets](/migration/airflow-to-dagster/airlift-v1/dag-level-migration/migrate)", we will proxy execution for the entire Airflow DAG in Dagster.

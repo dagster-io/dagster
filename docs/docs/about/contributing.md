@@ -160,4 +160,4 @@ In the PR template, please describe the change, including the motivation/context
 
 A Core reviewer will review your PR in around one business day and provide feedback on any changes it requires to be approved. Once approved and all the tests (including Buildkite!) pass, the reviewer will click the Squash and merge button in GitHub 🥳.
 
-Your PR is now merged into Dagster! We’ll shout out your contribution in the weekly release notes.
+Your PR is now merged into Dagster! We'll shout out your contribution in the weekly release notes.

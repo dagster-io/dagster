@@ -4,6 +4,8 @@ ACS
 AD
 ADLS2
 AKS
+AMD
+ARM
 AWS
 AWS Athena
 AWS CloudWatch
@@ -25,6 +27,7 @@ Census
 Crontab
 Cube
 DAG
+DNS
 DSL
 DataFrame
 Databricks
@@ -101,7 +104,9 @@ Spark
 Tableau
 Tensorflow
 Trino
+TTL
 Twilio
+VPC
 Weights & Biases
 [Cc]onfig
 [Mm]aterializable

@@ -30,7 +30,7 @@ Next, we can scaffold the asset file:
 dg scaffold defs dagster.assets dagster_code.py
 ```
 
-Next, you’ll define the asset. Copy and paste the following into the file `src/external_pipeline/defs/dagster_code.py`:
+Next, you'll define the asset. Copy and paste the following into the file `src/external_pipeline/defs/dagster_code.py`:
 
 <CodeExample
    path="docs_snippets/docs_snippets/guides/dagster/dagster_pipes/subprocess/part_1/dagster_code.py"
@@ -50,14 +50,14 @@ Before we define our asset code, we will add a standalone Python script named `e
    title="src/external_pipeline/defs/external_code.py"
 />
 
-Here’s what we did in this code:
+Here's what we did in this code:
 
 - Created an asset named `subprocess_asset`
-- Provided <PyObject section="execution" module="dagster" object="AssetExecutionContext" /> as the `context` argument to the asset. This object provides system information such as resources, config, and logging. We’ll come back to this a bit later in this section.
-- Specified a resource for the asset to use, `PipesSubprocessClient`. We’ll also come back to this in a little bit.
+- Provided <PyObject section="execution" module="dagster" object="AssetExecutionContext" /> as the `context` argument to the asset. This object provides system information such as resources, config, and logging. We'll come back to this a bit later in this section.
+- Specified a resource for the asset to use, `PipesSubprocessClient`. We'll also come back to this in a little bit.
 - Declared a command list `cmd` to run the external script. In the list:
   - First, found the path to the Python executable on the system using `shutil.which("python")`.
-  - Then, provided the file path to the file that we want to execute. In this case, it’s the `external_code.py` file that you created earlier.
+  - Then, provided the file path to the file that we want to execute. In this case, it's the `external_code.py` file that you created earlier.
 
 ### Step 4: Invoke the external code from the asset
 
@@ -65,7 +65,7 @@ Next, invoke a subprocess that executes the external code from the asset using t
 
 <CodeExample path="docs_snippets/docs_snippets/guides/dagster/dagster_pipes/subprocess/part_1/dagster_code.py" startAfter="start_asset_marker" endBefore="end_asset_marker" title="src/external_pipeline/defs/dagster_code.py" />
 
-Let’s take a look at what this code does:
+Let's take a look at what this code does:
 
 - The `PipesSubprocessClient` resource used by the asset exposes a `run` method.
 - When the asset is executed, this method will synchronously execute the subprocess in in a pipes session, and it will return a `PipesClientCompletedInvocation` object.
@@ -78,7 +78,7 @@ import ScaffoldResource from '@site/docs/partials/\_ScaffoldResource.md';
 
 <ScaffoldResource />
 
-To make the subprocess resource loadable and accessible, such as the CLI, UI, and Dagster+, you’ll create a function with the <PyObject section="definitions" module="dagster" object="Definitions" decorator />.
+To make the subprocess resource loadable and accessible, such as the CLI, UI, and Dagster+, you'll create a function with the <PyObject section="definitions" module="dagster" object="Definitions" decorator />.
 
 Copy and paste the following to the bottom of `src/external_pipeline/defs/resources.py`:
 
@@ -90,7 +90,7 @@ At this point, `dagster_code.py` should look like the following:
 
 ## Step 6: Run the subprocess from the Dagster UI
 
-In this step, you’ll execute the subprocess asset you created in earlier steps from the Dagster UI.
+In this step, you'll execute the subprocess asset you created in earlier steps from the Dagster UI.
 
 1. In a new command line session, run the following to start the UI:
 

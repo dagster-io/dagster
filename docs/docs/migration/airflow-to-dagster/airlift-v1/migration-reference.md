@@ -25,7 +25,7 @@ If your Dagster deployment lives behind a custom auth backend, you can customize
 
 ## Dagster+ authorization
 
-You can use a custom proxy operator to establish a connection to a Dagster plus deployment. The below example proxies to Dagster Plus using organization name, deployment name, and user token set as Airflow Variables. To set a Dagster+ user token, see "[Managing user tokens in Dagster+](/deployment/dagster-plus/management/tokens/user-tokens)".
+You can use a custom proxy operator to establish a connection to a Dagster plus deployment. The below example proxies to Dagster Plus using organization name, deployment name, and user token set as Airflow Variables. To set a Dagster+ user token, see [Managing user tokens in Dagster+](/deployment/dagster-plus/management/tokens/user-tokens).
 
 <CodeExample path="airlift-migration-tutorial/tutorial_example/snippets/custom_operator_examples/plus_proxy_operator.py" />
 

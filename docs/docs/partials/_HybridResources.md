@@ -2,4 +2,4 @@
 - **Code server container** - Budget for imports, plus the definition graph, and any heavy initialization. We recommend starting with 0.25 vCPU cores and 1GB RAM.
 - **Runs:** 4 vCPU cores, 8-16 GB of RAM depending on the workload
 
-For compute-heavy jobs, increase memory and/or CPU where the run workers are (i.e. Kubernetes pods or ECS tasks), not just the code server.
+For compute-heavy jobs, increase memory and/or CPU where the run workers are (for instance, Kubernetes pods or ECS tasks), not just the code server.

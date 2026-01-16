@@ -142,12 +142,12 @@ Use the following command to launch the Dagster UI locally:
 
 Then, in a browser, navigate to [http://127.0.0.1:3000](http://127.0.0.1:3000).
 
-At this point, your project will be empty, but you’ll continue adding to it throughout the tutorial.
+At this point, your project will be empty, but you'll continue adding to it throughout the tutorial.
 
 ![2048 resolution](/images/tutorial/dagster-tutorial/project.png)
 
 :::tip
 
-As you develop with Dagster, it’s often useful to periodically run `dg dev` to view your project.
+As you develop with Dagster, it's often useful to periodically run `dg dev` to view your project.
 
 :::

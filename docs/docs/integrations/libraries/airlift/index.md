@@ -31,7 +31,7 @@ Using [`dagster-airflift`](/integrations/libraries/airlift/dagster-airlift), you
 
 ### REST API Availability
 
-Airlift depends on the availability of Airflow’s REST API. Airflow’s REST API was made stable in its 2.0 release (Dec 2020) and was introduced experimentally in 1.10 in August 2018. Currently Airflow requires the availability of the REST API.
+Airlift depends on the availability of Airflow's REST API. Airflow's REST API was made stable in its 2.0 release (Dec 2020) and was introduced experimentally in 1.10 in August 2018. Currently Airflow requires the availability of the REST API.
 
 - **OSS:** Stable as of 2.00
 - **MWAA**
@@ -47,11 +47,11 @@ You can use Airlift to migrate an Airflow DAG to Dagster assets. Airlift enables
 - Has task-by-task rollback to reduce risk
 - Retains Airflow DAG structure and execution history during the migration
 
-To get started, see "[Migrate from Airflow to Dagster at the task level](/migration/airflow-to-dagster/airlift-v1/task-level-migration)".
+To get started, see [Migrate from Airflow to Dagster at the task level](/migration/airflow-to-dagster/airlift-v1/task-level-migration).
 
 :::note
 
-If you need to migrate at the DAG level, see "[Migrate from Airflow to Dagster at the DAG level](/migration/airflow-to-dagster/airlift-v1/dag-level-migration)".
+If you need to migrate at the DAG level, see [Migrate from Airflow to Dagster at the DAG level](/migration/airflow-to-dagster/airlift-v1/dag-level-migration).
 
 :::
 
@@ -59,8 +59,8 @@ If you need to migrate at the DAG level, see "[Migrate from Airflow to Dagster a
 
 You can use Airlift to observe DAGs from multiple Airflow instances, and federate execution between them using Dagster as a centralized control plane.
 
-To get started, see "[Federate execution between Airflow instances with Dagster](/migration/airflow-to-dagster/airlift-v1/federation)".
+To get started, see [Federate execution between Airflow instances with Dagster](/migration/airflow-to-dagster/airlift-v1/federation).
 
 ## Airflow operator migration
 
-You can easily migrate common Airflow operators to Dagster. For more information, see "[Airflow operator migration](/migration/airflow-to-dagster/airflow-operator-migration)".
+You can easily migrate common Airflow operators to Dagster. For more information, see [Airflow operator migration](/migration/airflow-to-dagster/airflow-operator-migration).

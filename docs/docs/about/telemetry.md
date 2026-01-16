@@ -14,7 +14,7 @@ Backend telemetry collection is logged at `$DAGSTER_HOME/logs/` if `$DAGSTER_HOM
 
 Use of telemetry data is governed by the [Dagster Privacy Policy](https://dagster.io/privacy).
 
-If you’d like to opt out, you can add the following to `$DAGSTER_HOME/dagster.yaml` (creating that file if necessary):
+If you'd like to opt out, you can add the following to `$DAGSTER_HOME/dagster.yaml` (creating that file if necessary):
 
 ```yaml
 telemetry:

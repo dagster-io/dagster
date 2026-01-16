@@ -64,7 +64,7 @@ Sometimes, you may invoke a single call to an API that results in multiple table
 Calling {method} with asset key {asset_key} is undefined. Asset has already been materialized, so no additional data can be reported for it
 ```
 
-Instead, you’ll need to set the `asset_key` parameter for each instance of <PyObject module="dagster_pipes" section="libraries" integration="pipes" object="PipesContext.report_asset_materialization" />:
+Instead, you'll need to set the `asset_key` parameter for each instance of <PyObject module="dagster_pipes" section="libraries" integration="pipes" object="PipesContext.report_asset_materialization" />:
 
 <CodeExample path="docs_snippets/docs_snippets/guides/dagster/dagster_pipes/subprocess/with_multi_asset/external_code.py" title="src/external_pipeline/defs/external_code.py" />
 

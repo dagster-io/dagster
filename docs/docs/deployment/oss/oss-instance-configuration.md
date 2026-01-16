@@ -136,7 +136,7 @@ To use a [MySQL database](/integrations/libraries/mysql/dagster-mysql) for stora
 
 ### Run launcher
 
-The `run_launcher` key allows you to configure the run launcher for your instance. Run launchers determine where runs are executed. You can use one of the Dagster-provided options or write your own custom run launcher. For more information, see "[Run launchers](/deployment/execution/run-launchers)".
+The `run_launcher` key allows you to configure the run launcher for your instance. Run launchers determine where runs are executed. You can use one of the Dagster-provided options or write your own custom run launcher. For more information, see [Run launchers](/deployment/execution/run-launchers).
 
 Refer to the following tabs for available options and sample configuration. Keep in mind that databases should be configured to use UTC timezone.
 
@@ -184,7 +184,7 @@ The <PyObject section="libraries" integration="k8s" module="dagster_k8s" object=
 
 ### Run coordinator
 
-The `run_coordinator` key allows you to configure the run coordinator for your instance. Run coordinators determine the policy used to set the prioritization rules and concurrency limits for runs. For more information and troubleshooting help, see "[Run coordinators](/deployment/execution/run-coordinators)".
+The `run_coordinator` key allows you to configure the run coordinator for your instance. Run coordinators determine the policy used to set the prioritization rules and concurrency limits for runs. For more information and troubleshooting help, see [Run coordinators](/deployment/execution/run-coordinators).
 
 Refer to the following tabs for available options and sample configuration.
 

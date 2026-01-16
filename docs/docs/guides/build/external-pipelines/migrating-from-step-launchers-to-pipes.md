@@ -4,7 +4,7 @@ description: "Learn how to migrate from Spark step launchers to Dagster Pipes."
 sidebar_position: 80
 ---
 
-In this guide, we’ll show you how to migrate from using step launchers to using [Dagster Pipes](/guides/build/external-pipelines) in Dagster.
+In this guide, we'll show you how to migrate from using step launchers to using [Dagster Pipes](/guides/build/external-pipelines) in Dagster.
 
 While step launchers were intended to support various runtime environments, in practice, they have only been implemented for Spark. Therefore, we will focus on Spark-related examples.
 

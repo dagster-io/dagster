@@ -157,4 +157,4 @@ make clean
 
 ## Next steps
 
-In the next step, "[Observe an Airflow DAG](/migration/airflow-to-dagster/airlift-v1/dag-level-migration/observe)", we'll create and observe assets that map to the entire example DAG.
+In the next step, [Observe an Airflow DAG](/migration/airflow-to-dagster/airlift-v1/dag-level-migration/observe)", we'll create and observe assets that map to the entire example DAG.

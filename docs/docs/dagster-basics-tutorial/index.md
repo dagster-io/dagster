@@ -14,15 +14,15 @@ By the end, you will be ready to build your own data pipelines and explore more 
 
 ## Dagster's programming model
 
-Dagster’s programming model is built around `Assets`, which are organized within `Definitions`.
+Dagster's programming model is built around `Assets`, which are organized within `Definitions`.
 
 - **`Definitions`** act as containers for all Dagster entities in your project.
 
-- **`Assets`** are the core building blocks of Dagster. They represent the entities in your data platform, while the dependencies between them define the project’s lineage.
+- **`Assets`** are the core building blocks of Dagster. They represent the entities in your data platform, while the dependencies between them define the project's lineage.
 
 ![2048 resolution](/images/tutorial/dagster-tutorial/overviews/overview-1.png)
 
-If you’d like to learn about the full set of Dagster features and how they interact with each other, check out our [Concepts page](/getting-started/concepts).
+If you'd like to learn about the full set of Dagster features and how they interact with each other, check out our [Concepts page](/getting-started/concepts).
 
 ## Prerequisites
 

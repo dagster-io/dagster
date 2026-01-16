@@ -92,7 +92,7 @@ In the scenario where a single API call or configuration can result in multiple 
 
 - **Efficiency:** Allows defining multiple assets in a single function, reducing boilerplate code.
 - **Simplicity:** Easier to manage related assets together.
-- **Consistency:** Matches the the developer experience of the Dagster ecosystem by using decorator-based assets.
+- **Consistency:** Matches the developer experience of the Dagster ecosystem by using decorator-based assets.
 
 ### Cons
 
