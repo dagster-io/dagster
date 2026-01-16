@@ -1,12 +1,12 @@
 ---
-title: Componentizing asset factories
-description: Componentizing asset factories
-sidebar_position: 200
+title: Creating asset factories
+description: Learn how to create asset factories using components to generate multiple similar assets from configuration.
+sidebar_position: 500
 ---
 
 Data engineers often need to implement multiple similar workflows in data pipelines. To keep this code maintainable, many engineers use asset factories to generate Dagster objects based on configuration instead of defining each one manually.
 
-While factories are powerful and flexible, many patterns that use them can also be expressed using [components](/guides/build/components). In this guide, we will implement an asset factory as a custom component.
+In this guide, we will implement an asset factory as a custom [component](/guides/build/components).
 
 :::note Prerequisites
 
@@ -105,3 +105,11 @@ These asset keys can then be used by other assets as dependencies to continue bu
 />
 
 ![Asset factory DAG downstream](/images/guides/labs/components/asset-factory-downstream.png)
+
+:::info Pure Python asset factories
+
+If you prefer not to use components, you can also create asset factories using pure Python. The factory pattern is essentially a function that takes configuration and returns <PyObject section="definitions" module="dagster" object="Definitions" />:
+
+<CodeExample path="docs_snippets/docs_snippets/guides/data-modeling/asset-factories/python-asset-factory.py" language="python" />
+
+:::
