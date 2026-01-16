@@ -361,7 +361,7 @@ def project_prepare_and_package_command(
         f"Running with dagster-dbt version: [bold green]{dagster_dbt_version}[/bold green]."
     )
     if file:
-        contents = load_python_file(file, working_directory=None)
+        contents = load_python_file(file, working_directory=None, add_uuid_suffix=True)
         dbt_projects = find_objects_in_module_of_types(contents, types=DbtProject)
     elif components:
         from dagster_dbt.components.dbt_project.component import get_projects_from_dbt_component
