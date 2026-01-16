@@ -1,25 +1,16 @@
-// Generated from /Users/salazarm/code/dagster/js_modules/dagster-ui/packages/ui-core/src/selection/SelectionAutoComplete.g4 by ANTLR 4.9.0-SNAPSHOT
+// Generated from /home/user/dagster/js_modules/dagster-ui/packages/ui-core/src/selection/SelectionAutoComplete.g4 by ANTLR 4.13.1
 
-import {FailedPredicateException} from 'antlr4ts/FailedPredicateException';
-import {NoViableAltException} from 'antlr4ts/NoViableAltException';
-import {Parser} from 'antlr4ts/Parser';
-import {ParserRuleContext} from 'antlr4ts/ParserRuleContext';
-import {RecognitionException} from 'antlr4ts/RecognitionException';
-import {RuleContext} from 'antlr4ts/RuleContext';
-//import { RuleVersion } from "antlr4ts/RuleVersion";
-import {TokenStream} from 'antlr4ts/TokenStream';
-import {Vocabulary} from 'antlr4ts/Vocabulary';
-import {VocabularyImpl} from 'antlr4ts/VocabularyImpl';
-import {ATN} from 'antlr4ts/atn/ATN';
-import {ATNDeserializer} from 'antlr4ts/atn/ATNDeserializer';
-import {ParserATNSimulator} from 'antlr4ts/atn/ParserATNSimulator';
-import * as Utils from 'antlr4ts/misc/Utils';
-import {TerminalNode} from 'antlr4ts/tree/TerminalNode';
+import * as antlr from 'antlr4ng';
+import {Token} from 'antlr4ng';
 
-import {SelectionAutoCompleteListener} from './SelectionAutoCompleteListener';
-import {SelectionAutoCompleteVisitor} from './SelectionAutoCompleteVisitor';
+import {SelectionAutoCompleteListener} from './SelectionAutoCompleteListener.js';
+import {SelectionAutoCompleteVisitor} from './SelectionAutoCompleteVisitor.js';
 
-export class SelectionAutoCompleteParser extends Parser {
+// for running tests with parameters, TODO: discuss strategy for typed parameters in CI
+// eslint-disable-next-line no-unused-vars
+type int = number;
+
+export class SelectionAutoCompleteParser extends antlr.Parser {
   public static readonly AND = 1;
   public static readonly OR = 2;
   public static readonly NOT = 3;
@@ -67,8 +58,49 @@ export class SelectionAutoCompleteParser extends Parser {
   public static readonly RULE_postDownwardTraversalWhitespace = 27;
   public static readonly RULE_postDigitsWhitespace = 28;
   public static readonly RULE_value = 29;
-  // tslint:disable:no-trailing-whitespace
-  public static readonly ruleNames: string[] = [
+
+  public static readonly literalNames = [
+    null,
+    null,
+    null,
+    null,
+    "'*'",
+    "'+'",
+    null,
+    "':'",
+    "'('",
+    "')'",
+    null,
+    null,
+    null,
+    "'<null>'",
+    "'='",
+    null,
+    null,
+    "','",
+  ];
+
+  public static readonly symbolicNames = [
+    null,
+    'AND',
+    'OR',
+    'NOT',
+    'STAR',
+    'PLUS',
+    'DIGITS',
+    'COLON',
+    'LPAREN',
+    'RPAREN',
+    'QUOTED_STRING',
+    'INCOMPLETE_LEFT_QUOTED_STRING',
+    'INCOMPLETE_RIGHT_QUOTED_STRING',
+    'NULL_STRING',
+    'EQUAL',
+    'IDENTIFIER',
+    'WS',
+    'COMMA',
+  ];
+  public static readonly ruleNames = [
     'start',
     'expr',
     'traversalAllowedExpr',
@@ -101,91 +133,43 @@ export class SelectionAutoCompleteParser extends Parser {
     'value',
   ];
 
-  private static readonly _LITERAL_NAMES: Array<string | undefined> = [
-    undefined,
-    undefined,
-    undefined,
-    undefined,
-    "'*'",
-    "'+'",
-    undefined,
-    "':'",
-    "'('",
-    "')'",
-    undefined,
-    undefined,
-    undefined,
-    "'<null>'",
-    "'='",
-    undefined,
-    undefined,
-    "','",
-  ];
-  private static readonly _SYMBOLIC_NAMES: Array<string | undefined> = [
-    undefined,
-    'AND',
-    'OR',
-    'NOT',
-    'STAR',
-    'PLUS',
-    'DIGITS',
-    'COLON',
-    'LPAREN',
-    'RPAREN',
-    'QUOTED_STRING',
-    'INCOMPLETE_LEFT_QUOTED_STRING',
-    'INCOMPLETE_RIGHT_QUOTED_STRING',
-    'NULL_STRING',
-    'EQUAL',
-    'IDENTIFIER',
-    'WS',
-    'COMMA',
-  ];
-  public static readonly VOCABULARY: Vocabulary = new VocabularyImpl(
-    SelectionAutoCompleteParser._LITERAL_NAMES,
-    SelectionAutoCompleteParser._SYMBOLIC_NAMES,
-    [],
-  );
-
-  // @Override
-  // @NotNull
-  public get vocabulary(): Vocabulary {
-    return SelectionAutoCompleteParser.VOCABULARY;
-  }
-  // tslint:enable:no-trailing-whitespace
-
-  // @Override
   public get grammarFileName(): string {
     return 'SelectionAutoComplete.g4';
   }
-
-  // @Override
+  public get literalNames(): (string | null)[] {
+    return SelectionAutoCompleteParser.literalNames;
+  }
+  public get symbolicNames(): (string | null)[] {
+    return SelectionAutoCompleteParser.symbolicNames;
+  }
   public get ruleNames(): string[] {
     return SelectionAutoCompleteParser.ruleNames;
   }
-
-  // @Override
-  public get serializedATN(): string {
+  public get serializedATN(): number[] {
     return SelectionAutoCompleteParser._serializedATN;
   }
 
   protected createFailedPredicateException(
     predicate?: string,
     message?: string,
-  ): FailedPredicateException {
-    return new FailedPredicateException(this, predicate, message);
+  ): antlr.FailedPredicateException {
+    return new antlr.FailedPredicateException(this, predicate, message);
   }
 
-  constructor(input: TokenStream) {
+  public constructor(input: antlr.TokenStream) {
     super(input);
-    this._interp = new ParserATNSimulator(SelectionAutoCompleteParser._ATN, this);
+    this.interpreter = new antlr.ParserATNSimulator(
+      this,
+      SelectionAutoCompleteParser._ATN,
+      SelectionAutoCompleteParser.decisionsToDFA,
+      new antlr.PredictionContextCache(),
+    );
   }
-  // @RuleVersion(0)
   public start(): StartContext {
-    const _localctx: StartContext = new StartContext(this._ctx, this.state);
-    this.enterRule(_localctx, 0, SelectionAutoCompleteParser.RULE_start);
+    let localContext = new StartContext(this.context, this.state);
+    this.enterRule(localContext, 0, SelectionAutoCompleteParser.RULE_start);
     try {
-      this.enterOuterAlt(_localctx, 1);
+      this.enterOuterAlt(localContext, 1);
       {
         this.state = 60;
         this.expr(0);
@@ -193,56 +177,53 @@ export class SelectionAutoCompleteParser extends Parser {
         this.match(SelectionAutoCompleteParser.EOF);
       }
     } catch (re) {
-      if (re instanceof RecognitionException) {
-        _localctx.exception = re;
-        this._errHandler.reportError(this, re);
-        this._errHandler.recover(this, re);
+      if (re instanceof antlr.RecognitionException) {
+        this.errorHandler.reportError(this, re);
+        this.errorHandler.recover(this, re);
       } else {
         throw re;
       }
     } finally {
       this.exitRule();
     }
-    return _localctx;
+    return localContext;
   }
 
   public expr(): ExprContext;
   public expr(_p: number): ExprContext;
-  // @RuleVersion(0)
   public expr(_p?: number): ExprContext {
     if (_p === undefined) {
       _p = 0;
     }
 
-    const _parentctx: ParserRuleContext = this._ctx;
-    const _parentState: number = this.state;
-    let _localctx: ExprContext = new ExprContext(this._ctx, _parentState);
-    let _prevctx: ExprContext = _localctx;
-    const _startState: number = 2;
-    this.enterRecursionRule(_localctx, 2, SelectionAutoCompleteParser.RULE_expr, _p);
+    let parentContext = this.context;
+    let parentState = this.state;
+    let localContext = new ExprContext(this.context, parentState);
+    let previousContext = localContext;
+    let _startState = 2;
+    this.enterRecursionRule(localContext, 2, SelectionAutoCompleteParser.RULE_expr, _p);
     try {
-      let _alt: number;
-      this.enterOuterAlt(_localctx, 1);
+      let alternative: number;
+      this.enterOuterAlt(localContext, 1);
       {
         this.state = 88;
-        this._errHandler.sync(this);
-        switch (this.interpreter.adaptivePredict(this._input, 0, this._ctx)) {
+        this.errorHandler.sync(this);
+        switch (this.interpreter.adaptivePredict(this.tokenStream, 0, this.context)) {
           case 1:
             {
-              _localctx = new TraversalAllowedExpressionContext(_localctx);
-              this._ctx = _localctx;
-              _prevctx = _localctx;
+              localContext = new TraversalAllowedExpressionContext(localContext);
+              this.context = localContext;
+              previousContext = localContext;
 
               this.state = 64;
               this.traversalAllowedExpr();
             }
             break;
-
           case 2:
             {
-              _localctx = new UpAndDownTraversalExpressionContext(_localctx);
-              this._ctx = _localctx;
-              _prevctx = _localctx;
+              localContext = new UpAndDownTraversalExpressionContext(localContext);
+              this.context = localContext;
+              previousContext = localContext;
               this.state = 65;
               this.upTraversalExpr();
               this.state = 66;
@@ -251,36 +232,33 @@ export class SelectionAutoCompleteParser extends Parser {
               this.downTraversalExpr();
             }
             break;
-
           case 3:
             {
-              _localctx = new UpTraversalExpressionContext(_localctx);
-              this._ctx = _localctx;
-              _prevctx = _localctx;
+              localContext = new UpTraversalExpressionContext(localContext);
+              this.context = localContext;
+              previousContext = localContext;
               this.state = 69;
               this.upTraversalExpr();
               this.state = 70;
               this.traversalAllowedExpr();
             }
             break;
-
           case 4:
             {
-              _localctx = new DownTraversalExpressionContext(_localctx);
-              this._ctx = _localctx;
-              _prevctx = _localctx;
+              localContext = new DownTraversalExpressionContext(localContext);
+              this.context = localContext;
+              previousContext = localContext;
               this.state = 72;
               this.traversalAllowedExpr();
               this.state = 73;
               this.downTraversalExpr();
             }
             break;
-
           case 5:
             {
-              _localctx = new NotExpressionContext(_localctx);
-              this._ctx = _localctx;
-              _prevctx = _localctx;
+              localContext = new NotExpressionContext(localContext);
+              this.context = localContext;
+              previousContext = localContext;
               this.state = 75;
               this.notToken();
               this.state = 76;
@@ -289,78 +267,76 @@ export class SelectionAutoCompleteParser extends Parser {
               this.expr(11);
             }
             break;
-
           case 6:
             {
-              _localctx = new IncompleteNotExpressionContext(_localctx);
-              this._ctx = _localctx;
-              _prevctx = _localctx;
+              localContext = new IncompleteNotExpressionContext(localContext);
+              this.context = localContext;
+              previousContext = localContext;
               this.state = 79;
               this.notToken();
               this.state = 80;
               this.postNotOperatorWhitespace();
             }
             break;
-
           case 7:
             {
-              _localctx = new AllExpressionContext(_localctx);
-              this._ctx = _localctx;
-              _prevctx = _localctx;
+              localContext = new AllExpressionContext(localContext);
+              this.context = localContext;
+              previousContext = localContext;
               this.state = 82;
               this.match(SelectionAutoCompleteParser.STAR);
               this.state = 83;
               this.postExpressionWhitespace();
             }
             break;
-
           case 8:
             {
-              _localctx = new UnmatchedValueContext(_localctx);
-              this._ctx = _localctx;
-              _prevctx = _localctx;
+              localContext = new UnmatchedValueContext(localContext);
+              this.context = localContext;
+              previousContext = localContext;
               this.state = 84;
               this.value();
               this.state = 85;
               this.postExpressionWhitespace();
             }
             break;
-
           case 9:
             {
-              _localctx = new CommaExpressionWrapper3Context(_localctx);
-              this._ctx = _localctx;
-              _prevctx = _localctx;
+              localContext = new CommaExpressionWrapper3Context(localContext);
+              this.context = localContext;
+              previousContext = localContext;
               this.state = 87;
               this.commaToken();
             }
             break;
         }
-        this._ctx._stop = this._input.tryLT(-1);
+        this.context!.stop = this.tokenStream.LT(-1);
         this.state = 116;
-        this._errHandler.sync(this);
-        _alt = this.interpreter.adaptivePredict(this._input, 2, this._ctx);
-        while (_alt !== 2 && _alt !== ATN.INVALID_ALT_NUMBER) {
-          if (_alt === 1) {
-            if (this._parseListeners != null) {
+        this.errorHandler.sync(this);
+        alternative = this.interpreter.adaptivePredict(this.tokenStream, 2, this.context);
+        while (alternative !== 2 && alternative !== antlr.ATN.INVALID_ALT_NUMBER) {
+          if (alternative === 1) {
+            if (this.parseListeners != null) {
               this.triggerExitRuleEvent();
             }
-            _prevctx = _localctx;
+            previousContext = localContext;
             {
               this.state = 114;
-              this._errHandler.sync(this);
-              switch (this.interpreter.adaptivePredict(this._input, 1, this._ctx)) {
+              this.errorHandler.sync(this);
+              switch (this.interpreter.adaptivePredict(this.tokenStream, 1, this.context)) {
                 case 1:
                   {
-                    _localctx = new AndExpressionContext(new ExprContext(_parentctx, _parentState));
+                    localContext = new AndExpressionContext(
+                      new ExprContext(parentContext, parentState),
+                    );
                     this.pushNewRecursionContext(
-                      _localctx,
+                      localContext,
                       _startState,
                       SelectionAutoCompleteParser.RULE_expr,
                     );
                     this.state = 90;
-                    if (!this.precpred(this._ctx, 10)) {
-                      throw this.createFailedPredicateException('this.precpred(this._ctx, 10)');
+                    if (!this.precpred(this.context, 10)) {
+                      throw this.createFailedPredicateException('this.precpred(this.context, 10)');
                     }
                     this.state = 91;
                     this.andToken();
@@ -370,18 +346,19 @@ export class SelectionAutoCompleteParser extends Parser {
                     this.expr(11);
                   }
                   break;
-
                 case 2:
                   {
-                    _localctx = new OrExpressionContext(new ExprContext(_parentctx, _parentState));
+                    localContext = new OrExpressionContext(
+                      new ExprContext(parentContext, parentState),
+                    );
                     this.pushNewRecursionContext(
-                      _localctx,
+                      localContext,
                       _startState,
                       SelectionAutoCompleteParser.RULE_expr,
                     );
                     this.state = 95;
-                    if (!this.precpred(this._ctx, 9)) {
-                      throw this.createFailedPredicateException('this.precpred(this._ctx, 9)');
+                    if (!this.precpred(this.context, 9)) {
+                      throw this.createFailedPredicateException('this.precpred(this.context, 9)');
                     }
                     this.state = 96;
                     this.orToken();
@@ -391,20 +368,19 @@ export class SelectionAutoCompleteParser extends Parser {
                     this.expr(10);
                   }
                   break;
-
                 case 3:
                   {
-                    _localctx = new CommaExpressionWrapper1Context(
-                      new ExprContext(_parentctx, _parentState),
+                    localContext = new CommaExpressionWrapper1Context(
+                      new ExprContext(parentContext, parentState),
                     );
                     this.pushNewRecursionContext(
-                      _localctx,
+                      localContext,
                       _startState,
                       SelectionAutoCompleteParser.RULE_expr,
                     );
                     this.state = 100;
-                    if (!this.precpred(this._ctx, 8)) {
-                      throw this.createFailedPredicateException('this.precpred(this._ctx, 8)');
+                    if (!this.precpred(this.context, 8)) {
+                      throw this.createFailedPredicateException('this.precpred(this.context, 8)');
                     }
                     this.state = 101;
                     this.commaToken();
@@ -412,20 +388,19 @@ export class SelectionAutoCompleteParser extends Parser {
                     this.expr(9);
                   }
                   break;
-
                 case 4:
                   {
-                    _localctx = new IncompleteAndExpressionContext(
-                      new ExprContext(_parentctx, _parentState),
+                    localContext = new IncompleteAndExpressionContext(
+                      new ExprContext(parentContext, parentState),
                     );
                     this.pushNewRecursionContext(
-                      _localctx,
+                      localContext,
                       _startState,
                       SelectionAutoCompleteParser.RULE_expr,
                     );
                     this.state = 104;
-                    if (!this.precpred(this._ctx, 7)) {
-                      throw this.createFailedPredicateException('this.precpred(this._ctx, 7)');
+                    if (!this.precpred(this.context, 7)) {
+                      throw this.createFailedPredicateException('this.precpred(this.context, 7)');
                     }
                     this.state = 105;
                     this.andToken();
@@ -433,20 +408,19 @@ export class SelectionAutoCompleteParser extends Parser {
                     this.postLogicalOperatorWhitespace();
                   }
                   break;
-
                 case 5:
                   {
-                    _localctx = new IncompleteOrExpressionContext(
-                      new ExprContext(_parentctx, _parentState),
+                    localContext = new IncompleteOrExpressionContext(
+                      new ExprContext(parentContext, parentState),
                     );
                     this.pushNewRecursionContext(
-                      _localctx,
+                      localContext,
                       _startState,
                       SelectionAutoCompleteParser.RULE_expr,
                     );
                     this.state = 108;
-                    if (!this.precpred(this._ctx, 6)) {
-                      throw this.createFailedPredicateException('this.precpred(this._ctx, 6)');
+                    if (!this.precpred(this.context, 6)) {
+                      throw this.createFailedPredicateException('this.precpred(this.context, 6)');
                     }
                     this.state = 109;
                     this.orToken();
@@ -454,20 +428,19 @@ export class SelectionAutoCompleteParser extends Parser {
                     this.postLogicalOperatorWhitespace();
                   }
                   break;
-
                 case 6:
                   {
-                    _localctx = new CommaExpressionWrapper2Context(
-                      new ExprContext(_parentctx, _parentState),
+                    localContext = new CommaExpressionWrapper2Context(
+                      new ExprContext(parentContext, parentState),
                     );
                     this.pushNewRecursionContext(
-                      _localctx,
+                      localContext,
                       _startState,
                       SelectionAutoCompleteParser.RULE_expr,
                     );
                     this.state = 112;
-                    if (!this.precpred(this._ctx, 5)) {
-                      throw this.createFailedPredicateException('this.precpred(this._ctx, 5)');
+                    if (!this.precpred(this.context, 5)) {
+                      throw this.createFailedPredicateException('this.precpred(this.context, 5)');
                     }
                     this.state = 113;
                     this.commaToken();
@@ -477,37 +450,32 @@ export class SelectionAutoCompleteParser extends Parser {
             }
           }
           this.state = 118;
-          this._errHandler.sync(this);
-          _alt = this.interpreter.adaptivePredict(this._input, 2, this._ctx);
+          this.errorHandler.sync(this);
+          alternative = this.interpreter.adaptivePredict(this.tokenStream, 2, this.context);
         }
       }
     } catch (re) {
-      if (re instanceof RecognitionException) {
-        _localctx.exception = re;
-        this._errHandler.reportError(this, re);
-        this._errHandler.recover(this, re);
+      if (re instanceof antlr.RecognitionException) {
+        this.errorHandler.reportError(this, re);
+        this.errorHandler.recover(this, re);
       } else {
         throw re;
       }
     } finally {
-      this.unrollRecursionContexts(_parentctx);
+      this.unrollRecursionContexts(parentContext);
     }
-    return _localctx;
+    return localContext;
   }
-  // @RuleVersion(0)
   public traversalAllowedExpr(): TraversalAllowedExprContext {
-    let _localctx: TraversalAllowedExprContext = new TraversalAllowedExprContext(
-      this._ctx,
-      this.state,
-    );
-    this.enterRule(_localctx, 4, SelectionAutoCompleteParser.RULE_traversalAllowedExpr);
+    let localContext = new TraversalAllowedExprContext(this.context, this.state);
+    this.enterRule(localContext, 4, SelectionAutoCompleteParser.RULE_traversalAllowedExpr);
     try {
       this.state = 133;
-      this._errHandler.sync(this);
-      switch (this.interpreter.adaptivePredict(this._input, 4, this._ctx)) {
+      this.errorHandler.sync(this);
+      switch (this.interpreter.adaptivePredict(this.tokenStream, 4, this.context)) {
         case 1:
-          _localctx = new AttributeExpressionContext(_localctx);
-          this.enterOuterAlt(_localctx, 1);
+          localContext = new AttributeExpressionContext(localContext);
+          this.enterOuterAlt(localContext, 1);
           {
             this.state = 119;
             this.attributeName();
@@ -516,8 +484,8 @@ export class SelectionAutoCompleteParser extends Parser {
             this.state = 121;
             this.attributeValue();
             this.state = 124;
-            this._errHandler.sync(this);
-            switch (this.interpreter.adaptivePredict(this._input, 3, this._ctx)) {
+            this.errorHandler.sync(this);
+            switch (this.interpreter.adaptivePredict(this.tokenStream, 3, this.context)) {
               case 1:
                 {
                   this.state = 122;
@@ -531,10 +499,9 @@ export class SelectionAutoCompleteParser extends Parser {
             this.postAttributeValueWhitespace();
           }
           break;
-
         case 2:
-          _localctx = new FunctionCallExpressionContext(_localctx);
-          this.enterOuterAlt(_localctx, 2);
+          localContext = new FunctionCallExpressionContext(localContext);
+          this.enterOuterAlt(localContext, 2);
           {
             this.state = 128;
             this.functionName();
@@ -542,19 +509,17 @@ export class SelectionAutoCompleteParser extends Parser {
             this.parenthesizedExpr();
           }
           break;
-
         case 3:
-          _localctx = new TraversalAllowedParenthesizedExpressionContext(_localctx);
-          this.enterOuterAlt(_localctx, 3);
+          localContext = new TraversalAllowedParenthesizedExpressionContext(localContext);
+          this.enterOuterAlt(localContext, 3);
           {
             this.state = 131;
             this.parenthesizedExpr();
           }
           break;
-
         case 4:
-          _localctx = new IncompleteExpressionContext(_localctx);
-          this.enterOuterAlt(_localctx, 4);
+          localContext = new IncompleteExpressionContext(localContext);
+          this.enterOuterAlt(localContext, 4);
           {
             this.state = 132;
             this.incompleteExpr();
@@ -562,25 +527,23 @@ export class SelectionAutoCompleteParser extends Parser {
           break;
       }
     } catch (re) {
-      if (re instanceof RecognitionException) {
-        _localctx.exception = re;
-        this._errHandler.reportError(this, re);
-        this._errHandler.recover(this, re);
+      if (re instanceof antlr.RecognitionException) {
+        this.errorHandler.reportError(this, re);
+        this.errorHandler.recover(this, re);
       } else {
         throw re;
       }
     } finally {
       this.exitRule();
     }
-    return _localctx;
+    return localContext;
   }
-  // @RuleVersion(0)
   public parenthesizedExpr(): ParenthesizedExprContext {
-    let _localctx: ParenthesizedExprContext = new ParenthesizedExprContext(this._ctx, this.state);
-    this.enterRule(_localctx, 6, SelectionAutoCompleteParser.RULE_parenthesizedExpr);
+    let localContext = new ParenthesizedExprContext(this.context, this.state);
+    this.enterRule(localContext, 6, SelectionAutoCompleteParser.RULE_parenthesizedExpr);
     try {
-      _localctx = new ParenthesizedExpressionContext(_localctx);
-      this.enterOuterAlt(_localctx, 1);
+      localContext = new ParenthesizedExpressionContext(localContext);
+      this.enterOuterAlt(localContext, 1);
       {
         this.state = 135;
         this.leftParenToken();
@@ -594,30 +557,28 @@ export class SelectionAutoCompleteParser extends Parser {
         this.postExpressionWhitespace();
       }
     } catch (re) {
-      if (re instanceof RecognitionException) {
-        _localctx.exception = re;
-        this._errHandler.reportError(this, re);
-        this._errHandler.recover(this, re);
+      if (re instanceof antlr.RecognitionException) {
+        this.errorHandler.reportError(this, re);
+        this.errorHandler.recover(this, re);
       } else {
         throw re;
       }
     } finally {
       this.exitRule();
     }
-    return _localctx;
+    return localContext;
   }
-  // @RuleVersion(0)
   public incompleteExpr(): IncompleteExprContext {
-    let _localctx: IncompleteExprContext = new IncompleteExprContext(this._ctx, this.state);
-    this.enterRule(_localctx, 8, SelectionAutoCompleteParser.RULE_incompleteExpr);
+    let localContext = new IncompleteExprContext(this.context, this.state);
+    this.enterRule(localContext, 8, SelectionAutoCompleteParser.RULE_incompleteExpr);
     let _la: number;
     try {
       this.state = 183;
-      this._errHandler.sync(this);
-      switch (this.interpreter.adaptivePredict(this._input, 6, this._ctx)) {
+      this.errorHandler.sync(this);
+      switch (this.interpreter.adaptivePredict(this.tokenStream, 6, this.context)) {
         case 1:
-          _localctx = new IncompleteAttributeExpressionMissingSecondValueContext(_localctx);
-          this.enterOuterAlt(_localctx, 1);
+          localContext = new IncompleteAttributeExpressionMissingSecondValueContext(localContext);
+          this.enterOuterAlt(localContext, 1);
           {
             this.state = 141;
             this.attributeName();
@@ -631,10 +592,9 @@ export class SelectionAutoCompleteParser extends Parser {
             this.attributeValueWhitespace();
           }
           break;
-
         case 2:
-          _localctx = new IncompleteAttributeExpressionMissingValueContext(_localctx);
-          this.enterOuterAlt(_localctx, 2);
+          localContext = new IncompleteAttributeExpressionMissingValueContext(localContext);
+          this.enterOuterAlt(localContext, 2);
           {
             this.state = 147;
             this.attributeName();
@@ -644,10 +604,9 @@ export class SelectionAutoCompleteParser extends Parser {
             this.attributeValueWhitespace();
           }
           break;
-
         case 3:
-          _localctx = new ExpressionlessFunctionExpressionContext(_localctx);
-          this.enterOuterAlt(_localctx, 3);
+          localContext = new ExpressionlessFunctionExpressionContext(localContext);
+          this.enterOuterAlt(localContext, 3);
           {
             this.state = 151;
             this.functionName();
@@ -655,10 +614,9 @@ export class SelectionAutoCompleteParser extends Parser {
             this.expressionLessParenthesizedExpr();
           }
           break;
-
         case 4:
-          _localctx = new UnclosedExpressionlessFunctionExpressionContext(_localctx);
-          this.enterOuterAlt(_localctx, 4);
+          localContext = new UnclosedExpressionlessFunctionExpressionContext(localContext);
+          this.enterOuterAlt(localContext, 4);
           {
             this.state = 154;
             this.functionName();
@@ -668,10 +626,9 @@ export class SelectionAutoCompleteParser extends Parser {
             this.postLogicalOperatorWhitespace();
           }
           break;
-
         case 5:
-          _localctx = new UnclosedFunctionExpressionContext(_localctx);
-          this.enterOuterAlt(_localctx, 5);
+          localContext = new UnclosedFunctionExpressionContext(localContext);
+          this.enterOuterAlt(localContext, 5);
           {
             this.state = 158;
             this.functionName();
@@ -681,10 +638,9 @@ export class SelectionAutoCompleteParser extends Parser {
             this.expr(0);
           }
           break;
-
         case 6:
-          _localctx = new UnclosedParenthesizedExpressionContext(_localctx);
-          this.enterOuterAlt(_localctx, 6);
+          localContext = new UnclosedParenthesizedExpressionContext(localContext);
+          this.enterOuterAlt(localContext, 6);
           {
             this.state = 162;
             this.leftParenToken();
@@ -694,19 +650,17 @@ export class SelectionAutoCompleteParser extends Parser {
             this.expr(0);
           }
           break;
-
         case 7:
-          _localctx = new ExpressionlessParenthesizedExpressionWrapperContext(_localctx);
-          this.enterOuterAlt(_localctx, 7);
+          localContext = new ExpressionlessParenthesizedExpressionWrapperContext(localContext);
+          this.enterOuterAlt(localContext, 7);
           {
             this.state = 166;
             this.expressionLessParenthesizedExpr();
           }
           break;
-
         case 8:
-          _localctx = new UnclosedExpressionlessParenthesizedExpressionContext(_localctx);
-          this.enterOuterAlt(_localctx, 8);
+          localContext = new UnclosedExpressionlessParenthesizedExpressionContext(localContext);
+          this.enterOuterAlt(localContext, 8);
           {
             this.state = 167;
             this.leftParenToken();
@@ -714,15 +668,14 @@ export class SelectionAutoCompleteParser extends Parser {
             this.postLogicalOperatorWhitespace();
           }
           break;
-
         case 9:
-          _localctx = new IncompletePlusTraversalExpressionContext(_localctx);
-          this.enterOuterAlt(_localctx, 9);
+          localContext = new IncompletePlusTraversalExpressionContext(localContext);
+          this.enterOuterAlt(localContext, 9);
           {
             this.state = 171;
-            this._errHandler.sync(this);
-            _la = this._input.LA(1);
-            if (_la === SelectionAutoCompleteParser.DIGITS) {
+            this.errorHandler.sync(this);
+            _la = this.tokenStream.LA(1);
+            if (_la === 6) {
               {
                 this.state = 170;
                 this.match(SelectionAutoCompleteParser.DIGITS);
@@ -735,10 +688,9 @@ export class SelectionAutoCompleteParser extends Parser {
             this.postNeighborTraversalWhitespace();
           }
           break;
-
         case 10:
-          _localctx = new IncompletePlusTraversalExpressionMissingValueContext(_localctx);
-          this.enterOuterAlt(_localctx, 10);
+          localContext = new IncompletePlusTraversalExpressionMissingValueContext(localContext);
+          this.enterOuterAlt(localContext, 10);
           {
             this.state = 175;
             this.match(SelectionAutoCompleteParser.PLUS);
@@ -748,10 +700,9 @@ export class SelectionAutoCompleteParser extends Parser {
             this.postExpressionWhitespace();
           }
           break;
-
         case 11:
-          _localctx = new IncompleteAttributeExpressionMissingKeyContext(_localctx);
-          this.enterOuterAlt(_localctx, 11);
+          localContext = new IncompleteAttributeExpressionMissingKeyContext(localContext);
+          this.enterOuterAlt(localContext, 11);
           {
             this.state = 179;
             this.colonToken();
@@ -763,26 +714,27 @@ export class SelectionAutoCompleteParser extends Parser {
           break;
       }
     } catch (re) {
-      if (re instanceof RecognitionException) {
-        _localctx.exception = re;
-        this._errHandler.reportError(this, re);
-        this._errHandler.recover(this, re);
+      if (re instanceof antlr.RecognitionException) {
+        this.errorHandler.reportError(this, re);
+        this.errorHandler.recover(this, re);
       } else {
         throw re;
       }
     } finally {
       this.exitRule();
     }
-    return _localctx;
+    return localContext;
   }
-  // @RuleVersion(0)
   public expressionLessParenthesizedExpr(): ExpressionLessParenthesizedExprContext {
-    let _localctx: ExpressionLessParenthesizedExprContext =
-      new ExpressionLessParenthesizedExprContext(this._ctx, this.state);
-    this.enterRule(_localctx, 10, SelectionAutoCompleteParser.RULE_expressionLessParenthesizedExpr);
+    let localContext = new ExpressionLessParenthesizedExprContext(this.context, this.state);
+    this.enterRule(
+      localContext,
+      10,
+      SelectionAutoCompleteParser.RULE_expressionLessParenthesizedExpr,
+    );
     try {
-      _localctx = new ExpressionlessParenthesizedExpressionContext(_localctx);
-      this.enterOuterAlt(_localctx, 1);
+      localContext = new ExpressionlessParenthesizedExpressionContext(localContext);
+      this.enterOuterAlt(localContext, 1);
       {
         this.state = 185;
         this.leftParenToken();
@@ -794,25 +746,23 @@ export class SelectionAutoCompleteParser extends Parser {
         this.postExpressionWhitespace();
       }
     } catch (re) {
-      if (re instanceof RecognitionException) {
-        _localctx.exception = re;
-        this._errHandler.reportError(this, re);
-        this._errHandler.recover(this, re);
+      if (re instanceof antlr.RecognitionException) {
+        this.errorHandler.reportError(this, re);
+        this.errorHandler.recover(this, re);
       } else {
         throw re;
       }
     } finally {
       this.exitRule();
     }
-    return _localctx;
+    return localContext;
   }
-  // @RuleVersion(0)
   public upTraversalExpr(): UpTraversalExprContext {
-    let _localctx: UpTraversalExprContext = new UpTraversalExprContext(this._ctx, this.state);
-    this.enterRule(_localctx, 12, SelectionAutoCompleteParser.RULE_upTraversalExpr);
+    let localContext = new UpTraversalExprContext(this.context, this.state);
+    this.enterRule(localContext, 12, SelectionAutoCompleteParser.RULE_upTraversalExpr);
     try {
-      _localctx = new UpTraversalContext(_localctx);
-      this.enterOuterAlt(_localctx, 1);
+      localContext = new UpTraversalContext(localContext);
+      this.enterOuterAlt(localContext, 1);
       {
         this.state = 190;
         this.upTraversalToken();
@@ -820,25 +770,23 @@ export class SelectionAutoCompleteParser extends Parser {
         this.postUpwardTraversalWhitespace();
       }
     } catch (re) {
-      if (re instanceof RecognitionException) {
-        _localctx.exception = re;
-        this._errHandler.reportError(this, re);
-        this._errHandler.recover(this, re);
+      if (re instanceof antlr.RecognitionException) {
+        this.errorHandler.reportError(this, re);
+        this.errorHandler.recover(this, re);
       } else {
         throw re;
       }
     } finally {
       this.exitRule();
     }
-    return _localctx;
+    return localContext;
   }
-  // @RuleVersion(0)
   public downTraversalExpr(): DownTraversalExprContext {
-    let _localctx: DownTraversalExprContext = new DownTraversalExprContext(this._ctx, this.state);
-    this.enterRule(_localctx, 14, SelectionAutoCompleteParser.RULE_downTraversalExpr);
+    let localContext = new DownTraversalExprContext(this.context, this.state);
+    this.enterRule(localContext, 14, SelectionAutoCompleteParser.RULE_downTraversalExpr);
     try {
-      _localctx = new DownTraversalContext(_localctx);
-      this.enterOuterAlt(_localctx, 1);
+      localContext = new DownTraversalContext(localContext);
+      this.enterOuterAlt(localContext, 1);
       {
         this.state = 193;
         this.downTraversalToken();
@@ -846,30 +794,28 @@ export class SelectionAutoCompleteParser extends Parser {
         this.postDownwardTraversalWhitespace();
       }
     } catch (re) {
-      if (re instanceof RecognitionException) {
-        _localctx.exception = re;
-        this._errHandler.reportError(this, re);
-        this._errHandler.recover(this, re);
+      if (re instanceof antlr.RecognitionException) {
+        this.errorHandler.reportError(this, re);
+        this.errorHandler.recover(this, re);
       } else {
         throw re;
       }
     } finally {
       this.exitRule();
     }
-    return _localctx;
+    return localContext;
   }
-  // @RuleVersion(0)
   public upTraversalToken(): UpTraversalTokenContext {
-    const _localctx: UpTraversalTokenContext = new UpTraversalTokenContext(this._ctx, this.state);
-    this.enterRule(_localctx, 16, SelectionAutoCompleteParser.RULE_upTraversalToken);
+    let localContext = new UpTraversalTokenContext(this.context, this.state);
+    this.enterRule(localContext, 16, SelectionAutoCompleteParser.RULE_upTraversalToken);
     let _la: number;
     try {
-      this.enterOuterAlt(_localctx, 1);
+      this.enterOuterAlt(localContext, 1);
       {
         this.state = 197;
-        this._errHandler.sync(this);
-        _la = this._input.LA(1);
-        if (_la === SelectionAutoCompleteParser.DIGITS) {
+        this.errorHandler.sync(this);
+        _la = this.tokenStream.LA(1);
+        if (_la === 6) {
           {
             this.state = 196;
             this.match(SelectionAutoCompleteParser.DIGITS);
@@ -880,33 +826,28 @@ export class SelectionAutoCompleteParser extends Parser {
         this.match(SelectionAutoCompleteParser.PLUS);
       }
     } catch (re) {
-      if (re instanceof RecognitionException) {
-        _localctx.exception = re;
-        this._errHandler.reportError(this, re);
-        this._errHandler.recover(this, re);
+      if (re instanceof antlr.RecognitionException) {
+        this.errorHandler.reportError(this, re);
+        this.errorHandler.recover(this, re);
       } else {
         throw re;
       }
     } finally {
       this.exitRule();
     }
-    return _localctx;
+    return localContext;
   }
-  // @RuleVersion(0)
   public downTraversalToken(): DownTraversalTokenContext {
-    const _localctx: DownTraversalTokenContext = new DownTraversalTokenContext(
-      this._ctx,
-      this.state,
-    );
-    this.enterRule(_localctx, 18, SelectionAutoCompleteParser.RULE_downTraversalToken);
+    let localContext = new DownTraversalTokenContext(this.context, this.state);
+    this.enterRule(localContext, 18, SelectionAutoCompleteParser.RULE_downTraversalToken);
     try {
-      this.enterOuterAlt(_localctx, 1);
+      this.enterOuterAlt(localContext, 1);
       {
         this.state = 201;
         this.match(SelectionAutoCompleteParser.PLUS);
         this.state = 203;
-        this._errHandler.sync(this);
-        switch (this.interpreter.adaptivePredict(this._input, 8, this._ctx)) {
+        this.errorHandler.sync(this);
+        switch (this.interpreter.adaptivePredict(this.tokenStream, 8, this.context)) {
           case 1:
             {
               this.state = 202;
@@ -916,93 +857,85 @@ export class SelectionAutoCompleteParser extends Parser {
         }
       }
     } catch (re) {
-      if (re instanceof RecognitionException) {
-        _localctx.exception = re;
-        this._errHandler.reportError(this, re);
-        this._errHandler.recover(this, re);
+      if (re instanceof antlr.RecognitionException) {
+        this.errorHandler.reportError(this, re);
+        this.errorHandler.recover(this, re);
       } else {
         throw re;
       }
     } finally {
       this.exitRule();
     }
-    return _localctx;
+    return localContext;
   }
-  // @RuleVersion(0)
   public attributeName(): AttributeNameContext {
-    const _localctx: AttributeNameContext = new AttributeNameContext(this._ctx, this.state);
-    this.enterRule(_localctx, 20, SelectionAutoCompleteParser.RULE_attributeName);
+    let localContext = new AttributeNameContext(this.context, this.state);
+    this.enterRule(localContext, 20, SelectionAutoCompleteParser.RULE_attributeName);
     try {
-      this.enterOuterAlt(_localctx, 1);
+      this.enterOuterAlt(localContext, 1);
       {
         this.state = 205;
         this.match(SelectionAutoCompleteParser.IDENTIFIER);
       }
     } catch (re) {
-      if (re instanceof RecognitionException) {
-        _localctx.exception = re;
-        this._errHandler.reportError(this, re);
-        this._errHandler.recover(this, re);
+      if (re instanceof antlr.RecognitionException) {
+        this.errorHandler.reportError(this, re);
+        this.errorHandler.recover(this, re);
       } else {
         throw re;
       }
     } finally {
       this.exitRule();
     }
-    return _localctx;
+    return localContext;
   }
-  // @RuleVersion(0)
   public attributeValue(): AttributeValueContext {
-    const _localctx: AttributeValueContext = new AttributeValueContext(this._ctx, this.state);
-    this.enterRule(_localctx, 22, SelectionAutoCompleteParser.RULE_attributeValue);
+    let localContext = new AttributeValueContext(this.context, this.state);
+    this.enterRule(localContext, 22, SelectionAutoCompleteParser.RULE_attributeValue);
     try {
-      this.enterOuterAlt(_localctx, 1);
+      this.enterOuterAlt(localContext, 1);
       {
         this.state = 207;
         this.value();
       }
     } catch (re) {
-      if (re instanceof RecognitionException) {
-        _localctx.exception = re;
-        this._errHandler.reportError(this, re);
-        this._errHandler.recover(this, re);
+      if (re instanceof antlr.RecognitionException) {
+        this.errorHandler.reportError(this, re);
+        this.errorHandler.recover(this, re);
       } else {
         throw re;
       }
     } finally {
       this.exitRule();
     }
-    return _localctx;
+    return localContext;
   }
-  // @RuleVersion(0)
   public functionName(): FunctionNameContext {
-    const _localctx: FunctionNameContext = new FunctionNameContext(this._ctx, this.state);
-    this.enterRule(_localctx, 24, SelectionAutoCompleteParser.RULE_functionName);
+    let localContext = new FunctionNameContext(this.context, this.state);
+    this.enterRule(localContext, 24, SelectionAutoCompleteParser.RULE_functionName);
     try {
-      this.enterOuterAlt(_localctx, 1);
+      this.enterOuterAlt(localContext, 1);
       {
         this.state = 209;
         this.match(SelectionAutoCompleteParser.IDENTIFIER);
       }
     } catch (re) {
-      if (re instanceof RecognitionException) {
-        _localctx.exception = re;
-        this._errHandler.reportError(this, re);
-        this._errHandler.recover(this, re);
+      if (re instanceof antlr.RecognitionException) {
+        this.errorHandler.reportError(this, re);
+        this.errorHandler.recover(this, re);
       } else {
         throw re;
       }
     } finally {
       this.exitRule();
     }
-    return _localctx;
+    return localContext;
   }
-  // @RuleVersion(0)
   public commaToken(): CommaTokenContext {
-    const _localctx: CommaTokenContext = new CommaTokenContext(this._ctx, this.state);
-    this.enterRule(_localctx, 26, SelectionAutoCompleteParser.RULE_commaToken);
+    let localContext = new CommaTokenContext(this.context, this.state);
+    this.enterRule(localContext, 26, SelectionAutoCompleteParser.RULE_commaToken);
     try {
-      this.enterOuterAlt(_localctx, 1);
+      this.enterOuterAlt(localContext, 1);
       {
         this.state = 211;
         this.match(SelectionAutoCompleteParser.COMMA);
@@ -1010,172 +943,155 @@ export class SelectionAutoCompleteParser extends Parser {
         this.postLogicalOperatorWhitespace();
       }
     } catch (re) {
-      if (re instanceof RecognitionException) {
-        _localctx.exception = re;
-        this._errHandler.reportError(this, re);
-        this._errHandler.recover(this, re);
+      if (re instanceof antlr.RecognitionException) {
+        this.errorHandler.reportError(this, re);
+        this.errorHandler.recover(this, re);
       } else {
         throw re;
       }
     } finally {
       this.exitRule();
     }
-    return _localctx;
+    return localContext;
   }
-  // @RuleVersion(0)
   public orToken(): OrTokenContext {
-    const _localctx: OrTokenContext = new OrTokenContext(this._ctx, this.state);
-    this.enterRule(_localctx, 28, SelectionAutoCompleteParser.RULE_orToken);
+    let localContext = new OrTokenContext(this.context, this.state);
+    this.enterRule(localContext, 28, SelectionAutoCompleteParser.RULE_orToken);
     try {
-      this.enterOuterAlt(_localctx, 1);
+      this.enterOuterAlt(localContext, 1);
       {
         this.state = 214;
         this.match(SelectionAutoCompleteParser.OR);
       }
     } catch (re) {
-      if (re instanceof RecognitionException) {
-        _localctx.exception = re;
-        this._errHandler.reportError(this, re);
-        this._errHandler.recover(this, re);
+      if (re instanceof antlr.RecognitionException) {
+        this.errorHandler.reportError(this, re);
+        this.errorHandler.recover(this, re);
       } else {
         throw re;
       }
     } finally {
       this.exitRule();
     }
-    return _localctx;
+    return localContext;
   }
-  // @RuleVersion(0)
   public andToken(): AndTokenContext {
-    const _localctx: AndTokenContext = new AndTokenContext(this._ctx, this.state);
-    this.enterRule(_localctx, 30, SelectionAutoCompleteParser.RULE_andToken);
+    let localContext = new AndTokenContext(this.context, this.state);
+    this.enterRule(localContext, 30, SelectionAutoCompleteParser.RULE_andToken);
     try {
-      this.enterOuterAlt(_localctx, 1);
+      this.enterOuterAlt(localContext, 1);
       {
         this.state = 216;
         this.match(SelectionAutoCompleteParser.AND);
       }
     } catch (re) {
-      if (re instanceof RecognitionException) {
-        _localctx.exception = re;
-        this._errHandler.reportError(this, re);
-        this._errHandler.recover(this, re);
+      if (re instanceof antlr.RecognitionException) {
+        this.errorHandler.reportError(this, re);
+        this.errorHandler.recover(this, re);
       } else {
         throw re;
       }
     } finally {
       this.exitRule();
     }
-    return _localctx;
+    return localContext;
   }
-  // @RuleVersion(0)
   public notToken(): NotTokenContext {
-    const _localctx: NotTokenContext = new NotTokenContext(this._ctx, this.state);
-    this.enterRule(_localctx, 32, SelectionAutoCompleteParser.RULE_notToken);
+    let localContext = new NotTokenContext(this.context, this.state);
+    this.enterRule(localContext, 32, SelectionAutoCompleteParser.RULE_notToken);
     try {
-      this.enterOuterAlt(_localctx, 1);
+      this.enterOuterAlt(localContext, 1);
       {
         this.state = 218;
         this.match(SelectionAutoCompleteParser.NOT);
       }
     } catch (re) {
-      if (re instanceof RecognitionException) {
-        _localctx.exception = re;
-        this._errHandler.reportError(this, re);
-        this._errHandler.recover(this, re);
+      if (re instanceof antlr.RecognitionException) {
+        this.errorHandler.reportError(this, re);
+        this.errorHandler.recover(this, re);
       } else {
         throw re;
       }
     } finally {
       this.exitRule();
     }
-    return _localctx;
+    return localContext;
   }
-  // @RuleVersion(0)
   public colonToken(): ColonTokenContext {
-    const _localctx: ColonTokenContext = new ColonTokenContext(this._ctx, this.state);
-    this.enterRule(_localctx, 34, SelectionAutoCompleteParser.RULE_colonToken);
+    let localContext = new ColonTokenContext(this.context, this.state);
+    this.enterRule(localContext, 34, SelectionAutoCompleteParser.RULE_colonToken);
     try {
-      this.enterOuterAlt(_localctx, 1);
+      this.enterOuterAlt(localContext, 1);
       {
         this.state = 220;
         this.match(SelectionAutoCompleteParser.COLON);
       }
     } catch (re) {
-      if (re instanceof RecognitionException) {
-        _localctx.exception = re;
-        this._errHandler.reportError(this, re);
-        this._errHandler.recover(this, re);
+      if (re instanceof antlr.RecognitionException) {
+        this.errorHandler.reportError(this, re);
+        this.errorHandler.recover(this, re);
       } else {
         throw re;
       }
     } finally {
       this.exitRule();
     }
-    return _localctx;
+    return localContext;
   }
-  // @RuleVersion(0)
   public leftParenToken(): LeftParenTokenContext {
-    const _localctx: LeftParenTokenContext = new LeftParenTokenContext(this._ctx, this.state);
-    this.enterRule(_localctx, 36, SelectionAutoCompleteParser.RULE_leftParenToken);
+    let localContext = new LeftParenTokenContext(this.context, this.state);
+    this.enterRule(localContext, 36, SelectionAutoCompleteParser.RULE_leftParenToken);
     try {
-      this.enterOuterAlt(_localctx, 1);
+      this.enterOuterAlt(localContext, 1);
       {
         this.state = 222;
         this.match(SelectionAutoCompleteParser.LPAREN);
       }
     } catch (re) {
-      if (re instanceof RecognitionException) {
-        _localctx.exception = re;
-        this._errHandler.reportError(this, re);
-        this._errHandler.recover(this, re);
+      if (re instanceof antlr.RecognitionException) {
+        this.errorHandler.reportError(this, re);
+        this.errorHandler.recover(this, re);
       } else {
         throw re;
       }
     } finally {
       this.exitRule();
     }
-    return _localctx;
+    return localContext;
   }
-  // @RuleVersion(0)
   public rightParenToken(): RightParenTokenContext {
-    const _localctx: RightParenTokenContext = new RightParenTokenContext(this._ctx, this.state);
-    this.enterRule(_localctx, 38, SelectionAutoCompleteParser.RULE_rightParenToken);
+    let localContext = new RightParenTokenContext(this.context, this.state);
+    this.enterRule(localContext, 38, SelectionAutoCompleteParser.RULE_rightParenToken);
     try {
-      this.enterOuterAlt(_localctx, 1);
+      this.enterOuterAlt(localContext, 1);
       {
         this.state = 224;
         this.match(SelectionAutoCompleteParser.RPAREN);
       }
     } catch (re) {
-      if (re instanceof RecognitionException) {
-        _localctx.exception = re;
-        this._errHandler.reportError(this, re);
-        this._errHandler.recover(this, re);
+      if (re instanceof antlr.RecognitionException) {
+        this.errorHandler.reportError(this, re);
+        this.errorHandler.recover(this, re);
       } else {
         throw re;
       }
     } finally {
       this.exitRule();
     }
-    return _localctx;
+    return localContext;
   }
-  // @RuleVersion(0)
   public attributeValueWhitespace(): AttributeValueWhitespaceContext {
-    const _localctx: AttributeValueWhitespaceContext = new AttributeValueWhitespaceContext(
-      this._ctx,
-      this.state,
-    );
-    this.enterRule(_localctx, 40, SelectionAutoCompleteParser.RULE_attributeValueWhitespace);
+    let localContext = new AttributeValueWhitespaceContext(this.context, this.state);
+    this.enterRule(localContext, 40, SelectionAutoCompleteParser.RULE_attributeValueWhitespace);
     try {
-      let _alt: number;
-      this.enterOuterAlt(_localctx, 1);
+      let alternative: number;
+      this.enterOuterAlt(localContext, 1);
       {
         this.state = 229;
-        this._errHandler.sync(this);
-        _alt = this.interpreter.adaptivePredict(this._input, 9, this._ctx);
-        while (_alt !== 2 && _alt !== ATN.INVALID_ALT_NUMBER) {
-          if (_alt === 1) {
+        this.errorHandler.sync(this);
+        alternative = this.interpreter.adaptivePredict(this.tokenStream, 9, this.context);
+        while (alternative !== 2 && alternative !== antlr.ATN.INVALID_ALT_NUMBER) {
+          if (alternative === 1) {
             {
               {
                 this.state = 226;
@@ -1184,39 +1100,34 @@ export class SelectionAutoCompleteParser extends Parser {
             }
           }
           this.state = 231;
-          this._errHandler.sync(this);
-          _alt = this.interpreter.adaptivePredict(this._input, 9, this._ctx);
+          this.errorHandler.sync(this);
+          alternative = this.interpreter.adaptivePredict(this.tokenStream, 9, this.context);
         }
       }
     } catch (re) {
-      if (re instanceof RecognitionException) {
-        _localctx.exception = re;
-        this._errHandler.reportError(this, re);
-        this._errHandler.recover(this, re);
+      if (re instanceof antlr.RecognitionException) {
+        this.errorHandler.reportError(this, re);
+        this.errorHandler.recover(this, re);
       } else {
         throw re;
       }
     } finally {
       this.exitRule();
     }
-    return _localctx;
+    return localContext;
   }
-  // @RuleVersion(0)
   public postAttributeValueWhitespace(): PostAttributeValueWhitespaceContext {
-    const _localctx: PostAttributeValueWhitespaceContext = new PostAttributeValueWhitespaceContext(
-      this._ctx,
-      this.state,
-    );
-    this.enterRule(_localctx, 42, SelectionAutoCompleteParser.RULE_postAttributeValueWhitespace);
+    let localContext = new PostAttributeValueWhitespaceContext(this.context, this.state);
+    this.enterRule(localContext, 42, SelectionAutoCompleteParser.RULE_postAttributeValueWhitespace);
     try {
-      let _alt: number;
-      this.enterOuterAlt(_localctx, 1);
+      let alternative: number;
+      this.enterOuterAlt(localContext, 1);
       {
         this.state = 235;
-        this._errHandler.sync(this);
-        _alt = this.interpreter.adaptivePredict(this._input, 10, this._ctx);
-        while (_alt !== 2 && _alt !== ATN.INVALID_ALT_NUMBER) {
-          if (_alt === 1) {
+        this.errorHandler.sync(this);
+        alternative = this.interpreter.adaptivePredict(this.tokenStream, 10, this.context);
+        while (alternative !== 2 && alternative !== antlr.ATN.INVALID_ALT_NUMBER) {
+          if (alternative === 1) {
             {
               {
                 this.state = 232;
@@ -1225,39 +1136,34 @@ export class SelectionAutoCompleteParser extends Parser {
             }
           }
           this.state = 237;
-          this._errHandler.sync(this);
-          _alt = this.interpreter.adaptivePredict(this._input, 10, this._ctx);
+          this.errorHandler.sync(this);
+          alternative = this.interpreter.adaptivePredict(this.tokenStream, 10, this.context);
         }
       }
     } catch (re) {
-      if (re instanceof RecognitionException) {
-        _localctx.exception = re;
-        this._errHandler.reportError(this, re);
-        this._errHandler.recover(this, re);
+      if (re instanceof antlr.RecognitionException) {
+        this.errorHandler.reportError(this, re);
+        this.errorHandler.recover(this, re);
       } else {
         throw re;
       }
     } finally {
       this.exitRule();
     }
-    return _localctx;
+    return localContext;
   }
-  // @RuleVersion(0)
   public postExpressionWhitespace(): PostExpressionWhitespaceContext {
-    const _localctx: PostExpressionWhitespaceContext = new PostExpressionWhitespaceContext(
-      this._ctx,
-      this.state,
-    );
-    this.enterRule(_localctx, 44, SelectionAutoCompleteParser.RULE_postExpressionWhitespace);
+    let localContext = new PostExpressionWhitespaceContext(this.context, this.state);
+    this.enterRule(localContext, 44, SelectionAutoCompleteParser.RULE_postExpressionWhitespace);
     try {
-      let _alt: number;
-      this.enterOuterAlt(_localctx, 1);
+      let alternative: number;
+      this.enterOuterAlt(localContext, 1);
       {
         this.state = 241;
-        this._errHandler.sync(this);
-        _alt = this.interpreter.adaptivePredict(this._input, 11, this._ctx);
-        while (_alt !== 2 && _alt !== ATN.INVALID_ALT_NUMBER) {
-          if (_alt === 1) {
+        this.errorHandler.sync(this);
+        alternative = this.interpreter.adaptivePredict(this.tokenStream, 11, this.context);
+        while (alternative !== 2 && alternative !== antlr.ATN.INVALID_ALT_NUMBER) {
+          if (alternative === 1) {
             {
               {
                 this.state = 238;
@@ -1266,39 +1172,34 @@ export class SelectionAutoCompleteParser extends Parser {
             }
           }
           this.state = 243;
-          this._errHandler.sync(this);
-          _alt = this.interpreter.adaptivePredict(this._input, 11, this._ctx);
+          this.errorHandler.sync(this);
+          alternative = this.interpreter.adaptivePredict(this.tokenStream, 11, this.context);
         }
       }
     } catch (re) {
-      if (re instanceof RecognitionException) {
-        _localctx.exception = re;
-        this._errHandler.reportError(this, re);
-        this._errHandler.recover(this, re);
+      if (re instanceof antlr.RecognitionException) {
+        this.errorHandler.reportError(this, re);
+        this.errorHandler.recover(this, re);
       } else {
         throw re;
       }
     } finally {
       this.exitRule();
     }
-    return _localctx;
+    return localContext;
   }
-  // @RuleVersion(0)
   public postNotOperatorWhitespace(): PostNotOperatorWhitespaceContext {
-    const _localctx: PostNotOperatorWhitespaceContext = new PostNotOperatorWhitespaceContext(
-      this._ctx,
-      this.state,
-    );
-    this.enterRule(_localctx, 46, SelectionAutoCompleteParser.RULE_postNotOperatorWhitespace);
+    let localContext = new PostNotOperatorWhitespaceContext(this.context, this.state);
+    this.enterRule(localContext, 46, SelectionAutoCompleteParser.RULE_postNotOperatorWhitespace);
     try {
-      let _alt: number;
-      this.enterOuterAlt(_localctx, 1);
+      let alternative: number;
+      this.enterOuterAlt(localContext, 1);
       {
         this.state = 247;
-        this._errHandler.sync(this);
-        _alt = this.interpreter.adaptivePredict(this._input, 12, this._ctx);
-        while (_alt !== 2 && _alt !== ATN.INVALID_ALT_NUMBER) {
-          if (_alt === 1) {
+        this.errorHandler.sync(this);
+        alternative = this.interpreter.adaptivePredict(this.tokenStream, 12, this.context);
+        while (alternative !== 2 && alternative !== antlr.ATN.INVALID_ALT_NUMBER) {
+          if (alternative === 1) {
             {
               {
                 this.state = 244;
@@ -1307,37 +1208,38 @@ export class SelectionAutoCompleteParser extends Parser {
             }
           }
           this.state = 249;
-          this._errHandler.sync(this);
-          _alt = this.interpreter.adaptivePredict(this._input, 12, this._ctx);
+          this.errorHandler.sync(this);
+          alternative = this.interpreter.adaptivePredict(this.tokenStream, 12, this.context);
         }
       }
     } catch (re) {
-      if (re instanceof RecognitionException) {
-        _localctx.exception = re;
-        this._errHandler.reportError(this, re);
-        this._errHandler.recover(this, re);
+      if (re instanceof antlr.RecognitionException) {
+        this.errorHandler.reportError(this, re);
+        this.errorHandler.recover(this, re);
       } else {
         throw re;
       }
     } finally {
       this.exitRule();
     }
-    return _localctx;
+    return localContext;
   }
-  // @RuleVersion(0)
   public postLogicalOperatorWhitespace(): PostLogicalOperatorWhitespaceContext {
-    const _localctx: PostLogicalOperatorWhitespaceContext =
-      new PostLogicalOperatorWhitespaceContext(this._ctx, this.state);
-    this.enterRule(_localctx, 48, SelectionAutoCompleteParser.RULE_postLogicalOperatorWhitespace);
+    let localContext = new PostLogicalOperatorWhitespaceContext(this.context, this.state);
+    this.enterRule(
+      localContext,
+      48,
+      SelectionAutoCompleteParser.RULE_postLogicalOperatorWhitespace,
+    );
     try {
-      let _alt: number;
-      this.enterOuterAlt(_localctx, 1);
+      let alternative: number;
+      this.enterOuterAlt(localContext, 1);
       {
         this.state = 253;
-        this._errHandler.sync(this);
-        _alt = this.interpreter.adaptivePredict(this._input, 13, this._ctx);
-        while (_alt !== 2 && _alt !== ATN.INVALID_ALT_NUMBER) {
-          if (_alt === 1) {
+        this.errorHandler.sync(this);
+        alternative = this.interpreter.adaptivePredict(this.tokenStream, 13, this.context);
+        while (alternative !== 2 && alternative !== antlr.ATN.INVALID_ALT_NUMBER) {
+          if (alternative === 1) {
             {
               {
                 this.state = 250;
@@ -1346,37 +1248,38 @@ export class SelectionAutoCompleteParser extends Parser {
             }
           }
           this.state = 255;
-          this._errHandler.sync(this);
-          _alt = this.interpreter.adaptivePredict(this._input, 13, this._ctx);
+          this.errorHandler.sync(this);
+          alternative = this.interpreter.adaptivePredict(this.tokenStream, 13, this.context);
         }
       }
     } catch (re) {
-      if (re instanceof RecognitionException) {
-        _localctx.exception = re;
-        this._errHandler.reportError(this, re);
-        this._errHandler.recover(this, re);
+      if (re instanceof antlr.RecognitionException) {
+        this.errorHandler.reportError(this, re);
+        this.errorHandler.recover(this, re);
       } else {
         throw re;
       }
     } finally {
       this.exitRule();
     }
-    return _localctx;
+    return localContext;
   }
-  // @RuleVersion(0)
   public postNeighborTraversalWhitespace(): PostNeighborTraversalWhitespaceContext {
-    const _localctx: PostNeighborTraversalWhitespaceContext =
-      new PostNeighborTraversalWhitespaceContext(this._ctx, this.state);
-    this.enterRule(_localctx, 50, SelectionAutoCompleteParser.RULE_postNeighborTraversalWhitespace);
+    let localContext = new PostNeighborTraversalWhitespaceContext(this.context, this.state);
+    this.enterRule(
+      localContext,
+      50,
+      SelectionAutoCompleteParser.RULE_postNeighborTraversalWhitespace,
+    );
     try {
-      let _alt: number;
-      this.enterOuterAlt(_localctx, 1);
+      let alternative: number;
+      this.enterOuterAlt(localContext, 1);
       {
         this.state = 259;
-        this._errHandler.sync(this);
-        _alt = this.interpreter.adaptivePredict(this._input, 14, this._ctx);
-        while (_alt !== 2 && _alt !== ATN.INVALID_ALT_NUMBER) {
-          if (_alt === 1) {
+        this.errorHandler.sync(this);
+        alternative = this.interpreter.adaptivePredict(this.tokenStream, 14, this.context);
+        while (alternative !== 2 && alternative !== antlr.ATN.INVALID_ALT_NUMBER) {
+          if (alternative === 1) {
             {
               {
                 this.state = 256;
@@ -1385,36 +1288,37 @@ export class SelectionAutoCompleteParser extends Parser {
             }
           }
           this.state = 261;
-          this._errHandler.sync(this);
-          _alt = this.interpreter.adaptivePredict(this._input, 14, this._ctx);
+          this.errorHandler.sync(this);
+          alternative = this.interpreter.adaptivePredict(this.tokenStream, 14, this.context);
         }
       }
     } catch (re) {
-      if (re instanceof RecognitionException) {
-        _localctx.exception = re;
-        this._errHandler.reportError(this, re);
-        this._errHandler.recover(this, re);
+      if (re instanceof antlr.RecognitionException) {
+        this.errorHandler.reportError(this, re);
+        this.errorHandler.recover(this, re);
       } else {
         throw re;
       }
     } finally {
       this.exitRule();
     }
-    return _localctx;
+    return localContext;
   }
-  // @RuleVersion(0)
   public postUpwardTraversalWhitespace(): PostUpwardTraversalWhitespaceContext {
-    const _localctx: PostUpwardTraversalWhitespaceContext =
-      new PostUpwardTraversalWhitespaceContext(this._ctx, this.state);
-    this.enterRule(_localctx, 52, SelectionAutoCompleteParser.RULE_postUpwardTraversalWhitespace);
+    let localContext = new PostUpwardTraversalWhitespaceContext(this.context, this.state);
+    this.enterRule(
+      localContext,
+      52,
+      SelectionAutoCompleteParser.RULE_postUpwardTraversalWhitespace,
+    );
     let _la: number;
     try {
-      this.enterOuterAlt(_localctx, 1);
+      this.enterOuterAlt(localContext, 1);
       {
         this.state = 265;
-        this._errHandler.sync(this);
-        _la = this._input.LA(1);
-        while (_la === SelectionAutoCompleteParser.WS) {
+        this.errorHandler.sync(this);
+        _la = this.tokenStream.LA(1);
+        while (_la === 16) {
           {
             {
               this.state = 262;
@@ -1422,37 +1326,38 @@ export class SelectionAutoCompleteParser extends Parser {
             }
           }
           this.state = 267;
-          this._errHandler.sync(this);
-          _la = this._input.LA(1);
+          this.errorHandler.sync(this);
+          _la = this.tokenStream.LA(1);
         }
       }
     } catch (re) {
-      if (re instanceof RecognitionException) {
-        _localctx.exception = re;
-        this._errHandler.reportError(this, re);
-        this._errHandler.recover(this, re);
+      if (re instanceof antlr.RecognitionException) {
+        this.errorHandler.reportError(this, re);
+        this.errorHandler.recover(this, re);
       } else {
         throw re;
       }
     } finally {
       this.exitRule();
     }
-    return _localctx;
+    return localContext;
   }
-  // @RuleVersion(0)
   public postDownwardTraversalWhitespace(): PostDownwardTraversalWhitespaceContext {
-    const _localctx: PostDownwardTraversalWhitespaceContext =
-      new PostDownwardTraversalWhitespaceContext(this._ctx, this.state);
-    this.enterRule(_localctx, 54, SelectionAutoCompleteParser.RULE_postDownwardTraversalWhitespace);
+    let localContext = new PostDownwardTraversalWhitespaceContext(this.context, this.state);
+    this.enterRule(
+      localContext,
+      54,
+      SelectionAutoCompleteParser.RULE_postDownwardTraversalWhitespace,
+    );
     try {
-      let _alt: number;
-      this.enterOuterAlt(_localctx, 1);
+      let alternative: number;
+      this.enterOuterAlt(localContext, 1);
       {
         this.state = 271;
-        this._errHandler.sync(this);
-        _alt = this.interpreter.adaptivePredict(this._input, 16, this._ctx);
-        while (_alt !== 2 && _alt !== ATN.INVALID_ALT_NUMBER) {
-          if (_alt === 1) {
+        this.errorHandler.sync(this);
+        alternative = this.interpreter.adaptivePredict(this.tokenStream, 16, this.context);
+        while (alternative !== 2 && alternative !== antlr.ATN.INVALID_ALT_NUMBER) {
+          if (alternative === 1) {
             {
               {
                 this.state = 268;
@@ -1461,38 +1366,33 @@ export class SelectionAutoCompleteParser extends Parser {
             }
           }
           this.state = 273;
-          this._errHandler.sync(this);
-          _alt = this.interpreter.adaptivePredict(this._input, 16, this._ctx);
+          this.errorHandler.sync(this);
+          alternative = this.interpreter.adaptivePredict(this.tokenStream, 16, this.context);
         }
       }
     } catch (re) {
-      if (re instanceof RecognitionException) {
-        _localctx.exception = re;
-        this._errHandler.reportError(this, re);
-        this._errHandler.recover(this, re);
+      if (re instanceof antlr.RecognitionException) {
+        this.errorHandler.reportError(this, re);
+        this.errorHandler.recover(this, re);
       } else {
         throw re;
       }
     } finally {
       this.exitRule();
     }
-    return _localctx;
+    return localContext;
   }
-  // @RuleVersion(0)
   public postDigitsWhitespace(): PostDigitsWhitespaceContext {
-    const _localctx: PostDigitsWhitespaceContext = new PostDigitsWhitespaceContext(
-      this._ctx,
-      this.state,
-    );
-    this.enterRule(_localctx, 56, SelectionAutoCompleteParser.RULE_postDigitsWhitespace);
+    let localContext = new PostDigitsWhitespaceContext(this.context, this.state);
+    this.enterRule(localContext, 56, SelectionAutoCompleteParser.RULE_postDigitsWhitespace);
     let _la: number;
     try {
-      this.enterOuterAlt(_localctx, 1);
+      this.enterOuterAlt(localContext, 1);
       {
         this.state = 277;
-        this._errHandler.sync(this);
-        _la = this._input.LA(1);
-        while (_la === SelectionAutoCompleteParser.WS) {
+        this.errorHandler.sync(this);
+        _la = this.tokenStream.LA(1);
+        while (_la === 16) {
           {
             {
               this.state = 274;
@@ -1500,298 +1400,269 @@ export class SelectionAutoCompleteParser extends Parser {
             }
           }
           this.state = 279;
-          this._errHandler.sync(this);
-          _la = this._input.LA(1);
+          this.errorHandler.sync(this);
+          _la = this.tokenStream.LA(1);
         }
       }
     } catch (re) {
-      if (re instanceof RecognitionException) {
-        _localctx.exception = re;
-        this._errHandler.reportError(this, re);
-        this._errHandler.recover(this, re);
+      if (re instanceof antlr.RecognitionException) {
+        this.errorHandler.reportError(this, re);
+        this.errorHandler.recover(this, re);
       } else {
         throw re;
       }
     } finally {
       this.exitRule();
     }
-    return _localctx;
+    return localContext;
   }
-  // @RuleVersion(0)
   public value(): ValueContext {
-    let _localctx: ValueContext = new ValueContext(this._ctx, this.state);
-    this.enterRule(_localctx, 58, SelectionAutoCompleteParser.RULE_value);
+    let localContext = new ValueContext(this.context, this.state);
+    this.enterRule(localContext, 58, SelectionAutoCompleteParser.RULE_value);
     try {
       this.state = 286;
-      this._errHandler.sync(this);
-      switch (this._input.LA(1)) {
+      this.errorHandler.sync(this);
+      switch (this.tokenStream.LA(1)) {
         case SelectionAutoCompleteParser.QUOTED_STRING:
-          _localctx = new QuotedStringValueContext(_localctx);
-          this.enterOuterAlt(_localctx, 1);
+          localContext = new QuotedStringValueContext(localContext);
+          this.enterOuterAlt(localContext, 1);
           {
             this.state = 280;
             this.match(SelectionAutoCompleteParser.QUOTED_STRING);
           }
           break;
         case SelectionAutoCompleteParser.INCOMPLETE_LEFT_QUOTED_STRING:
-          _localctx = new IncompleteLeftQuotedStringValueContext(_localctx);
-          this.enterOuterAlt(_localctx, 2);
+          localContext = new IncompleteLeftQuotedStringValueContext(localContext);
+          this.enterOuterAlt(localContext, 2);
           {
             this.state = 281;
             this.match(SelectionAutoCompleteParser.INCOMPLETE_LEFT_QUOTED_STRING);
           }
           break;
         case SelectionAutoCompleteParser.INCOMPLETE_RIGHT_QUOTED_STRING:
-          _localctx = new IncompleteRightQuotedStringValueContext(_localctx);
-          this.enterOuterAlt(_localctx, 3);
+          localContext = new IncompleteRightQuotedStringValueContext(localContext);
+          this.enterOuterAlt(localContext, 3);
           {
             this.state = 282;
             this.match(SelectionAutoCompleteParser.INCOMPLETE_RIGHT_QUOTED_STRING);
           }
           break;
         case SelectionAutoCompleteParser.IDENTIFIER:
-          _localctx = new UnquotedStringValueContext(_localctx);
-          this.enterOuterAlt(_localctx, 4);
+          localContext = new UnquotedStringValueContext(localContext);
+          this.enterOuterAlt(localContext, 4);
           {
             this.state = 283;
             this.match(SelectionAutoCompleteParser.IDENTIFIER);
           }
           break;
         case SelectionAutoCompleteParser.NULL_STRING:
-          _localctx = new NullStringValueContext(_localctx);
-          this.enterOuterAlt(_localctx, 5);
+          localContext = new NullStringValueContext(localContext);
+          this.enterOuterAlt(localContext, 5);
           {
             this.state = 284;
             this.match(SelectionAutoCompleteParser.NULL_STRING);
           }
           break;
         case SelectionAutoCompleteParser.DIGITS:
-          _localctx = new DigitsValueContext(_localctx);
-          this.enterOuterAlt(_localctx, 6);
+          localContext = new DigitsValueContext(localContext);
+          this.enterOuterAlt(localContext, 6);
           {
             this.state = 285;
             this.match(SelectionAutoCompleteParser.DIGITS);
           }
           break;
         default:
-          throw new NoViableAltException(this);
+          throw new antlr.NoViableAltException(this);
       }
     } catch (re) {
-      if (re instanceof RecognitionException) {
-        _localctx.exception = re;
-        this._errHandler.reportError(this, re);
-        this._errHandler.recover(this, re);
+      if (re instanceof antlr.RecognitionException) {
+        this.errorHandler.reportError(this, re);
+        this.errorHandler.recover(this, re);
       } else {
         throw re;
       }
     } finally {
       this.exitRule();
     }
-    return _localctx;
+    return localContext;
   }
 
-  public sempred(_localctx: RuleContext, ruleIndex: number, predIndex: number): boolean {
+  public override sempred(
+    localContext: antlr.ParserRuleContext | null,
+    ruleIndex: number,
+    predIndex: number,
+  ): boolean {
     switch (ruleIndex) {
       case 1:
-        return this.expr_sempred(_localctx as ExprContext, predIndex);
+        return this.expr_sempred(localContext as ExprContext, predIndex);
     }
     return true;
   }
-  private expr_sempred(_localctx: ExprContext, predIndex: number): boolean {
+  private expr_sempred(localContext: ExprContext | null, predIndex: number): boolean {
     switch (predIndex) {
       case 0:
-        return this.precpred(this._ctx, 10);
-
+        return this.precpred(this.context, 10);
       case 1:
-        return this.precpred(this._ctx, 9);
-
+        return this.precpred(this.context, 9);
       case 2:
-        return this.precpred(this._ctx, 8);
-
+        return this.precpred(this.context, 8);
       case 3:
-        return this.precpred(this._ctx, 7);
-
+        return this.precpred(this.context, 7);
       case 4:
-        return this.precpred(this._ctx, 6);
-
+        return this.precpred(this.context, 6);
       case 5:
-        return this.precpred(this._ctx, 5);
+        return this.precpred(this.context, 5);
     }
     return true;
   }
 
-  public static readonly _serializedATN: string =
-    '\x03\uC91D\uCABA\u058D\uAFBA\u4F53\u0607\uEA8B\uC241\x03\x13\u0123\x04' +
-    '\x02\t\x02\x04\x03\t\x03\x04\x04\t\x04\x04\x05\t\x05\x04\x06\t\x06\x04' +
-    '\x07\t\x07\x04\b\t\b\x04\t\t\t\x04\n\t\n\x04\v\t\v\x04\f\t\f\x04\r\t\r' +
-    '\x04\x0E\t\x0E\x04\x0F\t\x0F\x04\x10\t\x10\x04\x11\t\x11\x04\x12\t\x12' +
-    '\x04\x13\t\x13\x04\x14\t\x14\x04\x15\t\x15\x04\x16\t\x16\x04\x17\t\x17' +
-    '\x04\x18\t\x18\x04\x19\t\x19\x04\x1A\t\x1A\x04\x1B\t\x1B\x04\x1C\t\x1C' +
-    '\x04\x1D\t\x1D\x04\x1E\t\x1E\x04\x1F\t\x1F\x03\x02\x03\x02\x03\x02\x03' +
-    '\x03\x03\x03\x03\x03\x03\x03\x03\x03\x03\x03\x03\x03\x03\x03\x03\x03\x03' +
-    '\x03\x03\x03\x03\x03\x03\x03\x03\x03\x03\x03\x03\x03\x03\x03\x03\x03\x03' +
-    '\x03\x03\x03\x03\x03\x03\x03\x03\x03\x03\x03\x03\x03\x05\x03[\n\x03\x03' +
-    '\x03\x03\x03\x03\x03\x03\x03\x03\x03\x03\x03\x03\x03\x03\x03\x03\x03\x03' +
-    '\x03\x03\x03\x03\x03\x03\x03\x03\x03\x03\x03\x03\x03\x03\x03\x03\x03\x03' +
-    '\x03\x03\x03\x03\x03\x03\x03\x03\x03\x03\x03\x07\x03u\n\x03\f\x03\x0E' +
-    '\x03x\v\x03\x03\x04\x03\x04\x03\x04\x03\x04\x03\x04\x05\x04\x7F\n\x04' +
-    '\x03\x04\x03\x04\x03\x04\x03\x04\x03\x04\x03\x04\x03\x04\x05\x04\x88\n' +
-    '\x04\x03\x05\x03\x05\x03\x05\x03\x05\x03\x05\x03\x05\x03\x06\x03\x06\x03' +
-    '\x06\x03\x06\x03\x06\x03\x06\x03\x06\x03\x06\x03\x06\x03\x06\x03\x06\x03' +
-    '\x06\x03\x06\x03\x06\x03\x06\x03\x06\x03\x06\x03\x06\x03\x06\x03\x06\x03' +
-    '\x06\x03\x06\x03\x06\x03\x06\x03\x06\x03\x06\x03\x06\x03\x06\x03\x06\x03' +
-    '\x06\x05\x06\xAE\n\x06\x03\x06\x03\x06\x03\x06\x03\x06\x03\x06\x03\x06' +
-    '\x03\x06\x03\x06\x03\x06\x03\x06\x05\x06\xBA\n\x06\x03\x07\x03\x07\x03' +
-    '\x07\x03\x07\x03\x07\x03\b\x03\b\x03\b\x03\t\x03\t\x03\t\x03\n\x05\n\xC8' +
-    '\n\n\x03\n\x03\n\x03\v\x03\v\x05\v\xCE\n\v\x03\f\x03\f\x03\r\x03\r\x03' +
-    '\x0E\x03\x0E\x03\x0F\x03\x0F\x03\x0F\x03\x10\x03\x10\x03\x11\x03\x11\x03' +
-    '\x12\x03\x12\x03\x13\x03\x13\x03\x14\x03\x14\x03\x15\x03\x15\x03\x16\x07' +
-    '\x16\xE6\n\x16\f\x16\x0E\x16\xE9\v\x16\x03\x17\x07\x17\xEC\n\x17\f\x17' +
-    '\x0E\x17\xEF\v\x17\x03\x18\x07\x18\xF2\n\x18\f\x18\x0E\x18\xF5\v\x18\x03' +
-    '\x19\x07\x19\xF8\n\x19\f\x19\x0E\x19\xFB\v\x19\x03\x1A\x07\x1A\xFE\n\x1A' +
-    '\f\x1A\x0E\x1A\u0101\v\x1A\x03\x1B\x07\x1B\u0104\n\x1B\f\x1B\x0E\x1B\u0107' +
-    '\v\x1B\x03\x1C\x07\x1C\u010A\n\x1C\f\x1C\x0E\x1C\u010D\v\x1C\x03\x1D\x07' +
-    '\x1D\u0110\n\x1D\f\x1D\x0E\x1D\u0113\v\x1D\x03\x1E\x07\x1E\u0116\n\x1E' +
-    '\f\x1E\x0E\x1E\u0119\v\x1E\x03\x1F\x03\x1F\x03\x1F\x03\x1F\x03\x1F\x03' +
-    '\x1F\x05\x1F\u0121\n\x1F\x03\x1F\x02\x02\x03\x04 \x02\x02\x04\x02\x06' +
-    '\x02\b\x02\n\x02\f\x02\x0E\x02\x10\x02\x12\x02\x14\x02\x16\x02\x18\x02' +
-    '\x1A\x02\x1C\x02\x1E\x02 \x02"\x02$\x02&\x02(\x02*\x02,\x02.\x020\x02' +
-    '2\x024\x026\x028\x02:\x02<\x02\x02\x02\x02\u0131\x02>\x03\x02\x02\x02' +
-    '\x04Z\x03\x02\x02\x02\x06\x87\x03\x02\x02\x02\b\x89\x03\x02\x02\x02\n' +
-    '\xB9\x03\x02\x02\x02\f\xBB\x03\x02\x02\x02\x0E\xC0\x03\x02\x02\x02\x10' +
-    '\xC3\x03\x02\x02\x02\x12\xC7\x03\x02\x02\x02\x14\xCB\x03\x02\x02\x02\x16' +
-    '\xCF\x03\x02\x02\x02\x18\xD1\x03\x02\x02\x02\x1A\xD3\x03\x02\x02\x02\x1C' +
-    '\xD5\x03\x02\x02\x02\x1E\xD8\x03\x02\x02\x02 \xDA\x03\x02\x02\x02"\xDC' +
-    '\x03\x02\x02\x02$\xDE\x03\x02\x02\x02&\xE0\x03\x02\x02\x02(\xE2\x03\x02' +
-    '\x02\x02*\xE7\x03\x02\x02\x02,\xED\x03\x02\x02\x02.\xF3\x03\x02\x02\x02' +
-    '0\xF9\x03\x02\x02\x022\xFF\x03\x02\x02\x024\u0105\x03\x02\x02\x026\u010B' +
-    '\x03\x02\x02\x028\u0111\x03\x02\x02\x02:\u0117\x03\x02\x02\x02<\u0120' +
-    '\x03\x02\x02\x02>?\x05\x04\x03\x02?@\x07\x02\x02\x03@\x03\x03\x02\x02' +
-    '\x02AB\b\x03\x01\x02B[\x05\x06\x04\x02CD\x05\x0E\b\x02DE\x05\x06\x04\x02' +
-    'EF\x05\x10\t\x02F[\x03\x02\x02\x02GH\x05\x0E\b\x02HI\x05\x06\x04\x02I' +
-    '[\x03\x02\x02\x02JK\x05\x06\x04\x02KL\x05\x10\t\x02L[\x03\x02\x02\x02' +
-    'MN\x05"\x12\x02NO\x050\x19\x02OP\x05\x04\x03\rP[\x03\x02\x02\x02QR\x05' +
-    '"\x12\x02RS\x050\x19\x02S[\x03\x02\x02\x02TU\x07\x06\x02\x02U[\x05.\x18' +
-    '\x02VW\x05<\x1F\x02WX\x05.\x18\x02X[\x03\x02\x02\x02Y[\x05\x1C\x0F\x02' +
-    'ZA\x03\x02\x02\x02ZC\x03\x02\x02\x02ZG\x03\x02\x02\x02ZJ\x03\x02\x02\x02' +
-    'ZM\x03\x02\x02\x02ZQ\x03\x02\x02\x02ZT\x03\x02\x02\x02ZV\x03\x02\x02\x02' +
-    'ZY\x03\x02\x02\x02[v\x03\x02\x02\x02\\]\f\f\x02\x02]^\x05 \x11\x02^_\x05' +
-    '2\x1A\x02_`\x05\x04\x03\r`u\x03\x02\x02\x02ab\f\v\x02\x02bc\x05\x1E\x10' +
-    '\x02cd\x052\x1A\x02de\x05\x04\x03\feu\x03\x02\x02\x02fg\f\n\x02\x02gh' +
-    '\x05\x1C\x0F\x02hi\x05\x04\x03\viu\x03\x02\x02\x02jk\f\t\x02\x02kl\x05' +
-    ' \x11\x02lm\x052\x1A\x02mu\x03\x02\x02\x02no\f\b\x02\x02op\x05\x1E\x10' +
-    '\x02pq\x052\x1A\x02qu\x03\x02\x02\x02rs\f\x07\x02\x02su\x05\x1C\x0F\x02' +
-    't\\\x03\x02\x02\x02ta\x03\x02\x02\x02tf\x03\x02\x02\x02tj\x03\x02\x02' +
-    '\x02tn\x03\x02\x02\x02tr\x03\x02\x02\x02ux\x03\x02\x02\x02vt\x03\x02\x02' +
-    '\x02vw\x03\x02\x02\x02w\x05\x03\x02\x02\x02xv\x03\x02\x02\x02yz\x05\x16' +
-    '\f\x02z{\x05$\x13\x02{~\x05\x18\r\x02|}\x07\x10\x02\x02}\x7F\x05\x18\r' +
-    '\x02~|\x03\x02\x02\x02~\x7F\x03\x02\x02\x02\x7F\x80\x03\x02\x02\x02\x80' +
-    '\x81\x05,\x17\x02\x81\x88\x03\x02\x02\x02\x82\x83\x05\x1A\x0E\x02\x83' +
-    '\x84\x05\b\x05\x02\x84\x88\x03\x02\x02\x02\x85\x88\x05\b\x05\x02\x86\x88' +
-    '\x05\n\x06\x02\x87y\x03\x02\x02\x02\x87\x82\x03\x02\x02\x02\x87\x85\x03' +
-    '\x02\x02\x02\x87\x86\x03\x02\x02\x02\x88\x07\x03\x02\x02\x02\x89\x8A\x05' +
-    '&\x14\x02\x8A\x8B\x052\x1A\x02\x8B\x8C\x05\x04\x03\x02\x8C\x8D\x05(\x15' +
-    '\x02\x8D\x8E\x05.\x18\x02\x8E\t\x03\x02\x02\x02\x8F\x90\x05\x16\f\x02' +
-    '\x90\x91\x05$\x13\x02\x91\x92\x05\x18\r\x02\x92\x93\x07\x10\x02\x02\x93' +
-    '\x94\x05*\x16\x02\x94\xBA\x03\x02\x02\x02\x95\x96\x05\x16\f\x02\x96\x97' +
-    '\x05$\x13\x02\x97\x98\x05*\x16\x02\x98\xBA\x03\x02\x02\x02\x99\x9A\x05' +
-    '\x1A\x0E\x02\x9A\x9B\x05\f\x07\x02\x9B\xBA\x03\x02\x02\x02\x9C\x9D\x05' +
-    '\x1A\x0E\x02\x9D\x9E\x05&\x14\x02\x9E\x9F\x052\x1A\x02\x9F\xBA\x03\x02' +
-    '\x02\x02\xA0\xA1\x05\x1A\x0E\x02\xA1\xA2\x05&\x14\x02\xA2\xA3\x05\x04' +
-    '\x03\x02\xA3\xBA\x03\x02\x02\x02\xA4\xA5\x05&\x14\x02\xA5\xA6\x052\x1A' +
-    '\x02\xA6\xA7\x05\x04\x03\x02\xA7\xBA\x03\x02\x02\x02\xA8\xBA\x05\f\x07' +
-    '\x02\xA9\xAA\x05&\x14\x02\xAA\xAB\x052\x1A\x02\xAB\xBA\x03\x02\x02\x02' +
-    '\xAC\xAE\x07\b\x02\x02\xAD\xAC\x03\x02\x02\x02\xAD\xAE\x03\x02\x02\x02' +
-    '\xAE\xAF\x03\x02\x02\x02\xAF\xB0\x07\x07\x02\x02\xB0\xBA\x054\x1B\x02' +
-    '\xB1\xB2\x07\x07\x02\x02\xB2\xB3\x05<\x1F\x02\xB3\xB4\x05.\x18\x02\xB4' +
-    '\xBA\x03\x02\x02\x02\xB5\xB6\x05$\x13\x02\xB6\xB7\x05\x18\r\x02\xB7\xB8' +
-    '\x05.\x18\x02\xB8\xBA\x03\x02\x02\x02\xB9\x8F\x03\x02\x02\x02\xB9\x95' +
-    '\x03\x02\x02\x02\xB9\x99\x03\x02\x02\x02\xB9\x9C\x03\x02\x02\x02\xB9\xA0' +
-    '\x03\x02\x02\x02\xB9\xA4\x03\x02\x02\x02\xB9\xA8\x03\x02\x02\x02\xB9\xA9' +
-    '\x03\x02\x02\x02\xB9\xAD\x03\x02\x02\x02\xB9\xB1\x03\x02\x02\x02\xB9\xB5' +
-    '\x03\x02\x02\x02\xBA\v\x03\x02\x02\x02\xBB\xBC\x05&\x14\x02\xBC\xBD\x05' +
-    '2\x1A\x02\xBD\xBE\x05(\x15\x02\xBE\xBF\x05.\x18\x02\xBF\r\x03\x02\x02' +
-    '\x02\xC0\xC1\x05\x12\n\x02\xC1\xC2\x056\x1C\x02\xC2\x0F\x03\x02\x02\x02' +
-    '\xC3\xC4\x05\x14\v\x02\xC4\xC5\x058\x1D\x02\xC5\x11\x03\x02\x02\x02\xC6' +
-    '\xC8\x07\b\x02\x02\xC7\xC6\x03\x02\x02\x02\xC7\xC8\x03\x02\x02\x02\xC8' +
-    '\xC9\x03\x02\x02\x02\xC9\xCA\x07\x07\x02\x02\xCA\x13\x03\x02\x02\x02\xCB' +
-    '\xCD\x07\x07\x02\x02\xCC\xCE\x07\b\x02\x02\xCD\xCC\x03\x02\x02\x02\xCD' +
-    '\xCE\x03\x02\x02\x02\xCE\x15\x03\x02\x02\x02\xCF\xD0\x07\x11\x02\x02\xD0' +
-    '\x17\x03\x02\x02\x02\xD1\xD2\x05<\x1F\x02\xD2\x19\x03\x02\x02\x02\xD3' +
-    '\xD4\x07\x11\x02\x02\xD4\x1B\x03\x02\x02\x02\xD5\xD6\x07\x13\x02\x02\xD6' +
-    '\xD7\x052\x1A\x02\xD7\x1D\x03\x02\x02\x02\xD8\xD9\x07\x04\x02\x02\xD9' +
-    '\x1F\x03\x02\x02\x02\xDA\xDB\x07\x03\x02\x02\xDB!\x03\x02\x02\x02\xDC' +
-    '\xDD\x07\x05\x02\x02\xDD#\x03\x02\x02\x02\xDE\xDF\x07\t\x02\x02\xDF%\x03' +
-    "\x02\x02\x02\xE0\xE1\x07\n\x02\x02\xE1'\x03\x02\x02\x02\xE2\xE3\x07\v" +
-    '\x02\x02\xE3)\x03\x02\x02\x02\xE4\xE6\x07\x12\x02\x02\xE5\xE4\x03\x02' +
-    '\x02\x02\xE6\xE9\x03\x02\x02\x02\xE7\xE5\x03\x02\x02\x02\xE7\xE8\x03\x02' +
-    '\x02\x02\xE8+\x03\x02\x02\x02\xE9\xE7\x03\x02\x02\x02\xEA\xEC\x07\x12' +
-    '\x02\x02\xEB\xEA\x03\x02\x02\x02\xEC\xEF\x03\x02\x02\x02\xED\xEB\x03\x02' +
-    '\x02\x02\xED\xEE\x03\x02\x02\x02\xEE-\x03\x02\x02\x02\xEF\xED\x03\x02' +
-    '\x02\x02\xF0\xF2\x07\x12\x02\x02\xF1\xF0\x03\x02\x02\x02\xF2\xF5\x03\x02' +
-    '\x02\x02\xF3\xF1\x03\x02\x02\x02\xF3\xF4\x03\x02\x02\x02\xF4/\x03\x02' +
-    '\x02\x02\xF5\xF3\x03\x02\x02\x02\xF6\xF8\x07\x12\x02\x02\xF7\xF6\x03\x02' +
-    '\x02\x02\xF8\xFB\x03\x02\x02\x02\xF9\xF7\x03\x02\x02\x02\xF9\xFA\x03\x02' +
-    '\x02\x02\xFA1\x03\x02\x02\x02\xFB\xF9\x03\x02\x02\x02\xFC\xFE\x07\x12' +
-    '\x02\x02\xFD\xFC\x03\x02\x02\x02\xFE\u0101\x03\x02\x02\x02\xFF\xFD\x03' +
-    '\x02\x02\x02\xFF\u0100\x03\x02\x02\x02\u01003\x03\x02\x02\x02\u0101\xFF' +
-    '\x03\x02\x02\x02\u0102\u0104\x07\x12\x02\x02\u0103\u0102\x03\x02\x02\x02' +
-    '\u0104\u0107\x03\x02\x02\x02\u0105\u0103\x03\x02\x02\x02\u0105\u0106\x03' +
-    '\x02\x02\x02\u01065\x03\x02\x02\x02\u0107\u0105\x03\x02\x02\x02\u0108' +
-    '\u010A\x07\x12\x02\x02\u0109\u0108\x03\x02\x02\x02\u010A\u010D\x03\x02' +
-    '\x02\x02\u010B\u0109\x03\x02\x02\x02\u010B\u010C\x03\x02\x02\x02\u010C' +
-    '7\x03\x02\x02\x02\u010D\u010B\x03\x02\x02\x02\u010E\u0110\x07\x12\x02' +
-    '\x02\u010F\u010E\x03\x02\x02\x02\u0110\u0113\x03\x02\x02\x02\u0111\u010F' +
-    '\x03\x02\x02\x02\u0111\u0112\x03\x02\x02\x02\u01129\x03\x02\x02\x02\u0113' +
-    '\u0111\x03\x02\x02\x02\u0114\u0116\x07\x12\x02\x02\u0115\u0114\x03\x02' +
-    '\x02\x02\u0116\u0119\x03\x02\x02\x02\u0117\u0115\x03\x02\x02\x02\u0117' +
-    '\u0118\x03\x02\x02\x02\u0118;\x03\x02\x02\x02\u0119\u0117\x03\x02\x02' +
-    '\x02\u011A\u0121\x07\f\x02\x02\u011B\u0121\x07\r\x02\x02\u011C\u0121\x07' +
-    '\x0E\x02\x02\u011D\u0121\x07\x11\x02\x02\u011E\u0121\x07\x0F\x02\x02\u011F' +
-    '\u0121\x07\b\x02\x02\u0120\u011A\x03\x02\x02\x02\u0120\u011B\x03\x02\x02' +
-    '\x02\u0120\u011C\x03\x02\x02\x02\u0120\u011D\x03\x02\x02\x02\u0120\u011E' +
-    '\x03\x02\x02\x02\u0120\u011F\x03\x02\x02\x02\u0121=\x03\x02\x02\x02\x15' +
-    'Ztv~\x87\xAD\xB9\xC7\xCD\xE7\xED\xF3\xF9\xFF\u0105\u010B\u0111\u0117\u0120';
-  public static __ATN: ATN;
-  public static get _ATN(): ATN {
+  public static readonly _serializedATN: number[] = [
+    4, 1, 17, 289, 2, 0, 7, 0, 2, 1, 7, 1, 2, 2, 7, 2, 2, 3, 7, 3, 2, 4, 7, 4, 2, 5, 7, 5, 2, 6, 7,
+    6, 2, 7, 7, 7, 2, 8, 7, 8, 2, 9, 7, 9, 2, 10, 7, 10, 2, 11, 7, 11, 2, 12, 7, 12, 2, 13, 7, 13,
+    2, 14, 7, 14, 2, 15, 7, 15, 2, 16, 7, 16, 2, 17, 7, 17, 2, 18, 7, 18, 2, 19, 7, 19, 2, 20, 7,
+    20, 2, 21, 7, 21, 2, 22, 7, 22, 2, 23, 7, 23, 2, 24, 7, 24, 2, 25, 7, 25, 2, 26, 7, 26, 2, 27,
+    7, 27, 2, 28, 7, 28, 2, 29, 7, 29, 1, 0, 1, 0, 1, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
+    1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
+    1, 1, 1, 1, 3, 1, 89, 8, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
+    1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 5, 1, 115, 8, 1, 10,
+    1, 12, 1, 118, 9, 1, 1, 2, 1, 2, 1, 2, 1, 2, 1, 2, 3, 2, 125, 8, 2, 1, 2, 1, 2, 1, 2, 1, 2, 1,
+    2, 1, 2, 1, 2, 3, 2, 134, 8, 2, 1, 3, 1, 3, 1, 3, 1, 3, 1, 3, 1, 3, 1, 4, 1, 4, 1, 4, 1, 4, 1,
+    4, 1, 4, 1, 4, 1, 4, 1, 4, 1, 4, 1, 4, 1, 4, 1, 4, 1, 4, 1, 4, 1, 4, 1, 4, 1, 4, 1, 4, 1, 4, 1,
+    4, 1, 4, 1, 4, 1, 4, 1, 4, 1, 4, 1, 4, 1, 4, 1, 4, 1, 4, 3, 4, 172, 8, 4, 1, 4, 1, 4, 1, 4, 1,
+    4, 1, 4, 1, 4, 1, 4, 1, 4, 1, 4, 1, 4, 3, 4, 184, 8, 4, 1, 5, 1, 5, 1, 5, 1, 5, 1, 5, 1, 6, 1,
+    6, 1, 6, 1, 7, 1, 7, 1, 7, 1, 8, 3, 8, 198, 8, 8, 1, 8, 1, 8, 1, 9, 1, 9, 3, 9, 204, 8, 9, 1,
+    10, 1, 10, 1, 11, 1, 11, 1, 12, 1, 12, 1, 13, 1, 13, 1, 13, 1, 14, 1, 14, 1, 15, 1, 15, 1, 16,
+    1, 16, 1, 17, 1, 17, 1, 18, 1, 18, 1, 19, 1, 19, 1, 20, 5, 20, 228, 8, 20, 10, 20, 12, 20, 231,
+    9, 20, 1, 21, 5, 21, 234, 8, 21, 10, 21, 12, 21, 237, 9, 21, 1, 22, 5, 22, 240, 8, 22, 10, 22,
+    12, 22, 243, 9, 22, 1, 23, 5, 23, 246, 8, 23, 10, 23, 12, 23, 249, 9, 23, 1, 24, 5, 24, 252, 8,
+    24, 10, 24, 12, 24, 255, 9, 24, 1, 25, 5, 25, 258, 8, 25, 10, 25, 12, 25, 261, 9, 25, 1, 26, 5,
+    26, 264, 8, 26, 10, 26, 12, 26, 267, 9, 26, 1, 27, 5, 27, 270, 8, 27, 10, 27, 12, 27, 273, 9,
+    27, 1, 28, 5, 28, 276, 8, 28, 10, 28, 12, 28, 279, 9, 28, 1, 29, 1, 29, 1, 29, 1, 29, 1, 29, 1,
+    29, 3, 29, 287, 8, 29, 1, 29, 0, 1, 2, 30, 0, 2, 4, 6, 8, 10, 12, 14, 16, 18, 20, 22, 24, 26,
+    28, 30, 32, 34, 36, 38, 40, 42, 44, 46, 48, 50, 52, 54, 56, 58, 0, 0, 303, 0, 60, 1, 0, 0, 0, 2,
+    88, 1, 0, 0, 0, 4, 133, 1, 0, 0, 0, 6, 135, 1, 0, 0, 0, 8, 183, 1, 0, 0, 0, 10, 185, 1, 0, 0, 0,
+    12, 190, 1, 0, 0, 0, 14, 193, 1, 0, 0, 0, 16, 197, 1, 0, 0, 0, 18, 201, 1, 0, 0, 0, 20, 205, 1,
+    0, 0, 0, 22, 207, 1, 0, 0, 0, 24, 209, 1, 0, 0, 0, 26, 211, 1, 0, 0, 0, 28, 214, 1, 0, 0, 0, 30,
+    216, 1, 0, 0, 0, 32, 218, 1, 0, 0, 0, 34, 220, 1, 0, 0, 0, 36, 222, 1, 0, 0, 0, 38, 224, 1, 0,
+    0, 0, 40, 229, 1, 0, 0, 0, 42, 235, 1, 0, 0, 0, 44, 241, 1, 0, 0, 0, 46, 247, 1, 0, 0, 0, 48,
+    253, 1, 0, 0, 0, 50, 259, 1, 0, 0, 0, 52, 265, 1, 0, 0, 0, 54, 271, 1, 0, 0, 0, 56, 277, 1, 0,
+    0, 0, 58, 286, 1, 0, 0, 0, 60, 61, 3, 2, 1, 0, 61, 62, 5, 0, 0, 1, 62, 1, 1, 0, 0, 0, 63, 64, 6,
+    1, -1, 0, 64, 89, 3, 4, 2, 0, 65, 66, 3, 12, 6, 0, 66, 67, 3, 4, 2, 0, 67, 68, 3, 14, 7, 0, 68,
+    89, 1, 0, 0, 0, 69, 70, 3, 12, 6, 0, 70, 71, 3, 4, 2, 0, 71, 89, 1, 0, 0, 0, 72, 73, 3, 4, 2, 0,
+    73, 74, 3, 14, 7, 0, 74, 89, 1, 0, 0, 0, 75, 76, 3, 32, 16, 0, 76, 77, 3, 46, 23, 0, 77, 78, 3,
+    2, 1, 11, 78, 89, 1, 0, 0, 0, 79, 80, 3, 32, 16, 0, 80, 81, 3, 46, 23, 0, 81, 89, 1, 0, 0, 0,
+    82, 83, 5, 4, 0, 0, 83, 89, 3, 44, 22, 0, 84, 85, 3, 58, 29, 0, 85, 86, 3, 44, 22, 0, 86, 89, 1,
+    0, 0, 0, 87, 89, 3, 26, 13, 0, 88, 63, 1, 0, 0, 0, 88, 65, 1, 0, 0, 0, 88, 69, 1, 0, 0, 0, 88,
+    72, 1, 0, 0, 0, 88, 75, 1, 0, 0, 0, 88, 79, 1, 0, 0, 0, 88, 82, 1, 0, 0, 0, 88, 84, 1, 0, 0, 0,
+    88, 87, 1, 0, 0, 0, 89, 116, 1, 0, 0, 0, 90, 91, 10, 10, 0, 0, 91, 92, 3, 30, 15, 0, 92, 93, 3,
+    48, 24, 0, 93, 94, 3, 2, 1, 11, 94, 115, 1, 0, 0, 0, 95, 96, 10, 9, 0, 0, 96, 97, 3, 28, 14, 0,
+    97, 98, 3, 48, 24, 0, 98, 99, 3, 2, 1, 10, 99, 115, 1, 0, 0, 0, 100, 101, 10, 8, 0, 0, 101, 102,
+    3, 26, 13, 0, 102, 103, 3, 2, 1, 9, 103, 115, 1, 0, 0, 0, 104, 105, 10, 7, 0, 0, 105, 106, 3,
+    30, 15, 0, 106, 107, 3, 48, 24, 0, 107, 115, 1, 0, 0, 0, 108, 109, 10, 6, 0, 0, 109, 110, 3, 28,
+    14, 0, 110, 111, 3, 48, 24, 0, 111, 115, 1, 0, 0, 0, 112, 113, 10, 5, 0, 0, 113, 115, 3, 26, 13,
+    0, 114, 90, 1, 0, 0, 0, 114, 95, 1, 0, 0, 0, 114, 100, 1, 0, 0, 0, 114, 104, 1, 0, 0, 0, 114,
+    108, 1, 0, 0, 0, 114, 112, 1, 0, 0, 0, 115, 118, 1, 0, 0, 0, 116, 114, 1, 0, 0, 0, 116, 117, 1,
+    0, 0, 0, 117, 3, 1, 0, 0, 0, 118, 116, 1, 0, 0, 0, 119, 120, 3, 20, 10, 0, 120, 121, 3, 34, 17,
+    0, 121, 124, 3, 22, 11, 0, 122, 123, 5, 14, 0, 0, 123, 125, 3, 22, 11, 0, 124, 122, 1, 0, 0, 0,
+    124, 125, 1, 0, 0, 0, 125, 126, 1, 0, 0, 0, 126, 127, 3, 42, 21, 0, 127, 134, 1, 0, 0, 0, 128,
+    129, 3, 24, 12, 0, 129, 130, 3, 6, 3, 0, 130, 134, 1, 0, 0, 0, 131, 134, 3, 6, 3, 0, 132, 134,
+    3, 8, 4, 0, 133, 119, 1, 0, 0, 0, 133, 128, 1, 0, 0, 0, 133, 131, 1, 0, 0, 0, 133, 132, 1, 0, 0,
+    0, 134, 5, 1, 0, 0, 0, 135, 136, 3, 36, 18, 0, 136, 137, 3, 48, 24, 0, 137, 138, 3, 2, 1, 0,
+    138, 139, 3, 38, 19, 0, 139, 140, 3, 44, 22, 0, 140, 7, 1, 0, 0, 0, 141, 142, 3, 20, 10, 0, 142,
+    143, 3, 34, 17, 0, 143, 144, 3, 22, 11, 0, 144, 145, 5, 14, 0, 0, 145, 146, 3, 40, 20, 0, 146,
+    184, 1, 0, 0, 0, 147, 148, 3, 20, 10, 0, 148, 149, 3, 34, 17, 0, 149, 150, 3, 40, 20, 0, 150,
+    184, 1, 0, 0, 0, 151, 152, 3, 24, 12, 0, 152, 153, 3, 10, 5, 0, 153, 184, 1, 0, 0, 0, 154, 155,
+    3, 24, 12, 0, 155, 156, 3, 36, 18, 0, 156, 157, 3, 48, 24, 0, 157, 184, 1, 0, 0, 0, 158, 159, 3,
+    24, 12, 0, 159, 160, 3, 36, 18, 0, 160, 161, 3, 2, 1, 0, 161, 184, 1, 0, 0, 0, 162, 163, 3, 36,
+    18, 0, 163, 164, 3, 48, 24, 0, 164, 165, 3, 2, 1, 0, 165, 184, 1, 0, 0, 0, 166, 184, 3, 10, 5,
+    0, 167, 168, 3, 36, 18, 0, 168, 169, 3, 48, 24, 0, 169, 184, 1, 0, 0, 0, 170, 172, 5, 6, 0, 0,
+    171, 170, 1, 0, 0, 0, 171, 172, 1, 0, 0, 0, 172, 173, 1, 0, 0, 0, 173, 174, 5, 5, 0, 0, 174,
+    184, 3, 50, 25, 0, 175, 176, 5, 5, 0, 0, 176, 177, 3, 58, 29, 0, 177, 178, 3, 44, 22, 0, 178,
+    184, 1, 0, 0, 0, 179, 180, 3, 34, 17, 0, 180, 181, 3, 22, 11, 0, 181, 182, 3, 44, 22, 0, 182,
+    184, 1, 0, 0, 0, 183, 141, 1, 0, 0, 0, 183, 147, 1, 0, 0, 0, 183, 151, 1, 0, 0, 0, 183, 154, 1,
+    0, 0, 0, 183, 158, 1, 0, 0, 0, 183, 162, 1, 0, 0, 0, 183, 166, 1, 0, 0, 0, 183, 167, 1, 0, 0, 0,
+    183, 171, 1, 0, 0, 0, 183, 175, 1, 0, 0, 0, 183, 179, 1, 0, 0, 0, 184, 9, 1, 0, 0, 0, 185, 186,
+    3, 36, 18, 0, 186, 187, 3, 48, 24, 0, 187, 188, 3, 38, 19, 0, 188, 189, 3, 44, 22, 0, 189, 11,
+    1, 0, 0, 0, 190, 191, 3, 16, 8, 0, 191, 192, 3, 52, 26, 0, 192, 13, 1, 0, 0, 0, 193, 194, 3, 18,
+    9, 0, 194, 195, 3, 54, 27, 0, 195, 15, 1, 0, 0, 0, 196, 198, 5, 6, 0, 0, 197, 196, 1, 0, 0, 0,
+    197, 198, 1, 0, 0, 0, 198, 199, 1, 0, 0, 0, 199, 200, 5, 5, 0, 0, 200, 17, 1, 0, 0, 0, 201, 203,
+    5, 5, 0, 0, 202, 204, 5, 6, 0, 0, 203, 202, 1, 0, 0, 0, 203, 204, 1, 0, 0, 0, 204, 19, 1, 0, 0,
+    0, 205, 206, 5, 15, 0, 0, 206, 21, 1, 0, 0, 0, 207, 208, 3, 58, 29, 0, 208, 23, 1, 0, 0, 0, 209,
+    210, 5, 15, 0, 0, 210, 25, 1, 0, 0, 0, 211, 212, 5, 17, 0, 0, 212, 213, 3, 48, 24, 0, 213, 27,
+    1, 0, 0, 0, 214, 215, 5, 2, 0, 0, 215, 29, 1, 0, 0, 0, 216, 217, 5, 1, 0, 0, 217, 31, 1, 0, 0,
+    0, 218, 219, 5, 3, 0, 0, 219, 33, 1, 0, 0, 0, 220, 221, 5, 7, 0, 0, 221, 35, 1, 0, 0, 0, 222,
+    223, 5, 8, 0, 0, 223, 37, 1, 0, 0, 0, 224, 225, 5, 9, 0, 0, 225, 39, 1, 0, 0, 0, 226, 228, 5,
+    16, 0, 0, 227, 226, 1, 0, 0, 0, 228, 231, 1, 0, 0, 0, 229, 227, 1, 0, 0, 0, 229, 230, 1, 0, 0,
+    0, 230, 41, 1, 0, 0, 0, 231, 229, 1, 0, 0, 0, 232, 234, 5, 16, 0, 0, 233, 232, 1, 0, 0, 0, 234,
+    237, 1, 0, 0, 0, 235, 233, 1, 0, 0, 0, 235, 236, 1, 0, 0, 0, 236, 43, 1, 0, 0, 0, 237, 235, 1,
+    0, 0, 0, 238, 240, 5, 16, 0, 0, 239, 238, 1, 0, 0, 0, 240, 243, 1, 0, 0, 0, 241, 239, 1, 0, 0,
+    0, 241, 242, 1, 0, 0, 0, 242, 45, 1, 0, 0, 0, 243, 241, 1, 0, 0, 0, 244, 246, 5, 16, 0, 0, 245,
+    244, 1, 0, 0, 0, 246, 249, 1, 0, 0, 0, 247, 245, 1, 0, 0, 0, 247, 248, 1, 0, 0, 0, 248, 47, 1,
+    0, 0, 0, 249, 247, 1, 0, 0, 0, 250, 252, 5, 16, 0, 0, 251, 250, 1, 0, 0, 0, 252, 255, 1, 0, 0,
+    0, 253, 251, 1, 0, 0, 0, 253, 254, 1, 0, 0, 0, 254, 49, 1, 0, 0, 0, 255, 253, 1, 0, 0, 0, 256,
+    258, 5, 16, 0, 0, 257, 256, 1, 0, 0, 0, 258, 261, 1, 0, 0, 0, 259, 257, 1, 0, 0, 0, 259, 260, 1,
+    0, 0, 0, 260, 51, 1, 0, 0, 0, 261, 259, 1, 0, 0, 0, 262, 264, 5, 16, 0, 0, 263, 262, 1, 0, 0, 0,
+    264, 267, 1, 0, 0, 0, 265, 263, 1, 0, 0, 0, 265, 266, 1, 0, 0, 0, 266, 53, 1, 0, 0, 0, 267, 265,
+    1, 0, 0, 0, 268, 270, 5, 16, 0, 0, 269, 268, 1, 0, 0, 0, 270, 273, 1, 0, 0, 0, 271, 269, 1, 0,
+    0, 0, 271, 272, 1, 0, 0, 0, 272, 55, 1, 0, 0, 0, 273, 271, 1, 0, 0, 0, 274, 276, 5, 16, 0, 0,
+    275, 274, 1, 0, 0, 0, 276, 279, 1, 0, 0, 0, 277, 275, 1, 0, 0, 0, 277, 278, 1, 0, 0, 0, 278, 57,
+    1, 0, 0, 0, 279, 277, 1, 0, 0, 0, 280, 287, 5, 10, 0, 0, 281, 287, 5, 11, 0, 0, 282, 287, 5, 12,
+    0, 0, 283, 287, 5, 15, 0, 0, 284, 287, 5, 13, 0, 0, 285, 287, 5, 6, 0, 0, 286, 280, 1, 0, 0, 0,
+    286, 281, 1, 0, 0, 0, 286, 282, 1, 0, 0, 0, 286, 283, 1, 0, 0, 0, 286, 284, 1, 0, 0, 0, 286,
+    285, 1, 0, 0, 0, 287, 59, 1, 0, 0, 0, 19, 88, 114, 116, 124, 133, 171, 183, 197, 203, 229, 235,
+    241, 247, 253, 259, 265, 271, 277, 286,
+  ];
+
+  private static __ATN: antlr.ATN;
+  public static get _ATN(): antlr.ATN {
     if (!SelectionAutoCompleteParser.__ATN) {
-      SelectionAutoCompleteParser.__ATN = new ATNDeserializer().deserialize(
-        Utils.toCharArray(SelectionAutoCompleteParser._serializedATN),
+      SelectionAutoCompleteParser.__ATN = new antlr.ATNDeserializer().deserialize(
+        SelectionAutoCompleteParser._serializedATN,
       );
     }
 
     return SelectionAutoCompleteParser.__ATN;
   }
+
+  private static readonly vocabulary = new antlr.Vocabulary(
+    SelectionAutoCompleteParser.literalNames,
+    SelectionAutoCompleteParser.symbolicNames,
+    [],
+  );
+
+  public override get vocabulary(): antlr.Vocabulary {
+    return SelectionAutoCompleteParser.vocabulary;
+  }
+
+  private static readonly decisionsToDFA = SelectionAutoCompleteParser._ATN.decisionToState.map(
+    (ds: antlr.DecisionState, index: number) => new antlr.DFA(ds, index),
+  );
 }
 
-export class StartContext extends ParserRuleContext {
-  public expr(): ExprContext {
-    return this.getRuleContext(0, ExprContext);
-  }
-  public EOF(): TerminalNode {
-    return this.getToken(SelectionAutoCompleteParser.EOF, 0);
-  }
-  constructor(parent: ParserRuleContext | undefined, invokingState: number) {
+export class StartContext extends antlr.ParserRuleContext {
+  public constructor(parent: antlr.ParserRuleContext | null, invokingState: number) {
     super(parent, invokingState);
   }
-  // @Override
-  public get ruleIndex(): number {
+  public expr(): ExprContext {
+    return this.getRuleContext(0, ExprContext)!;
+  }
+  public EOF(): antlr.TerminalNode {
+    return this.getToken(SelectionAutoCompleteParser.EOF, 0)!;
+  }
+  public override get ruleIndex(): number {
     return SelectionAutoCompleteParser.RULE_start;
   }
-  // @Override
-  public enterRule(listener: SelectionAutoCompleteListener): void {
+  public override enterRule(listener: SelectionAutoCompleteListener): void {
     if (listener.enterStart) {
       listener.enterStart(this);
     }
   }
-  // @Override
-  public exitRule(listener: SelectionAutoCompleteListener): void {
+  public override exitRule(listener: SelectionAutoCompleteListener): void {
     if (listener.exitStart) {
       listener.exitStart(this);
     }
   }
-  // @Override
-  public accept<Result>(visitor: SelectionAutoCompleteVisitor<Result>): Result {
+  public override accept<Result>(visitor: SelectionAutoCompleteVisitor<Result>): Result | null {
     if (visitor.visitStart) {
       return visitor.visitStart(this);
     } else {
@@ -1800,521 +1671,36 @@ export class StartContext extends ParserRuleContext {
   }
 }
 
-export class ExprContext extends ParserRuleContext {
-  constructor(parent: ParserRuleContext | undefined, invokingState: number) {
+export class ExprContext extends antlr.ParserRuleContext {
+  public constructor(parent: antlr.ParserRuleContext | null, invokingState: number) {
     super(parent, invokingState);
   }
-  // @Override
-  public get ruleIndex(): number {
+  public override get ruleIndex(): number {
     return SelectionAutoCompleteParser.RULE_expr;
   }
-  public copyFrom(ctx: ExprContext): void {
+  public override copyFrom(ctx: ExprContext): void {
     super.copyFrom(ctx);
   }
 }
-export class TraversalAllowedExpressionContext extends ExprContext {
-  public traversalAllowedExpr(): TraversalAllowedExprContext {
-    return this.getRuleContext(0, TraversalAllowedExprContext);
-  }
-  constructor(ctx: ExprContext) {
-    super(ctx.parent, ctx.invokingState);
-    this.copyFrom(ctx);
-  }
-  // @Override
-  public enterRule(listener: SelectionAutoCompleteListener): void {
-    if (listener.enterTraversalAllowedExpression) {
-      listener.enterTraversalAllowedExpression(this);
-    }
-  }
-  // @Override
-  public exitRule(listener: SelectionAutoCompleteListener): void {
-    if (listener.exitTraversalAllowedExpression) {
-      listener.exitTraversalAllowedExpression(this);
-    }
-  }
-  // @Override
-  public accept<Result>(visitor: SelectionAutoCompleteVisitor<Result>): Result {
-    if (visitor.visitTraversalAllowedExpression) {
-      return visitor.visitTraversalAllowedExpression(this);
-    } else {
-      return visitor.visitChildren(this);
-    }
-  }
-}
-export class UpAndDownTraversalExpressionContext extends ExprContext {
-  public upTraversalExpr(): UpTraversalExprContext {
-    return this.getRuleContext(0, UpTraversalExprContext);
-  }
-  public traversalAllowedExpr(): TraversalAllowedExprContext {
-    return this.getRuleContext(0, TraversalAllowedExprContext);
-  }
-  public downTraversalExpr(): DownTraversalExprContext {
-    return this.getRuleContext(0, DownTraversalExprContext);
-  }
-  constructor(ctx: ExprContext) {
-    super(ctx.parent, ctx.invokingState);
-    this.copyFrom(ctx);
-  }
-  // @Override
-  public enterRule(listener: SelectionAutoCompleteListener): void {
-    if (listener.enterUpAndDownTraversalExpression) {
-      listener.enterUpAndDownTraversalExpression(this);
-    }
-  }
-  // @Override
-  public exitRule(listener: SelectionAutoCompleteListener): void {
-    if (listener.exitUpAndDownTraversalExpression) {
-      listener.exitUpAndDownTraversalExpression(this);
-    }
-  }
-  // @Override
-  public accept<Result>(visitor: SelectionAutoCompleteVisitor<Result>): Result {
-    if (visitor.visitUpAndDownTraversalExpression) {
-      return visitor.visitUpAndDownTraversalExpression(this);
-    } else {
-      return visitor.visitChildren(this);
-    }
-  }
-}
-export class UpTraversalExpressionContext extends ExprContext {
-  public upTraversalExpr(): UpTraversalExprContext {
-    return this.getRuleContext(0, UpTraversalExprContext);
-  }
-  public traversalAllowedExpr(): TraversalAllowedExprContext {
-    return this.getRuleContext(0, TraversalAllowedExprContext);
-  }
-  constructor(ctx: ExprContext) {
-    super(ctx.parent, ctx.invokingState);
-    this.copyFrom(ctx);
-  }
-  // @Override
-  public enterRule(listener: SelectionAutoCompleteListener): void {
-    if (listener.enterUpTraversalExpression) {
-      listener.enterUpTraversalExpression(this);
-    }
-  }
-  // @Override
-  public exitRule(listener: SelectionAutoCompleteListener): void {
-    if (listener.exitUpTraversalExpression) {
-      listener.exitUpTraversalExpression(this);
-    }
-  }
-  // @Override
-  public accept<Result>(visitor: SelectionAutoCompleteVisitor<Result>): Result {
-    if (visitor.visitUpTraversalExpression) {
-      return visitor.visitUpTraversalExpression(this);
-    } else {
-      return visitor.visitChildren(this);
-    }
-  }
-}
-export class DownTraversalExpressionContext extends ExprContext {
-  public traversalAllowedExpr(): TraversalAllowedExprContext {
-    return this.getRuleContext(0, TraversalAllowedExprContext);
-  }
-  public downTraversalExpr(): DownTraversalExprContext {
-    return this.getRuleContext(0, DownTraversalExprContext);
-  }
-  constructor(ctx: ExprContext) {
-    super(ctx.parent, ctx.invokingState);
-    this.copyFrom(ctx);
-  }
-  // @Override
-  public enterRule(listener: SelectionAutoCompleteListener): void {
-    if (listener.enterDownTraversalExpression) {
-      listener.enterDownTraversalExpression(this);
-    }
-  }
-  // @Override
-  public exitRule(listener: SelectionAutoCompleteListener): void {
-    if (listener.exitDownTraversalExpression) {
-      listener.exitDownTraversalExpression(this);
-    }
-  }
-  // @Override
-  public accept<Result>(visitor: SelectionAutoCompleteVisitor<Result>): Result {
-    if (visitor.visitDownTraversalExpression) {
-      return visitor.visitDownTraversalExpression(this);
-    } else {
-      return visitor.visitChildren(this);
-    }
-  }
-}
-export class NotExpressionContext extends ExprContext {
-  public notToken(): NotTokenContext {
-    return this.getRuleContext(0, NotTokenContext);
-  }
-  public postNotOperatorWhitespace(): PostNotOperatorWhitespaceContext {
-    return this.getRuleContext(0, PostNotOperatorWhitespaceContext);
-  }
-  public expr(): ExprContext {
-    return this.getRuleContext(0, ExprContext);
-  }
-  constructor(ctx: ExprContext) {
-    super(ctx.parent, ctx.invokingState);
-    this.copyFrom(ctx);
-  }
-  // @Override
-  public enterRule(listener: SelectionAutoCompleteListener): void {
-    if (listener.enterNotExpression) {
-      listener.enterNotExpression(this);
-    }
-  }
-  // @Override
-  public exitRule(listener: SelectionAutoCompleteListener): void {
-    if (listener.exitNotExpression) {
-      listener.exitNotExpression(this);
-    }
-  }
-  // @Override
-  public accept<Result>(visitor: SelectionAutoCompleteVisitor<Result>): Result {
-    if (visitor.visitNotExpression) {
-      return visitor.visitNotExpression(this);
-    } else {
-      return visitor.visitChildren(this);
-    }
-  }
-}
-export class AndExpressionContext extends ExprContext {
-  public expr(): ExprContext[];
-  public expr(i: number): ExprContext;
-  public expr(i?: number): ExprContext | ExprContext[] {
-    if (i === undefined) {
-      return this.getRuleContexts(ExprContext);
-    } else {
-      return this.getRuleContext(i, ExprContext);
-    }
-  }
-  public andToken(): AndTokenContext {
-    return this.getRuleContext(0, AndTokenContext);
-  }
-  public postLogicalOperatorWhitespace(): PostLogicalOperatorWhitespaceContext {
-    return this.getRuleContext(0, PostLogicalOperatorWhitespaceContext);
-  }
-  constructor(ctx: ExprContext) {
-    super(ctx.parent, ctx.invokingState);
-    this.copyFrom(ctx);
-  }
-  // @Override
-  public enterRule(listener: SelectionAutoCompleteListener): void {
-    if (listener.enterAndExpression) {
-      listener.enterAndExpression(this);
-    }
-  }
-  // @Override
-  public exitRule(listener: SelectionAutoCompleteListener): void {
-    if (listener.exitAndExpression) {
-      listener.exitAndExpression(this);
-    }
-  }
-  // @Override
-  public accept<Result>(visitor: SelectionAutoCompleteVisitor<Result>): Result {
-    if (visitor.visitAndExpression) {
-      return visitor.visitAndExpression(this);
-    } else {
-      return visitor.visitChildren(this);
-    }
-  }
-}
-export class OrExpressionContext extends ExprContext {
-  public expr(): ExprContext[];
-  public expr(i: number): ExprContext;
-  public expr(i?: number): ExprContext | ExprContext[] {
-    if (i === undefined) {
-      return this.getRuleContexts(ExprContext);
-    } else {
-      return this.getRuleContext(i, ExprContext);
-    }
-  }
-  public orToken(): OrTokenContext {
-    return this.getRuleContext(0, OrTokenContext);
-  }
-  public postLogicalOperatorWhitespace(): PostLogicalOperatorWhitespaceContext {
-    return this.getRuleContext(0, PostLogicalOperatorWhitespaceContext);
-  }
-  constructor(ctx: ExprContext) {
-    super(ctx.parent, ctx.invokingState);
-    this.copyFrom(ctx);
-  }
-  // @Override
-  public enterRule(listener: SelectionAutoCompleteListener): void {
-    if (listener.enterOrExpression) {
-      listener.enterOrExpression(this);
-    }
-  }
-  // @Override
-  public exitRule(listener: SelectionAutoCompleteListener): void {
-    if (listener.exitOrExpression) {
-      listener.exitOrExpression(this);
-    }
-  }
-  // @Override
-  public accept<Result>(visitor: SelectionAutoCompleteVisitor<Result>): Result {
-    if (visitor.visitOrExpression) {
-      return visitor.visitOrExpression(this);
-    } else {
-      return visitor.visitChildren(this);
-    }
-  }
-}
-export class CommaExpressionWrapper1Context extends ExprContext {
-  public expr(): ExprContext[];
-  public expr(i: number): ExprContext;
-  public expr(i?: number): ExprContext | ExprContext[] {
-    if (i === undefined) {
-      return this.getRuleContexts(ExprContext);
-    } else {
-      return this.getRuleContext(i, ExprContext);
-    }
-  }
-  public commaToken(): CommaTokenContext {
-    return this.getRuleContext(0, CommaTokenContext);
-  }
-  constructor(ctx: ExprContext) {
-    super(ctx.parent, ctx.invokingState);
-    this.copyFrom(ctx);
-  }
-  // @Override
-  public enterRule(listener: SelectionAutoCompleteListener): void {
-    if (listener.enterCommaExpressionWrapper1) {
-      listener.enterCommaExpressionWrapper1(this);
-    }
-  }
-  // @Override
-  public exitRule(listener: SelectionAutoCompleteListener): void {
-    if (listener.exitCommaExpressionWrapper1) {
-      listener.exitCommaExpressionWrapper1(this);
-    }
-  }
-  // @Override
-  public accept<Result>(visitor: SelectionAutoCompleteVisitor<Result>): Result {
-    if (visitor.visitCommaExpressionWrapper1) {
-      return visitor.visitCommaExpressionWrapper1(this);
-    } else {
-      return visitor.visitChildren(this);
-    }
-  }
-}
-export class IncompleteAndExpressionContext extends ExprContext {
-  public expr(): ExprContext {
-    return this.getRuleContext(0, ExprContext);
-  }
-  public andToken(): AndTokenContext {
-    return this.getRuleContext(0, AndTokenContext);
-  }
-  public postLogicalOperatorWhitespace(): PostLogicalOperatorWhitespaceContext {
-    return this.getRuleContext(0, PostLogicalOperatorWhitespaceContext);
-  }
-  constructor(ctx: ExprContext) {
-    super(ctx.parent, ctx.invokingState);
-    this.copyFrom(ctx);
-  }
-  // @Override
-  public enterRule(listener: SelectionAutoCompleteListener): void {
-    if (listener.enterIncompleteAndExpression) {
-      listener.enterIncompleteAndExpression(this);
-    }
-  }
-  // @Override
-  public exitRule(listener: SelectionAutoCompleteListener): void {
-    if (listener.exitIncompleteAndExpression) {
-      listener.exitIncompleteAndExpression(this);
-    }
-  }
-  // @Override
-  public accept<Result>(visitor: SelectionAutoCompleteVisitor<Result>): Result {
-    if (visitor.visitIncompleteAndExpression) {
-      return visitor.visitIncompleteAndExpression(this);
-    } else {
-      return visitor.visitChildren(this);
-    }
-  }
-}
-export class IncompleteOrExpressionContext extends ExprContext {
-  public expr(): ExprContext {
-    return this.getRuleContext(0, ExprContext);
-  }
-  public orToken(): OrTokenContext {
-    return this.getRuleContext(0, OrTokenContext);
-  }
-  public postLogicalOperatorWhitespace(): PostLogicalOperatorWhitespaceContext {
-    return this.getRuleContext(0, PostLogicalOperatorWhitespaceContext);
-  }
-  constructor(ctx: ExprContext) {
-    super(ctx.parent, ctx.invokingState);
-    this.copyFrom(ctx);
-  }
-  // @Override
-  public enterRule(listener: SelectionAutoCompleteListener): void {
-    if (listener.enterIncompleteOrExpression) {
-      listener.enterIncompleteOrExpression(this);
-    }
-  }
-  // @Override
-  public exitRule(listener: SelectionAutoCompleteListener): void {
-    if (listener.exitIncompleteOrExpression) {
-      listener.exitIncompleteOrExpression(this);
-    }
-  }
-  // @Override
-  public accept<Result>(visitor: SelectionAutoCompleteVisitor<Result>): Result {
-    if (visitor.visitIncompleteOrExpression) {
-      return visitor.visitIncompleteOrExpression(this);
-    } else {
-      return visitor.visitChildren(this);
-    }
-  }
-}
-export class CommaExpressionWrapper2Context extends ExprContext {
-  public expr(): ExprContext {
-    return this.getRuleContext(0, ExprContext);
-  }
-  public commaToken(): CommaTokenContext {
-    return this.getRuleContext(0, CommaTokenContext);
-  }
-  constructor(ctx: ExprContext) {
-    super(ctx.parent, ctx.invokingState);
-    this.copyFrom(ctx);
-  }
-  // @Override
-  public enterRule(listener: SelectionAutoCompleteListener): void {
-    if (listener.enterCommaExpressionWrapper2) {
-      listener.enterCommaExpressionWrapper2(this);
-    }
-  }
-  // @Override
-  public exitRule(listener: SelectionAutoCompleteListener): void {
-    if (listener.exitCommaExpressionWrapper2) {
-      listener.exitCommaExpressionWrapper2(this);
-    }
-  }
-  // @Override
-  public accept<Result>(visitor: SelectionAutoCompleteVisitor<Result>): Result {
-    if (visitor.visitCommaExpressionWrapper2) {
-      return visitor.visitCommaExpressionWrapper2(this);
-    } else {
-      return visitor.visitChildren(this);
-    }
-  }
-}
-export class IncompleteNotExpressionContext extends ExprContext {
-  public notToken(): NotTokenContext {
-    return this.getRuleContext(0, NotTokenContext);
-  }
-  public postNotOperatorWhitespace(): PostNotOperatorWhitespaceContext {
-    return this.getRuleContext(0, PostNotOperatorWhitespaceContext);
-  }
-  constructor(ctx: ExprContext) {
-    super(ctx.parent, ctx.invokingState);
-    this.copyFrom(ctx);
-  }
-  // @Override
-  public enterRule(listener: SelectionAutoCompleteListener): void {
-    if (listener.enterIncompleteNotExpression) {
-      listener.enterIncompleteNotExpression(this);
-    }
-  }
-  // @Override
-  public exitRule(listener: SelectionAutoCompleteListener): void {
-    if (listener.exitIncompleteNotExpression) {
-      listener.exitIncompleteNotExpression(this);
-    }
-  }
-  // @Override
-  public accept<Result>(visitor: SelectionAutoCompleteVisitor<Result>): Result {
-    if (visitor.visitIncompleteNotExpression) {
-      return visitor.visitIncompleteNotExpression(this);
-    } else {
-      return visitor.visitChildren(this);
-    }
-  }
-}
-export class AllExpressionContext extends ExprContext {
-  public STAR(): TerminalNode {
-    return this.getToken(SelectionAutoCompleteParser.STAR, 0);
-  }
-  public postExpressionWhitespace(): PostExpressionWhitespaceContext {
-    return this.getRuleContext(0, PostExpressionWhitespaceContext);
-  }
-  constructor(ctx: ExprContext) {
-    super(ctx.parent, ctx.invokingState);
-    this.copyFrom(ctx);
-  }
-  // @Override
-  public enterRule(listener: SelectionAutoCompleteListener): void {
-    if (listener.enterAllExpression) {
-      listener.enterAllExpression(this);
-    }
-  }
-  // @Override
-  public exitRule(listener: SelectionAutoCompleteListener): void {
-    if (listener.exitAllExpression) {
-      listener.exitAllExpression(this);
-    }
-  }
-  // @Override
-  public accept<Result>(visitor: SelectionAutoCompleteVisitor<Result>): Result {
-    if (visitor.visitAllExpression) {
-      return visitor.visitAllExpression(this);
-    } else {
-      return visitor.visitChildren(this);
-    }
-  }
-}
-export class UnmatchedValueContext extends ExprContext {
-  public value(): ValueContext {
-    return this.getRuleContext(0, ValueContext);
-  }
-  public postExpressionWhitespace(): PostExpressionWhitespaceContext {
-    return this.getRuleContext(0, PostExpressionWhitespaceContext);
-  }
-  constructor(ctx: ExprContext) {
-    super(ctx.parent, ctx.invokingState);
-    this.copyFrom(ctx);
-  }
-  // @Override
-  public enterRule(listener: SelectionAutoCompleteListener): void {
-    if (listener.enterUnmatchedValue) {
-      listener.enterUnmatchedValue(this);
-    }
-  }
-  // @Override
-  public exitRule(listener: SelectionAutoCompleteListener): void {
-    if (listener.exitUnmatchedValue) {
-      listener.exitUnmatchedValue(this);
-    }
-  }
-  // @Override
-  public accept<Result>(visitor: SelectionAutoCompleteVisitor<Result>): Result {
-    if (visitor.visitUnmatchedValue) {
-      return visitor.visitUnmatchedValue(this);
-    } else {
-      return visitor.visitChildren(this);
-    }
-  }
-}
 export class CommaExpressionWrapper3Context extends ExprContext {
-  public commaToken(): CommaTokenContext {
-    return this.getRuleContext(0, CommaTokenContext);
-  }
-  constructor(ctx: ExprContext) {
+  public constructor(ctx: ExprContext) {
     super(ctx.parent, ctx.invokingState);
-    this.copyFrom(ctx);
+    super.copyFrom(ctx);
   }
-  // @Override
-  public enterRule(listener: SelectionAutoCompleteListener): void {
+  public commaToken(): CommaTokenContext {
+    return this.getRuleContext(0, CommaTokenContext)!;
+  }
+  public override enterRule(listener: SelectionAutoCompleteListener): void {
     if (listener.enterCommaExpressionWrapper3) {
       listener.enterCommaExpressionWrapper3(this);
     }
   }
-  // @Override
-  public exitRule(listener: SelectionAutoCompleteListener): void {
+  public override exitRule(listener: SelectionAutoCompleteListener): void {
     if (listener.exitCommaExpressionWrapper3) {
       listener.exitCommaExpressionWrapper3(this);
     }
   }
-  // @Override
-  public accept<Result>(visitor: SelectionAutoCompleteVisitor<Result>): Result {
+  public override accept<Result>(visitor: SelectionAutoCompleteVisitor<Result>): Result | null {
     if (visitor.visitCommaExpressionWrapper3) {
       return visitor.visitCommaExpressionWrapper3(this);
     } else {
@@ -2322,120 +1708,476 @@ export class CommaExpressionWrapper3Context extends ExprContext {
     }
   }
 }
+export class UpTraversalExpressionContext extends ExprContext {
+  public constructor(ctx: ExprContext) {
+    super(ctx.parent, ctx.invokingState);
+    super.copyFrom(ctx);
+  }
+  public upTraversalExpr(): UpTraversalExprContext {
+    return this.getRuleContext(0, UpTraversalExprContext)!;
+  }
+  public traversalAllowedExpr(): TraversalAllowedExprContext {
+    return this.getRuleContext(0, TraversalAllowedExprContext)!;
+  }
+  public override enterRule(listener: SelectionAutoCompleteListener): void {
+    if (listener.enterUpTraversalExpression) {
+      listener.enterUpTraversalExpression(this);
+    }
+  }
+  public override exitRule(listener: SelectionAutoCompleteListener): void {
+    if (listener.exitUpTraversalExpression) {
+      listener.exitUpTraversalExpression(this);
+    }
+  }
+  public override accept<Result>(visitor: SelectionAutoCompleteVisitor<Result>): Result | null {
+    if (visitor.visitUpTraversalExpression) {
+      return visitor.visitUpTraversalExpression(this);
+    } else {
+      return visitor.visitChildren(this);
+    }
+  }
+}
+export class CommaExpressionWrapper2Context extends ExprContext {
+  public constructor(ctx: ExprContext) {
+    super(ctx.parent, ctx.invokingState);
+    super.copyFrom(ctx);
+  }
+  public expr(): ExprContext {
+    return this.getRuleContext(0, ExprContext)!;
+  }
+  public commaToken(): CommaTokenContext {
+    return this.getRuleContext(0, CommaTokenContext)!;
+  }
+  public override enterRule(listener: SelectionAutoCompleteListener): void {
+    if (listener.enterCommaExpressionWrapper2) {
+      listener.enterCommaExpressionWrapper2(this);
+    }
+  }
+  public override exitRule(listener: SelectionAutoCompleteListener): void {
+    if (listener.exitCommaExpressionWrapper2) {
+      listener.exitCommaExpressionWrapper2(this);
+    }
+  }
+  public override accept<Result>(visitor: SelectionAutoCompleteVisitor<Result>): Result | null {
+    if (visitor.visitCommaExpressionWrapper2) {
+      return visitor.visitCommaExpressionWrapper2(this);
+    } else {
+      return visitor.visitChildren(this);
+    }
+  }
+}
+export class CommaExpressionWrapper1Context extends ExprContext {
+  public constructor(ctx: ExprContext) {
+    super(ctx.parent, ctx.invokingState);
+    super.copyFrom(ctx);
+  }
+  public expr(): ExprContext[];
+  public expr(i: number): ExprContext | null;
+  public expr(i?: number): ExprContext[] | ExprContext | null {
+    if (i === undefined) {
+      return this.getRuleContexts(ExprContext);
+    }
 
-export class TraversalAllowedExprContext extends ParserRuleContext {
-  constructor(parent: ParserRuleContext | undefined, invokingState: number) {
+    return this.getRuleContext(i, ExprContext);
+  }
+  public commaToken(): CommaTokenContext {
+    return this.getRuleContext(0, CommaTokenContext)!;
+  }
+  public override enterRule(listener: SelectionAutoCompleteListener): void {
+    if (listener.enterCommaExpressionWrapper1) {
+      listener.enterCommaExpressionWrapper1(this);
+    }
+  }
+  public override exitRule(listener: SelectionAutoCompleteListener): void {
+    if (listener.exitCommaExpressionWrapper1) {
+      listener.exitCommaExpressionWrapper1(this);
+    }
+  }
+  public override accept<Result>(visitor: SelectionAutoCompleteVisitor<Result>): Result | null {
+    if (visitor.visitCommaExpressionWrapper1) {
+      return visitor.visitCommaExpressionWrapper1(this);
+    } else {
+      return visitor.visitChildren(this);
+    }
+  }
+}
+export class AllExpressionContext extends ExprContext {
+  public constructor(ctx: ExprContext) {
+    super(ctx.parent, ctx.invokingState);
+    super.copyFrom(ctx);
+  }
+  public STAR(): antlr.TerminalNode {
+    return this.getToken(SelectionAutoCompleteParser.STAR, 0)!;
+  }
+  public postExpressionWhitespace(): PostExpressionWhitespaceContext {
+    return this.getRuleContext(0, PostExpressionWhitespaceContext)!;
+  }
+  public override enterRule(listener: SelectionAutoCompleteListener): void {
+    if (listener.enterAllExpression) {
+      listener.enterAllExpression(this);
+    }
+  }
+  public override exitRule(listener: SelectionAutoCompleteListener): void {
+    if (listener.exitAllExpression) {
+      listener.exitAllExpression(this);
+    }
+  }
+  public override accept<Result>(visitor: SelectionAutoCompleteVisitor<Result>): Result | null {
+    if (visitor.visitAllExpression) {
+      return visitor.visitAllExpression(this);
+    } else {
+      return visitor.visitChildren(this);
+    }
+  }
+}
+export class NotExpressionContext extends ExprContext {
+  public constructor(ctx: ExprContext) {
+    super(ctx.parent, ctx.invokingState);
+    super.copyFrom(ctx);
+  }
+  public notToken(): NotTokenContext {
+    return this.getRuleContext(0, NotTokenContext)!;
+  }
+  public postNotOperatorWhitespace(): PostNotOperatorWhitespaceContext {
+    return this.getRuleContext(0, PostNotOperatorWhitespaceContext)!;
+  }
+  public expr(): ExprContext {
+    return this.getRuleContext(0, ExprContext)!;
+  }
+  public override enterRule(listener: SelectionAutoCompleteListener): void {
+    if (listener.enterNotExpression) {
+      listener.enterNotExpression(this);
+    }
+  }
+  public override exitRule(listener: SelectionAutoCompleteListener): void {
+    if (listener.exitNotExpression) {
+      listener.exitNotExpression(this);
+    }
+  }
+  public override accept<Result>(visitor: SelectionAutoCompleteVisitor<Result>): Result | null {
+    if (visitor.visitNotExpression) {
+      return visitor.visitNotExpression(this);
+    } else {
+      return visitor.visitChildren(this);
+    }
+  }
+}
+export class OrExpressionContext extends ExprContext {
+  public constructor(ctx: ExprContext) {
+    super(ctx.parent, ctx.invokingState);
+    super.copyFrom(ctx);
+  }
+  public expr(): ExprContext[];
+  public expr(i: number): ExprContext | null;
+  public expr(i?: number): ExprContext[] | ExprContext | null {
+    if (i === undefined) {
+      return this.getRuleContexts(ExprContext);
+    }
+
+    return this.getRuleContext(i, ExprContext);
+  }
+  public orToken(): OrTokenContext {
+    return this.getRuleContext(0, OrTokenContext)!;
+  }
+  public postLogicalOperatorWhitespace(): PostLogicalOperatorWhitespaceContext {
+    return this.getRuleContext(0, PostLogicalOperatorWhitespaceContext)!;
+  }
+  public override enterRule(listener: SelectionAutoCompleteListener): void {
+    if (listener.enterOrExpression) {
+      listener.enterOrExpression(this);
+    }
+  }
+  public override exitRule(listener: SelectionAutoCompleteListener): void {
+    if (listener.exitOrExpression) {
+      listener.exitOrExpression(this);
+    }
+  }
+  public override accept<Result>(visitor: SelectionAutoCompleteVisitor<Result>): Result | null {
+    if (visitor.visitOrExpression) {
+      return visitor.visitOrExpression(this);
+    } else {
+      return visitor.visitChildren(this);
+    }
+  }
+}
+export class UpAndDownTraversalExpressionContext extends ExprContext {
+  public constructor(ctx: ExprContext) {
+    super(ctx.parent, ctx.invokingState);
+    super.copyFrom(ctx);
+  }
+  public upTraversalExpr(): UpTraversalExprContext {
+    return this.getRuleContext(0, UpTraversalExprContext)!;
+  }
+  public traversalAllowedExpr(): TraversalAllowedExprContext {
+    return this.getRuleContext(0, TraversalAllowedExprContext)!;
+  }
+  public downTraversalExpr(): DownTraversalExprContext {
+    return this.getRuleContext(0, DownTraversalExprContext)!;
+  }
+  public override enterRule(listener: SelectionAutoCompleteListener): void {
+    if (listener.enterUpAndDownTraversalExpression) {
+      listener.enterUpAndDownTraversalExpression(this);
+    }
+  }
+  public override exitRule(listener: SelectionAutoCompleteListener): void {
+    if (listener.exitUpAndDownTraversalExpression) {
+      listener.exitUpAndDownTraversalExpression(this);
+    }
+  }
+  public override accept<Result>(visitor: SelectionAutoCompleteVisitor<Result>): Result | null {
+    if (visitor.visitUpAndDownTraversalExpression) {
+      return visitor.visitUpAndDownTraversalExpression(this);
+    } else {
+      return visitor.visitChildren(this);
+    }
+  }
+}
+export class UnmatchedValueContext extends ExprContext {
+  public constructor(ctx: ExprContext) {
+    super(ctx.parent, ctx.invokingState);
+    super.copyFrom(ctx);
+  }
+  public value(): ValueContext {
+    return this.getRuleContext(0, ValueContext)!;
+  }
+  public postExpressionWhitespace(): PostExpressionWhitespaceContext {
+    return this.getRuleContext(0, PostExpressionWhitespaceContext)!;
+  }
+  public override enterRule(listener: SelectionAutoCompleteListener): void {
+    if (listener.enterUnmatchedValue) {
+      listener.enterUnmatchedValue(this);
+    }
+  }
+  public override exitRule(listener: SelectionAutoCompleteListener): void {
+    if (listener.exitUnmatchedValue) {
+      listener.exitUnmatchedValue(this);
+    }
+  }
+  public override accept<Result>(visitor: SelectionAutoCompleteVisitor<Result>): Result | null {
+    if (visitor.visitUnmatchedValue) {
+      return visitor.visitUnmatchedValue(this);
+    } else {
+      return visitor.visitChildren(this);
+    }
+  }
+}
+export class AndExpressionContext extends ExprContext {
+  public constructor(ctx: ExprContext) {
+    super(ctx.parent, ctx.invokingState);
+    super.copyFrom(ctx);
+  }
+  public expr(): ExprContext[];
+  public expr(i: number): ExprContext | null;
+  public expr(i?: number): ExprContext[] | ExprContext | null {
+    if (i === undefined) {
+      return this.getRuleContexts(ExprContext);
+    }
+
+    return this.getRuleContext(i, ExprContext);
+  }
+  public andToken(): AndTokenContext {
+    return this.getRuleContext(0, AndTokenContext)!;
+  }
+  public postLogicalOperatorWhitespace(): PostLogicalOperatorWhitespaceContext {
+    return this.getRuleContext(0, PostLogicalOperatorWhitespaceContext)!;
+  }
+  public override enterRule(listener: SelectionAutoCompleteListener): void {
+    if (listener.enterAndExpression) {
+      listener.enterAndExpression(this);
+    }
+  }
+  public override exitRule(listener: SelectionAutoCompleteListener): void {
+    if (listener.exitAndExpression) {
+      listener.exitAndExpression(this);
+    }
+  }
+  public override accept<Result>(visitor: SelectionAutoCompleteVisitor<Result>): Result | null {
+    if (visitor.visitAndExpression) {
+      return visitor.visitAndExpression(this);
+    } else {
+      return visitor.visitChildren(this);
+    }
+  }
+}
+export class TraversalAllowedExpressionContext extends ExprContext {
+  public constructor(ctx: ExprContext) {
+    super(ctx.parent, ctx.invokingState);
+    super.copyFrom(ctx);
+  }
+  public traversalAllowedExpr(): TraversalAllowedExprContext {
+    return this.getRuleContext(0, TraversalAllowedExprContext)!;
+  }
+  public override enterRule(listener: SelectionAutoCompleteListener): void {
+    if (listener.enterTraversalAllowedExpression) {
+      listener.enterTraversalAllowedExpression(this);
+    }
+  }
+  public override exitRule(listener: SelectionAutoCompleteListener): void {
+    if (listener.exitTraversalAllowedExpression) {
+      listener.exitTraversalAllowedExpression(this);
+    }
+  }
+  public override accept<Result>(visitor: SelectionAutoCompleteVisitor<Result>): Result | null {
+    if (visitor.visitTraversalAllowedExpression) {
+      return visitor.visitTraversalAllowedExpression(this);
+    } else {
+      return visitor.visitChildren(this);
+    }
+  }
+}
+export class DownTraversalExpressionContext extends ExprContext {
+  public constructor(ctx: ExprContext) {
+    super(ctx.parent, ctx.invokingState);
+    super.copyFrom(ctx);
+  }
+  public traversalAllowedExpr(): TraversalAllowedExprContext {
+    return this.getRuleContext(0, TraversalAllowedExprContext)!;
+  }
+  public downTraversalExpr(): DownTraversalExprContext {
+    return this.getRuleContext(0, DownTraversalExprContext)!;
+  }
+  public override enterRule(listener: SelectionAutoCompleteListener): void {
+    if (listener.enterDownTraversalExpression) {
+      listener.enterDownTraversalExpression(this);
+    }
+  }
+  public override exitRule(listener: SelectionAutoCompleteListener): void {
+    if (listener.exitDownTraversalExpression) {
+      listener.exitDownTraversalExpression(this);
+    }
+  }
+  public override accept<Result>(visitor: SelectionAutoCompleteVisitor<Result>): Result | null {
+    if (visitor.visitDownTraversalExpression) {
+      return visitor.visitDownTraversalExpression(this);
+    } else {
+      return visitor.visitChildren(this);
+    }
+  }
+}
+export class IncompleteOrExpressionContext extends ExprContext {
+  public constructor(ctx: ExprContext) {
+    super(ctx.parent, ctx.invokingState);
+    super.copyFrom(ctx);
+  }
+  public expr(): ExprContext {
+    return this.getRuleContext(0, ExprContext)!;
+  }
+  public orToken(): OrTokenContext {
+    return this.getRuleContext(0, OrTokenContext)!;
+  }
+  public postLogicalOperatorWhitespace(): PostLogicalOperatorWhitespaceContext {
+    return this.getRuleContext(0, PostLogicalOperatorWhitespaceContext)!;
+  }
+  public override enterRule(listener: SelectionAutoCompleteListener): void {
+    if (listener.enterIncompleteOrExpression) {
+      listener.enterIncompleteOrExpression(this);
+    }
+  }
+  public override exitRule(listener: SelectionAutoCompleteListener): void {
+    if (listener.exitIncompleteOrExpression) {
+      listener.exitIncompleteOrExpression(this);
+    }
+  }
+  public override accept<Result>(visitor: SelectionAutoCompleteVisitor<Result>): Result | null {
+    if (visitor.visitIncompleteOrExpression) {
+      return visitor.visitIncompleteOrExpression(this);
+    } else {
+      return visitor.visitChildren(this);
+    }
+  }
+}
+export class IncompleteNotExpressionContext extends ExprContext {
+  public constructor(ctx: ExprContext) {
+    super(ctx.parent, ctx.invokingState);
+    super.copyFrom(ctx);
+  }
+  public notToken(): NotTokenContext {
+    return this.getRuleContext(0, NotTokenContext)!;
+  }
+  public postNotOperatorWhitespace(): PostNotOperatorWhitespaceContext {
+    return this.getRuleContext(0, PostNotOperatorWhitespaceContext)!;
+  }
+  public override enterRule(listener: SelectionAutoCompleteListener): void {
+    if (listener.enterIncompleteNotExpression) {
+      listener.enterIncompleteNotExpression(this);
+    }
+  }
+  public override exitRule(listener: SelectionAutoCompleteListener): void {
+    if (listener.exitIncompleteNotExpression) {
+      listener.exitIncompleteNotExpression(this);
+    }
+  }
+  public override accept<Result>(visitor: SelectionAutoCompleteVisitor<Result>): Result | null {
+    if (visitor.visitIncompleteNotExpression) {
+      return visitor.visitIncompleteNotExpression(this);
+    } else {
+      return visitor.visitChildren(this);
+    }
+  }
+}
+export class IncompleteAndExpressionContext extends ExprContext {
+  public constructor(ctx: ExprContext) {
+    super(ctx.parent, ctx.invokingState);
+    super.copyFrom(ctx);
+  }
+  public expr(): ExprContext {
+    return this.getRuleContext(0, ExprContext)!;
+  }
+  public andToken(): AndTokenContext {
+    return this.getRuleContext(0, AndTokenContext)!;
+  }
+  public postLogicalOperatorWhitespace(): PostLogicalOperatorWhitespaceContext {
+    return this.getRuleContext(0, PostLogicalOperatorWhitespaceContext)!;
+  }
+  public override enterRule(listener: SelectionAutoCompleteListener): void {
+    if (listener.enterIncompleteAndExpression) {
+      listener.enterIncompleteAndExpression(this);
+    }
+  }
+  public override exitRule(listener: SelectionAutoCompleteListener): void {
+    if (listener.exitIncompleteAndExpression) {
+      listener.exitIncompleteAndExpression(this);
+    }
+  }
+  public override accept<Result>(visitor: SelectionAutoCompleteVisitor<Result>): Result | null {
+    if (visitor.visitIncompleteAndExpression) {
+      return visitor.visitIncompleteAndExpression(this);
+    } else {
+      return visitor.visitChildren(this);
+    }
+  }
+}
+
+export class TraversalAllowedExprContext extends antlr.ParserRuleContext {
+  public constructor(parent: antlr.ParserRuleContext | null, invokingState: number) {
     super(parent, invokingState);
   }
-  // @Override
-  public get ruleIndex(): number {
+  public override get ruleIndex(): number {
     return SelectionAutoCompleteParser.RULE_traversalAllowedExpr;
   }
-  public copyFrom(ctx: TraversalAllowedExprContext): void {
+  public override copyFrom(ctx: TraversalAllowedExprContext): void {
     super.copyFrom(ctx);
   }
 }
-export class AttributeExpressionContext extends TraversalAllowedExprContext {
-  public attributeName(): AttributeNameContext {
-    return this.getRuleContext(0, AttributeNameContext);
-  }
-  public colonToken(): ColonTokenContext {
-    return this.getRuleContext(0, ColonTokenContext);
-  }
-  public attributeValue(): AttributeValueContext[];
-  public attributeValue(i: number): AttributeValueContext;
-  public attributeValue(i?: number): AttributeValueContext | AttributeValueContext[] {
-    if (i === undefined) {
-      return this.getRuleContexts(AttributeValueContext);
-    } else {
-      return this.getRuleContext(i, AttributeValueContext);
-    }
-  }
-  public postAttributeValueWhitespace(): PostAttributeValueWhitespaceContext {
-    return this.getRuleContext(0, PostAttributeValueWhitespaceContext);
-  }
-  public EQUAL(): TerminalNode | undefined {
-    return this.tryGetToken(SelectionAutoCompleteParser.EQUAL, 0);
-  }
-  constructor(ctx: TraversalAllowedExprContext) {
-    super(ctx.parent, ctx.invokingState);
-    this.copyFrom(ctx);
-  }
-  // @Override
-  public enterRule(listener: SelectionAutoCompleteListener): void {
-    if (listener.enterAttributeExpression) {
-      listener.enterAttributeExpression(this);
-    }
-  }
-  // @Override
-  public exitRule(listener: SelectionAutoCompleteListener): void {
-    if (listener.exitAttributeExpression) {
-      listener.exitAttributeExpression(this);
-    }
-  }
-  // @Override
-  public accept<Result>(visitor: SelectionAutoCompleteVisitor<Result>): Result {
-    if (visitor.visitAttributeExpression) {
-      return visitor.visitAttributeExpression(this);
-    } else {
-      return visitor.visitChildren(this);
-    }
-  }
-}
-export class FunctionCallExpressionContext extends TraversalAllowedExprContext {
-  public functionName(): FunctionNameContext {
-    return this.getRuleContext(0, FunctionNameContext);
-  }
-  public parenthesizedExpr(): ParenthesizedExprContext {
-    return this.getRuleContext(0, ParenthesizedExprContext);
-  }
-  constructor(ctx: TraversalAllowedExprContext) {
-    super(ctx.parent, ctx.invokingState);
-    this.copyFrom(ctx);
-  }
-  // @Override
-  public enterRule(listener: SelectionAutoCompleteListener): void {
-    if (listener.enterFunctionCallExpression) {
-      listener.enterFunctionCallExpression(this);
-    }
-  }
-  // @Override
-  public exitRule(listener: SelectionAutoCompleteListener): void {
-    if (listener.exitFunctionCallExpression) {
-      listener.exitFunctionCallExpression(this);
-    }
-  }
-  // @Override
-  public accept<Result>(visitor: SelectionAutoCompleteVisitor<Result>): Result {
-    if (visitor.visitFunctionCallExpression) {
-      return visitor.visitFunctionCallExpression(this);
-    } else {
-      return visitor.visitChildren(this);
-    }
-  }
-}
 export class TraversalAllowedParenthesizedExpressionContext extends TraversalAllowedExprContext {
-  public parenthesizedExpr(): ParenthesizedExprContext {
-    return this.getRuleContext(0, ParenthesizedExprContext);
-  }
-  constructor(ctx: TraversalAllowedExprContext) {
+  public constructor(ctx: TraversalAllowedExprContext) {
     super(ctx.parent, ctx.invokingState);
-    this.copyFrom(ctx);
+    super.copyFrom(ctx);
   }
-  // @Override
-  public enterRule(listener: SelectionAutoCompleteListener): void {
+  public parenthesizedExpr(): ParenthesizedExprContext {
+    return this.getRuleContext(0, ParenthesizedExprContext)!;
+  }
+  public override enterRule(listener: SelectionAutoCompleteListener): void {
     if (listener.enterTraversalAllowedParenthesizedExpression) {
       listener.enterTraversalAllowedParenthesizedExpression(this);
     }
   }
-  // @Override
-  public exitRule(listener: SelectionAutoCompleteListener): void {
+  public override exitRule(listener: SelectionAutoCompleteListener): void {
     if (listener.exitTraversalAllowedParenthesizedExpression) {
       listener.exitTraversalAllowedParenthesizedExpression(this);
     }
   }
-  // @Override
-  public accept<Result>(visitor: SelectionAutoCompleteVisitor<Result>): Result {
+  public override accept<Result>(visitor: SelectionAutoCompleteVisitor<Result>): Result | null {
     if (visitor.visitTraversalAllowedParenthesizedExpression) {
       return visitor.visitTraversalAllowedParenthesizedExpression(this);
     } else {
@@ -2444,27 +2186,24 @@ export class TraversalAllowedParenthesizedExpressionContext extends TraversalAll
   }
 }
 export class IncompleteExpressionContext extends TraversalAllowedExprContext {
-  public incompleteExpr(): IncompleteExprContext {
-    return this.getRuleContext(0, IncompleteExprContext);
-  }
-  constructor(ctx: TraversalAllowedExprContext) {
+  public constructor(ctx: TraversalAllowedExprContext) {
     super(ctx.parent, ctx.invokingState);
-    this.copyFrom(ctx);
+    super.copyFrom(ctx);
   }
-  // @Override
-  public enterRule(listener: SelectionAutoCompleteListener): void {
+  public incompleteExpr(): IncompleteExprContext {
+    return this.getRuleContext(0, IncompleteExprContext)!;
+  }
+  public override enterRule(listener: SelectionAutoCompleteListener): void {
     if (listener.enterIncompleteExpression) {
       listener.enterIncompleteExpression(this);
     }
   }
-  // @Override
-  public exitRule(listener: SelectionAutoCompleteListener): void {
+  public override exitRule(listener: SelectionAutoCompleteListener): void {
     if (listener.exitIncompleteExpression) {
       listener.exitIncompleteExpression(this);
     }
   }
-  // @Override
-  public accept<Result>(visitor: SelectionAutoCompleteVisitor<Result>): Result {
+  public override accept<Result>(visitor: SelectionAutoCompleteVisitor<Result>): Result | null {
     if (visitor.visitIncompleteExpression) {
       return visitor.visitIncompleteExpression(this);
     } else {
@@ -2472,53 +2211,122 @@ export class IncompleteExpressionContext extends TraversalAllowedExprContext {
     }
   }
 }
+export class AttributeExpressionContext extends TraversalAllowedExprContext {
+  public constructor(ctx: TraversalAllowedExprContext) {
+    super(ctx.parent, ctx.invokingState);
+    super.copyFrom(ctx);
+  }
+  public attributeName(): AttributeNameContext {
+    return this.getRuleContext(0, AttributeNameContext)!;
+  }
+  public colonToken(): ColonTokenContext {
+    return this.getRuleContext(0, ColonTokenContext)!;
+  }
+  public attributeValue(): AttributeValueContext[];
+  public attributeValue(i: number): AttributeValueContext | null;
+  public attributeValue(i?: number): AttributeValueContext[] | AttributeValueContext | null {
+    if (i === undefined) {
+      return this.getRuleContexts(AttributeValueContext);
+    }
 
-export class ParenthesizedExprContext extends ParserRuleContext {
-  constructor(parent: ParserRuleContext | undefined, invokingState: number) {
+    return this.getRuleContext(i, AttributeValueContext);
+  }
+  public postAttributeValueWhitespace(): PostAttributeValueWhitespaceContext {
+    return this.getRuleContext(0, PostAttributeValueWhitespaceContext)!;
+  }
+  public EQUAL(): antlr.TerminalNode | null {
+    return this.getToken(SelectionAutoCompleteParser.EQUAL, 0);
+  }
+  public override enterRule(listener: SelectionAutoCompleteListener): void {
+    if (listener.enterAttributeExpression) {
+      listener.enterAttributeExpression(this);
+    }
+  }
+  public override exitRule(listener: SelectionAutoCompleteListener): void {
+    if (listener.exitAttributeExpression) {
+      listener.exitAttributeExpression(this);
+    }
+  }
+  public override accept<Result>(visitor: SelectionAutoCompleteVisitor<Result>): Result | null {
+    if (visitor.visitAttributeExpression) {
+      return visitor.visitAttributeExpression(this);
+    } else {
+      return visitor.visitChildren(this);
+    }
+  }
+}
+export class FunctionCallExpressionContext extends TraversalAllowedExprContext {
+  public constructor(ctx: TraversalAllowedExprContext) {
+    super(ctx.parent, ctx.invokingState);
+    super.copyFrom(ctx);
+  }
+  public functionName(): FunctionNameContext {
+    return this.getRuleContext(0, FunctionNameContext)!;
+  }
+  public parenthesizedExpr(): ParenthesizedExprContext {
+    return this.getRuleContext(0, ParenthesizedExprContext)!;
+  }
+  public override enterRule(listener: SelectionAutoCompleteListener): void {
+    if (listener.enterFunctionCallExpression) {
+      listener.enterFunctionCallExpression(this);
+    }
+  }
+  public override exitRule(listener: SelectionAutoCompleteListener): void {
+    if (listener.exitFunctionCallExpression) {
+      listener.exitFunctionCallExpression(this);
+    }
+  }
+  public override accept<Result>(visitor: SelectionAutoCompleteVisitor<Result>): Result | null {
+    if (visitor.visitFunctionCallExpression) {
+      return visitor.visitFunctionCallExpression(this);
+    } else {
+      return visitor.visitChildren(this);
+    }
+  }
+}
+
+export class ParenthesizedExprContext extends antlr.ParserRuleContext {
+  public constructor(parent: antlr.ParserRuleContext | null, invokingState: number) {
     super(parent, invokingState);
   }
-  // @Override
-  public get ruleIndex(): number {
+  public override get ruleIndex(): number {
     return SelectionAutoCompleteParser.RULE_parenthesizedExpr;
   }
-  public copyFrom(ctx: ParenthesizedExprContext): void {
+  public override copyFrom(ctx: ParenthesizedExprContext): void {
     super.copyFrom(ctx);
   }
 }
 export class ParenthesizedExpressionContext extends ParenthesizedExprContext {
+  public constructor(ctx: ParenthesizedExprContext) {
+    super(ctx.parent, ctx.invokingState);
+    super.copyFrom(ctx);
+  }
   public leftParenToken(): LeftParenTokenContext {
-    return this.getRuleContext(0, LeftParenTokenContext);
+    return this.getRuleContext(0, LeftParenTokenContext)!;
   }
   public postLogicalOperatorWhitespace(): PostLogicalOperatorWhitespaceContext {
-    return this.getRuleContext(0, PostLogicalOperatorWhitespaceContext);
+    return this.getRuleContext(0, PostLogicalOperatorWhitespaceContext)!;
   }
   public expr(): ExprContext {
-    return this.getRuleContext(0, ExprContext);
+    return this.getRuleContext(0, ExprContext)!;
   }
   public rightParenToken(): RightParenTokenContext {
-    return this.getRuleContext(0, RightParenTokenContext);
+    return this.getRuleContext(0, RightParenTokenContext)!;
   }
   public postExpressionWhitespace(): PostExpressionWhitespaceContext {
-    return this.getRuleContext(0, PostExpressionWhitespaceContext);
+    return this.getRuleContext(0, PostExpressionWhitespaceContext)!;
   }
-  constructor(ctx: ParenthesizedExprContext) {
-    super(ctx.parent, ctx.invokingState);
-    this.copyFrom(ctx);
-  }
-  // @Override
-  public enterRule(listener: SelectionAutoCompleteListener): void {
+  public override enterRule(listener: SelectionAutoCompleteListener): void {
     if (listener.enterParenthesizedExpression) {
       listener.enterParenthesizedExpression(this);
     }
   }
-  // @Override
-  public exitRule(listener: SelectionAutoCompleteListener): void {
+  public override exitRule(listener: SelectionAutoCompleteListener): void {
     if (listener.exitParenthesizedExpression) {
       listener.exitParenthesizedExpression(this);
     }
   }
-  // @Override
-  public accept<Result>(visitor: SelectionAutoCompleteVisitor<Result>): Result {
+  public override accept<Result>(visitor: SelectionAutoCompleteVisitor<Result>): Result | null {
     if (visitor.visitParenthesizedExpression) {
       return visitor.visitParenthesizedExpression(this);
     } else {
@@ -2527,119 +2335,39 @@ export class ParenthesizedExpressionContext extends ParenthesizedExprContext {
   }
 }
 
-export class IncompleteExprContext extends ParserRuleContext {
-  constructor(parent: ParserRuleContext | undefined, invokingState: number) {
+export class IncompleteExprContext extends antlr.ParserRuleContext {
+  public constructor(parent: antlr.ParserRuleContext | null, invokingState: number) {
     super(parent, invokingState);
   }
-  // @Override
-  public get ruleIndex(): number {
+  public override get ruleIndex(): number {
     return SelectionAutoCompleteParser.RULE_incompleteExpr;
   }
-  public copyFrom(ctx: IncompleteExprContext): void {
+  public override copyFrom(ctx: IncompleteExprContext): void {
     super.copyFrom(ctx);
   }
 }
-export class IncompleteAttributeExpressionMissingSecondValueContext extends IncompleteExprContext {
-  public attributeName(): AttributeNameContext {
-    return this.getRuleContext(0, AttributeNameContext);
-  }
-  public colonToken(): ColonTokenContext {
-    return this.getRuleContext(0, ColonTokenContext);
-  }
-  public attributeValue(): AttributeValueContext {
-    return this.getRuleContext(0, AttributeValueContext);
-  }
-  public EQUAL(): TerminalNode {
-    return this.getToken(SelectionAutoCompleteParser.EQUAL, 0);
-  }
-  public attributeValueWhitespace(): AttributeValueWhitespaceContext {
-    return this.getRuleContext(0, AttributeValueWhitespaceContext);
-  }
-  constructor(ctx: IncompleteExprContext) {
-    super(ctx.parent, ctx.invokingState);
-    this.copyFrom(ctx);
-  }
-  // @Override
-  public enterRule(listener: SelectionAutoCompleteListener): void {
-    if (listener.enterIncompleteAttributeExpressionMissingSecondValue) {
-      listener.enterIncompleteAttributeExpressionMissingSecondValue(this);
-    }
-  }
-  // @Override
-  public exitRule(listener: SelectionAutoCompleteListener): void {
-    if (listener.exitIncompleteAttributeExpressionMissingSecondValue) {
-      listener.exitIncompleteAttributeExpressionMissingSecondValue(this);
-    }
-  }
-  // @Override
-  public accept<Result>(visitor: SelectionAutoCompleteVisitor<Result>): Result {
-    if (visitor.visitIncompleteAttributeExpressionMissingSecondValue) {
-      return visitor.visitIncompleteAttributeExpressionMissingSecondValue(this);
-    } else {
-      return visitor.visitChildren(this);
-    }
-  }
-}
-export class IncompleteAttributeExpressionMissingValueContext extends IncompleteExprContext {
-  public attributeName(): AttributeNameContext {
-    return this.getRuleContext(0, AttributeNameContext);
-  }
-  public colonToken(): ColonTokenContext {
-    return this.getRuleContext(0, ColonTokenContext);
-  }
-  public attributeValueWhitespace(): AttributeValueWhitespaceContext {
-    return this.getRuleContext(0, AttributeValueWhitespaceContext);
-  }
-  constructor(ctx: IncompleteExprContext) {
-    super(ctx.parent, ctx.invokingState);
-    this.copyFrom(ctx);
-  }
-  // @Override
-  public enterRule(listener: SelectionAutoCompleteListener): void {
-    if (listener.enterIncompleteAttributeExpressionMissingValue) {
-      listener.enterIncompleteAttributeExpressionMissingValue(this);
-    }
-  }
-  // @Override
-  public exitRule(listener: SelectionAutoCompleteListener): void {
-    if (listener.exitIncompleteAttributeExpressionMissingValue) {
-      listener.exitIncompleteAttributeExpressionMissingValue(this);
-    }
-  }
-  // @Override
-  public accept<Result>(visitor: SelectionAutoCompleteVisitor<Result>): Result {
-    if (visitor.visitIncompleteAttributeExpressionMissingValue) {
-      return visitor.visitIncompleteAttributeExpressionMissingValue(this);
-    } else {
-      return visitor.visitChildren(this);
-    }
-  }
-}
 export class ExpressionlessFunctionExpressionContext extends IncompleteExprContext {
+  public constructor(ctx: IncompleteExprContext) {
+    super(ctx.parent, ctx.invokingState);
+    super.copyFrom(ctx);
+  }
   public functionName(): FunctionNameContext {
-    return this.getRuleContext(0, FunctionNameContext);
+    return this.getRuleContext(0, FunctionNameContext)!;
   }
   public expressionLessParenthesizedExpr(): ExpressionLessParenthesizedExprContext {
-    return this.getRuleContext(0, ExpressionLessParenthesizedExprContext);
+    return this.getRuleContext(0, ExpressionLessParenthesizedExprContext)!;
   }
-  constructor(ctx: IncompleteExprContext) {
-    super(ctx.parent, ctx.invokingState);
-    this.copyFrom(ctx);
-  }
-  // @Override
-  public enterRule(listener: SelectionAutoCompleteListener): void {
+  public override enterRule(listener: SelectionAutoCompleteListener): void {
     if (listener.enterExpressionlessFunctionExpression) {
       listener.enterExpressionlessFunctionExpression(this);
     }
   }
-  // @Override
-  public exitRule(listener: SelectionAutoCompleteListener): void {
+  public override exitRule(listener: SelectionAutoCompleteListener): void {
     if (listener.exitExpressionlessFunctionExpression) {
       listener.exitExpressionlessFunctionExpression(this);
     }
   }
-  // @Override
-  public accept<Result>(visitor: SelectionAutoCompleteVisitor<Result>): Result {
+  public override accept<Result>(visitor: SelectionAutoCompleteVisitor<Result>): Result | null {
     if (visitor.visitExpressionlessFunctionExpression) {
       return visitor.visitExpressionlessFunctionExpression(this);
     } else {
@@ -2648,33 +2376,30 @@ export class ExpressionlessFunctionExpressionContext extends IncompleteExprConte
   }
 }
 export class UnclosedExpressionlessFunctionExpressionContext extends IncompleteExprContext {
+  public constructor(ctx: IncompleteExprContext) {
+    super(ctx.parent, ctx.invokingState);
+    super.copyFrom(ctx);
+  }
   public functionName(): FunctionNameContext {
-    return this.getRuleContext(0, FunctionNameContext);
+    return this.getRuleContext(0, FunctionNameContext)!;
   }
   public leftParenToken(): LeftParenTokenContext {
-    return this.getRuleContext(0, LeftParenTokenContext);
+    return this.getRuleContext(0, LeftParenTokenContext)!;
   }
   public postLogicalOperatorWhitespace(): PostLogicalOperatorWhitespaceContext {
-    return this.getRuleContext(0, PostLogicalOperatorWhitespaceContext);
+    return this.getRuleContext(0, PostLogicalOperatorWhitespaceContext)!;
   }
-  constructor(ctx: IncompleteExprContext) {
-    super(ctx.parent, ctx.invokingState);
-    this.copyFrom(ctx);
-  }
-  // @Override
-  public enterRule(listener: SelectionAutoCompleteListener): void {
+  public override enterRule(listener: SelectionAutoCompleteListener): void {
     if (listener.enterUnclosedExpressionlessFunctionExpression) {
       listener.enterUnclosedExpressionlessFunctionExpression(this);
     }
   }
-  // @Override
-  public exitRule(listener: SelectionAutoCompleteListener): void {
+  public override exitRule(listener: SelectionAutoCompleteListener): void {
     if (listener.exitUnclosedExpressionlessFunctionExpression) {
       listener.exitUnclosedExpressionlessFunctionExpression(this);
     }
   }
-  // @Override
-  public accept<Result>(visitor: SelectionAutoCompleteVisitor<Result>): Result {
+  public override accept<Result>(visitor: SelectionAutoCompleteVisitor<Result>): Result | null {
     if (visitor.visitUnclosedExpressionlessFunctionExpression) {
       return visitor.visitUnclosedExpressionlessFunctionExpression(this);
     } else {
@@ -2682,130 +2407,28 @@ export class UnclosedExpressionlessFunctionExpressionContext extends IncompleteE
     }
   }
 }
-export class UnclosedFunctionExpressionContext extends IncompleteExprContext {
-  public functionName(): FunctionNameContext {
-    return this.getRuleContext(0, FunctionNameContext);
-  }
-  public leftParenToken(): LeftParenTokenContext {
-    return this.getRuleContext(0, LeftParenTokenContext);
-  }
-  public expr(): ExprContext {
-    return this.getRuleContext(0, ExprContext);
-  }
-  constructor(ctx: IncompleteExprContext) {
-    super(ctx.parent, ctx.invokingState);
-    this.copyFrom(ctx);
-  }
-  // @Override
-  public enterRule(listener: SelectionAutoCompleteListener): void {
-    if (listener.enterUnclosedFunctionExpression) {
-      listener.enterUnclosedFunctionExpression(this);
-    }
-  }
-  // @Override
-  public exitRule(listener: SelectionAutoCompleteListener): void {
-    if (listener.exitUnclosedFunctionExpression) {
-      listener.exitUnclosedFunctionExpression(this);
-    }
-  }
-  // @Override
-  public accept<Result>(visitor: SelectionAutoCompleteVisitor<Result>): Result {
-    if (visitor.visitUnclosedFunctionExpression) {
-      return visitor.visitUnclosedFunctionExpression(this);
-    } else {
-      return visitor.visitChildren(this);
-    }
-  }
-}
-export class UnclosedParenthesizedExpressionContext extends IncompleteExprContext {
-  public leftParenToken(): LeftParenTokenContext {
-    return this.getRuleContext(0, LeftParenTokenContext);
-  }
-  public postLogicalOperatorWhitespace(): PostLogicalOperatorWhitespaceContext {
-    return this.getRuleContext(0, PostLogicalOperatorWhitespaceContext);
-  }
-  public expr(): ExprContext {
-    return this.getRuleContext(0, ExprContext);
-  }
-  constructor(ctx: IncompleteExprContext) {
-    super(ctx.parent, ctx.invokingState);
-    this.copyFrom(ctx);
-  }
-  // @Override
-  public enterRule(listener: SelectionAutoCompleteListener): void {
-    if (listener.enterUnclosedParenthesizedExpression) {
-      listener.enterUnclosedParenthesizedExpression(this);
-    }
-  }
-  // @Override
-  public exitRule(listener: SelectionAutoCompleteListener): void {
-    if (listener.exitUnclosedParenthesizedExpression) {
-      listener.exitUnclosedParenthesizedExpression(this);
-    }
-  }
-  // @Override
-  public accept<Result>(visitor: SelectionAutoCompleteVisitor<Result>): Result {
-    if (visitor.visitUnclosedParenthesizedExpression) {
-      return visitor.visitUnclosedParenthesizedExpression(this);
-    } else {
-      return visitor.visitChildren(this);
-    }
-  }
-}
-export class ExpressionlessParenthesizedExpressionWrapperContext extends IncompleteExprContext {
-  public expressionLessParenthesizedExpr(): ExpressionLessParenthesizedExprContext {
-    return this.getRuleContext(0, ExpressionLessParenthesizedExprContext);
-  }
-  constructor(ctx: IncompleteExprContext) {
-    super(ctx.parent, ctx.invokingState);
-    this.copyFrom(ctx);
-  }
-  // @Override
-  public enterRule(listener: SelectionAutoCompleteListener): void {
-    if (listener.enterExpressionlessParenthesizedExpressionWrapper) {
-      listener.enterExpressionlessParenthesizedExpressionWrapper(this);
-    }
-  }
-  // @Override
-  public exitRule(listener: SelectionAutoCompleteListener): void {
-    if (listener.exitExpressionlessParenthesizedExpressionWrapper) {
-      listener.exitExpressionlessParenthesizedExpressionWrapper(this);
-    }
-  }
-  // @Override
-  public accept<Result>(visitor: SelectionAutoCompleteVisitor<Result>): Result {
-    if (visitor.visitExpressionlessParenthesizedExpressionWrapper) {
-      return visitor.visitExpressionlessParenthesizedExpressionWrapper(this);
-    } else {
-      return visitor.visitChildren(this);
-    }
-  }
-}
 export class UnclosedExpressionlessParenthesizedExpressionContext extends IncompleteExprContext {
+  public constructor(ctx: IncompleteExprContext) {
+    super(ctx.parent, ctx.invokingState);
+    super.copyFrom(ctx);
+  }
   public leftParenToken(): LeftParenTokenContext {
-    return this.getRuleContext(0, LeftParenTokenContext);
+    return this.getRuleContext(0, LeftParenTokenContext)!;
   }
   public postLogicalOperatorWhitespace(): PostLogicalOperatorWhitespaceContext {
-    return this.getRuleContext(0, PostLogicalOperatorWhitespaceContext);
+    return this.getRuleContext(0, PostLogicalOperatorWhitespaceContext)!;
   }
-  constructor(ctx: IncompleteExprContext) {
-    super(ctx.parent, ctx.invokingState);
-    this.copyFrom(ctx);
-  }
-  // @Override
-  public enterRule(listener: SelectionAutoCompleteListener): void {
+  public override enterRule(listener: SelectionAutoCompleteListener): void {
     if (listener.enterUnclosedExpressionlessParenthesizedExpression) {
       listener.enterUnclosedExpressionlessParenthesizedExpression(this);
     }
   }
-  // @Override
-  public exitRule(listener: SelectionAutoCompleteListener): void {
+  public override exitRule(listener: SelectionAutoCompleteListener): void {
     if (listener.exitUnclosedExpressionlessParenthesizedExpression) {
       listener.exitUnclosedExpressionlessParenthesizedExpression(this);
     }
   }
-  // @Override
-  public accept<Result>(visitor: SelectionAutoCompleteVisitor<Result>): Result {
+  public override accept<Result>(visitor: SelectionAutoCompleteVisitor<Result>): Result | null {
     if (visitor.visitUnclosedExpressionlessParenthesizedExpression) {
       return visitor.visitUnclosedExpressionlessParenthesizedExpression(this);
     } else {
@@ -2813,69 +2436,31 @@ export class UnclosedExpressionlessParenthesizedExpressionContext extends Incomp
     }
   }
 }
-export class IncompletePlusTraversalExpressionContext extends IncompleteExprContext {
-  public PLUS(): TerminalNode {
-    return this.getToken(SelectionAutoCompleteParser.PLUS, 0);
-  }
-  public postNeighborTraversalWhitespace(): PostNeighborTraversalWhitespaceContext {
-    return this.getRuleContext(0, PostNeighborTraversalWhitespaceContext);
-  }
-  public DIGITS(): TerminalNode | undefined {
-    return this.tryGetToken(SelectionAutoCompleteParser.DIGITS, 0);
-  }
-  constructor(ctx: IncompleteExprContext) {
-    super(ctx.parent, ctx.invokingState);
-    this.copyFrom(ctx);
-  }
-  // @Override
-  public enterRule(listener: SelectionAutoCompleteListener): void {
-    if (listener.enterIncompletePlusTraversalExpression) {
-      listener.enterIncompletePlusTraversalExpression(this);
-    }
-  }
-  // @Override
-  public exitRule(listener: SelectionAutoCompleteListener): void {
-    if (listener.exitIncompletePlusTraversalExpression) {
-      listener.exitIncompletePlusTraversalExpression(this);
-    }
-  }
-  // @Override
-  public accept<Result>(visitor: SelectionAutoCompleteVisitor<Result>): Result {
-    if (visitor.visitIncompletePlusTraversalExpression) {
-      return visitor.visitIncompletePlusTraversalExpression(this);
-    } else {
-      return visitor.visitChildren(this);
-    }
-  }
-}
 export class IncompletePlusTraversalExpressionMissingValueContext extends IncompleteExprContext {
-  public PLUS(): TerminalNode {
-    return this.getToken(SelectionAutoCompleteParser.PLUS, 0);
+  public constructor(ctx: IncompleteExprContext) {
+    super(ctx.parent, ctx.invokingState);
+    super.copyFrom(ctx);
+  }
+  public PLUS(): antlr.TerminalNode {
+    return this.getToken(SelectionAutoCompleteParser.PLUS, 0)!;
   }
   public value(): ValueContext {
-    return this.getRuleContext(0, ValueContext);
+    return this.getRuleContext(0, ValueContext)!;
   }
   public postExpressionWhitespace(): PostExpressionWhitespaceContext {
-    return this.getRuleContext(0, PostExpressionWhitespaceContext);
+    return this.getRuleContext(0, PostExpressionWhitespaceContext)!;
   }
-  constructor(ctx: IncompleteExprContext) {
-    super(ctx.parent, ctx.invokingState);
-    this.copyFrom(ctx);
-  }
-  // @Override
-  public enterRule(listener: SelectionAutoCompleteListener): void {
+  public override enterRule(listener: SelectionAutoCompleteListener): void {
     if (listener.enterIncompletePlusTraversalExpressionMissingValue) {
       listener.enterIncompletePlusTraversalExpressionMissingValue(this);
     }
   }
-  // @Override
-  public exitRule(listener: SelectionAutoCompleteListener): void {
+  public override exitRule(listener: SelectionAutoCompleteListener): void {
     if (listener.exitIncompletePlusTraversalExpressionMissingValue) {
       listener.exitIncompletePlusTraversalExpressionMissingValue(this);
     }
   }
-  // @Override
-  public accept<Result>(visitor: SelectionAutoCompleteVisitor<Result>): Result {
+  public override accept<Result>(visitor: SelectionAutoCompleteVisitor<Result>): Result | null {
     if (visitor.visitIncompletePlusTraversalExpressionMissingValue) {
       return visitor.visitIncompletePlusTraversalExpressionMissingValue(this);
     } else {
@@ -2884,33 +2469,30 @@ export class IncompletePlusTraversalExpressionMissingValueContext extends Incomp
   }
 }
 export class IncompleteAttributeExpressionMissingKeyContext extends IncompleteExprContext {
+  public constructor(ctx: IncompleteExprContext) {
+    super(ctx.parent, ctx.invokingState);
+    super.copyFrom(ctx);
+  }
   public colonToken(): ColonTokenContext {
-    return this.getRuleContext(0, ColonTokenContext);
+    return this.getRuleContext(0, ColonTokenContext)!;
   }
   public attributeValue(): AttributeValueContext {
-    return this.getRuleContext(0, AttributeValueContext);
+    return this.getRuleContext(0, AttributeValueContext)!;
   }
   public postExpressionWhitespace(): PostExpressionWhitespaceContext {
-    return this.getRuleContext(0, PostExpressionWhitespaceContext);
+    return this.getRuleContext(0, PostExpressionWhitespaceContext)!;
   }
-  constructor(ctx: IncompleteExprContext) {
-    super(ctx.parent, ctx.invokingState);
-    this.copyFrom(ctx);
-  }
-  // @Override
-  public enterRule(listener: SelectionAutoCompleteListener): void {
+  public override enterRule(listener: SelectionAutoCompleteListener): void {
     if (listener.enterIncompleteAttributeExpressionMissingKey) {
       listener.enterIncompleteAttributeExpressionMissingKey(this);
     }
   }
-  // @Override
-  public exitRule(listener: SelectionAutoCompleteListener): void {
+  public override exitRule(listener: SelectionAutoCompleteListener): void {
     if (listener.exitIncompleteAttributeExpressionMissingKey) {
       listener.exitIncompleteAttributeExpressionMissingKey(this);
     }
   }
-  // @Override
-  public accept<Result>(visitor: SelectionAutoCompleteVisitor<Result>): Result {
+  public override accept<Result>(visitor: SelectionAutoCompleteVisitor<Result>): Result | null {
     if (visitor.visitIncompleteAttributeExpressionMissingKey) {
       return visitor.visitIncompleteAttributeExpressionMissingKey(this);
     } else {
@@ -2918,50 +2500,238 @@ export class IncompleteAttributeExpressionMissingKeyContext extends IncompleteEx
     }
   }
 }
+export class UnclosedParenthesizedExpressionContext extends IncompleteExprContext {
+  public constructor(ctx: IncompleteExprContext) {
+    super(ctx.parent, ctx.invokingState);
+    super.copyFrom(ctx);
+  }
+  public leftParenToken(): LeftParenTokenContext {
+    return this.getRuleContext(0, LeftParenTokenContext)!;
+  }
+  public postLogicalOperatorWhitespace(): PostLogicalOperatorWhitespaceContext {
+    return this.getRuleContext(0, PostLogicalOperatorWhitespaceContext)!;
+  }
+  public expr(): ExprContext {
+    return this.getRuleContext(0, ExprContext)!;
+  }
+  public override enterRule(listener: SelectionAutoCompleteListener): void {
+    if (listener.enterUnclosedParenthesizedExpression) {
+      listener.enterUnclosedParenthesizedExpression(this);
+    }
+  }
+  public override exitRule(listener: SelectionAutoCompleteListener): void {
+    if (listener.exitUnclosedParenthesizedExpression) {
+      listener.exitUnclosedParenthesizedExpression(this);
+    }
+  }
+  public override accept<Result>(visitor: SelectionAutoCompleteVisitor<Result>): Result | null {
+    if (visitor.visitUnclosedParenthesizedExpression) {
+      return visitor.visitUnclosedParenthesizedExpression(this);
+    } else {
+      return visitor.visitChildren(this);
+    }
+  }
+}
+export class IncompleteAttributeExpressionMissingValueContext extends IncompleteExprContext {
+  public constructor(ctx: IncompleteExprContext) {
+    super(ctx.parent, ctx.invokingState);
+    super.copyFrom(ctx);
+  }
+  public attributeName(): AttributeNameContext {
+    return this.getRuleContext(0, AttributeNameContext)!;
+  }
+  public colonToken(): ColonTokenContext {
+    return this.getRuleContext(0, ColonTokenContext)!;
+  }
+  public attributeValueWhitespace(): AttributeValueWhitespaceContext {
+    return this.getRuleContext(0, AttributeValueWhitespaceContext)!;
+  }
+  public override enterRule(listener: SelectionAutoCompleteListener): void {
+    if (listener.enterIncompleteAttributeExpressionMissingValue) {
+      listener.enterIncompleteAttributeExpressionMissingValue(this);
+    }
+  }
+  public override exitRule(listener: SelectionAutoCompleteListener): void {
+    if (listener.exitIncompleteAttributeExpressionMissingValue) {
+      listener.exitIncompleteAttributeExpressionMissingValue(this);
+    }
+  }
+  public override accept<Result>(visitor: SelectionAutoCompleteVisitor<Result>): Result | null {
+    if (visitor.visitIncompleteAttributeExpressionMissingValue) {
+      return visitor.visitIncompleteAttributeExpressionMissingValue(this);
+    } else {
+      return visitor.visitChildren(this);
+    }
+  }
+}
+export class UnclosedFunctionExpressionContext extends IncompleteExprContext {
+  public constructor(ctx: IncompleteExprContext) {
+    super(ctx.parent, ctx.invokingState);
+    super.copyFrom(ctx);
+  }
+  public functionName(): FunctionNameContext {
+    return this.getRuleContext(0, FunctionNameContext)!;
+  }
+  public leftParenToken(): LeftParenTokenContext {
+    return this.getRuleContext(0, LeftParenTokenContext)!;
+  }
+  public expr(): ExprContext {
+    return this.getRuleContext(0, ExprContext)!;
+  }
+  public override enterRule(listener: SelectionAutoCompleteListener): void {
+    if (listener.enterUnclosedFunctionExpression) {
+      listener.enterUnclosedFunctionExpression(this);
+    }
+  }
+  public override exitRule(listener: SelectionAutoCompleteListener): void {
+    if (listener.exitUnclosedFunctionExpression) {
+      listener.exitUnclosedFunctionExpression(this);
+    }
+  }
+  public override accept<Result>(visitor: SelectionAutoCompleteVisitor<Result>): Result | null {
+    if (visitor.visitUnclosedFunctionExpression) {
+      return visitor.visitUnclosedFunctionExpression(this);
+    } else {
+      return visitor.visitChildren(this);
+    }
+  }
+}
+export class ExpressionlessParenthesizedExpressionWrapperContext extends IncompleteExprContext {
+  public constructor(ctx: IncompleteExprContext) {
+    super(ctx.parent, ctx.invokingState);
+    super.copyFrom(ctx);
+  }
+  public expressionLessParenthesizedExpr(): ExpressionLessParenthesizedExprContext {
+    return this.getRuleContext(0, ExpressionLessParenthesizedExprContext)!;
+  }
+  public override enterRule(listener: SelectionAutoCompleteListener): void {
+    if (listener.enterExpressionlessParenthesizedExpressionWrapper) {
+      listener.enterExpressionlessParenthesizedExpressionWrapper(this);
+    }
+  }
+  public override exitRule(listener: SelectionAutoCompleteListener): void {
+    if (listener.exitExpressionlessParenthesizedExpressionWrapper) {
+      listener.exitExpressionlessParenthesizedExpressionWrapper(this);
+    }
+  }
+  public override accept<Result>(visitor: SelectionAutoCompleteVisitor<Result>): Result | null {
+    if (visitor.visitExpressionlessParenthesizedExpressionWrapper) {
+      return visitor.visitExpressionlessParenthesizedExpressionWrapper(this);
+    } else {
+      return visitor.visitChildren(this);
+    }
+  }
+}
+export class IncompletePlusTraversalExpressionContext extends IncompleteExprContext {
+  public constructor(ctx: IncompleteExprContext) {
+    super(ctx.parent, ctx.invokingState);
+    super.copyFrom(ctx);
+  }
+  public PLUS(): antlr.TerminalNode {
+    return this.getToken(SelectionAutoCompleteParser.PLUS, 0)!;
+  }
+  public postNeighborTraversalWhitespace(): PostNeighborTraversalWhitespaceContext {
+    return this.getRuleContext(0, PostNeighborTraversalWhitespaceContext)!;
+  }
+  public DIGITS(): antlr.TerminalNode | null {
+    return this.getToken(SelectionAutoCompleteParser.DIGITS, 0);
+  }
+  public override enterRule(listener: SelectionAutoCompleteListener): void {
+    if (listener.enterIncompletePlusTraversalExpression) {
+      listener.enterIncompletePlusTraversalExpression(this);
+    }
+  }
+  public override exitRule(listener: SelectionAutoCompleteListener): void {
+    if (listener.exitIncompletePlusTraversalExpression) {
+      listener.exitIncompletePlusTraversalExpression(this);
+    }
+  }
+  public override accept<Result>(visitor: SelectionAutoCompleteVisitor<Result>): Result | null {
+    if (visitor.visitIncompletePlusTraversalExpression) {
+      return visitor.visitIncompletePlusTraversalExpression(this);
+    } else {
+      return visitor.visitChildren(this);
+    }
+  }
+}
+export class IncompleteAttributeExpressionMissingSecondValueContext extends IncompleteExprContext {
+  public constructor(ctx: IncompleteExprContext) {
+    super(ctx.parent, ctx.invokingState);
+    super.copyFrom(ctx);
+  }
+  public attributeName(): AttributeNameContext {
+    return this.getRuleContext(0, AttributeNameContext)!;
+  }
+  public colonToken(): ColonTokenContext {
+    return this.getRuleContext(0, ColonTokenContext)!;
+  }
+  public attributeValue(): AttributeValueContext {
+    return this.getRuleContext(0, AttributeValueContext)!;
+  }
+  public EQUAL(): antlr.TerminalNode {
+    return this.getToken(SelectionAutoCompleteParser.EQUAL, 0)!;
+  }
+  public attributeValueWhitespace(): AttributeValueWhitespaceContext {
+    return this.getRuleContext(0, AttributeValueWhitespaceContext)!;
+  }
+  public override enterRule(listener: SelectionAutoCompleteListener): void {
+    if (listener.enterIncompleteAttributeExpressionMissingSecondValue) {
+      listener.enterIncompleteAttributeExpressionMissingSecondValue(this);
+    }
+  }
+  public override exitRule(listener: SelectionAutoCompleteListener): void {
+    if (listener.exitIncompleteAttributeExpressionMissingSecondValue) {
+      listener.exitIncompleteAttributeExpressionMissingSecondValue(this);
+    }
+  }
+  public override accept<Result>(visitor: SelectionAutoCompleteVisitor<Result>): Result | null {
+    if (visitor.visitIncompleteAttributeExpressionMissingSecondValue) {
+      return visitor.visitIncompleteAttributeExpressionMissingSecondValue(this);
+    } else {
+      return visitor.visitChildren(this);
+    }
+  }
+}
 
-export class ExpressionLessParenthesizedExprContext extends ParserRuleContext {
-  constructor(parent: ParserRuleContext | undefined, invokingState: number) {
+export class ExpressionLessParenthesizedExprContext extends antlr.ParserRuleContext {
+  public constructor(parent: antlr.ParserRuleContext | null, invokingState: number) {
     super(parent, invokingState);
   }
-  // @Override
-  public get ruleIndex(): number {
+  public override get ruleIndex(): number {
     return SelectionAutoCompleteParser.RULE_expressionLessParenthesizedExpr;
   }
-  public copyFrom(ctx: ExpressionLessParenthesizedExprContext): void {
+  public override copyFrom(ctx: ExpressionLessParenthesizedExprContext): void {
     super.copyFrom(ctx);
   }
 }
 export class ExpressionlessParenthesizedExpressionContext extends ExpressionLessParenthesizedExprContext {
+  public constructor(ctx: ExpressionLessParenthesizedExprContext) {
+    super(ctx.parent, ctx.invokingState);
+    super.copyFrom(ctx);
+  }
   public leftParenToken(): LeftParenTokenContext {
-    return this.getRuleContext(0, LeftParenTokenContext);
+    return this.getRuleContext(0, LeftParenTokenContext)!;
   }
   public postLogicalOperatorWhitespace(): PostLogicalOperatorWhitespaceContext {
-    return this.getRuleContext(0, PostLogicalOperatorWhitespaceContext);
+    return this.getRuleContext(0, PostLogicalOperatorWhitespaceContext)!;
   }
   public rightParenToken(): RightParenTokenContext {
-    return this.getRuleContext(0, RightParenTokenContext);
+    return this.getRuleContext(0, RightParenTokenContext)!;
   }
   public postExpressionWhitespace(): PostExpressionWhitespaceContext {
-    return this.getRuleContext(0, PostExpressionWhitespaceContext);
+    return this.getRuleContext(0, PostExpressionWhitespaceContext)!;
   }
-  constructor(ctx: ExpressionLessParenthesizedExprContext) {
-    super(ctx.parent, ctx.invokingState);
-    this.copyFrom(ctx);
-  }
-  // @Override
-  public enterRule(listener: SelectionAutoCompleteListener): void {
+  public override enterRule(listener: SelectionAutoCompleteListener): void {
     if (listener.enterExpressionlessParenthesizedExpression) {
       listener.enterExpressionlessParenthesizedExpression(this);
     }
   }
-  // @Override
-  public exitRule(listener: SelectionAutoCompleteListener): void {
+  public override exitRule(listener: SelectionAutoCompleteListener): void {
     if (listener.exitExpressionlessParenthesizedExpression) {
       listener.exitExpressionlessParenthesizedExpression(this);
     }
   }
-  // @Override
-  public accept<Result>(visitor: SelectionAutoCompleteVisitor<Result>): Result {
+  public override accept<Result>(visitor: SelectionAutoCompleteVisitor<Result>): Result | null {
     if (visitor.visitExpressionlessParenthesizedExpression) {
       return visitor.visitExpressionlessParenthesizedExpression(this);
     } else {
@@ -2970,43 +2740,39 @@ export class ExpressionlessParenthesizedExpressionContext extends ExpressionLess
   }
 }
 
-export class UpTraversalExprContext extends ParserRuleContext {
-  constructor(parent: ParserRuleContext | undefined, invokingState: number) {
+export class UpTraversalExprContext extends antlr.ParserRuleContext {
+  public constructor(parent: antlr.ParserRuleContext | null, invokingState: number) {
     super(parent, invokingState);
   }
-  // @Override
-  public get ruleIndex(): number {
+  public override get ruleIndex(): number {
     return SelectionAutoCompleteParser.RULE_upTraversalExpr;
   }
-  public copyFrom(ctx: UpTraversalExprContext): void {
+  public override copyFrom(ctx: UpTraversalExprContext): void {
     super.copyFrom(ctx);
   }
 }
 export class UpTraversalContext extends UpTraversalExprContext {
+  public constructor(ctx: UpTraversalExprContext) {
+    super(ctx.parent, ctx.invokingState);
+    super.copyFrom(ctx);
+  }
   public upTraversalToken(): UpTraversalTokenContext {
-    return this.getRuleContext(0, UpTraversalTokenContext);
+    return this.getRuleContext(0, UpTraversalTokenContext)!;
   }
   public postUpwardTraversalWhitespace(): PostUpwardTraversalWhitespaceContext {
-    return this.getRuleContext(0, PostUpwardTraversalWhitespaceContext);
+    return this.getRuleContext(0, PostUpwardTraversalWhitespaceContext)!;
   }
-  constructor(ctx: UpTraversalExprContext) {
-    super(ctx.parent, ctx.invokingState);
-    this.copyFrom(ctx);
-  }
-  // @Override
-  public enterRule(listener: SelectionAutoCompleteListener): void {
+  public override enterRule(listener: SelectionAutoCompleteListener): void {
     if (listener.enterUpTraversal) {
       listener.enterUpTraversal(this);
     }
   }
-  // @Override
-  public exitRule(listener: SelectionAutoCompleteListener): void {
+  public override exitRule(listener: SelectionAutoCompleteListener): void {
     if (listener.exitUpTraversal) {
       listener.exitUpTraversal(this);
     }
   }
-  // @Override
-  public accept<Result>(visitor: SelectionAutoCompleteVisitor<Result>): Result {
+  public override accept<Result>(visitor: SelectionAutoCompleteVisitor<Result>): Result | null {
     if (visitor.visitUpTraversal) {
       return visitor.visitUpTraversal(this);
     } else {
@@ -3015,43 +2781,39 @@ export class UpTraversalContext extends UpTraversalExprContext {
   }
 }
 
-export class DownTraversalExprContext extends ParserRuleContext {
-  constructor(parent: ParserRuleContext | undefined, invokingState: number) {
+export class DownTraversalExprContext extends antlr.ParserRuleContext {
+  public constructor(parent: antlr.ParserRuleContext | null, invokingState: number) {
     super(parent, invokingState);
   }
-  // @Override
-  public get ruleIndex(): number {
+  public override get ruleIndex(): number {
     return SelectionAutoCompleteParser.RULE_downTraversalExpr;
   }
-  public copyFrom(ctx: DownTraversalExprContext): void {
+  public override copyFrom(ctx: DownTraversalExprContext): void {
     super.copyFrom(ctx);
   }
 }
 export class DownTraversalContext extends DownTraversalExprContext {
+  public constructor(ctx: DownTraversalExprContext) {
+    super(ctx.parent, ctx.invokingState);
+    super.copyFrom(ctx);
+  }
   public downTraversalToken(): DownTraversalTokenContext {
-    return this.getRuleContext(0, DownTraversalTokenContext);
+    return this.getRuleContext(0, DownTraversalTokenContext)!;
   }
   public postDownwardTraversalWhitespace(): PostDownwardTraversalWhitespaceContext {
-    return this.getRuleContext(0, PostDownwardTraversalWhitespaceContext);
+    return this.getRuleContext(0, PostDownwardTraversalWhitespaceContext)!;
   }
-  constructor(ctx: DownTraversalExprContext) {
-    super(ctx.parent, ctx.invokingState);
-    this.copyFrom(ctx);
-  }
-  // @Override
-  public enterRule(listener: SelectionAutoCompleteListener): void {
+  public override enterRule(listener: SelectionAutoCompleteListener): void {
     if (listener.enterDownTraversal) {
       listener.enterDownTraversal(this);
     }
   }
-  // @Override
-  public exitRule(listener: SelectionAutoCompleteListener): void {
+  public override exitRule(listener: SelectionAutoCompleteListener): void {
     if (listener.exitDownTraversal) {
       listener.exitDownTraversal(this);
     }
   }
-  // @Override
-  public accept<Result>(visitor: SelectionAutoCompleteVisitor<Result>): Result {
+  public override accept<Result>(visitor: SelectionAutoCompleteVisitor<Result>): Result | null {
     if (visitor.visitDownTraversal) {
       return visitor.visitDownTraversal(this);
     } else {
@@ -3060,34 +2822,30 @@ export class DownTraversalContext extends DownTraversalExprContext {
   }
 }
 
-export class UpTraversalTokenContext extends ParserRuleContext {
-  public PLUS(): TerminalNode {
-    return this.getToken(SelectionAutoCompleteParser.PLUS, 0);
-  }
-  public DIGITS(): TerminalNode | undefined {
-    return this.tryGetToken(SelectionAutoCompleteParser.DIGITS, 0);
-  }
-  constructor(parent: ParserRuleContext | undefined, invokingState: number) {
+export class UpTraversalTokenContext extends antlr.ParserRuleContext {
+  public constructor(parent: antlr.ParserRuleContext | null, invokingState: number) {
     super(parent, invokingState);
   }
-  // @Override
-  public get ruleIndex(): number {
+  public PLUS(): antlr.TerminalNode {
+    return this.getToken(SelectionAutoCompleteParser.PLUS, 0)!;
+  }
+  public DIGITS(): antlr.TerminalNode | null {
+    return this.getToken(SelectionAutoCompleteParser.DIGITS, 0);
+  }
+  public override get ruleIndex(): number {
     return SelectionAutoCompleteParser.RULE_upTraversalToken;
   }
-  // @Override
-  public enterRule(listener: SelectionAutoCompleteListener): void {
+  public override enterRule(listener: SelectionAutoCompleteListener): void {
     if (listener.enterUpTraversalToken) {
       listener.enterUpTraversalToken(this);
     }
   }
-  // @Override
-  public exitRule(listener: SelectionAutoCompleteListener): void {
+  public override exitRule(listener: SelectionAutoCompleteListener): void {
     if (listener.exitUpTraversalToken) {
       listener.exitUpTraversalToken(this);
     }
   }
-  // @Override
-  public accept<Result>(visitor: SelectionAutoCompleteVisitor<Result>): Result {
+  public override accept<Result>(visitor: SelectionAutoCompleteVisitor<Result>): Result | null {
     if (visitor.visitUpTraversalToken) {
       return visitor.visitUpTraversalToken(this);
     } else {
@@ -3096,34 +2854,30 @@ export class UpTraversalTokenContext extends ParserRuleContext {
   }
 }
 
-export class DownTraversalTokenContext extends ParserRuleContext {
-  public PLUS(): TerminalNode {
-    return this.getToken(SelectionAutoCompleteParser.PLUS, 0);
-  }
-  public DIGITS(): TerminalNode | undefined {
-    return this.tryGetToken(SelectionAutoCompleteParser.DIGITS, 0);
-  }
-  constructor(parent: ParserRuleContext | undefined, invokingState: number) {
+export class DownTraversalTokenContext extends antlr.ParserRuleContext {
+  public constructor(parent: antlr.ParserRuleContext | null, invokingState: number) {
     super(parent, invokingState);
   }
-  // @Override
-  public get ruleIndex(): number {
+  public PLUS(): antlr.TerminalNode {
+    return this.getToken(SelectionAutoCompleteParser.PLUS, 0)!;
+  }
+  public DIGITS(): antlr.TerminalNode | null {
+    return this.getToken(SelectionAutoCompleteParser.DIGITS, 0);
+  }
+  public override get ruleIndex(): number {
     return SelectionAutoCompleteParser.RULE_downTraversalToken;
   }
-  // @Override
-  public enterRule(listener: SelectionAutoCompleteListener): void {
+  public override enterRule(listener: SelectionAutoCompleteListener): void {
     if (listener.enterDownTraversalToken) {
       listener.enterDownTraversalToken(this);
     }
   }
-  // @Override
-  public exitRule(listener: SelectionAutoCompleteListener): void {
+  public override exitRule(listener: SelectionAutoCompleteListener): void {
     if (listener.exitDownTraversalToken) {
       listener.exitDownTraversalToken(this);
     }
   }
-  // @Override
-  public accept<Result>(visitor: SelectionAutoCompleteVisitor<Result>): Result {
+  public override accept<Result>(visitor: SelectionAutoCompleteVisitor<Result>): Result | null {
     if (visitor.visitDownTraversalToken) {
       return visitor.visitDownTraversalToken(this);
     } else {
@@ -3132,31 +2886,27 @@ export class DownTraversalTokenContext extends ParserRuleContext {
   }
 }
 
-export class AttributeNameContext extends ParserRuleContext {
-  public IDENTIFIER(): TerminalNode {
-    return this.getToken(SelectionAutoCompleteParser.IDENTIFIER, 0);
-  }
-  constructor(parent: ParserRuleContext | undefined, invokingState: number) {
+export class AttributeNameContext extends antlr.ParserRuleContext {
+  public constructor(parent: antlr.ParserRuleContext | null, invokingState: number) {
     super(parent, invokingState);
   }
-  // @Override
-  public get ruleIndex(): number {
+  public IDENTIFIER(): antlr.TerminalNode {
+    return this.getToken(SelectionAutoCompleteParser.IDENTIFIER, 0)!;
+  }
+  public override get ruleIndex(): number {
     return SelectionAutoCompleteParser.RULE_attributeName;
   }
-  // @Override
-  public enterRule(listener: SelectionAutoCompleteListener): void {
+  public override enterRule(listener: SelectionAutoCompleteListener): void {
     if (listener.enterAttributeName) {
       listener.enterAttributeName(this);
     }
   }
-  // @Override
-  public exitRule(listener: SelectionAutoCompleteListener): void {
+  public override exitRule(listener: SelectionAutoCompleteListener): void {
     if (listener.exitAttributeName) {
       listener.exitAttributeName(this);
     }
   }
-  // @Override
-  public accept<Result>(visitor: SelectionAutoCompleteVisitor<Result>): Result {
+  public override accept<Result>(visitor: SelectionAutoCompleteVisitor<Result>): Result | null {
     if (visitor.visitAttributeName) {
       return visitor.visitAttributeName(this);
     } else {
@@ -3165,31 +2915,27 @@ export class AttributeNameContext extends ParserRuleContext {
   }
 }
 
-export class AttributeValueContext extends ParserRuleContext {
-  public value(): ValueContext {
-    return this.getRuleContext(0, ValueContext);
-  }
-  constructor(parent: ParserRuleContext | undefined, invokingState: number) {
+export class AttributeValueContext extends antlr.ParserRuleContext {
+  public constructor(parent: antlr.ParserRuleContext | null, invokingState: number) {
     super(parent, invokingState);
   }
-  // @Override
-  public get ruleIndex(): number {
+  public value(): ValueContext {
+    return this.getRuleContext(0, ValueContext)!;
+  }
+  public override get ruleIndex(): number {
     return SelectionAutoCompleteParser.RULE_attributeValue;
   }
-  // @Override
-  public enterRule(listener: SelectionAutoCompleteListener): void {
+  public override enterRule(listener: SelectionAutoCompleteListener): void {
     if (listener.enterAttributeValue) {
       listener.enterAttributeValue(this);
     }
   }
-  // @Override
-  public exitRule(listener: SelectionAutoCompleteListener): void {
+  public override exitRule(listener: SelectionAutoCompleteListener): void {
     if (listener.exitAttributeValue) {
       listener.exitAttributeValue(this);
     }
   }
-  // @Override
-  public accept<Result>(visitor: SelectionAutoCompleteVisitor<Result>): Result {
+  public override accept<Result>(visitor: SelectionAutoCompleteVisitor<Result>): Result | null {
     if (visitor.visitAttributeValue) {
       return visitor.visitAttributeValue(this);
     } else {
@@ -3198,31 +2944,27 @@ export class AttributeValueContext extends ParserRuleContext {
   }
 }
 
-export class FunctionNameContext extends ParserRuleContext {
-  public IDENTIFIER(): TerminalNode {
-    return this.getToken(SelectionAutoCompleteParser.IDENTIFIER, 0);
-  }
-  constructor(parent: ParserRuleContext | undefined, invokingState: number) {
+export class FunctionNameContext extends antlr.ParserRuleContext {
+  public constructor(parent: antlr.ParserRuleContext | null, invokingState: number) {
     super(parent, invokingState);
   }
-  // @Override
-  public get ruleIndex(): number {
+  public IDENTIFIER(): antlr.TerminalNode {
+    return this.getToken(SelectionAutoCompleteParser.IDENTIFIER, 0)!;
+  }
+  public override get ruleIndex(): number {
     return SelectionAutoCompleteParser.RULE_functionName;
   }
-  // @Override
-  public enterRule(listener: SelectionAutoCompleteListener): void {
+  public override enterRule(listener: SelectionAutoCompleteListener): void {
     if (listener.enterFunctionName) {
       listener.enterFunctionName(this);
     }
   }
-  // @Override
-  public exitRule(listener: SelectionAutoCompleteListener): void {
+  public override exitRule(listener: SelectionAutoCompleteListener): void {
     if (listener.exitFunctionName) {
       listener.exitFunctionName(this);
     }
   }
-  // @Override
-  public accept<Result>(visitor: SelectionAutoCompleteVisitor<Result>): Result {
+  public override accept<Result>(visitor: SelectionAutoCompleteVisitor<Result>): Result | null {
     if (visitor.visitFunctionName) {
       return visitor.visitFunctionName(this);
     } else {
@@ -3231,34 +2973,30 @@ export class FunctionNameContext extends ParserRuleContext {
   }
 }
 
-export class CommaTokenContext extends ParserRuleContext {
-  public COMMA(): TerminalNode {
-    return this.getToken(SelectionAutoCompleteParser.COMMA, 0);
-  }
-  public postLogicalOperatorWhitespace(): PostLogicalOperatorWhitespaceContext {
-    return this.getRuleContext(0, PostLogicalOperatorWhitespaceContext);
-  }
-  constructor(parent: ParserRuleContext | undefined, invokingState: number) {
+export class CommaTokenContext extends antlr.ParserRuleContext {
+  public constructor(parent: antlr.ParserRuleContext | null, invokingState: number) {
     super(parent, invokingState);
   }
-  // @Override
-  public get ruleIndex(): number {
+  public COMMA(): antlr.TerminalNode {
+    return this.getToken(SelectionAutoCompleteParser.COMMA, 0)!;
+  }
+  public postLogicalOperatorWhitespace(): PostLogicalOperatorWhitespaceContext {
+    return this.getRuleContext(0, PostLogicalOperatorWhitespaceContext)!;
+  }
+  public override get ruleIndex(): number {
     return SelectionAutoCompleteParser.RULE_commaToken;
   }
-  // @Override
-  public enterRule(listener: SelectionAutoCompleteListener): void {
+  public override enterRule(listener: SelectionAutoCompleteListener): void {
     if (listener.enterCommaToken) {
       listener.enterCommaToken(this);
     }
   }
-  // @Override
-  public exitRule(listener: SelectionAutoCompleteListener): void {
+  public override exitRule(listener: SelectionAutoCompleteListener): void {
     if (listener.exitCommaToken) {
       listener.exitCommaToken(this);
     }
   }
-  // @Override
-  public accept<Result>(visitor: SelectionAutoCompleteVisitor<Result>): Result {
+  public override accept<Result>(visitor: SelectionAutoCompleteVisitor<Result>): Result | null {
     if (visitor.visitCommaToken) {
       return visitor.visitCommaToken(this);
     } else {
@@ -3267,31 +3005,27 @@ export class CommaTokenContext extends ParserRuleContext {
   }
 }
 
-export class OrTokenContext extends ParserRuleContext {
-  public OR(): TerminalNode {
-    return this.getToken(SelectionAutoCompleteParser.OR, 0);
-  }
-  constructor(parent: ParserRuleContext | undefined, invokingState: number) {
+export class OrTokenContext extends antlr.ParserRuleContext {
+  public constructor(parent: antlr.ParserRuleContext | null, invokingState: number) {
     super(parent, invokingState);
   }
-  // @Override
-  public get ruleIndex(): number {
+  public OR(): antlr.TerminalNode {
+    return this.getToken(SelectionAutoCompleteParser.OR, 0)!;
+  }
+  public override get ruleIndex(): number {
     return SelectionAutoCompleteParser.RULE_orToken;
   }
-  // @Override
-  public enterRule(listener: SelectionAutoCompleteListener): void {
+  public override enterRule(listener: SelectionAutoCompleteListener): void {
     if (listener.enterOrToken) {
       listener.enterOrToken(this);
     }
   }
-  // @Override
-  public exitRule(listener: SelectionAutoCompleteListener): void {
+  public override exitRule(listener: SelectionAutoCompleteListener): void {
     if (listener.exitOrToken) {
       listener.exitOrToken(this);
     }
   }
-  // @Override
-  public accept<Result>(visitor: SelectionAutoCompleteVisitor<Result>): Result {
+  public override accept<Result>(visitor: SelectionAutoCompleteVisitor<Result>): Result | null {
     if (visitor.visitOrToken) {
       return visitor.visitOrToken(this);
     } else {
@@ -3300,31 +3034,27 @@ export class OrTokenContext extends ParserRuleContext {
   }
 }
 
-export class AndTokenContext extends ParserRuleContext {
-  public AND(): TerminalNode {
-    return this.getToken(SelectionAutoCompleteParser.AND, 0);
-  }
-  constructor(parent: ParserRuleContext | undefined, invokingState: number) {
+export class AndTokenContext extends antlr.ParserRuleContext {
+  public constructor(parent: antlr.ParserRuleContext | null, invokingState: number) {
     super(parent, invokingState);
   }
-  // @Override
-  public get ruleIndex(): number {
+  public AND(): antlr.TerminalNode {
+    return this.getToken(SelectionAutoCompleteParser.AND, 0)!;
+  }
+  public override get ruleIndex(): number {
     return SelectionAutoCompleteParser.RULE_andToken;
   }
-  // @Override
-  public enterRule(listener: SelectionAutoCompleteListener): void {
+  public override enterRule(listener: SelectionAutoCompleteListener): void {
     if (listener.enterAndToken) {
       listener.enterAndToken(this);
     }
   }
-  // @Override
-  public exitRule(listener: SelectionAutoCompleteListener): void {
+  public override exitRule(listener: SelectionAutoCompleteListener): void {
     if (listener.exitAndToken) {
       listener.exitAndToken(this);
     }
   }
-  // @Override
-  public accept<Result>(visitor: SelectionAutoCompleteVisitor<Result>): Result {
+  public override accept<Result>(visitor: SelectionAutoCompleteVisitor<Result>): Result | null {
     if (visitor.visitAndToken) {
       return visitor.visitAndToken(this);
     } else {
@@ -3333,31 +3063,27 @@ export class AndTokenContext extends ParserRuleContext {
   }
 }
 
-export class NotTokenContext extends ParserRuleContext {
-  public NOT(): TerminalNode {
-    return this.getToken(SelectionAutoCompleteParser.NOT, 0);
-  }
-  constructor(parent: ParserRuleContext | undefined, invokingState: number) {
+export class NotTokenContext extends antlr.ParserRuleContext {
+  public constructor(parent: antlr.ParserRuleContext | null, invokingState: number) {
     super(parent, invokingState);
   }
-  // @Override
-  public get ruleIndex(): number {
+  public NOT(): antlr.TerminalNode {
+    return this.getToken(SelectionAutoCompleteParser.NOT, 0)!;
+  }
+  public override get ruleIndex(): number {
     return SelectionAutoCompleteParser.RULE_notToken;
   }
-  // @Override
-  public enterRule(listener: SelectionAutoCompleteListener): void {
+  public override enterRule(listener: SelectionAutoCompleteListener): void {
     if (listener.enterNotToken) {
       listener.enterNotToken(this);
     }
   }
-  // @Override
-  public exitRule(listener: SelectionAutoCompleteListener): void {
+  public override exitRule(listener: SelectionAutoCompleteListener): void {
     if (listener.exitNotToken) {
       listener.exitNotToken(this);
     }
   }
-  // @Override
-  public accept<Result>(visitor: SelectionAutoCompleteVisitor<Result>): Result {
+  public override accept<Result>(visitor: SelectionAutoCompleteVisitor<Result>): Result | null {
     if (visitor.visitNotToken) {
       return visitor.visitNotToken(this);
     } else {
@@ -3366,31 +3092,27 @@ export class NotTokenContext extends ParserRuleContext {
   }
 }
 
-export class ColonTokenContext extends ParserRuleContext {
-  public COLON(): TerminalNode {
-    return this.getToken(SelectionAutoCompleteParser.COLON, 0);
-  }
-  constructor(parent: ParserRuleContext | undefined, invokingState: number) {
+export class ColonTokenContext extends antlr.ParserRuleContext {
+  public constructor(parent: antlr.ParserRuleContext | null, invokingState: number) {
     super(parent, invokingState);
   }
-  // @Override
-  public get ruleIndex(): number {
+  public COLON(): antlr.TerminalNode {
+    return this.getToken(SelectionAutoCompleteParser.COLON, 0)!;
+  }
+  public override get ruleIndex(): number {
     return SelectionAutoCompleteParser.RULE_colonToken;
   }
-  // @Override
-  public enterRule(listener: SelectionAutoCompleteListener): void {
+  public override enterRule(listener: SelectionAutoCompleteListener): void {
     if (listener.enterColonToken) {
       listener.enterColonToken(this);
     }
   }
-  // @Override
-  public exitRule(listener: SelectionAutoCompleteListener): void {
+  public override exitRule(listener: SelectionAutoCompleteListener): void {
     if (listener.exitColonToken) {
       listener.exitColonToken(this);
     }
   }
-  // @Override
-  public accept<Result>(visitor: SelectionAutoCompleteVisitor<Result>): Result {
+  public override accept<Result>(visitor: SelectionAutoCompleteVisitor<Result>): Result | null {
     if (visitor.visitColonToken) {
       return visitor.visitColonToken(this);
     } else {
@@ -3399,31 +3121,27 @@ export class ColonTokenContext extends ParserRuleContext {
   }
 }
 
-export class LeftParenTokenContext extends ParserRuleContext {
-  public LPAREN(): TerminalNode {
-    return this.getToken(SelectionAutoCompleteParser.LPAREN, 0);
-  }
-  constructor(parent: ParserRuleContext | undefined, invokingState: number) {
+export class LeftParenTokenContext extends antlr.ParserRuleContext {
+  public constructor(parent: antlr.ParserRuleContext | null, invokingState: number) {
     super(parent, invokingState);
   }
-  // @Override
-  public get ruleIndex(): number {
+  public LPAREN(): antlr.TerminalNode {
+    return this.getToken(SelectionAutoCompleteParser.LPAREN, 0)!;
+  }
+  public override get ruleIndex(): number {
     return SelectionAutoCompleteParser.RULE_leftParenToken;
   }
-  // @Override
-  public enterRule(listener: SelectionAutoCompleteListener): void {
+  public override enterRule(listener: SelectionAutoCompleteListener): void {
     if (listener.enterLeftParenToken) {
       listener.enterLeftParenToken(this);
     }
   }
-  // @Override
-  public exitRule(listener: SelectionAutoCompleteListener): void {
+  public override exitRule(listener: SelectionAutoCompleteListener): void {
     if (listener.exitLeftParenToken) {
       listener.exitLeftParenToken(this);
     }
   }
-  // @Override
-  public accept<Result>(visitor: SelectionAutoCompleteVisitor<Result>): Result {
+  public override accept<Result>(visitor: SelectionAutoCompleteVisitor<Result>): Result | null {
     if (visitor.visitLeftParenToken) {
       return visitor.visitLeftParenToken(this);
     } else {
@@ -3432,31 +3150,27 @@ export class LeftParenTokenContext extends ParserRuleContext {
   }
 }
 
-export class RightParenTokenContext extends ParserRuleContext {
-  public RPAREN(): TerminalNode {
-    return this.getToken(SelectionAutoCompleteParser.RPAREN, 0);
-  }
-  constructor(parent: ParserRuleContext | undefined, invokingState: number) {
+export class RightParenTokenContext extends antlr.ParserRuleContext {
+  public constructor(parent: antlr.ParserRuleContext | null, invokingState: number) {
     super(parent, invokingState);
   }
-  // @Override
-  public get ruleIndex(): number {
+  public RPAREN(): antlr.TerminalNode {
+    return this.getToken(SelectionAutoCompleteParser.RPAREN, 0)!;
+  }
+  public override get ruleIndex(): number {
     return SelectionAutoCompleteParser.RULE_rightParenToken;
   }
-  // @Override
-  public enterRule(listener: SelectionAutoCompleteListener): void {
+  public override enterRule(listener: SelectionAutoCompleteListener): void {
     if (listener.enterRightParenToken) {
       listener.enterRightParenToken(this);
     }
   }
-  // @Override
-  public exitRule(listener: SelectionAutoCompleteListener): void {
+  public override exitRule(listener: SelectionAutoCompleteListener): void {
     if (listener.exitRightParenToken) {
       listener.exitRightParenToken(this);
     }
   }
-  // @Override
-  public accept<Result>(visitor: SelectionAutoCompleteVisitor<Result>): Result {
+  public override accept<Result>(visitor: SelectionAutoCompleteVisitor<Result>): Result | null {
     if (visitor.visitRightParenToken) {
       return visitor.visitRightParenToken(this);
     } else {
@@ -3465,37 +3179,33 @@ export class RightParenTokenContext extends ParserRuleContext {
   }
 }
 
-export class AttributeValueWhitespaceContext extends ParserRuleContext {
-  public WS(): TerminalNode[];
-  public WS(i: number): TerminalNode;
-  public WS(i?: number): TerminalNode | TerminalNode[] {
+export class AttributeValueWhitespaceContext extends antlr.ParserRuleContext {
+  public constructor(parent: antlr.ParserRuleContext | null, invokingState: number) {
+    super(parent, invokingState);
+  }
+  public WS(): antlr.TerminalNode[];
+  public WS(i: number): antlr.TerminalNode | null;
+  public WS(i?: number): antlr.TerminalNode | null | antlr.TerminalNode[] {
     if (i === undefined) {
       return this.getTokens(SelectionAutoCompleteParser.WS);
     } else {
       return this.getToken(SelectionAutoCompleteParser.WS, i);
     }
   }
-  constructor(parent: ParserRuleContext | undefined, invokingState: number) {
-    super(parent, invokingState);
-  }
-  // @Override
-  public get ruleIndex(): number {
+  public override get ruleIndex(): number {
     return SelectionAutoCompleteParser.RULE_attributeValueWhitespace;
   }
-  // @Override
-  public enterRule(listener: SelectionAutoCompleteListener): void {
+  public override enterRule(listener: SelectionAutoCompleteListener): void {
     if (listener.enterAttributeValueWhitespace) {
       listener.enterAttributeValueWhitespace(this);
     }
   }
-  // @Override
-  public exitRule(listener: SelectionAutoCompleteListener): void {
+  public override exitRule(listener: SelectionAutoCompleteListener): void {
     if (listener.exitAttributeValueWhitespace) {
       listener.exitAttributeValueWhitespace(this);
     }
   }
-  // @Override
-  public accept<Result>(visitor: SelectionAutoCompleteVisitor<Result>): Result {
+  public override accept<Result>(visitor: SelectionAutoCompleteVisitor<Result>): Result | null {
     if (visitor.visitAttributeValueWhitespace) {
       return visitor.visitAttributeValueWhitespace(this);
     } else {
@@ -3504,37 +3214,33 @@ export class AttributeValueWhitespaceContext extends ParserRuleContext {
   }
 }
 
-export class PostAttributeValueWhitespaceContext extends ParserRuleContext {
-  public WS(): TerminalNode[];
-  public WS(i: number): TerminalNode;
-  public WS(i?: number): TerminalNode | TerminalNode[] {
+export class PostAttributeValueWhitespaceContext extends antlr.ParserRuleContext {
+  public constructor(parent: antlr.ParserRuleContext | null, invokingState: number) {
+    super(parent, invokingState);
+  }
+  public WS(): antlr.TerminalNode[];
+  public WS(i: number): antlr.TerminalNode | null;
+  public WS(i?: number): antlr.TerminalNode | null | antlr.TerminalNode[] {
     if (i === undefined) {
       return this.getTokens(SelectionAutoCompleteParser.WS);
     } else {
       return this.getToken(SelectionAutoCompleteParser.WS, i);
     }
   }
-  constructor(parent: ParserRuleContext | undefined, invokingState: number) {
-    super(parent, invokingState);
-  }
-  // @Override
-  public get ruleIndex(): number {
+  public override get ruleIndex(): number {
     return SelectionAutoCompleteParser.RULE_postAttributeValueWhitespace;
   }
-  // @Override
-  public enterRule(listener: SelectionAutoCompleteListener): void {
+  public override enterRule(listener: SelectionAutoCompleteListener): void {
     if (listener.enterPostAttributeValueWhitespace) {
       listener.enterPostAttributeValueWhitespace(this);
     }
   }
-  // @Override
-  public exitRule(listener: SelectionAutoCompleteListener): void {
+  public override exitRule(listener: SelectionAutoCompleteListener): void {
     if (listener.exitPostAttributeValueWhitespace) {
       listener.exitPostAttributeValueWhitespace(this);
     }
   }
-  // @Override
-  public accept<Result>(visitor: SelectionAutoCompleteVisitor<Result>): Result {
+  public override accept<Result>(visitor: SelectionAutoCompleteVisitor<Result>): Result | null {
     if (visitor.visitPostAttributeValueWhitespace) {
       return visitor.visitPostAttributeValueWhitespace(this);
     } else {
@@ -3543,37 +3249,33 @@ export class PostAttributeValueWhitespaceContext extends ParserRuleContext {
   }
 }
 
-export class PostExpressionWhitespaceContext extends ParserRuleContext {
-  public WS(): TerminalNode[];
-  public WS(i: number): TerminalNode;
-  public WS(i?: number): TerminalNode | TerminalNode[] {
+export class PostExpressionWhitespaceContext extends antlr.ParserRuleContext {
+  public constructor(parent: antlr.ParserRuleContext | null, invokingState: number) {
+    super(parent, invokingState);
+  }
+  public WS(): antlr.TerminalNode[];
+  public WS(i: number): antlr.TerminalNode | null;
+  public WS(i?: number): antlr.TerminalNode | null | antlr.TerminalNode[] {
     if (i === undefined) {
       return this.getTokens(SelectionAutoCompleteParser.WS);
     } else {
       return this.getToken(SelectionAutoCompleteParser.WS, i);
     }
   }
-  constructor(parent: ParserRuleContext | undefined, invokingState: number) {
-    super(parent, invokingState);
-  }
-  // @Override
-  public get ruleIndex(): number {
+  public override get ruleIndex(): number {
     return SelectionAutoCompleteParser.RULE_postExpressionWhitespace;
   }
-  // @Override
-  public enterRule(listener: SelectionAutoCompleteListener): void {
+  public override enterRule(listener: SelectionAutoCompleteListener): void {
     if (listener.enterPostExpressionWhitespace) {
       listener.enterPostExpressionWhitespace(this);
     }
   }
-  // @Override
-  public exitRule(listener: SelectionAutoCompleteListener): void {
+  public override exitRule(listener: SelectionAutoCompleteListener): void {
     if (listener.exitPostExpressionWhitespace) {
       listener.exitPostExpressionWhitespace(this);
     }
   }
-  // @Override
-  public accept<Result>(visitor: SelectionAutoCompleteVisitor<Result>): Result {
+  public override accept<Result>(visitor: SelectionAutoCompleteVisitor<Result>): Result | null {
     if (visitor.visitPostExpressionWhitespace) {
       return visitor.visitPostExpressionWhitespace(this);
     } else {
@@ -3582,37 +3284,33 @@ export class PostExpressionWhitespaceContext extends ParserRuleContext {
   }
 }
 
-export class PostNotOperatorWhitespaceContext extends ParserRuleContext {
-  public WS(): TerminalNode[];
-  public WS(i: number): TerminalNode;
-  public WS(i?: number): TerminalNode | TerminalNode[] {
+export class PostNotOperatorWhitespaceContext extends antlr.ParserRuleContext {
+  public constructor(parent: antlr.ParserRuleContext | null, invokingState: number) {
+    super(parent, invokingState);
+  }
+  public WS(): antlr.TerminalNode[];
+  public WS(i: number): antlr.TerminalNode | null;
+  public WS(i?: number): antlr.TerminalNode | null | antlr.TerminalNode[] {
     if (i === undefined) {
       return this.getTokens(SelectionAutoCompleteParser.WS);
     } else {
       return this.getToken(SelectionAutoCompleteParser.WS, i);
     }
   }
-  constructor(parent: ParserRuleContext | undefined, invokingState: number) {
-    super(parent, invokingState);
-  }
-  // @Override
-  public get ruleIndex(): number {
+  public override get ruleIndex(): number {
     return SelectionAutoCompleteParser.RULE_postNotOperatorWhitespace;
   }
-  // @Override
-  public enterRule(listener: SelectionAutoCompleteListener): void {
+  public override enterRule(listener: SelectionAutoCompleteListener): void {
     if (listener.enterPostNotOperatorWhitespace) {
       listener.enterPostNotOperatorWhitespace(this);
     }
   }
-  // @Override
-  public exitRule(listener: SelectionAutoCompleteListener): void {
+  public override exitRule(listener: SelectionAutoCompleteListener): void {
     if (listener.exitPostNotOperatorWhitespace) {
       listener.exitPostNotOperatorWhitespace(this);
     }
   }
-  // @Override
-  public accept<Result>(visitor: SelectionAutoCompleteVisitor<Result>): Result {
+  public override accept<Result>(visitor: SelectionAutoCompleteVisitor<Result>): Result | null {
     if (visitor.visitPostNotOperatorWhitespace) {
       return visitor.visitPostNotOperatorWhitespace(this);
     } else {
@@ -3621,37 +3319,33 @@ export class PostNotOperatorWhitespaceContext extends ParserRuleContext {
   }
 }
 
-export class PostLogicalOperatorWhitespaceContext extends ParserRuleContext {
-  public WS(): TerminalNode[];
-  public WS(i: number): TerminalNode;
-  public WS(i?: number): TerminalNode | TerminalNode[] {
+export class PostLogicalOperatorWhitespaceContext extends antlr.ParserRuleContext {
+  public constructor(parent: antlr.ParserRuleContext | null, invokingState: number) {
+    super(parent, invokingState);
+  }
+  public WS(): antlr.TerminalNode[];
+  public WS(i: number): antlr.TerminalNode | null;
+  public WS(i?: number): antlr.TerminalNode | null | antlr.TerminalNode[] {
     if (i === undefined) {
       return this.getTokens(SelectionAutoCompleteParser.WS);
     } else {
       return this.getToken(SelectionAutoCompleteParser.WS, i);
     }
   }
-  constructor(parent: ParserRuleContext | undefined, invokingState: number) {
-    super(parent, invokingState);
-  }
-  // @Override
-  public get ruleIndex(): number {
+  public override get ruleIndex(): number {
     return SelectionAutoCompleteParser.RULE_postLogicalOperatorWhitespace;
   }
-  // @Override
-  public enterRule(listener: SelectionAutoCompleteListener): void {
+  public override enterRule(listener: SelectionAutoCompleteListener): void {
     if (listener.enterPostLogicalOperatorWhitespace) {
       listener.enterPostLogicalOperatorWhitespace(this);
     }
   }
-  // @Override
-  public exitRule(listener: SelectionAutoCompleteListener): void {
+  public override exitRule(listener: SelectionAutoCompleteListener): void {
     if (listener.exitPostLogicalOperatorWhitespace) {
       listener.exitPostLogicalOperatorWhitespace(this);
     }
   }
-  // @Override
-  public accept<Result>(visitor: SelectionAutoCompleteVisitor<Result>): Result {
+  public override accept<Result>(visitor: SelectionAutoCompleteVisitor<Result>): Result | null {
     if (visitor.visitPostLogicalOperatorWhitespace) {
       return visitor.visitPostLogicalOperatorWhitespace(this);
     } else {
@@ -3660,37 +3354,33 @@ export class PostLogicalOperatorWhitespaceContext extends ParserRuleContext {
   }
 }
 
-export class PostNeighborTraversalWhitespaceContext extends ParserRuleContext {
-  public WS(): TerminalNode[];
-  public WS(i: number): TerminalNode;
-  public WS(i?: number): TerminalNode | TerminalNode[] {
+export class PostNeighborTraversalWhitespaceContext extends antlr.ParserRuleContext {
+  public constructor(parent: antlr.ParserRuleContext | null, invokingState: number) {
+    super(parent, invokingState);
+  }
+  public WS(): antlr.TerminalNode[];
+  public WS(i: number): antlr.TerminalNode | null;
+  public WS(i?: number): antlr.TerminalNode | null | antlr.TerminalNode[] {
     if (i === undefined) {
       return this.getTokens(SelectionAutoCompleteParser.WS);
     } else {
       return this.getToken(SelectionAutoCompleteParser.WS, i);
     }
   }
-  constructor(parent: ParserRuleContext | undefined, invokingState: number) {
-    super(parent, invokingState);
-  }
-  // @Override
-  public get ruleIndex(): number {
+  public override get ruleIndex(): number {
     return SelectionAutoCompleteParser.RULE_postNeighborTraversalWhitespace;
   }
-  // @Override
-  public enterRule(listener: SelectionAutoCompleteListener): void {
+  public override enterRule(listener: SelectionAutoCompleteListener): void {
     if (listener.enterPostNeighborTraversalWhitespace) {
       listener.enterPostNeighborTraversalWhitespace(this);
     }
   }
-  // @Override
-  public exitRule(listener: SelectionAutoCompleteListener): void {
+  public override exitRule(listener: SelectionAutoCompleteListener): void {
     if (listener.exitPostNeighborTraversalWhitespace) {
       listener.exitPostNeighborTraversalWhitespace(this);
     }
   }
-  // @Override
-  public accept<Result>(visitor: SelectionAutoCompleteVisitor<Result>): Result {
+  public override accept<Result>(visitor: SelectionAutoCompleteVisitor<Result>): Result | null {
     if (visitor.visitPostNeighborTraversalWhitespace) {
       return visitor.visitPostNeighborTraversalWhitespace(this);
     } else {
@@ -3699,37 +3389,33 @@ export class PostNeighborTraversalWhitespaceContext extends ParserRuleContext {
   }
 }
 
-export class PostUpwardTraversalWhitespaceContext extends ParserRuleContext {
-  public WS(): TerminalNode[];
-  public WS(i: number): TerminalNode;
-  public WS(i?: number): TerminalNode | TerminalNode[] {
+export class PostUpwardTraversalWhitespaceContext extends antlr.ParserRuleContext {
+  public constructor(parent: antlr.ParserRuleContext | null, invokingState: number) {
+    super(parent, invokingState);
+  }
+  public WS(): antlr.TerminalNode[];
+  public WS(i: number): antlr.TerminalNode | null;
+  public WS(i?: number): antlr.TerminalNode | null | antlr.TerminalNode[] {
     if (i === undefined) {
       return this.getTokens(SelectionAutoCompleteParser.WS);
     } else {
       return this.getToken(SelectionAutoCompleteParser.WS, i);
     }
   }
-  constructor(parent: ParserRuleContext | undefined, invokingState: number) {
-    super(parent, invokingState);
-  }
-  // @Override
-  public get ruleIndex(): number {
+  public override get ruleIndex(): number {
     return SelectionAutoCompleteParser.RULE_postUpwardTraversalWhitespace;
   }
-  // @Override
-  public enterRule(listener: SelectionAutoCompleteListener): void {
+  public override enterRule(listener: SelectionAutoCompleteListener): void {
     if (listener.enterPostUpwardTraversalWhitespace) {
       listener.enterPostUpwardTraversalWhitespace(this);
     }
   }
-  // @Override
-  public exitRule(listener: SelectionAutoCompleteListener): void {
+  public override exitRule(listener: SelectionAutoCompleteListener): void {
     if (listener.exitPostUpwardTraversalWhitespace) {
       listener.exitPostUpwardTraversalWhitespace(this);
     }
   }
-  // @Override
-  public accept<Result>(visitor: SelectionAutoCompleteVisitor<Result>): Result {
+  public override accept<Result>(visitor: SelectionAutoCompleteVisitor<Result>): Result | null {
     if (visitor.visitPostUpwardTraversalWhitespace) {
       return visitor.visitPostUpwardTraversalWhitespace(this);
     } else {
@@ -3738,37 +3424,33 @@ export class PostUpwardTraversalWhitespaceContext extends ParserRuleContext {
   }
 }
 
-export class PostDownwardTraversalWhitespaceContext extends ParserRuleContext {
-  public WS(): TerminalNode[];
-  public WS(i: number): TerminalNode;
-  public WS(i?: number): TerminalNode | TerminalNode[] {
+export class PostDownwardTraversalWhitespaceContext extends antlr.ParserRuleContext {
+  public constructor(parent: antlr.ParserRuleContext | null, invokingState: number) {
+    super(parent, invokingState);
+  }
+  public WS(): antlr.TerminalNode[];
+  public WS(i: number): antlr.TerminalNode | null;
+  public WS(i?: number): antlr.TerminalNode | null | antlr.TerminalNode[] {
     if (i === undefined) {
       return this.getTokens(SelectionAutoCompleteParser.WS);
     } else {
       return this.getToken(SelectionAutoCompleteParser.WS, i);
     }
   }
-  constructor(parent: ParserRuleContext | undefined, invokingState: number) {
-    super(parent, invokingState);
-  }
-  // @Override
-  public get ruleIndex(): number {
+  public override get ruleIndex(): number {
     return SelectionAutoCompleteParser.RULE_postDownwardTraversalWhitespace;
   }
-  // @Override
-  public enterRule(listener: SelectionAutoCompleteListener): void {
+  public override enterRule(listener: SelectionAutoCompleteListener): void {
     if (listener.enterPostDownwardTraversalWhitespace) {
       listener.enterPostDownwardTraversalWhitespace(this);
     }
   }
-  // @Override
-  public exitRule(listener: SelectionAutoCompleteListener): void {
+  public override exitRule(listener: SelectionAutoCompleteListener): void {
     if (listener.exitPostDownwardTraversalWhitespace) {
       listener.exitPostDownwardTraversalWhitespace(this);
     }
   }
-  // @Override
-  public accept<Result>(visitor: SelectionAutoCompleteVisitor<Result>): Result {
+  public override accept<Result>(visitor: SelectionAutoCompleteVisitor<Result>): Result | null {
     if (visitor.visitPostDownwardTraversalWhitespace) {
       return visitor.visitPostDownwardTraversalWhitespace(this);
     } else {
@@ -3777,37 +3459,33 @@ export class PostDownwardTraversalWhitespaceContext extends ParserRuleContext {
   }
 }
 
-export class PostDigitsWhitespaceContext extends ParserRuleContext {
-  public WS(): TerminalNode[];
-  public WS(i: number): TerminalNode;
-  public WS(i?: number): TerminalNode | TerminalNode[] {
+export class PostDigitsWhitespaceContext extends antlr.ParserRuleContext {
+  public constructor(parent: antlr.ParserRuleContext | null, invokingState: number) {
+    super(parent, invokingState);
+  }
+  public WS(): antlr.TerminalNode[];
+  public WS(i: number): antlr.TerminalNode | null;
+  public WS(i?: number): antlr.TerminalNode | null | antlr.TerminalNode[] {
     if (i === undefined) {
       return this.getTokens(SelectionAutoCompleteParser.WS);
     } else {
       return this.getToken(SelectionAutoCompleteParser.WS, i);
     }
   }
-  constructor(parent: ParserRuleContext | undefined, invokingState: number) {
-    super(parent, invokingState);
-  }
-  // @Override
-  public get ruleIndex(): number {
+  public override get ruleIndex(): number {
     return SelectionAutoCompleteParser.RULE_postDigitsWhitespace;
   }
-  // @Override
-  public enterRule(listener: SelectionAutoCompleteListener): void {
+  public override enterRule(listener: SelectionAutoCompleteListener): void {
     if (listener.enterPostDigitsWhitespace) {
       listener.enterPostDigitsWhitespace(this);
     }
   }
-  // @Override
-  public exitRule(listener: SelectionAutoCompleteListener): void {
+  public override exitRule(listener: SelectionAutoCompleteListener): void {
     if (listener.exitPostDigitsWhitespace) {
       listener.exitPostDigitsWhitespace(this);
     }
   }
-  // @Override
-  public accept<Result>(visitor: SelectionAutoCompleteVisitor<Result>): Result {
+  public override accept<Result>(visitor: SelectionAutoCompleteVisitor<Result>): Result | null {
     if (visitor.visitPostDigitsWhitespace) {
       return visitor.visitPostDigitsWhitespace(this);
     } else {
@@ -3816,98 +3494,36 @@ export class PostDigitsWhitespaceContext extends ParserRuleContext {
   }
 }
 
-export class ValueContext extends ParserRuleContext {
-  constructor(parent: ParserRuleContext | undefined, invokingState: number) {
+export class ValueContext extends antlr.ParserRuleContext {
+  public constructor(parent: antlr.ParserRuleContext | null, invokingState: number) {
     super(parent, invokingState);
   }
-  // @Override
-  public get ruleIndex(): number {
+  public override get ruleIndex(): number {
     return SelectionAutoCompleteParser.RULE_value;
   }
-  public copyFrom(ctx: ValueContext): void {
+  public override copyFrom(ctx: ValueContext): void {
     super.copyFrom(ctx);
   }
 }
-export class QuotedStringValueContext extends ValueContext {
-  public QUOTED_STRING(): TerminalNode {
-    return this.getToken(SelectionAutoCompleteParser.QUOTED_STRING, 0);
-  }
-  constructor(ctx: ValueContext) {
-    super(ctx.parent, ctx.invokingState);
-    this.copyFrom(ctx);
-  }
-  // @Override
-  public enterRule(listener: SelectionAutoCompleteListener): void {
-    if (listener.enterQuotedStringValue) {
-      listener.enterQuotedStringValue(this);
-    }
-  }
-  // @Override
-  public exitRule(listener: SelectionAutoCompleteListener): void {
-    if (listener.exitQuotedStringValue) {
-      listener.exitQuotedStringValue(this);
-    }
-  }
-  // @Override
-  public accept<Result>(visitor: SelectionAutoCompleteVisitor<Result>): Result {
-    if (visitor.visitQuotedStringValue) {
-      return visitor.visitQuotedStringValue(this);
-    } else {
-      return visitor.visitChildren(this);
-    }
-  }
-}
-export class IncompleteLeftQuotedStringValueContext extends ValueContext {
-  public INCOMPLETE_LEFT_QUOTED_STRING(): TerminalNode {
-    return this.getToken(SelectionAutoCompleteParser.INCOMPLETE_LEFT_QUOTED_STRING, 0);
-  }
-  constructor(ctx: ValueContext) {
-    super(ctx.parent, ctx.invokingState);
-    this.copyFrom(ctx);
-  }
-  // @Override
-  public enterRule(listener: SelectionAutoCompleteListener): void {
-    if (listener.enterIncompleteLeftQuotedStringValue) {
-      listener.enterIncompleteLeftQuotedStringValue(this);
-    }
-  }
-  // @Override
-  public exitRule(listener: SelectionAutoCompleteListener): void {
-    if (listener.exitIncompleteLeftQuotedStringValue) {
-      listener.exitIncompleteLeftQuotedStringValue(this);
-    }
-  }
-  // @Override
-  public accept<Result>(visitor: SelectionAutoCompleteVisitor<Result>): Result {
-    if (visitor.visitIncompleteLeftQuotedStringValue) {
-      return visitor.visitIncompleteLeftQuotedStringValue(this);
-    } else {
-      return visitor.visitChildren(this);
-    }
-  }
-}
 export class IncompleteRightQuotedStringValueContext extends ValueContext {
-  public INCOMPLETE_RIGHT_QUOTED_STRING(): TerminalNode {
-    return this.getToken(SelectionAutoCompleteParser.INCOMPLETE_RIGHT_QUOTED_STRING, 0);
-  }
-  constructor(ctx: ValueContext) {
+  public constructor(ctx: ValueContext) {
     super(ctx.parent, ctx.invokingState);
-    this.copyFrom(ctx);
+    super.copyFrom(ctx);
   }
-  // @Override
-  public enterRule(listener: SelectionAutoCompleteListener): void {
+  public INCOMPLETE_RIGHT_QUOTED_STRING(): antlr.TerminalNode {
+    return this.getToken(SelectionAutoCompleteParser.INCOMPLETE_RIGHT_QUOTED_STRING, 0)!;
+  }
+  public override enterRule(listener: SelectionAutoCompleteListener): void {
     if (listener.enterIncompleteRightQuotedStringValue) {
       listener.enterIncompleteRightQuotedStringValue(this);
     }
   }
-  // @Override
-  public exitRule(listener: SelectionAutoCompleteListener): void {
+  public override exitRule(listener: SelectionAutoCompleteListener): void {
     if (listener.exitIncompleteRightQuotedStringValue) {
       listener.exitIncompleteRightQuotedStringValue(this);
     }
   }
-  // @Override
-  public accept<Result>(visitor: SelectionAutoCompleteVisitor<Result>): Result {
+  public override accept<Result>(visitor: SelectionAutoCompleteVisitor<Result>): Result | null {
     if (visitor.visitIncompleteRightQuotedStringValue) {
       return visitor.visitIncompleteRightQuotedStringValue(this);
     } else {
@@ -3916,27 +3532,24 @@ export class IncompleteRightQuotedStringValueContext extends ValueContext {
   }
 }
 export class UnquotedStringValueContext extends ValueContext {
-  public IDENTIFIER(): TerminalNode {
-    return this.getToken(SelectionAutoCompleteParser.IDENTIFIER, 0);
-  }
-  constructor(ctx: ValueContext) {
+  public constructor(ctx: ValueContext) {
     super(ctx.parent, ctx.invokingState);
-    this.copyFrom(ctx);
+    super.copyFrom(ctx);
   }
-  // @Override
-  public enterRule(listener: SelectionAutoCompleteListener): void {
+  public IDENTIFIER(): antlr.TerminalNode {
+    return this.getToken(SelectionAutoCompleteParser.IDENTIFIER, 0)!;
+  }
+  public override enterRule(listener: SelectionAutoCompleteListener): void {
     if (listener.enterUnquotedStringValue) {
       listener.enterUnquotedStringValue(this);
     }
   }
-  // @Override
-  public exitRule(listener: SelectionAutoCompleteListener): void {
+  public override exitRule(listener: SelectionAutoCompleteListener): void {
     if (listener.exitUnquotedStringValue) {
       listener.exitUnquotedStringValue(this);
     }
   }
-  // @Override
-  public accept<Result>(visitor: SelectionAutoCompleteVisitor<Result>): Result {
+  public override accept<Result>(visitor: SelectionAutoCompleteVisitor<Result>): Result | null {
     if (visitor.visitUnquotedStringValue) {
       return visitor.visitUnquotedStringValue(this);
     } else {
@@ -3945,27 +3558,24 @@ export class UnquotedStringValueContext extends ValueContext {
   }
 }
 export class NullStringValueContext extends ValueContext {
-  public NULL_STRING(): TerminalNode {
-    return this.getToken(SelectionAutoCompleteParser.NULL_STRING, 0);
-  }
-  constructor(ctx: ValueContext) {
+  public constructor(ctx: ValueContext) {
     super(ctx.parent, ctx.invokingState);
-    this.copyFrom(ctx);
+    super.copyFrom(ctx);
   }
-  // @Override
-  public enterRule(listener: SelectionAutoCompleteListener): void {
+  public NULL_STRING(): antlr.TerminalNode {
+    return this.getToken(SelectionAutoCompleteParser.NULL_STRING, 0)!;
+  }
+  public override enterRule(listener: SelectionAutoCompleteListener): void {
     if (listener.enterNullStringValue) {
       listener.enterNullStringValue(this);
     }
   }
-  // @Override
-  public exitRule(listener: SelectionAutoCompleteListener): void {
+  public override exitRule(listener: SelectionAutoCompleteListener): void {
     if (listener.exitNullStringValue) {
       listener.exitNullStringValue(this);
     }
   }
-  // @Override
-  public accept<Result>(visitor: SelectionAutoCompleteVisitor<Result>): Result {
+  public override accept<Result>(visitor: SelectionAutoCompleteVisitor<Result>): Result | null {
     if (visitor.visitNullStringValue) {
       return visitor.visitNullStringValue(this);
     } else {
@@ -3973,30 +3583,79 @@ export class NullStringValueContext extends ValueContext {
     }
   }
 }
-export class DigitsValueContext extends ValueContext {
-  public DIGITS(): TerminalNode {
-    return this.getToken(SelectionAutoCompleteParser.DIGITS, 0);
-  }
-  constructor(ctx: ValueContext) {
+export class QuotedStringValueContext extends ValueContext {
+  public constructor(ctx: ValueContext) {
     super(ctx.parent, ctx.invokingState);
-    this.copyFrom(ctx);
+    super.copyFrom(ctx);
   }
-  // @Override
-  public enterRule(listener: SelectionAutoCompleteListener): void {
+  public QUOTED_STRING(): antlr.TerminalNode {
+    return this.getToken(SelectionAutoCompleteParser.QUOTED_STRING, 0)!;
+  }
+  public override enterRule(listener: SelectionAutoCompleteListener): void {
+    if (listener.enterQuotedStringValue) {
+      listener.enterQuotedStringValue(this);
+    }
+  }
+  public override exitRule(listener: SelectionAutoCompleteListener): void {
+    if (listener.exitQuotedStringValue) {
+      listener.exitQuotedStringValue(this);
+    }
+  }
+  public override accept<Result>(visitor: SelectionAutoCompleteVisitor<Result>): Result | null {
+    if (visitor.visitQuotedStringValue) {
+      return visitor.visitQuotedStringValue(this);
+    } else {
+      return visitor.visitChildren(this);
+    }
+  }
+}
+export class DigitsValueContext extends ValueContext {
+  public constructor(ctx: ValueContext) {
+    super(ctx.parent, ctx.invokingState);
+    super.copyFrom(ctx);
+  }
+  public DIGITS(): antlr.TerminalNode {
+    return this.getToken(SelectionAutoCompleteParser.DIGITS, 0)!;
+  }
+  public override enterRule(listener: SelectionAutoCompleteListener): void {
     if (listener.enterDigitsValue) {
       listener.enterDigitsValue(this);
     }
   }
-  // @Override
-  public exitRule(listener: SelectionAutoCompleteListener): void {
+  public override exitRule(listener: SelectionAutoCompleteListener): void {
     if (listener.exitDigitsValue) {
       listener.exitDigitsValue(this);
     }
   }
-  // @Override
-  public accept<Result>(visitor: SelectionAutoCompleteVisitor<Result>): Result {
+  public override accept<Result>(visitor: SelectionAutoCompleteVisitor<Result>): Result | null {
     if (visitor.visitDigitsValue) {
       return visitor.visitDigitsValue(this);
+    } else {
+      return visitor.visitChildren(this);
+    }
+  }
+}
+export class IncompleteLeftQuotedStringValueContext extends ValueContext {
+  public constructor(ctx: ValueContext) {
+    super(ctx.parent, ctx.invokingState);
+    super.copyFrom(ctx);
+  }
+  public INCOMPLETE_LEFT_QUOTED_STRING(): antlr.TerminalNode {
+    return this.getToken(SelectionAutoCompleteParser.INCOMPLETE_LEFT_QUOTED_STRING, 0)!;
+  }
+  public override enterRule(listener: SelectionAutoCompleteListener): void {
+    if (listener.enterIncompleteLeftQuotedStringValue) {
+      listener.enterIncompleteLeftQuotedStringValue(this);
+    }
+  }
+  public override exitRule(listener: SelectionAutoCompleteListener): void {
+    if (listener.exitIncompleteLeftQuotedStringValue) {
+      listener.exitIncompleteLeftQuotedStringValue(this);
+    }
+  }
+  public override accept<Result>(visitor: SelectionAutoCompleteVisitor<Result>): Result | null {
+    if (visitor.visitIncompleteLeftQuotedStringValue) {
+      return visitor.visitIncompleteLeftQuotedStringValue(this);
     } else {
       return visitor.visitChildren(this);
     }

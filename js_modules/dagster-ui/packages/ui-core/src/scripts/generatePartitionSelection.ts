@@ -1,12 +1,16 @@
-import {execSync} from 'child_process';
+import {execFileSync} from 'child_process';
 import path from 'path';
 
 const PARTITION_SELECTION_GRAMMAR_FILE_PATH = path.resolve(
   './src/partitions/PartitionSelection.g4',
 );
-execSync(
-  `antlr4ts -visitor -o ./src/partitions/generated ${PARTITION_SELECTION_GRAMMAR_FILE_PATH}`,
-);
+execFileSync('antlr4ng', [
+  '-Dlanguage=TypeScript',
+  '-visitor',
+  '-o',
+  './src/partitions/generated',
+  PARTITION_SELECTION_GRAMMAR_FILE_PATH,
+]);
 
 const files = [
   'PartitionSelectionLexer.ts',
@@ -16,5 +20,5 @@ const files = [
 ];
 
 files.forEach((file) => {
-  execSync(`yarn prettier ./src/partitions/generated/${file} --write`);
+  execFileSync('yarn', ['prettier', `./src/partitions/generated/${file}`, '--write']);
 });

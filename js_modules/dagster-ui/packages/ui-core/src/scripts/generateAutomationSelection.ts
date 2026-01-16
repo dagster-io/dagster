@@ -1,12 +1,16 @@
-import {execSync} from 'child_process';
+import {execFileSync} from 'child_process';
 import path from 'path';
 
 const AUTOMATION_SELECTION_GRAMMAR_FILE_PATH = path.resolve(
   './src/automation-selection/AutomationSelection.g4',
 );
-execSync(
-  `antlr4ts -visitor -o ./src/automation-selection/generated ${AUTOMATION_SELECTION_GRAMMAR_FILE_PATH}`,
-);
+execFileSync('antlr4ng', [
+  '-Dlanguage=TypeScript',
+  '-visitor',
+  '-o',
+  './src/automation-selection/generated',
+  AUTOMATION_SELECTION_GRAMMAR_FILE_PATH,
+]);
 
 const files = [
   'AutomationSelectionLexer.ts',
@@ -16,8 +20,15 @@ const files = [
 ];
 
 files.forEach((file) => {
-  execSync(
-    `yarn prettier --log-level silent --write ./src/automation-selection/generated/${file}`,
+  execFileSync(
+    'yarn',
+    [
+      'prettier',
+      '--log-level',
+      'silent',
+      '--write',
+      `./src/automation-selection/generated/${file}`,
+    ],
     {
       stdio: 'inherit',
     },
