@@ -12,7 +12,6 @@ from dagster._core.storage.tags import PRIORITY_TAG
 from dagster._utils.error import serializable_error_info_from_exc_info
 from dagster_shared.serdes import deserialize_value
 
-from dagster_celery.defaults import task_default_priority, task_default_queue
 from dagster_celery.make_app import make_app
 from dagster_celery.tags import (
     DAGSTER_CELERY_QUEUE_TAG,
@@ -41,6 +40,8 @@ def core_celery_execution_loop(job_context, execution_plan, step_execution_fn):
         )
 
     app = make_app(executor.app_args())
+    task_default_priority = app.conf.task_default_priority
+    task_default_queue = app.conf.task_default_queue
 
     priority_for_step = lambda step: (
         -1 * int(step.tags.get(DAGSTER_CELERY_STEP_PRIORITY_TAG, task_default_priority))
@@ -133,7 +134,7 @@ def core_celery_execution_loop(job_context, execution_plan, step_execution_fn):
                         )
 
                         # Get the Celery priority for this step
-                        priority = _get_step_priority(job_context, step)
+                        priority = _get_step_priority(job_context, step, task_default_priority)
 
                         # Submit the Celery tasks
                         step_results[step.key] = step_execution_fn(
@@ -168,7 +169,7 @@ def core_celery_execution_loop(job_context, execution_plan, step_execution_fn):
                 )
 
 
-def _get_step_priority(context, step):
+def _get_step_priority(context, step, task_default_priority):
     """Step priority is (currently) set as the overall run priority plus the individual
     step priority.
     """
