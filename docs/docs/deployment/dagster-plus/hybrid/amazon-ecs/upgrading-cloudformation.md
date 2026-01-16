@@ -34,4 +34,4 @@ In this guide, we'll show you how to upgrade an existing [Amazon Elastic Contain
 
 4. Proceed through the remaining steps in the wizard.
 
-When finished, the agent will be re-deployed using the newest image and Dagster version.
+When finished, the agent will be deployed again using the newest image and Dagster version.

@@ -40,8 +40,8 @@ swap:
   enrol: enroll
   enrolment: enrollment
   enthral: enthrall
-  # equalled: equaled // Under discussion
-  # equalling: equaling // Under discussion
+  equalled: equaled // Under discussion
+  equalling: equaling // Under discussion
   favourite: favorite
   fibre: fiber
   fillet: filet

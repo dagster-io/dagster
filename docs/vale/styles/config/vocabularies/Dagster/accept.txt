@@ -6,6 +6,7 @@ ADLS2
 AKS
 AMD
 ARM
+ARN
 AWS
 AWS Athena
 AWS CloudWatch
@@ -72,6 +73,7 @@ Meltano
 Microsoft Teams
 MongoDB
 MySQL
+NAT
 OLAP
 OLTP
 Okta
