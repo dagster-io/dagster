@@ -549,7 +549,7 @@ It supports running commands either on the local machine or on a remote machine 
 >
 > - The local machine where Dagster runs the task, for local execution.
 > - The remote host accessed via SSH, for remote execution.
-> - If executing remotely, also ensure that an SSH server (e.g., sshd) is running and accessible on the remote machine.
+> - If executing remotely, also ensure that an SSH server (such as `sshd`) is running and accessible on the remote machine.
 
 ### Parameters
 
@@ -619,7 +619,7 @@ It supports both local and remote execution (via SSH), allowing you to manage Te
 >
 > - The local machine running Dagster (for local execution).
 > - A remote host accessible via SSH (for remote execution).
-> - For remote setups, ensure an SSH server (e.g., sshd) is active and reachable.
+> - For remote setups, ensure an SSH server (such as `sshd`) is active and reachable.
 
 ### Parameters
 
@@ -642,7 +642,7 @@ It supports both local and remote execution (via SSH), allowing you to manage Te
 
 ### Raises
 
-- **`ValueError`** — If input validation fails (e.g., missing DDL list, invalid SSH configuration, or bad port number).
+- **`ValueError`** — If input validation fails (for example, missing DDL list, invalid SSH configuration, or bad port number).
 - **`Exception`** — If the DDL execution fails and the resulting error code is not part of the `error_list`.
 
 ### Notes
@@ -718,7 +718,7 @@ It provides a unified interface to run **TDLoad** operations either **locally** 
 - Executes TDLoad operations for data import/export between Teradata and external files.
 - Supports both local and remote execution via SSH.
 - Allows custom job configuration, variable files, and TDLoad command options.
-- Handles multiple data source and target formats (e.g., CSV, TEXT, PARQUET).
+- Handles multiple data source and target formats, such as CSV, TEXT, PARQUET.
 - Supports text delimiters for structured data handling.
 - Provides strong validation for remote execution parameters and ports.
 
@@ -728,7 +728,7 @@ It provides a unified interface to run **TDLoad** operations either **locally** 
 >
 > - The local machine running Dagster (for local execution).
 > - A remote host accessible via SSH (for remote execution).
-> - For remote setups, ensure that an SSH server (e.g., `sshd`) is active and reachable.
+> - For remote setups, ensure that an SSH server (such as `sshd`) is active and reachable.
 
 ### Parameters
 
@@ -740,9 +740,9 @@ It provides a unified interface to run **TDLoad** operations either **locally** 
 | `target_table`          | `str` | Name of the target table in Teradata.                                                       | ❌       | —       |
 | `source_file_name`      | `str` | Source file path for input data.                                                            | ❌       | —       |
 | `target_file_name`      | `str` | Target file path for output data.                                                           | ❌       | —       |
-| `source_format`         | `str` | Format of the source file (e.g., CSV, TEXT).                                                | ❌       | —       |
+| `source_format`         | `str` | Format of the source file (for example, CSV, TEXT).                                                | ❌       | —       |
 | `source_text_delimiter` | `str` | Field delimiter for the source file.                                                        | ❌       | —       |
-| `target_format`         | `str` | Format of the target file (e.g., CSV, TEXT).                                                | ❌       | —       |
+| `target_format`         | `str` | Format of the target file (for example, CSV, TEXT).                                                | ❌       | —       |
 | `target_text_delimiter` | `str` | Field delimiter for the target file.                                                        | ❌       | —       |
 | `tdload_options`        | `str` | Additional TDLoad options to customize execution.                                           | ❌       | —       |
 | `tdload_job_name`       | `str` | Name assigned to the TDLoad job.                                                            | ❌       | —       |
@@ -761,7 +761,7 @@ It provides a unified interface to run **TDLoad** operations either **locally** 
 
 ### Raises
 
-- **`ValueError`** — For invalid parameter combinations (e.g., both password and key provided, invalid port, or missing SSH credentials).
+- **`ValueError`** — For invalid parameter combinations (for example, both password and key provided, invalid port, or missing SSH credentials).
 - **`Exception`** — If the TDLoad execution fails for reasons not covered by user configuration.
 
 ### Notes

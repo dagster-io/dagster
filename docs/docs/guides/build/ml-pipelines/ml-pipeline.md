@@ -44,7 +44,7 @@ The first step is taking the dataframe and splitting it into a [training and tes
 
 <CodeExample path="docs_snippets/docs_snippets/guides/dagster/ml_pipelines/ml_pipeline.py" startAfter="test_train_split_start" endBefore="test_train_split_end" />
 
-Next, we will take both the training and test data subsets and [tokenize the titles](https://en.wikipedia.org/wiki/Lexical_analysis) e.g. take the words and turn them into columns with the frequency of terms for each record to create [features](https://en.wikipedia.org/wiki/Feature_\(machine_learning\)) for the data. To do this, we will be using the training set to fit the tokenizer. In this case, we are using [TfidfVectorizer](https://scikit-learn.org/stable/modules/generated/sklearn.feature_extraction.text.TfidfVectorizer.html) and then transforming both the training and test set based on that tokenizer.
+Next, we will take both the training and test data subsets and [tokenize the titles](https://en.wikipedia.org/wiki/Lexical_analysis), that is, take the words and turn them into columns with the frequency of terms for each record to create [features](https://en.wikipedia.org/wiki/Feature_\(machine_learning\)) for the data. To do this, we will be using the training set to fit the tokenizer. In this case, we are using [TfidfVectorizer](https://scikit-learn.org/stable/modules/generated/sklearn.feature_extraction.text.TfidfVectorizer.html) and then transforming both the training and test set based on that tokenizer.
 
 <CodeExample path="docs_snippets/docs_snippets/guides/dagster/ml_pipelines/ml_pipeline.py" startAfter="vectorizer_start" endBefore="vectorizer_end" />
 

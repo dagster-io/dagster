@@ -236,7 +236,7 @@ The `UpsertOptions` `BaseModel` subclass can be used to represent upsert options
 
 ## Allowing updates to schema and partitions
 
-By default, assets will error when you change the partition spec (e.g. if you change a partition from hourly to daily) or the schema (e.g. when you add a column). You can allow updates to an asset's partition spec and/or schema by setting `partition_spec_update_mode` and/or `schema_update_mode`, respectively, on the asset metadata:
+By default, assets will error when you change the partition spec (for example, if you change a partition from hourly to daily) or the schema (for example, when you add a column). You can allow updates to an asset's partition spec and/or schema by setting `partition_spec_update_mode` and/or `schema_update_mode`, respectively, on the asset metadata:
 
 <CodeExample
   path="docs_snippets/docs_snippets/integrations/iceberg/allowing_updates.py"

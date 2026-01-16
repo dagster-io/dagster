@@ -85,13 +85,13 @@ Let's review what's happening in this code:
 
   The submitted task must:
 
-  - **Specify `dagster-pipes` as a PyPI dependency**. You can include a version pin (e.g. `dagster-pipes==1.5.4`) if desired.
+  - **Specify `dagster-pipes` as a PyPI dependency**. You can include a version pin (such as `dagster-pipes==1.5.4`) if desired.
   - Use a `spark_python_task`.
   - Specify either `new_cluster` (this is the **recommended approach**) or `existing_cluster_id`. The `new_cluster` field is used in this example.
     - If `new_cluster` is set, then setting `new_cluster.cluster_log_conf.dbfs` enables the <PyObject section="libraries" integration="databricks" object="PipesDatabricksClient" module="dagster_databricks" /> to automatically set up <PyObject section="libraries" integration="databricks" object="PipesDbfsLogReader" module="dagster_databricks" />  objects for `stdout` and `stderr` of the driver process. These will periodically forward the `stdout` and `stderr` logs written by Databricks back to Dagster. **Note**: Because Databricks only updates these log files every five minutes, that is the maximum frequency at which Dagster can forward the logs.
     - If `existing_cluster_id` is set, <PyObject section="libraries" integration="databricks" object="PipesDatabricksClient" module="dagster_databricks" /> won't be able to forward `stdout` and `stderr` driver logs to Dagster. Using an existing cluster **requires passing an instance of <PyObject section="libraries" integration="pipes" object="PipesCliArgsParamsLoader" module="dagster_pipes" /> to <PyObject section="libraries" integration="pipes" object="open_dagster_pipes" module="dagster_pipes" />** in the Python script which is executed on Databricks. This is because setting environment variables is only possible when creating a new cluster, so we have to use the alternative method of passing Pipes parameters as command-line arguments.
 
-- **Defines an `extras` dictionary containing some arbitrary data (`some_parameter`).** This is where you can put various data, e.g. from the Dagster run config, that you want to be available in Databricks. Anything added here must be JSON-serializable.
+- **Defines an `extras` dictionary containing some arbitrary data (`some_parameter`).** This is where you can put various data, such as data from the Dagster run config, that you want to be available in Databricks. Anything added here must be JSON-serializable.
 
 - **Passes the `SubmitTask` object, `AssetExecutionContext`, and `extras` dictionary to the `run` method of <PyObject section="libraries" integration="databricks" module="dagster_databricks" object="PipesDatabricksClient" />**. This method synchronously executes the Databricks job specified by the `SubmitTask` object. It slightly modifies the object by injecting some environment variables under `new_cluster.spark_env_vars` before submitting the object to the Databricks API.
 

@@ -48,7 +48,7 @@ The `defs_state` field supports three configuration options:
 
 ### key
 
-Override the default defs state key for this component instance. By default, components generate keys based on their class name and configuration (e.g., `TableauComponent[my_tableau_site]`).
+Override the default defs state key for this component instance. By default, components generate keys based on their class name and configuration (for example, `TableauComponent[my_tableau_site]`).
 
 #### Example
 

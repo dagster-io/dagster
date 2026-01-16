@@ -142,7 +142,7 @@ The **Run details** page contains details about a single run, including timing i
 On this page, you can:
 
 - **View structured event and raw compute logs.** Refer to the run logs tab for more info.
-- **Re-execute a run** using the same configuration by clicking the **Re-execute** button. Related runs (e.g., runs created by re-executing the same previous run) are grouped in the right pane for easy reference
+- **Re-execute a run** using the same configuration by clicking the **Re-execute** button. Related runs (such as runs created by re-executing the same previous run) are grouped in the right pane for easy reference
 
 To access the run details page, click a run in the **Run details** page.
 

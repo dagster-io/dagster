@@ -6,9 +6,9 @@ sidebar_position: 50
 
 [Partitions](/guides/build/partitions-and-backfills/partitioning-assets) are a core abstraction in Dagster that allow you to manage large datasets, process incremental updates, and improve pipeline performance. You can partition assets the following ways:
 
-- Time-based: Split data by time periods (e.g., daily, monthly)
-- Category-based: Divide by known categories (e.g., country, product type)
-- Two-dimensional: Combine two partition types (e.g., country + date)
+- Time-based: Split data by time periods (for example, daily or monthly)
+- Category-based: Divide by known categories (for example, country or product type)
+- Two-dimensional: Combine two partition types (for example, country + date)
 - Dynamic: Create partitions based on runtime conditions
 
 In this step, you will create a time-based asset partitioned by month.

@@ -23,7 +23,7 @@ In a large organization, it's important to know which individuals and teams are 
 
 :::note
 
-`owners` must either be an email address or a team name prefixed by `team:` (e.g. `team:data-eng`).
+`owners` must either be an email address or a team name prefixed by `team:` (such as `team:data-eng`).
 
 :::
 

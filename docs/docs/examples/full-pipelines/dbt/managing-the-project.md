@@ -30,7 +30,7 @@ This design lets you control ingestion and transformation frequency independentl
 
 In the asset graph, you can see this difference:
 
-- `taxi_trips` references 3 partitions (e.g., 2024-05, 2024-06, 2024-07).
+- `taxi_trips` references 3 partitions (for example, 2024-05, 2024-06, 2024-07).
 - dbt assets reference 90 partitions (one per day across those 3 months).
 
 ![2048 resolution](/images/examples/dbt/asset_graph_partitions.png)

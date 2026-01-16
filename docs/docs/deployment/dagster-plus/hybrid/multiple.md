@@ -6,7 +6,7 @@ title: Running multiple Dagster agents
 tags: [dagster-plus-feature]
 ---
 
-Each Dagster+ full deployment (e.g., `prod`) needs to have at least one agent running. A single agent is adequate for many use cases, but you may want to run multiple agents to provide redundancy if a single agent goes down.
+Each Dagster+ full deployment (such as `prod`) needs to have at least one agent running. A single agent is adequate for many use cases, but you may want to run multiple agents to provide redundancy if a single agent goes down.
 
 ## When to use multiple agents
 
@@ -22,7 +22,7 @@ Each Dagster+ full deployment (e.g., `prod`) needs to have at least one agent ru
 
 ## Running multiple agents in the same environment
 
-To run multiple agents in the same environment (e.g., multiple Kubernetes agents in the same namespace), you can set the number of replicas in the configuration for your particular agent type:
+To run multiple agents in the same environment (for example, multiple Kubernetes agents in the same namespace), you can set the number of replicas in the configuration for your particular agent type:
 
 <Tabs groupId="same environment">
 <TabItem value="docker" label="Docker">

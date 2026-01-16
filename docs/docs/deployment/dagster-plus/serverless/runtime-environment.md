@@ -326,7 +326,7 @@ dagster-cloud serverless deploy --base-image=my_base_image:latest --location-nam
 
 ## Use private Python packages
 
-If you use PEX deploys in your workflow (`ENABLE_FAST_DEPLOYS: 'true'`), the following steps can install a package from a private GitHub repository, e.g. `my-org/private-repo`, as a dependency:
+If you use PEX deploys in your workflow (`ENABLE_FAST_DEPLOYS: 'true'`), the following steps can install a package from a private GitHub repository (for example, `my-org/private-repo`), as a dependency:
 
 1.  In your `dagster-plus-deploy.yml` file, add the following to the top of `steps:` section in the `dagster-cloud-default-deploy` job.
 

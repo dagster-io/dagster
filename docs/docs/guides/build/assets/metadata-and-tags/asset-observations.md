@@ -46,7 +46,7 @@ On the asset details page, we can see observations in the Asset Activity table:
 
 ### Specifying a partition for an AssetObservation
 
-If you are observing a single slice of an asset (e.g. a single day's worth of data on a larger table), rather than mutating or creating it entirely, you can indicate this to Dagster by including the `partition` argument on the object.
+If you are observing a single slice of an asset (for example, a single day's worth of data on a larger table), rather than mutating or creating it entirely, you can indicate this to Dagster by including the `partition` argument on the object.
 
 <CodeExample path="docs_snippets/docs_snippets/concepts/assets/observations.py" startAfter="start_partitioned_asset_observation" endBefore="end_partitioned_asset_observation" title="src/<project_name>/defs/assets.py" />
 

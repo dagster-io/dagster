@@ -425,13 +425,13 @@ Dagster's dbt integration can automatically attach [code reference](/guides/buil
 
 :::note
 
-In Dagster, tags are key-value pairs. However, in dbt, tags are strings. To bridge this divide, the dbt tag string is used as the Dagster tag key, and the Dagster tag value is set to the empty string, `""`. Any dbt tags that don't match Dagster's supported tag key format (e.g. they contain unsupported characters) will be ignored by default.
+In Dagster, tags are key-value pairs. However, in dbt, tags are strings. To bridge this divide, the dbt tag string is used as the Dagster tag key, and the Dagster tag value is set to the empty string, `""`. Any dbt tags that don't match Dagster's supported tag key format (for example, they contain unsupported characters) will be ignored by default.
 
 :::
 
 For dbt models, seeds, and snapshots, the default Dagster tags will be the dbt node's configured tags.
 
-Any dbt tags that don't match Dagster's supported tag key format (e.g. they contain unsupported characters) will be ignored.
+Any dbt tags that don't match Dagster's supported tag key format (for example, they contain unsupported characters) will be ignored.
 
 To override the Dagster tags for all dbt nodes in your dbt project, you can create a custom <PyObject section="libraries" integration="dbt" module="dagster_dbt" object="DagsterDbtTranslator" /> and implement <PyObject section="libraries" integration="dbt" module="dagster_dbt" object="DagsterDbtTranslator.get_tags" />. The following converts dbt tags of the form `foo=bar` to key/value pairs:
 

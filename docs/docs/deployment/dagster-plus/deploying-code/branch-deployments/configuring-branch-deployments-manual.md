@@ -73,7 +73,7 @@ BRANCH_DEPLOYMENT_NAME=$(
         --branch-name $BRANCH_NAME \
         --commit-hash $COMMIT_SHA \
         --timestamp $TIMESTAMP
-        --code-review-url $PR_URL \ # URL to review the given changes, e.g.
+        --code-review-url $PR_URL \ # URL to review the given changes, for example
             # Pull Request or Merge Request
         --code-review-id $INPUT_PR \ # Alphanumeric ID for the given set of changes
         --pull-request-status $PR_STATUS \ # A status, one of `OPEN`, `CLOSED`,

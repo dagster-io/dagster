@@ -4,7 +4,7 @@ sidebar_position: 40
 title: Asset sensors
 ---
 
-Asset sensors in Dagster allow you to monitor asset materializations and trigger downstream computations or notifications (e.g. launch a job imperatively or send a Slack message) based on those events.
+Asset sensors in Dagster allow you to monitor asset materializations and trigger downstream computations or notifications (for example, launch a job imperatively or send a Slack message) based on those events.
 
 This guide covers the most common use cases for asset sensors, such as defining cross-job and cross-code location dependencies.
 
