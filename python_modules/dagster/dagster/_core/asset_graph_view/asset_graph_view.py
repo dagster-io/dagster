@@ -638,16 +638,14 @@ class AssetGraphView(LoadingContext):
         status: Optional["AssetCheckExecutionResolvedStatus"],
         from_subset: EntitySubset,
     ) -> EntitySubset[AssetCheckKey]:
-        from dagster._core.storage.asset_check_status_cache import (
-            get_updated_asset_check_status_cache_value,
-        )
+        from dagster._core.storage.asset_check_status_cache import AssetCheckPartitionState
 
         check_node = self.asset_graph.get(key)
         if not check_node or not check_node.partitions_def:
             check.failed(f"Asset check {key} not found or not partitioned.")
 
-        cache_value = get_updated_asset_check_status_cache_value(
-            key, check_node.partitions_def, self
+        cache_value = await AssetCheckPartitionState.gen_updated(
+            self, (key, check_node.partitions_def)
         )
 
         if status is None:

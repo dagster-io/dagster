@@ -38,7 +38,7 @@ from dagster._core.storage.asset_check_execution_record import (
     AssetCheckExecutionRecordStatus,
     AssetCheckPartitionRecord,
 )
-from dagster._core.storage.dagster_run import DagsterRunStatsSnapshot
+from dagster._core.storage.dagster_run import FINISHED_STATUSES, DagsterRunStatsSnapshot
 from dagster._core.storage.partition_status_cache import get_and_update_asset_status_cache_value
 from dagster._core.storage.sql import AlembicVersion
 from dagster._core.storage.tags import MULTIDIMENSIONAL_PARTITION_PREFIX
@@ -50,6 +50,7 @@ from dagster._utils.warnings import deprecation_warning
 
 if TYPE_CHECKING:
     from dagster._core.events.log import EventLogEntry
+    from dagster._core.storage.asset_check_status_cache import AssetCheckPartitionState
     from dagster._core.storage.partition_status_cache import AssetStatusCacheValue
 
 
@@ -657,6 +658,57 @@ class EventLogStorage(ABC, MayHaveInstanceWeakref[T_DagsterInstance]):
     ) -> Sequence[AssetCheckPartitionRecord]:
         """Get asset check partition records with execution status and planned run info."""
         pass
+
+    @abstractmethod
+    def get_stored_asset_check_state(
+        self, keys: Sequence[tuple[AssetCheckKey, PartitionsDefinition]]
+    ) -> Mapping[AssetCheckKey, "AssetCheckPartitionState"]:
+        """Get the current stored asset check state for a list of asset checks and their
+        associated partitions definitions. This method is not guaranteed to return a
+        state object that is up to date with the latest events.
+        """
+        from dagster._core.storage.asset_check_status_cache import AssetCheckPartitionState
+
+        return {key: AssetCheckPartitionState.empty() for key, _ in keys}
+
+    def get_asset_check_state(
+        self, keys: Sequence[tuple[AssetCheckKey, PartitionsDefinition]]
+    ) -> Mapping[AssetCheckKey, "AssetCheckPartitionState"]:
+        from dagster._core.storage.runs.sql_run_storage import RunsFilter
+
+        initial_states = self.get_stored_asset_check_state(keys)
+
+        partitions_defs_by_key: dict[AssetCheckKey, PartitionsDefinition] = {
+            key: partitions_def for key, partitions_def in keys
+        }
+        state_by_key: dict[AssetCheckKey, AssetCheckPartitionState] = {}
+        records_by_key: dict[AssetCheckKey, Sequence[AssetCheckPartitionRecord]] = {}
+        for key, _ in keys:
+            records_by_key[key] = self.get_asset_check_partition_records(
+                key, after_storage_id=initial_states[key].latest_storage_id
+            )
+
+        # do a bulk fetch for runs across all states
+        run_ids_to_fetch = set()
+        for key, records in records_by_key.items():
+            run_ids_to_fetch.update(state_by_key[key].in_progress_runs.keys())
+            run_ids_to_fetch.update(
+                {
+                    record.last_planned_run_id
+                    for record in records
+                    if record.last_execution_status == AssetCheckExecutionRecordStatus.PLANNED
+                }
+            )
+        finished_runs = self._instance.get_runs(
+            filters=RunsFilter(run_ids=list(run_ids_to_fetch), statuses=FINISHED_STATUSES)
+        )
+        finished_runs_status_by_id = {run.run_id: run.status for run in finished_runs}
+        return {
+            key: state.with_updates(
+                key, partitions_defs_by_key[key], records_by_key[key], finished_runs_status_by_id
+            )
+            for key, state in state_by_key.items()
+        }
 
     @abstractmethod
     def fetch_materializations(

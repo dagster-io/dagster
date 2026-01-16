@@ -18,7 +18,7 @@ from dagster._core.storage.asset_check_execution_record import (
     AssetCheckExecutionResolvedStatus,
     AssetCheckInstanceSupport,
 )
-from dagster._core.storage.asset_check_status_cache import AssetCheckStatusCacheValue
+from dagster._core.storage.asset_check_status_cache import AssetCheckPartitionState
 from dagster._core.storage.dagster_run import RunRecord
 from packaging import version
 
@@ -142,7 +142,7 @@ def get_asset_checks_for_run_id(
 
 def build_asset_check_partition_statuses(
     key: AssetCheckKey,
-    partition_status: AssetCheckStatusCacheValue,
+    partition_status: AssetCheckPartitionState,
     partitions_def: PartitionsDefinition,
     dynamic_partitions_store: DynamicPartitionsStore,
 ) -> Union[
@@ -281,9 +281,8 @@ def build_multi_partition_statuses_for_checks(
             )
 
         # Build temporary cache value for secondary dimension
-        temp_cache_value = AssetCheckStatusCacheValue(
-            latest_check_record_storage_id=0,
-            latest_materialization_storage_id=0,
+        temp_cache_value = AssetCheckPartitionState(
+            latest_storage_id=0,
             subsets=secondary_serializable_subsets,
             in_progress_runs={},
         )

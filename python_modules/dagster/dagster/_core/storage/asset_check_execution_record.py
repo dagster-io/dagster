@@ -254,3 +254,12 @@ class AssetCheckPartitionRecord:
     last_storage_id: int
     # the storage id of the last materialization for the asset this check targets
     last_materialization_storage_id: Optional[int]
+
+    @property
+    def is_current(self) -> bool:
+        """Returns True if the latest check execution targets the latest materialization event."""
+        return (
+            self.last_materialization_storage_id is None
+            or self.last_materialization_storage_id
+            == self.last_execution_target_materialization_storage_id
+        )

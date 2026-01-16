@@ -414,7 +414,7 @@ class GrapheneAssetCheck(graphene.ObjectType):
             )
         ]
 
-    def resolve_partitionStatuses(
+    async def resolve_partitionStatuses(
         self, graphene_info: ResolveInfo
     ) -> Optional[
         Union[
@@ -425,9 +425,7 @@ class GrapheneAssetCheck(graphene.ObjectType):
     ]:
         """Resolve partition statuses using union type with efficient representation."""
         from dagster._core.definitions.asset_checks.asset_check_spec import AssetCheckKey
-        from dagster._core.storage.asset_check_status_cache import (
-            get_updated_asset_check_status_cache_value,
-        )
+        from dagster._core.storage.asset_check_status_cache import AssetCheckPartitionState
 
         from dagster_graphql.implementation.fetch_asset_checks import (
             build_asset_check_partition_statuses,
@@ -447,10 +445,8 @@ class GrapheneAssetCheck(graphene.ObjectType):
         )
 
         # Get partition status cache using the cache service (handles storage + reconciliation)
-        partition_status = get_updated_asset_check_status_cache_value(
-            key=check_key,
-            partitions_def=current_partition_def,
-            loading_context=graphene_info.context,
+        partition_status = await AssetCheckPartitionState.gen_updated(
+            graphene_info.context, (check_key, current_partition_def)
         )
 
         # Use builder function to construct appropriate union type
