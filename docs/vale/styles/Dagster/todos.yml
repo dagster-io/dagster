@@ -1,7 +1,7 @@
 # This rule will flag "TODO" or "todo" unless they occur inside React or HTML comments.
 
 extends: existence
-message: 'Remove or comment out TODOs.'
+message: 'Address or comment out TODOs.'
 level: suggestion
 scope: text
 ignorecase: true
