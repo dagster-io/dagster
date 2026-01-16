@@ -31,6 +31,7 @@ from dagster_dg_cli.cli.plus.deploy.deploy_session import (
     finish_deploy_session,
     init_deploy_session,
 )
+from dagster_dg_cli.cli.plus.deploy.validation import _extract_dagster_env_from_url
 from dagster_dg_cli.utils.plus.build import get_agent_type
 
 if TYPE_CHECKING:
@@ -193,6 +194,12 @@ def deploy_group(
     organization = _get_organization(organization, plus_config)
     deployment = _get_deployment(deployment, plus_config)
 
+    # Extract dagster_env from config
+    dagster_env = None
+    if DagsterPlusCliConfig.exists():
+        config = DagsterPlusCliConfig.get()
+        dagster_env = _extract_dagster_env_from_url(config.url)
+
     dg_context = DgContext.for_workspace_or_project_environment(target_path, cli_config)
     _validate_location_names(dg_context, location_names, cli_config)
 
@@ -217,6 +224,7 @@ def deploy_group(
         location_names,
         status_url,
         snapshot_base_condition,
+        dagster_env,
         skip_validation,
     )
 
@@ -320,6 +328,12 @@ def start_deploy_session_command(
     organization = _get_organization(organization, plus_config)
     deployment = _get_deployment(deployment, plus_config)
 
+    # Extract dagster_env from config
+    dagster_env = None
+    if DagsterPlusCliConfig.exists():
+        config = DagsterPlusCliConfig.get()
+        dagster_env = _extract_dagster_env_from_url(config.url)
+
     dg_context = DgContext.for_workspace_or_project_environment(target_path, cli_config)
     _validate_location_names(dg_context, location_names, cli_config)
     statedir = _get_statedir()
@@ -342,6 +356,7 @@ def start_deploy_session_command(
         location_names,
         status_url,
         snapshot_base_condition,
+        dagster_env,
         skip_validation,
     )
 

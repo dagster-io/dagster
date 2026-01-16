@@ -123,7 +123,7 @@ def test_deploy_start_succeeds_with_valid_config(logged_in_dg_cli_config, projec
 
 @responses.activate
 def test_deploy_start_eu_region_url(empty_dg_cli_config, project: Path, runner, monkeypatch):
-    """Test that EU region uses correct URL format."""
+    """Test that EU region uses correct URL format and passes dagster_env to init_impl."""
     config = DagsterPlusCliConfig(
         organization="hooli",
         user_token="fake-user-token",
@@ -139,10 +139,50 @@ def test_deploy_start_eu_region_url(empty_dg_cli_config, project: Path, runner, 
         json={"data": {"organizationSettings": {"settings": "{}"}}},
     )
 
-    with patch("dagster_cloud_cli.commands.ci.init_impl"):
+    with patch("dagster_cloud_cli.commands.ci.init_impl") as mock_init:
         result = runner.invoke("plus", "deploy", "start", "--yes")
         assert result.exit_code == 0, result.output
         assert "Configuration validated" in result.output
+
+        # Verify that init_impl was called with dagster_env="eu"
+        mock_init.assert_called_once()
+        call_kwargs = mock_init.call_args.kwargs
+        assert call_kwargs["dagster_env"] == "eu", (
+            f"Expected dagster_env='eu', got {call_kwargs.get('dagster_env')}"
+        )
+        assert call_kwargs["organization"] == "hooli"
+
+
+@responses.activate
+def test_deploy_start_us_region_url(empty_dg_cli_config, project: Path, runner, monkeypatch):
+    """Test that US region (default) passes dagster_env=None to init_impl."""
+    config = DagsterPlusCliConfig(
+        organization="hooli",
+        user_token="fake-user-token",
+        default_deployment="prod",
+        url="https://dagster.cloud",  # US region URL
+    )
+    config.write()
+    monkeypatch.setenv("DAGSTER_CLOUD_API_TOKEN", "fake-api-token")
+
+    responses.add(
+        responses.POST,
+        "https://hooli.dagster.cloud/graphql",
+        json={"data": {"organizationSettings": {"settings": "{}"}}},
+    )
+
+    with patch("dagster_cloud_cli.commands.ci.init_impl") as mock_init:
+        result = runner.invoke("plus", "deploy", "start", "--yes")
+        assert result.exit_code == 0, result.output
+        assert "Configuration validated" in result.output
+
+        # Verify that init_impl was called with dagster_env=None for US region
+        mock_init.assert_called_once()
+        call_kwargs = mock_init.call_args.kwargs
+        assert call_kwargs["dagster_env"] is None, (
+            f"Expected dagster_env=None, got {call_kwargs.get('dagster_env')}"
+        )
+        assert call_kwargs["organization"] == "hooli"
 
 
 @responses.activate
