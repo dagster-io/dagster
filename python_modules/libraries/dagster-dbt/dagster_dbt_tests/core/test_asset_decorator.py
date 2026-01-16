@@ -53,6 +53,7 @@ from packaging import version
 
 from dagster_dbt_tests.dbt_projects import (
     test_dbt_alias_path,
+    test_dbt_functions_path,
     test_dbt_model_versions_path,
     test_dbt_python_interleaving_path,
     test_dbt_semantic_models_path,
@@ -1176,6 +1177,30 @@ def test_dbt_with_unit_tests(test_dbt_unit_tests_manifest: dict[str, Any], selec
     result = materialize(
         [my_dbt_assets],
         resources={"dbt": DbtCliResource(project_dir=os.fspath(test_dbt_unit_tests_path))},
+    )
+    assert result.success
+
+
+@pytest.mark.skipif(
+    DBT_PYTHON_VERSION and DBT_PYTHON_VERSION < version.parse("1.11.0"),
+    reason="dbt udf support is only available in `dbt-core>=1.11.0`",
+)
+@pytest.mark.parametrize("select", ["fqn:*", "tag:test"])
+def test_dbt_with_functions(test_dbt_functions_manifest: dict[str, Any], select: str) -> None:
+    @dbt_assets(
+        manifest=test_dbt_functions_manifest,
+        select=select,
+    )
+    def my_dbt_assets(context: AssetExecutionContext, dbt: DbtCliResource):
+        # duckdb does not support building functions, so we exclude them here
+        # we only want to test a manifest with function nodes works
+        yield from dbt.cli(
+            ["build", "--exclude", "resource_type:function"], context=context
+        ).stream()
+
+    result = materialize(
+        [my_dbt_assets],
+        resources={"dbt": DbtCliResource(project_dir=os.fspath(test_dbt_functions_path))},
     )
     assert result.success
 

@@ -207,9 +207,9 @@ dataclasses-json==0.6.7
 datadog==0.52.1
 dataproperty==1.1.0
 db-dtypes==1.5.0
-dbt-adapters==1.16.3
-dbt-common==1.27.1
-dbt-core==1.10.8
+dbt-adapters==1.22.5
+dbt-common==1.37.2
+dbt-core==1.11.2
 dbt-duckdb==1.10.0
 dbt-extractor==0.6.0
 dbt-protos==1.0.419
@@ -505,7 +505,7 @@ prometheus-client==0.24.1
 prompt-toolkit==3.0.52
 propcache==0.4.1
 proto-plus==1.27.0
-protobuf==5.29.5
+protobuf==6.33.4
 psutil==7.2.1
 psycopg2-binary==2.9.11
 ptyprocess==0.7.0

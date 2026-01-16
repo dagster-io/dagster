@@ -786,6 +786,7 @@ def is_non_asset_node(dbt_resource_props: Mapping[str, Any]):
             resource_type == "metric",
             resource_type == "semantic_model",
             resource_type == "saved_query",
+            resource_type == "function",
             resource_type == "model"
             and dbt_resource_props.get("config", {}).get("materialized") == "ephemeral",
         ]
@@ -1262,5 +1263,8 @@ def get_node(manifest: Mapping[str, Any], unique_id: str) -> Mapping[str, Any]:
 
     if unique_id in manifest.get("unit_tests", {}):
         return manifest["unit_tests"][unique_id]
+
+    if unique_id in manifest.get("functions", {}):
+        return manifest["functions"][unique_id]
 
     check.failed(f"Could not find {unique_id} in dbt manifest")
