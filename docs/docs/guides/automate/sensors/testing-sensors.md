@@ -1,5 +1,5 @@
 ---
-description: Test sensors via the Dagster UI, CLI, or Python.
+description: Test sensors using the Dagster UI, CLI, or Python.
 sidebar_position: 300
 title: Testing sensors
 ---
@@ -66,7 +66,7 @@ To unit test sensors, you can directly invoke the sensor's Python function. This
   title="src/<project_name>/defs/sensors.py"
 />
 
-Notice that since the context argument wasn't used in the sensor, a context object doesn't have to be provided. However, if the context object **is** needed, it can be provided via <PyObject section="schedules-sensors" module="dagster" object="build_sensor_context" />. Consider again the `my_directory_sensor_cursor` example:
+Notice that since the context argument wasn't used in the sensor, a context object doesn't have to be provided. However, if the context object **is** needed, it can be provided by <PyObject section="schedules-sensors" module="dagster" object="build_sensor_context" />. Consider again the `my_directory_sensor_cursor` example:
 
 <CodeExample
   path="docs_snippets/docs_snippets/concepts/partitions_schedules_sensors/sensors/sensors.py"

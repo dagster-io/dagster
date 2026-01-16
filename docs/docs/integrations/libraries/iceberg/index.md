@@ -33,7 +33,7 @@ The [`dagster-iceberg` library](/integrations/libraries/iceberg/dagster-iceberg)
 - `daft` for interoperability with Daft DataFrames
 - `pandas` for interoperability with pandas DataFrames
 - `polars` for interoperability with Polars DataFrames
-- `spark` for interoperability with PySpark DataFrames (specifically, via Spark Connect)
+- `spark` for interoperability with PySpark DataFrames (specifically, through Spark Connect)
 
 `pyarrow` is a core package dependency, so the <PyObject section="libraries" integration="iceberg" object="io_manager.arrow.PyArrowIcebergIOManager" module="dagster_iceberg" /> is always available.
 

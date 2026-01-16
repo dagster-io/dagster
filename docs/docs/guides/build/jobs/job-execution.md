@@ -1,6 +1,6 @@
 ---
 title: Executing jobs
-description: Dagster provides several methods to execute op and asset jobs using the UI, command line, Python APIs, or via schedules or sensors.
+description: Dagster provides several methods to execute op and asset jobs using the UI, command line, Python APIs, or with schedules or sensors.
 sidebar_position: 400
 ---
 
@@ -117,7 +117,7 @@ This `executor_def` property can be set to allow for different types of isolatio
 
 ### Default job executor
 
-The default job executor definition defaults to multiprocess execution. It also allows you to toggle between in-process and multiprocess execution via config.
+The default job executor definition defaults to multiprocess execution. It also allows you to toggle between in-process and multiprocess execution with config.
 
 Below is an example of run config as YAML you could provide in the Dagster UI playground to launch an in-process execution.
 

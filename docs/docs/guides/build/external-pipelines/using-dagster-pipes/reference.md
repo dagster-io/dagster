@@ -12,7 +12,7 @@ When launching the subprocess, you may want to make environment variables or add
 <Tabs>
 <TabItem value="External code in external_code.py">
 
-In the external code, you can access extras via the <PyObject section="libraries" integration="pipes" module="dagster_pipes" object="PipesContext" /> object:
+In the external code, you can access extras with the <PyObject section="libraries" integration="pipes" module="dagster_pipes" object="PipesContext" /> object:
 
 <CodeExample path="docs_snippets/docs_snippets/guides/dagster/dagster_pipes/subprocess/with_extras_env/external_code.py" lineStart="2" title="src/external_pipeline/defs/external_code.py" />
 
@@ -36,7 +36,7 @@ Sometimes, you may not want to materialize an asset, but instead want to report 
 
 <TabItem value="External code in external_code.py">
 
-From the external code, you can report to Dagster that an asset check has been performed via <PyObject section="libraries" integration="pipes" module="dagster_pipes" object="PipesContext" method="report_asset_check" />. Note that `asset_key` in this case is required, and must match the asset key defined in <PyObject section="asset-checks" module="dagster" object="asset_check" decorator />:
+From the external code, you can report to Dagster that an asset check has been performed by using <PyObject section="libraries" integration="pipes" module="dagster_pipes" object="PipesContext" method="report_asset_check" />. Note that `asset_key` in this case is required, and must match the asset key defined in <PyObject section="asset-checks" module="dagster" object="asset_check" decorator />:
 
 <CodeExample path="docs_snippets/docs_snippets/guides/dagster/dagster_pipes/subprocess/with_asset_check/external_code.py" title="src/external_pipeline/defs/external_code.py" />
 

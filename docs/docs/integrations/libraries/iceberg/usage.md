@@ -14,7 +14,7 @@ At times, you might prefer not to retrieve an entire table for a downstream asse
 
 In this example, we focus exclusively on the columns containing sepal data from the `iris_dataset` table. To select specific columns, we can include metadata in the input asset. This is done using the `metadata` parameter of the <PyObject section="assets" module="dagster" object="AssetIn" /> that loads the `iris_dataset` asset within the `ins` parameter. We provide the key `columns` along with a list of the desired column names.
 
-When Dagster materializes `sepal_data` and retrieves the `iris_dataset` asset via the Iceberg I/O manager, it will only extract the `sepal_length_cm` and `sepal_width_cm` columns from the `iris/iris_dataset` table and make them available in `sepal_data` as a pandas DataFrame.
+When Dagster materializes `sepal_data` and retrieves the `iris_dataset` asset with the Iceberg I/O manager, it will only extract the `sepal_length_cm` and `sepal_width_cm` columns from the `iris/iris_dataset` table and make them available in `sepal_data` as a pandas DataFrame.
 
 ## Storing partitioned assets
 
@@ -91,14 +91,14 @@ Partition fields are named using the column name that they correspond to, with a
 
 For example, an asset that is partitioned using hourly partitions on a column `ingestion_time` will be assigned a corresponding partition field name of `part-ingestion_time`.
 
-The user may configure the prefix in the I/O manager configuration via the `IcebergCatalogConfig`:
+The user may configure the prefix in the I/O manager configuration with the `IcebergCatalogConfig`:
 
 <CodeExample
   path="docs_snippets/docs_snippets/integrations/iceberg/partition_field_naming_config.py"
   language="python"
 />
 
-Users may also configure the prefix at launch time via run config if the I/O manager is set up using `configure_at_launch()` (see the [resource configuration docs](/guides/build/external-resources/configuring-resources#configuring-resources-at-launch-time) for more details on this pattern).
+Users may also configure the prefix at launch time using run config if the I/O manager is set up using `configure_at_launch()` (see the [resource configuration docs](/guides/build/external-resources/configuring-resources#configuring-resources-at-launch-time) for more details on this pattern).
 
 ## Storing tables in multiple schemas
 
@@ -113,11 +113,13 @@ If you want to store assets in different schemas, you can specify the schema as 
 In this example, the `iris_dataset` asset will be stored in the `iris` schema, and the `daffodil_dataset` asset will be found in the `daffodil` schema.
 
 :::info Specifying a schema
+
 The two options for specifying schema are mutually exclusive. If you provide
 `schema` configuration to the I/O manager, you cannot also provide
-it via the asset key, and vice versa. If no `schema` is provided,
+it from the asset key, and vice versa. If no `schema` is provided,
 either from configuration or asset keys, the default `public` schema
 will be used.
+
 :::
 
 ## Using the Iceberg I/O manager with other I/O managers
@@ -187,7 +189,7 @@ The Iceberg I/O manager supports three write modes:
 
 - `overwrite` (**default**): every asset materialization will overwrite the backing Iceberg table. Partitioned assets only overwrite partitions of the Iceberg table that were part of the asset materialization.
 - `append`: results returned from each asset materialization will be inserted into the backing Iceberg table, respecting partitions when appropriate. **Not currently supported in the Spark I/O manager**.
-- `upsert`: asset materialization results will be merged into the backing Iceberg table using [pyiceberg's native implementation](https://py.iceberg.apache.org/api/#upsert), updating any existing records that match on a configurable join key, and inserting records that do not exist in the target table. Insert and update actions can be turned on or off via configuration; for example, you may only want to insert any new records but not update any matching records, or vice versa (see [Using upsert mode](#using-upsert-mode) for usage details). **Not currently supported in the Spark I/O manager**.
+- `upsert`: asset materialization results will be merged into the backing Iceberg table using [pyiceberg's native implementation](https://py.iceberg.apache.org/api/#upsert), updating any existing records that match on a configurable join key, and inserting records that do not exist in the target table. Insert and update actions can be turned on or off through configuration; for example, you may only want to insert any new records but not update any matching records, or vice versa (see [Using upsert mode](#using-upsert-mode) for usage details). **Not currently supported in the Spark I/O manager**.
 
 The write mode is set using the `write_mode` metadata key, which can be set using asset definition at deployment time, or at runtime within the asset definition body by using output metadata (see the examples in the next section).
 
@@ -209,7 +211,7 @@ The Iceberg I/O manager supports upsert operations, which allow you to update ex
 
 #### Options
 
-Upsert options can be set at deployment time via asset definition metadata, or dynamically at runtime via output metadata. Upsert options set at runtime via `context.add_output_metadata()` take precedence over those set in definition metadata.
+Upsert options can be set at deployment time through asset definition metadata, or dynamically at runtime through output metadata. Upsert options set at runtime through `context.add_output_metadata()` take precedence over those set in definition metadata.
 
 **Required**:
 

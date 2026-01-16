@@ -171,7 +171,7 @@ In this example, the `iris_dataset` asset will be stored in the `IRIS` schema, a
 The schema is determined in this order:
 
 <ol>
-  <li>If the schema is set via metadata, that schema will be used</li>
+  <li>If the schema is set from metadata, that schema will be used</li>
   <li>Otherwise, the schema set as configuration on the I/O manager will be used</li>
   <li>
     Otherwise, if there is a <code>key_prefix</code>, that schema will be used

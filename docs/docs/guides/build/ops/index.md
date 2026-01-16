@@ -26,7 +26,7 @@ The computational core of an [asset definition](/guides/build/assets) is an op. 
 
 Ops support a variety of useful features for data orchestration, such as:
 
-- **Flexible execution strategies**: Painlessly transition from development to production with ops, as they are sealed units of logic independent of execution strategy. Collections of ops - called [graphs](/guides/build/ops/graphs) - can be bound via [jobs](/guides/build/jobs) to an appropriate [executor](/guides/operate/run-executors) for single-process execution or distribution across a cluster.
+- **Flexible execution strategies**: Painlessly transition from development to production with ops, as they are sealed units of logic independent of execution strategy. Collections of ops - called [graphs](/guides/build/ops/graphs) - can be bound by [jobs](/guides/build/jobs) to an appropriate [executor](/guides/operate/run-executors) for single-process execution or distribution across a cluster.
 
 - **Pluggable external systems**: If your data pipeline interfaces with external systems, you may want to use local substitutes during development over a cloud-based production system. Dagster provides [resources](/guides/build/external-resources) as an abstraction layer for this purpose.
 

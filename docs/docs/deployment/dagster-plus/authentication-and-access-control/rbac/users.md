@@ -43,7 +43,7 @@ By default, users will be granted Viewer permissions on each deployment. The def
 5. In the **User email** field, enter the user's email address.
 6. Click **Add user**.
 
-After the user is created, they will be notified via email, and you can [add the user to teams](#teams) and [assign user roles for each deployment](#user-roles).
+After the user is created, they will be notified by email, and you can [add the user to teams](#teams) and [assign user roles for each deployment](#user-roles).
 
 ![Screenshot of assigning roles to a user](/images/dagster-plus/features/authentication-and-access-control/adding-new-user.png)
 

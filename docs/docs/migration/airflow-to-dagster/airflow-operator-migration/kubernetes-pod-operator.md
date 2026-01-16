@@ -64,7 +64,7 @@ Here's a comparison of the parameters between the KubernetesPodOperator and the 
 - cluster_context (named kube_context in the PipesK8sClient)
 - config_file (named kubeconfig_file in the PipesK8sClient)
 
-Many arguments are supported indirectly via the `base_pod_spec` argument.
+Many arguments are supported indirectly through the `base_pod_spec` argument.
 
 - volumes: Volumes to be used by the Pod (key `volumes`)
 - affinity: Node affinity/anti-affinity rules for the Pod (key `affinity`)

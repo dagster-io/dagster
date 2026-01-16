@@ -82,7 +82,7 @@ Asset materializations can also be yielded:
 
 <CodeExample path="docs_snippets/docs_snippets/concepts/ops_jobs_graphs/op_events.py" startAfter="start_asset_op_yield" endBefore="end_asset_op_yield" title="src/<project_name>/defs/ops.py"/>
 
-When yielding asset materializations, outputs must also be yielded via an <PyObject section="ops" module="dagster" object="Output"/>.
+When yielding asset materializations, outputs must also be yielded by an <PyObject section="ops" module="dagster" object="Output"/>.
 
 To learn more about assets and how they are surfaced once you send this event, check out the [Asset Catalog](/guides/operate/webserver#assets) documentation.
 

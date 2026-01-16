@@ -49,7 +49,7 @@ The <PyObject section="libraries" integration="aws" module="dagster_aws" object=
 
 By default, each run's task registers its own task definition. To simplify configuration, these task definitions inherit most of their configuration (networking, cpu, memory, environment, etc.) from the task that launches the run but overrides its container definition with a new command to launch a Dagster run.
 
-When using the <PyObject section="internals" module="dagster._core.run_coordinator" object="DefaultRunCoordinator" />, runs launched via the Dagster UI or GraphQL inherit their task definitions from the webserver task while runs launched from a sensor or schedule inherit their task definitions from the daemon task.
+When using the <PyObject section="internals" module="dagster._core.run_coordinator" object="DefaultRunCoordinator" />, runs launched from the Dagster UI or GraphQL inherit their task definitions from the webserver task while runs launched from a sensor or schedule inherit their task definitions from the daemon task.
 
 Alternatively, you can define your own task definition in your `dagster.yaml`:
 

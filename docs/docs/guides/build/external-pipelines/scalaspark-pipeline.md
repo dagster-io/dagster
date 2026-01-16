@@ -34,7 +34,7 @@ To run the examples, you'll need to:
   Make sure `hadoop-aws` JAR and AWS Java SDK versions are compatible with your Spark/Hadoop build.
 
 - In our example, the Scala JAR will be built by Docker before Spark starts running. In production,
-consider building and uploading the JAR to Spark via CI/CD.
+consider building and uploading the JAR to Spark with CI/CD.
 
 ## Project outline
 
@@ -77,7 +77,7 @@ We will set up a few non-default Pipes components to streamline the otherwise ch
 
 :::note
 
-In other Pipes workflows, passing the bootstrap information from Dagster to the remote Pipes session is typically done via environment variables, but setting environment variables for Spark jobs can be complicated (the exact way of doing this depends on the Spark deployment) or not possible at all. CLI arguments are a convenient alternative.
+In other Pipes workflows, passing the bootstrap information from Dagster to the remote Pipes session is typically done with environment variables, but setting environment variables for Spark jobs can be complicated (the exact way of doing this depends on the Spark deployment) or not possible at all. CLI arguments are a convenient alternative.
 
 :::
 

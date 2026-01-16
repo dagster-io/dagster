@@ -52,7 +52,7 @@ Let’s start by writing our three assets. We'll use Pandas DataFrames to intera
   endBefore="end_assets"
 />
 
-Now we can add these assets to our <PyObject section="definitions" module="dagster" object="Definitions" /> object and materialize them via the UI as part of our local development workflow. We can pass in credentials to our `SnowflakePandasIOManager`.
+Now we can add these assets to our <PyObject section="definitions" module="dagster" object="Definitions" /> object and materialize them in the UI as part of our local development workflow. We can pass in credentials to our `SnowflakePandasIOManager`.
 
 <CodeExample
   path="docs_snippets/docs_snippets/guides/dagster/development_to_production/repository/repository_v1.py"

@@ -31,7 +31,7 @@ In the following sections, we describe how the I/O manager constructs these quer
 
 :::
 
-For partitioning to work, the partition dimension needs to be one of the partition columns defined on the Delta table. Tables created via the I/O manager will be configured accordingly.
+For partitioning to work, the partition dimension needs to be one of the partition columns defined on the Delta table. Tables created with the I/O manager will be configured accordingly.
 
 :::
 
@@ -135,7 +135,7 @@ In this example, the `iris_dataset` asset will be stored in the `IRIS` schema, a
 
 :::
 
-The two options for specifying schema are mutually exclusive. If you provide `schema` configuration to the I/O manager, you cannot also provide it via the asset key and vice versa. If no `schema` is provided, either from configuration or asset keys, the default schema `public` will be used.
+The two options for specifying schema are mutually exclusive. If you provide `schema` configuration to the I/O manager, you cannot also provide it with the asset key and vice versa. If no `schema` is provided, either from configuration or asset keys, the default schema `public` will be used.
 
 :::
 

@@ -610,7 +610,7 @@ select *
 
 Then this model has an upstream source with the `jaffle_shop/orders` asset key.
 
-In order to manage this upstream asset with Dagster, you can define it by passing the key into an asset definition via <PyObject section="libraries" integration="dbt" module="dagster_dbt" object="get_asset_key_for_source"/>:
+In order to manage this upstream asset with Dagster, you can define it by passing the key into an asset definition using <PyObject section="libraries" integration="dbt" module="dagster_dbt" object="get_asset_key_for_source"/>:
 
 <CodeExample
   startAfter="start_upstream_asset"
@@ -694,7 +694,7 @@ SELECT ...
 
 ### Downstream dependencies
 
-Dagster allows you to define assets that are downstream of specific dbt models via <PyObject section="libraries" integration="dbt" module="dagster_dbt" object="get_asset_key_for_model"/>. The below example defines `my_downstream_asset` as a downstream dependency of `my_dbt_model`:
+Dagster allows you to define assets that are downstream of specific dbt models with <PyObject section="libraries" integration="dbt" module="dagster_dbt" object="get_asset_key_for_model"/>. The below example defines `my_downstream_asset` as a downstream dependency of `my_dbt_model`:
 
 <CodeExample
   startAfter="start_downstream_asset"

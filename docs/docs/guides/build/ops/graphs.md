@@ -115,7 +115,7 @@ Dependencies in Dagster are primarily _data dependencies_. Using data dependenci
 
 If you have an op, say `Op A`, that does not depend on any outputs of another op, say `Op B`, there theoretically shouldn't be a reason for `Op A` to run after `Op B`. In most cases, these two ops should be parallelizable. However, there are some cases where an explicit ordering is required, but it doesn't make sense to pass data through inputs and outputs to model the dependency.
 
-If you need to model an explicit ordering dependency, you can use the <PyObject section="types" module="dagster" object="Nothing"/> Dagster type on the input definition of the downstream op. This type specifies that you are passing "nothing" via Dagster between the ops, while still using inputs and outputs to model the dependency between the two ops.
+If you need to model an explicit ordering dependency, you can use the <PyObject section="types" module="dagster" object="Nothing"/> Dagster type on the input definition of the downstream op. This type specifies that you are passing "nothing" using Dagster between the ops, while still using inputs and outputs to model the dependency between the two ops.
 
 <CodeExample path="docs_snippets/docs_snippets/concepts/ops_jobs_graphs/graphs/order_based_dependency.py" startAfter="start_marker" endBefore="end_marker" title="src/<project_name>/defs/ops.py"/>
 

@@ -133,7 +133,7 @@ RUN pip install -e .
 
 :::info .local_defs_state and version control
 
-The `.local_defs_state` directory is automatically excluded from version control via an auto-generated `.gitignore` file. However, it **should** be included in your Docker image as part of your deployment artifact.
+The `.local_defs_state` directory is automatically excluded from version control with an auto-generated `.gitignore` file. However, it **should** be included in your Docker image as part of your deployment artifact.
 
 :::
 

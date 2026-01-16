@@ -322,7 +322,7 @@ jupyter notebook /path/to/new/notebook.ipynb
 
 Behind the scenes, when `load_asset_value` is called, Dagster fetches the value of `iris_dataset` that was most recently materialized and stored by an I/O manager.
 
-To integrate the new notebook, follow the steps from [Step 5.3](#step-53-modify-the-notebook) to add the `parameters` tag to the cell that fetches the `iris_dataset` asset via `load_asset_value`.
+To integrate the new notebook, follow the steps from [Step 5.3](#step-53-modify-the-notebook) to add the `parameters` tag to the cell that fetches the `iris_dataset` asset through `load_asset_value`.
 
 ## Conclusion
 

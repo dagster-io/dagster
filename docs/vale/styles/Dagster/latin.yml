@@ -7,4 +7,4 @@ ignorecase: true
 swap:
   '\b(?:e\.?g[\s.,;:])': "for example', 'like', or 'such as"
   '\b(?:i\.?e[\s.,;:])': that is
-  '\bvia\b': "with', 'through', or 'by using"
+  '\bvia\b': "with', 'by', 'from', 'using', 'through', 'by using', or 'in"

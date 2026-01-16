@@ -46,7 +46,7 @@ In order to proxy a task, you must do two things:
 
 Any task marked as proxied will use the <PyObject section="libraries" integration="airlift" module="dagster_airlift" object="in_airflow.DefaultProxyTaskToDagsterOperator" displayText="DefaultProxyTaskToDagsterOperator" /> when executed as part of the DAG. This operator will use the [Dagster GraphQL API](/api/graphql) to initiate a Dagster run of the assets corresponding to the task.
 
-The proxied file acts as the source of truth for proxied state. The information is attached to the DAG and then accessed by Dagster via the REST API.
+The proxied file acts as the source of truth for proxied state. The information is attached to the DAG and then accessed by Dagster through the REST API.
 
 A task which has been proxied can be easily toggled back to run in Airflow (for example, if a bug in implementation was encountered) simply by editing the file to `proxied: False`.
 
@@ -58,7 +58,7 @@ For some common operator patterns, like our `dbt` operator, Dagster supplies fac
 
 :::info
 
-It may take up to 30 seconds for the proxied state in the Airflow UI to reflect this change. You must subsequently reload the definitions in Dagster via the UI or by restarting `dagster dev`.
+It may take up to 30 seconds for the proxied state in the Airflow UI to reflect this change. You must subsequently reload the definitions in Dagster in the UI or by restarting `dagster dev`.
 
 :::
 

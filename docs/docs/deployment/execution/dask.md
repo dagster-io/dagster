@@ -8,7 +8,7 @@ The [`dagster-dask`](/integrations/libraries/dask/dagster-dask) library makes a 
 
 This executor takes the compiled execution plan, and converts each execution step into a [Dask Future](https://docs.dask.org/en/latest/futures.html) configured with the appropriate task dependencies to ensure tasks are properly sequenced. When the job is executed, these futures are generated and then awaited by the parent Dagster process.
 
-Data is passed between step executions via [I/O managers](/guides/build/io-managers). As a consequence, a persistent shared storage (such as a network filesystem shared by all of the Dask nodes, S3, or GCS) must be used.
+Data is passed between step executions with [I/O managers](/guides/build/io-managers). As a consequence, a persistent shared storage (such as a network filesystem shared by all of the Dask nodes, S3, or GCS) must be used.
 
 Note that, when using this executor, the compute function of a single op is still executed in a single process on a single machine. If your goal is to distribute execution of workloads _within_ the logic of a single op, you may find that invoking Dask or PySpark directly from within the body of an op's compute function is a better fit than the engine layer covered in this documentation.
 

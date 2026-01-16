@@ -66,7 +66,7 @@ dagsterCloudAgent:
 
 ### In Amazon ECS
 
-In Amazon ECS, the number of replicas can be set via the CloudFormation template:
+In Amazon ECS, the number of replicas can be set in the CloudFormation template:
 
 ```yaml
 DagsterCloudAgent:
@@ -76,7 +76,7 @@ DagsterCloudAgent:
     DesiredCount: 2
 ```
 
-If using the CloudFormation template provided by Dagster, the number of replicas can be set via the `NumReplicas` parameter in the Amazon Web Services (AWS) UI.
+If using the CloudFormation template provided by Dagster, the number of replicas can be set with the `NumReplicas` parameter in the Amazon Web Services (AWS) UI.
 
 </TabItem>
 </Tabs>

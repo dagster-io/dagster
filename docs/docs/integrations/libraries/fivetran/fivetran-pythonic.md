@@ -67,7 +67,7 @@ You can use Dagster to sync Fivetran connectors and materialize Fivetran connect
 
 :::note
 
-When syncing a Fivetran connector via Dagster, all Fivetran assets for this connector are materialized in Dagster.
+When syncing a Fivetran connector using Dagster, all Fivetran assets for this connector are materialized in Dagster.
 
 :::
 

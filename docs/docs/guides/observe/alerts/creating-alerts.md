@@ -1,5 +1,5 @@
 ---
-description: Create alert policies in Dagster+ via UI or dagster-cloud CLI on a per-deployment basis. Specify policy types, targets, and notification channels.
+description: Create alert policies in Dagster+ using the UI or dagster-cloud CLI on a per-deployment basis. Specify policy types, targets, and notification channels.
 sidebar_position: 200
 tags: [dagster-plus-feature]
 title: Creating alert policies
