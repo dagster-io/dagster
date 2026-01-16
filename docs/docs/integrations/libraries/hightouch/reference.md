@@ -3,6 +3,7 @@ title: dagster-hightouch integration reference
 description: API reference for the Dagster Hightouch integration.
 sidebar_position: 500
 ---
+
 # dagster-hightouch API reference
 
 ## Components
@@ -14,11 +15,13 @@ The `HightouchSyncComponent` is the modern, declarative way to define Hightouch 
 ## Resources
 
 ### Configurable Resource (Modern)
+
 This is the recommended resource for modern Dagster projects using pythonic configuration.
 
 ::: ddoc:dagster_hightouch.resources.ConfigurableHightouchResource
 
 ### Legacy Resource
+
 Included for backward compatibility with older Dagster versions.
 
 ::: ddoc:dagster_hightouch.resources.HightouchResource
