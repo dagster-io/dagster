@@ -1,21 +1,16 @@
 import os
 import shutil
-import sys
-import uuid
 from pathlib import Path
-from types import ModuleType
 from typing import Annotated, Any, Optional
 
 import click
 import typer
 import yaml
 from dagster._cli.project import check_if_pypi_package_conflict_exists
+from dagster._core.code_pointer import load_python_file
 from dagster._core.definitions.module_loaders.load_assets_from_modules import (
     find_objects_in_module_of_types,
 )
-from dagster._core.errors import DagsterImportError
-from dagster._utils import alter_sys_path
-from dagster_shared.seven import get_import_error_message, import_module_from_path
 from jinja2 import Environment, FileSystemLoader
 from rich.console import Console
 from rich.syntax import Syntax
@@ -45,24 +40,6 @@ console = Console()
 
 DBT_PROJECT_YML_NAME = "dbt_project.yml"
 DBT_PROFILES_YML_NAME = "profiles.yml"
-
-
-def _load_python_file_for_cli(python_file: Path) -> ModuleType:
-    python_file_str = os.fspath(python_file)
-    os.stat(python_file_str)
-
-    module_name = f"dagster_dbt_cli__{Path(python_file_str).stem}_{uuid.uuid4().hex}"
-    script_path = sys.path[0]
-
-    try:
-        with alter_sys_path(to_add=[], to_remove=[script_path]):
-            return import_module_from_path(module_name, python_file_str)
-    except ImportError as ie:
-        msg = get_import_error_message(ie)
-        raise DagsterImportError(
-            f"Encountered ImportError: `{msg}` while importing module from file {python_file_str}. "
-            "Consider specifying `--working-directory` if local imports rely on a different path."
-        ) from ie
 
 
 def validate_dagster_project_name(project_name: str) -> str:
@@ -384,7 +361,7 @@ def project_prepare_and_package_command(
         f"Running with dagster-dbt version: [bold green]{dagster_dbt_version}[/bold green]."
     )
     if file:
-        contents = _load_python_file_for_cli(file)
+        contents = load_python_file(file, working_directory=None, add_uuid_suffix=True)
         dbt_projects = find_objects_in_module_of_types(contents, types=DbtProject)
     elif components:
         from dagster_dbt.components.dbt_project.component import get_projects_from_dbt_component
