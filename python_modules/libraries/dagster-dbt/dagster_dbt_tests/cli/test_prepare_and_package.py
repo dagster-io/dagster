@@ -176,6 +176,69 @@ def test_prepare_and_package_with_packages(
     assert manifest_path.exists()
 
 
+def test_prepare_and_package_with_file_named_dbt(
+    monkeypatch: pytest.MonkeyPatch, dbt_project_dir: Path
+) -> None:
+    monkeypatch.chdir(dbt_project_dir)
+
+    project_name = "jaffle_dagster"
+    dagster_project_dir = dbt_project_dir.joinpath(project_name)
+    dagster_python_package_dir = dagster_project_dir.joinpath(project_name)
+
+    result = runner.invoke(
+        app,
+        [
+            "project",
+            "scaffold",
+            "--project-name",
+            project_name,
+            "--dbt-project-dir",
+            os.fspath(dbt_project_dir),
+        ],
+    )
+
+    assert result.exit_code == 0
+
+    project_file = dagster_python_package_dir.joinpath("project.py")
+    dbt_file = dagster_python_package_dir.joinpath("dbt.py")
+    project_file.rename(dbt_file)
+
+    assets_file = dagster_python_package_dir.joinpath("assets.py")
+    assets_file.write_text(
+        assets_file.read_text().replace(
+            "from .project import dbt_project_project", "from .dbt import dbt_project_project"
+        )
+    )
+
+    definitions_file = dagster_python_package_dir.joinpath("definitions.py")
+    definitions_file.write_text(
+        definitions_file.read_text().replace(
+            "from .project import dbt_project_project", "from .dbt import dbt_project_project"
+        )
+    )
+
+    recorded_projects: list[DbtProject] = []
+
+    def _fake_prepare(project: "DbtProject") -> None:
+        recorded_projects.append(project)
+
+    monkeypatch.setattr("dagster_dbt.cli.app.prepare_and_package", _fake_prepare)
+
+    result = runner.invoke(
+        app,
+        [
+            "project",
+            "prepare-and-package",
+            "--file",
+            os.fspath(dbt_file),
+        ],
+    )
+
+    assert result.exit_code == 0
+    assert len(recorded_projects) == 1
+    assert recorded_projects[0].project_dir == dbt_project_dir
+
+
 def test_prepare_and_package_with_state(
     monkeypatch: pytest.MonkeyPatch, dbt_project_dir: Path
 ) -> None:

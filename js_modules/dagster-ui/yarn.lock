@@ -2079,9 +2079,8 @@ __metadata:
     "@vx/shape": "npm:^0.0.192"
     amator: "npm:^1.1.0"
     ansi-to-react: "npm:^5.1.0"
-    antlr4ts: "npm:0.5.0-alpha.4"
-    antlr4ts-cli: "npm:0.5.0-alpha.4"
-    assert: "npm:^2.1.0"
+    antlr4ng: "npm:^3.0.4"
+    antlr4ng-cli: "npm:^2.0.0"
     babel-jest: "npm:^29.7.0"
     babel-loader: "npm:9.1.2"
     babel-plugin-graphql-tag: "npm:^3.3.0"
@@ -7168,19 +7167,19 @@ __metadata:
   languageName: node
   linkType: hard
 
-"antlr4ts-cli@npm:0.5.0-alpha.4":
-  version: 0.5.0-alpha.4
-  resolution: "antlr4ts-cli@npm:0.5.0-alpha.4"
+"antlr4ng-cli@npm:^2.0.0":
+  version: 2.0.0
+  resolution: "antlr4ng-cli@npm:2.0.0"
   bin:
-    antlr4ts: ./antlr4ts
-  checksum: 10/ca8cbf6df44081c9dd1ec9bf129adc042e345bc39e817a7c33d5a0cbd45be24f29419135522762a0e77f0be95e970483ab5679c7d94838772457df759fc7627a
+    antlr4ng: index.js
+  checksum: 10/1f88020dd76ebf520fccfc2239da6dd155c9f705f7a8db0ec1545f9528d85e1aa86955a02245b171acf19a517e4ace0fe62f14082164473b16c24a6db1c43970
   languageName: node
   linkType: hard
 
-"antlr4ts@npm:0.5.0-alpha.4":
-  version: 0.5.0-alpha.4
-  resolution: "antlr4ts@npm:0.5.0-alpha.4"
-  checksum: 10/d572047607e5dcbae1ee1f33f604cf2769fe279cb52d850c86a09548d55c97704055033afe5e0b91c33488ba73377a755fafcb50d106993a9323f746ca2dd187
+"antlr4ng@npm:^3.0.4":
+  version: 3.0.16
+  resolution: "antlr4ng@npm:3.0.16"
+  checksum: 10/318ba65b3d58657dab4e182097f1e1285c6f1d0562685ec1792280e22a20104cc6f5e7cacc4029f7d9f41cc6444745c8dce00c52304a4b6b11f5020cbdd76dc8
   languageName: node
   linkType: hard
 
@@ -7385,19 +7384,6 @@ __metadata:
     pvutils: "npm:^1.1.3"
     tslib: "npm:^2.4.0"
   checksum: 10/17fb0302432186631550de9606a4622ec366646d072cde9cdf4bcafa47bd2425e157eeb7b1377ee6520f8b46687b4ecaee31cf0ad2fa494361a1938b2ed53194
-  languageName: node
-  linkType: hard
-
-"assert@npm:^2.1.0":
-  version: 2.1.0
-  resolution: "assert@npm:2.1.0"
-  dependencies:
-    call-bind: "npm:^1.0.2"
-    is-nan: "npm:^1.3.2"
-    object-is: "npm:^1.1.5"
-    object.assign: "npm:^4.1.4"
-    util: "npm:^0.12.5"
-  checksum: 10/6b9d813c8eef1c0ac13feac5553972e4bd180ae16000d4eb5c0ded2489188737c75a5aacefc97a985008b37502f62fe1bad34da1a7481a54bbfabec3964c8aa7
   languageName: node
   linkType: hard
 
@@ -8010,7 +7996,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"call-bind@npm:^1.0.0, call-bind@npm:^1.0.2, call-bind@npm:^1.0.5, call-bind@npm:^1.0.7, call-bind@npm:^1.0.8":
+"call-bind@npm:^1.0.2, call-bind@npm:^1.0.5, call-bind@npm:^1.0.7, call-bind@npm:^1.0.8":
   version: 1.0.8
   resolution: "call-bind@npm:1.0.8"
   dependencies:
@@ -11925,7 +11911,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"is-arguments@npm:^1.0.4, is-arguments@npm:^1.1.1":
+"is-arguments@npm:^1.1.1":
   version: 1.2.0
   resolution: "is-arguments@npm:1.2.0"
   dependencies:
@@ -12105,7 +12091,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"is-generator-function@npm:^1.0.10, is-generator-function@npm:^1.0.7":
+"is-generator-function@npm:^1.0.10":
   version: 1.1.2
   resolution: "is-generator-function@npm:1.1.2"
   dependencies:
@@ -12179,16 +12165,6 @@ __metadata:
   version: 1.0.0
   resolution: "is-module@npm:1.0.0"
   checksum: 10/8cd5390730c7976fb4e8546dd0b38865ee6f7bacfa08dfbb2cc07219606755f0b01709d9361e01f13009bbbd8099fa2927a8ed665118a6105d66e40f1b838c3f
-  languageName: node
-  linkType: hard
-
-"is-nan@npm:^1.3.2":
-  version: 1.3.2
-  resolution: "is-nan@npm:1.3.2"
-  dependencies:
-    call-bind: "npm:^1.0.0"
-    define-properties: "npm:^1.1.3"
-  checksum: 10/1f784d3472c09bc2e47acba7ffd4f6c93b0394479aa613311dc1d70f1bfa72eb0846c81350967722c959ba65811bae222204d6c65856fdce68f31986140c7b0e
   languageName: node
   linkType: hard
 
@@ -12304,7 +12280,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"is-typed-array@npm:^1.1.13, is-typed-array@npm:^1.1.14, is-typed-array@npm:^1.1.15, is-typed-array@npm:^1.1.3":
+"is-typed-array@npm:^1.1.13, is-typed-array@npm:^1.1.14, is-typed-array@npm:^1.1.15":
   version: 1.1.15
   resolution: "is-typed-array@npm:1.1.15"
   dependencies:
@@ -19491,19 +19467,6 @@ __metadata:
   languageName: node
   linkType: hard
 
-"util@npm:^0.12.5":
-  version: 0.12.5
-  resolution: "util@npm:0.12.5"
-  dependencies:
-    inherits: "npm:^2.0.3"
-    is-arguments: "npm:^1.0.4"
-    is-generator-function: "npm:^1.0.7"
-    is-typed-array: "npm:^1.1.3"
-    which-typed-array: "npm:^1.1.2"
-  checksum: 10/61a10de7753353dd4d744c917f74cdd7d21b8b46379c1e48e1c4fd8e83f8190e6bd9978fc4e5102ab6a10ebda6019d1b36572fa4a325e175ec8b789a121f6147
-  languageName: node
-  linkType: hard
-
 "uuid@npm:^9.0.0":
   version: 9.0.0
   resolution: "uuid@npm:9.0.0"
@@ -19992,7 +19955,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"which-typed-array@npm:^1.1.13, which-typed-array@npm:^1.1.16, which-typed-array@npm:^1.1.18, which-typed-array@npm:^1.1.2":
+"which-typed-array@npm:^1.1.13, which-typed-array@npm:^1.1.16, which-typed-array@npm:^1.1.18":
   version: 1.1.19
   resolution: "which-typed-array@npm:1.1.19"
   dependencies:

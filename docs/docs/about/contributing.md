@@ -4,9 +4,11 @@ sidebar_position: 20
 title: Contributing
 ---
 
-We love to see our community members get involved! If you are planning to contribute to Dagster, you will first need to set up a local development environment.
+We love to see our community members get involved! We're particularly looking for bugfix and [integration library](https://docs.dagster.io/integrations/libraries) contributions. There are more constraints on core feature additions, so we encourage you to open an [issue](https://github.com/dagster-io/dagster/issues) to discuss any core feature idea with maintainers before investing time.
 
 ## Environment setup
+
+If you are planning to contribute to Dagster, you will first need to set up a local development environment.
 
 You can develop for Dagster using macOS, Linux, or Windows. If using Windows, you will need to install and use [WSL](https://learn.microsoft.com/windows/wsl/install) to follow the steps in this guide.
 

@@ -94,6 +94,11 @@ describe('parsePartitionSelection', () => {
       const result = parsePartitionSelection('["start...value"..."end...value"]');
       expect(result).toEqual([{type: 'range', start: 'start...value', end: 'end...value'}]);
     });
+
+    it('parses range with spaces in keys (datetime partitions)', () => {
+      const result = parsePartitionSelection('["2025-09-01 00:00"..."2026-01-14 20:00"]');
+      expect(result).toEqual([{type: 'range', start: '2025-09-01 00:00', end: '2026-01-14 20:00'}]);
+    });
   });
 
   describe('wildcards', () => {

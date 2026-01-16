@@ -2,6 +2,7 @@ import importlib
 import inspect
 import os
 import sys
+import uuid
 from abc import ABC, abstractmethod
 from collections.abc import Callable, Sequence
 from pathlib import Path
@@ -59,7 +60,11 @@ def rebase_file(relative_path_in_file: str, file_path_resides_in: str) -> str:
     )
 
 
-def load_python_file(python_file: Union[str, Path], working_directory: Optional[str]) -> ModuleType:
+def load_python_file(
+    python_file: Union[str, Path],
+    working_directory: Optional[str],
+    add_uuid_suffix: bool = False,
+) -> ModuleType:
     """Takes a path to a python file and returns a loaded module."""
     check.inst_param(python_file, "python_file", (str, Path))
     check.opt_str_param(working_directory, "working_directory")
@@ -68,6 +73,8 @@ def load_python_file(python_file: Union[str, Path], working_directory: Optional[
     os.stat(python_file)
 
     module_name = os.path.splitext(os.path.basename(python_file))[0]
+    if add_uuid_suffix:
+        module_name = f"{module_name}_{uuid.uuid4().hex}"
 
     # Use the passed in working directory for local imports (sys.path[0] isn't
     # consistently set in the different entry points that Dagster uses to import code)

@@ -1,4 +1,4 @@
-import {CharStreams, CommonTokenStream, ParserRuleContext} from 'antlr4ts';
+import {BaseErrorListener, CharStream, CommonTokenStream, ParserRuleContext} from 'antlr4ng';
 
 import {BaseSelectionVisitor} from '../BaseSelectionVisitor';
 import {SelectionAutoCompleteLexer} from '../generated/SelectionAutoCompleteLexer';
@@ -16,19 +16,18 @@ class TestBaseVisitor extends BaseSelectionVisitor {
   }
 
   public visitUnmatchedValue(ctx: UnmatchedValueContext) {
-    this.visitedNodes.push(
-      `visitUnmatchedValue: [${ctx.start.startIndex}, ${ctx.stop?.stopIndex}]`,
-    );
+    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+    this.visitedNodes.push(`visitUnmatchedValue: [${ctx.start!.start}, ${ctx.stop?.stop}]`);
   }
 
   public visitAttributeName(ctx: ParserRuleContext) {
-    this.visitedNodes.push(`visitAttributeName: [${ctx.start.startIndex}, ${ctx.stop?.stopIndex}]`);
+    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+    this.visitedNodes.push(`visitAttributeName: [${ctx.start!.start}, ${ctx.stop?.stop}]`);
   }
 
   public visitAttributeValue(ctx: AttributeValueContext) {
-    this.visitedNodes.push(
-      `visitAttributeValue: [${ctx.start.startIndex}, ${ctx.stop?.stopIndex}]`,
-    );
+    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+    this.visitedNodes.push(`visitAttributeValue: [${ctx.start!.start}, ${ctx.stop?.stop}]`);
   }
 }
 
@@ -36,22 +35,13 @@ class TestBaseVisitor extends BaseSelectionVisitor {
  * Helper function to parse input and return the root context.
  */
 function parseInput(line: string) {
-  const inputStream = CharStreams.fromString(line);
+  const inputStream = CharStream.fromString(line);
   const lexer = new SelectionAutoCompleteLexer(inputStream);
   const tokenStream = new CommonTokenStream(lexer);
   const parser = new SelectionAutoCompleteParser(tokenStream);
   parser.removeErrorListeners(); // Remove default error listeners
-  const errorListener = {
-    syntaxError: (
-      _recog: any,
-      _offendingSymbol: any,
-      _line: number,
-      _charPositionInLine: number,
-      _msg: string,
-      _e: any,
-    ) => {},
-  };
-  parser.addErrorListener(errorListener);
+  // Use BaseErrorListener which provides empty implementations for all methods
+  parser.addErrorListener(new BaseErrorListener());
   const tree = parser.start();
   return tree;
 }

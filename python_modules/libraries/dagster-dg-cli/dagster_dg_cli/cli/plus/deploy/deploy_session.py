@@ -127,6 +127,8 @@ def init_deploy_session(
     location_names: tuple[str],
     status_url: Optional[str],
     snapshot_base_condition: Optional["SnapshotBaseDeploymentCondition"],
+    dagster_env: Optional[str],
+    skip_validation: bool = False,
 ):
     deployment_type = (
         input_deployment_type
@@ -144,7 +146,14 @@ def init_deploy_session(
 
     dagster_cloud_yaml_file = create_temp_dagster_cloud_yaml_file(dg_context, statedir)
 
-    # Lazy import for test mocking and performance
+    from dagster_dg_cli.cli.plus.deploy.validation import validate_deploy_configuration
+
+    if not skip_validation:
+        validate_deploy_configuration(
+            dagster_cloud_yaml_path=dagster_cloud_yaml_file,
+            organization=organization,
+        )
+
     from dagster_cloud_cli.commands.ci import init_impl
 
     init_impl(
@@ -156,7 +165,7 @@ def init_deploy_session(
         require_branch_deployment=deployment_type == DgPlusDeploymentType.BRANCH_DEPLOYMENT,
         git_url=git_url,
         commit_hash=commit_hash,
-        dagster_env=None,
+        dagster_env=dagster_env,
         status_url=status_url,
         snapshot_base_condition=snapshot_base_condition,
         clean_statedir=False,

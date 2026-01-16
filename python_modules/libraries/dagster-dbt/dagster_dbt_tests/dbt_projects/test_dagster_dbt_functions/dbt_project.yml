@@ -1,0 +1,36 @@
+name: "test_dagster_dbt_functions"
+
+config-version: 2
+version: "0.1"
+
+profile: "jaffle_shop"
+
+model-paths: ["models"]
+seed-paths: ["seeds"]
+function-paths: ["functions"]
+test-paths: ["tests"]
+analysis-paths: ["analysis"]
+macro-paths: ["macros"]
+
+target-path: "target"
+clean-targets:
+  - "target"
+  - "dbt_modules"
+  - "logs"
+
+require-dbt-version: [">=1.11.0", "<2.0.0"]
+
+models:
+  test_dagster_dbt_functions:
+    +tags: test
+    materialized: table
+    staging:
+      materialized: view
+
+seeds:
+  test_dagster_dbt_functions:
+    +tags: test
+
+functions:
+  test_dagster_dbt_functions:
+    +tags: test

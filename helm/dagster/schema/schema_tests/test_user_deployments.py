@@ -560,6 +560,50 @@ def test_startup_probe_default_exec(template: HelmTemplate):
     ]
 
 
+def test_readiness_probe_exec(template: HelmTemplate):
+    deployment = create_simple_user_deployment("foo")
+    deployment.readinessProbe = ReadinessProbeWithEnabled.construct(
+        enabled=True, exec=dict(command=["my", "command"])
+    )
+    helm_values = DagsterHelmValues.construct(
+        dagsterUserDeployments=UserDeployments.construct(deployments=[deployment])
+    )
+
+    dagster_user_deployment = template.render(helm_values)
+    assert len(dagster_user_deployment) == 1
+    dagster_user_deployment = dagster_user_deployment[0]
+
+    assert len(dagster_user_deployment.spec.template.spec.containers) == 1
+    container = dagster_user_deployment.spec.template.spec.containers[0]
+
+    assert container.readiness_probe._exec.command == [  # noqa: SLF001
+        "my",
+        "command",
+    ]
+
+
+def test_liveness_probe_exec(template: HelmTemplate):
+    deployment = create_simple_user_deployment("foo")
+    deployment.livenessProbe = kubernetes.LivenessProbe.construct(
+        exec=dict(command=["my", "command"])
+    )
+    helm_values = DagsterHelmValues.construct(
+        dagsterUserDeployments=UserDeployments.construct(deployments=[deployment])
+    )
+
+    dagster_user_deployment = template.render(helm_values)
+    assert len(dagster_user_deployment) == 1
+    dagster_user_deployment = dagster_user_deployment[0]
+
+    assert len(dagster_user_deployment.spec.template.spec.containers) == 1
+    container = dagster_user_deployment.spec.template.spec.containers[0]
+
+    assert container.liveness_probe._exec.command == [  # noqa: SLF001
+        "my",
+        "command",
+    ]
+
+
 @pytest.mark.parametrize("chart_version", ["0.11.0", "0.11.1"])
 def test_user_deployment_default_image_tag_is_chart_version(
     template: HelmTemplate, chart_version: str
