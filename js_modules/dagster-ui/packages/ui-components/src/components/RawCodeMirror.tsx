@@ -1,5 +1,15 @@
 import 'codemirror/lib/codemirror.css';
 
+import 'codemirror/addon/edit/closebrackets';
+import 'codemirror/addon/edit/matchbrackets';
+import 'codemirror/addon/fold/brace-fold';
+import 'codemirror/addon/fold/foldcode';
+import 'codemirror/addon/fold/foldgutter';
+import 'codemirror/addon/fold/foldgutter.css';
+import 'codemirror/addon/lint/lint';
+import 'codemirror/addon/lint/lint.css';
+import 'codemirror/mode/javascript/javascript';
+
 import CodeMirror from 'codemirror';
 import {useEffect, useRef} from 'react';
 
