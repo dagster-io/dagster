@@ -11,6 +11,7 @@ from dagster import (
     StringSource,
     resource,
 )
+import dagster as dg
 from dagster._core.definitions.resource_definition import dagster_maintained_resource
 from dagster._utils.cached_method import cached_method
 from dagster._utils.merger import merge_dicts
@@ -22,17 +23,17 @@ from dagster_azure.adls2.utils import DataLakeServiceClient, create_adls2_client
 from dagster_azure.blob.utils import BlobServiceClient, create_blob_client
 
 
-class ADLS2SASToken(Config):
+class ADLS2SASToken(dg.Resolvable, Config):
     credential_type: Literal["sas"] = "sas"
     token: str
 
 
-class ADLS2Key(Config):
+class ADLS2Key(dg.Resolvable, Config):
     credential_type: Literal["key"] = "key"
     key: str
 
 
-class ADLS2DefaultAzureCredential(Config):
+class ADLS2DefaultAzureCredential(dg.Resolvable, Config):
     credential_type: Literal["default_azure_credential"] = "default_azure_credential"
     kwargs: dict[str, Any]
 
